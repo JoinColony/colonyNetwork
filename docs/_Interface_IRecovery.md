@@ -43,7 +43,7 @@ Exit recovery mode, can be called by anyone if enough whitelist approvals are gi
 
 ### `isInRecoveryMode`
 
-Is colony network in recovery mode
+Is colony network in recovery mode.
 
 
 
@@ -100,4 +100,4 @@ Update value of arbitrary storage variable. Can only be called by user with reco
 |Name|Type|Description|
 |---|---|---|
 |_slot|uint256|Uint address of storage slot to be updated
-|_value|bytes32|Bytes32 word of data to be set
+|_value|bytes32|word of data to be set

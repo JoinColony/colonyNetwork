@@ -22,7 +22,7 @@ pragma experimental "ABIEncoderV2";
 /// @title Recovery interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
 contract IRecovery {
-/// @notice Put colony network mining into recovery mode.
+  /// @notice Put colony network mining into recovery mode.
   /// Can only be called by user with recovery role.
   function enterRecoveryMode() public;
 
@@ -33,7 +33,7 @@ contract IRecovery {
   /// Can only be called by user with recovery role.
   function approveExitRecovery() public;
 
-  /// @notice Is colony network in recovery mode
+  /// @notice Is colony network in recovery mode.
   /// @return inRecoveryMode Return true if recovery mode is active, false otherwise
   function isInRecoveryMode() public view returns (bool inRecoveryMode);
 
@@ -54,7 +54,7 @@ contract IRecovery {
   /// @notice Update value of arbitrary storage variable.
   /// Can only be called by user with recovery role.
   /// @param _slot Uint address of storage slot to be updated
-  /// @param _value Bytes32 word of data to be set
+  /// @param _value word of data to be set
   /// @dev certain critical variables are protected from editing in this function
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public;
 

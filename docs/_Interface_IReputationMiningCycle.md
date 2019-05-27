@@ -9,7 +9,7 @@ order: 7
 
 ### `appendReputationUpdateLog`
 
-Add a new entry to the reputation update log
+Add a new entry to the reputation update log.
 
 
 **Parameters**
@@ -17,7 +17,7 @@ Add a new entry to the reputation update log
 |Name|Type|Description|
 |---|---|---|
 |_user|address|The address of the user having their reputation changed by this log entry
-|_amount|int256|The amount by which the user's reputation is going to change. Can be positive or negative
+|_amount|int256|The amount by which the user's reputation is going to change. Can be positive or negative.
 |_skillId|uint256|The skillId of the reputation being affected
 |_colonyAddress|address|The address of the colony the reputation is being affected in
 |_nParents|uint128|The number of parent skills the skill defined by the skillId has
@@ -26,7 +26,7 @@ Add a new entry to the reputation update log
 
 ### `challengeRoundComplete`
 
-Get whether a challenge round is complete
+Get whether a challenge round is complete.
 
 
 **Parameters**
@@ -59,7 +59,7 @@ This function ensures that the intermediate hashes saved are correct.
 
 ### `confirmJustificationRootHash`
 
-Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible
+Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible.
 
 *Note: The majority of calls to this function will have `round` equal to `0`. The exception to this is when a submitted hash is given a bye, in which case `round` will be nonzero.*
 
@@ -102,20 +102,20 @@ Get the reputation decay constant.
 
 ### `getDisputeRound`
 
-
+The getter for the disputeRounds mapping.
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_round|uint256|
+|_round|uint256|The dispute round to query
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|submissions|DisputedEntry[]|
+|submissions|DisputedEntry[]|An array of DisputedEntrys struct for the round. See ReputationMiningCycleDataTypes for the full description of the properties.
 
 ### `getEntryHash`
 
@@ -138,7 +138,7 @@ Get the hash for the corresponding entry.
 
 ### `getMiningWindowDuration`
 
-Get the length of the mining window in seconds
+Get the length of the mining window in seconds.
 
 
 
@@ -150,7 +150,7 @@ Get the length of the mining window in seconds
 
 ### `getMinStake`
 
-Get the minimum stake of CLNY required to mine
+Get the minimum stake of CLNY required to mine.
 
 
 
@@ -162,7 +162,7 @@ Get the minimum stake of CLNY required to mine
 
 ### `getNInvalidatedHashes`
 
-Get the number of hashes that have been invalidated this mining cycle
+Get the number of hashes that have been invalidated this mining cycle.
 
 
 
@@ -174,7 +174,7 @@ Get the number of hashes that have been invalidated this mining cycle
 
 ### `getNSubmissionsForHash`
 
-Get the number of submissions miners made of a particular hash / nNodes / jrh combination
+Get the number of submissions miners made of a particular hash / nNodes / jrh combination.
 
 
 **Parameters**
@@ -193,7 +193,7 @@ Get the number of submissions miners made of a particular hash / nNodes / jrh co
 
 ### `getNUniqueSubmittedHashes`
 
-Get the number of unique hash/nnodes/jrh sets that have been submitted this mining cycle
+Get the number of unique hash/nnodes/jrh sets that have been submitted this mining cycle.
 
 
 
@@ -218,11 +218,11 @@ The getter for the hashSubmissions mapping, which keeps track of submissions by 
 
 |Name|Type|Description|
 |---|---|---|
-|submission|Submission|the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description
+|submission|Submission|the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description.
 
 ### `getReputationMiningWindowOpenTimestamp`
 
-Get the timestamp that the current reputation mining window opened
+Get the timestamp that the current reputation mining window opened.
 
 
 
@@ -234,7 +234,7 @@ Get the timestamp that the current reputation mining window opened
 
 ### `getReputationUpdateLogEntry`
 
-Get the `ReputationLogEntry` at index `_id`
+Get the `ReputationLogEntry` at index `_id`.
 
 
 **Parameters**
@@ -251,7 +251,7 @@ Get the `ReputationLogEntry` at index `_id`
 
 ### `getReputationUpdateLogLength`
 
-Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract
+Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract.
 
 
 
@@ -263,7 +263,7 @@ Get the length of the ReputationUpdateLog stored on this instance of the Reputat
 
 ### `getSubmissionUser`
 
-Get the address that made a particular submission
+Get the address that made a particular submission.
 
 
 **Parameters**
@@ -285,7 +285,7 @@ Get the address that made a particular submission
 
 Initialise this reputation mining cycle.
 
-*Note: This will only be called once, by ColonyNetwork, in the same transaction that deploys this contract*
+*Note: This will only be called once, by ColonyNetwork, in the same transaction that deploys this contract.*
 
 **Parameters**
 
@@ -310,7 +310,7 @@ Invalidate a hash that has timed out relative to its opponent its current challe
 
 ### `minerSubmittedEntryIndex`
 
-Returns a boolean result of whether the miner has already submitted at this entry index
+Returns a boolean result of whether the miner has already submitted at this entry index.
 
 
 **Parameters**
@@ -328,9 +328,9 @@ Returns a boolean result of whether the miner has already submitted at this entr
 
 ### `resetWindow`
 
-Resets the timestamp that the submission window opens to `now`
+Resets the timestamp that the submission window opens to `now`.
 
-*Note: only allowed to be called by ColonyNetwork*
+*Note: only allowed to be called by ColonyNetwork.*
 
 
 
@@ -375,7 +375,7 @@ Respond to challenge, to establish which (if either) of the two submissions faci
 
 Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
 
-*Note: Only callable by colonyNetwork*
+*Note: Only callable by colonyNetwork. Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the same address backed the same hash multiple times with different entries.*
 
 **Parameters**
 
@@ -390,7 +390,7 @@ Start the reputation log with the rewards for the stakers who backed the accepte
 
 ### `submitRootHash`
 
-Submit a new reputation root hash
+Submit a new reputation root hash.
 
 
 **Parameters**

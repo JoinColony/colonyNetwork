@@ -9,22 +9,22 @@ order: 3
 
 ### `addDomain`
 
-Add a colony domain, and its respective local skill under skill with id `_parentSkillId` New funding pot is created and associated with the domain here
+Add a colony domain, and its respective local skill under skill with id `_parentSkillId`. New funding pot is created and associated with the domain here.
 
-*Note: Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: 1*
+*Note: Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: `1`.*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_parentDomainId|uint256|Id of the domain under which the new one will be added
 
 
 ### `addPayment`
 
-Add a new payment in the colony. Secured function to authorised members
+Add a new payment in the colony. Secured function to authorised members.
 
 
 **Parameters**
@@ -32,7 +32,7 @@ Add a new payment in the colony. Secured function to authorised members
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_recipient|address|Address of the payment recipient
 |_token|address|Address of the token, `0x0` value indicates Ether
 |_amount|uint256|Payout amount
@@ -47,7 +47,7 @@ Add a new payment in the colony. Secured function to authorised members
 
 ### `authority`
 
-Get the `ColonyAuthority` for the colony
+Get the `ColonyAuthority` for the colony.
 
 
 
@@ -59,9 +59,9 @@ Get the `ColonyAuthority` for the colony
 
 ### `bootstrapColony`
 
-Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to users `_users` This reputation is assigned in the colony-wide domain. Secured function to authorised members
+Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to `_users`. This reputation is assigned in the colony-wide domain. Secured function to authorised members.
 
-*Note: Only allowed to be called when `taskCount` is 0 by authorized addresses*
+*Note: Only allowed to be called when `taskCount` is `0` by authorized addresses.*
 
 **Parameters**
 
@@ -73,9 +73,9 @@ Allows the colony to bootstrap itself by having initial reputation and token `_a
 
 ### `cancelTask`
 
-Cancel a task at any point before it is finalized. Secured function to authorised members Any funds assigned to its funding pot can be moved back to the domain via `IColony.moveFundsBetweenPots`
+Cancel a task at any point before it is finalized. Secured function to authorised members. Any funds assigned to its funding pot can be moved back to the domain via `IColony.moveFundsBetweenPots`.
 
-*Note: Set the `task.status` property to 1*
+*Note: Set the `task.status` property to `1`.*
 
 **Parameters**
 
@@ -86,7 +86,7 @@ Cancel a task at any point before it is finalized. Secured function to authorise
 
 ### `claimColonyFunds`
 
-Move any funds received by the colony in `_token` denomination to the top-level domain pot, siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken
+Move any funds received by the colony in `_token` denomination to the top-level domain pot, siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
 
 
 **Parameters**
@@ -111,7 +111,7 @@ Claim the payout in `_token` denomination for payment `_id`. Here the network re
 
 ### `claimRewardPayout`
 
-Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation which will be proven via Merkle proof inside this function. Can only be called if payout is active, i.e if 60 days have not passed from its creation. Can only be called if next in queue
+Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation which will be proven via Merkle proof inside this function. Can only be called if payout is active, i.e if 60 days have not passed from its creation. Can only be called if next in queue.
 
 
 **Parameters**
@@ -119,7 +119,7 @@ Claim the reward payout at `_payoutId`. User needs to provide their reputation a
 |Name|Type|Description|
 |---|---|---|
 |_payoutId|uint256|Id of the reward payout
-|_squareRoots|uint256[7]|Square roots of values used in equation _squareRoots[0] - square root of user reputation _squareRoots[1] - square root of user tokens _squareRoots[2] - square root of total reputation _squareRoots[3] - square root of total tokens _squareRoots[4] - square root of numerator (user reputation * user tokens) _squareRoots[5] - square root of denominator (total reputation * total tokens) _squareRoots[6] - square root of payout amount
+|_squareRoots|uint256[7]|Square roots of values used in equation: `_squareRoots[0]` - square root of user reputation, `_squareRoots[1]` - square root of user tokens, `_squareRoots[2]` - square root of total reputation, `_squareRoots[3]` - square root of total tokens, `_squareRoots[4]` - square root of numerator (user reputation * user tokens), `_squareRoots[5]` - square root of denominator (total reputation * total tokens), `_squareRoots[6]` - square root of payout amount.
 |key|bytes|Some Reputation hash tree key
 |value|bytes|Reputation value
 |branchMask|uint256|The branchmask of the proof
@@ -128,7 +128,7 @@ Claim the reward payout at `_payoutId`. User needs to provide their reputation a
 
 ### `claimTaskPayout`
 
-Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role` Allowed only after task is finalized. Here the network receives its fee from each payout. Ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
+Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`. Allowed only after task is finalized. Here the network receives its fee from each payout. Ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
 
 
 **Parameters**
@@ -156,7 +156,7 @@ Mark a task as complete after the due date has passed. This allows the task to b
 
 Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker) using the detached signatures for these users.
 
-*Note: The Colony functions which require approval and the task roles to review these are set in `IColony.initialiseColony` at colony creation Upon successful execution the `taskChangeNonces` entry for the task is incremented*
+*Note: The Colony functions which require approval and the task roles to review these are set in `IColony.initialiseColony` at colony creation. Upon successful execution the `taskChangeNonces` entry for the task is incremented.*
 
 **Parameters**
 
@@ -172,7 +172,7 @@ Executes a task update transaction `_data` which is approved and signed by two o
 
 ### `executeTaskRoleAssignment`
 
-Executes a task role update transaction `_data` which is approved and signed by two of addresses depending of which function we are calling. Allowed functions are `setTaskManagerRole`, `setTaskEvaluatorRole` and `setTaskWorkerRole`. Upon successful execution the `taskChangeNonces` entry for the task is incremented
+Executes a task role update transaction `_data` which is approved and signed by two of addresses. depending of which function we are calling. Allowed functions are `setTaskManagerRole`, `setTaskEvaluatorRole` and `setTaskWorkerRole`. Upon successful execution the `taskChangeNonces` entry for the task is incremented.
 
 
 **Parameters**
@@ -189,7 +189,7 @@ Executes a task role update transaction `_data` which is approved and signed by 
 
 ### `finalizePayment`
 
-Finalizes the payment and logs the reputation log updates Allowed to be called once after payment is fully funded. Secured function to authorised members
+Finalizes the payment and logs the reputation log updates. Allowed to be called once after payment is fully funded. Secured function to authorised members.
 
 
 **Parameters**
@@ -197,13 +197,13 @@ Finalizes the payment and logs the reputation log updates Allowed to be called o
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_id|uint256|Payment identifier
 
 
 ### `finalizeRewardPayout`
 
-Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId` Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation
+Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`. Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation.
 
 
 **Parameters**
@@ -215,7 +215,7 @@ Finalises the reward payout. Allows creation of next reward payouts for token th
 
 ### `finalizeTask`
 
-Called after task work rating is complete which closes the task and logs the respective reputation log updates Allowed to be called once per task. Secured function to authorised members
+Called after task work rating is complete which closes the task and logs the respective reputation log updates. Allowed to be called once per task. Secured function to authorised members.
 
 *Note: Set the `task.finalized` property to true*
 
@@ -246,9 +246,9 @@ Helper function used to generage consistently the rating secret using salt value
 
 ### `getColonyNetwork`
 
-Returns the colony network address set on the Colony
+Returns the colony network address set on the Colony.
 
-*Note: The colonyNetworkAddress we read here is set once, during `initialiseColony`*
+*Note: The colonyNetworkAddress we read here is set once, during `initialiseColony`.*
 
 
 **Return Parameters**
@@ -259,7 +259,7 @@ Returns the colony network address set on the Colony
 
 ### `getDomain`
 
-Get a domain by id
+Get a domain by id.
 
 
 **Parameters**
@@ -276,7 +276,7 @@ Get a domain by id
 
 ### `getDomainCount`
 
-Get the number of domains in the colony
+Get the number of domains in the colony.
 
 
 
@@ -288,9 +288,9 @@ Get the number of domains in the colony
 
 ### `getFundingPot`
 
-Get the non-mapping properties of a pot by id
+Get the non-mapping properties of a pot by id.
 
-*Note: For the reward funding pot (e.g. id: 0) this returns (0, 0, 0)*
+*Note: For the reward funding pot (e.g. id: 0) this returns (0, 0, 0).*
 
 **Parameters**
 
@@ -308,7 +308,7 @@ Get the non-mapping properties of a pot by id
 
 ### `getFundingPotBalance`
 
-Get the `_token` balance of pot with id `_potId`
+Get the `_token` balance of pot with id `_potId`.
 
 
 **Parameters**
@@ -326,7 +326,7 @@ Get the `_token` balance of pot with id `_potId`
 
 ### `getFundingPotCount`
 
-Get the number of funding pots in the colony
+Get the number of funding pots in the colony.
 
 
 
@@ -338,7 +338,7 @@ Get the number of funding pots in the colony
 
 ### `getFundingPotPayout`
 
-Get the assigned `_token` payouts of pot with id `_potId`
+Get the assigned `_token` payouts of pot with id `_potId`.
 
 
 **Parameters**
@@ -356,7 +356,7 @@ Get the assigned `_token` payouts of pot with id `_potId`
 
 ### `getNonRewardPotsTotal`
 
-Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards
+Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
 
 
 **Parameters**
@@ -373,7 +373,7 @@ Get the total amount of tokens `_token` minus amount reserved to be paid to the 
 
 ### `getPayment`
 
-Returns an exiting payment
+Returns an exiting payment.
 
 
 **Parameters**
@@ -390,7 +390,7 @@ Returns an exiting payment
 
 ### `getPaymentCount`
 
-Get the number of payments in the colony
+Get the number of payments in the colony.
 
 
 
@@ -402,7 +402,7 @@ Get the number of payments in the colony
 
 ### `getRewardInverse`
 
-Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), return 100
+Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), return 100.
 
 
 
@@ -414,7 +414,7 @@ Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), 
 
 ### `getRewardPayoutInfo`
 
-Get useful information about specific reward payout
+Get useful information about specific reward payout.
 
 
 **Parameters**
@@ -427,7 +427,7 @@ Get useful information about specific reward payout
 
 |Name|Type|Description|
 |---|---|---|
-|rewardPayoutCycle|RewardPayoutCycle|RewardPayoutCycle, containing propertes:  reputationState Reputation root hash at the time of creation  colonyWideReputation Colony wide reputation in `reputationState`  totalTokens Total colony tokens at the time of creation  amount Total amount of tokens taken aside for reward payout  tokenAddress Token address  blockTimestamp Block number at the time of creation
+|rewardPayoutCycle|RewardPayoutCycle|RewardPayoutCycle, containing propertes:  `reputationState` Reputation root hash at the time of creation,  `colonyWideReputation` Colony wide reputation in `reputationState`,  `totalTokens` Total colony tokens at the time of creation,  `amount` Total amount of tokens taken aside for reward payout,  `tokenAddress` Token address,  `blockTimestamp` Block number at the time of creation.
 
 ### `getTask`
 
@@ -455,7 +455,7 @@ Get a task with id `_id`
 
 ### `getTaskChangeNonce`
 
-Starts from 0 and is incremented on every co-reviewed task change via `executeTaskChange` call
+Starts from 0 and is incremented on every co-reviewed task change via `executeTaskChange` call.
 
 
 **Parameters**
@@ -472,7 +472,7 @@ Starts from 0 and is incremented on every co-reviewed task change via `executeTa
 
 ### `getTaskCount`
 
-Get the number of tasks in the colony
+Get the number of tasks in the colony.
 
 
 
@@ -484,7 +484,7 @@ Get the number of tasks in the colony
 
 ### `getTaskPayout`
 
-Get payout amount in `_token` denomination for role `_role` in task `_id`
+Get payout amount in `_token` denomination for role `_role` in task `_id`.
 
 
 **Parameters**
@@ -503,7 +503,7 @@ Get payout amount in `_token` denomination for role `_role` in task `_id`
 
 ### `getTaskRole`
 
-Get the `Role` properties back for role `_role` in task `_id`
+Get the `Role` properties back for role `_role` in task `_id`.
 
 
 **Parameters**
@@ -539,7 +539,7 @@ Get the rating secret submitted for role `_role` in task `_id`
 
 ### `getTaskWorkRatingSecretsInfo`
 
-Get the `ColonyStorage.RatingSecrets` information for task `_id`
+Get the `ColonyStorage.RatingSecrets` information for task `_id`.
 
 
 **Parameters**
@@ -557,7 +557,7 @@ Get the `ColonyStorage.RatingSecrets` information for task `_id`
 
 ### `getToken`
 
-Get the colony token
+Get the colony token.
 
 
 
@@ -588,9 +588,9 @@ Check whether a given user has a given role for the colony. Calls the function o
 
 ### `initialiseColony`
 
-Called once when the colony is created to initialise certain storage slot values
+Called once when the colony is created to initialise certain storage slot values.
 
-*Note: Sets the reward inverse to the uint max 2**256 - 1*
+*Note: Sets the reward inverse to the uint max 2**256 - 1.*
 
 **Parameters**
 
@@ -602,7 +602,7 @@ Called once when the colony is created to initialise certain storage slot values
 
 ### `makeTask`
 
-Make a new task in the colony. Secured function to authorised members
+Make a new task in the colony. Secured function to authorised members.
 
 
 **Parameters**
@@ -610,16 +610,16 @@ Make a new task in the colony. Secured function to authorised members
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_specificationHash|bytes32|Database identifier where the task specification is stored
 |_domainId|uint256|The domain where the task belongs
-|_skillId|uint256|The skill associated with the task, can set to 0 for no-op
-|_dueDate|uint256|The due date of the task, can set to 0 for no-op
+|_skillId|uint256|The skill associated with the task, can set to `0` for no-op
+|_dueDate|uint256|The due date of the task, can set to `0` for no-op
 
 
 ### `mintTokens`
 
-Mint `_wad` amount of colony tokens. Secured function to authorised members
+Mint `_wad` amount of colony tokens. Secured function to authorised members.
 
 
 **Parameters**
@@ -639,8 +639,8 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_fromChildSkillIndex|uint256|The child index in _permissionDomainId where we can find the domain for _fromPotId
-|_toChildSkillIndex|uint256|The child index in _permissionDomainId where we can find the domain for _toPotId
+|_fromChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_fromPotId`
+|_toChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_toPotId`
 |_fromPot|uint256|Funding pot id providing the funds
 |_toPot|uint256|Funding pot id receiving the funds
 |_amount|uint256|Amount of funds
@@ -649,7 +649,7 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 
 ### `owner`
 
-Get the colony `owner` address. This should be address(0x0) at all times
+Get the colony `owner` address. This should be address(0x0) at all times.
 
 *Note: Used for testing.*
 
@@ -662,7 +662,7 @@ Get the colony `owner` address. This should be address(0x0) at all times
 
 ### `registerColonyLabel`
 
-Register colony's ENS label
+Register colony's ENS label.
 
 
 **Parameters**
@@ -675,7 +675,7 @@ Register colony's ENS label
 
 ### `removeTaskEvaluatorRole`
 
-Removing evaluator role Agreed between manager and currently assigned evaluator
+Removing evaluator role. Agreed between manager and currently assigned evaluator.
 
 
 **Parameters**
@@ -687,7 +687,7 @@ Removing evaluator role Agreed between manager and currently assigned evaluator
 
 ### `removeTaskWorkerRole`
 
-Removing worker role Agreed between manager and currently assigned worker
+Removing worker role. Agreed between manager and currently assigned worker.
 
 
 **Parameters**
@@ -699,9 +699,9 @@ Removing worker role Agreed between manager and currently assigned worker
 
 ### `revealTaskWorkRating`
 
-Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_id` and task role with id `_role` Allowed within 5 days period starting which whichever is first from either both rating secrets being submitted (via `IColony.submitTaskWorkRating`) or the 5 day rating period expiring
+Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_id` and task role with id `_role`. Allowed within 5 days period starting which whichever is first from either both rating secrets being submitted (via `IColony.submitTaskWorkRating`) or the 5 day rating period expiring.
 
-*Note: Compares the `keccak256(_salt, _rating)` output with the previously submitted rating secret and if they match, sets the task role properties `rated` to `true` and `rating` to `_rating`*
+*Note: Compares the `keccak256(_salt, _rating)` output with the previously submitted rating secret and if they match, sets the task role properties `rated` to `true` and `rating` to `_rating`.*
 
 **Parameters**
 
@@ -723,7 +723,7 @@ Set new colony admin role. Can be called by root role or architecture role.
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|Domain in which the caller has root/architecture role
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_user|address|User we want to give an admin role to
 |_domainId|uint256|Domain in which we are giving user the role
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
@@ -731,9 +731,9 @@ Set new colony admin role. Can be called by root role or architecture role.
 
 ### `setAllTaskPayouts`
 
-Set `_token` payout for all roles in task `_id` to the respective amounts
+Set `_token` payout for all roles in task `_id` to the respective amounts.
 
-*Note: Can only call if evaluator and worker are unassigned or manager, otherwise need signature*
+*Note: Can only call if evaluator and worker are unassigned or manager, otherwise need signature.*
 
 **Parameters**
 
@@ -756,7 +756,7 @@ Set new colony architecture role. Can be called by root role or architecture rol
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|Domain in which the caller has root/architecture role
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_user|address|User we want to give an architecture role to
 |_domainId|uint256|Domain in which we are giving user the role
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
@@ -772,7 +772,7 @@ Set new colony funding role. Can be called by root role or architecture role.
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|Domain in which the caller has root/architecture role
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_user|address|User we want to give an funding role to
 |_domainId|uint256|Domain in which we are giving user the role
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
@@ -787,15 +787,15 @@ Sets the domain on an existing payment. Secured function to authorised members
 
 |Name|Type|Description|
 |---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action.
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_id|uint256|Payment identifier
 |_domainId|uint256|Id of the new domain to set
 
 
 ### `setPaymentPayout`
 
-Sets the payout for a given token on an existing payment. Secured function to authorised members
+Sets the payout for a given token on an existing payment. Secured function to authorised members.
 
 
 **Parameters**
@@ -803,7 +803,7 @@ Sets the payout for a given token on an existing payment. Secured function to au
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_id|uint256|Payment identifier
 |_token|address|Address of the token, `0x0` value indicates Ether
 |_amount|uint256|Payout amount
@@ -811,7 +811,7 @@ Sets the payout for a given token on an existing payment. Secured function to au
 
 ### `setPaymentRecipient`
 
-Sets the recipient on an existing payment. Secured function to authorised members
+Sets the recipient on an existing payment. Secured function to authorised members.
 
 
 **Parameters**
@@ -819,14 +819,14 @@ Sets the recipient on an existing payment. Secured function to authorised member
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_id|uint256|Payment identifier
 |_recipient|address|Address of the payment recipient
 
 
 ### `setPaymentSkill`
 
-Sets the skill on an existing payment. Secured function to authorised members
+Sets the skill on an existing payment. Secured function to authorised members.
 
 
 **Parameters**
@@ -834,14 +834,14 @@ Sets the skill on an existing payment. Secured function to authorised members
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_id|uint256|Payment identifier
 |_skillId|uint256|Id of the new skill to set
 
 
 ### `setRewardInverse`
 
-Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100
+Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100.
 
 
 **Parameters**
@@ -866,7 +866,7 @@ Set new colony root role. Can be called by root role only.
 
 ### `setTaskBrief`
 
-Set the hash for the task brief, aka task work specification, which identifies the task brief content in ddb Allowed before a task is finalized
+Set the hash for the task brief, aka task work specification, which identifies the task brief content in ddb. Allowed before a task is finalized.
 
 
 **Parameters**
@@ -879,7 +879,7 @@ Set the hash for the task brief, aka task work specification, which identifies t
 
 ### `setTaskDomain`
 
-Set the domain for task `_id`
+Set the domain for task `_id`.
 
 
 **Parameters**
@@ -892,7 +892,7 @@ Set the domain for task `_id`
 
 ### `setTaskDueDate`
 
-Set the due date on task `_id`. Allowed before a task is finalized
+Set the due date on task `_id`. Allowed before a task is finalized.
 
 
 **Parameters**
@@ -905,7 +905,7 @@ Set the due date on task `_id`. Allowed before a task is finalized
 
 ### `setTaskEvaluatorPayout`
 
-Set `_token` payout for evaluator in task `_id` to `_amount`
+Set `_token` payout for evaluator in task `_id` to `_amount`.
 
 
 **Parameters**
@@ -919,9 +919,9 @@ Set `_token` payout for evaluator in task `_id` to `_amount`
 
 ### `setTaskEvaluatorRole`
 
-Assigning evaluator role Can only be set if there is no one currently assigned to be an evaluator Manager of the task and user we want to assign role to both need to agree Managers can assign themselves to this role, if there is no one currently assigned to it
+Assigning evaluator role. Can only be set if there is no one currently assigned to be an evaluator. Manager of the task and user we want to assign role to both need to agree. Managers can assign themselves to this role, if there is no one currently assigned to it.
 
-*Note: This function can only be called through `executeTaskRoleAssignment`*
+*Note: This function can only be called through `executeTaskRoleAssignment`.*
 
 **Parameters**
 
@@ -933,7 +933,7 @@ Assigning evaluator role Can only be set if there is no one currently assigned t
 
 ### `setTaskManagerPayout`
 
-Set `_token` payout for manager in task `_id` to `_amount`
+Set `_token` payout for manager in task `_id` to `_amount`.
 
 
 **Parameters**
@@ -947,9 +947,9 @@ Set `_token` payout for manager in task `_id` to `_amount`
 
 ### `setTaskManagerRole`
 
-Assigning manager role Current manager and user we want to assign role to both need to agree User we want to set here also needs to be an admin Note that the domain proof data comes at the end here to not interfere with the assembly argument unpacking
+Assigning manager role. Current manager and user we want to assign role to both need to agree. User we want to set here also needs to be an admin. Note that the domain proof data comes at the end here to not interfere with the assembly argument unpacking.
 
-*Note: This function can only be called through `executeTaskRoleAssignment`*
+*Note: This function can only be called through `executeTaskRoleAssignment`.*
 
 **Parameters**
 
@@ -958,14 +958,14 @@ Assigning manager role Current manager and user we want to assign role to both n
 |_id|uint256|Id of the task
 |_user|address|Address of the user we want to give a manager role to
 |_permissionDomainId|uint256|The domain ID in which _user has the Administration permission
-|_childSkillIndex|uint256|The index that the _domainId is relative to _permissionDomainId
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 
 
 ### `setTaskSkill`
 
-Set the skill for task `_id`
+Set the skill for task `_id`.
 
-*Note: Currently we only allow one skill per task although we have provisioned for an array of skills in `Task` struct Allowed before a task is finalized*
+*Note: Currently we only allow one skill per task although we have provisioned for an array of skills in `Task` struct. Allowed before a task is finalized.*
 
 **Parameters**
 
@@ -977,7 +977,7 @@ Set the skill for task `_id`
 
 ### `setTaskWorkerPayout`
 
-Set `_token` payout for worker in task `_id` to `_amount`
+Set `_token` payout for worker in task `_id` to `_amount`.
 
 
 **Parameters**
@@ -991,9 +991,9 @@ Set `_token` payout for worker in task `_id` to `_amount`
 
 ### `setTaskWorkerRole`
 
-Assigning worker role Can only be set if there is no one currently assigned to be a worker Manager of the task and user we want to assign role to both need to agree
+Assigning worker role. Can only be set if there is no one currently assigned to be a worker. Manager of the task and user we want to assign role to both need to agree.
 
-*Note: This function can only be called through `executeTaskRoleAssignment`*
+*Note: This function can only be called through `executeTaskRoleAssignment`.*
 
 **Parameters**
 
@@ -1021,9 +1021,9 @@ Add a new payment in the colony. Can only be called by users with root permissio
 
 ### `submitTaskDeliverable`
 
-Submit the task deliverable, i.e. the output of the work performed for task `_id` Submission is allowed only to the assigned worker before the task due date. Submissions cannot be overwritten
+Submit the task deliverable, i.e. the output of the work performed for task `_id`. Submission is allowed only to the assigned worker before the task due date. Submissions cannot be overwritten.
 
-*Note: Set the `task.deliverableHash` and `task.completionTimestamp` properties*
+*Note: Set the `task.deliverableHash` and `task.completionTimestamp` properties.*
 
 **Parameters**
 
@@ -1035,9 +1035,9 @@ Submit the task deliverable, i.e. the output of the work performed for task `_id
 
 ### `submitTaskDeliverableAndRating`
 
-Submit the task deliverable for Worker and rating for Manager
+Submit the task deliverable for Worker and rating for Manager.
 
-*Note: Internally call `submitTaskDeliverable` and `submitTaskWorkRating` in sequence*
+*Note: Internally call `submitTaskDeliverable` and `submitTaskWorkRating` in sequence.*
 
 **Parameters**
 
@@ -1050,7 +1050,7 @@ Submit the task deliverable for Worker and rating for Manager
 
 ### `submitTaskWorkRating`
 
-Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role` Allowed within 5 days period starting which whichever is first from either the deliverable being submitted or the dueDate been reached Allowed only for evaluator to rate worker and for worker to rate manager performance Once submitted ratings can not be changed or overwritten
+Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role`. Allowed within 5 days period starting which whichever is first from either the deliverable being submitted or the dueDate been reached. Allowed only for evaluator to rate worker and for worker to rate manager performance. Once submitted ratings can not be changed or overwritten.
 
 
 **Parameters**
@@ -1059,14 +1059,14 @@ Submit a hashed secret of the rating for work in task `_id` which was performed 
 |---|---|---|
 |_id|uint256|Id of the task
 |_role|uint8|Id of the role, as defined in TaskRole enum
-|_ratingSecret|bytes32|`keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50) Can be generated via `IColony.generateSecret` helper function
+|_ratingSecret|bytes32|`keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50). Can be generated via `IColony.generateSecret` helper function.
 
 
 ### `upgrade`
 
-Upgrades a colony to a new Colony contract version `_newVersion`
+Upgrades a colony to a new Colony contract version `_newVersion`.
 
-*Note: Downgrades are not allowed, i.e. `_newVersion` should be higher than the currect colony version*
+*Note: Downgrades are not allowed, i.e. `_newVersion` should be higher than the currect colony version.*
 
 **Parameters**
 
@@ -1079,7 +1079,7 @@ Upgrades a colony to a new Colony contract version `_newVersion`
 
 Helper function that can be used by a client to verify the correctness of a patricia proof they have been supplied with.
 
-*Note: For more detail about branchMask and siblings, examine the PatriciaTree implementation While public, likely only to be used by the Colony contracts, as it checks that the user is proving their own reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function is not currently exposed on the Colony's EtherRouter.*
+*Note: For more detail about branchMask and siblings, examine the PatriciaTree implementation. While public, likely only to be used by the Colony contracts, as it checks that the user is proving their own reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function is not currently exposed on the Colony's EtherRouter.*
 
 **Parameters**
 
@@ -1098,7 +1098,7 @@ Helper function that can be used by a client to verify the correctness of a patr
 
 ### `version`
 
-Get the Colony contract version Starts from 1 and is incremented with every deployed contract change
+Get the Colony contract version. Starts from 1 and is incremented with every deployed contract change.
 
 
 
