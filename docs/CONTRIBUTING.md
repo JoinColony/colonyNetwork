@@ -1,6 +1,6 @@
 # Contributing
 
-The focus currently is implementing the [Colony White Paper](https://colony.io/whitepaper.pdf) which was split down in distinct chunks into the [GitHub issues tracker](https://github.com/JoinColony/colonyNetwork/issues). 
+The focus currently is implementing the [Colony White Paper](https://colony.io/whitepaper.pdf) which was split down in distinct chunks into the [GitHub issues tracker](https://github.com/JoinColony/colonyNetwork/issues).
 
 Specifically we need help with the [Colony Contribute Backlog](https://github.com/JoinColony/colonyNetwork/projects/2). Items suitable for external contributors are labelled "good for collaborators".
 
@@ -15,7 +15,7 @@ In order to contribute, please fork off of the `develop` branch and make your ch
 
 We use PR-specific labels to indicate PR current status, that is: `in-progress` / `ready-for-review` / `under-review`
 
-### Branch naming 
+### Branch naming
 Use the following naming schema for your PR branch: [feature/fix/maintenance/...]/[issue-#]-[a-meaningful-description-in-kebab-case] e.g. `feature/84-voting-on-disputes`
 
 ### Commit messages
@@ -24,7 +24,11 @@ Use the following naming schema for your PR branch: [feature/fix/maintenance/...
 For the first line, try to be specific. e.g: "Ensure colony keys are unique" instead of "Fix a bug with contract setup"
 If you're adding or changing existing tests, they should go on the same commit.
 
-### Test coverage 
+### Documentation-only contributions
+If changes only affect files in the `docs/` directory, suspend CI builds by adding `[skip ci]` or `[ci skip]` to your commit message.
+
+
+### Test coverage
 When writing a new feature please ensure you write appropriate `truffle` test cases under test/. We strive for 100% test coverage for our contracts and CI works with close to 100% thresholds.
 
 ## Code of Conduct
