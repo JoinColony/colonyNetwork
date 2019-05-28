@@ -8,6 +8,7 @@ import { executeSignedTaskChange } from "../../helpers/task-review-signing";
 
 import {
   fundColonyWithTokens,
+  setupAssignedTask,
   setupFundedTask,
   setupFinalizedTask,
   makeTask,
@@ -420,6 +421,25 @@ contract("Meta Colony", accounts => {
           args: [taskId, 2]
         }),
         "colony-task-signatures-do-not-match-reviewer-1"
+      );
+
+      const task = await colony.getTask(taskId);
+      expect(task.domainId).to.eq.BN(1);
+    });
+
+    it("should NOT allow a non-worker to set domain on task", async () => {
+      await colony.addDomain(1, 0, 1);
+      const taskId = await setupAssignedTask({ colony });
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [MANAGER, OTHER_ACCOUNT],
+          sigTypes: [0, 0],
+          args: [taskId, 2]
+        }),
+        "colony-task-signatures-do-not-match-reviewer-2"
       );
 
       const task = await colony.getTask(taskId);

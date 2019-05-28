@@ -1,6 +1,7 @@
 /* globals artifacts */
 import chai from "chai";
 import bnChai from "bn-chai";
+import { soliditySha3 } from "web3-utils";
 
 import {
   MANAGER_RATING,
@@ -336,6 +337,21 @@ contract("Colony Task Work Rating", accounts => {
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       expect(roleWorker.rating).to.be.zero;
+    });
+
+    it("should fail if the submitted rating was None", async () => {
+      const dueDate = await currentBlockTime();
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
+      await colony.completeTask(taskId);
+      const badWorkerRating = 0;
+      const ratingSecret = soliditySha3(RATING_2_SALT, badWorkerRating);
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, ratingSecret, { from: EVALUATOR });
+
+      await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
+      await checkErrorRevert(
+        colony.revealTaskWorkRating(taskId, WORKER_ROLE, badWorkerRating, RATING_2_SALT, { from: EVALUATOR }),
+        "colony-task-rating-missing"
+      );
     });
 
     it("should log a TaskWorkRatingRevealed event", async () => {

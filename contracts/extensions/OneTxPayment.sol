@@ -36,8 +36,13 @@ contract OneTxPayment {
     colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
   }
 
-  // Note: assumes that each entity holds administration and funding roles in the same domain,
-  // although contract and caller can have the permissions in different domains.
+  /// @notice Completes a colony payment in a single transaction
+  /// @dev Assumes that each entity holds administration and funding roles in the same domain,
+  /// although contract and caller can have the permissions in different domains.
+  /// @param _permissionDomainId The domainId in which the _caller_ has permissions to add a payment and fund it
+  /// @param _childSkillIndex Index of the _permissionDomainId skill.children array to get
+  /// @param _callerPermissionDomainId The domainId in which the _contract_ has permissions to add a payment and fund it
+  /// @param _callerChildSkillIndex Index of the _callerPermissionDomainId skill.children array to get
   function makePayment(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -90,7 +95,7 @@ contract OneTxPayment {
     if (_callerPermissionDomainId != _domainId) {
       uint256 permissionSkillId = colony.getDomain(_callerPermissionDomainId).skillId;
       uint256 domainSkillId = colony.getDomain(_domainId).skillId;
-      require(domainSkillId > 0, "ds-auth-child-domain-does-not-exist");
+      require(domainSkillId > 0, "colony-one-tx-payment-domain-does-not-exist");
 
       uint256 childSkillId = colonyNetwork.getChildSkillId(permissionSkillId, _callerChildSkillIndex);
       require(childSkillId == domainSkillId, "colony-one-tx-payment-bad-child-skill");

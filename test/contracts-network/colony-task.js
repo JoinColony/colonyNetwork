@@ -211,7 +211,7 @@ contract("ColonyTask", accounts => {
           sigTypes: [0, 0],
           args: [taskId, WORKER]
         }),
-        "colony-task-change-is-not-role-assignement"
+        "colony-task-change-is-not-role-assignment"
       );
     });
 
@@ -230,6 +230,26 @@ contract("ColonyTask", accounts => {
         args
       });
       await checkErrorRevert(colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 10, txData), "colony-task-role-assignment-non-zero-value");
+    });
+
+    it("should not be able to execute task change when the number of signature parts differ", async () => {
+      const taskId = await makeTask({ colony });
+      const sigTypes = [0, 0];
+      const signers = [MANAGER, WORKER];
+      const args = [taskId, WORKER];
+      const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers,
+        sigTypes,
+        args
+      });
+
+      await checkErrorRevert(
+        colony.executeTaskRoleAssignment([sigV[0]], sigR, sigS, [0], 0, txData),
+        "colony-task-role-assignment-signatures-count-do-not-match"
+      );
     });
 
     it("should allow the worker and evaluator roles to be assigned", async () => {
@@ -1202,7 +1222,7 @@ contract("ColonyTask", accounts => {
         args: [taskId, "0x29738B9BB168790211D84C99c4AEAd215c34D731"]
       });
 
-      await checkErrorRevert(colony.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "colony-task-change-is-role-assignement");
+      await checkErrorRevert(colony.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "colony-task-change-is-role-assignment");
     });
   });
 

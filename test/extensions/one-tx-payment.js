@@ -164,7 +164,7 @@ contract("One transaction payments", accounts => {
     it("should not allow an admin to specify a non-existent domain", async () => {
       await checkErrorRevert(
         oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 99, GLOBAL_SKILL_ID, { from: COLONY_ADMIN }),
-        "ds-auth-child-domain-does-not-exist"
+        "colony-one-tx-payment-domain-does-not-exist"
       );
     });
 
@@ -172,6 +172,18 @@ contract("One transaction payments", accounts => {
       await checkErrorRevert(
         oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 1, 99, { from: COLONY_ADMIN }),
         "colony-skill-does-not-exist"
+      );
+    });
+
+    it("should error if user permissions are bad", async () => {
+      await colony.addDomain(1, 0, 1); // Adds domain 2 skillId 5
+      await colony.addDomain(1, 0, 1); // Adds domain 3 skillId 6
+
+      // Try to make a payment with the permissions in domain 1, child skill at index 1, i.e. skill 6
+      // When actually domain 2 in which we are creating the task is skill 5
+      await checkErrorRevert(
+        oneTxExtension.makePayment(1, 0, 1, 1, RECIPIENT, token.address, 10, 2, GLOBAL_SKILL_ID, { from: COLONY_ADMIN }),
+        "colony-one-tx-payment-bad-child-skill"
       );
     });
   });
