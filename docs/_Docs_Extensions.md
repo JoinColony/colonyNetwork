@@ -1,7 +1,7 @@
 ---
 title: Extensions
 section: Docs
-order: 5
+order: 6
 ---
 
 `glider` provides the option of "extensions" to the basic functionality of a colony through the use of _extensions_.
@@ -12,7 +12,7 @@ Extensions do not need to be part of the colonyNetwork codebase to function, the
 
 Currently there are two extensions 'officially' supported, but more may be added in the future. These extensions are written with dapp support in mind, and emit events to inform a user interface whether a colony has an extension enabled or not.
 
-Supported extensions implement a 'factory' design pattern to make deployment straightforward for users, but custom extensions need not follow this pattern. 
+Supported extensions implement a 'factory' design pattern to make deployment straightforward for users, but custom extensions need not follow this pattern.
 
 ## OneTxPayment
 Ordinarily payments require more than one transaction, because the payment lifecycle requires more than one permissioned [role](/colonynetwork/docs-modular-permissions).

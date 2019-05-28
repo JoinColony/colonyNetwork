@@ -1,7 +1,7 @@
 ---
 title: Reputation Mining Client
 section: Docs
-order: 6
+order: 5
 ---
 
 ## Goerli Testnet
