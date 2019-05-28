@@ -158,7 +158,7 @@ contract ColonyTask is ColonyStorage {
     (sig, taskId) = deconstructCall(_data);
     require(taskId > 0 && taskId <= taskCount, "colony-task-does-not-exist");
     require(tasks[taskId].status != TaskStatus.Finalized, "colony-task-finalized");
-    require(!roleAssignmentSigs[sig], "colony-task-change-is-role-assignement");
+    require(!roleAssignmentSigs[sig], "colony-task-change-is-role-assignment");
 
     uint8 nSignaturesRequired;
     uint8 taskRole1 = uint8(reviewers[sig][0]);
@@ -219,7 +219,7 @@ contract ColonyTask is ColonyStorage {
     address userAddress;
     (sig, taskId, userAddress) = deconstructRoleChangeCall(_data);
 
-    require(roleAssignmentSigs[sig], "colony-task-change-is-not-role-assignement");
+    require(roleAssignmentSigs[sig], "colony-task-change-is-not-role-assignment");
 
     uint8 nSignaturesRequired;
     address manager = tasks[taskId].roles[uint8(TaskRole.Manager)].user;

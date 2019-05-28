@@ -211,7 +211,7 @@ contract("ColonyTask", accounts => {
           sigTypes: [0, 0],
           args: [taskId, WORKER]
         }),
-        "colony-task-change-is-not-role-assignement"
+        "colony-task-change-is-not-role-assignment"
       );
     });
 
@@ -1222,7 +1222,7 @@ contract("ColonyTask", accounts => {
         args: [taskId, "0x29738B9BB168790211D84C99c4AEAd215c34D731"]
       });
 
-      await checkErrorRevert(colony.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "colony-task-change-is-role-assignement");
+      await checkErrorRevert(colony.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "colony-task-change-is-role-assignment");
     });
   });
 
