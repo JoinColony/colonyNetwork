@@ -1,7 +1,7 @@
 ---
 title: Releases
 section: Docs
-order: 3
+order: 7
 ---
 
 ![glider](img/glider_fullColor.svg)

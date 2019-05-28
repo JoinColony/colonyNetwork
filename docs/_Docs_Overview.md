@@ -1,7 +1,7 @@
 ---
 title: Overview
 section: Docs
-order: 1
+order: 2
 ---
 
 *The colonyNetwork repository is developed as free software; if you are interested in contributing, or want to report an issue or bug, please see the [GitHub repository.](https://github.com/JoinColony/colonyNetwork)*

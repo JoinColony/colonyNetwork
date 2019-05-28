@@ -1,11 +1,8 @@
 ---
 title: Get Started
 section: Docs
-order: 7
+order: 1
 ---
-
-There are a few ways to get started with the colonyNetwork contracts, depending on who you are and what you want to do.
-
 This page details how to engage purely on the contract-level, and is intended more for developers looking to contribute new features, extensions, or contract-level integrations. See our [guidelines](https://github.com/JoinColony/colonyNetwork/blob/develop/docs/CONTRIBUTING.md) if you're interested in contributing to the colonyNetwork codebase.
 
 If you're a dapp developer looking to integrate with colony, we recommend using [colonyJS](/colonyjs/intro-welcome/) as an entry point. There you'll find analogous instructions better suited to building applications on top of the colonyNetwork. For those without patience, we have built a [colonyStarter kit](/colonystarter/docs-overview/) which contains boilerplate examples for dapp development, including frontend frameworks like react, and is the fastest way to start building with Colony.
@@ -16,26 +13,15 @@ Either way, if you run into trouble or have any questions/comments, please post 
 
 ## Prerequisites
 
-### Node
+`node` v10.12 or higher (we recommend using `nvm`)
 
-You will need to have `node` installed. We recommended using `node` version `10.12.0`. An easy solution for managing `node` versions is `nvm`. If you do not have `node` installed, check out [Download Node](https://nodejs.org/en/download/) or [Node Package Manager](https://github.com/creationix/nvm).
+`yarn` v1.12 or higher
 
-### Yarn
+`docker` v18 or higher
 
-You will also need to install `yarn`. We recommended using `yarn` version `1.12.0` or higher. Check out the [Yarn Installation](https://yarnpkg.com/lang/en/docs/install/#mac-stable) documentation and then select your operating system for install instructions.
-
-It is possible to use `npm` instead of `yarn`, but you'll need to adapt any instructions yourself ;).
-
-### Docker
-
-In order to compile the colonyNetwork smart contracts, you will need to have Docker installed and running. We recommend using Docker Community Version `2.0.0.0`. You can find instructions for installing Docker here: [Docker Installation](https://docs.docker.com/install/).
-
-The colonyNetwork smart contracts require the `ethereum/solc:0.5.8` Docker image, so we will need to pull it down before we can begin.
-
-Make sure Docker is installed and then run the following command.
-
+Add the required solidity compiler by running:
 ```
-docker pull ethereum/solc:0.5.8
+$ docker pull ethereum/solc:0.5.8
 ```
 
 ## Colony Network
@@ -45,32 +31,27 @@ If you intend to work with `glider-rc.1` on the Görli testnet, proceed with ins
 
 ### Installation
 
-For testing and development, we will set up a local test network and then deploy the [colonyNetwork](https://github.com/JoinColony/colonyNetwork) smart contracts to that local test network.
-
-The first order of business will be pulling down the colonyNetwork repository, which includes some simple script commands that will help us get the colonyNetwork smart contracts set up and ready for testing and development.
-
-In the working directory of your choice, clone the latest version of the colonyNetwork repository.
+In the working directory of your choice, clone the latest version of the colonyNetwork repository:
 
 ```
-git clone https://github.com/JoinColony/colonyNetwork.git
+$ git clone https://github.com/JoinColony/colonyNetwork.git
 ```
 
-Next, we will need to move into the colonyNetwork directory and run `yarn` to install the required node packages.
+Move into the directory and install dependencies:
 
 ```
-cd colonyNetwork && yarn
+$ cd colonyNetwork && yarn
 ```
 
-The colonyNetwork repository includes a few submodules, so we will need to add them to our project and make sure we are using the version defined in the colonyNetwork repository index.
+Update submodule libraries:
+```
+$ git submodule update --init
+```
+
+Provision token contracts for testing:
 
 ```
-git submodule update --init
-```
-
-The final step for installation is copying over some of the files from our submodules into our build directory, which we made easy for you with a simple script command.
-
-```
-yarn run provision:token:contracts
+$ yarn provision:token:contracts
 ```
 
 ## `glider-rc.1` on the Görli testnet
@@ -96,7 +77,7 @@ $ yarn flatten:contracts
 
 Navigate to `colonyNetwork/build/flattened/` to find the contracts you need to import to Remix.
 
-In Remix, you'll need to instantiate `flatIColonyNetwork.sol` to the `ColonyNetwork` address `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B` in order to create a new colony.
+In Remix, instantiate `flatIColonyNetwork.sol` to the `ColonyNetwork` address `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B`
 
 Use the address of your existing ERC20 token contract to `createColony()`, then immidiately use `getColonyCount()` to get your colony's ID.  
 
@@ -139,7 +120,7 @@ truffle(goerli)> await colonyNetwork.getColonyCount()
 You can start a local test node and deploy the contracts yourself using the locally installed `truffle` package.
 
 ```
-yarn run start:blockchain:client
+yarn start:blockchain:client
 
 yarn truffle migrate --reset --compile-all
 ```

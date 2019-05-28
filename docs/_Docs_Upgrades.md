@@ -1,7 +1,7 @@
 ---
 title: The Delegate Proxy Pattern
 section: Docs
-order: 2
+order: 3
 ---
 The contracts comprising the Colony Network are upgradeable using the Delegate Proxy design pattern.
 
