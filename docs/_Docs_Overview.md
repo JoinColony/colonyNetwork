@@ -8,7 +8,7 @@ order: 2
 
 The Colony Network is a large set of contracts that together define how all colonies operate and interact with people and other smart contracts on the Ethereum blockchain.
 
-Colony is designed to be modular, upgradable, and eternally backwards-compatible. This is achieved through a sophisticated contract architecture that requires a bit of exposition. It is recommended that any developer seeking to understand the Colony Network solidity implementation first read the [Colony White Paper](https://colony.io/whitepaper/), or at the very least, the [White Paper TL;DR](/colonynetwork/whitepaper-tldr-colony/).
+Colony is designed to be modular, upgradable, and eternally backwards-compatible. This is achieved through a sophisticated contract architecture that requires a bit of exposition. It is recommended that any developer seeking to understand the Colony Network solidity implementation first read the [Colony White Paper](https://colony.io/whitepaper.pdf), or at the very least, the [White Paper TL;DR](/colonynetwork/whitepaper-tldr-colony/).
 
 ## Overview of Contracts
 Broadly speaking, the Colony Network contracts can be divided into a few categories:
