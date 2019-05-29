@@ -17,46 +17,51 @@ Broadly speaking, the Colony Network contracts can be divided into a few categor
   * `EtherRouter.sol`
   * `Resolver.sol`
   * `ContractRecovery.sol`
-  * `ContractEditing.sol`
+  * `CommonStorage.sol`
 
-* Interface contracts that collate and register public functions on the network.
+* Interface contracts that collate and register public functions on the network. These provide the integration points for interacting with the Colony Network. See [API documentation](/colonynetwork/interface-ietherrouter). 
    * `IColony.sol`
    * `IMetaColony.sol`
    * `IColonyNetwork.sol`
    * `IReputationMiningCycle.sol`
    * `ITokenLocking.sol`
    * `IRecovery.sol`
+   * `IEtherRouter.sol`
 
 * Authority contracts that define who can call which registered functions.
    * `CommonAuthority.sol`
    * `ColonyAuthority.sol`
    * `ColonyNetworkAuthority.sol`
+   * `DomainRoles.sol`
 
 * Colony contracts that define the state of an individual colony, such as funding pots, tasks, domains, and skills.
    * `Colony.sol`
    * `ColonyFunding.sol`
    * `ColonyPayment.sol`
    * `ColonyTask.sol`
+
    * `ColonyStorage.sol`
    * `ColonyDataTypes.sol`
-   * `DomainRoles.sol`
 
 * Network contracts that define a global state shared by all colonies, such as reputation, token auctions and ENS.
     * `ColonyNetwork.sol`
     * `ColonyNetworkAuction.sol`
     * `ColonyNetworkENS.sol`
     * `ColonyNetworkMining.sol`
+
     * `ColonyNetworkStorage.sol`
     * `ColonyNetworkDataTypes.sol`
 
 * Reputation Mining contracts that define a consensus protocol for validators of the global reputation state.
     * `ReputationMiningCycle.sol`
-    * `ReputationMiningCycleDataTypes.sol`
-    * `ReputationMiningCycleStorage.sol`
     * `ReputationMiningCycleRespond.sol`
 
-* Token contracts that define the CLNY token.
+    * `ReputationMiningCycleStorage.sol`
+    * `ReputationMiningCycleDataTypes.sol`
+
+* Token locking contracts allowing witholding access to depostied tokens from all colonies in the network.
     * `TokenLocking.sol`
+
     * `TokenLockingStorage.sol`
     * `TokenLockingDataTypes.sol`
 
@@ -70,7 +75,6 @@ Broadly speaking, the Colony Network contracts can be divided into a few categor
 * ENS contracts that define a custom ENS registry for use with colonies and the Colony Network
     * `ENS.sol`
     * `ENSRegistry.sol`
-
 
 ## Inheritance Architecture
 The Colony Network contracts are separated out into functional layers, and named according to their context.
