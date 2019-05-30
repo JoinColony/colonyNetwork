@@ -24,7 +24,7 @@ node packages/reputation-miner/bin/index.js --colonyNetworkAddress COLONY_NETWOR
 
 The `MINER_ADDRESS` in the execution above is the sixth account in `ganache-accounts.json` if running locally using the default migrations.
 
-The `colonyNetwork` address in the execution above is not the address outputted at contract deployment, but is the address of the Colony Network `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-the-delegate-proxy-pattern/) for more information about the EtherRouter design pattern.
+The `colonyNetwork` address in the execution above is not the address outputted at contract deployment, but is the address of the Colony Network `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-upgrade-design/) for more information about the EtherRouter design pattern.
 
 Due to a quirk with the mining cycle events, beginning the sync with a too-early block will result in an error. If you get this exception, try increasing the `BLOCK_NO`.
 

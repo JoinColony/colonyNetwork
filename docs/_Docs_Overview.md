@@ -11,7 +11,7 @@ The Colony Network is a large set of contracts that together define how all colo
 Colony is designed to be modular, upgradable, and eternally backwards-compatible. This is achieved through a sophisticated contract architecture that requires a bit of exposition. It is recommended that any developer seeking to understand the Colony Network solidity implementation first read the [Colony White Paper](https://colony.io/whitepaper.pdf), or at the very least, the [White Paper TL;DR](/colonynetwork/whitepaper-tldr-colony/).
 
 ## Smart Contracts Architecture
-The Colony Network contracts are separated out into four functional layers, and four logical entities outined below. This design is to an extent mandated by the [contract upgrade mechanism](/colonynetwork/docs-the-delegate-proxy-pattern/) we use.
+The Colony Network contracts are separated out into four functional layers, and four logical entities outined below. This design is to an extent mandated by the [contract upgrade mechanism](/colonynetwork/docs-upgrade-design/) we use.
 
 ![Interface, Logic, Data](img/colonyNetwork_diagram_r12.png)
 Starting from the layer closes to the user:
@@ -36,7 +36,7 @@ All function declarations live in this layer, which constitutes the majority of 
 
 For example, the logic for a colony is distributed across `Colony.sol`, `ColonyFunding.sol`, `ColonyPayment.sol` and `ColonyTask.sol`. Likewise for the ColonyNetwork and ReputationMiningCycle entities.
 
-Note that this logic distribution is possible due to the [contract upgrade mechanism](/colonynetwork/docs-the-delegate-proxy-pattern/), in which all functions are called from the same underlying `EtherRouter` delegate proxy instance, regardless of where they are implemented.
+Note that this logic distribution is possible due to the [contract upgrade mechanism](/colonynetwork/docs-upgrade-design/), in which all functions are called from the same underlying `EtherRouter` delegate proxy instance, regardless of where they are implemented.
 
 **Access layer**
 
