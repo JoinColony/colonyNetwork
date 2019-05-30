@@ -38,7 +38,7 @@ The current colonyNetwork release is [glider](/colonynetwork/docs-releases). Gli
 
 The Colony Network is maintained and improved by the [Meta Colony](/colonynetwork/tldr-the-meta-colony-and-clny) (which is, itself, a colony on the network with special permissions).
 
-Membership in the Metacolony is open to all (and heartily encouraged!), but changes such as [network upgrades](/colonynetwork/docs-the-delegate-proxy-pattern/) require a minimum *reputation* within the Metacolony to proceed.
+Membership in the Metacolony is open to all (and heartily encouraged!), but changes such as [network upgrades](/colonynetwork/docs-upgrade-design/) require a minimum *reputation* within the Metacolony to proceed.
 
 ### colonyJS
 colonyJS is a JavaScript library designed to make interaction with the Colony Network as straightforward as possible for (d)app developers.
