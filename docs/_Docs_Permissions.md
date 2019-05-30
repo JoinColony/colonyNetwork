@@ -20,7 +20,7 @@ Inside each domain, the possible roles are:
 
 On a domain-by-domain basis, an address given one or more roles will be able to call the functions assigned to the role (see below for a list of each role and its authorized functions).
 
-For example, within the 'logistics' domain, any address with the `ADMINISTRATION_ROLE` may call the `addPayment` function to create a new payment. But to add funding for the payment, an address with the `FUNDING_ROLE` must call `moveFundsBetweenPots` for the payment. These two functions can be called by the same address (even in the same transaction), provided that the address has both Administration and Funding permissions.
+For example, within an imaginary 'logistics' domain, any address with the `ADMINISTRATION_ROLE` may call the `addPayment` function to create a new payment. But to add funding for the payment, an address with the `FUNDING_ROLE` must call `moveFundsBetweenPots` for the payment. These two functions can be called by the same address (even in the same transaction, with the OneTxPayment extension), provided that the address has both Administration and Funding permissions.
 
 ## Definitions
 
@@ -76,7 +76,7 @@ addGlobalSkill
 deprecateGlobalSkill
 ```
 
-## It calls for `roleId`
+## `roleId` and Authority contracts
 Most functions in colony are *authorized* by a separate contract which defines the rules for who can call which functions. Any function that is decorated with the `auth` modifier will perform an authorization check before granting access to the function.
 
 In the current Glider release, authority is based on roles, which are defined in the relevant "authority" contracts, e.g. `ColonyAuthority.sol`.
