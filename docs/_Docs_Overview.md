@@ -26,25 +26,27 @@ Starting from the layer closes to the user:
   * `IRecovery.sol`
   * `IEtherRouter.sol`
 
-Finally, all public and external functions from the logic contracts for an entity are composed into a single interface. For example the Colony interface - `IColony.sol` is a superset of the public and external functions from the logic contracts for a Colony entity, i.e. `Colony.sol`, `ColonyFunding.sol`, `ColonyPayment.sol` and `ColonyTask.sol`. 
+All public and external functions from the logic contracts for an entity are composed into a single interface. For example the Colony interface - `IColony.sol` is a superset of the public and external functions from the logic contracts for a Colony entity, i.e. `Colony.sol`, `ColonyFunding.sol`, `ColonyPayment.sol` and `ColonyTask.sol`.
 
 This layer represents the Colony Network API, documented in the [Interface section](https://docs.colony.io/colonynetwork/interface-ietherrouter) of the documentation.
 
 **Logic layer**
 
-All function declarations live here and therefore this layer constitutes the majority of the code we write. There are often more than one contracts representing a single logical entity. For example the logic for a Colony entity is distributed across `Colony.sol`, `ColonyFunding.sol`, `ColonyPayment.sol` and `ColonyTask.sol`. Same thing is valid for the ColonyNetwork and ReputationMiningCycle entities. The TokenLocking logic however is succinct enough to be held entirely in the `TokenLocking.sol` contract.
+All function declarations live in this layer, which constitutes the majority of the colonyNetwork code. Functions that implement a feature or set of related actions are grouped together into a single contract. There are often several logic contracts representing a single logical entity.
 
-Note that this logic distribution is possible due to the [contract upgrade mechanism](/colonynetwork/docs-the-delegate-proxy-pattern/) we use where essentially all logic contracts for an entity, work with the same underlying `EtherRouter` delegate proxy instance.
+For example, the logic for a colony is distributed across `Colony.sol`, `ColonyFunding.sol`, `ColonyPayment.sol` and `ColonyTask.sol`. Likewise for the ColonyNetwork and ReputationMiningCycle entities.
+
+Note that this logic distribution is possible due to the [contract upgrade mechanism](/colonynetwork/docs-the-delegate-proxy-pattern/), in which all functions are called from the same underlying `EtherRouter` delegate proxy instance, regardless of where they are implemented.
 
 **Access layer**
 
-Access management in the network is handled by a group of contracts that underpin all of the application layers. 
+Access management in the network is handled by a group of contracts that underpin all of the application layers.
 
   * `CommonAuthority.sol`
   * `ColonyAuthority.sol`
   * `ColonyNetworkAuthority.sol`
   * `DomainRoles.sol`
-   
+
 These are based on the `DSRoles` and `DSAuth` implementations from the [dappsys library of contracts](https://github.com/dapphub/dappsys-monolithic).
 For a full list of these contracts, see the "Roles and Authority" point below. Also see [modular permissions section](/colonynetwork/docs-modular-permissions) for design details.
 
@@ -52,29 +54,28 @@ For a full list of these contracts, see the "Roles and Authority" point below. A
 
 Data structures, enums, constants and events are declared in a dedicated `*DataTypes.sol` contract, e.g. `ColonyDataTypes.sol`.
 
-For clarity all storage variables are held separately in a `*Storage.sol` contract, e.g. `ColonyStorage.sol`. Storage variable declaration ordering is crucial to be maintained correctly as that ordering cannot change during contract upgrages, due to the [contract upgrade mechanism](/colonynetwork/docs-the-delegate-proxy-pattern/) we use.
+For clarity, all storage variables are held separately in a `*Storage.sol` contract, e.g. `ColonyStorage.sol`. Storage variable declaration ordering is crucial to be maintained; network upgrades and recovery depend on a consistent and clear storage layout. All variabes are commented with slot numbers to support developers.
 
-Additionally when using recovery mode, we write to storage slots directly so again it is essential to maintain as clear storage layout as possible. We even have code comments with slot numbers in the storage contracts to faciliate that process.
 
 **Integrations**
+Colony supports an ENS integration, which defines a custom ENS registry for use with colonies and the Colony Network.
+  * `ENS.sol`
+  * `ENSRegistry.sol`
 
-* Extension contracts that allow for custom, legacy, or modified extention contracts to be added to a colony.
+
+Colony also supports the creation of extension contracts for use with other smart contracts or dapps. There are 2 officially supported extensions: OldRoles, and OneTxPayment.
   * `ExtensionFactory.sol`
   * `OldRoles.sol`
   * `OldRolesFactory.sol`
   * `OneTxPayment.sol`
   * `OneTxPaymentFactory.sol`
 
-* ENS contracts that define a custom ENS registry for use with colonies and the Colony Network.
-  * `ENS.sol`
-  * `ENSRegistry.sol`
-
 ## Logic Entities
 Broadly speaking, the Colony Network can be divided into four logical entities:
 
 **Colony**
 
-Defines the state of an individual colony, such as funding pots, tasks, domains, and skills. 
+Defines the state of an individual colony, such as funding pots, tasks, domains, and skills.
   * `Colony.sol`
   * `ColonyFunding.sol`
   * `ColonyPayment.sol`
@@ -83,7 +84,7 @@ Defines the state of an individual colony, such as funding pots, tasks, domains,
   * `ColonyStorage.sol`
   * `ColonyDataTypes.sol`
 
-**Colony Network **
+**Colony Network**
 
 Defines a global state shared by all colonies, such as reputation, token auctions and ENS.
   * `ColonyNetwork.sol`
