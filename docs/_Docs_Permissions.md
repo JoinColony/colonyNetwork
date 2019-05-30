@@ -4,7 +4,7 @@ section: Docs
 order: 4
 ---
 
-In the full implementation of the Colony protocol, any account with reputation in a colony should be allowed to move shared funds proportional with their reputation score. This functionality is planned for later releases.
+In the full implementation of the Colony protocol, decision making will be weighted on reputation and/or token value of an account. Actions that are currently permissioed, such as moving shared funds, will be allowed proportional to an account's reputation score. This functionality is planned for later releases.
 
 In the `glider` release, permissions within a colony are based on roles.
 
