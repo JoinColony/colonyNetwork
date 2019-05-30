@@ -25,7 +25,7 @@ For the first line, try to be specific. e.g: "Ensure colony keys are unique" ins
 If you're adding or changing existing tests, they should go on the same commit.
 
 ### Documentation-only contributions
-If changes only affect files in the `docs/` directory, suspend CI builds by adding `[skip ci]` or `[ci skip]` to your commit message.
+If changes only affect files in the `docs/` directory, skip CI builds by adding `[skip ci]` or `[ci skip]` to your commit message.
 
 
 ### Test coverage
