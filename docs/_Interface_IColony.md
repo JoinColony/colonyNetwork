@@ -746,6 +746,22 @@ Set `_token` payout for all roles in task `_id` to the respective amounts.
 |_workerAmount|uint256|Payout amount for worker
 
 
+### `setArbitrationRole`
+
+Set new colony arbitration role. Can be called only by root role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|Domain in which the caller has root role
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_user|address|User we want to give an arbitration role to
+|_domainId|uint256|Domain in which we are giving user the role
+|_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
+
+
 ### `setArchitectureRole`
 
 Set new colony architecture role. Can be called by root role or architecture role.
