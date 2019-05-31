@@ -381,9 +381,9 @@ class ReputationMiner {
         childAdjacentReputationProof
       })
     );
-    // console.log("updateNumber", updateNumber.toString());
-    // console.log("key", key);
-    // console.log("amount", amount.toString());
+    console.log("updateNumber", updateNumber.toString());
+    console.log("key", key);
+    console.log("amount", amount.toString());
     await this.insert(key, amount, updateNumber);
   }
 
