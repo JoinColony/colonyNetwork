@@ -115,7 +115,7 @@ class ReputationMinerClient {
     await this._miner.loadState(latestReputationHash);
     if (this._miner.nReputations.eq(0)) {
       console.log("No existing reputations found - starting from scratch");
-      await this._miner.sync(startingBlock);
+      await this._miner.sync(startingBlock, true);
     }
 
     this.gasBlockAverages = [];
@@ -129,6 +129,22 @@ class ReputationMinerClient {
       // Initial call to process the existing log from the cycle we're currently in
       await this.processReputationLog();
       best12Submissions = await this.getTwelveBestSubmissions();
+
+      // Have we already submitted any of these? Need to update submissionIndex if so
+      const repCycle = await this._miner.getActiveRepCycle();
+      const block = await this._miner.realProvider.getBlock('latest');
+
+      for (let i = 0; i < best12Submissions.length; i+=1 ){
+        if (block.timestamp >= best12Submissions[i].timestamp) {
+          const {entryIndex} = best12Submissions[i];
+          const entryIndexAlreadySubmitted = await repCycle.minerSubmittedEntryIndex(this._miner.minerAddress, entryIndex);
+          if (entryIndexAlreadySubmitted) {
+            submissionIndex += 1
+          } else {
+            break;
+          }
+        }
+      }
 
       // Add a listener to process log for when a new cycle starts
       const ReputationMiningCycleComplete = ethers.utils.id("ReputationMiningCycleComplete(bytes32,uint256)");
@@ -400,7 +416,9 @@ class ReputationMinerClient {
       return a.timestamp.sub(b.timestamp).toNumber();
     });
 
-    return timeAbleToSubmitEntries.slice(0, 12);
+    const maxEntries = Math.min(12, timeAbleToSubmitEntries.length);
+
+    return timeAbleToSubmitEntries.slice(0, maxEntries);
   }
 
   async submitEntry(entryIndex) {
