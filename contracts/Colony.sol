@@ -34,6 +34,19 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit ColonyRoleSet(_user, 1, uint8(ColonyRole.Root), _setTo);
   }
 
+  function setArbitrationRole(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bool _setTo
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
+
+    emit ColonyRoleSet(_user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
+  }
+
   function setArchitectureRole(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -74,19 +87,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
 
     emit ColonyRoleSet(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
-  }
-
-  function setArbitrationRole(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    address _user,
-    uint256 _domainId,
-    bool _setTo
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
-
-    emit ColonyRoleSet(_user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
   }
 
   function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool) {

@@ -54,10 +54,10 @@ contract ColonyAuthority is CommonAuthority {
 
     // Add permissions for the Root role
     addRoleCapability(ROOT_ROLE, "setRootRole(address,bool)");
+    addRoleCapability(ROOT_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ROOT_ROLE, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ROOT_ROLE, "setFundingRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ROOT_ROLE, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
-    addRoleCapability(ROOT_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
 
     // Managing recovery roles
     addRoleCapability(ROOT_ROLE, "setRecoveryRole(address)");
