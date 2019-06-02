@@ -4,17 +4,28 @@ section: Docs
 order: 6
 ---
 
+## Goerli Testnet
+
+You can start the reputation mining client against the Goerli testnet using the following command:
+
+```
+node ./packages/reputation-miner/bin/index.js --network goerli --colonyNetworkAddress 0x79073fc2117dD054FCEdaCad
+1E7018C9CbE3ec0B --privateKey { YOUR_PRIVATE_KEY }
+```
+
+The miner will begin to sync from scratch. To sync from a specific block number, add the `--syncFrom { BLOCK_NO }` flag.
+
 ## Local Network
 
 ### Start Mining Client
 
-You can start the reputation mining client using the following command.
+You can start the reputation mining client against a local chain using the following command:
 
 ```
 node packages/reputation-miner/bin/index.js --colonyNetworkAddress { COLONYNETWORK_ADDRESS } --minerAddress { MINER_ADDRESS }
 ```
 
-The `minerAddress` in the execution above is the sixth account in `ganache-accounts.json` if running locally.
+The `minerAddress` in the execution above is the sixth account in `ganache-accounts.json` if running locally using the default migrations.
 
 The `colonyNetwork` address in the execution above is not the address outputted at contract deployment, but is the address of the Colony Network `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-the-delegate-proxy-pattern/) for more information about the EtherRouter design pattern.
 
