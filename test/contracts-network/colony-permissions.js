@@ -9,6 +9,7 @@ import {
   ARCHITECTURE_SUBDOMAIN_ROLE,
   FUNDING_ROLE,
   ADMINISTRATION_ROLE,
+  ARBITRATION_ROLE,
   INITIAL_FUNDING,
   SPECIFICATION_HASH
 } from "../../helpers/constants";
@@ -58,13 +59,14 @@ contract("ColonyPermissions", accounts => {
     it("should give colony creator all permissions in root domain", async () => {
       const fundingRole = await colony.hasUserRole(FOUNDER, 1, FUNDING_ROLE);
       const administrationRole = await colony.hasUserRole(FOUNDER, 1, ADMINISTRATION_ROLE);
-      // const arbitrationRole = await colony.hasUserRole(FOUNDER, 1, ARBITRATION_ROLE); Not implemented yet.
+      const arbitrationRole = await colony.hasUserRole(FOUNDER, 1, ARBITRATION_ROLE);
       const architectureRole = await colony.hasUserRole(FOUNDER, 1, ARCHITECTURE_ROLE);
       const architectureSubdomainRole = await colony.hasUserRole(FOUNDER, 1, ARCHITECTURE_SUBDOMAIN_ROLE);
       const rootRole = await colony.hasUserRole(FOUNDER, 1, ROOT_ROLE);
 
       expect(fundingRole).to.be.true;
       expect(administrationRole).to.be.true;
+      expect(arbitrationRole).to.be.true;
       expect(architectureRole).to.be.true;
       expect(architectureSubdomainRole).to.be.true;
       expect(rootRole).to.be.true;
@@ -223,6 +225,7 @@ contract("ColonyPermissions", accounts => {
 
       // Can create manage permissions in the root domain!
       await colony.setFundingRole(1, 0, USER2, 1, true, { from: USER1 });
+      await colony.setArbitrationRole(1, 0, USER2, 1, true, { from: USER1 });
       await colony.setAdministrationRole(1, 0, USER2, 1, true, { from: USER1 });
       await colony.setArchitectureRole(1, 0, USER2, 1, true, { from: USER1 });
       await colony.setRootRole(USER2, true, { from: USER1 });
