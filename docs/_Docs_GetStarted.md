@@ -56,7 +56,7 @@ $ yarn provision:token:contracts
 
 ## `glider-rc.1` on the Görli testnet
 
-The [Glider release candidate](/colonynetwork/docs-releases/) is in many ways a simpler and easier way to experiment than setting up a local development environment, and can be very useful if you're looking to just get a sense of how the colonyNetwork contracts work, or want to build extensions/integrations that remain inside the EVM.
+The [Glider release candidate](https://github.com/JoinColony/colonyNetwork/releases/tag/glider-rc.2) is in many ways a simpler and easier way to experiment than setting up a local development environment, and can be very useful if you're looking to just get a sense of how the colonyNetwork contracts work, or want to build extensions/integrations that remain inside the EVM.
 
 To connect, you'll need to know the address of the colonyNetwork (which is, in reality, the address of the `etherRouter` contract; see [The Delegate Proxy Pattern](/colonynetwork/docs-upgrade-design/) for more info).
 

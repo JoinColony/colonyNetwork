@@ -23,4 +23,4 @@ A function signature lookup will return the address of the contracts that implem
 
 ![EtherRouter](img/delegateProxyCallchain_1.png)
 
-This pattern enables both fine-grained control of permissions for individual functions (see below), well as eternal backwards-compatibility following network upgrades. To learn more about planned upgrades to the Colony Network, please see [Releases](/colonynetwork/docs-releases/).
+This pattern enables both fine-grained control of permissions for individual functions (see below), well as eternal backwards-compatibility following network upgrades.
