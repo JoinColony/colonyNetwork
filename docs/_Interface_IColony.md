@@ -32,7 +32,7 @@ Add a new payment in the colony. Secured function to authorised members.
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`,  (only used if `_permissionDomainId` is different to `_domainId`)
 |_recipient|address|Address of the payment recipient
 |_token|address|Address of the token, `0x0` value indicates Ether
 |_amount|uint256|Payout amount
@@ -744,22 +744,6 @@ Set `_token` payout for all roles in task `_id` to the respective amounts.
 |_managerAmount|uint256|Payout amount for manager
 |_evaluatorAmount|uint256|Payout amount for evaluator
 |_workerAmount|uint256|Payout amount for worker
-
-
-### `setArbitrationRole`
-
-Set new colony arbitration role. Can be called only by root role.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|Domain in which the caller has root role
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
-|_user|address|User we want to give an arbitration role to
-|_domainId|uint256|Domain in which we are giving user the role
-|_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
 ### `setArchitectureRole`
