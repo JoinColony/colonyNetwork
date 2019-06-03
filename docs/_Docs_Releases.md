@@ -6,7 +6,7 @@ order: 7
 
 ![glider](img/glider_fullColor.svg)
 
-The [current colonyNetwork release](https://github.com/JoinColony/colonyNetwork/releases/tag/glider-rc.1), `glider`, implements some but not all of the Colony Protocol:
+The [current colonyNetwork release](https://github.com/JoinColony/colonyNetwork/releases), `glider`, implements some but not all of the Colony Protocol:
 
 * The Reputation system
 * Meta Colony and the CLNY Token
