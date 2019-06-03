@@ -156,6 +156,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     // Assign all permissions in root domain
     colony.setRecoveryRole(msg.sender);
     colony.setRootRole(msg.sender, true);
+    colony.setArbitrationRole(1, 0, msg.sender, 1, true);
     colony.setArchitectureRole(1, 0, msg.sender, 1, true);
     colony.setFundingRole(1, 0, msg.sender, 1, true);
     colony.setAdministrationRole(1, 0, msg.sender, 1, true);
@@ -263,7 +264,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return skill.children[_childSkillIndex];
   }
 
-  function deprecateSkill(uint256 _skillId) public stoppable 
+  function deprecateSkill(uint256 _skillId) public stoppable
   allowedToAddSkill(true)
   {
     skills[_skillId].deprecated = true;
