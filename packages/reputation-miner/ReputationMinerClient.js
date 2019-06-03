@@ -7,11 +7,6 @@ const ReputationMiner = require("./ReputationMiner");
 const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
 const miningCycleDuration = ethers.utils.bigNumberify(60).mul(60).mul(24); // 24 hours
 const constant = ethers.utils.bigNumberify(2).pow(256).sub(1).div(miningCycleDuration);
-let submissionIndex = 0;
-let best12Submissions = [];
-let filterReputationMiningCycleComplete;
-let lockedForBlockProcessing;
-let lockedForLogProcessing;
 
 class ReputationMinerClient {
   /**
@@ -23,6 +18,12 @@ class ReputationMinerClient {
     this._loader = loader;
     this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, useJsTree, dbPath });
     this._auto = auto;
+    this.submissionIndex = 0;
+    this.best12Submissions = [];
+    this.filterReputationMiningCycleComplete;
+    this.lockedForBlockProcessing;
+    this.lockedForLogProcessing;
+
     if (typeof this._auto === "undefined") {
       this._auto = true;
     }
@@ -128,18 +129,18 @@ class ReputationMinerClient {
     if (this._auto) {
       // Initial call to process the existing log from the cycle we're currently in
       await this.processReputationLog();
-      best12Submissions = await this.getTwelveBestSubmissions();
+      this.best12Submissions = await this.getTwelveBestSubmissions();
 
       // Have we already submitted any of these? Need to update submissionIndex if so
       const repCycle = await this._miner.getActiveRepCycle();
       const block = await this._miner.realProvider.getBlock('latest');
 
-      for (let i = 0; i < best12Submissions.length; i+=1 ){
-        if (block.timestamp >= best12Submissions[i].timestamp) {
-          const {entryIndex} = best12Submissions[i];
+      for (let i = 0; i < this.best12Submissions.length; i+=1 ){
+        if (block.timestamp >= this.best12Submissions[i].timestamp) {
+          const {entryIndex} = this.best12Submissions[i];
           const entryIndexAlreadySubmitted = await repCycle.minerSubmittedEntryIndex(this._miner.minerAddress, entryIndex);
           if (entryIndexAlreadySubmitted) {
-            submissionIndex += 1
+            this.submissionIndex += 1
           } else {
             break;
           }
@@ -148,23 +149,23 @@ class ReputationMinerClient {
 
       // Add a listener to process log for when a new cycle starts
       const ReputationMiningCycleComplete = ethers.utils.id("ReputationMiningCycleComplete(bytes32,uint256)");
-      filterReputationMiningCycleComplete = {
+      this.filterReputationMiningCycleComplete = {
         address: this._miner.colonyNetwork.address,
         topics: [ ReputationMiningCycleComplete ]
       }
 
       // If a new mining cycle starts, process the new reputation update log and rehydrate the 12 best submissions
-      await this._miner.realProvider.on(filterReputationMiningCycleComplete, async () => {
-        if (lockedForLogProcessing) {
+      await this._miner.realProvider.on(this.filterReputationMiningCycleComplete, async () => {
+        if (this.lockedForLogProcessing) {
           // This would be quite a big surprise if it happened, but for completeness
           console.log("WARNING: Somehow, two log updates were triggered. This seems very unlikely, so maybe something is broken...?")
           return;
         }
-        lockedForLogProcessing = true;
+        this.lockedForLogProcessing = true;
         // No awaits above this line in this function, otherwise race conditions will rear their head
         await this.processReputationLog();
-        best12Submissions = await this.getTwelveBestSubmissions();
-        lockedForLogProcessing = false;
+        this.best12Submissions = await this.getTwelveBestSubmissions();
+        this.lockedForLogProcessing = false;
         if (this.resolveLogProcessingFinished){
           this.resolveLogProcessingFinished();
         }
@@ -174,7 +175,7 @@ class ReputationMinerClient {
       this._miner.realProvider.pollingInterval = 1000;
 
       // Do the other checks for whether we can submit or confirm a hash
-      lockedForBlockProcessing = false;
+      this.lockedForBlockProcessing = false;
       this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
     }
   }
@@ -219,10 +220,10 @@ class ReputationMinerClient {
    */
   async doBlockChecks(blockNumber) {
   try {
-      if (lockedForBlockProcessing || lockedForLogProcessing) {
+      if (this.lockedForBlockProcessing || this.lockedForLogProcessing) {
         return;
       }
-      lockedForBlockProcessing = true;
+      this.lockedForBlockProcessing = true;
       // DO NOT PUT ANY AWAITS ABOVE THIS LINE OR YOU WILL GET RACE CONDITIONS
 
       const block = await this._miner.realProvider.getBlock(blockNumber, true);
@@ -236,20 +237,20 @@ class ReputationMinerClient {
       const nHashSubmissions = await repCycle.getNSubmissionsForHash(hash, nNodes, jrh);
 
       // If less than 12 submissions have been made, submit at our next best possible time
-      if (nHashSubmissions.lt(12) && best12Submissions[submissionIndex]) {
-        if (block.timestamp >= best12Submissions[submissionIndex].timestamp) {    
-          const {entryIndex} = best12Submissions[submissionIndex];
+      if (nHashSubmissions.lt(12) && this.best12Submissions[this.submissionIndex]) {
+        if (block.timestamp >= this.best12Submissions[this.submissionIndex].timestamp) {
+          const {entryIndex} = this.best12Submissions[this.submissionIndex];
           const canSubmit = await this._miner.submissionPossible(entryIndex);
           if (canSubmit) {
             console.log("⏰ Looks like it's time to submit an entry to the current cycle");
-            submissionIndex += 1;
+            this.submissionIndex += 1;
             await this.submitEntry(entryIndex);
           }
         }
       }
 
       const windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
-    
+
       const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
       const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
       const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
@@ -317,16 +318,16 @@ class ReputationMinerClient {
         // 3. Are we at the end of a binary search and need to confirm?
         // Check that our opponent has finished the binary search, check that we have, and check we've not confirmed yet
         } else if (
-          oppEntry.upperBound.eq(oppEntry.lowerBound) && 
-          entry.upperBound.eq(entry.lowerBound) && 
-          ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNNodes) 
+          oppEntry.upperBound.eq(oppEntry.lowerBound) &&
+          entry.upperBound.eq(entry.lowerBound) &&
+          ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNNodes)
         )
         {
           await this._miner.confirmBinarySearchResult();
         // 4. Is the binary search confirmed, and we need to respond to challenge?
         // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
         } else if (
-            ethers.utils.bigNumberify(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNNodes) && 
+            ethers.utils.bigNumberify(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNNodes) &&
             ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNNodes) &&
             ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNNodes)
           )
@@ -337,8 +338,8 @@ class ReputationMinerClient {
 
       if (lastHashStanding && ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
         // If the submission window is closed and we are the last hash, confirm it
-        best12Submissions = []; // Clear the submissions
-        submissionIndex = 0;
+        this.best12Submissions = []; // Clear the submissions
+        this.submissionIndex = 0;
         await this.confirmEntry();
       }
       this.endDoBlockChecks();
@@ -351,7 +352,7 @@ class ReputationMinerClient {
     if (this.resolveBlockChecksFinished){
       this.resolveBlockChecksFinished();
     }
-    lockedForBlockProcessing = false;
+    this.lockedForBlockProcessing = false;
   }
 
   async close() {
@@ -370,17 +371,17 @@ class ReputationMinerClient {
       console.log("ERROR: on block listener not removed on client close");
     }
 
-    this._miner.realProvider.removeAllListeners(filterReputationMiningCycleComplete);
-    const reputationMiningCycleCompleteListener = this._miner.realProvider.listenerCount(filterReputationMiningCycleComplete);
+    this._miner.realProvider.removeAllListeners(this.filterReputationMiningCycleComplete);
+    const reputationMiningCycleCompleteListener = this._miner.realProvider.listenerCount(this.filterReputationMiningCycleComplete);
     if(reputationMiningCycleCompleteListener !== 0) {
       console.log("ERROR: on ReputationMiningCycleComplete listener not removed on client close");
     }
 
     this.server.close();
-    if (lockedForBlockProcessing) {
+    if (this.lockedForBlockProcessing) {
       await blockChecksFinished;
     }
-    if (lockedForLogProcessing) {
+    if (this.lockedForLogProcessing) {
       await logProcessingFinished;
     }
 
