@@ -263,7 +263,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return skill.children[_childSkillIndex];
   }
 
-  function deprecateSkill(uint256 _skillId) public stoppable 
+  function deprecateSkill(uint256 _skillId) public stoppable
   allowedToAddSkill(true)
   {
     skills[_skillId].deprecated = true;

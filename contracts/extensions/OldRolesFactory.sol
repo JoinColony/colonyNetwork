@@ -26,7 +26,7 @@ import "./OldRoles.sol";
 
 
 contract OldRolesFactory is ExtensionFactory, ColonyDataTypes { // ignore-swc-123. TODO Any takers to explain to me?
-  mapping (address => OldRoles) public deployedExtensions;	
+  mapping (address => OldRoles) public deployedExtensions;
 
   function deployExtension(address _colony) external {
     require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root");

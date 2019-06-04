@@ -197,8 +197,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       toClaim = sub(sub(targetToken.balanceOf(address(this)), nonRewardPotsTotal[_token]), fundingPots[0].balance[_token]); // ignore-swc-123
     }
 
-    feeToPay = toClaim / getRewardInverse(); // ignore-swc-110 . This variable is set when the colony is 
-    // initialised to MAX_UINT, and cannot be set to zero via setRewardInverse, so this is a false positive. It *can* be set 
+    feeToPay = toClaim / getRewardInverse(); // ignore-swc-110 . This variable is set when the colony is
+    // initialised to MAX_UINT, and cannot be set to zero via setRewardInverse, so this is a false positive. It *can* be set
     // to 0 via recovery mode, but a) That's not why MythX is balking here and b) There's only so much we can stop people being
     // able to do with recovery mode.
     remainder = sub(toClaim, feeToPay);

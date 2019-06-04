@@ -17,7 +17,8 @@
     "import/named": "off",
     "no-console": "off",
     "no-unused-expressions": "off",
-    "no-await-in-loop": "off"
+    "no-await-in-loop": "off",
+    "no-trailing-spaces": "error"
   },
   "parserOptions": {
     "ecmaVersion": 2017
