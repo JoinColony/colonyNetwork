@@ -8,7 +8,6 @@ const ColonyNetworkAuction = artifacts.require("./ColonyNetworkAuction");
 const ColonyNetworkENS = artifacts.require("./ColonyNetworkENS");
 const ReputationMiningCycle = artifacts.require("./ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("./ReputationMiningCycleRespond");
-const ENSRegistry = artifacts.require("./ENSRegistry");
 const OneTxPaymentFactory = artifacts.require("./extensions/OneTxPaymentFactory");
 const OldRolesFactory = artifacts.require("./extensions/OldRolesFactory");
 
@@ -29,7 +28,6 @@ module.exports = (deployer, network) => {
   deployer.deploy(ColonyNetworkENS);
   deployer.deploy(ReputationMiningCycle);
   deployer.deploy(ReputationMiningCycleRespond);
-  deployer.deploy(ENSRegistry);
   deployer.deploy(EtherRouter);
   deployer.deploy(Resolver);
   deployer.deploy(ContractRecovery);

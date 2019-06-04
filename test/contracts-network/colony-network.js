@@ -2,11 +2,11 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
 import { GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
+import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
 const namehash = require("eth-ens-namehash");
 
@@ -288,14 +288,8 @@ contract("Colony Network", accounts => {
     let ensRegistry;
 
     beforeEach(async () => {
-      const USER_HASH = await soliditySha3("user");
-      const COLONY_HASH = await soliditySha3("colony");
       ensRegistry = await ENSRegistry.new();
-      await colonyNetwork.setupRegistrar(ensRegistry.address, rootNode);
-      await ensRegistry.setOwner(rootNode, accounts[0]);
-
-      await ensRegistry.setSubnodeOwner(rootNode, USER_HASH, colonyNetwork.address);
-      await ensRegistry.setSubnodeOwner(rootNode, COLONY_HASH, colonyNetwork.address);
+      await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
     });
 
     it("should be able to get the ENSRegistrar", async () => {
