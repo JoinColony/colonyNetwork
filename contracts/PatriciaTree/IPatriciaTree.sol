@@ -19,7 +19,7 @@ contract IPatriciaTree is IPatriciaTreeBase {
 
   /// @notice Calculates and returns a root hash for the `key`, `value`, `branchMask` and `siblings`
   /// @return rootHash The calculated hash
-  function getImpliedRoot(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings) 
+  function getImpliedRoot(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
     public pure returns (bytes32 rootHash);
 
 }

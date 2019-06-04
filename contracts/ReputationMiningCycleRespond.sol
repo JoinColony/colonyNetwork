@@ -381,7 +381,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(
       keccak256(
         buildReputationKey(b32[B_REPUTATION_KEY_COLONY], b32[B_REPUTATION_KEY_SKILLID], b32[B_REPUTATION_KEY_USER])
-      ) == b32[B_REPUTATION_KEY_HASH], 
+      ) == b32[B_REPUTATION_KEY_HASH],
       "colony-reputation-mining-reputation-key-and-hash-mismatch"
     );
   }
@@ -669,7 +669,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32[] memory agreeStateSiblings,
     bytes32 userOriginReputationKeyHash,
     bytes32[] memory userOriginReputationStateSiblings
-    ) internal view 
+    ) internal view
   {
     // We binary searched to the first disagreement, so the last agreement is the one before
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;

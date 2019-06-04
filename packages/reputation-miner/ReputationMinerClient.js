@@ -153,12 +153,12 @@ class ReputationMinerClient {
           this.resolveLogProcessingFinished();
         }
       });
-      
+
       this._miner.realProvider.polling = true;
       this._miner.realProvider.pollingInterval = 1000;
 
       // Do the other checks for whether we can submit or confirm a hash
-      lockedForBlockProcessing = false;        
+      lockedForBlockProcessing = false;
       this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
     }
   }
@@ -185,9 +185,9 @@ class ReputationMinerClient {
 
     this._miner.gasPrice = ethers.utils.hexlify(
       this.gasBlockAverages.reduce(
-        (total, sum) => { 
+        (total, sum) => {
           return total.add(sum)
-        }, 
+        },
         ethers.utils.bigNumberify(0)
       ).div(this.gasBlockAverages.length)
     );
@@ -220,7 +220,7 @@ class ReputationMinerClient {
 
     // If less than 12 submissions have been made, submit at our next best possible time
     if (nHashSubmissions.lt(12) && best12Submissions[submissionIndex]) {
-      if (block.timestamp >= best12Submissions[submissionIndex].timestamp) {    
+      if (block.timestamp >= best12Submissions[submissionIndex].timestamp) {
         const {entryIndex} = best12Submissions[submissionIndex];
         const canSubmit = await this._miner.submissionPossible(entryIndex);
         if (canSubmit) {
@@ -232,7 +232,7 @@ class ReputationMinerClient {
     }
 
     const windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
-  
+
     const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
@@ -300,16 +300,16 @@ class ReputationMinerClient {
       // 3. Are we at the end of a binary search and need to confirm?
       // Check that our opponent has finished the binary search, check that we have, and check we've not confirmed yet
       } else if (
-        oppEntry.upperBound.eq(oppEntry.lowerBound) && 
-        entry.upperBound.eq(entry.lowerBound) && 
-        ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNNodes) 
+        oppEntry.upperBound.eq(oppEntry.lowerBound) &&
+        entry.upperBound.eq(entry.lowerBound) &&
+        ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNNodes)
       )
       {
         await this._miner.confirmBinarySearchResult();
       // 4. Is the binary search confirmed, and we need to respond to challenge?
       // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
       } else if (
-          ethers.utils.bigNumberify(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNNodes) && 
+          ethers.utils.bigNumberify(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNNodes) &&
           ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNNodes) &&
           ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNNodes)
         )
@@ -355,7 +355,7 @@ class ReputationMinerClient {
     if(reputationMiningCycleCompleteListener !== 0) {
       console.log("ERROR: on ReputationMiningCycleComplete listener not removed on client close");
     }
-    
+
     this.server.close();
     if (lockedForBlockProcessing) {
       await blockChecksFinished;
@@ -382,7 +382,7 @@ class ReputationMinerClient {
 
     const timeAbleToSubmitEntries = [];
     for (let i = ethers.utils.bigNumberify(1); i.lte(balance.div(minStake)); i = i.add(1)) {
-      const entryHash = await repCycle.getEntryHash(this._miner.minerAddress, i, rootHash);  
+      const entryHash = await repCycle.getEntryHash(this._miner.minerAddress, i, rootHash);
       const timeAbleToSubmitEntry = ethers.utils.bigNumberify(entryHash).div(constant).add(reputationMiningWindowOpenTimestamp);
 
       const validEntry = {
@@ -410,7 +410,7 @@ class ReputationMinerClient {
       submitRootHashTx = await this._miner.realProvider.getTransaction(submitRootHashTx);
     }
     console.log("⛏️ Transaction waiting to be mined", submitRootHashTx.hash);
-    
+
     await submitRootHashTx.wait();
     console.log("🆗 New reputation hash submitted successfully");
   }

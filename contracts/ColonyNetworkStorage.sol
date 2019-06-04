@@ -59,7 +59,7 @@ contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   mapping (uint256 => address) colonyVersionResolver; // Storage slot 20
   // Contains all global and local skills in the network, mapping skillId to Skill. Where skillId is 1-based unique identifier
   mapping (uint256 => Skill) skills; // Storage slot 21
-  
+
   // Mapping containing how much has been staked by each user
   mapping (address => uint) stakedBalances; // Storage slot 22
 
