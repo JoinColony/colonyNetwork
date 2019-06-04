@@ -1,4 +1,5 @@
 import { soliditySha3 } from "web3-utils";
+import namehash from "eth-ens-namehash";
 import assert from "assert";
 import fs from "fs";
 
@@ -113,4 +114,16 @@ export async function setupReputationMiningCycleResolver(reputationMiningCycle, 
   await setupEtherRouter("IReputationMiningCycle", deployedImplementations, resolver);
 
   await colonyNetwork.setMiningResolver(resolver.address);
+}
+
+export async function setupENSRegistrar(colonyNetwork, ensRegistry, registrarOwner) {
+  const rootNode = namehash.hash("joincolony.eth");
+  const USER_HASH = await soliditySha3("user");
+  const COLONY_HASH = await soliditySha3("colony");
+
+  await colonyNetwork.setupRegistrar(ensRegistry.address, rootNode);
+  await ensRegistry.setOwner(rootNode, registrarOwner);
+
+  await ensRegistry.setSubnodeOwner(rootNode, USER_HASH, colonyNetwork.address);
+  await ensRegistry.setSubnodeOwner(rootNode, COLONY_HASH, colonyNetwork.address);
 }
