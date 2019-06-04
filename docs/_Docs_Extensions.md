@@ -4,9 +4,9 @@ section: Docs
 order: 6
 ---
 
-`glider` provides the option of "extensions" to the basic functionality of a colony through the use of _extensions_.
+`glider` provides the option of expanding the basic functionality of a colony through the use of _extensions_.
 
-Extensions are other smart contracts that have been given permissions to interact with a colony in a specified domain. Extensions can be used for many purposes, such as bundling transactions, automating certain actions, or something else entirely. Their implementations are intentionally disconected from the colonyNetwork codebase (stored in the [/contracts/extensions](https://github.com/JoinColony/colonyNetwork/tree/develop/contracts/extensions) folder in the network) to allow for greater design flexibility unbounded by the network protocol.
+Extensions are other smart contracts that have been given permissions to interact with a colony in a specified domain. Extensions can be used for many purposes, such as bundling transactions, automating certain actions, or something else entirely. Their implementations are intentionally disconnected from the colonyNetwork codebase (stored in the [/contracts/extensions](https://github.com/JoinColony/colonyNetwork/tree/develop/contracts/extensions) folder in the network) to allow for greater design flexibility unbounded by the network protocol.
 
 Currently there are two extensions 'officially' supported, but more may be added in the future. These extensions are written with dapp support in mind, and emit events to inform a user interface whether a colony has an extension enabled or not. Adding and removing an extension from a colony is restricted to those with `Root` permissions on the colony.
 
