@@ -61,15 +61,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
   function setRootRole(address _user, bool _setTo) public;
 
-  /// @notice Set new colony arbitration role.
-  /// Can be called only by root role.
-  /// @param _permissionDomainId Domain in which the caller has root role
-  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
-  /// @param _user User we want to give an arbitration role to
-  /// @param _domainId Domain in which we are giving user the role
-  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
-  function setArbitrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
-
   /// @notice Set new colony architecture role.
   /// Can be called by root role or architecture role.
   /// @param _permissionDomainId Domain in which the caller has root/architecture role
@@ -160,7 +151,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   // Implemented in ColonyPayment.sol
   /// @notice Add a new payment in the colony. Secured function to authorised members.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
-  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`, 
   /// (only used if `_permissionDomainId` is different to `_domainId`)
   /// @param _recipient Address of the payment recipient
   /// @param _token Address of the token, `0x0` value indicates Ether
