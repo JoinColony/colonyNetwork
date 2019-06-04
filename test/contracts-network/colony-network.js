@@ -6,6 +6,7 @@ import { ethers } from "ethers";
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
 import { GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
+import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
 const namehash = require("eth-ens-namehash");
 
@@ -288,8 +289,7 @@ contract("Colony Network", accounts => {
 
     beforeEach(async () => {
       ensRegistry = await ENSRegistry.new();
-      await ensRegistry.setOwner(rootNode, colonyNetwork.address);
-      await colonyNetwork.setupRegistrar(ensRegistry.address, rootNode);
+      await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
     });
 
     it("should be able to get the ENSRegistrar", async () => {
@@ -300,7 +300,7 @@ contract("Colony Network", accounts => {
     it("should own the root domains", async () => {
       let owner;
       owner = await ensRegistry.owner(rootNode);
-      expect(owner).to.equal(colonyNetwork.address);
+      expect(owner).to.equal(accounts[0]);
 
       owner = await ensRegistry.owner(namehash.hash("user.joincolony.eth"));
       expect(owner).to.equal(colonyNetwork.address);
