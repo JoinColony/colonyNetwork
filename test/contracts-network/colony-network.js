@@ -2,6 +2,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
 import { GLOBAL_SKILL_ID } from "../../helpers/constants";
@@ -287,9 +288,14 @@ contract("Colony Network", accounts => {
     let ensRegistry;
 
     beforeEach(async () => {
+      const USER_HASH = await soliditySha3("user");
+      const COLONY_HASH = await soliditySha3("colony");
       ensRegistry = await ENSRegistry.new();
-      await ensRegistry.setOwner(rootNode, colonyNetwork.address);
       await colonyNetwork.setupRegistrar(ensRegistry.address, rootNode);
+      await ensRegistry.setOwner(rootNode, accounts[0]);
+
+      await ensRegistry.setSubnodeOwner(rootNode, USER_HASH, colonyNetwork.address);
+      await ensRegistry.setSubnodeOwner(rootNode, COLONY_HASH, colonyNetwork.address);
     });
 
     it("should be able to get the ENSRegistrar", async () => {
@@ -300,7 +306,7 @@ contract("Colony Network", accounts => {
     it("should own the root domains", async () => {
       let owner;
       owner = await ensRegistry.owner(rootNode);
-      expect(owner).to.equal(colonyNetwork.address);
+      expect(owner).to.equal(accounts[0]);
 
       owner = await ensRegistry.owner(namehash.hash("user.joincolony.eth"));
       expect(owner).to.equal(colonyNetwork.address);
