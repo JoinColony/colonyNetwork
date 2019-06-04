@@ -118,8 +118,8 @@ export async function setupReputationMiningCycleResolver(reputationMiningCycle, 
 
 export async function setupENSRegistrar(colonyNetwork, ensRegistry, registrarOwner) {
   const rootNode = namehash.hash("joincolony.eth");
-  const USER_HASH = await soliditySha3("user");
-  const COLONY_HASH = await soliditySha3("colony");
+  const USER_HASH = soliditySha3("user");
+  const COLONY_HASH = soliditySha3("colony");
 
   await colonyNetwork.setupRegistrar(ensRegistry.address, rootNode);
   await ensRegistry.setOwner(rootNode, registrarOwner);
