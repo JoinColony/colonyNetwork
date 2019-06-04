@@ -48,8 +48,6 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     rootNode = _rootNode;
     userNode = keccak256(abi.encodePacked(rootNode, USER_HASH));
     colonyNode = keccak256(abi.encodePacked(rootNode, COLONY_HASH));
-    ENS(ens).setSubnodeOwner(rootNode, USER_HASH, address(this));
-    ENS(ens).setSubnodeOwner(rootNode, COLONY_HASH, address(this));
   }
 
   function registerUserLabel(string memory username, string memory orbitdb)
