@@ -428,7 +428,8 @@ Initialises the colony network by setting the first Colony version resolver to `
 
 |Name|Type|Description|
 |---|---|---|
-|_resolver|address|Address of the resolver for Colony contract version 1
+|_resolver|address|Address of the resolver for Colony contract
+|_version|uint256|Version of the Colony contract the resolver represents
 
 
 ### `initialiseReputationMining`

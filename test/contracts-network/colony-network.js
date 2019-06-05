@@ -48,7 +48,7 @@ contract("Colony Network", accounts => {
 
     it("should have the correct current Colony version set", async () => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      expect(currentColonyVersion).to.eq.BN(1);
+      expect(currentColonyVersion).to.eq.BN(2);
     });
 
     it("should have the Resolver for current Colony version set", async () => {
@@ -80,7 +80,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should not be able to initialise network twice", async () => {
-      await checkErrorRevert(colonyNetwork.initialise("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA"), "colony-network-already-initialised");
+      await checkErrorRevert(colonyNetwork.initialise("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA", 3), "colony-network-already-initialised");
     });
 
     it("should not be able to create a colony if the network is not initialised", async () => {
@@ -93,6 +93,26 @@ contract("Colony Network", accounts => {
         colonyNetwork.createColony("0x8972e86549bb8E350673e0562fba9a4889d01637"),
         "colony-network-not-initialised-cannot-create-colony"
       );
+    });
+
+    it("should not be able to initialise the network with colony version number 0", async () => {
+      const resolverColonyNetworkDeployed = await Resolver.deployed();
+      const etherRouter = await EtherRouter.new();
+      await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+      const colonyNetworkNew = await IColonyNetwork.at(etherRouter.address);
+
+      await checkErrorRevert(colonyNetworkNew.initialise("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA", 0), "colony-network-invalid-version");
+    });
+
+    it("should be able to initialise the network with any colony version number greater than 0", async () => {
+      const resolverColonyNetworkDeployed = await Resolver.deployed();
+      const etherRouter = await EtherRouter.new();
+      await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+      const colonyNetworkNew = await IColonyNetwork.at(etherRouter.address);
+
+      await colonyNetworkNew.initialise("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA", 79);
+      const currentColonyVersion = await colonyNetworkNew.getCurrentColonyVersion();
+      expect(currentColonyVersion).to.eq.BN(79);
     });
   });
 
