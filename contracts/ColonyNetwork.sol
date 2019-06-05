@@ -187,6 +187,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   auth
   {
     require(currentColonyVersion == 0, "colony-network-already-initialised");
+    require(_version > 0, "colony-network-invalid-version");
     colonyVersionResolver[_version] = _resolver;
     currentColonyVersion = _version;
 
