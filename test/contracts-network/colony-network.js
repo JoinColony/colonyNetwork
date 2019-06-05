@@ -48,7 +48,7 @@ contract("Colony Network", accounts => {
 
     it("should have the correct current Colony version set", async () => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      expect(currentColonyVersion).to.eq.BN(1);
+      expect(currentColonyVersion).to.eq.BN(2);
     });
 
     it("should have the Resolver for current Colony version set", async () => {
