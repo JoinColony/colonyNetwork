@@ -80,7 +80,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should not be able to initialise network twice", async () => {
-      await checkErrorRevert(colonyNetwork.initialise("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA"), "colony-network-already-initialised");
+      await checkErrorRevert(colonyNetwork.initialise("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA", 3), "colony-network-already-initialised");
     });
 
     it("should not be able to create a colony if the network is not initialised", async () => {
