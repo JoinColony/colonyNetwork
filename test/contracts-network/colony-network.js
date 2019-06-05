@@ -94,6 +94,26 @@ contract("Colony Network", accounts => {
         "colony-network-not-initialised-cannot-create-colony"
       );
     });
+
+    it("should not be able to initialise the network with colony version number 0", async () => {
+      const resolverColonyNetworkDeployed = await Resolver.deployed();
+      const etherRouter = await EtherRouter.new();
+      await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+      const colonyNetworkNew = await IColonyNetwork.at(etherRouter.address);
+
+      await checkErrorRevert(colonyNetworkNew.initialise("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA", 0), "colony-network-invalid-version");
+    });
+
+    it("should be able to initialise the network with any colony version number greater than 0", async () => {
+      const resolverColonyNetworkDeployed = await Resolver.deployed();
+      const etherRouter = await EtherRouter.new();
+      await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+      const colonyNetworkNew = await IColonyNetwork.at(etherRouter.address);
+
+      await colonyNetworkNew.initialise("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA", 79);
+      const currentColonyVersion = await colonyNetworkNew.getCurrentColonyVersion();
+      expect(currentColonyVersion).to.eq.BN(79);
+    });
   });
 
   describe("when managing the mining process", () => {
