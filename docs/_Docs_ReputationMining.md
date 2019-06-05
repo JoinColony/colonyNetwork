@@ -4,19 +4,29 @@ section: Docs
 order: 6
 ---
 
+## Goerli Testnet
+
+You can start the reputation mining client against the Goerli testnet using the following command:
+
+```
+node ./packages/reputation-miner/bin/index.js --network goerli --colonyNetworkAddress 0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B --syncFrom 548534 --privateKey YOUR_PRIVATE_KEY
+```
+
 ## Local Network
 
 ### Start Mining Client
 
-You can start the reputation mining client using the following command.
+You can start the reputation mining client against a local chain using the following command:
 
 ```
-node packages/reputation-miner/bin/index.js --colonyNetworkAddress { COLONYNETWORK_ADDRESS } --minerAddress { MINER_ADDRESS }
+node packages/reputation-miner/bin/index.js --colonyNetworkAddress COLONY_NETWORK_ADDRESS --minerAddress MINER_ADDRESS --syncFrom BLOCK_NO
 ```
 
-The `minerAddress` in the execution above is the sixth account in `ganache-accounts.json` if running locally.
+The `MINER_ADDRESS` in the execution above is the sixth account in `ganache-accounts.json` if running locally using the default migrations.
 
 The `colonyNetwork` address in the execution above is not the address outputted at contract deployment, but is the address of the Colony Network `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-the-delegate-proxy-pattern/) for more information about the EtherRouter design pattern.
+
+Due to a quirk with the mining cycle events, beginning the sync with a too-early block will result in an error. If you get this exception, try increasing the `BLOCK_NO`.
 
 ### Force Reputation Updates
 
@@ -36,7 +46,7 @@ curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","metho
 
 Note that because reputation is awarded for the *previous* submission window, you will need to use the "fast-forward" command above to speed through at least 3 reputation updates before noticing a change in the miner's reputation.
 
-### Get Reputation from the Reputation Oracle
+## Get Reputation from the Reputation Oracle
 
 The reputation mining client will answer queries for reputation scores locally over HTTP.
 
