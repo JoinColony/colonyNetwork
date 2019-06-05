@@ -142,8 +142,9 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
 
   /// @notice Initialises the colony network by setting the first Colony version resolver to `_resolver` address.
   /// @dev Only allowed to be run once, by the Network owner before any Colony versions are added.
-  /// @param _resolver Address of the resolver for Colony contract version 1
-  function initialise(address _resolver) public;
+  /// @param _resolver Address of the resolver for Colony contract
+  /// @param _resolver Version of the Colony contract the resolver represents
+  function initialise(address _resolver, uint256 _version) public;
 
   /// @notice Get a colony address by its Id in the network.
   /// @param _id Id of the colony to get

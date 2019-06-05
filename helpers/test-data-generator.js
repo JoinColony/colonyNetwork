@@ -344,7 +344,8 @@ export async function setupColonyNetwork() {
 
   const colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
-  await colonyNetwork.initialise(resolver.address);
+  const version = await colonyTemplate.version();
+  await colonyNetwork.initialise(resolver.address, version);
   // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
   const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
   const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();

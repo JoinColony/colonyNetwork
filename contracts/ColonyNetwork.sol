@@ -182,13 +182,13 @@ contract ColonyNetwork is ColonyNetworkStorage {
     emit ColonyVersionAdded(_version, _resolver);
   }
 
-  function initialise(address _resolver) public
+  function initialise(address _resolver, uint256 _version) public
   stoppable
   auth
   {
     require(currentColonyVersion == 0, "colony-network-already-initialised");
-    colonyVersionResolver[1] = _resolver;
-    currentColonyVersion = 1;
+    colonyVersionResolver[_version] = _resolver;
+    currentColonyVersion = _version;
 
     emit ColonyNetworkInitialised(_resolver);
   }
