@@ -28,7 +28,7 @@ module.exports = async function(deployer) {
 
   // Register the new Colony contract version with the newly setup Resolver
   await setupColonyVersionResolver(colony, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
-  await colonyNetwork.initialise(resolver.address);
+  await colonyNetwork.initialise(resolver.address, version);
 
   console.log("### Colony version", version.toString(), "set to Resolver", resolver.address);
 };
