@@ -125,11 +125,6 @@ class ReputationMiner {
     this.reverseReputationHashLookup = {};
     const repCycle = await this.getActiveRepCycle(blockNumber)
 
-    if (repCycle.address === ethers.constants.AddressZero) {
-      console.log(`WARNING: No active mining cycle found for block number ${blockNumber}`);
-      return;
-    }
-
     // Do updates
     this.nReputationsBeforeLatestLog = ethers.utils.bigNumberify(this.nReputations.toString());
     // This is also the number of decays we have.
@@ -623,6 +618,11 @@ class ReputationMiner {
    */
   async getActiveRepCycle(blockNumber = "latest") {
     const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
+
+    if (addr === ethers.constants.AddressZero) {
+      throw new Error(`No active mining cycle found for block number ${blockNumber}`);
+    }
+
     return new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
   }
 
