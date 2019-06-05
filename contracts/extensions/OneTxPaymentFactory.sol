@@ -26,7 +26,7 @@ import "./OneTxPayment.sol";
 
 
 contract OneTxPaymentFactory is ExtensionFactory, ColonyDataTypes { // ignore-swc-123
-  mapping (address => OneTxPayment) public deployedExtensions;	
+  mapping (address => OneTxPayment) public deployedExtensions;
 
   function deployExtension(address _colony) external {
     require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root");

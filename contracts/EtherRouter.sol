@@ -40,8 +40,8 @@ contract EtherRouter is DSAuth {
     // 1. Contracts that use 'send' or 'transfer' cannot send money to Colonies/ColonyNetwork
     // 2. We commit to never using a fallback function that does anything.
     //
-    // We have decided on option 2 here. In the future, if we wish to have such a fallback function 
-    // for a Colony, it could be in a separate extension contract. 
+    // We have decided on option 2 here. In the future, if we wish to have such a fallback function
+    // for a Colony, it could be in a separate extension contract.
 
     // Get routing information for the called function
     address destination = resolver.lookup(msg.sig);
@@ -50,9 +50,9 @@ contract EtherRouter is DSAuth {
     assembly {
       let size := extcodesize(destination)
       if eq(size, 0) { revert(0,0) }
-	
+
       calldatacopy(mload(0x40), 0, calldatasize)
-      let result := delegatecall(gas, destination, mload(0x40), calldatasize, mload(0x40), 0) // ignore-swc-112 calls are only to trusted contracts 
+      let result := delegatecall(gas, destination, mload(0x40), calldatasize, mload(0x40), 0) // ignore-swc-112 calls are only to trusted contracts
       // as their addresses are controlled by the Resolver which we trust
       returndatacopy(mload(0x40), 0, returndatasize)
       switch result

@@ -61,8 +61,8 @@ contract ReputationMiningCycleDataTypes {
                                           // the binary search
     bytes32 hash2;                        // The hash that is the immediate child on the right hand side of the last hash that was proved during
                                           // the binary search
-                                          // These two hashes are compared, and depending on whether the hashes on the LHS are the same or not, 
-                                          // determines which part of the tree the search continues down looking for the first discrepancy in the 
+                                          // These two hashes are compared, and depending on whether the hashes on the LHS are the same or not,
+                                          // determines which part of the tree the search continues down looking for the first discrepancy in the
                                           // Justification tree.
   }
 
@@ -75,7 +75,7 @@ contract ReputationMiningCycleDataTypes {
 
   /// @notice Event logged when a reputation UID is proven to be correct in a challenge
   event ProveUIDSuccess(uint256 previousNewReputationUID, uint256 _disagreeStateReputationUID, bool existingUID);
-  
+
   /// @notice Event logged when a reputation value is proven to be correct in a challenge
   event ProveValueSuccess(int256 _agreeStateReputationValue, int256 _disagreeStateReputationValue, int256 _originReputationValue);
 }
