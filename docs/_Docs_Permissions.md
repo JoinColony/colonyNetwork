@@ -61,9 +61,9 @@ might have local skillIds assigned as:
 ```
 
 In this example,
-Skill `142` has children: `[147, 159, 254, 307, 696]`
-Skill `147` has children: `[159, 307]`
-Skill `254` has children: `[]`
+* Skill `142` has children: `[147, 159, 254, 307, 696]`
+* Skill `147` has children: `[159, 307]`
+* Skill `254` has children: `[]`
 
 If a user with "Admininstration" authority in domain `2` wants to finalize a payment in domain `5`, they would call:
 
@@ -73,7 +73,9 @@ colony.finalizePayment(2, 1, _paymentId);
 
 The `authDomain` modifier performs the following checks:
 
-1) Whether `msg.sender` has the "Administration" or "Root" permission in domain `2`
-2) Whether the domain of action (in this case domain `5`) is indeed a child of the permission domain `2`, by checking that the second item in the `childSkillIndex` matches the local skill associated with the domain, whatever that may be.   
+* Whether `msg.sender` has the "Administration" or "Root" permission in domain `2`
+* Whether the domain of action (in this case domain `5`) is indeed a child of the permission domain `2`, by checking that the second item in the `childSkillIndex` matches the local skill associated with the domain, whatever that may be.   
 
-Note: Functions authorized by the "Architecture" role check to see that the domain is strictly a child of the permission domain exclusively (not the permission domain itself). Within `ColonyAuthority.sol` you will see this role implemented as both`Architecture` and `ArchitectureSubdomain` roles. This is in order to prohibit an architect from modifying the domain in which the role was given (which would allow them to, for example, remove their co-architect's role). Architects may alter permissions in sub-domains only.
+Note: Functions authorized by the "Architecture" role check to see that the domain is strictly a child of the permission domain exclusively (not the permission domain itself).
+
+Within `ColonyAuthority.sol` you will see this role implemented as both`Architecture` and `ArchitectureSubdomain` roles. This is in order to prohibit an architect from modifying the domain in which the role was given (which would allow them to, for example, remove their co-architect's role). Architects may alter permissions in sub-domains only.

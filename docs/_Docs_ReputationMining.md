@@ -6,73 +6,65 @@ order: 5
 
 ## Running the Mining Client
 
+The reputation mining client can be run locally to sync with a local ganache instance, the `goerli` testnet, or with glider on `mainnet`.
+
 To participate in the reputation mining process you need to have staked at least the [minimum amount of CLNY Tokens](/colonynetwork/interface-ireputationminingcycle#getminstake), for at least [one full mining cycle duration](/colonynetwork/interface-ireputationminingcycle#getminingwindowduration) before you can submit a new reputation root hash.
 
-The reputation mining client can be run locally using the following command and arguments:
+Usage:
+```
+node packages/reputation-miner/bin/index.js (--arguments <params>) [--arguments <params>]
+```
 
-`node packages/reputation-miner/bin/index.js`
+Mandatory arguments:
+```
+(--minerAddress <address>) | (--privateKey <key>)
+(--colonyNetworkAddress <address>)
+(--syncFrom <number>)   // [goerli:'548534', mainnet:'TBD']
+```
+Optional arguments:
+```
+[--network <(goerli|mainnet)>]  
+[--localPort <number>]
+[--dbPath <$PATH>]
+[--auto <(true|false)>]
+```
 
-Available arguments are:
 
-`--minerAddress`
-
-Mandatory to provide either `--minerAddress` or `--privateKey`.
-
+#### `--minerAddress`
 Address of the miner account which the client will send reputation mining contract transactions from. Used when working with an unlocked account for the miner against **development networks only**. We provision twelve unlocked test accounts stored in `ganache-accounts.json` for testing that are available when starting a local ganache-cli instance via `yarn run start:blockchain:client` command.
 
-`--privateKey`
-
-Mandatory to provide either `--minerAddress` or `--privateKey`.
-
+#### `--privateKey`
 Private key of the miner account which the client will sign reputation mining contract transactions with.
 
-`--colonyNetworkAddress`
-
-Mandatory
-
+#### `--colonyNetworkAddress`
 The address of the Colony Network's `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-upgrade-design/) for more information about the EtherRouter design pattern. This address is static on `goerli` and `mainnet`
 `goerli` `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B`
 `mainnet` `TBD`
 
-`--dbPath` 
-
-Optional
-
+#### `--dbPath`
 Path for the sqlite database storing reputation state. Default is `./reputationStates.sqlite`.
 
-`--network`
-
-Optional
-
+#### `--network`
 Used for connecting to a supported Infura node (instead of a local client). Valid options are `goerli` and `mainnet`.
 
-`--localPort`
-
-Optional
-
+#### `--localPort`
 Used to connect to a local clinet running on the specified port. Default is `8545`.
 
-`--syncFrom`
-
-Mandatory 
-
+#### `--syncFrom`
 Block number to start reputation state sync from. This is the block at which the reputation mining process was initialised.
 This number is static on `goerli` and `mainnet`
-`goerli` `548534`
-`mainnet` `TBD`
+`goerli: 548534`
+`mainnet: TBD`
 
-Note that beginning the sync with a too-early block will result in an error. If you get this exception, try increasing the block number you are syncing from.
+Note that beginning the sync with a too-early block will result in an error. If you get this exception, try syncing from a more recent block. Note that the sync process can take long. Latest tests syncing a client from scratch to 28 reputation cycles took ~2 hours.
 
-Note that the sync process can take long. Latest tests syncing a client from scratch to 28 reputation cycles took ~2 hours.
-
-`--auto` 
-
-Optional
-
+#### `--auto`
 Default is `true`
 
-Participate in the mining process automatically. Including proposing a new hash at the first possible block times it is allowed and up to the maximum of 12 submissions (or the number it is allowed to make based on the miner stake of CLNY).
-Responding to challenges in the dispute resolution process when there are disagreeing submissions. And finally confirming the last hash after the mining window closes and any disputes have been resolved.
+The "auto" reputation mining client will:
+* Propose a new hash at the first possible block time, and submit until the maximum number has been reached (based on staked CLNY, with a maximum of 12 submissions allowed)
+* Respond to challenges if there are disagreeing submissions.
+* Confirm the last hash after the mining window closes and any disputes have been resolved.
 
 Reputation mining protocol details can be found in the [Whitepaper TLDR](/colonynetwork/whitepaper-tldr-reputation-mining#submissions)
 
