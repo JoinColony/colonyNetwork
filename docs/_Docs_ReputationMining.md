@@ -6,7 +6,9 @@ order: 5
 
 ## Running the Mining Client
 
-The reputation mining client can be run locally using the following command and arguments
+To participate in the reputation mining process you need to have staked at least the [minimum amount of CLNY Tokens](/colonynetwork/interface-ireputationminingcycle#getminstake), for at least [one full mining cycle duration](/colonynetwork/interface-ireputationminingcycle#getminingwindowduration) before you can submit a new reputation root hash.
+
+The reputation mining client can be run locally using the following command and arguments:
 
 `node packages/reputation-miner/bin/index.js`
 
@@ -71,6 +73,8 @@ Default is `true`
 
 Participate in the mining process automatically. Including proposing a new hash at the first possible block times it is allowed and up to the maximum of 12 submissions (or the number it is allowed to make based on the miner stake of CLNY).
 Responding to challenges in the dispute resolution process when there are disagreeing submissions. And finally confirming the last hash after the mining window closes and any disputes have been resolved.
+
+Reputation mining protocol details can be found in the [Whitepaper TLDR](/colonynetwork/whitepaper-tldr-reputation-mining#submissions)
 
 ## Visualizations
 
