@@ -77,3 +77,25 @@ And find your colony's id (the newest created colony) after the transaction is m
 
 truffle(goerli)> await colonyNetwork.getColonyCount()
 ```
+
+When working with Colony tasks there are a set of functions that work via the `executeTaskChange` and `executeTaskRoleAssignment`. Constructing the transactions for these calls involves working with [parameterized transaction reviews](https://blog.colony.io/parameterized-transaction-reviews-11f0cdc40479/) signed by at least one of the task role members which can be complex. To simplify their execution, we provide a set of convenience functions which you can import in the truffle console via 
+`const sigHelper = require("../helpers/task-review-signing.js")` 
+
+Then to execute a signed task change, for example, cancel a task with id 5, you can call the helper in the truffle console as follows:
+`await sigHelper.executeSignedTaskChange({colony, functionName:"cancelTask",taskId:5, signers:[TASK_MANAGER_ADDRESS], privKeys:[TASK_MANAGER_PRIVATE_KEY], sigTypes: [0],args: [5]})`
+where `colony` is your colony instantiated in the console via `const colony = await IColony.at(COLONY_ADDRESS)`, `TASK_MANAGER_ADDRESS` and `TASK_MANAGER_PRIVATE_KEY` are the address and private key of the manager account for task 5. Note that in this example the task is not yet assigned a worker, otherwise both the signatures and private keys of manager and worker would be required.
+
+### Safely testing transactions against Goerli and Mainnet
+
+If you want to safely test your transactions before executing them against a network, you can fork the target network and do a practice run there. To fork either goerli or mainnet networks with `ganache-cli` use
+
+`yarn run ganache-cli --fork https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d`
+for goerli
+
+`yarn run ganache-cli --fork https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d`
+for mainnet
+
+This will start a local copy of the target network running on `ganache-cli` which amongst other benefits like instant mining and zero gas costs also returns `revert` error messages for failed transctions that are essential in troubleshooting.
+
+Then you can connect via the truffle console to this local node via the usual way `yarn run truffle console`. In the console you can then safely execute your transactions to test their results.
+
