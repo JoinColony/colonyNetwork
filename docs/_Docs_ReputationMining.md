@@ -51,10 +51,9 @@ Used for connecting to a supported Infura node (instead of a local client). Vali
 Used to connect to a local clinet running on the specified port. Default is `8545`.
 
 #### `--syncFrom`
-Block number to start reputation state sync from. This is the block at which the reputation mining process was initialised.
-This number is static on `goerli` and `mainnet`
-`goerli: 548534`
-`mainnet: TBD`
+Block number to start reputation state sync from. This is the block at which the reputation mining process was initialised. This number is static on `goerli` and `mainnet`
+* `goerli: 548534`
+* `mainnet: TBD`
 
 Note that beginning the sync with a too-early block will result in an error. If you get this exception, try syncing from a more recent block. Note that the sync process can take long. Latest tests syncing a client from scratch to 28 reputation cycles took ~2 hours.
 
