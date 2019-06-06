@@ -12,10 +12,10 @@ Currently there are two extensions 'officially' supported, but more may be added
 
 Supported extensions implement a 'factory' design pattern to make deployment straightforward for users, but custom extensions need not follow this pattern. To enable any of the two existing extensions for your colony, you can use the respective Factory contract to generate it. Factory addresses are published in each [colonyNetwork release](https://github.com/JoinColony/colonyNetwork/releases/).
 
-For example, to enable the `OneTxPayment` extension on a `colony` instance of `IColony` on the Goerli testnet:
+For example, to enable the `OneTxPayment` extension on a `colony` instance of `IColony` on the Görli testnet:
 
 ```
-// Instantiate the extension factory on Goerli
+// Instantiate the extension factory on Görli
 const oneTxExtensionFactory = await OneTxPaymentFactory.at("0x3e03f868450ffD588E2cB2034fA2e0F74F9FFbe3")
 
 // Deploy a new OneTxPayment extension contract, dedicated for the colony

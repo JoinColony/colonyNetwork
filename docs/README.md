@@ -25,13 +25,42 @@ Colony is offering substantial rewards to external developers who report bugs an
 
 See the [Bug Bounty program overview](./_bug_rules.md) for more information about bounties, rules, and terms.
 
-## Install
+## Prerequisites
+
+`node` v10.12 or higher (we recommend using `nvm`)
+
+`yarn` v1.13 or higher
+
+`docker` v18 or higher
+
+Add the required solidity compiler by running:
 ```
-git clone https://github.com/JoinColony/colonyNetwork.git
-cd colonyNetwork
-yarn
-git submodule update --init
-yarn run provision:token:contracts
+$ docker pull ethereum/solc:0.5.8
+```
+
+## Installation
+
+In the working directory of your choice, clone the latest version of the colonyNetwork repository:
+
+```
+$ git clone https://github.com/JoinColony/colonyNetwork.git
+```
+
+Move into the directory and install dependencies:
+
+```
+$ cd colonyNetwork && yarn
+```
+
+Update submodule libraries:
+```
+$ git submodule update --init
+```
+
+Provision token contracts for testing:
+
+```
+$ yarn provision:token:contracts
 ```
 
 ## Contracts
@@ -39,10 +68,23 @@ The contract upgradability is using the EtherRouter pattern, see [the delegate p
 
 The `math`, `erc20`, `auth`, `roles` and a significant part of the `token` contract have been reused from the [Dappsys library](https://github.com/dapphub/dappsys-monolithic).
 
-## Testing
-To run all tests:
+### Local Development and Testing
+
+You can start a local test node and deploy the contracts yourself using the locally installed `truffle` package.
+
 ```
-yarn run test:contracts
+yarn start:blockchain:client
+
+yarn truffle migrate --reset --compile-all
+```
+
+To deploy all contracts and run all contract tests:
+```
+yarn test:contracts
+```
+To deploy all contracts and run all reputation mining tests:
+```
+yarn test:reputation
 ```
 To run tests with code coverage using [solidity-coverage](https://github.com/sc-forks/solidity-coverage):
 ```

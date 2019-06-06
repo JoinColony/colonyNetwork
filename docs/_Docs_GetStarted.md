@@ -11,59 +11,21 @@ Either way, if you run into trouble or have any questions/comments, please post 
 
 ==TOC==
 
-## Prerequisites
-
-`node` v10.12 or higher (we recommend using `nvm`)
-
-`yarn` v1.12 or higher
-
-`docker` v18 or higher
-
-Add the required solidity compiler by running:
-```
-$ docker pull ethereum/solc:0.5.8
-```
-
 ## Colony Network
 
-If you intend to work with `glider-rc.1` on the Görli testnet, proceed with installation below, skipping the "local development and testing" section.
+For local development and testing, follow instructions listed in the [repository readme page](https://github.com/JoinColony/colonyNetwork/blob/develop/docs/README.md).
 
+For more detailed instructions, and additional steps required to set up an environment for use with [colonyJS](https://github.com/JoinColony/colonyJS), check out the colonyJS [Local Setup](/colonyjs/intro-local-setup/) documentation.
 
-### Installation
+## `glider-rc.3` on the Görli testnet
 
-In the working directory of your choice, clone the latest version of the colonyNetwork repository:
-
-```
-$ git clone https://github.com/JoinColony/colonyNetwork.git
-```
-
-Move into the directory and install dependencies:
-
-```
-$ cd colonyNetwork && yarn
-```
-
-Update submodule libraries:
-```
-$ git submodule update --init
-```
-
-Provision token contracts for testing:
-
-```
-$ yarn provision:token:contracts
-```
-
-## `glider-rc.1` on the Görli testnet
-
-The [Glider release candidate](https://github.com/JoinColony/colonyNetwork/releases/tag/glider-rc.2) is in many ways a simpler and easier way to experiment than setting up a local development environment, and can be very useful if you're looking to just get a sense of how the colonyNetwork contracts work, or want to build extensions/integrations that remain inside the EVM.
+The [Glider release candidate](https://github.com/JoinColony/colonyNetwork/releases/tag/glider-rc.3) is in many ways a simpler and easier way to experiment than setting up a local development environment, and can be very useful if you're looking to just get a sense of how the colonyNetwork contracts work, or want to build extensions/integrations that remain inside the EVM.
 
 To connect, you'll need to know the address of the colonyNetwork (which is, in reality, the address of the `etherRouter` contract; see [The Delegate Proxy Pattern](/colonynetwork/docs-upgrade-design/) for more info).
 
 `ColonyNetwork`: `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B`
 
 You will also require Görli test ETH, and a deployed ERC20 token to import.
-
 
 ### Access with Remix (good for experimenting)
 
@@ -79,7 +41,7 @@ Navigate to `colonyNetwork/build/flattened/` to find the contracts you need to i
 
 In Remix, instantiate `flatIColonyNetwork.sol` to the `ColonyNetwork` address `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B`
 
-Use the address of your existing ERC20 token contract to `createColony()`, then immidiately use `getColonyCount()` to get your colony's ID.  
+Use the address of your existing ERC20 token contract to `createColony()`, then immidiately use `getColonyCount()` to get your colony's ID.
 
 Call `getColony()` to get your colony's address from the ID, then instantiate `flatIColony.sol` to your colony's address in Remix.
 
@@ -101,7 +63,7 @@ Then, start up the truffle console and connect to testnet:
 ```
 $ yarn truffle console --network goerli
 ```
-In the truffle console, instantiate the IColonyNetwork interface for `glider-rc.1`:
+In the truffle console, instantiate the IColonyNetwork interface on Görli:
 ```
 truffle(goerli)> let colonyNetwork = await IColonyNetwork.at("0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B")
 
@@ -115,23 +77,3 @@ And find your colony's id (the newest created colony) after the transaction is m
 
 truffle(goerli)> await colonyNetwork.getColonyCount()
 ```
-### Local Development and Testing
-
-You can start a local test node and deploy the contracts yourself using the locally installed `truffle` package.
-
-```
-yarn start:blockchain:client
-
-yarn truffle migrate --reset --compile-all
-```
-
-To deploy all contracts and run all contract tests:
-```
-yarn test:contracts
-```
-To deploy all contracts and run all reputation mining tests:
-```
-yarn test:reputation
-```
-
-For more detailed instructions, and additional steps required to set up an environment for use with [colonyJS](https://github.com/JoinColony/colonyJS), check out the colonyJS [Local Setup](/colonyjs/intro-local-setup/) documentation.
