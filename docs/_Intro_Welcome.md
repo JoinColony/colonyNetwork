@@ -27,7 +27,7 @@ The Colony Network is the infrastructure upon which all colonies run.
 
 The colonyNetwork repository contains the solidity implementation of Colony, which is developed as free software. See our [guidelines](https://github.com/JoinColony/colonyNetwork/blob/develop/docs/CONTRIBUTING.md) if you're interested in contributing to the colonyNetwork codebase. Developers interested in contributing to the Colony Network are encouraged to look at the code on [GitHub](https://github.com/JoinColony/colonyNetwork), and to come say hi on [Gitter](https://gitter.im/JoinColony/colonyNetwork).
 
-The current colonyNetwork release is [glider](/colonynetwork/docs-releases). Glider implements some, but not all, of the Colony Protocol:
+The current colonyNetwork release is [glider](https://github.com/JoinColony/colonyNetwork/releases). Glider implements some, but not all, of the Colony Protocol:
 
 * Ownership and permissions (through roles)
 * Reputation
@@ -38,9 +38,9 @@ The current colonyNetwork release is [glider](/colonynetwork/docs-releases). Gli
 
 The Colony Network is maintained and improved by the [Meta Colony](/colonynetwork/tldr-the-meta-colony-and-clny) (which is, itself, a colony on the network with special permissions).
 
-Membership in the Metacolony is open to all (and heartily encouraged!), but changes such as [network upgrades](/colonynetwork/docs-the-delegate-proxy-pattern/) require a minimum *reputation* within the Metacolony to proceed.
+Membership in the Metacolony is open to all (and heartily encouraged!), but changes such as [network upgrades](/colonynetwork/docs-upgrade-design/) require a minimum *reputation* within the Metacolony to proceed.
 
-### colonyJS (and colonyStarter?)
+### colonyJS
 colonyJS is a JavaScript library designed to make interaction with the Colony Network as straightforward as possible for (d)app developers.
 
 Using colonyJS, all of the functions of a colony can be imported and called as methods within a JavaScript application.

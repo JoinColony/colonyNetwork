@@ -1,11 +1,8 @@
 ---
 title: Get Started
 section: Docs
-order: 7
+order: 1
 ---
-
-There are a few ways to get started with the colonyNetwork contracts, depending on who you are and what you want to do.
-
 This page details how to engage purely on the contract-level, and is intended more for developers looking to contribute new features, extensions, or contract-level integrations. See our [guidelines](https://github.com/JoinColony/colonyNetwork/blob/develop/docs/CONTRIBUTING.md) if you're interested in contributing to the colonyNetwork codebase.
 
 If you're a dapp developer looking to integrate with colony, we recommend using [colonyJS](/colonyjs/intro-welcome/) as an entry point. There you'll find analogous instructions better suited to building applications on top of the colonyNetwork. For those without patience, we have built a [colonyStarter kit](/colonystarter/docs-overview/) which contains boilerplate examples for dapp development, including frontend frameworks like react, and is the fastest way to start building with Colony.
@@ -14,75 +11,21 @@ Either way, if you run into trouble or have any questions/comments, please post 
 
 ==TOC==
 
-## Prerequisites
-
-### Node
-
-You will need to have `node` installed. We recommended using `node` version `10.12.0`. An easy solution for managing `node` versions is `nvm`. If you do not have `node` installed, check out [Download Node](https://nodejs.org/en/download/) or [Node Package Manager](https://github.com/creationix/nvm).
-
-### Yarn
-
-You will also need to install `yarn`. We recommended using `yarn` version `1.12.0` or higher. Check out the [Yarn Installation](https://yarnpkg.com/lang/en/docs/install/#mac-stable) documentation and then select your operating system for install instructions.
-
-It is possible to use `npm` instead of `yarn`, but you'll need to adapt any instructions yourself ;).
-
-### Docker
-
-In order to compile the colonyNetwork smart contracts, you will need to have Docker installed and running. We recommend using Docker Community Version `2.0.0.0`. You can find instructions for installing Docker here: [Docker Installation](https://docs.docker.com/install/).
-
-The colonyNetwork smart contracts require the `ethereum/solc:0.5.8` Docker image, so we will need to pull it down before we can begin.
-
-Make sure Docker is installed and then run the following command.
-
-```
-docker pull ethereum/solc:0.5.8
-```
-
 ## Colony Network
 
-If you intend to work with `glider-rc.1` on the Görli testnet, proceed with installation below, skipping the "local development and testing" section.
+For local development and testing, follow instructions listed in the [repository readme page](https://github.com/JoinColony/colonyNetwork/blob/develop/docs/README.md).
 
+For more detailed instructions, and additional steps required to set up an environment for use with [colonyJS](https://github.com/JoinColony/colonyJS), check out the colonyJS [Local Setup](/colonyjs/intro-local-setup/) documentation.
 
-### Installation
+## `glider-rc.3` on the Görli testnet
 
-For testing and development, we will set up a local test network and then deploy the [colonyNetwork](https://github.com/JoinColony/colonyNetwork) smart contracts to that local test network.
+The [Glider release candidate](https://github.com/JoinColony/colonyNetwork/releases/tag/glider-rc.3) is in many ways a simpler and easier way to experiment than setting up a local development environment, and can be very useful if you're looking to just get a sense of how the colonyNetwork contracts work, or want to build extensions/integrations that remain inside the EVM.
 
-The first order of business will be pulling down the colonyNetwork repository, which includes some simple script commands that will help us get the colonyNetwork smart contracts set up and ready for testing and development.
-
-In the working directory of your choice, clone the latest version of the colonyNetwork repository.
-
-```
-git clone https://github.com/JoinColony/colonyNetwork.git
-```
-
-Next, we will need to move into the colonyNetwork directory and run `yarn` to install the required node packages.
-
-```
-cd colonyNetwork && yarn
-```
-
-The colonyNetwork repository includes a few submodules, so we will need to add them to our project and make sure we are using the version defined in the colonyNetwork repository index.
-
-```
-git submodule update --init
-```
-
-The final step for installation is copying over some of the files from our submodules into our build directory, which we made easy for you with a simple script command.
-
-```
-yarn run provision:token:contracts
-```
-
-## `glider-rc.1` on the Görli testnet
-
-The [Glider release candidate](/colonynetwork/docs-releases/) is in many ways a simpler and easier way to experiment than setting up a local development environment, and can be very useful if you're looking to just get a sense of how the colonyNetwork contracts work, or want to build extensions/integrations that remain inside the EVM.
-
-To connect, you'll need to know the address of the colonyNetwork (which is, in reality, the address of the `etherRouter` contract; see [The Delegate Proxy Pattern](/colonynetwork/docs-the-delegate-proxy-pattern/) for more info).
+To connect, you'll need to know the address of the colonyNetwork (which is, in reality, the address of the `etherRouter` contract; see [upgrade design](/colonynetwork/docs-upgrade-design/) for more info).
 
 `ColonyNetwork`: `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B`
 
 You will also require Görli test ETH, and a deployed ERC20 token to import.
-
 
 ### Access with Remix (good for experimenting)
 
@@ -96,9 +39,9 @@ $ yarn flatten:contracts
 
 Navigate to `colonyNetwork/build/flattened/` to find the contracts you need to import to Remix.
 
-In Remix, you'll need to instantiate `flatIColonyNetwork.sol` to the `ColonyNetwork` address `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B` in order to create a new colony.
+In Remix, instantiate `flatIColonyNetwork.sol` to the `ColonyNetwork` address `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B`
 
-Use the address of your existing ERC20 token contract to `createColony()`, then immidiately use `getColonyCount()` to get your colony's ID.  
+Use the address of your existing ERC20 token contract to `createColony()`, then immidiately use `getColonyCount()` to get your colony's ID.
 
 Call `getColony()` to get your colony's address from the ID, then instantiate `flatIColony.sol` to your colony's address in Remix.
 
@@ -120,7 +63,7 @@ Then, start up the truffle console and connect to testnet:
 ```
 $ yarn truffle console --network goerli
 ```
-In the truffle console, instantiate the IColonyNetwork interface for `glider-rc.1`:
+In the truffle console, instantiate the IColonyNetwork interface on Görli:
 ```
 truffle(goerli)> let colonyNetwork = await IColonyNetwork.at("0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B")
 
@@ -134,23 +77,34 @@ And find your colony's id (the newest created colony) after the transaction is m
 
 truffle(goerli)> await colonyNetwork.getColonyCount()
 ```
-### Local Development and Testing
 
-You can start a local test node and deploy the contracts yourself using the locally installed `truffle` package.
+**Helpers for multisig**
+Constructing multisig transactions is required for certain parts of the task workflow. These transactions involve [parameterized transaction reviews](https://blog.colony.io/parameterized-transaction-reviews-11f0cdc40479/) signed by at least one of the task role members. The operations work through the `executeTaskChange` and `executeTaskRoleAssignment` methods.  
 
-```
-yarn run start:blockchain:client
+To simplify their execution, we provide a set of convenience functions which you can import in the truffle console via
+`const sigHelper = require("../helpers/task-review-signing.js")`
 
-yarn truffle migrate --reset --compile-all
+To execute a signed task change, for example, cancel a task with id 5, you can call the helper in the truffle console as follows:
 ```
-
-To deploy all contracts and run all contract tests:
-```
-yarn test:contracts
-```
-To deploy all contracts and run all reputation mining tests:
-```
-yarn test:reputation
+await sigHelper.executeSignedTaskChange({colony, functionName:"cancelTask",taskId:5, signers:[TASK_MANAGER_ADDRESS], privKeys:[TASK_MANAGER_PRIVATE_KEY], sigTypes: [0],args: [5]})
 ```
 
-For more detailed instructions, and additional steps required to set up an environment for use with [colonyJS](https://github.com/JoinColony/colonyJS), check out the colonyJS [Local Setup](/colonyjs/intro-local-setup/) documentation.
+`colony` is your colony instantiated in the console via `const colony = await IColony.at(COLONY_ADDRESS)`.
+
+`TASK_MANAGER_ADDRESS` and `TASK_MANAGER_PRIVATE_KEY` are the address and private key of the manager account for task 5.
+
+Note that in this example the task is not yet assigned a worker, otherwise both the signatures and private keys of manager and worker would be required.
+
+### Safely testing transactions against Goerli and Mainnet
+
+If you want to safely test your transactions before executing them against a network, you can fork the target network and do a practice run there. To fork either goerli or mainnet networks with `ganache-cli` use
+
+`yarn run ganache-cli --fork https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d`
+for goerli
+
+`yarn run ganache-cli --fork https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d`
+for mainnet
+
+This will start a local copy of the target network running on `ganache-cli` which returns `revert` error messages for failed transactions that are essential in troubleshooting. Other benefits of the forked network include instant mining and zero gas costs.
+
+Then you can connect via the truffle console to this local node via the usual way `yarn run truffle console`. In the console you can then safely execute your transactions to test their results.

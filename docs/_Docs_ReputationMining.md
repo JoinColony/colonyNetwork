@@ -1,50 +1,93 @@
 ---
 title: Reputation Mining Client
 section: Docs
-order: 6
+order: 5
 ---
 
-## Goerli Testnet
+## Running the Mining Client
 
-You can start the reputation mining client against the Goerli testnet using the following command:
+The reputation mining client can be run locally to sync with a local ganache instance, the `goerli` testnet, or with glider on `mainnet`.
 
+To participate in the reputation mining process you need to have staked at least the [minimum amount of CLNY Tokens](/colonynetwork/interface-ireputationminingcycle#getminstake), for at least [one full mining cycle duration](/colonynetwork/interface-ireputationminingcycle#getminingwindowduration) before you can submit a new reputation root hash.
+
+Usage:
 ```
-node ./packages/reputation-miner/bin/index.js --network goerli --colonyNetworkAddress 0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B --syncFrom 548534 --privateKey YOUR_PRIVATE_KEY
-```
-
-## Local Network
-
-### Start Mining Client
-
-You can start the reputation mining client against a local chain using the following command:
-
-```
-node packages/reputation-miner/bin/index.js --colonyNetworkAddress COLONY_NETWORK_ADDRESS --minerAddress MINER_ADDRESS --syncFrom BLOCK_NO
+node packages/reputation-miner/bin/index.js (--arguments <params>) [--arguments <params>]
 ```
 
-The `MINER_ADDRESS` in the execution above is the sixth account in `ganache-accounts.json` if running locally using the default migrations.
+Mandatory arguments:
+```
+(--minerAddress <address>) | (--privateKey <key>)
+(--colonyNetworkAddress <address>)
+(--syncFrom <number>)   // [goerli:'548534', mainnet:'TBD']
+```
+Optional arguments:
+```
+[--network <(goerli|mainnet)>]  
+[--localPort <number>]
+[--dbPath <$PATH>]
+[--auto <(true|false)>]
+```
 
-The `colonyNetwork` address in the execution above is not the address outputted at contract deployment, but is the address of the Colony Network `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-the-delegate-proxy-pattern/) for more information about the EtherRouter design pattern.
 
-Due to a quirk with the mining cycle events, beginning the sync with a too-early block will result in an error. If you get this exception, try increasing the `BLOCK_NO`.
+#### `--minerAddress`
+Address of the miner account which the client will send reputation mining contract transactions from. Used when working with an unlocked account for the miner against **development networks only**. We provision twelve unlocked test accounts stored in `ganache-accounts.json` for testing that are available when starting a local ganache-cli instance via `yarn run start:blockchain:client` command.
+
+#### `--privateKey`
+Private key of the miner account which the client will sign reputation mining contract transactions with.
+
+#### `--colonyNetworkAddress`
+The address of the Colony Network's `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-upgrade-design/) for more information about the EtherRouter design pattern. This address is static on `goerli` and `mainnet`
+`goerli` `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B`
+`mainnet` `TBD`
+
+#### `--dbPath`
+Path for the sqlite database storing reputation state. Default is `./reputationStates.sqlite`.
+
+#### `--network`
+Used for connecting to a supported Infura node (instead of a local client). Valid options are `goerli` and `mainnet`.
+
+#### `--localPort`
+Used to connect to a local clinet running on the specified port. Default is `8545`.
+
+#### `--syncFrom`
+Block number to start reputation state sync from. This is the block at which the reputation mining process was initialised. This number is static on `goerli` and `mainnet`
+* `goerli: 548534`
+* `mainnet: TBD`
+
+Note that beginning the sync with a too-early block will result in an error. If you get this exception, try syncing from a more recent block. Note that the sync process can take long. Latest tests syncing a client from scratch to 28 reputation cycles took ~2 hours.
+
+#### `--auto`
+Default is `true`
+
+The "auto" reputation mining client will:
+* Propose a new hash at the first possible block time, and submit until the maximum number has been reached (based on staked CLNY, with a maximum of 12 submissions allowed)
+* Respond to challenges if there are disagreeing submissions.
+* Confirm the last hash after the mining window closes and any disputes have been resolved.
+
+Reputation mining protocol details can be found in the [Whitepaper TLDR](/colonynetwork/whitepaper-tldr-reputation-mining#submissions)
+
+## Visualizations
+
+The reputation mining client comes with a set of built-in visualizers to make it easier to view reputation states and to see the current state of the mining process. Once a mining client is running and connected to a network, navigate to the client's address in a browser (i.e. `http://localhost:3000/`) to access the available visualization tools.
 
 ### Force Reputation Updates
 
 The client is set to provide a reputation update once every 24 hours. For testing, you'll likely want to "fast-forward" your network through a few submissions to see usable reputation.
 
-You can move the network forward by an hour with the following command.
+You can move the network forward by 24 hours with the following command.
 
 ```
 curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_increaseTime","params":[86400],"id": 1}' localhost:8545
 ```
 
-Once you have moved the network forward by an hour, you can then mine a new block with the following command.
+Once you have moved the network forward 24 hours, you can then mine a new block with the following command.
 
 ```
 curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_mine","params":[]}' localhost:8545
 ```
 
-Note that because reputation is awarded for the *previous* submission window, you will need to use the "fast-forward" command above to speed through at least 3 reputation updates before noticing a change in the miner's reputation.
+Note that because reputation is awarded for the *previous* submission window, you will need to use the "fast-forward" command above to speed through at least 2 reputation updates before noticing a change in the miner's reputation.
 
 ## Get Reputation from the Reputation Oracle
 
@@ -67,7 +110,3 @@ The oracle should return something similar to the following.
 ```
 {"branchMask":"0x8000000000000000000000000000000000000000000000000000000000000000","siblings":["0x32c047a86aec6bbbfc1510bb2dd3a9086ec70b7524bd6f92ce1a12dfc7be32ca"],"key":"0x1133560db4aebbebc712d4273c8e3137f58c3a6500000000000000000000000000000000000000000000000000000000000000023a965407ced5e62c5ad71de491ce7b23da5331a4","value":"0x0000000000000000000000000000000000000000000000410d586a20a4c000000000000000000000000000000000000000000000000000000000000000000003","reputationAmount":"0"}
 ```
-
-## Visualizations
-
-The reputation mining client comes with a set of built-in visualizers to make it easier to view reputation states and to see the current state of the mining process. Once a mining client is running and connected to a network, navigate to the client's address in a browser (i.e. `http://localhost:3000/`) to access the available visualization tools.
