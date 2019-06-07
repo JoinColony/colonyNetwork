@@ -575,9 +575,8 @@ contract("Colony Network Auction", accounts => {
     ];
 
     auctionPropsLowQuantitiesHighPrice.forEach(async auctionProp => {
-      it(`should correctly accept bids at high price and finalise auction for quantity ${auctionProp.quantity} at day open ${
-        auctionProp.daysOpen
-      }`, async () => {
+      it(`should correctly accept bids at high price and finalise auction for quantity ${auctionProp.quantity}
+      at day open ${auctionProp.daysOpen}`, async () => {
         await otherToken.mint(colonyNetwork.address, auctionProp.quantity);
         const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
         const auctionAddress = logs[0].args.auction;
