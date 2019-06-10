@@ -39,7 +39,7 @@ Private key of the miner account which the client will sign reputation mining co
 #### `--colonyNetworkAddress`
 The address of the Colony Network's `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-upgrade-design/) for more information about the EtherRouter design pattern. This address is static on `goerli` and `mainnet`
 `goerli` `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B`
-`mainnet` `TBD`
+`mainnet` `0x5346d0f80e2816fad329f2c140c870ffc3c3e2ef`
 
 #### `--dbPath`
 Path for the sqlite database storing reputation state. Default is `./reputationStates.sqlite`.
@@ -53,7 +53,7 @@ Used to connect to a local clinet running on the specified port. Default is `854
 #### `--syncFrom`
 Block number to start reputation state sync from. This is the block at which the reputation mining process was initialised. This number is static on `goerli` and `mainnet`
 * `goerli: 548534`
-* `mainnet: TBD`
+* `mainnet: 7913100`
 
 Note that beginning the sync with a too-early block will result in an error. If you get this exception, try syncing from a more recent block. Note that the sync process can take long. Latest tests syncing a client from scratch to 28 reputation cycles took ~2 hours.
 
