@@ -36,7 +36,7 @@ The current colonyNetwork release is [glider](https://github.com/JoinColony/colo
 * Tasks and work ratings
 
 
-The Colony Network is maintained and improved by the [Meta Colony](/colonynetwork/tldr-the-meta-colony-and-clny) (which is, itself, a colony on the network with special permissions).
+The Colony Network is maintained and improved by the [Meta Colony](/colonynetwork/whitepaper-tldr-the-meta-colony-and-clny) (which is, itself, a colony on the network with special permissions).
 
 Membership in the Metacolony is open to all (and heartily encouraged!), but changes such as [network upgrades](/colonynetwork/docs-upgrade-design/) require a minimum *reputation* within the Metacolony to proceed.
 
