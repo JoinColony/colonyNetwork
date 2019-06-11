@@ -18,6 +18,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
+const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
 contract("Colony Network", accounts => {
   const SAMPLE_RESOLVER = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
@@ -363,6 +364,22 @@ contract("Colony Network", accounts => {
 
       // Can't register two labels for a user
       await checkErrorRevert(colonyNetwork.registerUserLabel(username2, orbitDBAddress, { from: accounts[1] }), "colony-user-label-already-owned");
+    });
+
+    it("colony should not be able to register a user label for itself", async () => {
+      const { colony } = await setupRandomColony(colonyNetwork);
+
+      const latestVersion = await colonyNetwork.getCurrentColonyVersion();
+      const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
+      const resolver = await Resolver.at(resolverAddress);
+
+      const functionsNotAvailableOnColony = await FunctionsNotAvailableOnColony.new();
+      await resolver.register("registerUserLabel(string,string)", functionsNotAvailableOnColony.address);
+      const fakeColony = await FunctionsNotAvailableOnColony.at(colony.address);
+      await checkErrorRevert(fakeColony.registerUserLabel("test", orbitDBAddress), "colony-caller-must-not-be-colony");
+
+      const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(colony.address);
+      expect(lookedUpENSDomain).to.not.equal("test.user.joincolony.eth");
     });
 
     it("should be able to register one unique label per colony, with root permission", async () => {
