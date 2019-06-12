@@ -3,7 +3,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
-import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
+import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent, getColonyEditable } from "../../helpers/test-helper";
 import { GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
@@ -18,6 +18,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
+const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
 contract("Colony Network", accounts => {
   const SAMPLE_RESOLVER = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
@@ -122,8 +123,22 @@ contract("Colony Network", accounts => {
       await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-already-initialised");
     });
 
+    it("should not allow initialisation if the clny token is 0", async () => {
+      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
+      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-clny-token-invalid-address");
+    });
+
     it("should not allow another mining cycle to start if the process isn't initialised", async () => {
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-not-initialised");
+    });
+
+    it("should not allow another mining cycle to start if the clny token is 0", async () => {
+      await colonyNetwork.initialiseReputationMining();
+      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
+      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+
+      await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-clny-token-invalid-address");
     });
   });
 
@@ -363,6 +378,22 @@ contract("Colony Network", accounts => {
 
       // Can't register two labels for a user
       await checkErrorRevert(colonyNetwork.registerUserLabel(username2, orbitDBAddress, { from: accounts[1] }), "colony-user-label-already-owned");
+    });
+
+    it("colony should not be able to register a user label for itself", async () => {
+      const { colony } = await setupRandomColony(colonyNetwork);
+
+      const latestVersion = await colonyNetwork.getCurrentColonyVersion();
+      const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
+      const resolver = await Resolver.at(resolverAddress);
+
+      const functionsNotAvailableOnColony = await FunctionsNotAvailableOnColony.new();
+      await resolver.register("registerUserLabel(string,string)", functionsNotAvailableOnColony.address);
+      const fakeColony = await FunctionsNotAvailableOnColony.at(colony.address);
+      await checkErrorRevert(fakeColony.registerUserLabel("test", orbitDBAddress), "colony-caller-must-not-be-colony");
+
+      const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(colony.address);
+      expect(lookedUpENSDomain).to.not.equal("test.user.joincolony.eth");
     });
 
     it("should be able to register one unique label per colony, with root permission", async () => {
