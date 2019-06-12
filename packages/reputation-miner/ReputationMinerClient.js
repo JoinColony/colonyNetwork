@@ -1,6 +1,7 @@
 const ethers = require("ethers");
 const express = require("express");
 const path = require('path');
+const request = require('request-promise');
 
 const ReputationMiner = require("./ReputationMiner");
 
@@ -181,35 +182,29 @@ class ReputationMinerClient {
     }
   }
 
-  async updateGasEstimate(block) {
-    // Get the average from this block
-    // Logic mostly taken from https://github.com/MetaMask/eth-gas-price-suggestor which
-    // sadly doesn't actually work any more, otherwise I'd have just used it.
-    const gasPriceSum = block.transactions
-    .map(tx => ethers.utils.bigNumberify(tx.gasPrice))
-    .reduce((result, gasPrice) => {
-      return result.add(gasPrice)
-    }, new ethers.utils.bigNumberify(0)); // eslint-disable-line new-cap
+  async updateGasEstimate(type) {
+    // Get latest from ethGasStation
+    const options = {
+      uri: 'https://ethgasstation.info/json/ethgasAPI.json',
+      headers: {
+          'User-Agent': 'Request-Promise'
+      },
+      json: true // Automatically parses the JSON string in the response
+    };
+    try {
+      const gasEstimates = await request(options);
+      console.log(gasEstimates, type, gasEstimates[type])
 
-    let average = ethers.utils.bigNumberify(20000000000);
-    if (block.transactions.length > 0){
-      average = gasPriceSum.div(block.transactions.length)
+      if (gasEstimates[type]){
+        this._miner.gasPrice = ethers.utils.hexlify(gasEstimates[type]/10 * 1e9);
+      } else {
+        this._miner.gasPrice = ethers.utils.hexlify(20000000000);
+      }
+    } catch (err) {
+      console.log(err);
+      this._miner.gasPrice = ethers.utils.hexlify(20000000000);
     }
-    this.gasBlockAverages.push(average);
-
-    if (this.gasBlockAverages.length > 10) {
-      this.gasBlockAverages.shift()
-    }
-
-    this._miner.gasPrice = ethers.utils.hexlify(
-      this.gasBlockAverages.reduce(
-        (total, sum) => {
-          return total.add(sum)
-        },
-        ethers.utils.bigNumberify(0)
-      ).div(this.gasBlockAverages.length)
-    );
-    // console.log("Average gas price from last 10 blocks: ", this._miner.gasPrice);
+    console.log(this._miner.gasPrice);
   }
 
   /**
@@ -228,7 +223,6 @@ class ReputationMinerClient {
       // DO NOT PUT ANY AWAITS ABOVE THIS LINE OR YOU WILL GET RACE CONDITIONS
 
       const block = await this._miner.realProvider.getBlock(blockNumber, true);
-      await this.updateGasEstimate(block);
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
       const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
@@ -245,6 +239,7 @@ class ReputationMinerClient {
           if (canSubmit) {
             console.log("⏰ Looks like it's time to submit an entry to the current cycle");
             this.submissionIndex += 1;
+            await this.updateGasEstimate('safeLow');
             await this.submitEntry(entryIndex);
           }
         }
@@ -287,7 +282,8 @@ class ReputationMinerClient {
               return;
             }
           }
-          await repCycle.invalidateHash(round, oppIndex);
+          await this.updateGasEstimate('safeLow');
+          await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
           this.endDoBlockChecks();
           return;
         }
@@ -297,7 +293,8 @@ class ReputationMinerClient {
         const opponentTimeout = ethers.utils.bigNumberify(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600);
         if (opponentTimeout){
           // If so, invalidate them.
-          await repCycle.invalidateHash(round, oppIndex);
+          await this.updateGasEstimate('safeLow');
+          await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
           this.endDoBlockChecks();
           return;
         }
@@ -306,6 +303,7 @@ class ReputationMinerClient {
         // Our opponent hasn't timed out yet. We should check if we can respond to something though
         // 1. Do we still need to confirm JRH?
         if (submission.jrhNNodes.eq(0)) {
+          await this.updateGasEstimate('fast');
           await this._miner.confirmJustificationRootHash();
         // 2. Are we in the middle of a binary search?
         // Check our opponent has confirmed their JRH, and the binary search is ongoing.
@@ -314,6 +312,7 @@ class ReputationMinerClient {
           // We can respond if neither of us have responded to this stage yet or
           // if they have responded already
           if (oppEntry.challengeStepCompleted.gte(entry.challengeStepCompleted)) {
+            await this.updateGasEstimate('fast');
             await this._miner.respondToBinarySearchForChallenge();
           }
         // 3. Are we at the end of a binary search and need to confirm?
@@ -324,6 +323,7 @@ class ReputationMinerClient {
           ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNNodes)
         )
         {
+          await this.updateGasEstimate('fast');
           await this._miner.confirmBinarySearchResult();
         // 4. Is the binary search confirmed, and we need to respond to challenge?
         // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
@@ -333,6 +333,7 @@ class ReputationMinerClient {
             ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNNodes)
           )
         {
+          await this.updateGasEstimate('fast');
           await this._miner.respondToChallenge();
         }
       }
@@ -341,6 +342,7 @@ class ReputationMinerClient {
         // If the submission window is closed and we are the last hash, confirm it
         this.best12Submissions = []; // Clear the submissions
         this.submissionIndex = 0;
+        await this.updateGasEstimate('safeLow');
         await this.confirmEntry();
       }
       this.endDoBlockChecks();

@@ -19,6 +19,8 @@
     "ethers": "^4.0.37",
     "express": "^4.16.3",
     "ganache-core": "^2.8.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4",
     "sqlite": "^3.0.2",
     "web3-utils": "^1.0.0",
     "yargs": "^14.0.0"
