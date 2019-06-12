@@ -79,6 +79,19 @@ contract("Colony Recovery", accounts => {
       expect(numRecoveryRoles).to.eq.BN(2);
     });
 
+    it.skip("should not allow more than the maximum users allowed to have recovery role", async function maximumRecoveryUsersTest() {
+      // Besides the fact it takes a long time, this test is also very expensive. It currently runs out of funds
+      // half way through the for-loop below so come back to it if there's need in future
+      this.timeout(100000000);
+      const uint64Max = 2 ** 64;
+      for (let i = 0; i < uint64Max; i += 1) {
+        const user = web3.utils.randomHex(20);
+        await colony.setRecoveryRole(user);
+      }
+      const userX = web3.utils.randomHex(20);
+      await checkErrorRevert(colony.setRecoveryRole(userX), "colony-maximum-num-recovery-roles");
+    });
+
     it("should not be able to add and remove roles when in recovery", async () => {
       await colony.enterRecoveryMode();
       await checkErrorRevert(colony.setAdministrationRole(1, 0, accounts[1], 1, true), "colony-in-recovery-mode");
