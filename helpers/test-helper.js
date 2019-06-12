@@ -15,6 +15,7 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 const Resolver = artifacts.require("Resolver");
+const ContractEditing = artifacts.require("ContractEditing");
 
 const { expect } = chai;
 
@@ -698,4 +699,14 @@ export async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId,
     }
   }
   throw Error("Supplied child domain is not a child of the supplied parent domain");
+}
+
+export async function getColonyUnderRecovery(colony, colonyNetwork) {
+  const colonyVersion = await colony.version();
+  const colonyResolverAddress = await colonyNetwork.getColonyVersionResolver(colonyVersion);
+  const colonyResolver = await Resolver.at(colonyResolverAddress);
+  const contractEditing = await ContractEditing.new();
+  await colonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
+  const colonyUnderRecovery = await ContractEditing.at(colony.address);
+  return colonyUnderRecovery;
 }
