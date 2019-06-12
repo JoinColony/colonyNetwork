@@ -4,7 +4,15 @@ import { ethers } from "ethers";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { getTokenArgs, web3GetTransactionReceipt, web3GetCode, checkErrorRevert, forwardTime, getBlockTime } from "../../helpers/test-helper";
+import {
+  getTokenArgs,
+  web3GetTransactionReceipt,
+  web3GetCode,
+  checkErrorRevert,
+  forwardTime,
+  getBlockTime,
+  getColonyEditable
+} from "../../helpers/test-helper";
 import { WAD, SECONDS_PER_DAY } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken, giveUserCLNYTokens } from "../../helpers/test-data-generator";
 
@@ -61,6 +69,17 @@ contract("Colony Network Auction", accounts => {
 
     it("should fail with a zero address token", async () => {
       await checkErrorRevert(colonyNetwork.startTokenAuction(ethers.constants.AddressZero), "colony-auction-invalid-token");
+    });
+
+    it("should fail with a zero clny token", async () => {
+      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
+      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+
+      const args = getTokenArgs();
+      token = await Token.new(...args);
+      await token.unlock();
+      await token.mint(colonyNetwork.address, quantity);
+      await checkErrorRevert(colonyNetwork.startTokenAuction(token.address), "colony-auction-invalid-clny-token");
     });
 
     it("should burn tokens if auction is initialised for the CLNY token", async () => {
