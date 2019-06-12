@@ -13,6 +13,8 @@ chai.use(bnChai(web3.utils.BN));
 
 const DutchAuction = artifacts.require("DutchAuction");
 const Token = artifacts.require("Token");
+const ContractEditing = artifacts.require("ContractEditing");
+const Resolver = artifacts.require("Resolver");
 
 contract("Colony Network Auction", accounts => {
   const BIDDER_1 = accounts[1];
@@ -61,6 +63,23 @@ contract("Colony Network Auction", accounts => {
 
     it("should fail with a zero address token", async () => {
       await checkErrorRevert(colonyNetwork.startTokenAuction(ethers.constants.AddressZero), "colony-auction-invalid-token");
+    });
+
+    it("should fail with a zero clny token", async () => {
+      const metaColonyVersion = await metaColony.version();
+      const metaColonyResolverAddress = await colonyNetwork.getColonyVersionResolver(metaColonyVersion);
+      const metaColonyResolver = await Resolver.at(metaColonyResolverAddress);
+      const contractEditing = await ContractEditing.new();
+      await metaColonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
+
+      const metaColonyUnderRecovery = await ContractEditing.at(metaColony.address);
+      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+
+      const args = getTokenArgs();
+      token = await Token.new(...args);
+      await token.unlock();
+      await token.mint(colonyNetwork.address, quantity);
+      await checkErrorRevert(colonyNetwork.startTokenAuction(token.address), "colony-auction-invalid-clny-token");
     });
 
     it("should burn tokens if auction is initialised for the CLNY token", async () => {
