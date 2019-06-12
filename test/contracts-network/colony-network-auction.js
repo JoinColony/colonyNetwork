@@ -4,7 +4,15 @@ import { ethers } from "ethers";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { getTokenArgs, web3GetTransactionReceipt, web3GetCode, checkErrorRevert, forwardTime, getBlockTime } from "../../helpers/test-helper";
+import {
+  getTokenArgs,
+  web3GetTransactionReceipt,
+  web3GetCode,
+  checkErrorRevert,
+  forwardTime,
+  getBlockTime,
+  getColonyUnderRecovery
+} from "../../helpers/test-helper";
 import { WAD, SECONDS_PER_DAY } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken, giveUserCLNYTokens } from "../../helpers/test-data-generator";
 
@@ -13,8 +21,6 @@ chai.use(bnChai(web3.utils.BN));
 
 const DutchAuction = artifacts.require("DutchAuction");
 const Token = artifacts.require("Token");
-const ContractEditing = artifacts.require("ContractEditing");
-const Resolver = artifacts.require("Resolver");
 
 contract("Colony Network Auction", accounts => {
   const BIDDER_1 = accounts[1];
@@ -66,13 +72,7 @@ contract("Colony Network Auction", accounts => {
     });
 
     it("should fail with a zero clny token", async () => {
-      const metaColonyVersion = await metaColony.version();
-      const metaColonyResolverAddress = await colonyNetwork.getColonyVersionResolver(metaColonyVersion);
-      const metaColonyResolver = await Resolver.at(metaColonyResolverAddress);
-      const contractEditing = await ContractEditing.new();
-      await metaColonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
-
-      const metaColonyUnderRecovery = await ContractEditing.at(metaColony.address);
+      const metaColonyUnderRecovery = await getColonyUnderRecovery(metaColony, colonyNetwork);
       await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
 
       const args = getTokenArgs();
