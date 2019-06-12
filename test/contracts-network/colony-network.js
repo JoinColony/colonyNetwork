@@ -3,7 +3,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
-import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent, getColonyUnderRecovery } from "../../helpers/test-helper";
+import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent, getColonyEditable } from "../../helpers/test-helper";
 import { GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
@@ -124,7 +124,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should not allow initialisation if the clny token is 0", async () => {
-      const metaColonyUnderRecovery = await getColonyUnderRecovery(metaColony, colonyNetwork);
+      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
       await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
       await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-clny-token-invalid-address");
     });
@@ -135,7 +135,7 @@ contract("Colony Network", accounts => {
 
     it("should not allow another mining cycle to start if the clny token is 0", async () => {
       await colonyNetwork.initialiseReputationMining();
-      const metaColonyUnderRecovery = await getColonyUnderRecovery(metaColony, colonyNetwork);
+      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
       await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
 
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-clny-token-invalid-address");
