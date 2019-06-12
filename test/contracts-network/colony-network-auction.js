@@ -11,7 +11,7 @@ import {
   checkErrorRevert,
   forwardTime,
   getBlockTime,
-  getColonyUnderRecovery
+  getColonyEditable
 } from "../../helpers/test-helper";
 import { WAD, SECONDS_PER_DAY } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken, giveUserCLNYTokens } from "../../helpers/test-data-generator";
@@ -72,7 +72,7 @@ contract("Colony Network Auction", accounts => {
     });
 
     it("should fail with a zero clny token", async () => {
-      const metaColonyUnderRecovery = await getColonyUnderRecovery(metaColony, colonyNetwork);
+      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
       await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
 
       const args = getTokenArgs();
