@@ -16,6 +16,7 @@ chai.use(bnChai(web3.utils.BN));
 const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
+const ContractEditing = artifacts.require("ContractEditing");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
@@ -123,8 +124,35 @@ contract("Colony Network", accounts => {
       await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-already-initialised");
     });
 
+    it("should not allow initialisation if the clny token is 0", async () => {
+      const metaColonyVersion = await metaColony.version();
+      const metaColonyResolverAddress = await colonyNetwork.getColonyVersionResolver(metaColonyVersion);
+      const metaColonyResolver = await Resolver.at(metaColonyResolverAddress);
+      const contractEditing = await ContractEditing.new();
+      await metaColonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
+
+      const metaColonyUnderRecovery = await ContractEditing.at(metaColony.address);
+      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-clny-token-invalid-address");
+    });
+
     it("should not allow another mining cycle to start if the process isn't initialised", async () => {
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-not-initialised");
+    });
+
+    it("should not allow another mining cycle to start if the clny token is 0", async () => {
+      await colonyNetwork.initialiseReputationMining();
+
+      const metaColonyVersion = await metaColony.version();
+      const metaColonyResolverAddress = await colonyNetwork.getColonyVersionResolver(metaColonyVersion);
+      const metaColonyResolver = await Resolver.at(metaColonyResolverAddress);
+      const contractEditing = await ContractEditing.new();
+      await metaColonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
+
+      const metaColonyUnderRecovery = await ContractEditing.at(metaColony.address);
+      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+
+      await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-clny-token-invalid-address");
     });
   });
 
