@@ -404,15 +404,15 @@ contract("Colony Network Recovery", accounts => {
           // slot 3: colonyNetworkAddress
           // slot 4: tokenLockingAddress
           // slot 5: clnyTokenAddress
-          newActiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
-          newActiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          newActiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
+          await newActiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
+          await newActiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
+          await newActiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
           let timeNow = await currentBlockTime();
           timeNow = new BN(timeNow).toString(16, 64);
-          newActiveCycleAsRecovery.setStorageSlot(9, `0x${timeNow.toString(16, 64)}`);
-          newInactiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
-          newInactiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          newInactiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
+          await newActiveCycleAsRecovery.setStorageSlot(9, `0x${timeNow.toString(16, 64)}`);
+          await newInactiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
+          await newInactiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
+          await newInactiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
 
           // Port over log entries.
           let nLogEntries = await oldActiveCycle.getReputationUpdateLogLength();
