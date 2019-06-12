@@ -701,7 +701,7 @@ export async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId,
   throw Error("Supplied child domain is not a child of the supplied parent domain");
 }
 
-export async function getColonyUnderRecovery(colony, colonyNetwork) {
+export async function getColonyEditable(colony, colonyNetwork) {
   const colonyVersion = await colony.version();
   const colonyResolverAddress = await colonyNetwork.getColonyVersionResolver(colonyVersion);
   const colonyResolver = await Resolver.at(colonyResolverAddress);
