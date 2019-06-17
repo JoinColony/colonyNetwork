@@ -26,11 +26,29 @@ module.exports = {
       network_id: 1999,
       skipDryRun: true
     },
+    goerliFork: {
+      host: "localhost",
+      port: 8605,
+      gasPrice: 0,
+      network_id: "5"
+    },
+    mainnetFork: {
+      host: "localhost",
+      port: 8601,
+      gasPrice: 0,
+      network_id: "1"
+    },
     goerli: {
       provider: () => {
         return new HDWalletProvider("replace-with-private-key-when-using", "https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d");
       },
       network_id: "5"
+    },
+    mainnet: {
+      provider: () => {
+        return new HDWalletProvider("replace-with-private-key-when-using", "https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d");
+      },
+      network_id: "1"
     }
   },
   mocha: {
