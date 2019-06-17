@@ -48,6 +48,7 @@ contract ColonyAuthority is CommonAuthority {
 
     // Add permissions for the Architecture role
     addRoleCapability(ARCHITECTURE_ROLE, "addDomain(uint256,uint256,uint256)");
+    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setFundingRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
