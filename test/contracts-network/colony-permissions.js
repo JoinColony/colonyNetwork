@@ -179,6 +179,14 @@ contract("ColonyPermissions", accounts => {
       await colony.addDomain(1, 0, 1, { from: USER1 });
 
       // Manipulate permission in subdomain...
+      await colony.setArbitrationRole(1, 0, USER2, 2, true, { from: USER1 });
+      hasRole = await colony.hasUserRole(USER2, 2, ARBITRATION_ROLE);
+      expect(hasRole).to.be.true;
+
+      await colony.setArbitrationRole(1, 0, USER2, 2, false, { from: USER1 });
+      hasRole = await colony.hasUserRole(USER2, 2, ARBITRATION_ROLE);
+      expect(hasRole).to.be.false;
+
       await colony.setFundingRole(1, 0, USER2, 2, true, { from: USER1 });
       hasRole = await colony.hasUserRole(USER2, 2, FUNDING_ROLE);
       expect(hasRole).to.be.true;
