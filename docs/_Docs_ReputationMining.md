@@ -102,7 +102,7 @@ An instance of the oracle is available for reputation queries against `goerli` o
 https://colony.io/reputation/{goerli|mainnet}/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
 ```
 
-The oracle should be able to provide responses to any valid reputation score in all historical states, as well as the current state.
+The oracle should be able to provide responses to any valid reputation score in all historical states, as well as the current state. For querying the colony-wide reputation instead of user-specific one, instead of {userAddress} use a zero address (`0x0000000000000000000000000000000000000000`)
 
 For example, you can get the reputation score of the miner in a reputation state `0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc`) using the address of the Meta Colony (`0x14946533cefe742399e9734a123f0c02d0405a51`), the mining skill id (`2`), and address of a miner (`0x0A1d439C7d0b9244035d4F934BBF8A418B35d064`).
 
