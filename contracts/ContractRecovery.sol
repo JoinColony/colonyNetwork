@@ -87,7 +87,7 @@ contract ContractRecovery is CommonStorage { // ignore-swc-123
   // Can only be called by the root role.
   function setRecoveryRole(address _user) public stoppable auth {
     require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
-    if (!CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
+    if (!CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) { // ignore-swc-113
       CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, true);
       recoveryRolesCount++;
 
@@ -97,9 +97,9 @@ contract ContractRecovery is CommonStorage { // ignore-swc-123
 
   // Can only be called by the root role.
   function removeRecoveryRole(address _user) public stoppable auth {
-    if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
-      CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, false);
-      recoveryRolesCount--;
+    if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) { // ignore-swc-113
+      CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, false); // ignore-swc-113 ignore-swc-107
+      recoveryRolesCount--; // ignore-swc-107 ignore-swc-101
 
       emit RecoveryRoleSet(_user, false);
     }
