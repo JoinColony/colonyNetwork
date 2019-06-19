@@ -68,7 +68,7 @@ contract ContractRecovery is CommonStorage { // ignore-swc-123
   }
 
   function approveExitRecovery() public recovery auth {
-    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "colony-recovery-approval-already-given");
+    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "colony-recovery-approval-already-given");  // ignore-swc-116
     recoveryApprovalTimestamps[msg.sender] = now;
     recoveryApprovalCount++;
   }
