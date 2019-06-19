@@ -22,7 +22,7 @@ import "./ColonyStorage.sol";
 import "./ITokenLocking.sol";
 
 
-contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
+contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, TaskRole.Manager, _token, _amount);
     emit TaskPayoutSet(_id, TaskRole.Manager, _token, _amount);
@@ -194,7 +194,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     } else {
       // Assume it's an ERC 20 token.
       ERC20Extended targetToken = ERC20Extended(_token);
-      toClaim = sub(sub(targetToken.balanceOf(address(this)), nonRewardPotsTotal[_token]), fundingPots[0].balance[_token]);
+      toClaim = sub(sub(targetToken.balanceOf(address(this)), nonRewardPotsTotal[_token]), fundingPots[0].balance[_token]); // ignore-swc-123
     }
 
     feeToPay = toClaim / getRewardInverse(); // ignore-swc-110 . This variable is set when the colony is
