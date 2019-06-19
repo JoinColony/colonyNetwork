@@ -135,7 +135,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     EtherRouter etherRouter = new EtherRouter();
     IColony colony = IColony(address(etherRouter));
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion]; // ignore-swc-107
-    etherRouter.setResolver(resolverForLatestColonyVersion);
+    etherRouter.setResolver(resolverForLatestColonyVersion); // ignore-swc-113
 
     // Creating new instance of colony's authority
     ColonyAuthority _authority = new ColonyAuthority(address(colony));
