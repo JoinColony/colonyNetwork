@@ -1,8 +1,10 @@
 /* globals artifacts */
 import shortid from "shortid";
 import chai from "chai";
-import { asciiToHex } from "web3-utils";
+import { asciiToHex, isBN } from "web3-utils";
 import BN from "bn.js";
+import { ethers } from "ethers";
+import { BigNumber } from "bignumber.js";
 
 import { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW } from "./constants";
 
@@ -825,6 +827,24 @@ export async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nL
       reject(new Error("Timeout while waiting for 12 hash submissions"));
     }, 60 * 1000);
   });
+
+export async function encodeTxData(colony, functionName, args) {
+  const convertedArgs = [];
+  args.forEach(arg => {
+    if (Number.isInteger(arg)) {
+      const convertedArg = ethers.BigNumber.from(arg);
+      convertedArgs.push(convertedArg);
+    } else if (isBN(arg) || BigNumber.isBigNumber(arg)) {
+      // Can use isBigNumber from utils once https://github.com/ethereum/web3.js/issues/2835 sorted
+      const convertedArg = ethers.BigNumber.from(arg.toString());
+      convertedArgs.push(convertedArg);
+    } else {
+      convertedArgs.push(arg);
+    }
+  });
+
+  const txData = await colony.contract.methods[functionName](...convertedArgs).encodeABI();
+  return txData;
 }
 
 export async function getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId, userAddress) {

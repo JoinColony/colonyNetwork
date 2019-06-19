@@ -26,34 +26,32 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
 
   constructor(address _colony) public VotingBase(_colony) {}
 
-  struct RepDatum {
+  struct RepInfo {
     bytes32 rootHash;
     uint256 skillId;
   }
 
-  mapping (uint256 => RepDatum) repData;
+  mapping (uint256 => RepInfo) repInfo;
 
   // The UserVote type here is just the bytes32 voteSecret
 
   mapping (address => mapping (uint256 => bytes32)) userVotes;
 
-  function createPoll(uint256 _numOutcomes, uint256 _duration, uint256 _skillId) public {
-    pollCount += 1;
-
-    polls[pollCount] = Poll({
-      pollCloses: add(now, _duration),
-      voteCounts: new uint256[](_numOutcomes)
-    });
-
-    repData[pollCount] = RepDatum({
+  function setPollRepInfo(uint256 _pollId, uint256 _skillId) public onlyCreator(_pollId) pollPending(_pollId) {
+    repInfo[pollCount] = RepInfo({
       rootHash: colonyNetwork.getReputationRootHash(),
       skillId: _skillId
     });
   }
 
-  function submitVote(uint256 _pollId, bytes32 _voteSecret) public {
-    require(getPollState(_pollId) == PollState.Open, "colony-rep-voting-poll-not-open");
+  // Override the base function
+  function openPoll(uint256 _pollId, uint256 _duration) public onlyCreator(_pollId) pollPending(_pollId) {
+    require(repInfo[_pollId].rootHash != 0x0, "voting-rep-poll-no-root-hash");
+    super.openPoll(_pollId, _duration);
+  }
 
+  function submitVote(uint256 _pollId, bytes32 _voteSecret) public {
+    require(getPollState(_pollId) == PollState.Open, "voting-rep-poll-not-open");
     userVotes[msg.sender][_pollId] = _voteSecret;
   }
 
@@ -68,12 +66,11 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
   )
     public
   {
-    uint256 pollCloses = polls[_pollId].pollCloses;
-    require(getPollState(_pollId) != PollState.Open, "colony-rep-voting-poll-still-open");
+    require(getPollState(_pollId) != PollState.Open, "voting-rep-poll-still-open");
 
     bytes32 voteSecret = userVotes[msg.sender][_pollId];
-    require(voteSecret == getVoteSecret(_salt, _vote), "colony-rep-voting-secret-no-match");
-    require(_vote < polls[_pollId].voteCounts.length, "colony-rep-voting-invalid-vote");
+    require(voteSecret == getVoteSecret(_salt, _vote), "voting-rep-secret-no-match");
+    require(_vote < polls[_pollId].voteCounts.length, "voting-rep-invalid-vote");
 
     // Validate proof and get reputation value
     uint256 userReputation = checkReputation(_pollId, _key, _value, _branchMask, _siblings);
@@ -98,7 +95,7 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     internal view returns (uint256)
   {
     bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
-    require(repData[_pollId].rootHash == impliedRoot, "colony-rep-voting-invalid-root-hash");
+    require(repInfo[_pollId].rootHash == impliedRoot, "voting-rep-invalid-root-hash");
 
     uint256 reputationValue;
     address keyColonyAddress;
@@ -112,9 +109,9 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
       keyUserAddress := mload(add(_key, 72))
     }
 
-    require(keyColonyAddress == address(colony), "colony-rep-voting-invalid-colony-address");
-    require(keySkill == repData[_pollId].skillId, "colony-rep-voting-invalid-skill-id");
-    require(keyUserAddress == msg.sender, "colony-rep-voting-invalid-user-address");
+    require(keyColonyAddress == address(colony), "voting-rep-invalid-colony-address");
+    require(keySkill == repInfo[_pollId].skillId, "voting-rep-invalid-skill-id");
+    require(keyUserAddress == msg.sender, "voting-rep-invalid-user-address");
 
     return reputationValue;
   }
