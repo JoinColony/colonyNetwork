@@ -19,7 +19,7 @@ Mandatory arguments:
 ```
 (--minerAddress <address>) | (--privateKey <key>)
 (--colonyNetworkAddress <address>)
-(--syncFrom <number>)   // [goerli:'548534', mainnet:'TBD']
+(--syncFrom <number>)   // [goerli:'548534', mainnet:'7913100']
 ```
 Optional arguments:
 ```
