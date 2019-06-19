@@ -25,11 +25,11 @@ import "./ExtensionFactory.sol";
 import "./OldRoles.sol";
 
 
-contract OldRolesFactory is ExtensionFactory, ColonyDataTypes { // ignore-swc-123. TODO Any takers to explain to me?
+contract OldRolesFactory is ExtensionFactory, ColonyDataTypes { // ignore-swc-123
   mapping (address => OldRoles) public deployedExtensions;
 
   function deployExtension(address _colony) external {
-    require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root");
+    require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root"); // ignore-swc-123
     require(deployedExtensions[_colony] == OldRoles(0x00), "colony-extension-already-deployed");
     OldRoles newExtensionAddress = new OldRoles(_colony);
     deployedExtensions[_colony] = newExtensionAddress;
@@ -37,7 +37,7 @@ contract OldRolesFactory is ExtensionFactory, ColonyDataTypes { // ignore-swc-12
   }
 
   function removeExtension(address _colony) external {
-    require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root");
+    require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root"); // ignore-swc-123
     deployedExtensions[_colony] = OldRoles(0x00);
     emit ExtensionRemoved("OldRoles", _colony);
   }
