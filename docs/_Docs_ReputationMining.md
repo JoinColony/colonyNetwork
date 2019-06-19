@@ -97,16 +97,21 @@ The reputation mining client will answer queries for reputation scores locally o
 http://127.0.0.1:3000/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
 ```
 
+An instance of the oracle is available for reputation queries against `goerli` or `mainnet`:
+```
+https://colony.io/reputation/{goerli|mainnet}/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
+```
+
 The oracle should be able to provide responses to any valid reputation score in all historical states, as well as the current state.
 
-For example, you can get the reputation score of the miner in the current reputation state (which after three updates, will be `0x7ad8c25e960b823336fea83f761f5199d690c7b230e846eb29a359187943eb33`) using the address of the Meta Colony (`0x1133560dB4AebBebC712d4273C8e3137f58c3A65`), the skill tag of `2`, and the address of the miner (`0x3a965407ced5e62c5ad71de491ce7b23da5331a4`).
+For example, you can get the reputation score of the miner in a reputation state `0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc`) using the address of the Meta Colony (`0x14946533cefe742399e9734a123f0c02d0405a51`), the mining skill id (`2`), and address of a miner (`0x0A1d439C7d0b9244035d4F934BBF8A418B35d064`).
 
 ```
-http://127.0.0.1:3000/0x7ad8c25e960b823336fea83f761f5199d690c7b230e846eb29a359187943eb33/0x1133560dB4AebBebC712d4273C8e3137f58c3A65/2/0x3a965407ced5e62c5ad71de491ce7b23da5331a4
+https://colony.io/reputation/mainnet/0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc/0x14946533cefe742399e9734a123f0c02d0405a51/0000000000000000000000000000000000000000000000000000000000000002/0x0A1d439C7d0b9244035d4F934BBF8A418B35d064
 ```
 
-The oracle should return something similar to the following.
+The oracle returns
 
 ```
-{"branchMask":"0x8000000000000000000000000000000000000000000000000000000000000000","siblings":["0x32c047a86aec6bbbfc1510bb2dd3a9086ec70b7524bd6f92ce1a12dfc7be32ca"],"key":"0x1133560db4aebbebc712d4273c8e3137f58c3a6500000000000000000000000000000000000000000000000000000000000000023a965407ced5e62c5ad71de491ce7b23da5331a4","value":"0x0000000000000000000000000000000000000000000000410d586a20a4c000000000000000000000000000000000000000000000000000000000000000000003","reputationAmount":"0"}
+{"branchMask":"0xc000000000000000000000000000000000000000000000000000000000000000","siblings":["0x15c45d734bccc204df2e275d516250ed0a1cd60ccabadf49e2157a3e8067e59c","0xd4ee79473ec5573d706be030f3077c44aef06f26745349bbd93dcf5f4e254422"],"key":"0x14946533cefe742399e9734a123f0c02d0405a5100000000000000000000000000000000000000000000000000000000000000020a1d439c7d0b9244035d4f934bbf8a418b35d064","value":"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004","reputation":"0x0000000000000000000000000000000000000000000000000000000000000000","uid":"0x0000000000000000000000000000000000000000000000000000000000000004","reputationAmount":"0"}
 ```
