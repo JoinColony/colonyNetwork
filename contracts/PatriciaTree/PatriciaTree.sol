@@ -13,7 +13,7 @@ contract PatriciaTree is IPatriciaTree, PatriciaTreeBase {
     tree.insert(keccak256(key), value);
   }
 
-  function getProof(bytes memory key) public view returns (uint branchMask, bytes32[] memory _siblings) {
+  function getProof(bytes memory key) public view returns (uint branchMask, bytes32[] memory _siblings) { // ignore-swc-127
     return getProofFunctionality(keccak256(key));
   }
 
