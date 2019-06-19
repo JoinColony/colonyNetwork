@@ -97,7 +97,7 @@ contract ContractRecovery is CommonStorage { // ignore-swc-123
 
   // Can only be called by the root role.
   function removeRecoveryRole(address _user) public stoppable auth {
-    if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) { // ignore-swc-113
+    if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) { // ignore-swc-113 ignore-swc-128
       CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, false); // ignore-swc-113 ignore-swc-107
       recoveryRolesCount--; // ignore-swc-107 ignore-swc-101
 
