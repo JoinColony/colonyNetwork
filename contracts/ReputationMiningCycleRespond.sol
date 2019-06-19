@@ -574,7 +574,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
             childReputationChange = logEntry.amount * userChildReputationValue / userOriginReputationValue;
             // Cap change based on current value of the user's child reputation.
             if (userChildReputationValue + childReputationChange < 0) {
-              reputationChange = userChildReputationValue * -1;
+              reputationChange = -1 * userChildReputationValue;
             } else {
               reputationChange = childReputationChange;
             }
