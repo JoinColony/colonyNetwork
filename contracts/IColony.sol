@@ -61,6 +61,15 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
   function setRootRole(address _user, bool _setTo) public;
 
+  /// @notice Set new colony arbitration role.
+  /// Can be called by root role or architecture role.
+  /// @param _permissionDomainId Domain in which the caller has root role
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _user User we want to give an arbitration role to
+  /// @param _domainId Domain in which we are giving user the role
+  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
+  function setArbitrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
+
   /// @notice Set new colony architecture role.
   /// Can be called by root role or architecture role.
   /// @param _permissionDomainId Domain in which the caller has root/architecture role
