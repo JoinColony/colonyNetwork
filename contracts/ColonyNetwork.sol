@@ -138,12 +138,12 @@ contract ColonyNetwork is ColonyNetworkStorage {
     etherRouter.setResolver(resolverForLatestColonyVersion); // ignore-swc-113
 
     // Creating new instance of colony's authority
-    ColonyAuthority _authority = new ColonyAuthority(address(colony));
+    ColonyAuthority colonyAuthority = new ColonyAuthority(address(colony));
 
     DSAuth dsauth = DSAuth(etherRouter);
-    dsauth.setAuthority(_authority);
+    dsauth.setAuthority(colonyAuthority);
 
-    _authority.setOwner(address(etherRouter));
+    colonyAuthority.setOwner(address(etherRouter));
 
     // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;
