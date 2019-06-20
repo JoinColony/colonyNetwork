@@ -748,7 +748,7 @@ Set `_token` payout for all roles in task `_id` to the respective amounts.
 
 ### `setArbitrationRole`
 
-Set new colony arbitration role. Can be called only by root role.
+Set new colony arbitration role. Can be called by root role or architecture role.
 
 
 **Parameters**
