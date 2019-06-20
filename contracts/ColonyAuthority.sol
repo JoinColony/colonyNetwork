@@ -48,18 +48,22 @@ contract ColonyAuthority is CommonAuthority {
 
     // Add permissions for the Architecture role
     addRoleCapability(ARCHITECTURE_ROLE, "addDomain(uint256,uint256,uint256)");
+    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setFundingRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
 
     // Add permissions for the Root role
     addRoleCapability(ROOT_ROLE, "setRootRole(address,bool)");
+    addRoleCapability(ROOT_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ROOT_ROLE, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ROOT_ROLE, "setFundingRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ROOT_ROLE, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
+
     // Managing recovery roles
     addRoleCapability(ROOT_ROLE, "setRecoveryRole(address)");
     addRoleCapability(ROOT_ROLE, "removeRecoveryRole(address)");
+
     // Colony functions
     addRoleCapability(ROOT_ROLE, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
     addRoleCapability(ROOT_ROLE, "bootstrapColony(address[],int256[])");
@@ -67,6 +71,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "setRewardInverse(uint256)");
     addRoleCapability(ROOT_ROLE, "mintTokens(uint256)");
     addRoleCapability(ROOT_ROLE, "upgrade(uint256)");
+
     //  Meta Colony functions
     addRoleCapability(ROOT_ROLE, "addNetworkColonyVersion(uint256,address)");
     addRoleCapability(ROOT_ROLE, "setNetworkFeeInverse(uint256)");
