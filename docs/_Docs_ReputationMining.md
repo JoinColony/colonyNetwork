@@ -97,9 +97,9 @@ The reputation mining client will answer queries for reputation scores locally o
 http://127.0.0.1:3000/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
 ```
 
-An instance of the oracle is available for reputation queries against `goerli` or `mainnet`:
+An instance of the oracle is available for reputation queries against `goerli` or `mainnet` networks:
 ```
-https://colony.io/reputation/{goerli|mainnet}/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
+https://colony.io/reputation/{network}/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
 ```
 
 The oracle should be able to provide responses to any valid reputation score in all historical states, as well as the current state. For querying the colony-wide reputation instead of user-specific one, instead of {userAddress} use a zero address (`0x0000000000000000000000000000000000000000`)
@@ -107,7 +107,7 @@ The oracle should be able to provide responses to any valid reputation score in 
 For example, you can get the reputation score of the miner in a reputation state `0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc`) using the address of the Meta Colony (`0x14946533cefe742399e9734a123f0c02d0405a51`), the mining skill id (`2`), and address of a miner (`0x0A1d439C7d0b9244035d4F934BBF8A418B35d064`).
 
 ```
-https://colony.io/reputation/mainnet/0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc/0x14946533cefe742399e9734a123f0c02d0405a51/0000000000000000000000000000000000000000000000000000000000000002/0x0A1d439C7d0b9244035d4F934BBF8A418B35d064
+https://colony.io/reputation/mainnet/0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc/0x14946533cefe742399e9734a123f0c02d0405a51/2/0x0A1d439C7d0b9244035d4F934BBF8A418B35d064
 ```
 
 The oracle returns
