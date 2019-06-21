@@ -30,7 +30,7 @@ function correctAuthModifier(functionDef) {
 
   const authDec = functionDef.modifiers.filter(mod => ["auth", "authDomain"].indexOf(mod.name) > -1)[0];
   // Check if it's the 'normal' auth
-  if (authDec.arguments.length === 0) {
+  if (!authDec.arguments) {
     return { valid, errors };
   }
 
