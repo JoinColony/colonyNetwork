@@ -159,7 +159,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   stoppable
   auth
   {
-    ERC20Extended(token).mint(address(this), _wad);
+    ERC20Extended(token).mint(address(this), _wad); // ignore-swc-107
   }
 
   function mintTokensForColonyNetwork(uint _wad) public stoppable {
@@ -181,7 +181,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   returns (uint256)
   {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.addSkill(0);
+    return colonyNetwork.addSkill(0); // ignore-swc-107
   }
 
   function deprecateGlobalSkill(uint256 _skillId) public
@@ -197,7 +197,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   auth
   {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.setFeeInverse(_feeInverse);
+    return colonyNetwork.setFeeInverse(_feeInverse); // ignore-swc-107
   }
 
   function addNetworkColonyVersion(uint256 _version, address _resolver) public
