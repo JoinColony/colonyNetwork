@@ -1,4 +1,4 @@
-pragma solidity 0.5.8; // ignore-swc-101 TODO: Now *this* feels like a bug in MythX. Only shows up if analysing PatriciaTree.sol
+pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
 
@@ -19,7 +19,7 @@ library Bits {
     uint val = self;
     for (uint8 i = 128; i >= 1; i >>= 1) {
       if (val & (ONE << i) - 1 << i != 0) {
-        highest += i; // ignore-swc-101
+        highest += i;
         val >>= i;
       }
     }
@@ -33,8 +33,8 @@ library Bits {
     require(self != 0, "colony-patricia-tree-zero-self");
     uint val = self;
     for (uint8 i = 128; i >= 1; i >>= 1) {
-      if (val & (ONE << i) - 1 == 0) { // ignore-swc-101 TODO: his one also only shows up if analysing PatricaTree.sol
-        lowest += i; // ignore-swc-101
+      if (val & (ONE << i) - 1 == 0) { // ignore-swc-101 TODO: this one also only shows up if analysing PatricaTree.sol
+        lowest += i;
         val >>= i;
       }
     }

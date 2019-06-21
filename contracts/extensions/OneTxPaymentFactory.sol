@@ -29,7 +29,7 @@ contract OneTxPaymentFactory is ExtensionFactory, ColonyDataTypes { // ignore-sw
   mapping (address => OneTxPayment) public deployedExtensions;
 
   function deployExtension(address _colony) external {
-    require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root");
+    require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root"); // ignore-swc-123
     require(deployedExtensions[_colony] == OneTxPayment(0x00), "colony-extension-already-deployed");
     OneTxPayment newExtensionAddress = new OneTxPayment(_colony);
     deployedExtensions[_colony] = newExtensionAddress;
