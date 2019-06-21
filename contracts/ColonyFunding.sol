@@ -22,7 +22,7 @@ import "./ColonyStorage.sol";
 import "./ITokenLocking.sol";
 
 
-contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
+contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, TaskRole.Manager, _token, _amount);
     emit TaskPayoutSet(_id, TaskRole.Manager, _token, _amount);
