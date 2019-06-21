@@ -8137,6 +8137,11 @@ solidity-parser-antlr@^0.4.1, solidity-parser-antlr@^0.4.2:
   resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.4.2.tgz#b862eba5936e7a90b4f5f1c8eb1d33fe86650f78"
   integrity sha512-0OKT2YKZAqPe14HN7Nbo24hjmnyUYh92UjyZG0Zz2rpQhl/w8asX8qHb+ASSXfayQaiW8g9zGIupXEE355tOQQ==
 
+solidity-parser-antlr@^0.4.5:
+  version "0.4.5"
+  resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.4.5.tgz#4de1867f1a12df4553886209225bc80328aeb0c1"
+  integrity sha512-5GzhIs4hpY3XnGwMndgrOksD567O5WdUQPbpy2n2WA1m3algzUKYMf+Ne/QHd36TTUNvVV+iTWD5tKaCZfaOjg==
+
 solidity-steamroller@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/solidity-steamroller/-/solidity-steamroller-1.1.0.tgz#ef44bd794ce7f017796a8fe51f05f9cccade58be"
