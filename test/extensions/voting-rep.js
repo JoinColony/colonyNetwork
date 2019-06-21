@@ -21,12 +21,16 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const VotingReputation = artifacts.require("VotingReputation");
+const VotingReputationFactory = artifacts.require("VotingReputationFactory");
 
 contract("Voting Reputation", accounts => {
   let colony;
   let metaColony;
   let colonyNetwork;
+
   let voting;
+  let votingFactory;
+
   let reputationTree;
 
   const USER0 = accounts[0];
@@ -43,11 +47,15 @@ contract("Voting Reputation", accounts => {
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER, DEFAULT_STAKE);
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
+
+    votingFactory = await VotingReputationFactory.new();
   });
 
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
-    voting = await VotingReputation.new(colony.address);
+    await votingFactory.deployExtension(colony.address);
+    const votingAddress = await votingFactory.deployedExtensions(colony.address);
+    voting = await VotingReputation.at(votingAddress);
 
     reputationTree = new PatriciaTree();
     await reputationTree.insert(
@@ -74,7 +82,7 @@ contract("Voting Reputation", accounts => {
     await repCycle.confirmNewHash(0);
   });
 
-  describe.only("creating and editing polls", async () => {
+  describe("creating and editing polls", async () => {
     it("can create a new poll", async () => {
       let pollId = await voting.getPollCount();
       expect(pollId).to.be.zero;
@@ -143,7 +151,7 @@ contract("Voting Reputation", accounts => {
     });
   });
 
-  describe.only("voting on polls", async () => {
+  describe("voting on polls", async () => {
     let key, value, mask, siblings, pollId; // eslint-disable-line one-var
 
     beforeEach(async () => {
@@ -295,7 +303,7 @@ contract("Voting Reputation", accounts => {
     });
   });
 
-  describe.only("simple exceptions", async () => {
+  describe("simple exceptions", async () => {
     let pollId;
 
     beforeEach(async () => {
