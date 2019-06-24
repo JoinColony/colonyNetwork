@@ -27,7 +27,7 @@ See the [Bug Bounty program overview](./_bug_rules.md) for more information abou
 
 ## Prerequisites
 
-`node` v10.12 or higher (we recommend using `nvm`)
+`node` v10.13 or higher (we recommend using `nvm`)
 
 `yarn` v1.13 or higher
 
