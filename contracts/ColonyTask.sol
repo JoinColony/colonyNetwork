@@ -323,7 +323,7 @@ contract ColonyTask is ColonyStorage {
     // Can only assign role if no one is currently assigned to it
     Role storage workerRole = tasks[_id].roles[uint8(TaskRole.Worker)];
     require(workerRole.user == address(0x0), "colony-task-worker-role-already-assigned");
-    require(tasks[_id].skills[0] > 0, "colony-task-skill-not-set");
+    require(tasks[_id].skills[0] > 0, "colony-task-skill-not-set"); // ignore-swc-110
     setTaskRoleUser(_id, TaskRole.Worker, _user);
   }
 

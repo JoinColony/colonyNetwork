@@ -26,7 +26,7 @@ import "./TokenLockingStorage.sol";
 import "../lib/dappsys/math.sol";
 
 
-contract TokenLocking is TokenLockingStorage, DSMath {
+contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   modifier calledByColony() {
     require(IColonyNetwork(colonyNetwork).isColony(msg.sender), "colony-token-locking-sender-not-colony");
     _;
@@ -101,7 +101,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   tokenNotLocked(_token)
   {
     require(_amount > 0, "colony-token-locking-invalid-amount");
-    require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed");
+    require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
 
     Lock storage lock = userLocks[_token][msg.sender];
 
