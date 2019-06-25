@@ -76,7 +76,7 @@ contract OneTxPayment {
     colony.moveFundsBetweenPots(
       1, // Root domain always 1
       0, // Not used, this extension contract must have funding permission in the root for this function to work
-      0, // Not used, this extension contract must have funding permission in the root for this function to work
+      _childSkillIndex,
       1, // Root domain funding pot is always 1
       payment.fundingPotId,
       _amount,
