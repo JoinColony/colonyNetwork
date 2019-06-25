@@ -123,6 +123,11 @@ contract("One transaction payments", accounts => {
       await oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 2, GLOBAL_SKILL_ID, { from: COLONY_ADMIN });
     });
 
+    it("should allow a single-transaction to occur in the root domain, paid out from the root domain", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      await oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 1, GLOBAL_SKILL_ID, { from: COLONY_ADMIN });
+    });
+
     it(`should not allow a single-transaction to occur in a child domain, paid out from the root domain
       if the user does not have permission to take funds from root domain`, async () => {
       await colony.addDomain(1, 0, 1);
