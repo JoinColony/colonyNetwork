@@ -37,17 +37,25 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
 
   mapping (address => mapping (uint256 => bytes32)) userVotes;
 
-  function setPollRepInfo(uint256 _pollId, uint256 _skillId) public onlyCreator(_pollId) pollPending(_pollId) {
-    repInfo[pollCount] = RepInfo({
-      rootHash: colonyNetwork.getReputationRootHash(),
-      skillId: _skillId
-    });
-  }
+  function createPoll(
+    bytes memory _action,
+    uint256 _duration,
+    uint256 _skillId,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    public
+  {
+    pollCount += 1;
 
-  // Override the base function
-  function openPoll(uint256 _pollId, uint256 _duration) public onlyCreator(_pollId) pollPending(_pollId) {
-    require(repInfo[_pollId].rootHash != 0x0, "voting-rep-poll-no-root-hash");
-    super.openPoll(_pollId, _duration);
+    repInfo[pollCount].rootHash = colonyNetwork.getReputationRootHash();
+    repInfo[pollCount].skillId = _skillId;
+
+    polls[pollCount].closes = add(now, _duration);
+    polls[pollCount].maxVotes = checkReputation(pollCount, address(0x0), _key, _value, _branchMask, _siblings);
+    polls[pollCount].action = _action;
   }
 
   function submitVote(uint256 _pollId, bytes32 _voteSecret) public {
@@ -58,7 +66,7 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
   function revealVote(
     uint256 _pollId,
     bytes32 _salt,
-    uint256 _vote,
+    bool _vote,
     bytes memory _key,
     bytes memory _value,
     uint256 _branchMask,
@@ -70,10 +78,9 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
 
     bytes32 voteSecret = userVotes[msg.sender][_pollId];
     require(voteSecret == getVoteSecret(_salt, _vote), "voting-rep-secret-no-match");
-    require(_vote < polls[_pollId].voteCounts.length, "voting-rep-invalid-vote");
 
     // Validate proof and get reputation value
-    uint256 userReputation = checkReputation(_pollId, _key, _value, _branchMask, _siblings);
+    uint256 userReputation = checkReputation(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
 
     // Remove the secret
     delete userVotes[msg.sender][_pollId];
@@ -81,12 +88,13 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     // Increment the vote if poll in reveal, otherwise skip
     // NOTE: since there's no locking, we could just `require` PollState.Reveal
     if (getPollState(_pollId) == PollState.Reveal) {
-      polls[_pollId].voteCounts[_vote] += userReputation;
+      polls[_pollId].votes[_vote ? 1 : 0] += userReputation;
     }
   }
 
   function checkReputation(
     uint256 _pollId,
+    address _who,
     bytes memory _key,
     bytes memory _value,
     uint256 _branchMask,
@@ -111,7 +119,7 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
 
     require(keyColonyAddress == address(colony), "voting-rep-invalid-colony-address");
     require(keySkill == repInfo[_pollId].skillId, "voting-rep-invalid-skill-id");
-    require(keyUserAddress == msg.sender, "voting-rep-invalid-user-address");
+    require(keyUserAddress == _who, "voting-rep-invalid-user-address");
 
     return reputationValue;
   }

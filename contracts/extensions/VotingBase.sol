@@ -38,56 +38,31 @@ contract VotingBase is DSMath {
   }
 
   // Data structures
-  enum PollState { Pending, Open, Reveal, Closed, Executed }
+  enum PollState { Open, Reveal, Closed, Executed }
 
   struct Poll {
     bool executed;
-    address creator;
-    uint256 pollCloses;
-    uint256[] voteCounts;
+    uint256 closes;
+    uint256[2] votes; // [nay, yay]
+    uint256 maxVotes;
+    bytes action;
   }
 
   // Storage
   uint256 pollCount;
   mapping (uint256 => Poll) polls;
-  mapping (uint256 => mapping (uint256 => bytes)) pollActions;
-
-  // Modifiers
-  modifier onlyCreator(uint256 _pollId) {
-    require(polls[_pollId].creator == msg.sender, "voting-base-only-creator");
-    _;
-  }
-
-  modifier pollPending(uint256 _pollId) {
-    require(getPollState(_pollId) == PollState.Pending, "voting-base-poll-not-pending");
-    _;
-  }
 
   // Functions
-  function createPoll() public {
-    pollCount += 1;
-    polls[pollCount].creator = msg.sender;
-  }
-
-  function addPollAction(uint256 _pollId, bytes memory _action) public onlyCreator(_pollId) pollPending(_pollId) {
-    pollActions[_pollId][polls[_pollId].voteCounts.length] = _action;
-    polls[_pollId].voteCounts.push(0);
-  }
-
-  function openPoll(uint256 _pollId, uint256 _duration) public onlyCreator(_pollId) pollPending(_pollId) {
-    require(polls[_pollId].voteCounts.length > 1, "voting-base-insufficient-poll-actions");
-    polls[_pollId].pollCloses = add(now, _duration);
-  }
-
   function executePoll(uint256 _pollId) public returns (bool) {
     require(getPollState(_pollId) != PollState.Executed, "voting-base-poll-already-executed");
     require(getPollState(_pollId) == PollState.Closed, "voting-base-poll-not-closed");
 
-    polls[_pollId].executed = true;
+    Poll storage poll = polls[_pollId];
+    poll.executed = true;
 
-    uint256 winner = getPollWinner(_pollId);
-    bytes storage action = pollActions[_pollId][winner];
-    return executeCall(address(colony), action);
+    if (poll.votes[0] < poll.votes[1]) {
+      return executeCall(address(colony), poll.action);
+    }
   }
 
   function getPollCount() public view returns (uint256) {
@@ -100,27 +75,14 @@ contract VotingBase is DSMath {
 
   function getPollState(uint256 _pollId) public view returns (PollState) {
     Poll storage poll = polls[_pollId];
-    if (poll.pollCloses == 0) {
-      return PollState.Pending;
-    } else if (now < poll.pollCloses) {
+    if (now < poll.closes) {
       return PollState.Open;
-    } else if (now < add(poll.pollCloses, REVEAL_PERIOD)) {
+    } else if (now < add(poll.closes, REVEAL_PERIOD)) {
       return PollState.Reveal;
     } else if (!poll.executed) {
       return PollState.Closed;
     } else {
       return PollState.Executed;
-    }
-  }
-
-  function getPollWinner(uint256 _pollId) public view returns (uint256 winner) {
-    uint256[] storage voteCounts = polls[_pollId].voteCounts;
-
-    // TODO: Handle ties!
-    for (uint256 i; i < voteCounts.length; i += 1) {
-      if (voteCounts[i] > voteCounts[winner]) {
-        winner = i;
-      }
     }
   }
 
@@ -135,7 +97,7 @@ contract VotingBase is DSMath {
     }
   }
 
-  function getVoteSecret(bytes32 _salt, uint256 _vote) internal pure returns (bytes32) {
+  function getVoteSecret(bytes32 _salt, bool _vote) internal pure returns (bytes32) {
     return keccak256(abi.encodePacked(_salt, _vote));
   }
 }
