@@ -24,6 +24,10 @@ step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
       command: docker pull ethereum/solc:0.5.8
+step_setup_slither: &step_setup_slither
+    run:
+      name: "Setup slither analyser https://github.com/crytic/slither"
+      command: pip install slither-analyzer
 
 jobs:
   lint-and-unit-test:
@@ -126,9 +130,13 @@ jobs:
       - setup_remote_docker
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_setup_slither
+      - run: 
+          name: "Slither analysis"
+          command: yarn run test:security:slither
       - run:
           name: "MythX security analysis"
-          command: yarn run test:contracts:security
+          command: yarn run test:security:mythril
   end-to-end-tests:
     <<: *job_common
     steps:
