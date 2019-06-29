@@ -8952,7 +8952,7 @@ truffle-resolver@^5.0.13:
     truffle-expect "^0.0.8"
     truffle-provisioner "^0.1.4"
 
-truffle-security@1.5.2:
+truffle-security@^1.5.2:
   version "1.5.2"
   resolved "https://registry.yarnpkg.com/truffle-security/-/truffle-security-1.5.2.tgz#26969e08f55e6e4e05e92fc443c37e9798c5033a"
   integrity sha512-qf+IPxrdi7VKLsVMjgZqM9fh/E5XbjdrL4pvSDuCy2cMFOnCLkWbiyeLuDrt2YFJL4pBxhaVf6g4gQq6Y3OvEQ==
