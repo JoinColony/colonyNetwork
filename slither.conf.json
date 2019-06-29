@@ -1,0 +1,5 @@
+{
+  "solc": "solc",
+  "solc_args": "--allow-path .",
+  "disable_solc_warnings": true
+}
