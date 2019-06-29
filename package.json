@@ -106,7 +106,7 @@
     "solidity-steamroller": "^1.1.0",
     "truffle": "^5.0.14",
     "truffle-hdwallet-provider": "^1.0.9",
-    "truffle-security": "1.5.2",
+    "truffle-security": "^1.5.2",
     "web3-utils": "^1.0.0-beta.55"
   },
   "private": true,
