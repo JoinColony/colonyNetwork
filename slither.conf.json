@@ -1,5 +1,5 @@
 {
+  "detectors_to_exclude": "unused-state,naming-convention,solc-version,external-function,pragma,constable-states",
   "solc": "solc",
-  "solc_args": "--allow-path .",
-  "disable_solc_warnings": true
+  "solc_args": "--allow-path ."
 }

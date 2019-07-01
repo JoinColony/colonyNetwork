@@ -27,7 +27,9 @@ step_pull_solc_docker: &step_pull_solc_docker
 step_setup_slither: &step_setup_slither
     run:
       name: "Setup slither analyser https://github.com/crytic/slither"
-      command: pip install slither-analyzer
+      command: |
+        sudo apt-get install -y python3 
+        pip install slither-analyzer
 
 jobs:
   lint-and-unit-test:
