@@ -4,6 +4,10 @@ job_common: &job_common
   docker:
     - image: circleci/node:10.12-stretch
   working_directory: ~/colonyNetwork
+job_python: &job_python
+  docker:
+    - image: circleci/python:3.7.3-stretch-node
+  working_directory: ~/colonyNetwork
 step_save_cache: &step_save_cache
   save_cache:
     paths:
@@ -28,9 +32,7 @@ step_setup_slither: &step_setup_slither
     run:
       name: "Setup slither analyser https://github.com/crytic/slither"
       command: |
-        sudo apt-get install -y python3
-        python3 -m venv venv
-        pip install slither-analyzer
+        sudo pip install slither-analyzer
 
 jobs:
   lint-and-unit-test:
@@ -126,7 +128,7 @@ jobs:
       - store_artifacts:
           path: coverage
   security-analysis:
-    <<: *job_common
+    <<: *job_python
     steps:
       - checkout
       - <<: *step_restore_cache
