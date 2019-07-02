@@ -32,6 +32,9 @@ step_setup_slither: &step_setup_slither
     run:
       name: "Setup slither analyser https://github.com/crytic/slither"
       command: |
+        wget https://github.com/ethereum/solidity/releases/download/v0.5.8/solc-static-linux
+        chmod +x solc-static-linux
+        sudo mv solc-static-linux /usr/local/bin/solc
         sudo pip install slither-analyzer
 
 jobs:
