@@ -86,6 +86,9 @@ jobs:
           name: "Running upgrade tests"
           command: yarn run test:contracts:upgrade:parity && yarn run test:contracts:upgrade:ganache
       - run:
+          name: "Running v2 to v3 upgrade tests, forked from mainnet"
+          command: yarn run test:contracts:upgrade:2to3
+      - run:
           name: "Running gas cost tests"
           command: yarn run test:contracts:gasCosts
       - run:

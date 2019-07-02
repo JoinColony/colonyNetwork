@@ -26,7 +26,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 2; }
+  function version() public pure returns (uint256 colonyVersion) { return 3; }
 
   function setRootRole(address _user, bool _setTo) public stoppable auth {
     ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
@@ -175,6 +175,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork(colonyNetworkAddress).registerColonyLabel(colonyName, orbitdb);
   }
 
+  function updateColonyOrbitDB(string memory orbitdb) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).updateColonyOrbitDB(orbitdb);
+  }
+
   function addGlobalSkill() public
   stoppable
   auth
@@ -275,6 +279,15 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     currentColony.setResolver(newResolver);
 
     emit ColonyUpgraded(currentVersion, _newVersion);
+  }
+
+  function finishUpgrade2To3() public always {
+    ColonyAuthority(address(authority)).setRoleCapability(
+      uint8(ColonyDataTypes.ColonyRole.Root),
+      address(this),
+      bytes4(keccak256("updateColonyOrbitDB(string)")),
+      true
+    );
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

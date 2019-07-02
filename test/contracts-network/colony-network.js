@@ -486,5 +486,35 @@ contract("Colony Network", accounts => {
 
       await checkErrorRevert(ensRegistry.setSubnodeOwner(hash, hash, accounts[0]), "unowned-node");
     });
+
+    it("should allow a user to update their orbitDBAddress", async () => {
+      const hash = namehash.hash("test.user.joincolony.eth");
+      await colonyNetwork.registerUserLabel("test", orbitDBAddress, { from: accounts[1] });
+      await colonyNetwork.updateUserOrbitDB("anotherstring", { from: accounts[1] });
+      const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
+      expect(retrievedOrbitDB).to.equal("anotherstring");
+    });
+
+    it("should allow a user to set an orbitDBAddress if they've not got a label", async () => {
+      await checkErrorRevert(colonyNetwork.updateUserOrbitDB("anotherstring", { from: accounts[1] }), "colony-user-not-labeled");
+    });
+
+    it("should allow a colony to change its orbitDBAddress with root permissions", async () => {
+      const colonyName = "test";
+      const hash = namehash.hash("test.colony.joincolony.eth");
+      const { colony } = await setupRandomColony(colonyNetwork);
+      await colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[0] });
+      await colony.finishUpgrade2To3();
+      await colony.updateColonyOrbitDB("anotherstring", { from: accounts[0] });
+      // Get stored orbitdb address
+      const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
+      expect(retrievedOrbitDB).to.equal("anotherstring");
+    });
+
+    it("should not allow a colony to change its orbitDBAddress without having registered a label", async () => {
+      const { colony } = await setupRandomColony(colonyNetwork);
+      await colony.finishUpgrade2To3();
+      await checkErrorRevert(colony.updateColonyOrbitDB("anotherstring", { from: accounts[0] }), "colony-colony-not-labeled");
+    });
   });
 });
