@@ -46,6 +46,8 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _newVersion The target version for the upgrade
   function upgrade(uint _newVersion) public;
 
+  function finishUpgrade2To3() public;
+
   /// @notice Returns the colony network address set on the Colony.
   /// @dev The colonyNetworkAddress we read here is set once, during `initialiseColony`.
   /// @return colonyNetwork The address of Colony Network instance
@@ -126,6 +128,10 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param colonyName The label to register.
   /// @param orbitdb The path of the orbitDB database associated with the colony name
   function registerColonyLabel(string memory colonyName, string memory orbitdb) public;
+
+  /// @notice Update a colony's orbitdb address. Can only be called by a colony with a registered subdomain
+  /// @param orbitdb The path of the orbitDB database to be associated with the colony
+  function updateColonyOrbitDB(string memory orbitdb) public;
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`.
   /// New funding pot is created and associated with the domain here.
