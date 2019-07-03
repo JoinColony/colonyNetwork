@@ -46,6 +46,8 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _newVersion The target version for the upgrade
   function upgrade(uint _newVersion) public;
 
+  /// @notice A function to be called after an upgrade has been done from v2 to v3.
+  /// @dev Sets up the permission for those with root permission to be able to call updateColonyOrbitDB, which is new in v3
   function finishUpgrade2To3() public;
 
   /// @notice Returns the colony network address set on the Colony.
