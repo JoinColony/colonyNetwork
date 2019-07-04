@@ -437,6 +437,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     uint fee = calculateNetworkFeeForPayout(payout);
     uint remainder = sub(payout, fee);
+    fundingPots[fundingPotId].payouts[_token] = sub(fundingPots[fundingPotId].payouts[_token], payout);
 
     if (_token == address(0x0)) {
       // Payout ether
@@ -453,8 +454,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       require(payoutToken.transfer(user, remainder), "colony-funding-payout-user-transfer-fail");
       require(payoutToken.transfer(colonyNetworkAddress, fee), "colony-funding-fee-network-transfer-fail");
     }
-
-    fundingPots[fundingPotId].payouts[_token] = sub(fundingPots[fundingPotId].payouts[_token], payout);
 
     emit PayoutClaimed(fundingPotId, _token, remainder);
   }
