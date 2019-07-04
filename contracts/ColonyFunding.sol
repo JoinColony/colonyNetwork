@@ -278,8 +278,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     fundingPots[0].balance[tokenAddress] = sub(fundingPots[0].balance[tokenAddress], reward);
 
-    ERC20Extended(tokenAddress).transfer(msg.sender, remainder);
-    ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee);
+    require(ERC20Extended(tokenAddress).transfer(msg.sender, remainder), "colony-funding-laim-payout-transfer-fail");
+    require(ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee), "colony-funding-claim-fee-network-transfer-fail");
 
     emit RewardPayoutClaimed(_payoutId, msg.sender, fee, remainder);
   }
@@ -450,8 +450,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       // TODO: (post CCv1) If it's a whitelisted token, it goes straight to the metaColony
       // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
       ERC20Extended payoutToken = ERC20Extended(_token);
-      payoutToken.transfer(user, remainder);
-      payoutToken.transfer(colonyNetworkAddress, fee);
+      require(payoutToken.transfer(user, remainder), "colony-funding-payout-user-transfer-fail");
+      require(payoutToken.transfer(colonyNetworkAddress, fee), "colony-funding-fee-network-transfer-fail");
     }
 
     fundingPots[fundingPotId].payouts[_token] = sub(fundingPots[fundingPotId].payouts[_token], payout);

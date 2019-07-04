@@ -43,7 +43,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     }
 
     DutchAuction auction = new DutchAuction(clny, _token, metaColony);
-    ERC20Extended(_token).transfer(address(auction), availableTokens);
+    require(ERC20Extended(_token).transfer(address(auction), availableTokens), "colony-auction-start-transfer-failed");
     auction.start();
     recentAuctions[_token] = now;
     emit AuctionCreated(address(auction), _token, availableTokens);
@@ -199,7 +199,7 @@ contract DutchAuction is DSMath {
       bidCount += 1;
     }
 
-    clnyToken.transferFrom(msg.sender, address(this), amount);
+    require(clnyToken.transferFrom(msg.sender, address(this), amount), "colony-auction-bid-transfer-failed");
     bids[msg.sender] = add(bids[msg.sender], amount);
     receivedTotal = add(receivedTotal, amount);
 
@@ -243,7 +243,7 @@ contract DutchAuction is DSMath {
     // Set receiver bid to 0 before transferring the tokens
     bids[recipient] = 0;
     uint beforeClaimBalance = token.balanceOf(recipient);
-    require(token.transfer(recipient, tokens), "colony-auction-transfer-failed");
+    require(token.transfer(recipient, tokens), "colony-auction-claim-transfer-failed");
     assert(token.balanceOf(recipient) == add(beforeClaimBalance, tokens));
     assert(bids[recipient] == 0);
 
@@ -257,10 +257,10 @@ contract DutchAuction is DSMath {
   {
     // Transfer token remainder to the network
     uint auctionTokenBalance = token.balanceOf(address(this));
-    token.transfer(colonyNetwork, auctionTokenBalance);
+    require(token.transfer(colonyNetwork, auctionTokenBalance), "colony-auction-destruct-transfer-failed");
     // Transfer CLNY remainder to the meta colony. There shouldn't be any left at this point but just in case..
     uint auctionClnyBalance = clnyToken.balanceOf(address(this));
-    clnyToken.transfer(metaColonyAddress, auctionClnyBalance);
+    require(clnyToken.transfer(metaColonyAddress, auctionClnyBalance), "colony-auction-destruct-clny-transfer-failed");
     // Check this contract balances in the working tokens is 0 before we kill it
     assert(clnyToken.balanceOf(address(this)) == 0);
     assert(token.balanceOf(address(this)) == 0);
