@@ -39,11 +39,11 @@ contract("Colony contract upgrade", () => {
 
     // These tests run against the developers colony. We assume we have forked main chain at 8046998
     colony = await IColony.at(TESTCOLONY_ADDRESS);
+    await colonyNetwork.registerUserLabel("username", "before update");
   });
 
   describe("check behaviour before colonyNetwork upgrade", function() {
     it("should not be able to update user orbit db", async function() {
-      await colonyNetwork.registerUserLabel("username", "before update");
       await checkErrorRevert(colonyNetwork.updateUserOrbitDB("anotherstring"));
     });
   });
