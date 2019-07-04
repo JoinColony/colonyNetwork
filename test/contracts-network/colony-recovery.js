@@ -176,9 +176,9 @@ contract("Colony Recovery", accounts => {
     it("should allow upgrade to be called on a colony in and out of recovery mode", async () => {
       // Note that we can't upgrade, because we don't have a new version. But this test is still valid, because we're getting the
       // 'version must be newer' error, not a `colony-not-in-recovery-mode` or `colony-in-recovery-mode` error.
-      await checkErrorRevert(colony.upgrade(1), "colony-version-must-be-newer");
+      await checkErrorRevert(colony.upgrade(1), "colony-version-must-be-one-newer");
       await colony.enterRecoveryMode();
-      await checkErrorRevert(colony.upgrade(1), "colony-version-must-be-newer");
+      await checkErrorRevert(colony.upgrade(1), "colony-version-must-be-one-newer");
     });
   });
 });

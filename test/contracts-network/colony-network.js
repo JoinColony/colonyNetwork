@@ -275,7 +275,7 @@ contract("Colony Network", accounts => {
       const newVersion = currentColonyVersion.subn(1);
       await metaColony.addNetworkColonyVersion(newVersion, SAMPLE_RESOLVER);
 
-      await checkErrorRevert(colony.upgrade(newVersion), "colony-version-must-be-newer");
+      await checkErrorRevert(colony.upgrade(newVersion), "colony-version-must-be-one-newer");
       expect(version).to.eq.BN(currentColonyVersion);
     });
 
@@ -495,7 +495,7 @@ contract("Colony Network", accounts => {
       expect(retrievedOrbitDB).to.equal("anotherstring");
     });
 
-    it("should allow a user to set an orbitDBAddress if they've not got a label", async () => {
+    it("should not allow a user to set an orbitDBAddress if they've not got a label", async () => {
       await checkErrorRevert(colonyNetwork.updateUserOrbitDB("anotherstring", { from: accounts[1] }), "colony-user-not-labeled");
     });
 
