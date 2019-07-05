@@ -226,6 +226,14 @@ Called after task work rating is complete which closes the task and logs the res
 |_id|uint256|Id of the task
 
 
+### `finishUpgrade`
+
+A function to be called after an upgrade has been done from v2 to v3.
+
+*Note: Can only be called by the colony itself, and only expected to be called as part of the `upgrade()` call. Required to be public so it can be an external call.*
+
+
+
 ### `finishUpgrade2To3`
 
 A function to be called after an upgrade has been done from v2 to v3.
