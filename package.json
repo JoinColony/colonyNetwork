@@ -30,7 +30,7 @@
     "test:contracts:upgrade:2to3": "npm run start:blockchain:client:2to3 & truffle test ./test-upgrade/2to3/2to3.js",
     "test:contracts:gasCosts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test test-gas-costs/gasCosts.js --network development",
     "test:contracts:patricia": "npm run start:blockchain:client parity & truffle migrate --reset --compile-all && truffle test packages/reputation-miner/patricia-test.js --network development",
-    "test:contracts:coverage": "SOLIDITY_COVERAGE=1 solidity-coverage && istanbul check-coverage --statements 99 --branches 95 --functions 99 --lines 99",
+    "test:contracts:coverage": "SOLIDITY_COVERAGE=1 solidity-coverage && istanbul check-coverage --statements 99 --branches 94 --functions 99 --lines 99",
     "test:contracts:watch": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle watch --network development",
     "test:contracts:e2e": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test test-system/end-to-end.js --network development",
     "test:security:slither": "slither contracts/ --solc-disable-warnings --exclude-low --exclude-informational --exclude uninitialized-state-variables,uninitialized-local-variables,reentrancy-no-eth",
