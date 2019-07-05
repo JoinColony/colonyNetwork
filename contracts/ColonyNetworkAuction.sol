@@ -43,7 +43,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     }
 
     DutchAuction auction = new DutchAuction(clny, _token, metaColony);
-    require(ERC20Extended(_token).transfer(address(auction), availableTokens), "colony-auction-start-transfer-failed");
+    assert(ERC20Extended(_token).transfer(address(auction), availableTokens));
     auction.start();
     recentAuctions[_token] = now;
     emit AuctionCreated(address(auction), _token, availableTokens);
@@ -243,7 +243,7 @@ contract DutchAuction is DSMath {
     // Set receiver bid to 0 before transferring the tokens
     bids[recipient] = 0;
     uint beforeClaimBalance = token.balanceOf(recipient);
-    require(token.transfer(recipient, tokens), "colony-auction-claim-transfer-failed");
+    assert(token.transfer(recipient, tokens));
     assert(token.balanceOf(recipient) == add(beforeClaimBalance, tokens));
     assert(bids[recipient] == 0);
 
@@ -257,10 +257,10 @@ contract DutchAuction is DSMath {
   {
     // Transfer token remainder to the network
     uint auctionTokenBalance = token.balanceOf(address(this));
-    require(token.transfer(colonyNetwork, auctionTokenBalance), "colony-auction-destruct-transfer-failed");
+    assert(token.transfer(colonyNetwork, auctionTokenBalance));
     // Transfer CLNY remainder to the meta colony. There shouldn't be any left at this point but just in case..
     uint auctionClnyBalance = clnyToken.balanceOf(address(this));
-    require(clnyToken.transfer(metaColonyAddress, auctionClnyBalance), "colony-auction-destruct-clny-transfer-failed");
+    assert(clnyToken.transfer(metaColonyAddress, auctionClnyBalance));
     // Check this contract balances in the working tokens is 0 before we kill it
     assert(clnyToken.balanceOf(address(this)) == 0);
     assert(token.balanceOf(address(this)) == 0);
