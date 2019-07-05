@@ -145,6 +145,7 @@ jobs:
       - run:
           name: "MythX security analysis"
           command: yarn run test:security:mythril
+          no_output_timeout: 30m
   end-to-end-tests:
     <<: *job_common
     steps:
