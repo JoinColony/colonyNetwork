@@ -21,7 +21,7 @@ const Token = artifacts.require("Token");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
 contract("Colony Network", accounts => {
-  const SAMPLE_RESOLVER = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
+  let newResolverAddress;
   const TOKEN_ARGS = getTokenArgs();
   const OTHER_ACCOUNT = accounts[1];
   let colonyNetwork;
@@ -38,6 +38,16 @@ contract("Colony Network", accounts => {
     colonyNetwork = await setupColonyNetwork();
     version = await colonyNetwork.getCurrentColonyVersion();
     ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+    // For upgrade tests, we need a resolver...
+    const r = await Resolver.new();
+    newResolverAddress = r.address.toLowerCase();
+    // ... that knows the .finishUpgrade() function
+    const sig = await r.stringToSig("finishUpgrade()");
+    const metaColonyAsEtherRouter = await EtherRouter.at(metaColony.address);
+    const wiredResolverAddress = await metaColonyAsEtherRouter.resolver();
+    const wiredResolver = await Resolver.at(wiredResolverAddress);
+    const finishUpgradeFunctionLocation = await wiredResolver.lookup(sig);
+    await r.register("finishUpgrade()", finishUpgradeFunctionLocation);
   });
 
   describe("when initialised", () => {
@@ -60,17 +70,17 @@ contract("Colony Network", accounts => {
     it("should be able to register a higher Colony contract version", async () => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const updatedVersion = currentColonyVersion.addn(1);
-      await metaColony.addNetworkColonyVersion(updatedVersion, SAMPLE_RESOLVER);
+      await metaColony.addNetworkColonyVersion(updatedVersion, newResolverAddress);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       expect(updatedColonyVersion).to.eq.BN(updatedVersion);
       const currentResolver = await colonyNetwork.getColonyVersionResolver(updatedVersion);
-      expect(currentResolver.toLowerCase()).to.equal(SAMPLE_RESOLVER);
+      expect(currentResolver.toLowerCase()).to.equal(newResolverAddress);
     });
 
     it("when registering a lower version of the Colony contract, should NOT update the current (latest) colony version", async () => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      await metaColony.addNetworkColonyVersion(currentColonyVersion.subn(1), SAMPLE_RESOLVER);
+      await metaColony.addNetworkColonyVersion(currentColonyVersion.subn(1), newResolverAddress);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       expect(updatedColonyVersion).to.eq.BN(currentColonyVersion);
@@ -253,27 +263,27 @@ contract("Colony Network", accounts => {
 
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1);
-      await metaColony.addNetworkColonyVersion(newVersion, SAMPLE_RESOLVER);
+      await metaColony.addNetworkColonyVersion(newVersion, newResolverAddress);
 
       await colony.upgrade(newVersion);
       const colonyResolver = await colonyEtherRouter.resolver();
-      expect(colonyResolver.toLowerCase()).to.equal(SAMPLE_RESOLVER);
+      expect(colonyResolver.toLowerCase()).to.equal(newResolverAddress);
     });
 
     it("should not be able to set colony resolver by directly calling `setResolver`", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1);
-      await metaColony.addNetworkColonyVersion(newVersion, SAMPLE_RESOLVER);
+      await metaColony.addNetworkColonyVersion(newVersion, newResolverAddress);
       const etherRouter = await EtherRouter.at(colony.address);
-      await checkErrorRevert(etherRouter.setResolver(SAMPLE_RESOLVER), "ds-auth-unauthorized");
+      await checkErrorRevert(etherRouter.setResolver(newResolverAddress), "ds-auth-unauthorized");
     });
 
     it("should NOT be able to upgrade a colony to a lower version", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.subn(1);
-      await metaColony.addNetworkColonyVersion(newVersion, SAMPLE_RESOLVER);
+      await metaColony.addNetworkColonyVersion(newVersion, newResolverAddress);
 
       await checkErrorRevert(colony.upgrade(newVersion), "colony-version-must-be-one-newer");
       expect(version).to.eq.BN(currentColonyVersion);
@@ -295,10 +305,10 @@ contract("Colony Network", accounts => {
 
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1);
-      await metaColony.addNetworkColonyVersion(newVersion, SAMPLE_RESOLVER);
+      await metaColony.addNetworkColonyVersion(newVersion, newResolverAddress);
 
       await checkErrorRevert(colony.upgrade(newVersion, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
-      expect(colonyResolver).to.not.equal(SAMPLE_RESOLVER);
+      expect(colonyResolver).to.not.equal(newResolverAddress);
     });
   });
 

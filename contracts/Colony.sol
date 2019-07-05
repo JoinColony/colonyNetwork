@@ -277,7 +277,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(newResolver != address(0x0), "colony-version-must-be-registered");
     IEtherRouter currentColony = IEtherRouter(address(this));
     currentColony.setResolver(newResolver);
-
+    // This is deliberately an external call, because we don't know what we need to do for our next upgrade yet.
+    // Because it's called after setResolver, it'll do the new finishUpgrade, which will be populated with what we know
+    // we need to do once we know what's in it!
+    this.finishUpgrade();
     emit ColonyUpgraded(currentVersion, _newVersion);
   }
 
@@ -288,6 +291,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
       bytes4(keccak256("updateColonyOrbitDB(string)")),
       true
     );
+  }
+
+  function finishUpgrade() public always {
+    // Nothing here for v2 to v3, but it needs to be defined.
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

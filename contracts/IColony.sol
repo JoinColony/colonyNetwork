@@ -48,7 +48,13 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice A function to be called after an upgrade has been done from v2 to v3.
   /// @dev Sets up the permission for those with root permission to be able to call updateColonyOrbitDB, which is new in v3
+  /// @dev Should be removed in v4, and only `finishUpgrade` should be used, introduced in v3.
   function finishUpgrade2To3() public;
+
+  /// @notice A function to be called after an upgrade has been done from v2 to v3.
+  /// @dev Can only be called by the colony itself, and only expected to be called as part of the `upgrade()` call. Required to
+  /// be public so it can be an external call.
+  function finishUpgrade() public;
 
   /// @notice Returns the colony network address set on the Colony.
   /// @dev The colonyNetworkAddress we read here is set once, during `initialiseColony`.
