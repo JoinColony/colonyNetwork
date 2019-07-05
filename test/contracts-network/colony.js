@@ -143,7 +143,7 @@ contract("Colony", accounts => {
     const INITIAL_REPUTATIONS = [WAD.muln(5), WAD.muln(4), WAD.muln(3), WAD.muln(2)];
     const INITIAL_ADDRESSES = accounts.slice(0, 4);
 
-    it("should assign reputation correctly when bootstrapping the colony", async () => {
+    it("should assign reputation correctly", async () => {
       const skillCount = await colonyNetwork.getSkillCount();
 
       await colony.mintTokens(WAD.muln(14));
@@ -159,7 +159,7 @@ contract("Colony", accounts => {
       expect(updateLog.skillId).to.eq.BN(skillCount);
     });
 
-    it("should assign tokens correctly when bootstrapping the colony", async () => {
+    it("should assign tokens correctly", async () => {
       await colony.mintTokens(WAD.muln(14));
       await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-bootstrap-not-enough-tokens");
 
