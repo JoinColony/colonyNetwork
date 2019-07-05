@@ -168,10 +168,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     IMetaColony(metaColony).mintTokensForColonyNetwork(realReward);
 
     for (i = 0; i < stakers.length; i++) {
-      require(
-        ERC20Extended(clnyToken).transfer(stakers[i], wmul(reward, minerWeights[i])),
-        "colony-reputation-mining-reward-stakers-transfer-fail"
-      );
+      assert(ERC20Extended(clnyToken).transfer(stakers[i], wmul(reward, minerWeights[i])));
     }
 
     // This gives them reputation in the next update cycle.
