@@ -226,6 +226,22 @@ Called after task work rating is complete which closes the task and logs the res
 |_id|uint256|Id of the task
 
 
+### `finishUpgrade`
+
+A function to be called after an upgrade has been done from v2 to v3.
+
+*Note: Can only be called by the colony itself, and only expected to be called as part of the `upgrade()` call. Required to be public so it can be an external call.*
+
+
+
+### `finishUpgrade2To3`
+
+A function to be called after an upgrade has been done from v2 to v3.
+
+*Note: Sets up the permission for those with root permission to be able to call updateColonyOrbitDB, which is new in v3*
+
+
+
 ### `generateSecret`
 
 Helper function used to generage consistently the rating secret using salt value `_salt` and value to hide `_value`
@@ -1076,6 +1092,18 @@ Submit a hashed secret of the rating for work in task `_id` which was performed 
 |_id|uint256|Id of the task
 |_role|uint8|Id of the role, as defined in TaskRole enum
 |_ratingSecret|bytes32|`keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50). Can be generated via `IColony.generateSecret` helper function.
+
+
+### `updateColonyOrbitDB`
+
+Update a colony's orbitdb address. Can only be called by a colony with a registered subdomain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|orbitdb|string|The path of the orbitDB database to be associated with the colony
 
 
 ### `upgrade`

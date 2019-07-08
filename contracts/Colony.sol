@@ -26,7 +26,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 2; }
+  function version() public pure returns (uint256 colonyVersion) { return 3; }
 
   function setRootRole(address _user, bool _setTo) public stoppable auth {
     ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
@@ -175,6 +175,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork(colonyNetworkAddress).registerColonyLabel(colonyName, orbitdb);
   }
 
+  function updateColonyOrbitDB(string memory orbitdb) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).updateColonyOrbitDB(orbitdb);
+  }
+
   function addGlobalSkill() public
   stoppable
   auth
@@ -265,16 +269,32 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function upgrade(uint256 _newVersion) public always auth {
-    // Upgrades can only go up in version
+    // Upgrades can only go up in version, one at a time
     uint256 currentVersion = version();
-    require(_newVersion > currentVersion, "colony-version-must-be-newer");
+    require(_newVersion == currentVersion + 1, "colony-version-must-be-one-newer");
     // Requested version has to be registered
     address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
     require(newResolver != address(0x0), "colony-version-must-be-registered");
     IEtherRouter currentColony = IEtherRouter(address(this));
     currentColony.setResolver(newResolver);
-
+    // This is deliberately an external call, because we don't know what we need to do for our next upgrade yet.
+    // Because it's called after setResolver, it'll do the new finishUpgrade, which will be populated with what we know
+    // we need to do once we know what's in it!
+    this.finishUpgrade();
     emit ColonyUpgraded(currentVersion, _newVersion);
+  }
+
+  function finishUpgrade2To3() public always {
+    ColonyAuthority(address(authority)).setRoleCapability(
+      uint8(ColonyDataTypes.ColonyRole.Root),
+      address(this),
+      bytes4(keccak256("updateColonyOrbitDB(string)")),
+      true
+    );
+  }
+
+  function finishUpgrade() public always {
+    // Nothing here for v2 to v3, but it needs to be defined.
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
