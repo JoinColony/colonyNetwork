@@ -148,7 +148,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
       fundingPots[1].balance[token] = sub(fundingPots[1].balance[token], uint256(_amounts[i]));
       nonRewardPotsTotal[token] = sub(nonRewardPotsTotal[token], uint256(_amounts[i]));
 
-      ERC20Extended(token).transfer(_users[i], uint256(_amounts[i]));
+      assert(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])));
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
     }
 
@@ -168,7 +168,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Function only valid on the Meta Colony
     require(address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
     ERC20Extended(token).mint(_wad);
-    ERC20Extended(token).transfer(colonyNetworkAddress, _wad);
+    assert(ERC20Extended(token).transfer(colonyNetworkAddress, _wad));
   }
 
   function registerColonyLabel(string memory colonyName, string memory orbitdb) public stoppable auth {

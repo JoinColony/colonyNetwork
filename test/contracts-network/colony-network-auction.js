@@ -330,6 +330,12 @@ contract("Colony Network Auction", accounts => {
       await checkErrorRevert(tokenAuction.bid(0), "colony-auction-invalid-bid");
     });
 
+    it("cannot bid more tokens than have approved", async () => {
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, 100);
+      await clnyToken.approve(tokenAuction.address, 99, { from: BIDDER_1 });
+      await checkErrorRevert(tokenAuction.bid(100), "ds-token-insufficient-approval");
+    });
+
     it("auction closes when the receivedTotal goes over the total amount to end the auction for quantity > 1e18", async () => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, quantity);
       await clnyToken.approve(tokenAuction.address, quantity, { from: BIDDER_1 });
