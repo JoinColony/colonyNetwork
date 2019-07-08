@@ -119,9 +119,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     metaColony = createColony(_tokenAddress);
 
     // Add the special mining skill
-    this.addSkill(skillCount);
-    // NB skillCount is incremented by the above call
-    reputationMiningSkillId = skillCount;
+    reputationMiningSkillId = this.addSkill(skillCount);
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }

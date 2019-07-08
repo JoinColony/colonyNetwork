@@ -278,8 +278,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     fundingPots[0].balance[tokenAddress] = sub(fundingPots[0].balance[tokenAddress], reward);
 
-    ERC20Extended(tokenAddress).transfer(msg.sender, remainder);
-    ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee);
+    assert(ERC20Extended(tokenAddress).transfer(msg.sender, remainder));
+    assert(ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee));
 
     emit RewardPayoutClaimed(_payoutId, msg.sender, fee, remainder);
   }
@@ -437,6 +437,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     uint fee = calculateNetworkFeeForPayout(payout);
     uint remainder = sub(payout, fee);
+    fundingPots[fundingPotId].payouts[_token] = sub(fundingPots[fundingPotId].payouts[_token], payout);
 
     if (_token == address(0x0)) {
       // Payout ether
@@ -450,11 +451,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       // TODO: (post CCv1) If it's a whitelisted token, it goes straight to the metaColony
       // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
       ERC20Extended payoutToken = ERC20Extended(_token);
-      payoutToken.transfer(user, remainder);
-      payoutToken.transfer(colonyNetworkAddress, fee);
+      assert(payoutToken.transfer(user, remainder));
+      assert(payoutToken.transfer(colonyNetworkAddress, fee));
     }
-
-    fundingPots[fundingPotId].payouts[_token] = sub(fundingPots[fundingPotId].payouts[_token], payout);
 
     emit PayoutClaimed(fundingPotId, _token, remainder);
   }
