@@ -88,6 +88,30 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     emit ColonyLabelRegistered(msg.sender, subnode);
   }
 
+  function updateColonyOrbitDB(string memory orbitdb)
+  public
+  calledByColony
+  stoppable
+  {
+    string storage label = colonyLabels[msg.sender];
+    require(bytes(label).length > 0, "colony-colony-not-labeled");
+    bytes32 subnode = keccak256(abi.encodePacked(label));
+    bytes32 node = keccak256(abi.encodePacked(colonyNode, subnode));
+    records[node].orbitdb = orbitdb;
+  }
+
+  function updateUserOrbitDB(string memory orbitdb)
+  public
+  notCalledByColony
+  stoppable
+  {
+    string storage label = userLabels[msg.sender];
+    require(bytes(label).length > 0, "colony-user-not-labeled");
+    bytes32 subnode = keccak256(abi.encodePacked(label));
+    bytes32 node = keccak256(abi.encodePacked(userNode, subnode));
+    records[node].orbitdb = orbitdb;
+  }
+
   function getProfileDBAddress(bytes32 node) public view returns (string memory orbitDB) {
     return records[node].orbitdb;
   }

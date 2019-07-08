@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.5.6; // ignore-swc-103
+pragma solidity >=0.5.8; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
 import "./IRecovery.sol";
@@ -226,6 +226,14 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param colonyName The label to register.
   /// @param orbitdb The path of the orbitDB database associated with the colony name
   function registerColonyLabel(string memory colonyName, string memory orbitdb) public;
+
+  /// @notice Update a colony's orbitdb address. Can only be called by a colony with a registered subdomain
+  /// @param orbitdb The path of the orbitDB database to be associated with the colony
+  function updateColonyOrbitDB(string memory orbitdb) public;
+
+  /// @notice Update a user's orbitdb address. Can only be called by a user with a registered subdomain
+  /// @param orbitdb The path of the orbitDB database to be associated with the user
+  function updateUserOrbitDB(string memory orbitdb) public;
 
   /// @notice Retrieve the orbitdb address corresponding to a registered account.
   /// @param node The Namehash of the account being queried.

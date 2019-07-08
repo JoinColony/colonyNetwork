@@ -619,3 +619,26 @@ Query if a contract implements an interface
 |Name|Type|Description|
 |---|---|---|
 |bool|bool|
+
+### `updateColonyOrbitDB`
+
+Update a colony's orbitdb address. Can only be called by a colony with a registered subdomain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|orbitdb|string|The path of the orbitDB database to be associated with the colony
+
+
+### `updateUserOrbitDB`
+
+Update a user's orbitdb address. Can only be called by a user with a registered subdomain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|orbitdb|string|The path of the orbitDB database to be associated with the user
