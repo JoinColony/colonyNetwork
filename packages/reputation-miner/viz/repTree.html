@@ -53,7 +53,7 @@
     // declares a tree layout and assigns the size
     var treemap = d3.tree().size([height, width]);
 
-    d3.request(`http://localhost:3000/reputations`, function(error, res) {
+    d3.request(`reputations`, function(error, res) {
       if (error) throw error;
 
       const { rootHash, reputations } = JSON.parse(res.response);
