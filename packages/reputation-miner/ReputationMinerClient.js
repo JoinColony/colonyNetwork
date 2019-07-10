@@ -134,9 +134,8 @@ class ReputationMinerClient {
       // Have we already submitted any of these? Need to update submissionIndex if so
       const repCycle = await this._miner.getActiveRepCycle();
       const block = await this._miner.realProvider.getBlock('latest');
-      // Ensure the submission index is reset as
+      // Ensure the submission index is reset to the correct point in the best12Submissions array
       this.submissionIndex = 0;
-
       for (let i = 0; i < this.best12Submissions.length; i+=1 ){
         if (block.timestamp >= this.best12Submissions[i].timestamp) {
           const {entryIndex} = this.best12Submissions[i];
