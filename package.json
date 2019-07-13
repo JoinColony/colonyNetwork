@@ -112,7 +112,7 @@
     "truffle": "^5.0.14",
     "truffle-hdwallet-provider": "^1.0.9",
     "truffle-security": "^1.5.2",
-    "web3-utils": "^1.0.0-beta.55"
+    "web3-utils": "^1.0.0"
   },
   "private": true,
   "workspaces": [
