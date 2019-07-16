@@ -11,7 +11,7 @@ const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const { expect } = chai;
 
-contract("Colony contract upgrade", () => {
+contract("Colony contract upgrade", accounts => {
   let metaColony;
   let colony;
   let colonyNetwork;
@@ -39,6 +39,7 @@ contract("Colony contract upgrade", () => {
 
     // These tests run against the developers colony. We assume we have forked main chain at 8046998
     colony = await IColony.at(TESTCOLONY_ADDRESS);
+    await colony.addDomain(1, 0, 1, { from: TESTCOLONY_OWNER });
     await colonyNetwork.registerUserLabel("username", "before update");
   });
 
@@ -65,12 +66,14 @@ contract("Colony contract upgrade", () => {
     });
   });
 
+  // Tests here throw with no error - these are not failed requires. The functions just isn't registered
   describe("check behaviour before colony upgrade", function() {
+    it("should not be able to assign arbitration role", async function() {
+      await checkErrorRevert(colony.setArbitrationRole(1, 0, accounts[3], 2, true, { from: TESTCOLONY_OWNER }));
+    });
+
     it("should not be able to update colony orbit db", async function() {
-      await checkErrorRevert(
-        colony.updateColonyOrbitDB("anotherstring", { from: TESTCOLONY_OWNER })
-        // This throws with no error - this is not a failed require. The function just isn't registered
-      );
+      await checkErrorRevert(colony.updateColonyOrbitDB("anotherstring", { from: TESTCOLONY_OWNER }));
     });
   });
 
@@ -79,6 +82,13 @@ contract("Colony contract upgrade", () => {
       // Upgrade the test colony
       await colony.upgrade(3, { from: TESTCOLONY_OWNER });
       await colony.finishUpgrade2To3();
+    });
+
+    it("should be able to assign arbitration role", async function() {
+      let hasRole = await colony.hasUserRole(accounts[3], 2, 2);
+      await colony.setArbitrationRole(1, 0, accounts[3], 2, true, { from: TESTCOLONY_OWNER });
+      hasRole = await colony.hasUserRole(accounts[3], 2, 2);
+      expect(hasRole).to.be.true;
     });
 
     it("should be able to update colony orbit db", async function() {
