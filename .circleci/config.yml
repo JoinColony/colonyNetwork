@@ -104,6 +104,9 @@ jobs:
           name: "Running gas cost tests"
           command: yarn run test:contracts:gasCosts
       - run:
+          name: "Running gas cost diff check"
+          command: npx codechecks
+      - run:
           name: "Running patricia tree tests"
           command: yarn run test:contracts:patricia
       - <<: *step_save_cache
@@ -139,7 +142,7 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - <<: *step_setup_slither
-      - run: 
+      - run:
           name: "Slither analysis"
           command: yarn run test:security:slither
       - run:
