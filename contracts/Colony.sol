@@ -285,8 +285,24 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function finishUpgrade2To3() public always {
-    ColonyAuthority(address(authority)).setRoleCapability(
-      uint8(ColonyDataTypes.ColonyRole.Root),
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+
+    colonyAuthority.setRoleCapability(
+     uint8(ColonyDataTypes.ColonyRole.ArchitectureSubdomain),
+      address(this),
+      bytes4(keccak256("setArbitrationRole(uint256,uint256,address,uint256,bool)")),
+      true
+    );
+
+    colonyAuthority.setRoleCapability(
+     uint8(ColonyDataTypes.ColonyRole.Root),
+      address(this),
+      bytes4(keccak256("setArbitrationRole(uint256,uint256,address,uint256,bool)")),
+      true
+    );
+
+    colonyAuthority.setRoleCapability(
+     uint8(ColonyDataTypes.ColonyRole.Root),
       address(this),
       bytes4(keccak256("updateColonyOrbitDB(string)")),
       true
