@@ -48,14 +48,12 @@ contract ColonyAuthority is CommonAuthority {
 
     // Add permissions for the Architecture role
     addRoleCapability(ARCHITECTURE_ROLE, "addDomain(uint256,uint256,uint256)");
-    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setFundingRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
 
     // Add permissions for the Root role
     addRoleCapability(ROOT_ROLE, "setRootRole(address,bool)");
-    addRoleCapability(ROOT_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ROOT_ROLE, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ROOT_ROLE, "setFundingRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ROOT_ROLE, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
@@ -80,6 +78,8 @@ contract ColonyAuthority is CommonAuthority {
 
     // Added in colony v3
     addRoleCapability(ROOT_ROLE, "updateColonyOrbitDB(string)");
+    addRoleCapability(ROOT_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
+    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {
