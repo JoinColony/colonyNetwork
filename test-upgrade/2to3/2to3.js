@@ -2,6 +2,7 @@
 /* eslint-disable prefer-arrow-callback */
 import chai from "chai";
 import { checkErrorRevert } from "../../helpers/test-helper";
+import { ARBITRATION_ROLE } from "../../helpers/constants";
 
 const namehash = require("eth-ens-namehash");
 
@@ -85,9 +86,9 @@ contract("Colony contract upgrade", accounts => {
     });
 
     it("should be able to assign arbitration role", async function() {
-      let hasRole = await colony.hasUserRole(accounts[3], 2, 2);
+      let hasRole = await colony.hasUserRole(accounts[3], 2, ARBITRATION_ROLE);
       await colony.setArbitrationRole(1, 0, accounts[3], 2, true, { from: TESTCOLONY_OWNER });
-      hasRole = await colony.hasUserRole(accounts[3], 2, 2);
+      hasRole = await colony.hasUserRole(accounts[3], 2, ARBITRATION_ROLE);
       expect(hasRole).to.be.true;
     });
 
