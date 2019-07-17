@@ -87,6 +87,7 @@ contract("Colony contract upgrade", accounts => {
 
     it("should be able to assign arbitration role", async function() {
       let hasRole = await colony.hasUserRole(accounts[3], 2, ARBITRATION_ROLE);
+      expect(hasRole).to.be.false;
       await colony.setArbitrationRole(1, 0, accounts[3], 2, true, { from: TESTCOLONY_OWNER });
       hasRole = await colony.hasUserRole(accounts[3], 2, ARBITRATION_ROLE);
       expect(hasRole).to.be.true;
