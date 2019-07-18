@@ -102,13 +102,10 @@ jobs:
           command: yarn run test:contracts:upgrade:2to3
       - run:
           name: "Running gas cost tests"
-          command: yarn run test:contracts:gasCosts
+          command: yarn run test:contracts:gasCosts && yarn run codechecks
       - run:
           name: "Running patricia tree tests"
           command: yarn run test:contracts:patricia
-      - run:
-          name: "Generate gas cost diff report"
-          command: yarn run codechecks
       - <<: *step_save_cache
       # Save test results
       - store_test_results:
