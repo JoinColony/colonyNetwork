@@ -162,8 +162,8 @@ workflows:
   version: 2
   commit:
     jobs:
-      - lint-and-unit-test
-      - test-coverage
+      - security-analysis:
+          context: colony-network-context
   nightly:
     triggers:
       - schedule:
