@@ -4,7 +4,7 @@ section: Whitepaper TL;DR
 order: 4
 ---
 
-In an organization of any type, reputation is an essential heuristic for people to keep track of each other's perceived merit in an environment of limited information. Reputation within Colony is meant stay close to the concept of reputation as it is commonly understood. Reputation is a representation of _merit_, which in Colony implies an immutable record of contributions to a shared goal.
+In an organization of any type, reputation is an essential heuristic for people to keep track of each other's perceived merit in an environment of limited information. Reputation within Colony is meant to stay close to the concept of reputation as it is commonly understood. Reputation is a representation of _merit_, which in Colony implies an immutable record of contributions to a shared goal.
 
 In the Colony Protocol, **reputation** is a number that quantifies a particular individual’s influence, calculated from the sum of work that has been completed within the colony.
 
