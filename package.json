@@ -34,7 +34,7 @@
     "test:contracts:watch": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle watch --network development",
     "test:contracts:e2e": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test test-system/end-to-end.js --network development",
     "test:security:slither": "slither contracts/ --solc-disable-warnings --exclude-low --exclude-informational --exclude uninitialized-state-variables,uninitialized-local-variables,reentrancy-no-eth",
-    "test:security:mythril": "truffle run verify --mode quick --style json --limit 1 | grep '^\\[{\"' > truffle-security-output.json; node ./scripts/process-truffle-security.js",
+    "test:security:mythril": "truffle run verify --mode quick --style json --limit 1 --swc-blacklist 128 | grep '^\\[{\"' > truffle-security-output.json; node ./scripts/process-truffle-security.js",
     "pretest:contracts": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:upgrade:parity": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:upgrade:ganache": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
