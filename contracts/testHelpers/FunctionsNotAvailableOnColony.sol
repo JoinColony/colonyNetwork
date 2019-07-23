@@ -15,20 +15,15 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8; // ignore-swc-103
+pragma solidity 0.5.8;
+pragma experimental ABIEncoderV2;
 
-import "../lib/dappsys/erc20.sol";
+import "./../Colony.sol";
+import "./../IColonyNetwork.sol";
 
 
-contract ERC20Extended is ERC20 {
-  event Mint(address indexed guy, uint wad);
-  event Burn(address indexed guy, uint wad);
-
-  function mint(uint wad) public;
-
-  function mint(address guy, uint wad) public;
-
-  function burn(uint wad) public;
-
-  function burn(address guy, uint wad) public;
+contract FunctionsNotAvailableOnColony is Colony {
+  function registerUserLabel(string memory username, string memory orbitdb) public {
+    return IColonyNetwork(colonyNetworkAddress).registerUserLabel(username, orbitdb);
+  }
 }

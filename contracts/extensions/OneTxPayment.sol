@@ -39,11 +39,70 @@ contract OneTxPayment {
   /// @notice Completes a colony payment in a single transaction
   /// @dev Assumes that each entity holds administration and funding roles in the same domain,
   /// although contract and caller can have the permissions in different domains.
-  /// @param _permissionDomainId The domainId in which the _caller_ has permissions to add a payment and fund it
+  /// Payment is taken from root domain, and the caller must have funding permission explicitly in the root domain
+  /// @param _permissionDomainId The domainId in which the _contract_ has permissions to add a payment and fund it
   /// @param _childSkillIndex Index of the _permissionDomainId skill.children array to get
-  /// @param _callerPermissionDomainId The domainId in which the _contract_ has permissions to add a payment and fund it
+  /// @param _callerPermissionDomainId The domainId in which the _caller_ has permissions to add a payment and fund it
   /// @param _callerChildSkillIndex Index of the _callerPermissionDomainId skill.children array to get
+  /// @param _worker The address of the recipient of the payment
+  /// @param _token The address of the token the payment is being made in. 0x00 for Ether.
+  /// @param _amount The amount of the token being paid out
+  /// @param _domainId The Id of the domain the payment should be coming from
+  /// @param _skillId The Id of the skill that the payment should be marked with, possibly awarding reputation in this skill.
   function makePayment(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _callerPermissionDomainId,
+    uint256 _callerChildSkillIndex,
+    address payable _worker,
+    address _token,
+    uint256 _amount,
+    uint256 _domainId,
+    uint256 _skillId) public
+  {
+    // Check caller is able to call {add,finalize}Payment and moveFundsBetweenPots on the colony in the domain in question
+    validateCallerPermissions(_callerPermissionDomainId, _callerChildSkillIndex, _domainId);
+    // In addition, check the caller is able to call moveFundsBetweenPots from the root domain
+    require(
+      ColonyAuthority(colony.authority()).canCall(msg.sender, 1, address(colony), MOVE_FUNDS_SIG),
+      "colony-one-tx-payment-root-funding-not-authorized"
+    );
+
+    // Add a new payment
+    uint256 paymentId = colony.addPayment(_permissionDomainId, _childSkillIndex, _worker, _token, _amount, _domainId, _skillId);
+    ColonyDataTypes.Payment memory payment = colony.getPayment(paymentId);
+
+    // Fund the payment
+    colony.moveFundsBetweenPots(
+      1, // Root domain always 1
+      0, // Not used, this extension contract must have funding permission in the root for this function to work
+      _childSkillIndex,
+      1, // Root domain funding pot is always 1
+      payment.fundingPotId,
+      _amount,
+      _token
+    );
+    colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
+
+    // Claim payout on behalf of the recipient
+    colony.claimPayment(paymentId, _token);
+  }
+
+
+  /// @notice Completes a colony payment in a single transaction
+  /// @dev Assumes that each entity holds administration and funding roles in the same domain,
+  /// although contract and caller can have the permissions in different domains.
+  /// Payment is taken from domain funds - if the domain does not have sufficient funds, call will fail.
+  /// @param _permissionDomainId The domainId in which the _contract_ has permissions to add a payment and fund it
+  /// @param _childSkillIndex Index of the _permissionDomainId skill.children array to get
+  /// @param _callerPermissionDomainId The domainId in which the _caller_ has permissions to add a payment and fund it
+  /// @param _callerChildSkillIndex Index of the _callerPermissionDomainId skill.children array to get
+  /// @param _worker The address of the recipient of the payment
+  /// @param _token The address of the token the payment is being made in. 0x00 for Ether.
+  /// @param _amount The amount of the token being paid out
+  /// @param _domainId The Id of the domain the payment should be coming from
+  /// @param _skillId The Id of the skill that the payment should be marked with, possibly awarding reputation in this skill.
+  function makePaymentFundedFromDomain(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _callerPermissionDomainId,

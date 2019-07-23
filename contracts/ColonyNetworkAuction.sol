@@ -20,10 +20,7 @@ pragma solidity 0.5.8;
 import "./ColonyNetworkStorage.sol";
 
 
-contract ColonyNetworkAuction is ColonyNetworkStorage { // ignore-swc-123 .
-  // This ignore is something to do with the auctionNotStarted and auctionStartedAndOpen modifiers. If we comment out their
-  // contents, there isn't an issue, but I can't understand what MythX would like us to do instead. Open to suggestions!
-
+contract ColonyNetworkAuction is ColonyNetworkStorage {
   function startTokenAuction(address _token) public
   stoppable
   auth
@@ -46,7 +43,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage { // ignore-swc-123 .
     }
 
     DutchAuction auction = new DutchAuction(clny, _token, metaColony);
-    ERC20Extended(_token).transfer(address(auction), availableTokens);
+    assert(ERC20Extended(_token).transfer(address(auction), availableTokens));
     auction.start();
     recentAuctions[_token] = now;
     emit AuctionCreated(address(auction), _token, availableTokens);
@@ -56,7 +53,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage { // ignore-swc-123 .
 
 contract DutchAuction is DSMath {
   address payable public colonyNetwork;
-  address public metaColony;
+  address public metaColonyAddress;
   ERC20Extended public clnyToken;
   ERC20Extended public token;
 
@@ -117,9 +114,9 @@ contract DutchAuction is DSMath {
   event AuctionClaim(address indexed _recipient, uint256 _sentAmount);
   event AuctionFinalized(uint256 _finalPrice);
 
-  constructor(address _clnyToken, address _token, address _metaColony) public {
+  constructor(address _clnyToken, address _token, address _metaColonyAddress) public {
     colonyNetwork = msg.sender;
-    metaColony = _metaColony;
+    metaColonyAddress = _metaColonyAddress;
     clnyToken = ERC20Extended(_clnyToken);
     token = ERC20Extended(_token);
   }
@@ -202,7 +199,7 @@ contract DutchAuction is DSMath {
       bidCount += 1;
     }
 
-    clnyToken.transferFrom(msg.sender, address(this), amount);
+    require(clnyToken.transferFrom(msg.sender, address(this), amount), "colony-auction-bid-transfer-failed");
     bids[msg.sender] = add(bids[msg.sender], amount);
     receivedTotal = add(receivedTotal, amount);
 
@@ -246,7 +243,7 @@ contract DutchAuction is DSMath {
     // Set receiver bid to 0 before transferring the tokens
     bids[recipient] = 0;
     uint beforeClaimBalance = token.balanceOf(recipient);
-    require(token.transfer(recipient, tokens), "colony-auction-transfer-failed");
+    assert(token.transfer(recipient, tokens));
     assert(token.balanceOf(recipient) == add(beforeClaimBalance, tokens));
     assert(bids[recipient] == 0);
 
@@ -260,10 +257,10 @@ contract DutchAuction is DSMath {
   {
     // Transfer token remainder to the network
     uint auctionTokenBalance = token.balanceOf(address(this));
-    token.transfer(colonyNetwork, auctionTokenBalance);
+    assert(token.transfer(colonyNetwork, auctionTokenBalance));
     // Transfer CLNY remainder to the meta colony. There shouldn't be any left at this point but just in case..
     uint auctionClnyBalance = clnyToken.balanceOf(address(this));
-    clnyToken.transfer(metaColony, auctionClnyBalance);
+    assert(clnyToken.transfer(metaColonyAddress, auctionClnyBalance));
     // Check this contract balances in the working tokens is 0 before we kill it
     assert(clnyToken.balanceOf(address(this)) == 0);
     assert(token.balanceOf(address(this)) == 0);

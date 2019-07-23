@@ -36,6 +36,7 @@ contract OldRoles {
     require(colony.hasUserRole(msg.sender, 1, ROOT), "old-roles-caller-not-authorized");
 
     colony.setRootRole(_user, true);
+    colony.setArbitrationRole(1, 0, _user, 1, true);
     colony.setArchitectureRole(1, 0, _user, 1, true);
     colony.setFundingRole(1, 0, _user, 1, true);
     colony.setAdministrationRole(1, 0, _user, 1, true);
@@ -44,6 +45,7 @@ contract OldRoles {
     colony.setAdministrationRole(1, 0, msg.sender, 1, false);
     colony.setFundingRole(1, 0, msg.sender, 1, false);
     colony.setArchitectureRole(1, 0, msg.sender, 1, false);
+    colony.setArbitrationRole(1, 0, msg.sender, 1, false);
     colony.setRootRole(msg.sender, false);
   }
 

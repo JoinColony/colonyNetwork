@@ -26,12 +26,25 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 2; }
+  function version() public pure returns (uint256 colonyVersion) { return 3; }
 
   function setRootRole(address _user, bool _setTo) public stoppable auth {
     ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
 
     emit ColonyRoleSet(_user, 1, uint8(ColonyRole.Root), _setTo);
+  }
+
+  function setArbitrationRole(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bool _setTo
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
+
+    emit ColonyRoleSet(_user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
   }
 
   function setArchitectureRole(
@@ -135,7 +148,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
       fundingPots[1].balance[token] = sub(fundingPots[1].balance[token], uint256(_amounts[i]));
       nonRewardPotsTotal[token] = sub(nonRewardPotsTotal[token], uint256(_amounts[i]));
 
-      ERC20Extended(token).transfer(_users[i], uint256(_amounts[i]));
+      assert(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])));
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
     }
 
@@ -146,7 +159,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   stoppable
   auth
   {
-    ERC20Extended(token).mint(address(this), _wad);
+    ERC20Extended(token).mint(address(this), _wad); // ignore-swc-107
   }
 
   function mintTokensForColonyNetwork(uint _wad) public stoppable {
@@ -155,11 +168,15 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Function only valid on the Meta Colony
     require(address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
     ERC20Extended(token).mint(_wad);
-    ERC20Extended(token).transfer(colonyNetworkAddress, _wad);
+    assert(ERC20Extended(token).transfer(colonyNetworkAddress, _wad));
   }
 
   function registerColonyLabel(string memory colonyName, string memory orbitdb) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).registerColonyLabel(colonyName, orbitdb);
+  }
+
+  function updateColonyOrbitDB(string memory orbitdb) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).updateColonyOrbitDB(orbitdb);
   }
 
   function addGlobalSkill() public
@@ -168,7 +185,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   returns (uint256)
   {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.addSkill(0);
+    return colonyNetwork.addSkill(0); // ignore-swc-107
   }
 
   function deprecateGlobalSkill(uint256 _skillId) public
@@ -184,7 +201,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   auth
   {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.setFeeInverse(_feeInverse);
+    return colonyNetwork.setFeeInverse(_feeInverse); // ignore-swc-107
   }
 
   function addNetworkColonyVersion(uint256 _version, address _resolver) public
@@ -252,16 +269,48 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function upgrade(uint256 _newVersion) public always auth {
-    // Upgrades can only go up in version
+    // Upgrades can only go up in version, one at a time
     uint256 currentVersion = version();
-    require(_newVersion > currentVersion, "colony-version-must-be-newer");
+    require(_newVersion == currentVersion + 1, "colony-version-must-be-one-newer");
     // Requested version has to be registered
     address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
     require(newResolver != address(0x0), "colony-version-must-be-registered");
     IEtherRouter currentColony = IEtherRouter(address(this));
     currentColony.setResolver(newResolver);
-
+    // This is deliberately an external call, because we don't know what we need to do for our next upgrade yet.
+    // Because it's called after setResolver, it'll do the new finishUpgrade, which will be populated with what we know
+    // we need to do once we know what's in it!
+    this.finishUpgrade();
     emit ColonyUpgraded(currentVersion, _newVersion);
+  }
+
+  function finishUpgrade2To3() public always {
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+
+    colonyAuthority.setRoleCapability(
+     uint8(ColonyDataTypes.ColonyRole.ArchitectureSubdomain),
+      address(this),
+      bytes4(keccak256("setArbitrationRole(uint256,uint256,address,uint256,bool)")),
+      true
+    );
+
+    colonyAuthority.setRoleCapability(
+     uint8(ColonyDataTypes.ColonyRole.Root),
+      address(this),
+      bytes4(keccak256("setArbitrationRole(uint256,uint256,address,uint256,bool)")),
+      true
+    );
+
+    colonyAuthority.setRoleCapability(
+     uint8(ColonyDataTypes.ColonyRole.Root),
+      address(this),
+      bytes4(keccak256("updateColonyOrbitDB(string)")),
+      true
+    );
+  }
+
+  function finishUpgrade() public always {
+    // Nothing here for v2 to v3, but it needs to be defined.
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

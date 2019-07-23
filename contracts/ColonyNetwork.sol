@@ -119,9 +119,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     metaColony = createColony(_tokenAddress);
 
     // Add the special mining skill
-    this.addSkill(skillCount);
-    // NB skillCount is incremented by the above call
-    reputationMiningSkillId = skillCount;
+    reputationMiningSkillId = this.addSkill(skillCount);
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
@@ -135,15 +133,15 @@ contract ColonyNetwork is ColonyNetworkStorage {
     EtherRouter etherRouter = new EtherRouter();
     IColony colony = IColony(address(etherRouter));
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion]; // ignore-swc-107
-    etherRouter.setResolver(resolverForLatestColonyVersion);
+    etherRouter.setResolver(resolverForLatestColonyVersion); // ignore-swc-113
 
     // Creating new instance of colony's authority
-    ColonyAuthority authority = new ColonyAuthority(address(colony));
+    ColonyAuthority colonyAuthority = new ColonyAuthority(address(colony));
 
     DSAuth dsauth = DSAuth(etherRouter);
-    dsauth.setAuthority(authority);
+    dsauth.setAuthority(colonyAuthority);
 
-    authority.setOwner(address(etherRouter));
+    colonyAuthority.setOwner(address(etherRouter));
 
     // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;
@@ -156,6 +154,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     // Assign all permissions in root domain
     colony.setRecoveryRole(msg.sender);
     colony.setRootRole(msg.sender, true);
+    colony.setArbitrationRole(1, 0, msg.sender, 1, true);
     colony.setArchitectureRole(1, 0, msg.sender, 1, true);
     colony.setFundingRole(1, 0, msg.sender, 1, true);
     colony.setAdministrationRole(1, 0, msg.sender, 1, true);

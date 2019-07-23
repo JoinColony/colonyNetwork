@@ -4,6 +4,10 @@ job_common: &job_common
   docker:
     - image: circleci/node:10.12-stretch
   working_directory: ~/colonyNetwork
+job_python: &job_python
+  docker:
+    - image: circleci/python:3.7.3-stretch-node
+  working_directory: ~/colonyNetwork
 step_save_cache: &step_save_cache
   save_cache:
     paths:
@@ -24,6 +28,14 @@ step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
       command: docker pull ethereum/solc:0.5.8
+step_setup_slither: &step_setup_slither
+    run:
+      name: "Setup slither analyser https://github.com/crytic/slither"
+      command: |
+        wget https://github.com/ethereum/solidity/releases/download/v0.5.8/solc-static-linux
+        chmod +x solc-static-linux
+        sudo mv solc-static-linux /usr/local/bin/solc
+        sudo pip install slither-analyzer
 
 jobs:
   lint-and-unit-test:
@@ -86,8 +98,11 @@ jobs:
           name: "Running upgrade tests"
           command: yarn run test:contracts:upgrade:parity && yarn run test:contracts:upgrade:ganache
       - run:
+          name: "Running v2 to v3 upgrade tests, forked from mainnet"
+          command: yarn run test:contracts:upgrade:2to3
+      - run:
           name: "Running gas cost tests"
-          command: yarn run test:contracts:gasCosts
+          command: yarn run test:contracts:gasCosts && yarn run codechecks
       - run:
           name: "Running patricia tree tests"
           command: yarn run test:contracts:patricia
@@ -116,16 +131,21 @@ jobs:
       - store_artifacts:
           path: coverage
   security-analysis:
-    <<: *job_common
+    <<: *job_python
     steps:
       - checkout
       - <<: *step_restore_cache
       - setup_remote_docker
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_setup_slither
+      - run:
+          name: "Slither analysis"
+          command: yarn run test:security:slither
       - run:
           name: "MythX security analysis"
-          command: yarn run test:contracts:security
+          command: yarn run test:security:mythril
+          no_output_timeout: 60m
   end-to-end-tests:
     <<: *job_common
     steps:

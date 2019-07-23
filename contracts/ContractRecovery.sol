@@ -25,7 +25,7 @@ import "./IRecovery.sol";
 
 /// @title Used for recovery in both ColonyNetwork and Colony instances
 /// @notice Implements functions defined in IRecovery interface
-contract ContractRecovery is CommonStorage {
+contract ContractRecovery is CommonStorage { // ignore-swc-123
   uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
 
   event RecoveryRoleSet(address indexed user, bool setTo);
@@ -36,7 +36,7 @@ contract ContractRecovery is CommonStorage {
     require(_slot != RESOLVER_SLOT, "colony-common-protected-variable");
 
     // NB. This isn't necessarily a colony - could be ColonyNetwork. But they both have this function, so it's okay.
-    IRecovery(address(this)).checkNotAdditionalProtectedVariable(_slot);
+    IRecovery(address(this)).checkNotAdditionalProtectedVariable(_slot); // ignore-swc-123
 
     // Protect key variables
     uint64 _recoveryRolesCount = recoveryRolesCount;
@@ -68,7 +68,7 @@ contract ContractRecovery is CommonStorage {
   }
 
   function approveExitRecovery() public recovery auth {
-    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "colony-recovery-approval-already-given");
+    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "colony-recovery-approval-already-given");  // ignore-swc-116
     recoveryApprovalTimestamps[msg.sender] = now;
     recoveryApprovalCount++;
   }
@@ -87,7 +87,7 @@ contract ContractRecovery is CommonStorage {
   // Can only be called by the root role.
   function setRecoveryRole(address _user) public stoppable auth {
     require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
-    if (!CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
+    if (!CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) { // ignore-swc-113
       CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, true);
       recoveryRolesCount++;
 
@@ -97,9 +97,9 @@ contract ContractRecovery is CommonStorage {
 
   // Can only be called by the root role.
   function removeRecoveryRole(address _user) public stoppable auth {
-    if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
-      CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, false);
-      recoveryRolesCount--;
+    if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) { // ignore-swc-113 ignore-swc-128
+      CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, false); // ignore-swc-113 ignore-swc-107
+      recoveryRolesCount--; // ignore-swc-107 ignore-swc-101
 
       emit RecoveryRoleSet(_user, false);
     }
