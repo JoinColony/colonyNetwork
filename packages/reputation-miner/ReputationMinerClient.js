@@ -15,10 +15,11 @@ class ReputationMinerClient {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ minerAddress, loader, realProviderPort, minerPort = 3000, privateKey, provider, useJsTree, dbPath, auto }) {
+  constructor({ minerAddress, loader, realProviderPort, minerPort = 3000, privateKey, provider, useJsTree, dbPath, auto, oracle }) {
     this._loader = loader;
     this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, useJsTree, dbPath });
     this._auto = auto;
+    this._oracle = oracle;
     this.submissionIndex = 0;
     this.best12Submissions = [];
     this.filterReputationMiningCycleComplete;
@@ -29,77 +30,83 @@ class ReputationMinerClient {
       this._auto = true;
     }
 
-    this._app = express();
+    if (typeof this._oracle === "undefined") {
+      this._oracle = true;
+    }
 
-    this._app.use(function(req, res, next) {
-      res.header("Access-Control-Allow-Origin", "*");
-      next();
-    });
+    if (this._oracle) {
+      this._app = express();
 
-    this._app.get("/", async (req, res) => {
-      return res.status(200).sendFile(path.join(__dirname, 'viz/index.html'));
-    });
+      this._app.use(function(req, res, next) {
+        res.header("Access-Control-Allow-Origin", "*");
+        next();
+      });
 
-    // Serve visualizers
-    this._app.get("/repTree", async (req, res) => {
-      return res.status(200).sendFile(path.join(__dirname, 'viz/repTree.html'));
-    });
+      this._app.get("/", async (req, res) => {
+        return res.status(200).sendFile(path.join(__dirname, 'viz/index.html'));
+      });
 
-    this._app.get("/repCycle", async (req, res) => {
-      return res.status(200).sendFile(path.join(__dirname, 'viz/repCycle.html'));
-    });
+      // Serve visualizers
+      this._app.get("/repTree", async (req, res) => {
+        return res.status(200).sendFile(path.join(__dirname, 'viz/repTree.html'));
+      });
 
-    // Serve data for visualizers
-    this._app.get("/reputations", async (req, res) => {
-      const rootHash = await this._miner.getRootHash();
-      const reputations = Object.keys(this._miner.reputations).map(key => {
-        const decimalValue = ethers.utils.bigNumberify(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
-        return { key, decimalValue }
-      })
-      return res.status(200).send({ rootHash, reputations });
-    });
+      this._app.get("/repCycle", async (req, res) => {
+        return res.status(200).sendFile(path.join(__dirname, 'viz/repCycle.html'));
+      });
 
-    this._app.get("/network", async (req, res) => {
-      return res.status(200).send(this._miner.realProvider._network.name); // eslint-disable-line no-underscore-dangle
-    });
+      // Serve data for visualizers
+      this._app.get("/reputations", async (req, res) => {
+        const rootHash = await this._miner.getRootHash();
+        const reputations = Object.keys(this._miner.reputations).map(key => {
+          const decimalValue = ethers.utils.bigNumberify(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
+          return { key, decimalValue }
+        })
+        return res.status(200).send({ rootHash, reputations });
+      });
 
-    this._app.get("/repCycleContractDef", async (req, res) => {
-      return res.status(200).send(this._miner.repCycleContractDef);
-    });
+      this._app.get("/network", async (req, res) => {
+        return res.status(200).send(this._miner.realProvider._network.name); // eslint-disable-line no-underscore-dangle
+      });
 
-    this._app.get("/repCycleAddresses", async (req, res) => {
-      const activeAddr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
-      const inactiveAddr = await this._miner.colonyNetwork.getReputationMiningCycle(false);
-      return res.status(200).send({ active: activeAddr, inactive: inactiveAddr });
-    });
+      this._app.get("/repCycleContractDef", async (req, res) => {
+        return res.status(200).send(this._miner.repCycleContractDef);
+      });
 
-    // Query specific reputation values
-    this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
-      const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
-      const currentHash = await this._miner.getRootHash();
-      if (currentHash === req.params.rootHash) {
-        if (this._miner.reputations[key]) {
-          const proof = await this._miner.getReputationProofObject(key);
-          delete proof.nNodes;
+      this._app.get("/repCycleAddresses", async (req, res) => {
+        const activeAddr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+        const inactiveAddr = await this._miner.colonyNetwork.getReputationMiningCycle(false);
+        return res.status(200).send({ active: activeAddr, inactive: inactiveAddr });
+      });
+
+      // Query specific reputation values
+      this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
+        const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
+        const currentHash = await this._miner.getRootHash();
+        if (currentHash === req.params.rootHash) {
+          if (this._miner.reputations[key]) {
+            const proof = await this._miner.getReputationProofObject(key);
+            delete proof.nNodes;
+            proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
+            return res.status(200).send(proof);
+          }
+          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+        }
+
+        try {
+          const [branchMask, siblings, value] = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
+          const proof = { branchMask: `${branchMask.toString(16)}`, siblings, key, value };
           proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
           return res.status(200).send(proof);
+        } catch (err) {
+          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
         }
-        return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
-      }
+      });
 
-      try {
-        const [branchMask, siblings, value] = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
-        const proof = { branchMask: `${branchMask.toString(16)}`, siblings, key, value };
-        proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
-        return res.status(200).send(proof);
-      } catch (err) {
-        return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
-      }
-    });
-
-    this.server = this._app.listen(minerPort, () => {
-      console.log("⭐️ Reputation oracle running on port ", this.server.address().port);
-    });
+      this.server = this._app.listen(minerPort, () => {
+        console.log("⭐️ Reputation oracle running on port ", this.server.address().port);
+      });
+    }
   }
 
   /**
@@ -222,7 +229,7 @@ class ReputationMinerClient {
       this.lockedForBlockProcessing = true;
       // DO NOT PUT ANY AWAITS ABOVE THIS LINE OR YOU WILL GET RACE CONDITIONS
 
-      const block = await this._miner.realProvider.getBlock(blockNumber, true);
+      const block = await this._miner.realProvider.getBlock(blockNumber);
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
       const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
@@ -380,7 +387,10 @@ class ReputationMinerClient {
       console.log("ERROR: on ReputationMiningCycleComplete listener not removed on client close");
     }
 
-    this.server.close();
+    if (this.server){
+      this.server.close();
+    }
+
     if (this.lockedForBlockProcessing) {
       await blockChecksFinished;
     }
