@@ -93,6 +93,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return ColonyAuthority(address(authority)).hasUserRole(_user, _domainId, uint8(_role));
   }
 
+  function getUserRoles(address who, uint256 where) public view returns (bytes32) {
+    return ColonyAuthority(address(authority)).getUserRoles(who, where);
+  }
+
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
   }
