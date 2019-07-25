@@ -132,7 +132,6 @@ class ReputationMinerClient {
     // See if we're talking to Ganache to fix a ganache crash (which, while fun to say, is not fun to see)
     const clientString = await this._miner.realProvider.send("web3_clientVersion");
     this.ganacheClient = clientString.indexOf('TestRPC') !== -1
-
     console.log("🏁 Initialised");
     if (this._auto) {
       // Initial call to process the existing log from the cycle we're currently in
@@ -200,7 +199,6 @@ class ReputationMinerClient {
     };
     try {
       const gasEstimates = await request(options);
-      console.log(gasEstimates, type, gasEstimates[type])
 
       if (gasEstimates[type]){
         this._miner.gasPrice = ethers.utils.hexlify(gasEstimates[type]/10 * 1e9);
@@ -211,7 +209,6 @@ class ReputationMinerClient {
       console.log(err);
       this._miner.gasPrice = ethers.utils.hexlify(20000000000);
     }
-    console.log(this._miner.gasPrice);
   }
 
   /**
@@ -461,7 +458,7 @@ class ReputationMinerClient {
     if (round && round.gte(0)) {
       let gasEstimate;
       if (process.env.SOLIDITY_COVERAGE || this.ganacheClient) {
-        gasEstimate = ethers.utils.bigNumberify(1500000);
+        gasEstimate = ethers.utils.bigNumberify(2500000);
       } else {
         gasEstimate = await repCycle.estimate.confirmNewHash(round);
       }
