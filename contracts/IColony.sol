@@ -115,6 +115,12 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return hasRole Boolean indicating whether the given user has the given role in domain
   function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool hasRole);
 
+  /// @notice Gets the bytes32 representation of the roles for a user in a given domain
+  /// @param who The user whose roles we want to get
+  /// @param where The domain where we want to get roles for
+  /// @return roles bytes32 representation of the roles
+  function getUserRoles(address who, uint256 where) public view returns (bytes32 roles);
+
   /// @notice Called once when the colony is created to initialise certain storage slot values.
   /// @dev Sets the reward inverse to the uint max 2**256 - 1.
   /// @param _colonyNetworkAddress Address of the colony network

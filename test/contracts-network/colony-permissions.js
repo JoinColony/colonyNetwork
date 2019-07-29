@@ -18,6 +18,8 @@ import { fundColonyWithTokens, makeTask, setupRandomColony } from "../../helpers
 import { checkErrorRevert } from "../../helpers/test-helper";
 import { executeSignedRoleAssignment } from "../../helpers/task-review-signing";
 
+const ethers = require("ethers");
+
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
@@ -238,7 +240,7 @@ contract("ColonyPermissions", accounts => {
       await colony.setFundingRole(1, 0, USER2, 1, true, { from: USER1 });
       await colony.setAdministrationRole(1, 0, USER2, 1, true, { from: USER1 });
 
-      // // And child domains!
+      // And child domains!
       await colony.setAdministrationRole(1, 0, USER2, 2, true, { from: USER1 });
       await colony.setAdministrationRole(1, 1, USER2, 3, true, { from: USER1 });
     });
@@ -276,6 +278,24 @@ contract("ColonyPermissions", accounts => {
 
     it("should not allow users to pass a too-large child skill index", async () => {
       await checkErrorRevert(colony.makeTask(1, 100, SPECIFICATION_HASH, 2, 0, 0), "colony-network-out-of-range-child-skill-index");
+    });
+
+    it("should be able to get all user roles", async () => {
+      const roleRecovery = ethers.utils.bigNumberify(2 ** 0).toHexString();
+      const roleRoot = ethers.utils.bigNumberify(2 ** 1).toHexString();
+      const roleArbitration = ethers.utils.bigNumberify(2 ** 2).toHexString();
+      const roleArchitecture = ethers.utils.bigNumberify(2 ** 3).toHexString();
+      const roleArchitectureSubdomain = ethers.utils.bigNumberify(2 ** 4).toHexString();
+      const roleFunding = ethers.utils.bigNumberify(2 ** 5).toHexString();
+      const roleAdministration = ethers.utils.bigNumberify(2 ** 6).toHexString();
+
+      const roles1 = await colony.getUserRoles(FOUNDER, 1);
+      const allRoles = roleRecovery | roleRoot | roleArbitration | roleArchitecture | roleArchitectureSubdomain | roleFunding | roleAdministration; // eslint-disable-line no-bitwise
+      expect(roles1).to.equal(ethers.utils.hexZeroPad(ethers.utils.bigNumberify(allRoles).toHexString(), 32));
+
+      await colony.setAdministrationRole(1, 0, USER2, 2, true, { from: FOUNDER });
+      const roles2 = await colony.getUserRoles(USER2, 2);
+      expect(roles2).to.equal(ethers.utils.hexZeroPad(roleAdministration, 32));
     });
   });
 });

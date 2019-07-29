@@ -583,6 +583,24 @@ Get the colony token.
 |---|---|---|
 |tokenAddress|address|Address of the token contract
 
+### `getUserRoles`
+
+Gets the bytes32 representation of the roles for a user in a given domain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|who|address|The user whose roles we want to get
+|where|uint256|The domain where we want to get roles for
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|roles|bytes32|bytes32 representation of the roles
+
 ### `hasUserRole`
 
 Check whether a given user has a given role for the colony. Calls the function of the same name on the colony's authority contract.
