@@ -241,7 +241,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
-  public view
+  public
   stoppable
   returns (bool)
   {
