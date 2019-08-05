@@ -27,6 +27,8 @@ import "./ColonyDataTypes.sol";
 
 
 contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes, DSMath {
+  uint256 constant COLONY_NETWORK_SLOT = 6;
+
   // When adding variables, do not make them public, otherwise all contracts that inherit from
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
