@@ -23,6 +23,8 @@ import "../lib/dappsys/auth.sol";
 // ignore-file-swc-108
 
 contract CommonStorage is DSAuth {
+  uint256 constant UINT256_MAX = 2**256 - 1;
+
   uint256 constant AUTHORITY_SLOT = 0;
   uint256 constant OWNER_SLOT = 1;
   uint256 constant RESOLVER_SLOT = 2;

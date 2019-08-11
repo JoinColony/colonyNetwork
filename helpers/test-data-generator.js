@@ -33,6 +33,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const Colony = artifacts.require("Colony");
 const ColonyFunding = artifacts.require("ColonyFunding");
+const ColonyExpenditure = artifacts.require("ColonyExpenditure");
 const ColonyTask = artifacts.require("ColonyTask");
 const ColonyPayment = artifacts.require("ColonyPayment");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -335,6 +336,7 @@ export async function setupColonyNetwork() {
   const resolverColonyNetworkDeployed = await Resolver.deployed();
   const colonyTemplate = await Colony.new();
   const colonyFunding = await ColonyFunding.new();
+  const colonyExpenditure = await ColonyExpenditure.new();
   const colonyTask = await ColonyTask.new();
   const colonyPayment = await ColonyPayment.new();
   const resolver = await Resolver.new();
@@ -343,7 +345,7 @@ export async function setupColonyNetwork() {
   await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
 
   const colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-  await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
+  await setupColonyVersionResolver(colonyTemplate, colonyExpenditure, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
   const version = await colonyTemplate.version();
   await colonyNetwork.initialise(resolver.address, version);
   // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.

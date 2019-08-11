@@ -79,6 +79,11 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "updateColonyOrbitDB(string)");
     addRoleCapability(ROOT_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
+
+    // Added in colony v4
+    addRoleCapability(ADMINISTRATION_ROLE, "makeExpenditure(uint256,uint256,uint256)");
+    addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayoutScalar(uint256,uint256,uint256,uint256,uint256)");
+    addRoleCapability(ARBITRATION_ROLE, "setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

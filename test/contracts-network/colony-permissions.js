@@ -95,6 +95,21 @@ contract("ColonyPermissions", accounts => {
       await colony.moveFundsBetweenPots(2, 0, 0, domain2.fundingPotId, task.fundingPotId, WAD, token.address, { from: USER1 });
     });
 
+    it("should allow users with administration permission manipulate expenditures in their domains only", async () => {
+      // Founder can create expenditures in domain 1, 2, 3.
+      await colony.makeExpenditure(1, 0, 1, { from: FOUNDER });
+      await colony.makeExpenditure(1, 0, 2, { from: FOUNDER });
+      await colony.makeExpenditure(1, 1, 3, { from: FOUNDER });
+
+      // User1 can only create expenditures in domain 2.
+      await colony.setAdministrationRole(1, 0, USER1, 2, true);
+      hasRole = await colony.hasUserRole(USER1, 2, ADMINISTRATION_ROLE);
+      expect(hasRole).to.be.true;
+
+      await checkErrorRevert(colony.makeExpenditure(1, 0, 1, { from: USER1 }), "ds-auth-unauthorized");
+      await colony.makeExpenditure(2, 0, 2, { from: USER1 });
+    });
+
     it("should allow users with administration permission manipulate tasks/payments in their domains only", async () => {
       // Founder can create tasks in domain 1, 2, 3.
       await colony.makeTask(1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: FOUNDER });
