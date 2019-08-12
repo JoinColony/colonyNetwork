@@ -83,7 +83,7 @@
     "bn.js": "^4.11.8",
     "chai": "^4.2.0",
     "eslint": "^6.1.0",
-    "eslint-config-airbnb-base": "^13.0.0",
+    "eslint-config-airbnb-base": "^14.0.0",
     "eslint-config-prettier": "^6.0.0",
     "eslint-import-resolver-jest": "^2.1.1",
     "eslint-plugin-flowtype": "^4.0.0",
