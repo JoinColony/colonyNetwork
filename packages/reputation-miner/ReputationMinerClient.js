@@ -15,11 +15,12 @@ class ReputationMinerClient {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ minerAddress, loader, realProviderPort, minerPort = 3000, privateKey, provider, useJsTree, dbPath, auto, oracle }) {
+  constructor({ minerAddress, loader, realProviderPort, minerPort = 3000, privateKey, provider, useJsTree, dbPath, auto, oracle, exitOnError }) {
     this._loader = loader;
     this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, useJsTree, dbPath });
     this._auto = auto;
     this._oracle = oracle;
+    this._exitOnError = exitOnError;
     this.submissionIndex = 0;
     this.best12Submissions = [];
     this.filterReputationMiningCycleComplete;
@@ -352,6 +353,9 @@ class ReputationMinerClient {
       this.endDoBlockChecks();
     } catch (err) {
       console.log("err", err);
+      if (this._exitOnError) {
+        process.exit(1);
+      }
     }
   }
 
