@@ -719,10 +719,10 @@
     assert "^2.0.0"
     babel-runtime "^6.26.0"
 
-"@colony/eslint-config-colony@7.0.0":
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/@colony/eslint-config-colony/-/eslint-config-colony-7.0.0.tgz#3371c84f86cd8024b5df57f44f344c50b692e7d0"
-  integrity sha512-6lYncfvTQlIjOPP8QYRlxF/SxlRPimqm4pzbAGvfZ9dchQMciNGifKmVJr1rZNDV2aVmp8HZ2rZ65AQl1VMvEQ==
+"@colony/eslint-config-colony@8.0.0":
+  version "8.0.0"
+  resolved "https://registry.yarnpkg.com/@colony/eslint-config-colony/-/eslint-config-colony-8.0.0.tgz#b51d61c4e1de1e262576421cc6d1743c254a728c"
+  integrity sha512-pySIQVXmlAjd0xZitpQJFtxz/sDKzVe0RCFBdkmu9TADK5fzDouLohigLtz+oNDoigbKGbvSLHbnFPR6CbODFQ==
 
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"
