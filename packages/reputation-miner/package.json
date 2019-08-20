@@ -21,7 +21,7 @@
     "ganache-core": "^2.5.3",
     "sqlite": "^3.0.2",
     "web3-utils": "^1.0.0",
-    "yargs": "^13.2.4"
+    "yargs": "^14.0.0"
   },
   "devDependencies": {
     "@babel/polyfill": "^7.4.4",
