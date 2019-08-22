@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-console */
 
 const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
 

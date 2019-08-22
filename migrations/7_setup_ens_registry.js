@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-console */
 
 const { setupENSRegistrar } = require("../helpers/upgradable-contracts");
 

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import parser from "solidity-parser-antlr";
 import fs from "fs";
 import path from "path";

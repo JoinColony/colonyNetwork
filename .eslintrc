@@ -18,7 +18,8 @@
     "no-console": "off",
     "no-unused-expressions": "off",
     "no-await-in-loop": "off",
-    "no-trailing-spaces": "error"
+    "no-trailing-spaces": "error",
+    "eslint-comments/disable-enable-pair": ["error", {"allowWholeFile": true}]
   },
   "parserOptions": {
     "ecmaVersion": 2017

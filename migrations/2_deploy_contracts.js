@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-undef, no-console */
 
 const ContractRecovery = artifacts.require("./ContractRecovery");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");

@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+/* globals artifacts */
 const Migrations = artifacts.require("./Migrations");
 
 module.exports = deployer => {
