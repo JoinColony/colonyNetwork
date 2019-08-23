@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable prefer-arrow-callback */
 import { currentBlockTime, getTokenArgs } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import { ROOT_ROLE, SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";

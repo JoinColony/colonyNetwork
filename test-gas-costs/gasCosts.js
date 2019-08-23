@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-console, prefer-arrow-callback */
 
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";

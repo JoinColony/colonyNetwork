@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable prefer-arrow-callback */
 import { getTokenArgs } from "../helpers/test-helper";
 
 const Token = artifacts.require("Token");

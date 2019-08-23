@@ -570,7 +570,7 @@ class ReputationMiner {
    * @param  {bigNumber or string} nNodes           The number of nodes in the reputation state Tree
    * @return {string}                               The correctly formatted hex string for inclusion in the justification tree
    */
-  getJRHEntryValueAsBytes(_reputationState, nNodes) { //eslint-disable-line
+  getJRHEntryValueAsBytes(_reputationState, nNodes) { // eslint-disable-line class-methods-use-this
     let reputationState = _reputationState.toString(16);
     if (reputationState.substring(0, 2) === "0x") {
       reputationState = reputationState.slice(2);
@@ -584,7 +584,7 @@ class ReputationMiner {
    * @param  {bigNumber or string} uid        The global UID assigned to this reputation
    * @return {string}            Appropriately formatted hex string
    */
-  getValueAsBytes(reputation, uid) { //eslint-disable-line
+  getValueAsBytes(reputation, uid) { // eslint-disable-line class-methods-use-this
     return `0x${new BN(reputation.toString()).toString(16, 64)}${new BN(uid.toString()).toString(16, 64)}`;
   }
 

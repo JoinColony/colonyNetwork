@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable prefer-arrow-callback */
 import chai from "chai";
 import { checkErrorRevert } from "../../helpers/test-helper";
 import { ARBITRATION_ROLE } from "../../helpers/constants";

@@ -372,7 +372,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
       let powerTwoEntries = false;
       while (!powerTwoEntries) {
-        await setupFinalizedTask( // eslint-disable-line
+        await setupFinalizedTask( // eslint-disable-line prettier/prettier
           {
             colonyNetwork,
             colony: metaColony,

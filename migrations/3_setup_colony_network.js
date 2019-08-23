@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-console */
 const { setupUpgradableColonyNetwork } = require("../helpers/upgradable-contracts");
 
 const ColonyNetworkAuthority = artifacts.require("./ColonyNetworkAuthority");

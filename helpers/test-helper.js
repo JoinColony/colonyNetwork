@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-console */
 import shortid from "shortid";
 import chai from "chai";
 import { asciiToHex } from "web3-utils";
@@ -356,7 +355,7 @@ export function makeReputationKey(colonyAddress, skillBN, accountAddress = undef
 
 // Note: value can be anything with a `.toString()` method -- a string, number, or BN.
 export function makeReputationValue(value, reputationId) {
-  return `0x${(new BN(value.toString())).toString(16, 64)}${(new BN(reputationId)).toString(16, 64)}`; // eslint-disable-line
+  return `0x${new BN(value.toString()).toString(16, 64)}${new BN(reputationId).toString(16, 64)}`;
 }
 
 export async function getValidEntryNumber(colonyNetwork, account, hash, startingEntryNumber = 1) {
@@ -621,7 +620,7 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
       // But for now, that's okay.
     } else {
       // We shouldn't get here. If this fires during a test, you haven't finished writing the test.
-      console.log("We're mid dispute process, and can't untangle from here"); // eslint-disable-line no-console
+      console.log("We're mid dispute process, and can't untangle from here");
       // process.exit(1);
       return false;
     }
