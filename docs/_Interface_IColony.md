@@ -4,7 +4,7 @@ section: Interface
 order: 3
 ---
 
-
+  
 ## Interface Methods
 
 ### `addDomain`

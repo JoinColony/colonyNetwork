@@ -13,6 +13,7 @@ import {
   RATING_1_SALT,
   RATING_2_SALT,
   MANAGER_ROLE,
+  EVALUATOR_ROLE,
   WORKER_ROLE,
   SPECIFICATION_HASH,
   DELIVERABLE_HASH
@@ -58,10 +59,11 @@ export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HAS
   return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
 }
 
-export async function assignRoles({ colony, taskId, manager, evaluator, worker }) {
-  if (manager !== evaluator) {
+export async function assignRoles({ colony, tasks, taskId, manager, evaluator, worker }) {
+  if (evaluator && manager !== evaluator) {
     await executeSignedTaskChange({
       colony,
+      tasks,
       taskId,
       functionName: "removeTaskEvaluatorRole",
       signers: [manager],
@@ -71,6 +73,7 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
 
     await executeSignedRoleAssignment({
       colony,
+      tasks,
       taskId,
       functionName: "setTaskEvaluatorRole",
       signers: [manager, evaluator],
@@ -84,12 +87,24 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
 
   await executeSignedRoleAssignment({
     colony,
+    tasks,
     taskId,
     functionName: "setTaskWorkerRole",
     signers,
     sigTypes,
     args: [taskId, worker]
   });
+}
+
+export async function submitDeliverableAndRatings({ colony, tasks, taskId, managerRating = MANAGER_RATING, workerRating = WORKER_RATING }) {
+  const managerRatingSecret = soliditySha3(RATING_1_SALT, managerRating);
+  const workerRatingSecret = soliditySha3(RATING_2_SALT, workerRating);
+  const evaluator = await (colony || tasks).getTaskRole(taskId, EVALUATOR_ROLE);
+  const worker = await (colony || tasks).getTaskRole(taskId, WORKER_ROLE);
+  await (colony || tasks).submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, managerRatingSecret, { from: worker.user });
+  await (colony || tasks).submitTaskWorkRating(taskId, WORKER_ROLE, workerRatingSecret, { from: evaluator.user });
+  await (colony || tasks).revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, RATING_1_SALT, { from: worker.user });
+  await (colony || tasks).revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, RATING_2_SALT, { from: evaluator.user });
 }
 
 export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId, manager, evaluator, worker }) {
@@ -160,9 +175,7 @@ export async function setupRatedTask({
   evaluatorPayout = EVALUATOR_PAYOUT,
   workerPayout = WORKER_PAYOUT,
   managerRating = MANAGER_RATING,
-  managerRatingSalt = RATING_1_SALT,
-  workerRating = WORKER_RATING,
-  workerRatingSalt = RATING_2_SALT
+  workerRating = WORKER_RATING
 }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
@@ -184,13 +197,7 @@ export async function setupRatedTask({
     workerPayout
   });
 
-  const WORKER_RATING_SECRET = soliditySha3(workerRatingSalt, workerRating);
-  const MANAGER_RATING_SECRET = soliditySha3(managerRatingSalt, managerRating);
-  await colony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, MANAGER_RATING_SECRET, { from: worker });
-  await colony.submitTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING_SECRET, { from: evaluator });
-  await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, managerRatingSalt, { from: worker });
-  await colony.revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, workerRatingSalt, { from: evaluator });
-
+  await submitDeliverableAndRatings({ colony, taskId, evaluator, worker, managerRating, workerRating });
   return taskId;
 }
 
@@ -208,9 +215,7 @@ export async function setupFinalizedTask({
   evaluatorPayout,
   workerPayout,
   managerRating,
-  managerRatingSalt,
-  workerRating,
-  workerRatingSalt
+  workerRating
 }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
@@ -231,9 +236,7 @@ export async function setupFinalizedTask({
     evaluatorPayout,
     workerPayout,
     managerRating,
-    managerRatingSalt,
-    workerRating,
-    workerRatingSalt
+    workerRating
   });
 
   await colony.finalizeTask(taskId);
