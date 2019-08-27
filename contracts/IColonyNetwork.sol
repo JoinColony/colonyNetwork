@@ -29,8 +29,8 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Query if a contract implements an interface
   /// @param interfaceID The interface identifier, as specified in ERC-165
   /// @dev Interface identification is specified in ERC-165.
-  /// @return `true` if the contract implements `interfaceID`
-  function supportsInterface(bytes4 interfaceID) external pure returns (bool);
+  /// @return status `true` if the contract implements `interfaceID`
+  function supportsInterface(bytes4 interfaceID) external pure returns (bool status);
 
   /// @notice Set a replacement log entry if we're in recovery mode.
   /// @param _reputationMiningCycle The address of the reputation mining cycle that the log was in.
