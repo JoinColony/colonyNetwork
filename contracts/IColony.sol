@@ -115,6 +115,17 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return hasRole Boolean indicating whether the given user has the given role in domain
   function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool hasRole);
 
+  /// @notice Check whether a given user has a given role for the colony, in a child domain.
+  /// Calls the function of the same name on the colony's authority contract and an internal inheritence validator function
+  /// @param _user The user whose role we want to check
+  /// @param _domainId Domain in which the caller has the role
+  /// @param _role The role we want to check for
+  /// @param _childSkillIndex The index that the `_childDomainId` is relative to `_domainId`
+  /// @param _childDomainId The domain where we want to use the role
+  /// @return hasRole Boolean indicating whether the given user has the given role in domain
+  function hasInheritedUserRole(address _user, uint256 _domainId, ColonyRole _role, uint256 _childSkillIndex, uint256 _childDomainId)
+    public view returns (bool hasRole);
+
   /// @notice Gets the bytes32 representation of the roles for a user in a given domain
   /// @param who The user whose roles we want to get
   /// @param where The domain where we want to get roles for
