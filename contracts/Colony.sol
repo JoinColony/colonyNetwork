@@ -119,6 +119,26 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return token;
   }
 
+  function emitDomainReputationPenalty(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    address _user,
+    int256 _amount
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    require(_amount <= 0, "colony-penalty-not-negative");
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
+  }
+
+  function emitSkillReputationPenalty(uint256 _permissionDomainId, uint256 _skillId, address _user, int256 _amount)
+  public stoppable validGlobalSkill(_skillId)
+  {
+    require(_amount <= 0, "colony-penalty-not-negative");
+    require(isAuthorized(msg.sender, _permissionDomainId, msg.sig), "ds-auth-unauthorized");
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
+  }
+
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
     require(colonyNetworkAddress == address(0x0), "colony-already-initialised-network");
     require(token == address(0x0), "colony-already-initialised-token");
