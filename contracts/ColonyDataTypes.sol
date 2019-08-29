@@ -169,9 +169,10 @@ contract ColonyDataTypes {
 
   /// @notice Event logged when a payout is claimed, either from a Task or Payment
   /// @param fundingPotId Id of the funding pot where payout comes from
+  /// @param recipient Recipient of the payout claim
   /// @param token Token of the payout claim
   /// @param amount Amount of the payout claimed, after network fee was deducted
-  event PayoutClaimed(uint256 indexed fundingPotId, address token, uint256 amount);
+  event PayoutClaimed(uint256 indexed fundingPotId, address indexed recipient, address indexed token, uint256 amount);
 
   /// @notice Event logged when a task has been canceled
   /// @param taskId Id of the canceled task

@@ -493,17 +493,17 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);
   }
 
-  function processPayout(uint256 fundingPotId, address _token, uint256 payout, address payable user) private {
-    fundingPots[fundingPotId].balance[_token] = sub(fundingPots[fundingPotId].balance[_token], payout);
-    nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
+  function processPayout(uint256 _fundingPotId, address _token, uint256 _payout, address payable _user) private {
+    fundingPots[_fundingPotId].balance[_token] = sub(fundingPots[_fundingPotId].balance[_token], _payout);
+    nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _payout);
 
-    uint fee = calculateNetworkFeeForPayout(payout);
-    uint remainder = sub(payout, fee);
-    fundingPots[fundingPotId].payouts[_token] = sub(fundingPots[fundingPotId].payouts[_token], payout);
+    uint fee = calculateNetworkFeeForPayout(_payout);
+    uint remainder = sub(_payout, fee);
+    fundingPots[_fundingPotId].payouts[_token] = sub(fundingPots[_fundingPotId].payouts[_token], _payout);
 
     if (_token == address(0x0)) {
       // Payout ether
-      user.transfer(remainder);
+      _user.transfer(remainder);
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
@@ -513,11 +513,11 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       // TODO: (post CCv1) If it's a whitelisted token, it goes straight to the metaColony
       // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
       ERC20Extended payoutToken = ERC20Extended(_token);
-      assert(payoutToken.transfer(user, remainder));
+      assert(payoutToken.transfer(_user, remainder));
       assert(payoutToken.transfer(colonyNetworkAddress, fee));
     }
 
-    emit PayoutClaimed(fundingPotId, _token, remainder);
+    emit PayoutClaimed(_fundingPotId, _user, _token, remainder);
   }
 
   function calculateNetworkFeeForPayout(uint256 _payout) private view returns (uint256 fee) {

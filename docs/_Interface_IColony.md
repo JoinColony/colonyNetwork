@@ -811,6 +811,27 @@ Gets the bytes32 representation of the roles for a user in a given domain
 |---|---|---|
 |roles|bytes32|bytes32 representation of the roles
 
+### `hasInheritedUserRole`
+
+Check whether a given user has a given role for the colony, in a child domain. Calls the function of the same name on the colony's authority contract and an internal inheritence validator function
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|The user whose role we want to check
+|_domainId|uint256|Domain in which the caller has the role
+|_role|ColonyRole|The role we want to check for
+|_childSkillIndex|uint256|The index that the `_childDomainId` is relative to `_domainId`
+|_childDomainId|uint256|The domain where we want to use the role
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|hasRole|bool|Boolean indicating whether the given user has the given role in domain
+
 ### `hasUserRole`
 
 Check whether a given user has a given role for the colony. Calls the function of the same name on the colony's authority contract.
