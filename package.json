@@ -109,7 +109,7 @@
     "rimraf": "^3.0.0",
     "shortid": "^2.2.14",
     "solidity-coverage": "^0.6.0",
-    "solidity-parser-antlr": "^0.4.5",
+    "solidity-parser-antlr": "^0.4.11",
     "solidity-steamroller": "^1.1.0",
     "truffle": "^5.0.39",
     "truffle-hdwallet-provider": "^1.0.9",
