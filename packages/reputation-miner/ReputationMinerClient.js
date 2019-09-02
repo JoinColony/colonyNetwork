@@ -222,6 +222,7 @@ class ReputationMinerClient {
   async doBlockChecks(blockNumber) {
   try {
       if (this.lockedForBlockProcessing || this.lockedForLogProcessing) {
+        console.log("Processing already - block: ", this.lockedForBlockProcessing, "log: ", this.lockedForLogProcessing)
         return;
       }
       this.lockedForBlockProcessing = true;
