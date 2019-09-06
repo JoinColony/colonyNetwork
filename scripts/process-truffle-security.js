@@ -12,16 +12,20 @@ async function main() {
     if (file.filePath.indexOf("/lib/") === -1) {
       for (let j = 0; j < file.messages.length; j += 1) {
         const message = file.messages[j];
-        // load relevant line from file
-        try {
-          const line = await nthline(message.line - 1, file.filePath);
-          if (line.toLowerCase().search(new RegExp(`//.*ignore-${message.ruleId.toLowerCase()}`, "g")) === -1) {
-            fail = true;
-            console.log("Failing file: ", file.filePath);
-            console.log(message);
+        if (message.ruleId === "N/A") {
+          // It's the upgrade message, not a real error, so continue to next message
+        } else {
+          // load relevant line from file
+          try {
+            const line = await nthline(message.line - 1, file.filePath);
+            if (line.toLowerCase().search(new RegExp(`//.*ignore-${message.ruleId.toLowerCase()}`, "g")) === -1) {
+              fail = true;
+              console.log("Failing file: ", file.filePath);
+              console.log(message);
+            }
+          } catch (err) {
+            console.log("ERROR:", err);
           }
-        } catch (err) {
-          console.log("ERROR:", err);
         }
       }
     }
