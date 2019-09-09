@@ -235,5 +235,5 @@ contract ColonyDataTypes {
     uint256 fundingPotId;
   }
 
-  uint256 constant MAX_PAYOUT = 2**254 - 1; // Up to 254 bits to account for sign and payout modifiers.
+  uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs
 }

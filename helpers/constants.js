@@ -3,6 +3,7 @@ import { BN } from "bn.js";
 import shortid from "shortid";
 
 const UINT256_MAX = new BN(0).notn(256);
+const UINT128_MAX = new BN(0).notn(128);
 const INT256_MAX = new BN(0).notn(255);
 const INT128_MAX = new BN(2).pow(new BN(127)).sub(new BN(1));
 const INT128_MIN = new BN(2).pow(new BN(127)).mul(new BN(-1));
@@ -35,7 +36,7 @@ const INITIAL_FUNDING = WAD.muln(360);
 const MANAGER_PAYOUT = WAD.muln(100);
 const EVALUATOR_PAYOUT = WAD.muln(50);
 const WORKER_PAYOUT = WAD.muln(200);
-const MAX_PAYOUT = new BN(0).notn(254);
+const MAX_PAYOUT = UINT128_MAX;
 
 const MANAGER_RATING = 2;
 const WORKER_RATING = 2;
