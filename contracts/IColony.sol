@@ -251,19 +251,20 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _skillId Id of the new skill to set
   function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId) public;
 
-  /// @notice Set the payout scalar on an expenditure slot. Can only be called by Arbitration role.
+  /// @notice Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
+  /// @dev Note that when determining payouts the payoutModifier is incremented by WAD and converted into payoutScalar
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
   /// (only used if `_permissionDomainId` is different to `_domainId`)
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
-  /// @param _payoutScalar Value to scale their payout (between 0 and 2, denominated in WADs)
-  function setExpenditurePayoutScalar(
+  /// @param _payoutModifier Modifier to their payout (between -1 and 1, denominated in WADs, 0 means no modification)
+  function setExpenditurePayoutModifier(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _id,
     uint256 _slot,
-    uint256 _payoutScalar
+    int256 _payoutModifier
     ) public;
 
   /// @notice Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
@@ -296,46 +297,18 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return expenditure The expenditure
   function getExpenditure(uint256 _id) public view returns (Expenditure memory expenditure);
 
-  /// @notice Returns an existing expenditure slot's recipient.
+  /// @notice Returns an existing expenditure slot.
   /// @param _id Expenditure identifier
   /// @param _slot Expenditure slot
-  /// @return recipient The recipient assigned to that slot
-  function getExpenditureRecipient(uint256 _id, uint256 _slot) public view returns (address recipient);
+  /// @return expenditureSlot The expenditure slot
+  function getExpenditureSlot(uint256 _id, uint256 _slot) public view returns (ExpenditureSlot memory expenditureSlot);
 
-  /// @notice Returns an existing expenditure slot's claimDelay.
-  /// @param _id Expenditure identifier
-  /// @param _slot Expenditure slot
-  /// @return claimDelay The claim delay assigned to that slot
-  function getExpenditureClaimDelay(uint256 _id, uint256 _slot) public view returns (uint256 claimDelay);
-
-  /// @notice Returns an existing expenditure slot's payoutScalar.
-  /// @param _id Expenditure identifier
-  /// @param _slot Expenditure slot
-  /// @return payoutScalar The payout scalar assigned to that slot
-  function getExpenditurePayoutScalar(uint256 _id, uint256 _slot) public view returns (uint256 payoutScalar);
-
-  /// @notice Returns an existing expenditure slot's skills array.
-  /// @param _id Expenditure identifier
-  /// @param _slot Expenditure slot
-  /// @return skills List of skillIds assigned to that slot
-  function getExpenditureSkills(uint256 _id, uint256 _slot) public view returns (uint256[] memory skills);
-
-  /// @notice Returns an existing expenditure slot's payout.
+  /// @notice Returns an existing expenditure slot's payout for a token.
   /// @param _id Expenditure identifier
   /// @param _slot Expenditure slot
   /// @param _token Token address
   /// @return amount Amount of the payout for that slot/token.
   function getExpenditurePayout(uint256 _id, uint256 _slot, address _token) public view returns (uint256 amount);
-
-  /// @notice Returns an existing expenditure slot (useful for off-chain queries).
-  /// @param _id Expenditure identifier
-  /// @param _slot Expenditure slot
-  /// @return recipient The recipient assigned to that slot
-  /// @return claimDelay The claim delay assigned to that slot
-  /// @return payoutScalar The payout scalar assigned to that slot
-  /// @return skills List of skillIds assigned to that slot
-  function getExpenditureSlot(uint256 _id, uint256 _slot)
-    public view returns (address recipient, uint256 claimDelay, uint256 payoutScalar, uint256[] memory skills);
 
   // Implemented in ColonyPayment.sol
   /// @notice Add a new payment in the colony. Secured function to authorised members.

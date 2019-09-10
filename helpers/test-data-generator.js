@@ -99,12 +99,21 @@ export async function assignRoles({ colony, tasks, taskId, manager, evaluator, w
 export async function submitDeliverableAndRatings({ colony, tasks, taskId, managerRating = MANAGER_RATING, workerRating = WORKER_RATING }) {
   const managerRatingSecret = soliditySha3(RATING_1_SALT, managerRating);
   const workerRatingSecret = soliditySha3(RATING_2_SALT, workerRating);
-  const evaluator = await (colony || tasks).getTaskRole(taskId, EVALUATOR_ROLE);
-  const worker = await (colony || tasks).getTaskRole(taskId, WORKER_ROLE);
-  await (colony || tasks).submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, managerRatingSecret, { from: worker.user });
-  await (colony || tasks).submitTaskWorkRating(taskId, WORKER_ROLE, workerRatingSecret, { from: evaluator.user });
-  await (colony || tasks).revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, RATING_1_SALT, { from: worker.user });
-  await (colony || tasks).revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, RATING_2_SALT, { from: evaluator.user });
+  let evaluator;
+  let worker;
+  if (colony) {
+    const evaluatorRole = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
+    const workerRole = await colony.getTaskRole(taskId, WORKER_ROLE);
+    evaluator = evaluatorRole.user;
+    worker = workerRole.user;
+  } else {
+    evaluator = await tasks.getTaskRoleUser(taskId, EVALUATOR_ROLE);
+    worker = await tasks.getTaskRoleUser(taskId, WORKER_ROLE);
+  }
+  await (colony || tasks).submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, managerRatingSecret, { from: worker });
+  await (colony || tasks).submitTaskWorkRating(taskId, WORKER_ROLE, workerRatingSecret, { from: evaluator });
+  await (colony || tasks).revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, RATING_1_SALT, { from: worker });
+  await (colony || tasks).revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, RATING_2_SALT, { from: evaluator });
 }
 
 export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId, manager, evaluator, worker }) {

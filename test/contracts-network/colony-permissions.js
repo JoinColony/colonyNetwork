@@ -286,11 +286,11 @@ contract("ColonyPermissions", accounts => {
 
       // Domain penalties
       await colony.emitDomainReputationPenalty(1, 1, 3, USER2, -100, { from: USER1 });
-      await checkErrorRevert(colony.emitDomainReputationPenalty(1, 1, 3, USER2, 100, { from: USER1 }), "colony-penalty-not-negative");
+      await checkErrorRevert(colony.emitDomainReputationPenalty(1, 1, 3, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");
 
       // Skill penalties
       await colony.emitSkillReputationPenalty(1, GLOBAL_SKILL_ID, USER2, -100, { from: USER1 });
-      await checkErrorRevert(colony.emitSkillReputationPenalty(1, GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "colony-penalty-not-negative");
+      await checkErrorRevert(colony.emitSkillReputationPenalty(1, GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");
       await checkErrorRevert(colony.emitSkillReputationPenalty(2, GLOBAL_SKILL_ID, USER2, -100, { from: USER1 }), "ds-auth-unauthorized");
     });
 

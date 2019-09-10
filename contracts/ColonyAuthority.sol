@@ -82,7 +82,7 @@ contract ColonyAuthority is CommonAuthority {
 
     // Added in colony v4
     addRoleCapability(ADMINISTRATION_ROLE, "makeExpenditure(uint256,uint256,uint256)");
-    addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayoutScalar(uint256,uint256,uint256,uint256,uint256)");
+    addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)");
     addRoleCapability(ARBITRATION_ROLE, "setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)");
     addRoleCapability(ARBITRATION_ROLE, "emitDomainReputationPenalty(uint256,uint256,uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "emitSkillReputationPenalty(uint256,uint256,address,int256)");

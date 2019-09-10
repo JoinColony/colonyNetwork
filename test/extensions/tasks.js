@@ -133,15 +133,15 @@ contract("Tasks extension", accounts => {
       const taskId = await tasks.getTaskCount();
       const task = await tasks.getTask(taskId);
 
-      const taskManager = await tasks.getTaskRole(taskId, MANAGER_ROLE);
-      const taskEvaluator = await tasks.getTaskRole(taskId, EVALUATOR_ROLE);
-      const expenditureManager = await colony.getExpenditureRecipient(task.expenditureId, MANAGER_ROLE);
-      const expenditureEvaluator = await colony.getExpenditureRecipient(task.expenditureId, EVALUATOR_ROLE);
+      const taskManager = await tasks.getTaskRoleUser(taskId, MANAGER_ROLE);
+      const taskEvaluator = await tasks.getTaskRoleUser(taskId, EVALUATOR_ROLE);
+      const expenditureManager = await colony.getExpenditureSlot(task.expenditureId, MANAGER_ROLE);
+      const expenditureEvaluator = await colony.getExpenditureSlot(task.expenditureId, EVALUATOR_ROLE);
 
-      expect(taskManager.user).to.equal(MANAGER);
-      expect(taskEvaluator.user).to.equal(MANAGER);
-      expect(expenditureManager).to.equal(MANAGER);
-      expect(expenditureEvaluator).to.equal(MANAGER);
+      expect(taskManager).to.equal(MANAGER);
+      expect(taskEvaluator).to.equal(MANAGER);
+      expect(expenditureManager.recipient).to.equal(MANAGER);
+      expect(expenditureEvaluator.recipient).to.equal(MANAGER);
     });
 
     it("should allow the reassignment of evaluator", async () => {
@@ -151,8 +151,8 @@ contract("Tasks extension", accounts => {
       await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
-      let taskEvaluator = await tasks.getTaskRole(taskId, EVALUATOR_ROLE);
-      expect(taskEvaluator.user).to.equal(MANAGER);
+      let evaluator = await tasks.getTaskRoleUser(taskId, EVALUATOR_ROLE);
+      expect(evaluator).to.equal(MANAGER);
 
       await executeSignedTaskChange({
         tasks,
@@ -163,8 +163,8 @@ contract("Tasks extension", accounts => {
         args: [taskId]
       });
 
-      taskEvaluator = await tasks.getTaskRole(taskId, EVALUATOR_ROLE);
-      expect(taskEvaluator.user).to.equal(ethers.constants.AddressZero);
+      evaluator = await tasks.getTaskRoleUser(taskId, EVALUATOR_ROLE);
+      expect(evaluator).to.equal(ethers.constants.AddressZero);
 
       await executeSignedRoleAssignment({
         tasks,
@@ -175,8 +175,8 @@ contract("Tasks extension", accounts => {
         args: [taskId, newEvaluator]
       });
 
-      taskEvaluator = await tasks.getTaskRole(taskId, EVALUATOR_ROLE);
-      expect(taskEvaluator.user).to.equal(newEvaluator);
+      evaluator = await tasks.getTaskRoleUser(taskId, EVALUATOR_ROLE);
+      expect(evaluator).to.equal(newEvaluator);
     });
 
     it("should return the correct number of tasks", async () => {
@@ -213,8 +213,8 @@ contract("Tasks extension", accounts => {
       const task = await tasks.getTask(taskId);
       expect(task.dueDate).to.eq.BN(dueDate);
 
-      const skills = await colony.getExpenditureSkills(task.expenditureId, WORKER_ROLE);
-      expect(skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      const slot = await colony.getExpenditureSlot(task.expenditureId, WORKER_ROLE);
+      expect(slot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
     });
 
     it("should set the due date to 90 days from now if unspecified", async () => {
@@ -343,8 +343,8 @@ contract("Tasks extension", accounts => {
         args: [taskId, newEvaluator]
       });
 
-      const evaluator = await tasks.getTaskRole(taskId, EVALUATOR_ROLE);
-      expect(evaluator.user).to.equal(newEvaluator);
+      const evaluator = await tasks.getTaskRoleUser(taskId, EVALUATOR_ROLE);
+      expect(evaluator).to.equal(newEvaluator);
 
       await executeSignedRoleAssignment({
         tasks,
@@ -355,8 +355,8 @@ contract("Tasks extension", accounts => {
         args: [taskId, WORKER]
       });
 
-      const worker = await tasks.getTaskRole(taskId, WORKER_ROLE);
-      expect(worker.user).to.equal(WORKER);
+      const worker = await tasks.getTaskRoleUser(taskId, WORKER_ROLE);
+      expect(worker).to.equal(WORKER);
     });
 
     it("should not allow a worker to be assigned if the task has no skill", async () => {
@@ -486,8 +486,8 @@ contract("Tasks extension", accounts => {
         args: [taskId, WORKER]
       });
 
-      let workerInfo = await tasks.getTaskRole(taskId, WORKER_ROLE);
-      expect(workerInfo.user).to.equal(WORKER);
+      let worker = await tasks.getTaskRoleUser(taskId, WORKER_ROLE);
+      expect(worker).to.equal(WORKER);
 
       // Worker does not agree
       await checkErrorRevert(
@@ -512,8 +512,8 @@ contract("Tasks extension", accounts => {
         args: [taskId]
       });
 
-      workerInfo = await tasks.getTaskRole(taskId, WORKER_ROLE);
-      expect(workerInfo.user).to.equal(ethers.constants.AddressZero);
+      worker = await tasks.getTaskRoleUser(taskId, WORKER_ROLE);
+      expect(worker).to.equal(ethers.constants.AddressZero);
     });
 
     it("should not allow role to be assigned if passed address is not equal to one of the signers", async () => {
@@ -546,8 +546,8 @@ contract("Tasks extension", accounts => {
         args: [taskId, MANAGER]
       });
 
-      const workerInfo = await tasks.getTaskRole(taskId, WORKER_ROLE);
-      expect(workerInfo.user).to.equal(MANAGER);
+      const worker = await tasks.getTaskRoleUser(taskId, WORKER_ROLE);
+      expect(worker).to.equal(MANAGER);
     });
 
     it("should not allow anyone to assign themself to a role with one signature except manager", async () => {
@@ -580,8 +580,8 @@ contract("Tasks extension", accounts => {
         args: [taskId, WORKER]
       });
 
-      const workerInfo = await tasks.getTaskRole(taskId, WORKER_ROLE);
-      expect(workerInfo.user).to.equal(WORKER);
+      const worker = await tasks.getTaskRoleUser(taskId, WORKER_ROLE);
+      expect(worker).to.equal(WORKER);
     });
 
     it("should not allow role assignment if none of the signers is manager", async () => {
@@ -614,8 +614,8 @@ contract("Tasks extension", accounts => {
         args: [taskId, ADMIN, 1, 0]
       });
 
-      const managerInfo = await tasks.getTaskRole(taskId, MANAGER_ROLE);
-      expect(managerInfo.user).to.equal(ADMIN);
+      const manager = await tasks.getTaskRoleUser(taskId, MANAGER_ROLE);
+      expect(manager).to.equal(ADMIN);
     });
 
     it("should not allow one-signature assignment of manager to a role if signer is not manager", async () => {
@@ -1546,13 +1546,13 @@ contract("Tasks extension", accounts => {
       forwardTime(SECONDS_PER_DAY * 10 + 1);
       await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
 
-      const managerPayoutScalar = await colony.getExpenditurePayoutScalar(task.expenditureId, MANAGER_ROLE);
-      const evaluatorPayoutScalar = await colony.getExpenditurePayoutScalar(task.expenditureId, EVALUATOR_ROLE);
-      const workerPayoutScalar = await colony.getExpenditurePayoutScalar(task.expenditureId, WORKER_ROLE);
+      const managerSlot = await colony.getExpenditureSlot(task.expenditureId, MANAGER_ROLE);
+      const evaluatorSlot = await colony.getExpenditureSlot(task.expenditureId, EVALUATOR_ROLE);
+      const workerSlot = await colony.getExpenditureSlot(task.expenditureId, WORKER_ROLE);
 
-      expect(managerPayoutScalar).to.eq.BN(WAD.muln(3).divn(2)); // Implicit rating of 3
-      expect(evaluatorPayoutScalar).to.be.zero; // Rating of 0 for failing to rate
-      expect(workerPayoutScalar).to.eq.BN(WAD); // Implicit rating of 3, minus 1 for rateFail, gives 2
+      expect(managerSlot.payoutModifier).to.eq.BN(WAD.divn(2)); // Implicit rating of 3
+      expect(evaluatorSlot.payoutModifier).to.eq.BN(WAD.neg()); // Rating of 0 for failing to rate
+      expect(workerSlot.payoutModifier).to.be.zero; // Implicit rating of 3, minus 1 for rateFail, gives 2
     });
 
     it("should fail if it's not sufficiently funded to support all its payouts", async () => {
@@ -1996,13 +1996,13 @@ contract("Tasks extension", accounts => {
       await submitDeliverableAndRatings({ tasks, taskId, managerRating: 1, workerRating: 1 });
       await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
 
-      const managerPayoutScalar = await colony.getExpenditurePayoutScalar(task.expenditureId, MANAGER_ROLE);
-      const evaluatorPayoutScalar = await colony.getExpenditurePayoutScalar(task.expenditureId, EVALUATOR_ROLE);
-      const workerPayoutScalar = await colony.getExpenditurePayoutScalar(task.expenditureId, WORKER_ROLE);
+      const managerSlot = await colony.getExpenditureSlot(task.expenditureId, MANAGER_ROLE);
+      const evaluatorSlot = await colony.getExpenditureSlot(task.expenditureId, EVALUATOR_ROLE);
+      const workerSlot = await colony.getExpenditureSlot(task.expenditureId, WORKER_ROLE);
 
-      expect(managerPayoutScalar).to.be.zero;
-      expect(evaluatorPayoutScalar).to.eq.BN(WAD);
-      expect(workerPayoutScalar).to.be.zero;
+      expect(managerSlot.payoutModifier).to.eq.BN(WAD.neg()); // rating of 1
+      expect(evaluatorSlot.payoutModifier).to.be.zero; // rating of 2
+      expect(workerSlot.payoutModifier).to.eq.BN(WAD.neg()); // rating of 1
 
       const managerBalanceBefore = await token.balanceOf(MANAGER);
       const evaluatorBalanceBefore = await token.balanceOf(EVALUATOR);
@@ -2042,13 +2042,13 @@ contract("Tasks extension", accounts => {
       await forwardTime(SECONDS_PER_DAY * 5 + 1);
       await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
 
-      const managerPayoutScalar = await colony.getExpenditurePayoutScalar(task.expenditureId, MANAGER_ROLE);
-      const evaluatorPayoutScalar = await colony.getExpenditurePayoutScalar(task.expenditureId, EVALUATOR_ROLE);
-      const workerPayoutScalar = await colony.getExpenditurePayoutScalar(task.expenditureId, WORKER_ROLE);
+      const managerSlot = await colony.getExpenditureSlot(task.expenditureId, MANAGER_ROLE);
+      const evaluatorSlot = await colony.getExpenditureSlot(task.expenditureId, EVALUATOR_ROLE);
+      const workerSlot = await colony.getExpenditureSlot(task.expenditureId, WORKER_ROLE);
 
-      expect(managerPayoutScalar).to.eq.BN(WAD);
-      expect(evaluatorPayoutScalar).to.be.zero;
-      expect(workerPayoutScalar).to.eq.BN(WAD.muln(3).divn(2)); // Implicit rating of 3
+      expect(managerSlot.payoutModifier).to.be.zero; // Rating of 2
+      expect(evaluatorSlot.payoutModifier).to.eq.BN(WAD.neg()); // Rating of 1
+      expect(workerSlot.payoutModifier).to.eq.BN(WAD.divn(2)); // Implicit rating of 3
 
       const managerPayout = await colony.getExpenditurePayout(task.expenditureId, MANAGER_ROLE, token.address);
       const evaluatorPayout = await colony.getExpenditurePayout(task.expenditureId, EVALUATOR_ROLE, token.address);

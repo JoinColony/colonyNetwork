@@ -107,12 +107,12 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     FundingPot storage fundingPot = fundingPots[expenditure.fundingPotId];
     assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
 
-    uint256 payout = slot.payouts[_token];
-    uint256 payoutScalar = unpackPayoutScalar(slot.payoutScalar);
+    uint256 payout = expenditureSlotPayouts[_id][_slot][_token];
+    uint256 payoutScalar = uint256(slot.payoutModifier + int256(WAD));
     uint256 repPayout = wmul(payout, payoutScalar);
     uint256 tokenPayout = min(payout, repPayout);
 
-    slot.payouts[_token] = 0;
+    expenditureSlotPayouts[_id][_slot][_token] = 0;
     fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], sub(payout, tokenPayout)); // Let funds be reclaimed
 
     // Process reputation updates if own token
@@ -195,27 +195,38 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     fromPot.balance[_token] = sub(fromPot.balance[_token], _amount);
     toPot.balance[_token] = add(toPot.balance[_token], _amount);
 
-    // If this pot is associated with a Task or Expenditure, prevent money being taken from the pot if the
-    // remaining balance is less than the amount needed for payouts, unless the task was cancelled.
+    // If this pot is associated with a Task or Expenditure, prevent money
+    // being taken from the pot if the remaining balance is less than
+    // the amount needed for payouts, unless the task was cancelled.
     if (fromPot.associatedType == FundingPotAssociatedType.Task) {
       require(
-        tasks[fromPot.associatedTypeId].status == TaskStatus.Cancelled || fromPot.balance[_token] >= fromPot.payouts[_token],
+        tasks[fromPot.associatedTypeId].status == TaskStatus.Cancelled ||
+        fromPot.balance[_token] >= fromPot.payouts[_token],
         "colony-funding-task-bad-state"
       );
     }
     if (fromPot.associatedType == FundingPotAssociatedType.Expenditure) {
       require(
-        expenditures[fromPot.associatedTypeId].status == ExpenditureStatus.Cancelled || fromPot.balance[_token] >= fromPot.payouts[_token],
+        expenditures[fromPot.associatedTypeId].status == ExpenditureStatus.Cancelled ||
+        fromPot.balance[_token] >= fromPot.payouts[_token],
         "colony-funding-expenditure-bad-state"
       );
     }
 
-    if (fromPot.associatedType != FundingPotAssociatedType.Domain) {
+    if (
+      fromPot.associatedType == FundingPotAssociatedType.Expenditure ||
+      fromPot.associatedType == FundingPotAssociatedType.Payment ||
+      fromPot.associatedType == FundingPotAssociatedType.Task
+    ) {
       uint256 fromPotPreviousAmount = add(fromPot.balance[_token], _amount);
       updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
     }
 
-    if (toPot.associatedType != FundingPotAssociatedType.Domain) {
+    if (
+      toPot.associatedType == FundingPotAssociatedType.Expenditure ||
+      toPot.associatedType == FundingPotAssociatedType.Payment ||
+      toPot.associatedType == FundingPotAssociatedType.Task
+    ) {
       uint256 toPotPreviousAmount = sub(toPot.balance[_token], _amount);
       updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
     }
@@ -460,14 +471,13 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   expenditureOnlyOwner(_id)
   validPayoutAmount(_amount)
   {
-    ExpenditureSlot storage slot = expenditureSlots[_id][_slot];
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     assert(fundingPot.associatedType == FundingPotAssociatedType.Expenditure);
 
     uint256 currentTotal = fundingPot.payouts[_token];
-    uint256 currentPayout = slot.payouts[_token];
+    uint256 currentPayout = expenditureSlotPayouts[_id][_slot][_token];
 
-    slot.payouts[_token] = _amount;
+    expenditureSlotPayouts[_id][_slot][_token] = _amount;
     fundingPot.payouts[_token] = add(sub(currentTotal, currentPayout), _amount);
 
     updatePayoutsWeCannotMakeAfterBudgetChange(expenditures[_id].fundingPotId, _token, currentTotal);
@@ -545,7 +555,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       domainId = expenditures[fundingPot.associatedTypeId].domainId;
     } else {
       // If rewards pot, return root domain.
-      require(_fundingPotId == 0, "colony-funding-expected-rewards-pot");
+      assert(_fundingPotId == 0);
       domainId = 1;
     }
   }

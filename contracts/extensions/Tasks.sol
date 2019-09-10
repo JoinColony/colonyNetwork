@@ -72,7 +72,6 @@ contract Tasks is DSMath {
   }
 
   struct Role {
-    address payable user;
     bool rateFail;
     TaskRatings rating;
   }
@@ -143,7 +142,7 @@ contract Tasks is DSMath {
   }
 
   modifier confirmTaskRoleIdentity(uint256 _id, address _user, TaskRole _role) {
-    require(msg.sender == taskRoles[_id][uint8(_role)].user, "colony-task-role-identity-mismatch");
+    require(msg.sender == getTaskRoleUser(_id, _role), "colony-task-role-identity-mismatch");
     _;
   }
 
@@ -170,12 +169,12 @@ contract Tasks is DSMath {
     require(status != ColonyDataTypes.ExpenditureStatus.Finalized, "colony-task-finalized");
 
     uint8 nSignaturesRequired;
-    uint8 taskRole1 = uint8(reviewers[sig][0]);
-    uint8 taskRole2 = uint8(reviewers[sig][1]);
-    if (taskRoles[taskId][taskRole1].user == address(0) || taskRoles[taskId][taskRole2].user == address(0)) {
+    address taskRole1User = getTaskRoleUser(taskId, TaskRole(reviewers[sig][0]));
+    address taskRole2User = getTaskRoleUser(taskId, TaskRole(reviewers[sig][1]));
+    if (taskRole1User == address(0) || taskRole2User == address(0)) {
       // When one of the roles is not set, allow the other one to execute a change with just their signature
       nSignaturesRequired = 1;
-    } else if (taskRoles[taskId][taskRole1].user == taskRoles[taskId][taskRole2].user) {
+    } else if (taskRole1User == taskRole2User) {
       // We support roles being assumed by the same user, in this case, allow them to execute a change with just their signature
       nSignaturesRequired = 1;
     } else {
@@ -187,16 +186,14 @@ contract Tasks is DSMath {
     address[] memory reviewerAddresses = getReviewerAddresses(_sigV, _sigR, _sigS, _mode, msgHash);
 
     require(
-      reviewerAddresses[0] == taskRoles[taskId][taskRole1].user ||
-      reviewerAddresses[0] == taskRoles[taskId][taskRole2].user,
+      reviewerAddresses[0] == taskRole1User || reviewerAddresses[0] == taskRole2User,
       "colony-task-signatures-do-not-match-reviewer-1"
     );
 
     if (nSignaturesRequired == 2) {
       require(reviewerAddresses[0] != reviewerAddresses[1], "colony-task-duplicate-reviewers");
       require(
-        reviewerAddresses[1] == taskRoles[taskId][taskRole1].user ||
-        reviewerAddresses[1] == taskRoles[taskId][taskRole2].user,
+        reviewerAddresses[1] == taskRole1User || reviewerAddresses[1] == taskRole2User,
         "colony-task-signatures-do-not-match-reviewer-2"
       );
     }
@@ -229,7 +226,7 @@ contract Tasks is DSMath {
     require(status != ColonyDataTypes.ExpenditureStatus.Finalized, "colony-task-finalized");
 
     uint8 nSignaturesRequired;
-    address manager = taskRoles[taskId][uint8(TaskRole.Manager)].user;
+    address manager = getTaskRoleUser(taskId, TaskRole.Manager);
     // If manager wants to set himself to a role
     if (userAddress == manager) {
       nSignaturesRequired = 1;
@@ -305,9 +302,9 @@ contract Tasks is DSMath {
     taskComplete(_id)
   {
     if (_role == TaskRole.Manager) { // Manager rated by worker
-      require(msg.sender == taskRoles[_id][uint8(TaskRole.Worker)].user, "colony-user-cannot-rate-task-manager");
+      require(msg.sender == getTaskRoleUser(_id, TaskRole.Worker), "colony-user-cannot-rate-task-manager");
     } else if (_role == TaskRole.Worker) { // Worker rated by evaluator
-      require(msg.sender == taskRoles[_id][uint8(TaskRole.Evaluator)].user, "colony-user-cannot-rate-task-worker");
+      require(msg.sender == getTaskRoleUser(_id, TaskRole.Evaluator), "colony-user-cannot-rate-task-worker");
     } else {
       revert("colony-unsupported-role-to-rate");
     }
@@ -369,16 +366,14 @@ contract Tasks is DSMath {
 
   function setTaskEvaluatorRole(uint256 _id, address payable _user) public self {
     // Can only assign role if no one is currently assigned to it
-    Role storage evaluatorRole = taskRoles[_id][uint8(TaskRole.Evaluator)];
-    require(evaluatorRole.user == address(0x0), "colony-task-evaluator-role-already-assigned");
+    require(getTaskRoleUser(_id, TaskRole.Evaluator) == address(0x0), "colony-task-evaluator-role-already-assigned");
     setTaskRoleUser(_id, TaskRole.Evaluator, _user);
   }
 
   function setTaskWorkerRole(uint256 _id, address payable _user) public self {
     // Can only assign role if no one is currently assigned to it
-    Role storage workerRole = taskRoles[_id][uint8(TaskRole.Worker)];
-    require(workerRole.user == address(0x0), "colony-task-worker-role-already-assigned");
-    uint256[] memory skills = colony.getExpenditureSkills(tasks[_id].expenditureId, uint256(TaskRole.Worker));
+    require(getTaskRoleUser(_id, TaskRole.Worker) == address(0x0), "colony-task-worker-role-already-assigned");
+    uint256[] memory skills = colony.getExpenditureSlot(tasks[_id].expenditureId, uint256(TaskRole.Worker)).skills;
     require(skills[0] > 0, "colony-task-skill-not-set"); // ignore-swc-110
     setTaskRoleUser(_id, TaskRole.Worker, _user);
   }
@@ -413,9 +408,10 @@ contract Tasks is DSMath {
     public
     confirmTaskRoleIdentity(_id, msg.sender, TaskRole.Manager)
   {
-    address manager = taskRoles[_id][uint8(TaskRole.Manager)].user;
-    address evaluator = taskRoles[_id][uint8(TaskRole.Evaluator)].user;
-    address worker = taskRoles[_id][uint8(TaskRole.Worker)].user;
+
+    address manager = getTaskRoleUser(_id, TaskRole.Manager);
+    address evaluator = getTaskRoleUser(_id, TaskRole.Evaluator);
+    address worker = getTaskRoleUser(_id, TaskRole.Worker);
 
     require(evaluator == manager || evaluator == address(0x0), "colony-funding-evaluator-already-set");
     require(worker == manager || worker == address(0x0), "colony-funding-worker-already-set");
@@ -500,15 +496,17 @@ contract Tasks is DSMath {
 
     assignWorkRatings(_id);
 
-    // If negative, emit penalty, if positive, set payout scalar
     for (uint8 roleId = 0; roleId <= 2; roleId++) {
       Role storage role = taskRoles[_id][roleId];
       assert(role.rating != TaskRatings.None);
 
+      // Emit reputation penalty if unsatisfactory
       if (role.rating == TaskRatings.Unsatisfactory) {
         emitReputationPenalty(_permissionDomainId, _childSkillIndex, _id, roleId);
       }
-      setPayoutScalar(_permissionDomainId, _childSkillIndex, _id, roleId);
+
+      // Set payout modifier in all cases
+      setPayoutModifier(_permissionDomainId, _childSkillIndex, _id, roleId);
     }
   }
 
@@ -528,29 +526,34 @@ contract Tasks is DSMath {
     role = taskRoles[_id][_role];
   }
 
+  function getTaskRoleUser(uint256 _id, TaskRole _role) public view returns (address) {
+    return colony.getExpenditureSlot(tasks[_id].expenditureId, uint256(_role)).recipient;
+  }
+
   function emitReputationPenalty(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint8 _roleId) internal {
     Role storage role = taskRoles[_id][_roleId];
     assert(role.rating == TaskRatings.Unsatisfactory);
 
+    address user = getTaskRoleUser(_id, TaskRole(_roleId));
     address token = colony.getToken();
     uint256 payout = colony.getExpenditurePayout(tasks[_id].expenditureId, uint256(_roleId), token);
     int256 reputation = -int256(add(mul(payout, 2), role.rateFail ? payout : 0) / 2);
 
     uint256 domainId = colony.getExpenditure(tasks[_id].expenditureId).domainId;
-    colony.emitDomainReputationPenalty(_permissionDomainId, _childSkillIndex, domainId, role.user, reputation);
+    colony.emitDomainReputationPenalty(_permissionDomainId, _childSkillIndex, domainId, user, reputation);
 
     // We do not penalise skill reputation if the worker did not rate -- calculate it again without the penalty.
     if (TaskRole(_roleId) == TaskRole.Worker) {
-      uint256[] memory skills = colony.getExpenditureSkills(tasks[_id].expenditureId, uint256(_roleId));
+      uint256[] memory skills = colony.getExpenditureSlot(tasks[_id].expenditureId, uint256(_roleId)).skills;
       int256 reputationPerSkill = -int256(payout / max(skills.length, 1));
 
       for (uint i = 0; i < skills.length; i += 1) {
-        colony.emitSkillReputationPenalty(_permissionDomainId, skills[i], role.user, reputationPerSkill);
+        colony.emitSkillReputationPenalty(_permissionDomainId, skills[i], user, reputationPerSkill);
       }
     }
   }
 
-  function setPayoutScalar(
+  function setPayoutModifier(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _id,
@@ -560,12 +563,15 @@ contract Tasks is DSMath {
   {
     Role storage role = taskRoles[_id][_roleId];
     uint256 payoutScalar;
+
     if (role.rating == TaskRatings.Satisfactory || role.rating == TaskRatings.Excellent) {
       payoutScalar = (role.rating == TaskRatings.Excellent) ? 3 : 2;
       payoutScalar -= role.rateFail ? 1 : 0;
       payoutScalar *= WAD / 2;
     }
-    colony.setExpenditurePayoutScalar(_permissionDomainId, _childSkillIndex, tasks[_id].expenditureId, uint256(_roleId), payoutScalar);
+
+    int256 payoutModifier = int256(payoutScalar) - int256(WAD);
+    colony.setExpenditurePayoutModifier(_permissionDomainId, _childSkillIndex, tasks[_id].expenditureId, uint256(_roleId), payoutModifier);
   }
 
   function getReviewerAddresses(
@@ -667,7 +673,6 @@ contract Tasks is DSMath {
     taskNotComplete(_id)
   {
     taskRoles[_id][uint8(_role)] = Role({
-      user: _user,
       rateFail: false,
       rating: TaskRatings.None
     });

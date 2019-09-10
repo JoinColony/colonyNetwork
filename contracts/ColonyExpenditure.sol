@@ -22,7 +22,8 @@ import "./ColonyStorage.sol";
 
 
 contract ColonyExpenditure is ColonyStorage {
-  uint256 constant MAX_PAYOUT_SCALAR = 2 * WAD;
+  int256 constant MAX_PAYOUT_MODIFIER = int256(WAD);
+  int256 constant MIN_PAYOUT_MODIFIER = -int256(WAD);
 
   // Public functions
 
@@ -125,20 +126,21 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureSkillSet(_id, _slot, _skillId);
   }
 
-  function setExpenditurePayoutScalar(
+  function setExpenditurePayoutModifier(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _id,
     uint256 _slot,
-    uint256 _payoutScalar
+    int256 _payoutModifier
   )
     public
     stoppable
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
-    require(_payoutScalar <= MAX_PAYOUT_SCALAR, "colony-expenditure-payout-scalar-too-large");
+    require(_payoutModifier <= MAX_PAYOUT_MODIFIER, "colony-expenditure-payout-modifier-too-large");
+    require(_payoutModifier >= MIN_PAYOUT_MODIFIER, "colony-expenditure-payout-modifier-too-small");
 
-    expenditureSlots[_id][_slot].payoutScalar = packPayoutScalar(_payoutScalar);
+    expenditureSlots[_id][_slot].payoutModifier = _payoutModifier;
   }
 
   function setExpenditureClaimDelay(
@@ -165,32 +167,11 @@ contract ColonyExpenditure is ColonyStorage {
     expenditure = expenditures[_id];
   }
 
-  function getExpenditureRecipient(uint256 _id, uint256 _slot) public view returns (address) {
-    return expenditureSlots[_id][_slot].recipient;
-  }
-
-  function getExpenditureClaimDelay(uint256 _id, uint256 _slot) public view returns (uint256) {
-    return expenditureSlots[_id][_slot].claimDelay;
-  }
-
-  function getExpenditurePayoutScalar(uint256 _id, uint256 _slot) public view returns (uint256) {
-    return unpackPayoutScalar(expenditureSlots[_id][_slot].payoutScalar);
-  }
-
-  function getExpenditureSkills(uint256 _id, uint256 _slot) public view returns (uint256[] memory) {
-    return expenditureSlots[_id][_slot].skills;
+  function getExpenditureSlot(uint256 _id, uint256 _slot) public view returns (ExpenditureSlot memory expenditureSlot) {
+    expenditureSlot = expenditureSlots[_id][_slot];
   }
 
   function getExpenditurePayout(uint256 _id, uint256 _slot, address _token) public view returns (uint256) {
-    return expenditureSlots[_id][_slot].payouts[_token];
-  }
-
-  function getExpenditureSlot(uint256 _id, uint256 _slot)
-    public
-    view
-    returns (address, uint256, uint256, uint256[] memory)
-  {
-    ExpenditureSlot storage e = expenditureSlots[_id][_slot];
-    return (e.recipient, e.claimDelay, unpackPayoutScalar(e.payoutScalar), e.skills);
+    return expenditureSlotPayouts[_id][_slot][_token];
   }
 }

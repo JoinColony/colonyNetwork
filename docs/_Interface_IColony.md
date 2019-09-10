@@ -388,24 +388,6 @@ Returns an existing expenditure.
 |---|---|---|
 |expenditure|Expenditure|The expenditure
 
-### `getExpenditureClaimDelay`
-
-Returns an existing expenditure slot's claimDelay.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Expenditure identifier
-|_slot|uint256|Expenditure slot
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|claimDelay|uint256|The claim delay assigned to that slot
-
 ### `getExpenditureCount`
 
 Get the number of expenditures in the colony.
@@ -420,7 +402,7 @@ Get the number of expenditures in the colony.
 
 ### `getExpenditurePayout`
 
-Returns an existing expenditure slot's payout.
+Returns an existing expenditure slot's payout for a token.
 
 
 **Parameters**
@@ -437,63 +419,9 @@ Returns an existing expenditure slot's payout.
 |---|---|---|
 |amount|uint256|Amount of the payout for that slot/token.
 
-### `getExpenditurePayoutScalar`
-
-Returns an existing expenditure slot's payoutScalar.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Expenditure identifier
-|_slot|uint256|Expenditure slot
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|payoutScalar|uint256|The payout scalar assigned to that slot
-
-### `getExpenditureRecipient`
-
-Returns an existing expenditure slot's recipient.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Expenditure identifier
-|_slot|uint256|Expenditure slot
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|recipient|address|The recipient assigned to that slot
-
-### `getExpenditureSkills`
-
-Returns an existing expenditure slot's skills array.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Expenditure identifier
-|_slot|uint256|Expenditure slot
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|skills|uint256[]|List of skillIds assigned to that slot
-
 ### `getExpenditureSlot`
 
-Returns an existing expenditure slot (useful for off-chain queries).
+Returns an existing expenditure slot.
 
 
 **Parameters**
@@ -507,10 +435,7 @@ Returns an existing expenditure slot (useful for off-chain queries).
 
 |Name|Type|Description|
 |---|---|---|
-|recipient|address|The recipient assigned to that slot
-|claimDelay|uint256|The claim delay assigned to that slot
-|payoutScalar|uint256|The payout scalar assigned to that slot
-|skills|uint256[]|List of skillIds assigned to that slot
+|expenditureSlot|ExpenditureSlot|The expenditure slot
 
 ### `getFundingPot`
 
@@ -1093,10 +1018,11 @@ Set the token payout on an expenditure slot. Can only be called by expenditure o
 |_amount|uint256|Payout amount
 
 
-### `setExpenditurePayoutScalar`
+### `setExpenditurePayoutModifier`
 
-Set the payout scalar on an expenditure slot. Can only be called by Arbitration role.
+Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
 
+*Note: Note that when determining payouts the payoutModifier is incremented by WAD and converted into payoutScalar*
 
 **Parameters**
 
@@ -1106,7 +1032,7 @@ Set the payout scalar on an expenditure slot. Can only be called by Arbitration 
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
 |_id|uint256|Expenditure identifier
 |_slot|uint256|Number of the slot
-|_payoutScalar|uint256|Value to scale their payout (between 0 and 2, denominated in WADs)
+|_payoutModifier|int256|Modifier to their payout (between -1 and 1, denominated in WADs, 0 means no modification)
 
 
 ### `setExpenditureRecipient`

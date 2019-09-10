@@ -212,9 +212,8 @@ contract ColonyDataTypes {
   struct ExpenditureSlot {
     address payable recipient;
     uint256 claimDelay;
-    uint256 payoutScalar;
+    int256 payoutModifier;
     uint256[] skills;
-    mapping (address => uint256) payouts;
   }
 
   enum ExpenditureStatus { Active, Cancelled, Finalized }
