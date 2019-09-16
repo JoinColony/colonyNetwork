@@ -123,6 +123,26 @@ Creates a new colony in the network with the latest version available Note that 
 |---|---|---|
 |colonyAddress|address|Address of the newly created colony
 
+### `createColonyWithOptions`
+
+Creates a new colony in the network, with an ENS label. Note that the token ownership (if there is one) has to be transferred to the newly created colony Additionally token can optionally support `mint` as defined in `ERC20Extended` Support for `mint` is mandatory only for the Meta Colony Token
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_colonyName|string|The label to register (if null, no label is registered)
+|_orbitdb|string|The path of the orbitDB database associated with the user profile
+|_useExtensionManager|bool|If true, give the ExtensionManager the root role in the colony
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
 ### `createMetaColony`
 
 Create the Meta Colony, same as a normal colony plus the root skill.

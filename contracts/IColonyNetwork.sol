@@ -127,22 +127,30 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   function createMetaColony(address _tokenAddress) public;
 
   /// @notice Creates a new colony in the network with the latest version available
-  /// Note that the token ownership (if there is one) has to be transferred to the newly created colony.
+  /// Note that the token ownership (if there is one) should be transferred to the newly created colony.
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token.
   /// Additionally token can optionally support `mint` as defined in `ERC20Extended`.
   /// Support for `mint` is mandatory only for the Meta Colony Token.
   /// @return colonyAddress Address of the newly created colony
   function createColony(address _tokenAddress) public returns (address colonyAddress);
 
-  /// @notice Creates a new colony in the network at a specific version. Not recommended unless you
-  /// are confident in what you're doing.
-  /// Note that the token ownership (if there is one) has to be transferred to the newly created colony.
-  /// @param _tokenAddress Address of an ERC20 token to serve as the colony token.
-  /// @param _version The version of colony to deploy.
-  /// Additionally token can optionally support `mint` as defined in `ERC20Extended`.
-  /// Support for `mint` is mandatory only for the Meta Colony Token.
+  /// @notice Creates a new colony in the network, with an ENS label.
+  /// Note that the token ownership (if there is one) has to be transferred to the newly created colony
+  /// Additionally token can optionally support `mint` as defined in `ERC20Extended`
+  /// Support for `mint` is mandatory only for the Meta Colony Token
+  /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
+  /// @param _version The version of colony to deploy (pass 0 for the current version)
+  /// @param _colonyName The label to register (if null, no label is registered)
+  /// @param _orbitdb The path of the orbitDB database associated with the user profile
+  /// @param _useExtensionManager If true, give the ExtensionManager the root role in the colony
   /// @return colonyAddress Address of the newly created colony
-  function createColony(address _tokenAddress, uint256 _version) public returns (address colonyAddress);
+  function createColonyWithOptions(
+    address _tokenAddress,
+    uint256 _version,
+    string memory _colonyName,
+    string memory _orbitdb,
+    bool _useExtensionManager
+    ) public returns (address colonyAddress);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
   /// Allowed to be called by the Meta Colony only.
