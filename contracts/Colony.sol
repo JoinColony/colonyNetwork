@@ -312,13 +312,17 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     );
   }
 
+  bytes4 constant SIG1 = bytes4(keccak256("setTaskDomain(uint256,uint256)"));
+  bytes4 constant SIG2 = bytes4(keccak256("setPaymentDomain(uint256,uint256,uint256,uint256)"));
+
   // v3 to v4
   function finishUpgrade() public always {
-    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+    // Remove from multisig
+    delete reviewers[SIG1];
 
-    // Remove function
-    bytes4 sig1 = bytes4(keccak256("setPaymentDomain(uint256,uint256,uint256,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig1, false);
+    // Remove from authority
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), SIG2, false);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
