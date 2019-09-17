@@ -927,19 +927,6 @@ Set the hash for the task brief, aka task work specification, which identifies t
 |_specificationHash|bytes32|Unique hash of the task brief in ddb
 
 
-### `setTaskDomain`
-
-Set the domain for task `_id`.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_domainId|uint256|Id of the domain
-
-
 ### `setTaskDueDate`
 
 Set the due date on task `_id`. Allowed before a task is finalized.

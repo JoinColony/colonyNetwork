@@ -1031,20 +1031,8 @@ contract("ColonyTask", accounts => {
       );
     });
 
-    it("should fail to execute task changes, when trying to set domain or skill to 0", async () => {
+    it("should fail to execute task change, when trying to set skill to 0", async () => {
       const taskId = await makeTask({ colony });
-
-      await checkErrorRevert(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [MANAGER],
-          sigTypes: [0],
-          args: [taskId, 0]
-        }),
-        "colony-task-change-execution-failed"
-      );
 
       await checkErrorRevert(
         executeSignedTaskChange({
@@ -1149,22 +1137,6 @@ contract("ColonyTask", accounts => {
       );
     });
 
-    it("should log a TaskDomainSet event, if the task domain gets changed", async () => {
-      const taskId = await makeTask({ colony });
-      await colony.addDomain(1, 0, 1);
-      await expectEvent(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [MANAGER],
-          sigTypes: [0],
-          args: [taskId, 2]
-        }),
-        "TaskDomainSet"
-      );
-    });
-
     it("should log a TaskRoleUserSet event, if a task role's user gets changed", async () => {
       const taskId = await makeTask({ colony });
 
@@ -1187,7 +1159,7 @@ contract("ColonyTask", accounts => {
       const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
         colony,
         taskId,
-        functionName: "setTaskDomain",
+        functionName: "setTaskDueDate",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, 1]
@@ -1202,7 +1174,7 @@ contract("ColonyTask", accounts => {
       const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
         colony,
         taskId,
-        functionName: "setTaskDomain",
+        functionName: "setTaskDueDate",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
         args: [taskId, 1]

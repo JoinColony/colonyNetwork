@@ -397,11 +397,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _skillId Id of the skill which has to be a global skill
   function setTaskSkill(uint256 _id, uint256 _skillId) public;
 
-  /// @notice Set the domain for task `_id`.
-  /// @param _id Id of the task
-  /// @param _domainId Id of the domain
-  function setTaskDomain(uint256 _id, uint256 _domainId) public;
-
   /// @notice Set the hash for the task brief, aka task work specification, which identifies the task brief content in ddb.
   /// Allowed before a task is finalized.
   /// @param _id Id of the task
