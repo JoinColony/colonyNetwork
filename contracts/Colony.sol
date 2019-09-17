@@ -312,8 +312,13 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     );
   }
 
+  // v3 to v4
   function finishUpgrade() public always {
-    // Nothing here for v2 to v3, but it needs to be defined.
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+
+    // Remove function
+    bytes4 sig1 = bytes4(keccak256("setPaymentDomain(uint256,uint256,uint256,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig1, false);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

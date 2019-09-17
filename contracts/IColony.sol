@@ -212,13 +212,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _recipient Address of the payment recipient
   function setPaymentRecipient(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address payable _recipient) public;
 
-  /// @notice Sets the domain on an existing payment. Secured function to authorised members
-  /// @param _permissionDomainId The domainId in which I have the permission to take this action.
-  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
-  /// @param _id Payment identifier
-  /// @param _domainId Id of the new domain to set
-  function setPaymentDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _domainId) public;
-
   /// @notice Sets the skill on an existing payment. Secured function to authorised members.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`

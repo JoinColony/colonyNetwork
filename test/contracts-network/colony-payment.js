@@ -131,27 +131,6 @@ contract("Colony Payment", accounts => {
       );
     });
 
-    it("should allow admins to update domain", async () => {
-      await colony.addDomain(1, 0, 1);
-      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
-      const paymentId = await colony.getPaymentCount();
-
-      let payment = await colony.getPayment(paymentId);
-      expect(payment.domainId).to.eq.BN(1);
-      await colony.setPaymentDomain(1, 0, paymentId, 2, { from: COLONY_ADMIN });
-      payment = await colony.getPayment(paymentId);
-      expect(payment.domainId).to.eq.BN(2);
-    });
-
-    it("should not allow admins to update to empty domain", async () => {
-      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
-      const paymentId = await colony.getPaymentCount();
-
-      const { domainId } = await colony.getPayment(paymentId);
-      expect(domainId).to.eq.BN(1);
-      await checkErrorRevert(colony.setPaymentDomain(1, 0, paymentId, 10, { from: COLONY_ADMIN }), "ds-auth-child-domain-does-not-exist");
-    });
-
     it("should allow admins to update skill", async () => {
       await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
@@ -259,11 +238,6 @@ contract("Colony Payment", accounts => {
     it("should not allow admins to update recipient", async () => {
       await colony.finalizePayment(1, 0, paymentId);
       await checkErrorRevert(colony.setPaymentRecipient(1, 0, paymentId, accounts[6], { from: COLONY_ADMIN }), "colony-payment-finalized");
-    });
-
-    it("should not allow admins to update to empty domain", async () => {
-      await colony.finalizePayment(1, 0, paymentId);
-      await checkErrorRevert(colony.setPaymentDomain(1, 0, paymentId, 2, { from: COLONY_ADMIN }), "colony-payment-finalized");
     });
 
     it("should not allow admins to update skill", async () => {
