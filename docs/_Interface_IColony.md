@@ -828,21 +828,6 @@ Set new colony funding role. Can be called by root role or architecture role.
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
-### `setPaymentDomain`
-
-Sets the domain on an existing payment. Secured function to authorised members
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action.
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
-|_id|uint256|Payment identifier
-|_domainId|uint256|Id of the new domain to set
-
-
 ### `setPaymentPayout`
 
 Sets the payout for a given token on an existing payment. Secured function to authorised members.
@@ -925,19 +910,6 @@ Set the hash for the task brief, aka task work specification, which identifies t
 |---|---|---|
 |_id|uint256|Id of the task
 |_specificationHash|bytes32|Unique hash of the task brief in ddb
-
-
-### `setTaskDomain`
-
-Set the domain for task `_id`.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_domainId|uint256|Id of the domain
 
 
 ### `setTaskDueDate`

@@ -115,7 +115,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), TaskRole.Manager, TaskRole.Worker);
     setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
     setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("setTaskDomain(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
     // We are setting a manager to both reviewers, but it will require just one signature from manager
     setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Manager);
     setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Evaluator);
@@ -313,8 +312,17 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     );
   }
 
+  bytes4 constant SIG1 = bytes4(keccak256("setTaskDomain(uint256,uint256)"));
+  bytes4 constant SIG2 = bytes4(keccak256("setPaymentDomain(uint256,uint256,uint256,uint256)"));
+
+  // v3 to v4
   function finishUpgrade() public always {
-    // Nothing here for v2 to v3, but it needs to be defined.
+    // Remove from multisig
+    delete reviewers[SIG1];
+
+    // Remove from authority
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), SIG2, false);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

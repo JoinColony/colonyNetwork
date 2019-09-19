@@ -97,15 +97,6 @@ contract ColonyPayment is ColonyStorage {
     payments[_id].recipient = _recipient;
   }
 
-  function setPaymentDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _domainId) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
-  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  paymentNotFinalized(_id)
-  {
-    payments[_id].domainId = _domainId;
-  }
-
   function setPaymentSkill(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _skillId) public
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)

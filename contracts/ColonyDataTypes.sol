@@ -93,11 +93,6 @@ contract ColonyDataTypes {
   /// @param dueDate New due date of the task
   event TaskDueDateSet(uint256 indexed taskId, uint256 dueDate);
 
-  /// @notice Event logged when a task's domain changes
-  /// @param taskId Id of the task
-  /// @param domainId New domain id of the task
-  event TaskDomainSet(uint256 indexed taskId, uint256 indexed domainId);
-
   /// @notice Event logged when a task's skill changes
   /// @param taskId Id of the task
   /// @param skillId New skill id of the task

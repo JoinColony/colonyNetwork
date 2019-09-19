@@ -335,19 +335,6 @@ contract ColonyTask is ColonyStorage {
     setTaskRoleUser(_id, TaskRole.Worker, address(0x0));
   }
 
-  function setTaskDomain(uint256 _id, uint256 _domainId) public
-  stoppable
-  taskExists(_id)
-  taskNotComplete(_id)
-  self()
-  {
-    require(domainExists(_domainId), "colony-domain-does-not-exist");
-
-    tasks[_id].domainId = _domainId;
-
-    emit TaskDomainSet(_id, _domainId);
-  }
-
   function setTaskSkill(uint256 _id, uint256 _skillId) public
   stoppable
   taskExists(_id)
