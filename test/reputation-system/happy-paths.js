@@ -160,12 +160,7 @@ contract("Reputation Mining - happy paths", accounts => {
 
       await clients[0].saveCurrentState();
       const savedHash = await clients[0].reputationTree.getRootHash();
-      await Promise.all(
-        clients.map(async client => {
-          client.loadState(savedHash);
-        })
-      );
-
+      await Promise.all(clients.map(async client => client.loadState(savedHash)));
       await submitAndForwardTimeToDispute(clients, this);
 
       // Round 1

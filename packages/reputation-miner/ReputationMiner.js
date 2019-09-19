@@ -95,6 +95,7 @@ class ReputationMiner {
 
       const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
       const contract = await contractFactory.deploy();
+      await contract.deployed();
       this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
 
@@ -117,10 +118,12 @@ class ReputationMiner {
         this.patriciaTreeNoHashContractDef.bytecode,
         this.ganacheWallet
       );
+
       const contract = await contractFactory.deploy();
+      await contract.deployed();
+
       this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeNoHashContractDef.abi, this.ganacheWallet);
     }
-
     this.justificationHashes = {};
     this.reverseReputationHashLookup = {};
     const repCycle = await this.getActiveRepCycle(blockNumber)
@@ -154,7 +157,10 @@ class ReputationMiner {
     const interimHash = await this.reputationTree.getRootHash();
     const jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     const nextUpdateProof = {};
-    await this.justificationTree.insert(ReputationMiner.getHexString(totalnUpdates, 64), jhLeafValue, { gasLimit: 4000000 });
+    const tx = await this.justificationTree.insert(ReputationMiner.getHexString(totalnUpdates, 64), jhLeafValue, { gasLimit: 4000000 });
+    if (!this.useJsTree) {
+      await tx.wait();
+    }
 
     this.justificationHashes[ReputationMiner.getHexString(totalnUpdates, 64)] = JSON.parse(
       JSON.stringify({
@@ -344,7 +350,10 @@ class ReputationMiner {
       justUpdatedProof = await this.getReputationProofObject(prevKey);
     }
     const newestReputationProof = await this.getNewestReputationProofObject(updateNumber);
-    await this.justificationTree.insert(ReputationMiner.getHexString(updateNumber, 64), jhLeafValue, { gasLimit: 4000000 });
+    const tx = await this.justificationTree.insert(ReputationMiner.getHexString(updateNumber, 64), jhLeafValue, { gasLimit: 4000000 });
+    if (!this.useJsTree) {
+      await tx.wait();
+    }
 
     const key = await this.getKeyForUpdateNumber(updateNumber, blockNumber);
     const nextUpdateProof = await this.getReputationProofObject(key);
@@ -1111,7 +1120,10 @@ class ReputationMiner {
       value = this.getValueAsBytes(newValue, this.nReputations.add(1), index);
       this.nReputations = this.nReputations.add(1);
     }
-    await this.reputationTree.insert(key, value, { gasLimit: 4000000 });
+    const tx = await this.reputationTree.insert(key, value, { gasLimit: 4000000 });
+    if (!this.useJsTree) {
+      await tx.wait();
+    }
     // If successful, add to our JSON.
     this.reputations[key] = value;
     return true;
@@ -1248,6 +1260,8 @@ class ReputationMiner {
 
       const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
       const contract = await contractFactory.deploy();
+      await contract.deployed();
+
       this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
 
@@ -1263,7 +1277,10 @@ class ReputationMiner {
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
       const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
-      await this.reputationTree.insert(key, row.value, { gasLimit: 4000000 });
+      const tx = await this.reputationTree.insert(key, row.value, { gasLimit: 4000000 });
+      if (!this.useJsTree) {
+        await tx.wait();
+      }
       this.reputations[key] = row.value;
     }
     const currentStateHash = await this.reputationTree.getRootHash();

@@ -46,11 +46,14 @@ class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
       return new Error("No valid entry for submission found");
     }
     // Mess up the JRH
-
-    await this.justificationTree.insert(
-      ethers.utils.hexZeroPad(ethers.utils.hexlify(parseInt(this.entryToFalsify, 10)), 32),
-      `0x${"0".repeat(127)}1`
+    const insertTx = await this.justificationTree.insert(
+      MaliciousReputationMinerWrongJRH.getHexString(parseInt(this.entryToFalsify, 10), 64),
+      `0x${"0".repeat(127)}1`,
+      { gasLimit: 4000000 }
     );
+    if (!this.useJsTree){
+      await insertTx.wait();
+    }
     // Get the JRH
     const jrh = await this.justificationTree.getRootHash();
     // Submit that entry
