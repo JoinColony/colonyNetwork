@@ -3,24 +3,29 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 
-import { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID } from "../../helpers/constants";
+import { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID, FUNDING_ROLE, ADMINISTRATION_ROLE } from "../../helpers/constants";
 import { checkErrorRevert } from "../../helpers/test-helper";
+import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const OneTxPaymentFactory = artifacts.require("OneTxPaymentFactory");
+const ExtensionManager = artifacts.require("ExtensionManager");
 const OneTxPayment = artifacts.require("OneTxPayment");
+const Resolver = artifacts.require("Resolver");
 
 contract("One transaction payments", (accounts) => {
   let colony;
   let token;
   let colonyNetwork;
+  let extensionManager;
   let metaColony;
   let oneTxExtension;
-  let oneTxExtensionFactory;
+
+  const ONE_TX_PAYMENT = soliditySha3("OneTxPayment");
 
   const RECIPIENT = accounts[3];
   const RECIPIENT2 = accounts[4];
@@ -29,60 +34,33 @@ contract("One transaction payments", (accounts) => {
   before(async () => {
     colonyNetwork = await setupColonyNetwork();
     ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+    extensionManager = await ExtensionManager.new(metaColony.address);
+    const oneTxPayment = await OneTxPayment.new();
+    const oneTxPaymentResolver = await Resolver.new();
+    await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPayment.address }, oneTxPaymentResolver);
+    await metaColony.addExtension(extensionManager.address, ONE_TX_PAYMENT, 0, oneTxPaymentResolver.address, [FUNDING_ROLE, ADMINISTRATION_ROLE]);
+
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
-    oneTxExtensionFactory = await OneTxPaymentFactory.new();
   });
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
+    await colony.setRootRole(extensionManager.address, true);
+    await extensionManager.installExtension(ONE_TX_PAYMENT, 0, colony.address, 0, 1, 0, 1);
+
+    const extensionAddress = await extensionManager.getExtension(ONE_TX_PAYMENT, 0, colony.address, 1);
+    oneTxExtension = await OneTxPayment.at(extensionAddress);
+
     // Give a user colony administration rights (needed for one-tx)
     await colony.setAdministrationRole(1, UINT256_MAX, COLONY_ADMIN, 1, true);
     await colony.setFundingRole(1, UINT256_MAX, COLONY_ADMIN, 1, true);
-
-    await oneTxExtensionFactory.deployExtension(colony.address);
-    const oneTxExtensionAddress = await oneTxExtensionFactory.deployedExtensions(colony.address);
-    oneTxExtension = await OneTxPayment.at(oneTxExtensionAddress);
-
-    // Give oneTxExtension administration and funding rights
-    await colony.setAdministrationRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
-    await colony.setFundingRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
   });
 
-  describe("under normal conditions", () => {
-    it("does not allow an extension to be redeployed", async () => {
-      await checkErrorRevert(oneTxExtensionFactory.deployExtension(colony.address), "colony-extension-already-deployed");
-    });
-
-    it("does not allow a user without root permission to deploy the extension", async () => {
-      await checkErrorRevert(oneTxExtensionFactory.deployExtension(colony.address, { from: COLONY_ADMIN }), "colony-extension-user-not-root");
-    });
-
-    it("does not allow a user without root permission to remove the extension", async () => {
-      await checkErrorRevert(oneTxExtensionFactory.removeExtension(colony.address, { from: COLONY_ADMIN }), "colony-extension-user-not-root");
-    });
-
-    it("does allow a user with root permission to remove the extension", async () => {
-      const tx = await oneTxExtensionFactory.removeExtension(colony.address);
-      const extensionAddress = await oneTxExtensionFactory.deployedExtensions(colony.address);
-      assert.equal(extensionAddress, ethers.constants.AddressZero);
-      const event = tx.logs[0];
-      assert.equal(event.args[0], "OneTxPayment");
-      assert.equal(event.args[1], colony.address);
-    });
-
-    it("emits the expected event when extension added", async () => {
-      ({ colony, token } = await setupRandomColony(colonyNetwork));
-      const tx = await oneTxExtensionFactory.deployExtension(colony.address);
-      const event = tx.logs[0];
-      assert.equal(event.args[0], "OneTxPayment");
-      assert.equal(event.args[1], colony.address);
-      const oneTxExtensionAddress = await oneTxExtensionFactory.deployedExtensions(colony.address);
-      assert.equal(event.args[2], oneTxExtensionAddress);
-    });
-
+  describe("one tx payments", () => {
     it("should allow a single-transaction payment of tokens to occur", async () => {
       const balanceBefore = await token.balanceOf(RECIPIENT);
       expect(balanceBefore).to.eq.BN(0);

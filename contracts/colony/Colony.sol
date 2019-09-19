@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 import "./../common/IEtherRouter.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
+import "./extensions/ExtensionManager.sol";
 
 
 contract Colony is ColonyStorage, PatriciaTreeProofs {
@@ -288,6 +289,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.addColonyVersion(_version, _resolver);
   }
 
+  function addExtension(address _manager, bytes32 _extensionId, uint256 _version, address _resolver, uint8[] memory _roles)
+  public stoppable auth
+  {
+    ExtensionManager(_manager).addExtension(_extensionId, _version, _resolver, _roles);
+  }
+
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
@@ -386,6 +393,14 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Add expenditure state change support
     sig = bytes4(keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+
+    // Add coin machine support
+    sig = bytes4(keccak256("mintTokensFor(address,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    // Add extension manager support
+    sig = bytes4(keccak256("addExtension(address,bytes32,uint256,address,uint8[])"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
