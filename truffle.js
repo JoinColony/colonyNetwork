@@ -20,9 +20,7 @@ module.exports = {
     },
     coverage: {
       host: "localhost",
-      port: 8555, // <-- Use port 8555
-      gas: 0xfffffffffff, // <-- Use this high gas value
-      gasPrice: 0x01, // <-- Use this low gas price
+      port: 8555,
       network_id: 1999,
       skipDryRun: true
     },
@@ -74,5 +72,5 @@ module.exports = {
       }
     }
   },
-  plugins: ["truffle-security"]
+  plugins: ["truffle-security", "solidity-coverage"]
 };
