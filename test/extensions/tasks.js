@@ -115,7 +115,7 @@ contract("Tasks extension", accounts => {
 
   describe("when creating tasks", () => {
     it("should allow admins to make a task", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
       const task = await tasks.getTask(taskId);
 
@@ -125,11 +125,11 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if a non-admin user tries to make a task", async () => {
-      await checkErrorRevert(tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: OTHER }), "task-not-admin");
+      await checkErrorRevert(tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: OTHER }), "task-not-admin");
     });
 
     it("should set the task creator as the manager and evaluator", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
       const task = await tasks.getTask(taskId);
 
@@ -148,7 +148,7 @@ contract("Tasks extension", accounts => {
       const newEvaluator = accounts[1];
       expect(newEvaluator).to.not.equal(MANAGER);
 
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       let evaluator = await tasks.getTaskRoleUser(taskId, EVALUATOR_ROLE);
@@ -183,7 +183,7 @@ contract("Tasks extension", accounts => {
       const taskCountBefore = await tasks.getTaskCount();
 
       for (let i = 0; i < 5; i += 1) {
-        await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+        await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       }
 
       const taskCountAfter = await tasks.getTaskCount();
@@ -191,7 +191,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should set the task domain correctly", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 2, 0, 0);
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 2, 0, 0, true);
       const taskId = await tasks.getTaskCount();
 
       const task = await tasks.getTask(taskId);
@@ -200,14 +200,14 @@ contract("Tasks extension", accounts => {
     });
 
     it("should log TaskAdded and TaskDueDateSet events", async () => {
-      await expectAllEvents(tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0), ["TaskAdded", "TaskDueDateSet"]);
+      await expectAllEvents(tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true), ["TaskAdded", "TaskDueDateSet"]);
     });
 
     it("should optionally set the skill and due date", async () => {
       const currTime = await currentBlockTime();
       const dueDate = currTime + SECONDS_PER_DAY;
 
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, dueDate);
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, dueDate, true);
       const taskId = await tasks.getTaskCount();
 
       const task = await tasks.getTask(taskId);
@@ -218,7 +218,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should set the due date to 90 days from now if unspecified", async () => {
-      const tx = await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0);
+      const tx = await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true);
       const taskId = await tasks.getTaskCount();
 
       const task = await tasks.getTask(taskId);
@@ -229,7 +229,7 @@ contract("Tasks extension", accounts => {
 
   describe("when updating tasks", () => {
     it("should not be able to `executeTaskRoleAssignment` on a nonexistent task", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -245,13 +245,13 @@ contract("Tasks extension", accounts => {
       );
     });
 
-    it("should not be able to `executeTaskRoleAssignment` on a finalized task", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+    it("should not be able to `executeTaskRoleAssignment` on a completed task", async () => {
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId });
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -262,12 +262,12 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, WORKER]
         }),
-        "colony-task-finalized"
+        "task-complete"
       );
     });
 
     it("should not be able to pass unallowed function signature to `executeTaskRoleAssignment`", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -284,7 +284,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not be able to send any ether while assigning a role", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
@@ -300,7 +300,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not be able to execute task change when the number of signature parts differ", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
@@ -319,7 +319,7 @@ contract("Tasks extension", accounts => {
       const newEvaluator = accounts[1];
       expect(newEvaluator).to.not.equal(MANAGER);
 
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedTaskChange({
@@ -357,7 +357,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow a worker to be assigned if the task has no skill", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -395,7 +395,7 @@ contract("Tasks extension", accounts => {
       const newEvaluator = accounts[1];
       expect(newEvaluator).to.not.equal(MANAGER);
 
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedTaskChange({
@@ -433,7 +433,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow role to be assigned if it is already assigned to somebody", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -471,7 +471,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should allow role to be unassigned, as long as the current assigned address agrees", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -514,7 +514,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow role to be assigned if passed address is not equal to one of the signers", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -531,7 +531,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should allow manager to assign themself to a role", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -548,7 +548,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow anyone to assign themself to a role with one signature except manager", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -565,7 +565,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should allow different modes of signing when assigning roles", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -582,7 +582,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow role assignment if none of the signers is manager", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -599,7 +599,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should allow to change manager role if the user agrees", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -616,7 +616,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow one-signature assignment of manager to a role if signer is not manager", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -633,7 +633,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow assignment of manager role if the user does not agree", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -650,7 +650,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow assignment of manager role if user is not an admin", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -667,7 +667,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow removal of manager role", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -687,7 +687,7 @@ contract("Tasks extension", accounts => {
       const newEvaluator = accounts[1];
       expect(newEvaluator).to.not.equal(MANAGER);
 
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       // Setting the worker
@@ -734,10 +734,10 @@ contract("Tasks extension", accounts => {
     });
 
     it("should correctly increment `taskChangeNonce` for multiple updates on multiple tasks", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId1 = await tasks.getTaskCount();
 
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId2 = await tasks.getTaskCount();
 
       // Change the task1 brief
@@ -781,7 +781,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should allow update of task brief signed by manager only when worker has not been assigned", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedTaskChange({
@@ -798,7 +798,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should allow update of task brief signed by manager and worker", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -824,7 +824,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should allow update of task brief signed by manager and worker using Trezor-style signatures", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -850,7 +850,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should allow update of task brief signed by manager and worker if one uses Trezor-style signatures and the other does not", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -876,7 +876,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow update of task brief signed by manager twice, with two different signature styles", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -903,7 +903,7 @@ contract("Tasks extension", accounts => {
 
     it("should allow update of task due date signed by manager and worker", async () => {
       const dueDate = await currentBlockTime();
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -929,14 +929,14 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if a non-colony call is made to the task update functions", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(tasks.setTaskBrief(taskId, SPECIFICATION_HASH_UPDATED, { from: OTHER }), "task-not-self");
     });
 
     it("should fail update of task brief signed by a non-registered role", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -953,7 +953,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail update of task brief signed by manager and evaluator", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -979,7 +979,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail to execute task change for a non-registered function signature", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -996,7 +996,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail to execute change of task brief, using an invalid taskId", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
       const taskCount = await tasks.getTaskCount();
       const nonExistentTaskId = taskCount.addn(10);
@@ -1031,7 +1031,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail to execute task changes, when trying to set skill to 0", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -1047,13 +1047,13 @@ contract("Tasks extension", accounts => {
       );
     });
 
-    it("should fail to execute task change, if the task is already finalized", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+    it("should fail to execute task change, if the task is already complete", async () => {
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId });
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
       await checkErrorRevert(
         executeSignedTaskChange({
@@ -1064,12 +1064,12 @@ contract("Tasks extension", accounts => {
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
         }),
-        "colony-task-finalized"
+        "task-complete"
       );
     });
 
     it("should fail to change task manager, if the task is complete", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await forwardTime(90 * SECONDS_PER_DAY);
@@ -1084,12 +1084,12 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, ADMIN, 1, 0]
         }),
-        "olony-task-role-assignment-execution-failed"
+        "task-complete"
       );
     });
 
     it("should log a TaskBriefSet event, if the task brief gets changed", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await expectEvent(
@@ -1106,7 +1106,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should log a TaskDueDateSet event, if the task due date gets changed", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       const dueDate = await currentBlockTime();
@@ -1124,7 +1124,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail to execute task change with a non zero value", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
@@ -1140,7 +1140,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail to execute task change with a mismatched set of signature parts", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
@@ -1156,7 +1156,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail to execute task change send for a task role assignment call (which should be using executeTaskRoleAssignment)", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
@@ -1172,7 +1172,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail to execute task change with the wrong signatures, one signer", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
@@ -1188,7 +1188,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail to execute task change with the wrong signatures, two signers", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -1215,7 +1215,7 @@ contract("Tasks extension", accounts => {
 
   describe("when submitting task deliverable", () => {
     it("should update task", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
       await assignRoles({ tasks, taskId, manager: MANAGER, evaluator: EVALUATOR, worker: WORKER });
 
@@ -1228,7 +1228,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if I try to submit work for a task that is complete", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
       await assignRoles({ tasks, taskId, manager: MANAGER, evaluator: EVALUATOR, worker: WORKER });
 
@@ -1239,18 +1239,18 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if I try to submit work for a task that is finalized", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId });
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
       await checkErrorRevert(tasks.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER }), "task-complete");
     });
 
     it("should succeed if I try to submit work for a task that is past its due date but not yet marked as complete", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1262,14 +1262,14 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if I try to submit work for a task using an invalid id", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(tasks.submitTaskDeliverable(taskId.addn(1), DELIVERABLE_HASH), "task-does-not-exist");
     });
 
     it("should fail if I try to submit work twice", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1279,7 +1279,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if I try to mark a taske complete after work is submitted", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1289,7 +1289,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if I try to submit work if I'm not the assigned worker", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: OTHER });
@@ -1297,7 +1297,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should log a TaskDeliverableSubmitted event", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1305,7 +1305,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if I try to complete the task before the due date", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1315,14 +1315,14 @@ contract("Tasks extension", accounts => {
 
   describe("when evaluating a task", () => {
     it("should fail if I try to evaluate before work is submitted", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }), "task-not-complete");
     });
 
     it("should fail if I try to evaluate twice", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1332,7 +1332,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if the wrong user tries to rate the wrong role", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1345,7 +1345,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("can retreive rating secret information", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1362,7 +1362,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if the user tries to rate too late", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1374,7 +1374,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow a user to reveal after the deadline, with two secrets", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1390,7 +1390,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow a user to reveal after the deadline, with one secret", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1405,7 +1405,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow a user to reveal during the submission period", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1419,7 +1419,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow a user to reveal a non-matching rating", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1431,7 +1431,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not allow a user to reveal a rating of None", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1445,12 +1445,12 @@ contract("Tasks extension", accounts => {
 
   describe("when finalizing a task", () => {
     it('should set the task "status" property to "finalized"', async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId });
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
       const task = await tasks.getTask(taskId);
       const expenditure = await colony.getExpenditure(task.expenditureId);
@@ -1458,46 +1458,53 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if I try to finalize a task twice", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId });
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId, { from: MANAGER }), "colony-expenditure-not-active");
+      await checkErrorRevert(tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER }), "colony-expenditure-not-active");
+    });
+
+    it("should fail if I try to finalize a secure task using finalizeManagedTask", async () => {
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
+      const taskId = await tasks.getTaskCount();
+
+      await checkErrorRevert(tasks.finalizeManagedTask(taskId), "task-not-managed");
     });
 
     it("should fail if I try to finalize a task that is not complete", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "task-not-complete");
+      await checkErrorRevert(tasks.finalizeSecureTask(1, 0, taskId), "task-not-complete");
     });
 
     it("should fail if the task work ratings have not been assigned and they still have time to be", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await tasks.submitTaskDeliverable(taskId, SPECIFICATION_HASH, { from: WORKER });
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "task-ratings-not-closed");
+      await checkErrorRevert(tasks.finalizeSecureTask(1, 0, taskId), "task-ratings-not-closed");
     });
 
     it("should fail if the task work ratings have not been revealed and they still have time to be", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await tasks.submitTaskDeliverableAndRating(taskId, SPECIFICATION_HASH, RATING_1_SECRET, { from: WORKER });
       await tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: MANAGER });
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "task-ratings-not-closed");
+      await checkErrorRevert(tasks.finalizeSecureTask(1, 0, taskId), "task-ratings-not-closed");
     });
 
     it("should finalize if the rate and reveal period have elapsed", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1505,26 +1512,26 @@ contract("Tasks extension", accounts => {
 
       // No ratings submitted, so must wait for both rate and reveal periods to elapse
       await forwardTime(SECONDS_PER_DAY * 10 + 1);
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
     });
 
     it("should finalize if only the reveal period has elapsed after both secrets are submitted", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await tasks.submitTaskDeliverableAndRating(taskId, SPECIFICATION_HASH, RATING_1_SECRET, { from: WORKER });
       await tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: MANAGER });
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "task-ratings-not-closed");
+      await checkErrorRevert(tasks.finalizeSecureTask(1, 0, taskId), "task-ratings-not-closed");
 
       // Both secrets submitted, so we only have to wait for the reveal period to elapse
       await forwardTime(SECONDS_PER_DAY * 5 + 1);
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
     });
 
     it("should assign manager and worker maximum rating if unrated", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
       const task = await tasks.getTask(taskId);
 
@@ -1532,7 +1539,7 @@ contract("Tasks extension", accounts => {
       await tasks.submitTaskDeliverable(taskId, SPECIFICATION_HASH, { from: WORKER });
 
       forwardTime(SECONDS_PER_DAY * 10 + 1);
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
       const managerSlot = await colony.getExpenditureSlot(task.expenditureId, MANAGER_ROLE);
       const evaluatorSlot = await colony.getExpenditureSlot(task.expenditureId, EVALUATOR_ROLE);
@@ -1544,7 +1551,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if it's not sufficiently funded to support all its payouts", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedTaskChange({
@@ -1559,30 +1566,30 @@ contract("Tasks extension", accounts => {
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId });
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "colony-expenditure-not-funded");
+      await checkErrorRevert(tasks.finalizeSecureTask(1, 0, taskId), "colony-expenditure-not-funded");
     });
 
     it("should fail if I try to accept a task that was finalized before", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId });
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "colony-expenditure-not-active");
+      await checkErrorRevert(tasks.finalizeSecureTask(1, 0, taskId), "colony-expenditure-not-active");
     });
 
     it("should fail if I try to accept a task using an invalid id", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId.addn(1)), "task-does-not-exist");
+      await checkErrorRevert(tasks.finalizeSecureTask(1, 0, taskId.addn(1)), "task-does-not-exist");
     });
 
     it("should emit two negative reputation updates for a bad worker rating", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
       const task = await tasks.getTask(taskId);
       const expenditure = await colony.getExpenditure(task.expenditureId);
@@ -1601,7 +1608,7 @@ contract("Tasks extension", accounts => {
       await forwardTime(SECONDS_PER_DAY * 5 + 1);
       await tasks.revealTaskWorkRating(taskId, WORKER_ROLE, 1, RATING_2_SALT, { from: MANAGER });
       await forwardTime(SECONDS_PER_DAY * 5 + 1);
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
       const numEntriesAfter = await repCycle.getReputationUpdateLogLength();
       expect(numEntriesAfter.sub(numEntriesBefore)).to.eq.BN(2);
@@ -1621,7 +1628,7 @@ contract("Tasks extension", accounts => {
 
     it("should emit one negative reputation update for a bad manager/evaluator rating", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
       const task = await tasks.getTask(taskId);
       const expenditure = await colony.getExpenditure(task.expenditureId);
@@ -1634,7 +1641,7 @@ contract("Tasks extension", accounts => {
       await colony.moveFundsBetweenPots(1, 0, 0, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId, managerRating: 1 });
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
       const numEntriesAfter = await repCycle.getReputationUpdateLogLength();
       expect(numEntriesAfter.sub(numEntriesBefore)).to.eq.BN(1);
@@ -1648,7 +1655,7 @@ contract("Tasks extension", accounts => {
 
   describe("when cancelling a task", () => {
     it('should set the task "status" property to "cancelled"', async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedTaskChange({
@@ -1666,7 +1673,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if manager tries to cancel a task that was completed", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
@@ -1681,12 +1688,12 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId]
         }),
-        "colony-task-change-execution-failed"
+        "task-complete"
       );
     });
 
     it("should fail if manager tries to cancel a task with invalid id", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await checkErrorRevert(
@@ -1705,7 +1712,7 @@ contract("Tasks extension", accounts => {
 
   describe("when funding tasks", () => {
     it("should be able to set the task payouts for different roles", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -1793,7 +1800,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should be able (if manager) to set all payments at once if evaluator and worker are manager or unassigned", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
       await checkErrorRevert(
         tasks.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000, { from: OTHER }),
@@ -1812,7 +1819,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not be able to set all payments at once if worker is assigned and is not the manager", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedRoleAssignment({
@@ -1828,7 +1835,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should not be able to set all payments at once if evaluator is assigned and is not the manager", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await executeSignedTaskChange({
@@ -1853,7 +1860,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should correctly return the current total payout", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await tasks.setAllTaskPayouts(taskId, token.address, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT);
@@ -1867,7 +1874,7 @@ contract("Tasks extension", accounts => {
     it("should be possible to return funds back to the domain if cancelled", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await tasks.setAllTaskPayouts(taskId, token.address, 0, 0, WAD);
@@ -1930,7 +1937,7 @@ contract("Tasks extension", accounts => {
     it("should payout agreed ether and tokens for a task", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       // Setup payouts
@@ -1948,7 +1955,7 @@ contract("Tasks extension", accounts => {
       // Complete task
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId });
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
       // Claim payouts
       const workerEtherBalanceBefore = await web3GetBalance(WORKER);
@@ -1967,7 +1974,7 @@ contract("Tasks extension", accounts => {
     it("should disburse nothing for unsatisfactory work, for manager and worker", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await tasks.setAllTaskPayouts(taskId, token.address, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT);
@@ -1979,7 +1986,7 @@ contract("Tasks extension", accounts => {
 
       await assignRoles({ tasks, taskId, manager: MANAGER, evaluator: EVALUATOR, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId, managerRating: 1, workerRating: 1 });
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
       const managerSlot = await colony.getExpenditureSlot(task.expenditureId, MANAGER_ROLE);
       const evaluatorSlot = await colony.getExpenditureSlot(task.expenditureId, EVALUATOR_ROLE);
@@ -2009,7 +2016,7 @@ contract("Tasks extension", accounts => {
     it("should disburse nothing for unsatisfactory work, for evaluator", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await tasks.setAllTaskPayouts(taskId, token.address, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT);
@@ -2025,7 +2032,7 @@ contract("Tasks extension", accounts => {
       await forwardTime(SECONDS_PER_DAY * 5 + 1);
       await tasks.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
       await forwardTime(SECONDS_PER_DAY * 5 + 1);
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
       const managerSlot = await colony.getExpenditureSlot(task.expenditureId, MANAGER_ROLE);
       const evaluatorSlot = await colony.getExpenditureSlot(task.expenditureId, EVALUATOR_ROLE);
@@ -2063,7 +2070,7 @@ contract("Tasks extension", accounts => {
     it("should automatically reclaim funds after unsatisfactory reviews", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       await tasks.setAllTaskPayouts(taskId, token.address, 0, 0, WORKER_PAYOUT);
@@ -2074,7 +2081,7 @@ contract("Tasks extension", accounts => {
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId, workerRating: 1 });
-      await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
+      await tasks.finalizeSecureTask(1, 0, taskId, { from: MANAGER });
 
       const balanceBefore = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
       await colony.claimExpenditurePayout(task.expenditureId, WORKER_ROLE, token.address);
@@ -2083,11 +2090,128 @@ contract("Tasks extension", accounts => {
     });
 
     it("should return error when task is not finalized", async () => {
-      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, true, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
       const task = await tasks.getTask(taskId);
       await checkErrorRevert(colony.claimExpenditurePayout(task.expenditureId, MANAGER_ROLE, token.address), "colony-expenditure-not-finalized");
+    });
+  });
+
+  describe("managed tasks", () => {
+    it("should allow admins to make managed tasks", async () => {
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, false, { from: MANAGER });
+      const taskId = await tasks.getTaskCount();
+      const task = await tasks.getTask(taskId);
+      expect(task.secure).to.be.false;
+    });
+
+    it("should allow managers to edit task attributes without multi-sig", async () => {
+      const currTime = await currentBlockTime();
+      const dueDate = currTime + SECONDS_PER_DAY;
+
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, false, { from: MANAGER });
+      const taskId = await tasks.getTaskCount();
+
+      await tasks.setTaskManagerRole(taskId, ADMIN, 1, 0);
+      await tasks.setTaskManagerRole(taskId, MANAGER, 1, 0, { from: ADMIN });
+
+      await tasks.setTaskSkill(taskId, GLOBAL_SKILL_ID);
+
+      // await tasks.setTaskEvaluatorRole(taskId, EVALUATOR); // Except this one!
+      await tasks.setTaskWorkerRole(taskId, WORKER);
+
+      await tasks.setTaskBrief(taskId, SPECIFICATION_HASH_UPDATED);
+      await tasks.setTaskDueDate(taskId, dueDate);
+
+      await tasks.setTaskManagerPayout(taskId, token.address, MANAGER_PAYOUT);
+      await tasks.setTaskEvaluatorPayout(taskId, token.address, EVALUATOR_PAYOUT);
+      await tasks.setTaskWorkerPayout(taskId, token.address, WORKER_PAYOUT);
+
+      await tasks.removeTaskEvaluatorRole(taskId);
+      await tasks.removeTaskWorkerRole(taskId);
+
+      await tasks.cancelTask(taskId);
+    });
+
+    it("should not allow managers to set an evaluator", async () => {
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, false, { from: MANAGER });
+      const taskId = await tasks.getTaskCount();
+
+      await checkErrorRevert(tasks.setTaskEvaluatorRole(taskId, EVALUATOR), "task-not-secure");
+    });
+
+    it("should not allow participants to submit work or ratings", async () => {
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, false, { from: MANAGER });
+      const taskId = await tasks.getTaskCount();
+
+      await tasks.setTaskWorkerRole(taskId, WORKER);
+
+      await checkErrorRevert(tasks.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER }), "task-not-secure");
+      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER }), "task-not-secure");
+      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: MANAGER }), "task-not-secure");
+    });
+
+    it("should allow managers to finalize a task, with an implicit rating of 2", async () => {
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, false, { from: MANAGER });
+      const taskId = await tasks.getTaskCount();
+
+      await tasks.finalizeManagedTask(taskId);
+
+      const task = await tasks.getTask(taskId);
+      const managerSlot = await colony.getExpenditureSlot(task.expenditureId, MANAGER_ROLE);
+      const evaluatorSlot = await colony.getExpenditureSlot(task.expenditureId, EVALUATOR_ROLE);
+      const workerSlot = await colony.getExpenditureSlot(task.expenditureId, WORKER_ROLE);
+      expect(managerSlot.payoutModifier).to.be.zero; // rating of 2
+      expect(evaluatorSlot.payoutModifier).to.be.zero; // rating of 2
+      expect(workerSlot.payoutModifier).to.be.zero; // rating of 2
+    });
+
+    it("should allow managers to convert managed tasks to secure tasks (and back)", async () => {
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, false, { from: MANAGER });
+      const taskId = await tasks.getTaskCount();
+
+      let task;
+      task = await tasks.getTask(taskId);
+      expect(task.secure).to.be.false;
+
+      await tasks.setTaskWorkerRole(taskId, WORKER);
+
+      await tasks.setTaskSecurity(taskId, true);
+      task = await tasks.getTask(taskId);
+      expect(task.secure).to.be.true;
+
+      await executeSignedRoleAssignment({
+        tasks,
+        taskId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER, EVALUATOR],
+        sigTypes: [0, 0],
+        args: [taskId, EVALUATOR]
+      });
+
+      await executeSignedTaskChange({
+        tasks,
+        taskId,
+        functionName: "setTaskSecurity",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, false]
+      });
+
+      task = await tasks.getTask(taskId);
+      expect(task.secure).to.be.false;
+
+      // Setting to managed removes the evaluator
+      const evaluator = await tasks.getTaskRoleUser(taskId, EVALUATOR_ROLE);
+      expect(evaluator).to.equal(ethers.constants.AddressZero);
+    });
+
+    it("should not allow managers to finalize a managed task using finalizeSecureTask ", async () => {
+      await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, false, { from: MANAGER });
+      const taskId = await tasks.getTaskCount();
+
+      await checkErrorRevert(tasks.finalizeSecureTask(1, 0, taskId), "task-not-secure");
     });
   });
 });

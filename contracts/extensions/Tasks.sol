@@ -33,6 +33,11 @@ contract Tasks is DSMath {
   /// @param taskId The newly added task id
   event TaskAdded(uint256 taskId);
 
+  /// @notice Event logged when a task's security status changes (secure vs. managed)
+  /// @param taskId Id of the task
+  /// @param secure Boolean of security status (true: secure, false: managed)
+  event TaskSecuritySet(uint256 indexed taskId, bool secure);
+
   /// @notice Event logged when a task's specification hash changes
   /// @param taskId Id of the task
   /// @param specificationHash New specification hash of the task
@@ -69,6 +74,7 @@ contract Tasks is DSMath {
     uint256 dueDate;
     uint256 completionTimestamp;
     uint256 changeNonce;
+    bool secure;
   }
 
   struct Role {
@@ -103,6 +109,7 @@ contract Tasks is DSMath {
     roleAssignmentSigs[bytes4(keccak256("setTaskWorkerRole(uint256,address)"))] = true;
 
     // Initialise the task update reviewers
+    reviewers[bytes4(keccak256("setTaskSecurity(uint256,bool)"))] = [TaskRole.Manager, TaskRole.Worker];
     reviewers[bytes4(keccak256("setTaskBrief(uint256,bytes32)"))] = [TaskRole.Manager, TaskRole.Worker];
     reviewers[bytes4(keccak256("setTaskDueDate(uint256,uint256)"))] = [TaskRole.Manager, TaskRole.Worker];
     reviewers[bytes4(keccak256("setTaskSkill(uint256,uint256)"))] = [TaskRole.Manager, TaskRole.Worker];
@@ -115,8 +122,8 @@ contract Tasks is DSMath {
     reviewers[bytes4(keccak256("cancelTask(uint256)"))] = [TaskRole.Manager, TaskRole.Worker];
   }
 
-  modifier self() {
-    require(address(this) == msg.sender, "task-not-self");
+  modifier self(uint256 _id) {
+    require(managerCanCall(_id) || address(this) == msg.sender, "task-not-self");
     _;
   }
 
@@ -128,6 +135,16 @@ contract Tasks is DSMath {
 
   modifier taskExists(uint256 _id) {
     require(doesTaskExist(_id), "task-does-not-exist");
+    _;
+  }
+
+  modifier taskSecure(uint256 _id) {
+    require(isTaskSecure(_id), "task-not-secure");
+    _;
+  }
+
+  modifier taskManaged(uint256 _id) {
+    require(!isTaskSecure(_id), "task-not-managed");
     _;
   }
 
@@ -162,11 +179,9 @@ contract Tasks is DSMath {
     bytes4 sig;
     uint256 taskId;
     (sig, taskId) = deconstructCall(_data);
-    require(taskId > 0 && taskId <= taskCount, "task-does-not-exist");
+    require(doesTaskExist(taskId), "task-does-not-exist");
+    require(!isTaskComplete(taskId), "task-complete");
     require(!roleAssignmentSigs[sig], "task-change-is-role-assign");
-
-    ColonyDataTypes.ExpenditureStatus status = colony.getExpenditure(tasks[taskId].expenditureId).status;
-    require(status != ColonyDataTypes.ExpenditureStatus.Finalized, "task-finalized");
 
     uint8 nSignaturesRequired;
     address taskRole1User = getTaskRoleUser(taskId, TaskRole(reviewers[sig][0]));
@@ -219,11 +234,9 @@ contract Tasks is DSMath {
     uint256 taskId;
     address userAddress;
     (sig, taskId, userAddress) = deconstructRoleChangeCall(_data);
-    require(taskId > 0 && taskId <= taskCount, "task-does-not-exist");
+    require(doesTaskExist(taskId), "task-does-not-exist");
+    require(!isTaskComplete(taskId), "task-complete");
     require(roleAssignmentSigs[sig], "task-change-is-not-role-assign");
-
-    ColonyDataTypes.ExpenditureStatus status = colony.getExpenditure(tasks[taskId].expenditureId).status;
-    require(status != ColonyDataTypes.ExpenditureStatus.Finalized, "task-finalized");
 
     uint8 nSignaturesRequired;
     address manager = getTaskRoleUser(taskId, TaskRole.Manager);
@@ -274,7 +287,8 @@ contract Tasks is DSMath {
     bytes32 _specificationHash,
     uint256 _domainId,
     uint256 _skillId,
-    uint256 _dueDate
+    uint256 _dueDate,
+    bool _secure
   )
     public
     isAdmin(msg.sender, _callerPermissionDomainId, _callerChildSkillIndex, _domainId)
@@ -285,9 +299,13 @@ contract Tasks is DSMath {
     tasks[taskCount].expenditureId = expenditureId;
     tasks[taskCount].specificationHash = _specificationHash;
     tasks[taskCount].dueDate = (_dueDate > 0) ? _dueDate : now + 90 days; // Note: can set dueDate in past?
+    tasks[taskCount].secure = _secure;
 
     setTaskRoleUser(taskCount, TaskRole.Manager, msg.sender);
-    setTaskRoleUser(taskCount, TaskRole.Evaluator, msg.sender);
+
+    if (_secure) {
+      setTaskRoleUser(taskCount, TaskRole.Evaluator, msg.sender);
+    }
 
     if (_skillId > 0) {
       this.setTaskSkill(taskCount, _skillId);
@@ -299,6 +317,8 @@ contract Tasks is DSMath {
 
   function submitTaskWorkRating(uint256 _id, TaskRole _role, bytes32 _secret)
     public
+    taskExists(_id)
+    taskSecure(_id)
     taskComplete(_id)
   {
     if (_role == TaskRole.Manager) { // Manager rated by worker
@@ -355,22 +375,32 @@ contract Tasks is DSMath {
     return ratingSecrets[_id].secret[_role];
   }
 
+  function setTaskSecurity(uint256 _id, bool _secure) public self(_id) {
+    tasks[_id].secure = _secure;
+
+    if (!_secure) {
+      removeTaskEvaluatorRole(_id);
+    }
+
+    emit TaskSecuritySet(_id, _secure);
+  }
+
   // Note: the domain permissions arguments are placed at the end for consistency with the other role change functions
   function setTaskManagerRole(uint256 _id, address payable _user, uint256 _permissionDomainId, uint256 _childSkillIndex)
     public
-    self
+    self(_id)
     isAdmin(_user, _permissionDomainId, _childSkillIndex, colony.getExpenditure(tasks[_id].expenditureId).domainId)
   {
     setTaskRoleUser(_id, TaskRole.Manager, _user);
   }
 
-  function setTaskEvaluatorRole(uint256 _id, address payable _user) public self {
+  function setTaskEvaluatorRole(uint256 _id, address payable _user) public self(_id) taskSecure(_id) {
     // Can only assign role if no one is currently assigned to it
     require(getTaskRoleUser(_id, TaskRole.Evaluator) == address(0x0), "task-evaluator-role-assigned");
     setTaskRoleUser(_id, TaskRole.Evaluator, _user);
   }
 
-  function setTaskWorkerRole(uint256 _id, address payable _user) public self {
+  function setTaskWorkerRole(uint256 _id, address payable _user) public self(_id) {
     // Can only assign role if no one is currently assigned to it
     require(getTaskRoleUser(_id, TaskRole.Worker) == address(0x0), "task-worker-role-assigned");
     uint256[] memory skills = colony.getExpenditureSlot(tasks[_id].expenditureId, uint256(TaskRole.Worker)).skills;
@@ -378,23 +408,23 @@ contract Tasks is DSMath {
     setTaskRoleUser(_id, TaskRole.Worker, _user);
   }
 
-  function removeTaskEvaluatorRole(uint256 _id) public self {
+  function removeTaskEvaluatorRole(uint256 _id) public self(_id) {
     setTaskRoleUser(_id, TaskRole.Evaluator, address(0x0));
   }
 
-  function removeTaskWorkerRole(uint256 _id) public self {
+  function removeTaskWorkerRole(uint256 _id) public self(_id) {
     setTaskRoleUser(_id, TaskRole.Worker, address(0x0));
   }
 
-  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public self {
+  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public self(_id) {
     colony.setExpenditurePayout(_id, uint256(TaskRole.Manager), _token, _amount);
   }
 
-  function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public self {
+  function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public self(_id) {
     colony.setExpenditurePayout(_id, uint256(TaskRole.Evaluator), _token, _amount);
   }
 
-  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public self {
+  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public self(_id) {
     colony.setExpenditurePayout(_id, uint256(TaskRole.Worker), _token, _amount);
   }
 
@@ -421,15 +451,14 @@ contract Tasks is DSMath {
     this.setTaskWorkerPayout(_id, _token, _workerAmount);
   }
 
-  function setTaskSkill(uint256 _id, uint256 _skillId) public self {
+  function setTaskSkill(uint256 _id, uint256 _skillId) public self(_id) {
     colony.setExpenditureSkill(tasks[_id].expenditureId, uint256(TaskRole.Worker), _skillId);
   }
 
   function setTaskBrief(uint256 _id, bytes32 _specificationHash)
     public
-    self
+    self(_id)
     taskExists(_id)
-    taskNotComplete(_id)
   {
     tasks[_id].specificationHash = _specificationHash;
 
@@ -438,9 +467,8 @@ contract Tasks is DSMath {
 
   function setTaskDueDate(uint256 _id, uint256 _dueDate)
     public
-    self
+    self(_id)
     taskExists(_id)
-    taskNotComplete(_id)
   {
     tasks[_id].dueDate = _dueDate;
 
@@ -450,6 +478,7 @@ contract Tasks is DSMath {
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash)
     public
     taskExists(_id)
+    taskSecure(_id)
     taskNotComplete(_id)
     confirmTaskRoleIdentity(_id, msg.sender, TaskRole.Worker)
   {
@@ -468,6 +497,7 @@ contract Tasks is DSMath {
   function completeTask(uint256 _id)
     public
     taskExists(_id)
+    taskSecure(_id)
     taskNotComplete(_id)
     confirmTaskRoleIdentity(_id, msg.sender, TaskRole.Manager)
   {
@@ -479,17 +509,17 @@ contract Tasks is DSMath {
 
   function cancelTask(uint256 _id)
     public
-    self
+    self(_id)
     taskExists(_id)
-    taskNotComplete(_id)
   {
     colony.cancelExpenditure(tasks[_id].expenditureId);
   }
 
   // Permissions pertain to the Arbitration role here
-  function finalizeTask(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id)
+  function finalizeSecureTask(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id)
     public
     taskExists(_id)
+    taskSecure(_id)
     taskComplete(_id)
   {
     colony.finalizeExpenditure(tasks[_id].expenditureId);
@@ -508,6 +538,15 @@ contract Tasks is DSMath {
       // Set payout modifier in all cases
       setPayoutModifier(_permissionDomainId, _childSkillIndex, _id, roleId);
     }
+  }
+
+  function finalizeManagedTask(uint256 _id)
+    public
+    taskExists(_id)
+    taskManaged(_id)
+    confirmTaskRoleIdentity(_id, msg.sender, TaskRole.Manager)
+  {
+    colony.finalizeExpenditure(tasks[_id].expenditureId);
   }
 
   function getTaskCount() public view returns (uint256) {
@@ -629,12 +668,14 @@ contract Tasks is DSMath {
   function taskWorkRatingsAssigned(uint256 _id) internal view returns (bool) {
     Role storage workerRole = taskRoles[_id][uint8(TaskRole.Worker)];
     Role storage managerRole = taskRoles[_id][uint8(TaskRole.Manager)];
+
     return (workerRole.rating != TaskRatings.None) && (managerRole.rating != TaskRatings.None);
   }
 
   function taskWorkRatingsClosed(uint256 _id) internal view returns (bool) {
     assert(tasks[_id].completionTimestamp > 0);
     assert(ratingSecrets[_id].count <= 2);
+
     if (ratingSecrets[_id].count == 2) {
       return sub(now, ratingSecrets[_id].timestamp) > RATING_REVEAL_TIMEOUT;
     } else {
@@ -667,15 +708,8 @@ contract Tasks is DSMath {
     }
   }
 
-  function setTaskRoleUser(uint256 _id, TaskRole _role, address payable _user)
-    internal
-    taskExists(_id)
-    taskNotComplete(_id)
-  {
-    taskRoles[_id][uint8(_role)] = Role({
-      rateFail: false,
-      rating: TaskRatings.None
-    });
+  function setTaskRoleUser(uint256 _id, TaskRole _role, address payable _user) internal {
+    taskRoles[_id][uint8(_role)] = Role({ rateFail: false, rating: TaskRatings.None });
 
     colony.setExpenditureRecipient(tasks[_id].expenditureId, uint256(_role), _user);
   }
@@ -684,7 +718,15 @@ contract Tasks is DSMath {
     return _id > 0 && _id <= taskCount;
   }
 
+  function isTaskSecure(uint256 _id) internal view returns (bool) {
+    return tasks[_id].secure;
+  }
+
   function isTaskComplete(uint256 _id) internal view returns (bool) {
     return tasks[_id].completionTimestamp > 0;
+  }
+
+  function managerCanCall(uint256 _id) internal view returns (bool) {
+    return !tasks[_id].secure && getTaskRoleUser(_id, TaskRole.Manager) == msg.sender;
   }
 }
