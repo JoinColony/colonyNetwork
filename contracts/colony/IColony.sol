@@ -121,6 +121,16 @@ contract IColony is ColonyDataTypes, IRecovery {
   function hasInheritedUserRole(address _user, uint256 _domainId, ColonyRole _role, uint256 _childSkillIndex, uint256 _childDomainId)
     public view returns (bool hasRole);
 
+  /// @notice Check whether a given user can modify roles in the target domain `_childDomainId`.
+  /// Mostly a convenience function to provide a uniform interface for extension contracts validating permissions
+  /// @param _user The user whose permissions we want to check
+  /// @param _domainId Domain in which the caller has the role (currently Root or Architecture)
+  /// @param _childSkillIndex The index that the `_childDomainId` is relative to `_domainId`
+  /// @param _childDomainId The domain where we want to edit roles
+  /// @return canSet Boolean indicating whether the given user is allowed to edit roles in the target domain.
+  function userCanSetRoles(address _user, uint256 _domainId, uint256 _childSkillIndex, uint256 _childDomainId)
+    public view returns (bool canSet);
+
   /// @notice Gets the bytes32 representation of the roles for a user in a given domain
   /// @param _user The user whose roles we want to get
   /// @param _domain The domain we want to get roles in

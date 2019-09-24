@@ -113,6 +113,19 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return ColonyAuthority(address(authority)).getCapabilityRoles(address(this), _sig);
   }
 
+  function userCanSetRoles(
+    address _user,
+    uint256 _domainId,
+    uint256 _childSkillIndex,
+    uint256 _childDomainId
+  ) public view returns (bool)
+  {
+    return (
+      hasUserRole(_user, 1, ColonyRole.Root) ||
+      (_domainId != _childDomainId && hasInheritedUserRole(_user, _domainId, ColonyRole.Architecture, _childSkillIndex, _childDomainId))
+    );
+  }
+
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
   }

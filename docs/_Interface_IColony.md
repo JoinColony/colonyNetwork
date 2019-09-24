@@ -1544,6 +1544,26 @@ Upgrades a colony to a new Colony contract version `_newVersion`.
 |_newVersion|uint|The target version for the upgrade
 
 
+### `userCanSetRoles`
+
+Check whether a given user can modify roles in the target domain `_childDomainId`. Mostly a convenience function to provide a uniform interface for extension contracts validating permissions
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|The user whose permissions we want to check
+|_domainId|uint256|Domain in which the caller has the role (currently Root or Architecture)
+|_childSkillIndex|uint256|The index that the `_childDomainId` is relative to `_domainId`
+|_childDomainId|uint256|The domain where we want to edit roles
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|canSet|bool|Boolean indicating whether the given user is allowed to edit roles in the target domain.
+
 ### `verifyReputationProof`
 
 Helper function that can be used by a client to verify the correctness of a patricia proof they have been supplied with.

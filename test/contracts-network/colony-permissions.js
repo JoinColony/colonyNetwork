@@ -94,6 +94,23 @@ contract("ColonyPermissions", (accounts) => {
       expect(administrationRole).to.be.false;
     });
 
+    it("should let users query for role-setting permissions in domains", async () => {
+      await colony.setArchitectureRole(1, 0, USER1, 1, true);
+      await colony.setArchitectureRole(1, 0, USER2, 2, true);
+
+      const founderDomain1 = await colony.userCanSetRoles(FOUNDER, 1, 0, 1);
+      const founderDomain2 = await colony.userCanSetRoles(FOUNDER, 1, 0, 2);
+      const user1Domain1 = await colony.userCanSetRoles(USER1, 1, 0, 1);
+      const user1Domain2 = await colony.userCanSetRoles(USER1, 1, 0, 2);
+      const user2Domain2 = await colony.userCanSetRoles(USER2, 2, 0, 2);
+
+      expect(founderDomain1).to.be.true;
+      expect(founderDomain2).to.be.true;
+      expect(user1Domain1).to.be.false;
+      expect(user1Domain2).to.be.true;
+      expect(user2Domain2).to.be.false;
+    });
+
     it("should allow users with funding permission manipulate funds in their domains only", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
