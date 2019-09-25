@@ -77,13 +77,11 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param round The round number the hash we are responding on behalf of is in
   /// @param idx The index in the round that the hash we are responding on behalf of is in
   /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
-  /// @param branchMask The branchMask of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
   /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
   function respondToBinarySearchForChallenge(
     uint256 round,
     uint256 idx,
     bytes memory jhIntermediateValue,
-    uint branchMask,
     bytes32[] memory siblings) public;
 
   /// @notice Confirm the result of a binary search - depending on how exactly the binary search finished, the saved binary search intermediate state might be incorrect.
@@ -91,13 +89,11 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param round The round number the hash we are responding on behalf of is in
   /// @param idx The index in the round that the hash we are responding on behalf of is in
   /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
-  /// @param branchMask The branchMask of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
   /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
   function confirmBinarySearchResult(
     uint256 round,
     uint256 idx,
     bytes memory jhIntermediateValue,
-    uint256 branchMask,
     bytes32[] memory siblings) public;
 
   /// @notice Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
@@ -166,9 +162,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible.
   /// @param round The round that the hash is currently in.
   /// @param index The index in the round that the hash is currently in
-  /// @param branchMask1 The branchmask for the Merkle proof that the currently accepted reputation state (given by `ColonyNetwork.getReputationRootHash()` + `ColonyNetwork.getReputationRootHashNNodes()`, where `+` is concatenation) is at key 0x000..000 in the submitted JRH
   /// @param siblings1 The siblings for the same Merkle proof
-  /// @param branchMask2 The branchmask for the Merkle proof that the proposed new reputation state is at the key corresponding to the number of transactions expected in this update in the submitted JRH. This key should be the number of decay transactions plus the number of transactions the log indicates are to happen.
   /// @param siblings2 The siblings for the same Merkle proof
   /// @dev The majority of calls to this function will have `round` equal to `0`. The exception to this is when a submitted hash is given a bye, in which case `round` will be nonzero.
   /// @dev Note that it is possible for this function to be required to be called in every round - the hash getting the bye can wait until they will also be awarded the bye in the next round, if
@@ -177,9 +171,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   function confirmJustificationRootHash(
     uint256 round,
     uint256 index,
-    uint branchMask1,
     bytes32[] memory siblings1,
-    uint branchMask2,
     bytes32[] memory siblings2) public;
 
   /// @notice Add a new entry to the reputation update log.

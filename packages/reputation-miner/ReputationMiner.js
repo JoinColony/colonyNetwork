@@ -824,7 +824,7 @@ class ReputationMiner {
    * @return {Promise}
    */
   async confirmJustificationRootHash() {
-    const [branchMask1, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
+    const [, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
     const repCycle = await this.getActiveRepCycle();
     const nLogEntries = await repCycle.getReputationUpdateLogLength();
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.sub(1));
@@ -832,20 +832,19 @@ class ReputationMiner {
       .bigNumberify(lastLogEntry.nUpdates)
       .add(lastLogEntry.nPreviousUpdates)
       .add(this.nReputationsBeforeLatestLog);
-    const [branchMask2, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
+    const [, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     let gasEstimate;
+
     if (process.env.SOLIDITY_COVERAGE) {
       gasEstimate = ethers.utils.bigNumberify(6000000);
     } else {
-      gasEstimate = await repCycle.estimate.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2);
+      gasEstimate = await repCycle.estimate.confirmJustificationRootHash(round, index, siblings1, siblings2);
     }
     return repCycle.confirmJustificationRootHash(
       round,
       index,
-      branchMask1,
       siblings1,
-      branchMask2,
       siblings2,
       { gasLimit: gasEstimate, gasPrice: this.gasPrice }
     );
@@ -925,7 +924,6 @@ class ReputationMiner {
         round,
         index,
         intermediateReputationHash,
-        branchMask.toString(),
         siblings
       );
     }
@@ -934,7 +932,6 @@ class ReputationMiner {
       round,
       index,
       intermediateReputationHash,
-      branchMask.toString(),
       siblings,
       {
         gasLimit: gasEstimate,
@@ -957,15 +954,15 @@ class ReputationMiner {
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
-    const [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
+    const [, siblings] = await this.justificationTree.getProof(targetNodeKey);
     let gasEstimate;
     if (process.env.SOLIDITY_COVERAGE) {
       gasEstimate = ethers.utils.bigNumberify(1000000);
     } else {
-      gasEstimate = await repCycle.estimate.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings);
+      gasEstimate = await repCycle.estimate.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings);
     }
 
-    return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings, {
+    return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings, {
       gasLimit: gasEstimate,
       gasPrice: this.gasPrice
     });

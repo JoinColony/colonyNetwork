@@ -182,20 +182,20 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await checkErrorRevert(
-        repCycle.confirmJustificationRootHash(0, 10000, 0, ["0x00"], 0, ["0x00"]),
+        repCycle.confirmJustificationRootHash(0, 10000, ["0x00"], ["0x00"]),
         "colony-reputation-mining-index-beyond-round-length"
       );
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
       await checkErrorRevert(
-        repCycle.respondToBinarySearchForChallenge(0, 10000, "0x00", 0, ["0x00"]),
+        repCycle.respondToBinarySearchForChallenge(0, 10000, "0x00", ["0x00"]),
         "colony-reputation-mining-index-beyond-round-length"
       );
 
       await runBinarySearch(goodClient, badClient);
 
-      await checkErrorRevert(repCycle.confirmBinarySearchResult(0, 10000, "0x00", 0, ["0x00"]), "colony-reputation-mining-index-beyond-round-length");
+      await checkErrorRevert(repCycle.confirmBinarySearchResult(0, 10000, "0x00", ["0x00"]), "colony-reputation-mining-index-beyond-round-length");
 
       // // Check we can't respond to challenge before we've confirmed the binary search result
       // await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-binary-search-result-not-confirmed");
@@ -470,18 +470,24 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.subn(1));
       const totalnUpdates = new BN(lastLogEntry.nUpdates).add(new BN(lastLogEntry.nPreviousUpdates));
 
-      const [branchMask1, siblings1] = await goodClient.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
-      const [branchMask2, siblings2] = await goodClient.justificationTree.getProof(`0x${totalnUpdates.toString(16, 64)}`);
+      const [, siblings1] = await goodClient.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
+      const [, siblings2] = await goodClient.justificationTree.getProof(`0x${totalnUpdates.toString(16, 64)}`);
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
 
-      await checkErrorRevert(
-        repCycle.confirmJustificationRootHash(round, index, "123456", siblings1, branchMask2, siblings2),
-        "colony-reputation-mining-invalid-jrh-proof-1"
-      );
+      // Mess up proofs in the reverse of the order they're checked in.
+
+      siblings2.pop();
 
       await checkErrorRevert(
-        repCycle.confirmJustificationRootHash(round, index, branchMask1, siblings1, "123456", siblings2),
-        "colony-reputation-mining-invalid-jrh-proof-2"
+        repCycle.confirmJustificationRootHash(round, index, siblings1, siblings2),
+        "colony-reputation-mining-invalid-jrh-proof-2-length"
+      );
+
+      siblings1.pop();
+
+      await checkErrorRevert(
+        repCycle.confirmJustificationRootHash(round, index, siblings1, siblings2),
+        "colony-reputation-mining-invalid-jrh-proof-1-length"
       );
 
       // Cleanup
@@ -507,7 +513,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await badClient.confirmJustificationRootHash();
 
       await checkErrorRevert(
-        repCycle.respondToBinarySearchForChallenge(0, 0, "0x00", 0x07, ["0x00", "0x00", "0x00"]),
+        repCycle.respondToBinarySearchForChallenge(0, 0, "0x00", ["0x00", "0x00", "0x00"]),
         "colony-reputation-mining-invalid-binary-search-response"
       );
 
@@ -540,10 +546,10 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       const disputedEntry = disputeRound[index];
       const targetNode = disputedEntry.lowerBound;
       const targetNodeKey = ReputationMinerTestWrapper.getHexString(targetNode, 64);
-      const [branchMask, siblings] = await goodClient.justificationTree.getProof(targetNodeKey);
+      const [, siblings] = await goodClient.justificationTree.getProof(targetNodeKey);
 
       await checkErrorRevert(
-        repCycle.confirmBinarySearchResult(round, index, "0x00", branchMask, siblings),
+        repCycle.confirmBinarySearchResult(round, index, "0x00", siblings),
         "colony-reputation-mining-invalid-binary-search-confirmation"
       );
 
