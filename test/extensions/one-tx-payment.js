@@ -39,7 +39,7 @@ contract("One transaction payments", (accounts) => {
     const oneTxPayment = await OneTxPayment.new();
     const oneTxPaymentResolver = await Resolver.new();
     await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPayment.address }, oneTxPaymentResolver);
-    await metaColony.addExtension(extensionManager.address, ONE_TX_PAYMENT, 0, oneTxPaymentResolver.address, [FUNDING_ROLE, ADMINISTRATION_ROLE]);
+    await metaColony.addExtension(extensionManager.address, ONE_TX_PAYMENT, 1, oneTxPaymentResolver.address, [FUNDING_ROLE, ADMINISTRATION_ROLE]);
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
@@ -50,9 +50,9 @@ contract("One transaction payments", (accounts) => {
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
     await colony.setRootRole(extensionManager.address, true);
-    await extensionManager.installExtension(ONE_TX_PAYMENT, 0, colony.address, 0, 1, 0, 1);
+    await extensionManager.installExtension(ONE_TX_PAYMENT, 1, colony.address, 0, 1, 0, 1);
 
-    const extensionAddress = await extensionManager.getExtension(ONE_TX_PAYMENT, 0, colony.address, 1);
+    const extensionAddress = await extensionManager.getExtension(ONE_TX_PAYMENT, 1, colony.address, 1);
     oneTxExtension = await OneTxPayment.at(extensionAddress);
 
     // Give a user colony administration rights (needed for one-tx)

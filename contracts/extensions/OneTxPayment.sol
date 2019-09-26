@@ -31,6 +31,26 @@ contract OneTxPayment is ColonyExtension {
   bytes4 constant ADD_PAYMENT_SIG = bytes4(keccak256("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"));
   bytes4 constant MOVE_FUNDS_SIG = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"));
 
+  IColonyNetwork colonyNetwork;
+
+  /// @notice Configures the extension
+  /// @param _colony The colony in which the extension holds permissions
+  function install(address _colony) public auth {
+    require(address(colony) == address(0x0), "extension-already-installed");
+
+    colony = IColony(_colony);
+    colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
+  }
+
+  /// @notice Called when upgrading the extension (currently a no-op since this OneTxPayment does not support upgrading)
+  function upgrade() public auth {}
+
+  /// @notice Called when uninstalling the extension
+  /// @param _beneficiary The address which will receive the extension's ether
+  function uninstall(address payable _beneficiary) public auth {
+    selfdestruct(_beneficiary);
+  }
+
   /// @notice Completes a colony payment in a single transaction
   /// @dev Assumes that each entity holds administration and funding roles in the same domain,
   /// although contract and caller can have the permissions in different domains.
@@ -245,7 +265,7 @@ contract OneTxPayment is ColonyExtension {
       uint256 domainSkillId = colony.getDomain(_domainId).skillId;
       require(domainSkillId > 0, "colony-one-tx-payment-domain-does-not-exist");
 
-      uint256 childSkillId = IColonyNetwork(colony.getColonyNetwork()).getChildSkillId(permissionSkillId, _callerChildSkillIndex);
+      uint256 childSkillId = colonyNetwork.getChildSkillId(permissionSkillId, _callerChildSkillIndex);
       require(childSkillId == domainSkillId, "colony-one-tx-payment-bad-child-skill");
     }
   }

@@ -25,21 +25,7 @@ import "../IColony.sol";
 contract ColonyExtension is EtherRouter {
   IColony colony;
 
-  function install(address _colony, address _resolver) public auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
-    setResolver(_resolver);
-  }
-
-  function uninstall(address payable _beneficiary) public auth {
-    require(uninstallable(), "extension-not-uninstallable");
-
-    selfdestruct(_beneficiary);
-  }
-
-  // This can be overridden on a per-extension basis to reflect extension state
-  function uninstallable() public view returns (bool) {
-    return true;
-  }
+  function install(address _colony) public;
+  function upgrade() public;
+  function uninstall(address payable _beneficiary) public;
 }
