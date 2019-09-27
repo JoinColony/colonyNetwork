@@ -1,15 +1,15 @@
 import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
-class MaliciousReputationMinerWrongNNodes extends ReputationMinerTestWrapper {
+class MaliciousReputationMinerWrongNLeaves extends ReputationMinerTestWrapper {
 
   constructor(opts, amountToFalsifyBy) {
     super(opts);
     this.amountToFalsifyBy = amountToFalsifyBy.toString();
   }
 
-  async getRootHashNNodes() {
+  async getRootHashNLeaves() {
     return this.nReputations.add(this.amountToFalsifyBy);
   }
 }
 
-export default MaliciousReputationMinerWrongNNodes;
+export default MaliciousReputationMinerWrongNLeaves;

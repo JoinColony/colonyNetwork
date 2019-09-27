@@ -197,10 +197,10 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
 
   /// @notice Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
   /// @param newHash The reputation root hash
-  /// @param newNNodes The updated nodes count value
+  /// @param newNLeaves The updated leaves count value
   /// @param stakers Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
   /// @param reward Amount of CLNY to be distributed as reward to miners
-  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] memory stakers, uint256 reward) public;
+  function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers, uint256 reward) public;
 
   /// @notice Starts a new Reputation Mining cycle. Explicitly called only the first time,
   /// subsequently called from within `setReputationRootHash`.
@@ -213,10 +213,10 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return rootHash The current Reputation Root Hash
   function getReputationRootHash() public view returns (bytes32 rootHash);
 
-  /// @notice Get the number of nodes in the current reputation state tree.
+  /// @notice Get the number of newNLeaves in the current reputation state tree.
   /// @dev I cannot see a reason why a user's client would need to call this - only stored to help with some edge cases in reputation mining dispute resolution.
-  /// @return nNodes uint256 The number of nodes in the state tree
-  function getReputationRootHashNNodes() public view returns (uint256 nNodes);
+  /// @return nLeaves uint256 The number of leaves in the state tree
+  function getReputationRootHashNLeaves() public view returns (uint256 nLeaves);
 
   /// @notice Create and start a new `DutchAuction` for the entire amount of `_token` owned by the Colony Network.
   /// @param _token Address of the token held by the network to be auctioned

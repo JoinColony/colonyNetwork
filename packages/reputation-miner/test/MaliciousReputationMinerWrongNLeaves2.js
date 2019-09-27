@@ -1,6 +1,6 @@
 import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
-class MaliciousReputationMinerWrongNNodes2 extends ReputationMinerTestWrapper {
+class MaliciousReputationMinerWrongNLeaves2 extends ReputationMinerTestWrapper {
   // This client will reuse a UID for a reputation
   constructor(opts, entryToFalsify, amountToFalsify) {
     super(opts);
@@ -16,4 +16,4 @@ class MaliciousReputationMinerWrongNNodes2 extends ReputationMinerTestWrapper {
   }
 }
 
-export default MaliciousReputationMinerWrongNNodes2;
+export default MaliciousReputationMinerWrongNLeaves2;

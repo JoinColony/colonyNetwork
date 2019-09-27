@@ -52,10 +52,10 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
 
   /// @notice Submit a new reputation root hash.
   /// @param newHash The proposed new reputation root hash
-  /// @param nNodes Number of nodes in tree with root `newHash`
+  /// @param nLeaves Number of leaves in tree with root `newHash`
   /// @param jrh The justifcation root hash for this submission
-  /// @param entryIndex The entry number for the given `newHash` and `nNodes`
-  function submitRootHash(bytes32 newHash, uint256 nNodes, bytes32 jrh, uint256 entryIndex) public;
+  /// @param entryIndex The entry number for the given `newHash` and `nLeaves`
+  function submitRootHash(bytes32 newHash, uint256 nLeaves, bytes32 jrh, uint256 entryIndex) public;
 
   /// @notice Get whether a challenge round is complete.
   /// @param round The round number to check
@@ -76,8 +76,8 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice Respond to a binary search step, to eventually discover where two submitted hashes differ in their Justification trees.
   /// @param round The round number the hash we are responding on behalf of is in
   /// @param idx The index in the round that the hash we are responding on behalf of is in
-  /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
-  /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
+  /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetLeaf` (see function description). The value of `targetLeaf` is computed locally to establish what to submit to this function.
+  /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetLeaf`
   function respondToBinarySearchForChallenge(
     uint256 round,
     uint256 idx,
@@ -88,8 +88,8 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice This function ensures that the intermediate hashes saved are correct.
   /// @param round The round number the hash we are responding on behalf of is in
   /// @param idx The index in the round that the hash we are responding on behalf of is in
-  /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
-  /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
+  /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetLeaf` (see function description). The value of `targetLeaf` is computed locally to establish what to submit to this function.
+  /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetLeaf`
   function confirmBinarySearchResult(
     uint256 round,
     uint256 idx,
@@ -101,9 +101,9 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 1. The current round of the hash being responded on behalf of
   /// * 2. The current index in the round of the hash being responded on behalf of
   /// * 3. The branchMask of the proof that the reputation is in the reputation state tree for the reputation with the disputed change
-  /// * 4. The number of nodes in the last reputation state that both submitted hashes agree on
+  /// * 4. The number of leaves in the last reputation state that both submitted hashes agree on
   /// * 5. The branchMask of the proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
-  /// * 6. The number of nodes this hash considers to be present in the first reputation state the two hashes in this challenge disagree on
+  /// * 6. The number of leaves this hash considers to be present in the first reputation state the two hashes in this challenge disagree on
   /// * 7. The branchMask of the proof that reputation root hash of the first reputation state the two hashes in this challenge disagree on is in this submitted hash's justification tree
   /// * 8. The index of the log entry that the update in question was implied by. Each log entry can imply multiple reputation updates, and so we expect the clients to pass
   ///      the log entry index corresponding to the update to avoid us having to iterate over the log.
@@ -220,8 +220,8 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param clnyToken Address of the CLNY token
   function initialise(address tokenLocking, address clnyToken) public;
 
-  /// @notice Get the number of unique hash/nnodes/jrh sets that have been submitted this mining cycle.
-  /// @return nUniqueSubmittedHashes Number of unique hash/nnodes/jrh sets in this cycle
+  /// @notice Get the number of unique hash/nleaves/jrh sets that have been submitted this mining cycle.
+  /// @return nUniqueSubmittedHashes Number of unique hash/nleaves/jrh sets in this cycle
   function getNUniqueSubmittedHashes() public view returns (uint256 nUniqueSubmittedHashes);
 
   /// @notice Get the number of hashes that have been invalidated this mining cycle.
@@ -243,18 +243,18 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
 
   /// @notice Get the address that made a particular submission.
   /// @param hash The hash that was submitted
-  /// @param nNodes The number of nodes that was submitted
+  /// @param nLeaves The number of leaves that was submitted
   /// @param jrh The JRH of that was submitted
   /// @param index The index of the submission - should be 0-11, as up to twelve submissions can be made.
-  /// @return user Address of the user that submitted the hash / nNodes/ jrh at index
-  function getSubmissionUser(bytes32 hash, uint256 nNodes, bytes32 jrh, uint256 index) public view returns (address user);
+  /// @return user Address of the user that submitted the hash / nLeaves/ jrh at index
+  function getSubmissionUser(bytes32 hash, uint256 nLeaves, bytes32 jrh, uint256 index) public view returns (address user);
 
-  /// @notice Get the number of submissions miners made of a particular hash / nNodes / jrh combination.
+  /// @notice Get the number of submissions miners made of a particular hash / nLeaves / jrh combination.
   /// @param hash The hash that was submitted
-  /// @param nNodes The number of nodes that was submitted
+  /// @param nLeaves The number of leaves that was submitted
   /// @param jrh The JRH of that was submitted
   /// @return count The number of submissions - should be 0-12, as up to twelve submissions can be made
-  function getNSubmissionsForHash(bytes32 hash, uint256 nNodes, bytes32 jrh) public view returns (uint256 count);
+  function getNSubmissionsForHash(bytes32 hash, uint256 nLeaves, bytes32 jrh) public view returns (uint256 count);
 
   /// @notice Returns whether a particular address has been involved in the current mining cycle. This might be
   /// from submitting a hash, or from defending one during a dispute.

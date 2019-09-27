@@ -78,8 +78,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return reputationRootHash;
   }
 
-  function getReputationRootHashNNodes() public view returns (uint256) {
-    return reputationRootHashNNodes;
+  function getReputationRootHashNLeaves() public view returns (uint256) {
+    return reputationRootHashNLeaves;
   }
 
   function setTokenLocking(address _tokenLocking) public
@@ -214,7 +214,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
         parentSkill.children.push(skillCount);
         parentSkill.nChildren += 1;
 
-        // When we are at an integer power of two steps away from the newly added skill node,
+        // When we are at an integer power of two steps away from the newly added skill (leaf) node,
         // add the current parent skill to the new skill's parents array
         if (treeWalkingCounter == powerOfTwo) {
           skills[skillCount].parents.push(parentSkillId);

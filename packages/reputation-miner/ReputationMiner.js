@@ -171,7 +171,7 @@ class ReputationMiner {
     this.justificationHashes[ReputationMiner.getHexString(totalnUpdates, 64)] = JSON.parse(
       JSON.stringify({
         interimHash,
-        nNodes: this.nReputations.toString(),
+        nLeaves: this.nReputations.toString(),
         jhLeafValue,
         justUpdatedProof,
         nextUpdateProof
@@ -342,10 +342,10 @@ class ReputationMiner {
 
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.eq(0)) {
-      const nNodes = await this.colonyNetwork.getReputationRootHashNNodes({ blockTag: blockNumber });
+      const nLeaves = await this.colonyNetwork.getReputationRootHashNLeaves({ blockTag: blockNumber });
       const localRootHash = await this.reputationTree.getRootHash();
       const currentRootHash = await this.colonyNetwork.getReputationRootHash({ blockTag: blockNumber });
-      if (!nNodes.eq(this.nReputations) || localRootHash !== currentRootHash) {
+      if (!nLeaves.eq(this.nReputations) || localRootHash !== currentRootHash) {
         console.log("Warning: client being initialized in bad state. Was the previous rootHash submitted correctly?");
         interimHash = await this.colonyNetwork.getReputationRootHash();
         jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
@@ -373,7 +373,7 @@ class ReputationMiner {
     this.justificationHashes[ReputationMiner.getHexString(updateNumber, 64)] = JSON.parse(
       JSON.stringify({
         interimHash,
-        nNodes: this.nReputations.toString(),
+        nLeaves: this.nReputations.toString(),
         jhLeafValue,
         justUpdatedProof,
         nextUpdateProof,
@@ -414,7 +414,7 @@ class ReputationMiner {
     }
     const reputation = `0x${value.slice(2,66)}`;
     const uid = `0x${value.slice(-64)}`;
-    return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, reputation, uid, nNodes: this.nReputations.toString() };
+    return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, reputation, uid, nLeaves: this.nReputations.toString() };
   }
 
   static getKey(_colonyAddress, _skillId, _userAddress) {
@@ -577,17 +577,17 @@ class ReputationMiner {
   }
 
   /**
-   * Formats `_reputationState` and `nNodes` in to the format used for the Justification Tree
+   * Formats `_reputationState` and `nLeaves` in to the format used for the Justification Tree
    * @param  {bigNumber or string} _reputationState The reputation state root hashes
-   * @param  {bigNumber or string} nNodes           The number of nodes in the reputation state Tree
+   * @param  {bigNumber or string} nLeaves          The number of leaves in the reputation state Tree
    * @return {string}                               The correctly formatted hex string for inclusion in the justification tree
    */
-  getJRHEntryValueAsBytes(_reputationState, nNodes) { // eslint-disable-line class-methods-use-this
+  getJRHEntryValueAsBytes(_reputationState, nLeaves) { // eslint-disable-line class-methods-use-this
     let reputationState = _reputationState.toString(16);
     if (reputationState.substring(0, 2) === "0x") {
       reputationState = reputationState.slice(2);
     }
-    return `0x${new BN(reputationState.toString(), 16).toString(16, 64)}${new BN(nNodes.toString()).toString(16, 64)}`;
+    return `0x${new BN(reputationState.toString(), 16).toString(16, 64)}${new BN(nLeaves.toString()).toString(16, 64)}`;
   }
 
   /**
@@ -633,7 +633,7 @@ class ReputationMiner {
    */
   async submitRootHash(entryIndex) {
     const hash = await this.getRootHash();
-    const nNodes = await this.getRootHashNNodes();
+    const nLeaves = await this.getRootHashNLeaves();
     const jrh = await this.justificationTree.getRootHash();
     const repCycle = await this.getActiveRepCycle();
 
@@ -642,14 +642,14 @@ class ReputationMiner {
     }
     let gasEstimate = ethers.BigNumber.from(1000000);
     try {
-      gasEstimate = await repCycle.estimate.submitRootHash(hash, nNodes, jrh, entryIndex);
+      gasEstimate = await repCycle.estimate.submitRootHash(hash, nLeaves, jrh, entryIndex);
     } catch (err) { // eslint-disable-line no-empty
 
     }
     gasEstimate = this.padGasEstimateIfGanache(gasEstimate);
 
     // Submit that entry
-    return repCycle.submitRootHash(hash, nNodes, jrh, entryIndex, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+    return repCycle.submitRootHash(hash, nLeaves, jrh, entryIndex, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
   }
 
   async getEntryIndex(startIndex = 1) {
@@ -736,10 +736,10 @@ class ReputationMiner {
   }
 
   /**
-   * Get what the client believes should be the next reputation state nNodes.
-   * @return {Promise}      Resolves to the nNodes as ethers BigNumber
+   * Get what the client believes should be the next reputation state nLeaves.
+   * @return {Promise}      Resolves to the nLeaves as ethers BigNumber
    */
-  async getRootHashNNodes() {
+  async getRootHashNLeaves() {
     return this.nReputations;
   }
 
@@ -851,7 +851,7 @@ class ReputationMiner {
    */
   async getMySubmissionRoundAndIndex() {
     const submittedHash = await this.reputationTree.getRootHash();
-    const submittedNNodes = await this.getRootHashNNodes();
+    const submittedNLeaves = await this.getRootHashNLeaves();
     const jrh = await this.justificationTree.getRootHash();
     const repCycle = await this.getActiveRepCycle();
 
@@ -862,7 +862,7 @@ class ReputationMiner {
         const submission = await repCycle.getReputationHashSubmission(disputeRound[index].firstSubmitter);
         if (
           submission.proposedNewRootHash === submittedHash &&
-          submission.nNodes.toString() === submittedNNodes.toString() &&
+          submission.nLeaves.toString() === submittedNLeaves.toString() &&
           submission.jrh === jrh
         ) {
           return [round, index ] }
@@ -884,17 +884,17 @@ class ReputationMiner {
     const disputeRound = await repCycle.getDisputeRound(round);
     const disputedEntry = disputeRound[index];
 
-    const targetNode = disputedEntry.lowerBound;
-    const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
+    const targetLeafKey = disputedEntry.lowerBound;
+    const targetLeafKeyAsHex = ReputationMiner.getHexString(targetLeafKey, 64);
 
-    const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
-    const proof = await this.justificationTree.getProof(targetNodeKey);
+    const intermediateReputationHash = this.justificationHashes[targetLeafKeyAsHex].jhLeafValue;
+    const proof = await this.justificationTree.getProof(targetLeafKeyAsHex);
     const [branchMask] = proof;
     let [, siblings] = proof;
 
     let proofEndingHash = await this.justificationTree.getImpliedRoot(
-      targetNodeKey,
-      this.justificationHashes[targetNodeKey].jhLeafValue,
+      targetLeafKeyAsHex,
+      this.justificationHashes[targetLeafKeyAsHex].jhLeafValue,
       branchMask,
       siblings
     );
@@ -904,8 +904,8 @@ class ReputationMiner {
       siblings = siblings.slice(1);
       // Recalulate ending hash
       proofEndingHash = await this.justificationTree.getImpliedRoot(
-        targetNodeKey,
-        this.justificationHashes[targetNodeKey].jhLeafValue,
+        targetLeafKeyAsHex,
+        this.justificationHashes[targetLeafKeyAsHex].jhLeafValue,
         branchMask,
         siblings
       );
@@ -945,12 +945,13 @@ class ReputationMiner {
     const repCycle = await this.getActiveRepCycle();
     const disputeRound = await repCycle.getDisputeRound(round);
     const disputedEntry = disputeRound[index];
-    const targetNode = ethers.BigNumber.from(disputedEntry.lowerBound);
-    const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
+    const targetLeafKey = ethers.BigNumber.from(disputedEntry.lowerBound);
+    const targetLeafKeyAsHex = ReputationMiner.getHexString(targetNode, 64);
 
-    const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
-    const [, siblings] = await this.justificationTree.getProof(targetNodeKey);
+    const intermediateReputationHash = this.justificationHashes[targetLeafKeyAsHex].jhLeafValue;
+    const [, siblings] = await this.justificationTree.getProof(targetLeafKeyAsHex);
     let gasEstimate = ethers.BigNumber.from(1000000);
+
     try {
       gasEstimate = await repCycle.estimate.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings);
     } catch (err){ // eslint-disable-line no-empty
@@ -1016,9 +1017,9 @@ class ReputationMiner {
         round,
         index,
         firstDisagreeJustifications.justUpdatedProof.branchMask,
-        lastAgreeJustifications.nextUpdateProof.nNodes,
+        lastAgreeJustifications.nextUpdateProof.nLeaves,
         ReputationMiner.getHexString(agreeStateBranchMask),
-        firstDisagreeJustifications.justUpdatedProof.nNodes,
+        firstDisagreeJustifications.justUpdatedProof.nLeaves,
         ReputationMiner.getHexString(disagreeStateBranchMask),
         logEntryNumber,
         "0",
@@ -1149,12 +1150,12 @@ class ReputationMiner {
       const event = events[i];
       const hash = event.data.slice(0, 66);
       if (applyLogs) {
-        const nNodes = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
+        const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
         const previousBlock = event.blockNumber - 1;
         await this.addLogContentsToReputationTree(previousBlock);
         localHash = await this.reputationTree.getRootHash();
-        const localNNodes = this.nReputations;
-        if (localHash !== hash || !localNNodes.eq(nNodes)) {
+        const localNLeaves = this.nReputations;
+        if (localHash !== hash || !localNLeaves.eq(nLeaves)) {
           console.log("WARNING: Either sync has failed, or some log entries have been replaced. Continuing sync, as we might recover");
         }
         if (saveHistoricalStates) {
@@ -1168,10 +1169,10 @@ class ReputationMiner {
 
     // Check final state
     const currentHash = await this.colonyNetwork.getReputationRootHash();
-    const currentNNodes = await this.colonyNetwork.getReputationRootHashNNodes();
+    const currentNLeaves = await this.colonyNetwork.getReputationRootHashNLeaves();
     localHash = await this.reputationTree.getRootHash();
-    const localNNodes = await this.nReputations;
-    if (localHash !== currentHash || !currentNNodes.eq(localNNodes)) {
+    const localNLeaves = await this.nReputations;
+    if (localHash !== currentHash || !currentNLeaves.eq(localNLeaves)) {
       console.log("ERROR: Sync failed and did not recover");
     } else {
       console.log("Sync successful, even if there were warnings above");
@@ -1205,7 +1206,7 @@ class ReputationMiner {
     const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
 
     const currentRootHash = await this.getRootHash();
-    let res = await db.run(`INSERT OR IGNORE INTO reputation_states (root_hash, n_nodes) VALUES ('${currentRootHash}', ${this.nReputations})`);
+    let res = await db.run(`INSERT OR IGNORE INTO reputation_states (root_hash, n_leaves) VALUES ('${currentRootHash}', ${this.nReputations})`);
 
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
       const key = Object.keys(this.reputations)[i];
@@ -1307,7 +1308,7 @@ class ReputationMiner {
   async createDB() {
     const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
     await db.run("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE )");
-    await db.run("CREATE TABLE IF NOT EXISTS reputation_states ( root_hash text NOT NULL UNIQUE, n_nodes INTEGER NOT NULL)");
+    await db.run("CREATE TABLE IF NOT EXISTS reputation_states ( root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)");
     await db.run("CREATE TABLE IF NOT EXISTS colonies ( address text NOT NULL UNIQUE )");
     await db.run("CREATE TABLE IF NOT EXISTS skills ( skill_id INTEGER PRIMARY KEY )");
     await db.run(

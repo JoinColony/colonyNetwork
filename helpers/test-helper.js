@@ -399,9 +399,9 @@ export async function submitAndForwardTimeToDispute(clients, test) {
   // If there are multiple submissions, ensure they are all different
   const submissionsPromise = clients.map(async (client) => {
     const rootHash = await client.getRootHash();
-    const nNodes = await client.getRootHashNNodes();
+    const nLeaves = await client.getRootHashNLeaves();
     const jrh = await client.justificationTree.getRootHash();
-    return rootHash + nNodes + jrh;
+    return rootHash + nLeaves + jrh;
   });
 
   const submissions = await Promise.all(submissionsPromise);
@@ -462,7 +462,7 @@ export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetw
 
   // Submit JRH for submission 1 if needed
   // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
-  if (submission1before.jrhNNodes === "0") {
+  if (submission1before.jrhNLeaves === "0") {
     await checkSuccessEthers(client1.confirmJustificationRootHash(), "Client 1 was unable to confirmJustificationRootHash");
   } else {
     await checkSuccessEthers(client1.respondToBinarySearchForChallenge(), "Client 1 was unable to respondToBinarySearchForChallenge");
@@ -531,7 +531,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
 
   // Submit JRH for submission 1 if needed
   // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
-  if (submission1before.jrhNNodes === "0") {
+  if (submission1before.jrhNLeaves === "0") {
     if (errors.client1.confirmJustificationRootHash) {
       await checkErrorRevertEthers(client1.confirmJustificationRootHash(), errors.client1.confirmJustificationRootHash);
     } else {
@@ -547,7 +547,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     "Clients are not facing each other in this round"
   ).to.be.true;
 
-  if (submission2before.jrhNNodes === "0") {
+  if (submission2before.jrhNLeaves === "0") {
     if (errors.client2.confirmJustificationRootHash) {
       await checkErrorRevertEthers(client2.confirmJustificationRootHash(), errors.client2.confirmJustificationRootHash);
     } else {
@@ -738,10 +738,10 @@ export async function getColonyEditable(colony, colonyNetwork) {
   return colonyUnderRecovery;
 }
 
-export async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, n) {
+export async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, n) {
   return new Promise(function (resolve, reject) {
-    repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nNodes, _jrh, _entryIndex, event) => {
-      const nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nNodes, jrh);
+    repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nLeaves, _jrh, _entryIndex, event) => {
+      const nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
       if (nSubmissions.toNumber() >= n) {
         event.removeListener();
         resolve();

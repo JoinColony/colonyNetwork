@@ -66,18 +66,18 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     return replacementReputationUpdateLogsExist[_reputationMiningCycle];
   }
 
-  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] memory stakers, uint256 reward) public
+  function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers, uint256 reward) public
   stoppable
   onlyReputationMiningCycle
   {
     reputationRootHash = newHash;
-    reputationRootHashNNodes = newNNodes;
+    reputationRootHashNLeaves = newNLeaves;
     // Reward stakers
     activeReputationMiningCycle = address(0x0);
     startNextCycle();
     rewardStakers(stakers, reward);
 
-    emit ReputationRootHashSet(newHash, newNNodes, stakers, reward);
+    emit ReputationRootHashSet(newHash, newNLeaves, stakers, reward);
   }
 
   function initialiseReputationMining() public stoppable {
@@ -106,7 +106,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     e.setResolver(miningCycleResolver);
     inactiveReputationMiningCycle = address(e);
     IReputationMiningCycle(inactiveReputationMiningCycle).initialise(tokenLocking, clnyToken);
-    emit ReputationMiningCycleComplete(reputationRootHash, reputationRootHashNNodes);
+    emit ReputationMiningCycleComplete(reputationRootHash, reputationRootHashNLeaves);
   }
 
   function getReputationMiningCycle(bool _active) public view returns(address) {

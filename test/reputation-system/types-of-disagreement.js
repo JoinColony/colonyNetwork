@@ -33,9 +33,9 @@ import MaliciousReputationMinerWrongUID from "../../packages/reputation-miner/te
 import MaliciousReputationMinerReuseUID from "../../packages/reputation-miner/test/MaliciousReputationMinerReuseUID";
 import MaliciousReputationMinerClaimNew from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNew";
 import MaliciousReputationMinerWrongJRH from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRH";
-import MaliciousReputationMinerWrongJRHRightNNodes from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRHRightNNodes";
-import MaliciousReputationMinerWrongNNodes from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes";
-import MaliciousReputationMinerWrongNNodes2 from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes2";
+import MaliciousReputationMinerWrongJRHRightNLeaves from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRHRightNLeaves";
+import MaliciousReputationMinerWrongNLeaves from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNLeaves";
+import MaliciousReputationMinerWrongNLeaves2 from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNLeaves2";
 import MaliciousReputationMinerAddNewReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerAddNewReputation";
 
 const { expect } = chai;
@@ -134,7 +134,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       const disputedRound = await repCycle.getDisputeRound(round1);
       const disputedEntry = disputedRound[index1];
       const submission = await repCycle.getReputationHashSubmission(goodClient.minerAddress);
-      expect(submission.jrhNNodes).to.be.zero;
+      expect(submission.jrhNLeaves).to.be.zero;
       await forwardTime(10, this); // This is just to ensure that the timestamps checked below will be different if JRH was submitted.
 
       await goodClient.confirmJustificationRootHash();
@@ -362,8 +362,8 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
     });
   });
 
-  describe("should correctly resolve dispute over nNodes", () => {
-    it("where the submitted nNodes is lied about", async () => {
+  describe("should correctly resolve dispute over nLeaves", () => {
+    it("where the submitted nLeaves is lied about", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
@@ -374,7 +374,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nInactiveLogEntries).to.eq.BN(5);
 
-      const badClient = new MaliciousReputationMinerWrongNNodes({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 8);
+      const badClient = new MaliciousReputationMinerWrongNLeaves({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 8);
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -386,23 +386,23 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("where the number of nodes has been incremented incorrectly when adding a new reputation", async () => {
+    it("where the number of leaves has been incremented incorrectly when adding a new reputation", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      const badClient = new MaliciousReputationMinerWrongNNodes2({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 3, 1);
+      const badClient = new MaliciousReputationMinerWrongNLeaves2({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 3, 1);
       await badClient.initialise(colonyNetwork.address);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-network-mining-more-than-one-node-added" },
+        client2: { respondToChallenge: "colony-network-mining-more-than-one-leaf-added" },
       });
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.confirmNewHash(1);
     });
 
-    it("where the number of nodes has been incremented during an update of an existing reputation", async () => {
+    it("where the number of leaves has been incremented during an update of an existing reputation", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
@@ -413,7 +413,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nInactiveLogEntries).to.eq.BN(5);
 
-      const badClient = new MaliciousReputationMinerWrongNNodes2({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 8, 1);
+      const badClient = new MaliciousReputationMinerWrongNLeaves2({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 8, 1);
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -484,7 +484,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nInactiveLogEntries).to.eq.BN(5);
 
-      const badClient = new MaliciousReputationMinerWrongJRHRightNNodes(
+      const badClient = new MaliciousReputationMinerWrongJRHRightNLeaves(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
         [500000],
         [1, 11, 10, 9, 8]

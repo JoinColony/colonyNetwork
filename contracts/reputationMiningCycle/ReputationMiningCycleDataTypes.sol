@@ -31,9 +31,9 @@ contract ReputationMiningCycleDataTypes {
 
   struct Submission {
     bytes32 proposedNewRootHash;          // The hash that the submitter is proposing as the next reputation hash
-    uint256 nNodes;                       // The number of nodes in the reputation tree being proposed as the next reputation hash
+    uint256 nLeaves;                      // The number of leaves in the reputation tree being proposed as the next reputation hash
     bytes32 jrh;                          // The Justification Root Hash corresponding to this submission.
-    uint256 jrhNNodes;                    // The number of nodes in the tree the JRH is the root of.
+    uint256 jrhNLeaves;                   // The number of leaves in the tree the JRH is the root of.
   }
 
   struct DisputedEntry {
@@ -45,7 +45,7 @@ contract ReputationMiningCycleDataTypes {
                                           // the challenge process.
     bytes32 intermediateReputationHash;   // The hash this submission hash has as a leaf node in the tree the JRH is the root of where
                                           // this submission and its opponent differ for the first time.
-    uint256 intermediateReputationNNodes; // The number of nodes in the reputation tree in the reputation state where this submission and
+    uint256 intermediateReputationNLeaves; // The number of leaves in the reputation tree in the reputation state where this submission and
                                           // its opponent first differ.
     uint256 lowerBound;                   // During the binary search, the lowest index in the justification tree that might still be the
                                           // first place where the two submissions differ.
@@ -62,11 +62,11 @@ contract ReputationMiningCycleDataTypes {
                                           // Justification tree.
   }
 
-  event ReputationRootHashSubmitted(address _miner, bytes32 _newHash, uint256 _nNodes, bytes32 _jrh, uint256 _entryIndex);
-  event JustificationRootHashConfirmed(bytes32 _newHash, uint256 _nNodes, bytes32 _jrh);
-  event BinarySearchConfirmed(bytes32 _newHash, uint256 _nNodes, bytes32 _jrh, uint256 _firstDisagreeIdx);
-  event ChallengeCompleted(bytes32 _newHash, uint256 _nNodes, bytes32 _jrh);
-  event HashInvalidated(bytes32 _newHash, uint256 _nNodes, bytes32 _jrh);
+  event ReputationRootHashSubmitted(address _miner, bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex);
+  event JustificationRootHashConfirmed(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
+  event BinarySearchConfirmed(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _firstDisagreeIdx);
+  event ChallengeCompleted(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
+  event HashInvalidated(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
 
 
   /// @notice Event logged when a reputation UID is proven to be correct in a challenge
