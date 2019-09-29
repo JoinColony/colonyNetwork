@@ -125,7 +125,7 @@ contract("Tasks extension", accounts => {
     });
 
     it("should fail if a non-admin user tries to make a task", async () => {
-      await checkErrorRevert(tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: OTHER }), "colony-task-not-admin");
+      await checkErrorRevert(tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: OTHER }), "task-not-admin");
     });
 
     it("should set the task creator as the manager and evaluator", async () => {
@@ -241,7 +241,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId.addn(1), WORKER]
         }),
-        "colony-task-does-not-exist"
+        "task-does-not-exist"
       );
     });
 
@@ -279,7 +279,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, WORKER]
         }),
-        "colony-task-change-is-not-role-assignment"
+        "task-change-is-not-role-assign"
       );
     });
 
@@ -296,7 +296,7 @@ contract("Tasks extension", accounts => {
         args: [taskId, WORKER]
       });
 
-      await checkErrorRevert(tasks.executeTaskRoleAssignment(sigV, sigR, sigS, [0, 0], 10, txData), "colony-task-role-assignment-non-zero-value");
+      await checkErrorRevert(tasks.executeTaskRoleAssignment(sigV, sigR, sigS, [0, 0], 10, txData), "task-role-assign-non-zero-value");
     });
 
     it("should not be able to execute task change when the number of signature parts differ", async () => {
@@ -312,10 +312,7 @@ contract("Tasks extension", accounts => {
         args: [taskId, WORKER]
       });
 
-      await checkErrorRevert(
-        tasks.executeTaskRoleAssignment([sigV[0]], sigR, sigS, [0], 0, txData),
-        "colony-task-role-assignment-signatures-count-do-not-match"
-      );
+      await checkErrorRevert(tasks.executeTaskRoleAssignment([sigV[0]], sigR, sigS, [0], 0, txData), "task-role-assign-sig-count-no-match");
     });
 
     it("should allow the evaluator and worker roles to be assigned", async () => {
@@ -372,7 +369,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, WORKER]
         }),
-        "colony-task-role-assignment-execution-failed"
+        "task-role-assign-exec-failed"
       );
 
       await executeSignedTaskChange({
@@ -419,7 +416,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0],
           args: [taskId, newEvaluator]
         }),
-        "colony-task-role-assignment-does-not-meet-required-signatures"
+        "task-role-assign-wrong-num-sigs"
       );
 
       await checkErrorRevert(
@@ -431,7 +428,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0],
           args: [taskId, WORKER]
         }),
-        "colony-task-role-assignment-does-not-meet-required-signatures"
+        "task-role-assign-wrong-num-sigs"
       );
     });
 
@@ -448,7 +445,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, OTHER]
         }),
-        "colony-task-role-assignment-execution-failed"
+        "task-role-assign-exec-failed"
       );
 
       await executeSignedRoleAssignment({
@@ -469,7 +466,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, OTHER]
         }),
-        "colony-task-role-assignment-execution-failed"
+        "task-role-assign-exec-failed"
       );
     });
 
@@ -499,7 +496,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, ethers.constants.AddressZero]
         }),
-        "colony-task-role-assignment-not-signed-by-new-user-for-role"
+        "task-role-assign-no-new-user-sig"
       );
 
       // Now they do!
@@ -529,7 +526,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, WORKER]
         }),
-        "colony-task-role-assignment-not-signed-by-new-user-for-role"
+        "task-role-assign-no-new-user-sig"
       );
     });
 
@@ -563,7 +560,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0],
           args: [taskId, WORKER]
         }),
-        "colony-task-role-assignment-does-not-meet-required-signatures"
+        "task-role-assign-wrong-num-sigs"
       );
     });
 
@@ -597,7 +594,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, WORKER]
         }),
-        "colony-task-role-assignment-not-signed-by-manager"
+        "task-role-assign-no-manager-sig"
       );
     });
 
@@ -631,7 +628,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0],
           args: [taskId, MANAGER]
         }),
-        "colony-task-role-assignment-not-signed-by-manager"
+        "task-role-assign-no-manager-sig"
       );
     });
 
@@ -648,7 +645,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, ADMIN, 1, 0]
         }),
-        "colony-task-role-assignment-not-signed-by-new-user-for-role"
+        "task-role-assign-no-new-user-sig"
       );
     });
 
@@ -665,7 +662,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, OTHER, 1, 0]
         }),
-        "colony-task-role-assignment-execution-failed"
+        "task-role-assign-exec-failed"
       );
     });
 
@@ -682,7 +679,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, ethers.constants.AddressZero, 1, 0]
         }),
-        "colony-task-role-assignment-not-signed-by-new-user-for-role"
+        "task-role-assign-no-new-user-sig"
       );
     });
 
@@ -732,7 +729,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, WORKER, 1, 0]
         }),
-        "colony-task-role-assignment-not-signed-by-manager"
+        "task-role-assign-no-manager-sig"
       );
     });
 
@@ -900,7 +897,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 1],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
         }),
-        "colony-task-duplicate-reviewers"
+        "task-duplicate-reviewers"
       );
     });
 
@@ -935,7 +932,7 @@ contract("Tasks extension", accounts => {
       await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
-      await checkErrorRevert(tasks.setTaskBrief(taskId, SPECIFICATION_HASH_UPDATED, { from: OTHER }), "colony-task-not-self");
+      await checkErrorRevert(tasks.setTaskBrief(taskId, SPECIFICATION_HASH_UPDATED, { from: OTHER }), "task-not-self");
     });
 
     it("should fail update of task brief signed by a non-registered role", async () => {
@@ -951,7 +948,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
         }),
-        "colony-task-change-does-not-meet-signatures-required"
+        "task-change-wrong-num-sigs"
       );
     });
 
@@ -977,7 +974,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
         }),
-        "colony-task-change-does-not-meet-signatures-required"
+        "task-change-wrong-num-sigs"
       );
     });
 
@@ -994,7 +991,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, 0]
         }),
-        "colony-task-change-does-not-meet-signatures-required"
+        "task-change-wrong-num-sigs"
       );
     });
 
@@ -1013,7 +1010,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0],
           args: [nonExistentTaskId, SPECIFICATION_HASH_UPDATED]
         }),
-        "colony-task-does-not-exist"
+        "task-does-not-exist"
       );
     });
 
@@ -1029,7 +1026,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
         }),
-        "colony-task-does-not-exist"
+        "task-does-not-exist"
       );
     });
 
@@ -1046,7 +1043,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0],
           args: [taskId, 0]
         }),
-        "colony-task-change-execution-failed"
+        "task-change-execution-failed"
       );
     });
 
@@ -1087,7 +1084,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0, 0],
           args: [taskId, ADMIN, 1, 0]
         }),
-        "colony-task-role-assignment-execution-failed"
+        "olony-task-role-assignment-execution-failed"
       );
     });
 
@@ -1139,7 +1136,7 @@ contract("Tasks extension", accounts => {
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
 
-      await checkErrorRevert(tasks.executeTaskChange(sigV, sigR, sigS, [0], 100, txData), "colony-task-change-non-zero-value");
+      await checkErrorRevert(tasks.executeTaskChange(sigV, sigR, sigS, [0], 100, txData), "task-change-non-zero-value");
     });
 
     it("should fail to execute task change with a mismatched set of signature parts", async () => {
@@ -1155,7 +1152,7 @@ contract("Tasks extension", accounts => {
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
 
-      await checkErrorRevert(tasks.executeTaskChange([sigV[0]], sigR, sigS, [0], 0, txData), "colony-task-change-signatures-count-do-not-match");
+      await checkErrorRevert(tasks.executeTaskChange([sigV[0]], sigR, sigS, [0], 0, txData), "task-change-sig-count-no-match");
     });
 
     it("should fail to execute task change send for a task role assignment call (which should be using executeTaskRoleAssignment)", async () => {
@@ -1171,7 +1168,7 @@ contract("Tasks extension", accounts => {
         args: [taskId, "0x29738B9BB168790211D84C99c4AEAd215c34D731"]
       });
 
-      await checkErrorRevert(tasks.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "colony-task-change-is-role-assignment");
+      await checkErrorRevert(tasks.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "task-change-is-role-assign");
     });
 
     it("should fail to execute task change with the wrong signatures, one signer", async () => {
@@ -1187,7 +1184,7 @@ contract("Tasks extension", accounts => {
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
 
-      await checkErrorRevert(tasks.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "colony-task-signatures-do-not-match-reviewer-1");
+      await checkErrorRevert(tasks.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "task-sigs-no-match-reviewer-1");
     });
 
     it("should fail to execute task change with the wrong signatures, two signers", async () => {
@@ -1212,7 +1209,7 @@ contract("Tasks extension", accounts => {
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
 
-      await checkErrorRevert(tasks.executeTaskChange(sigV, sigR, sigS, [0, 0], 0, txData), "colony-task-signatures-do-not-match-reviewer-2");
+      await checkErrorRevert(tasks.executeTaskChange(sigV, sigR, sigS, [0, 0], 0, txData), "task-sigs-no-match-reviewer-2");
     });
   });
 
@@ -1238,7 +1235,7 @@ contract("Tasks extension", accounts => {
       await forwardTime(90 * SECONDS_PER_DAY);
       await tasks.completeTask(taskId, { from: MANAGER });
 
-      await checkErrorRevert(tasks.submitTaskDeliverable(taskId, DELIVERABLE_HASH), "colony-task-complete");
+      await checkErrorRevert(tasks.submitTaskDeliverable(taskId, DELIVERABLE_HASH), "task-complete");
     });
 
     it("should fail if I try to submit work for a task that is finalized", async () => {
@@ -1249,7 +1246,7 @@ contract("Tasks extension", accounts => {
       await submitDeliverableAndRatings({ tasks, taskId });
       await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
 
-      await checkErrorRevert(tasks.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER }), "colony-task-complete");
+      await checkErrorRevert(tasks.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER }), "task-complete");
     });
 
     it("should succeed if I try to submit work for a task that is past its due date but not yet marked as complete", async () => {
@@ -1268,7 +1265,7 @@ contract("Tasks extension", accounts => {
       await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
-      await checkErrorRevert(tasks.submitTaskDeliverable(taskId.addn(1), DELIVERABLE_HASH), "colony-task-does-not-exist");
+      await checkErrorRevert(tasks.submitTaskDeliverable(taskId.addn(1), DELIVERABLE_HASH), "task-does-not-exist");
     });
 
     it("should fail if I try to submit work twice", async () => {
@@ -1278,7 +1275,7 @@ contract("Tasks extension", accounts => {
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await tasks.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
 
-      await checkErrorRevert(tasks.submitTaskDeliverable(taskId, SPECIFICATION_HASH, { from: WORKER }), "colony-task-complete");
+      await checkErrorRevert(tasks.submitTaskDeliverable(taskId, SPECIFICATION_HASH, { from: WORKER }), "task-complete");
     });
 
     it("should fail if I try to mark a taske complete after work is submitted", async () => {
@@ -1288,7 +1285,7 @@ contract("Tasks extension", accounts => {
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await tasks.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
 
-      await checkErrorRevert(tasks.completeTask(taskId, { from: MANAGER }), "colony-task-complete");
+      await checkErrorRevert(tasks.completeTask(taskId, { from: MANAGER }), "task-complete");
     });
 
     it("should fail if I try to submit work if I'm not the assigned worker", async () => {
@@ -1296,7 +1293,7 @@ contract("Tasks extension", accounts => {
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: OTHER });
-      await checkErrorRevert(tasks.submitTaskDeliverable(taskId, SPECIFICATION_HASH, { from: WORKER }), "colony-task-role-identity-mismatch");
+      await checkErrorRevert(tasks.submitTaskDeliverable(taskId, SPECIFICATION_HASH, { from: WORKER }), "task-role-identity-mismatch");
     });
 
     it("should log a TaskDeliverableSubmitted event", async () => {
@@ -1312,7 +1309,7 @@ contract("Tasks extension", accounts => {
       const taskId = await tasks.getTaskCount();
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
-      await checkErrorRevert(tasks.completeTask(taskId, { from: MANAGER }), "colony-task-due-date-in-future");
+      await checkErrorRevert(tasks.completeTask(taskId, { from: MANAGER }), "task-due-date-in-future");
     });
   });
 
@@ -1321,7 +1318,7 @@ contract("Tasks extension", accounts => {
       await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
-      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }), "colony-task-not-complete");
+      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }), "task-not-complete");
     });
 
     it("should fail if I try to evaluate twice", async () => {
@@ -1331,10 +1328,7 @@ contract("Tasks extension", accounts => {
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await tasks.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, RATING_1_SECRET, { from: WORKER });
 
-      await checkErrorRevert(
-        tasks.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER }),
-        "colony-task-rating-secret-already-exists"
-      );
+      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER }), "task-secret-already-exists");
     });
 
     it("should fail if the wrong user tries to rate the wrong role", async () => {
@@ -1345,9 +1339,9 @@ contract("Tasks extension", accounts => {
       await tasks.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
 
       const SECRET = soliditySha3("secret");
-      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, MANAGER_ROLE, SECRET, { from: OTHER }), "colony-user-cannot-rate-task-manager");
-      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, WORKER_ROLE, SECRET, { from: OTHER }), "colony-user-cannot-rate-task-worker");
-      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, EVALUATOR_ROLE, SECRET), "colony-unsupported-role-to-rate");
+      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, MANAGER_ROLE, SECRET, { from: OTHER }), "task-user-cannot-rate-manager");
+      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, WORKER_ROLE, SECRET, { from: OTHER }), "task-user-cannot-rate-worker");
+      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, EVALUATOR_ROLE, SECRET), "task-unsupported-role-to-rate");
     });
 
     it("can retreive rating secret information", async () => {
@@ -1376,10 +1370,7 @@ contract("Tasks extension", accounts => {
       await tasks.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, RATING_1_SECRET, { from: WORKER });
 
       await forwardTime(SECONDS_PER_DAY * 5 + 1);
-      await checkErrorRevert(
-        tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: MANAGER }),
-        "colony-task-rating-secret-submit-period-closed"
-      );
+      await checkErrorRevert(tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: MANAGER }), "task-secret-submissions-closed");
     });
 
     it("should not allow a user to reveal after the deadline, with two secrets", async () => {
@@ -1394,7 +1385,7 @@ contract("Tasks extension", accounts => {
       await forwardTime(SECONDS_PER_DAY * 5 + 1);
       await checkErrorRevert(
         tasks.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER }),
-        "colony-task-rating-secret-reveal-period-closed"
+        "task-secret-reveal-closed"
       );
     });
 
@@ -1409,7 +1400,7 @@ contract("Tasks extension", accounts => {
       await forwardTime(SECONDS_PER_DAY * 10 + 1);
       await checkErrorRevert(
         tasks.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER }),
-        "colony-task-rating-secret-reveal-period-closed"
+        "task-secret-reveal-closed"
       );
     });
 
@@ -1423,7 +1414,7 @@ contract("Tasks extension", accounts => {
 
       await checkErrorRevert(
         tasks.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER }),
-        "colony-task-rating-secret-reveal-period-not-open"
+        "task-secret-reveal-not-open"
       );
     });
 
@@ -1436,10 +1427,7 @@ contract("Tasks extension", accounts => {
       await tasks.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, soliditySha3(RATING_1_SALT, 3), { from: WORKER });
       await tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: MANAGER });
 
-      await checkErrorRevert(
-        tasks.revealTaskWorkRating(taskId, MANAGER_ROLE, 2, RATING_1_SALT, { from: WORKER }),
-        "colony-task-rating-secret-mismatch"
-      );
+      await checkErrorRevert(tasks.revealTaskWorkRating(taskId, MANAGER_ROLE, 2, RATING_1_SALT, { from: WORKER }), "task-secret-mismatch");
     });
 
     it("should not allow a user to reveal a rating of None", async () => {
@@ -1451,7 +1439,7 @@ contract("Tasks extension", accounts => {
       await tasks.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, soliditySha3(RATING_1_SALT, 0), { from: WORKER });
       await tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: MANAGER });
 
-      await checkErrorRevert(tasks.revealTaskWorkRating(taskId, MANAGER_ROLE, 0, RATING_1_SALT, { from: WORKER }), "colony-task-rating-missing");
+      await checkErrorRevert(tasks.revealTaskWorkRating(taskId, MANAGER_ROLE, 0, RATING_1_SALT, { from: WORKER }), "task-rating-missing");
     });
   });
 
@@ -1484,7 +1472,7 @@ contract("Tasks extension", accounts => {
       await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "colony-task-not-complete");
+      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "task-not-complete");
     });
 
     it("should fail if the task work ratings have not been assigned and they still have time to be", async () => {
@@ -1494,7 +1482,7 @@ contract("Tasks extension", accounts => {
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await tasks.submitTaskDeliverable(taskId, SPECIFICATION_HASH, { from: WORKER });
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "colony-task-ratings-not-closed");
+      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "task-ratings-not-closed");
     });
 
     it("should fail if the task work ratings have not been revealed and they still have time to be", async () => {
@@ -1505,7 +1493,7 @@ contract("Tasks extension", accounts => {
       await tasks.submitTaskDeliverableAndRating(taskId, SPECIFICATION_HASH, RATING_1_SECRET, { from: WORKER });
       await tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: MANAGER });
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "colony-task-ratings-not-closed");
+      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "task-ratings-not-closed");
     });
 
     it("should finalize if the rate and reveal period have elapsed", async () => {
@@ -1528,7 +1516,7 @@ contract("Tasks extension", accounts => {
       await tasks.submitTaskDeliverableAndRating(taskId, SPECIFICATION_HASH, RATING_1_SECRET, { from: WORKER });
       await tasks.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: MANAGER });
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "colony-task-ratings-not-closed");
+      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId), "task-ratings-not-closed");
 
       // Both secrets submitted, so we only have to wait for the reveal period to elapse
       await forwardTime(SECONDS_PER_DAY * 5 + 1);
@@ -1589,7 +1577,7 @@ contract("Tasks extension", accounts => {
       await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
       const taskId = await tasks.getTaskCount();
 
-      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId.addn(1)), "colony-task-does-not-exist");
+      await checkErrorRevert(tasks.finalizeTask(1, 0, taskId.addn(1)), "task-does-not-exist");
     });
 
     it("should emit two negative reputation updates for a bad worker rating", async () => {
@@ -1710,7 +1698,7 @@ contract("Tasks extension", accounts => {
           sigTypes: [0],
           args: [taskId.addn(1)]
         }),
-        "colony-task-does-not-exist"
+        "task-does-not-exist"
       );
     });
   });
@@ -1809,7 +1797,7 @@ contract("Tasks extension", accounts => {
       const taskId = await tasks.getTaskCount();
       await checkErrorRevert(
         tasks.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000, { from: OTHER }),
-        "colony-task-role-identity-mismatch"
+        "task-role-identity-mismatch"
       );
       await tasks.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000);
 
@@ -1836,7 +1824,7 @@ contract("Tasks extension", accounts => {
         args: [taskId, WORKER]
       });
 
-      await checkErrorRevert(tasks.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000), "colony-funding-worker-already-set");
+      await checkErrorRevert(tasks.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000), "task-worker-already-set");
     });
 
     it("should not be able to set all payments at once if evaluator is assigned and is not the manager", async () => {
@@ -1861,10 +1849,7 @@ contract("Tasks extension", accounts => {
         args: [taskId, EVALUATOR]
       });
 
-      await checkErrorRevert(
-        tasks.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000),
-        "colony-funding-evaluator-already-set"
-      );
+      await checkErrorRevert(tasks.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000), "task-evaluator-already-set");
     });
 
     it("should correctly return the current total payout", async () => {
