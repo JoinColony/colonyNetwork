@@ -42,18 +42,20 @@ contract ExtensionManager {
     metaColony = IMetaColony(_metaColony);
   }
 
-  function addExtension(bytes32 _extensionId, uint256 _version, address _resolver, uint8[] memory _roles)
+  function addExtension(bytes32 _extensionId, address _resolver, uint8[] memory _roles)
     public
   {
     require(msg.sender == address(metaColony), "extension-manager-not-metacolony");
-    require(_version == 1 || resolvers[_extensionId][_version - 1] != address(0x0), "extension-manager-bad-version");
-    require(resolvers[_extensionId][_version] == address(0x0), "extension-manager-already-added");
     require(_resolver != address(0x0), "extension-manager-bad-resolver");
 
-    resolvers[_extensionId][_version] = _resolver;
-    roles[_extensionId][_version] = _roles;
+    uint256 version = getResolverVersion(_resolver);
+    require(version == 1 || resolvers[_extensionId][version - 1] != address(0x0), "extension-manager-bad-version");
+    require(resolvers[_extensionId][version] == address(0x0), "extension-manager-already-added");
 
-    emit ExtensionAdded(_extensionId, _version);
+    resolvers[_extensionId][version] = _resolver;
+    roles[_extensionId][version] = _roles;
+
+    emit ExtensionAdded(_extensionId, version);
   }
 
   function installExtension(
@@ -102,9 +104,11 @@ contract ExtensionManager {
   {
     require(authorized(_colony, _permissionDomainId, _childSkillIndex, _domainId), "extension-manager-unauthorized");
 
-    uint256 newVersion = _version + 1;
     address payable extension = installations[_extensionId][_version][_colony][_domainId];
     require(extension != address(0x0), "extension-manager-not-installed");
+
+    uint256 newVersion = _version + 1;
+    require(resolvers[_extensionId][newVersion] != address(0x0), "extension-manager-bad-version");
 
     installations[_extensionId][_version][_colony][_domainId] = address(0x0);
     installations[_extensionId][newVersion][_colony][_domainId] = extension;
@@ -136,11 +140,11 @@ contract ExtensionManager {
       "extension-manager-not-installed"
     );
 
+    assignRoles(_colony, _rootChildSkillIndex, _domainId, _extensionId, _version, false);
+
     ColonyExtension extension = ColonyExtension(installations[_extensionId][_version][_colony][_domainId]);
     installations[_extensionId][_version][_colony][_domainId] = address(0x0);
-
-    assignRoles(_colony, _rootChildSkillIndex, _domainId, _extensionId, _version, false);
-    extension.uninstall(_colony);
+    extension.uninstall();
 
     emit ExtensionUninstalled(_extensionId, _version, _colony, _domainId);
   }
@@ -167,6 +171,16 @@ contract ExtensionManager {
     returns (bool)
   {
     return IColony(_colony).userCanSetRoles(msg.sender, _permissionDomainId, _childSkillIndex, _domainId);
+  }
+
+  function getResolverVersion(address _resolver) internal returns (uint256) {
+    EtherRouter extension = new EtherRouter();
+    extension.setResolver(_resolver);
+
+    uint256 version = ColonyExtension(address(extension)).version();
+    ColonyExtension(address(extension)).uninstall();
+
+    return version;
   }
 
   function assignRoles(

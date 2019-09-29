@@ -289,10 +289,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.addColonyVersion(_version, _resolver);
   }
 
-  function addExtension(address _manager, bytes32 _extensionId, uint256 _version, address _resolver, uint8[] memory _roles)
+  function addExtension(address _manager, bytes32 _extensionId, address _resolver, uint8[] memory _roles)
   public stoppable auth
   {
-    ExtensionManager(_manager).addExtension(_extensionId, _version, _resolver, _roles);
+    ExtensionManager(_manager).addExtension(_extensionId, _resolver, _roles);
   }
 
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public

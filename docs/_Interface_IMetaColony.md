@@ -19,7 +19,6 @@ Add a new extension/version to the ExtensionManager.
 |---|---|---|
 |_manager|address|Address of the ExtensionManager contract
 |_extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
-|_version|uint256|The version number of the extension
 |_resolver|address|The deployed resolver containing the extension contract logic
 |_roles|uint8[]|An array containing the roles required by the extension
 

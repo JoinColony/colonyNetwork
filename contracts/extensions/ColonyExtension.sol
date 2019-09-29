@@ -25,7 +25,8 @@ import "../IColony.sol";
 contract ColonyExtension is EtherRouter {
   IColony colony;
 
+  function version() public pure returns (uint256);
   function install(address _colony) public;
   function upgrade() public;
-  function uninstall(address payable _beneficiary) public;
+  function uninstall() public;
 }
