@@ -1,11 +1,5 @@
 import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
-const ethers = require("ethers");
-
-const miningCycleDuration = ethers.utils.bigNumberify(60).mul(60).mul(24); // 24 hours
-const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000);
-const constant = ethers.utils.bigNumberify(2).pow(256).sub(1).div(miningCycleDuration);
-
 class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it submits a bad JRH
 
@@ -19,32 +13,15 @@ class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
     // This client sometimes won't be able to respond to challenge - we mess up its JRH with a hash it doesn't know about
   }
 
-  async submitRootHash(startIndex = 1) {
+  async submitRootHash(entryIndex) {
     const hash = await this.getRootHash();
     const repCycle = await this.getActiveRepCycle();
     // Get how much we've staked, and thefore how many entries we have
-    let entryIndex;
-    const [, balance] = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
-    const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
-      // Iterate over entries until we find one that passes
-      const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash);
-      const block = await this.realProvider.getBlock("latest");
-      const { timestamp } = block;
 
-      const target = ethers.utils
-        .bigNumberify(timestamp)
-        .sub(reputationMiningWindowOpenTimestamp)
-        .mul(constant);
-
-      if (ethers.utils.bigNumberify(entryHash).lt(target)) {
-        entryIndex = i;
-        break;
-      }
-    }
     if (!entryIndex) {
-      return new Error("No valid entry for submission found");
+      entryIndex = await this.getEntryIndex(); // eslint-disable-line no-param-reassign
     }
+
     // Mess up the JRH
     const insertTx = await this.justificationTree.insert(
       MaliciousReputationMinerWrongJRH.getHexString(parseInt(this.entryToFalsify, 10), 64),
