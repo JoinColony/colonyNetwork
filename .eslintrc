@@ -19,6 +19,7 @@
     "no-unused-expressions": "off",
     "no-await-in-loop": "off",
     "no-trailing-spaces": "error",
+    "no-multi-spaces": ["error", {"ignoreEOLComments": true}],
     "eslint-comments/disable-enable-pair": ["error", {"allowWholeFile": true}]
   },
   "parserOptions": {

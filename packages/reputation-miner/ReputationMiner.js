@@ -244,7 +244,7 @@ class ReputationMiner {
       // is very slightly less than one (0.5 ** (1/2160) for a 1-hr mining cycle, 0.5 ** (1/90) for a 24-hr cycle).
       // Disabling prettier on the next line so we can have these two values aligned so it's easy to see
       // the fraction will be slightly less than one.
-      const numerator   = ethers.utils.bigNumberify("992327946262944");
+      const numerator = ethers.utils.bigNumberify("992327946262944");
       const denominator = ethers.utils.bigNumberify("1000000000000000");
 
       const newReputation = reputation.mul(numerator).div(denominator);
