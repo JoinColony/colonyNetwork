@@ -402,9 +402,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
     uint256 nLogEntries = reputationUpdateLog.length;
 
-    uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates +
-      reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
-    submission.jrhNNodes = nUpdates + 1; // This is the number of nodes we expect in the justification tree
+    submission.jrhNNodes = reputationUpdateLog[nLogEntries-1].nUpdates +
+      reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes + 1; // This is the number of nodes we expect in the justification tree
 
     uint256 expectedLength = expectedProofLength(submission.jrhNNodes, 0);
     require(expectedLength == siblings1.length, "colony-reputation-mining-invalid-jrh-proof-1-length");
