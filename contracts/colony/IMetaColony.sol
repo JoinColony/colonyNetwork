@@ -59,12 +59,16 @@ contract IMetaColony is IColony {
   /// @dev Calls the corresponding function on the ColonyNetwork.
   function setReputationMiningCycleReward(uint256 _amount) public;
 
+  /// @notice Set the address for the ExtensionManager.
+  /// @dev Calls `IColonyNetwork.setExtensionManager`.
+  /// @param _extensionManagerAddress Address of the ExtensionManager contract
+  function setExtensionManager(address _extensionManagerAddress) public;
+
   /// @notice Add a new extension/version to the ExtensionManager.
-  /// @dev Calls `IExtensionManager.addExtension`.
+  /// @dev Calls `IColonyNetwork.addExtension`.
   /// @dev The extension version is queried from the resolver itself.
-  /// @param _manager Address of the ExtensionManager contract
   /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param _resolver The deployed resolver containing the extension contract logic
   /// @param _roles An array containing the roles required by the extension
-  function addExtension(address _manager, bytes32 _extensionId, address _resolver, uint8[] memory _roles) public;
+  function addExtension(bytes32 _extensionId, address _resolver, uint8[] memory _roles) public;
 }

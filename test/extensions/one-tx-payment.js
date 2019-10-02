@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID, FUNDING_ROLE, ADMINISTRATION_ROLE } from "../../helpers/constants";
-import { checkErrorRevert } from "../../helpers/test-helper";
+import { checkErrorRevert, web3GetCode } from "../../helpers/test-helper";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 
@@ -35,11 +35,13 @@ contract("One transaction payments", (accounts) => {
     colonyNetwork = await setupColonyNetwork();
     ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
-    extensionManager = await ExtensionManager.new(metaColony.address);
+    extensionManager = await ExtensionManager.new(colonyNetwork.address);
+    await metaColony.setExtensionManager(extensionManager.address);
+
     const oneTxPayment = await OneTxPayment.new();
     const resolver = await Resolver.new();
     await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPayment.address }, resolver);
-    await metaColony.addExtension(extensionManager.address, ONE_TX_PAYMENT, resolver.address, [FUNDING_ROLE, ADMINISTRATION_ROLE]);
+    await metaColony.addExtension(ONE_TX_PAYMENT, resolver.address, [FUNDING_ROLE, ADMINISTRATION_ROLE]);
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
@@ -52,7 +54,7 @@ contract("One transaction payments", (accounts) => {
     await colony.setRootRole(extensionManager.address, true);
     await extensionManager.installExtension(ONE_TX_PAYMENT, 1, colony.address, 0, 1, 0, 1);
 
-    const extensionAddress = await extensionManager.getExtension(ONE_TX_PAYMENT, 1, colony.address, 1);
+    const extensionAddress = await extensionManager.getExtension(ONE_TX_PAYMENT, colony.address, 1);
     oneTxExtension = await OneTxPayment.at(extensionAddress);
 
     // Give a user colony administration rights (needed for one-tx)
@@ -61,6 +63,22 @@ contract("One transaction payments", (accounts) => {
   });
 
   describe("one tx payments", () => {
+    it("should implement the ColonyExtension interface", async () => {
+      const extension = await OneTxPayment.new();
+
+      const version = await extension.version();
+      expect(version).to.eq.BN(1);
+
+      await extension.install(colony.address);
+      await checkErrorRevert(extension.install(colony.address), "extension-already-installed");
+
+      await extension.finishUpgrade();
+
+      await extension.uninstall();
+      const code = await web3GetCode(extension.address);
+      expect(code).to.equal("0x");
+    });
+
     it("should allow a single-transaction payment of tokens to occur", async () => {
       const balanceBefore = await token.balanceOf(RECIPIENT);
       expect(balanceBefore).to.eq.BN(0);

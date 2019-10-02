@@ -16,6 +16,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const ExtensionManager = artifacts.require("ExtensionManager");
+const ColonyExtension = artifacts.require("ColonyExtension");
 const TestExtension0 = artifacts.require("TestExtension0");
 const TestExtension1 = artifacts.require("TestExtension1");
 const TestExtension2 = artifacts.require("TestExtension2");
@@ -60,17 +61,20 @@ contract("ExtensionManager", accounts => {
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
 
-    extensionManager = await ExtensionManager.new(metaColony.address);
+    extensionManager = await ExtensionManager.new(colonyNetwork.address);
+    await metaColony.setExtensionManager(extensionManager.address);
 
     resolver0 = await setupResolver(0);
     resolver1 = await setupResolver(1);
     resolver2 = await setupResolver(2);
-    await metaColony.addExtension(extensionManager.address, TEST_EXTENSION, resolver1.address, [FUNDING_ROLE, ADMINISTRATION_ROLE]);
-    await metaColony.addExtension(extensionManager.address, TEST_EXTENSION, resolver2.address, [FUNDING_ROLE, ADMINISTRATION_ROLE]);
+    await metaColony.addExtension(TEST_EXTENSION, resolver1.address, [FUNDING_ROLE, ADMINISTRATION_ROLE]);
+    await metaColony.addExtension(TEST_EXTENSION, resolver2.address, []);
   });
 
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
+    await colony.addDomain(1, 0, 1); // Domain 2
+
     await colony.setRootRole(extensionManager.address, true);
     await colony.setArchitectureRole(1, 0, ARCHITECT, 1, true);
   });
@@ -85,8 +89,12 @@ contract("ExtensionManager", accounts => {
       // Can only install once
       await checkErrorRevert(extension.install(colony.address), "extension-already-installed");
 
-      // Can uninstall as expected
-      await extension.send(100);
+      // Cannot send ether by default as expected
+      await checkErrorRevert(extension.send(100));
+      // But can using separate payable function
+      await extension.sendEther({ value: 100 });
+
+      // Can uninstall as expected, with ether going to the colony
       await extension.uninstall();
       const colonyBalance = await web3GetBalance(colony.address);
       expect(new BN(colonyBalance)).to.eq.BN(100);
@@ -102,52 +110,53 @@ contract("ExtensionManager", accounts => {
 
     it("allows the meta colony to add new extensions to the manager", async () => {
       // Versions start at 1
-      await checkErrorRevert(metaColony.addExtension(extensionManager.address, extensionId, resolver0.address, []), "extension-manager-bad-version");
+      await checkErrorRevert(metaColony.addExtension(extensionId, resolver0.address, []), "extension-manager-bad-version");
 
-      await metaColony.addExtension(extensionManager.address, extensionId, resolver1.address, []);
-      await metaColony.addExtension(extensionManager.address, extensionId, resolver2.address, []);
+      await metaColony.addExtension(extensionId, resolver1.address, []);
+      await metaColony.addExtension(extensionId, resolver2.address, []);
 
       const resolverAddress = await extensionManager.getResolver(extensionId, 1);
       expect(resolverAddress).to.equal(resolver1.address);
     });
 
     it("does not allow the meta colony to overwrite existing extensions", async () => {
-      await metaColony.addExtension(extensionManager.address, extensionId, resolver1.address, []);
+      await metaColony.addExtension(extensionId, resolver1.address, []);
 
-      await checkErrorRevert(
-        metaColony.addExtension(extensionManager.address, extensionId, resolver1.address, []),
-        "extension-manager-already-added"
-      );
+      await checkErrorRevert(metaColony.addExtension(extensionId, resolver1.address, []), "extension-manager-already-added");
     });
 
     it("does not allow the meta colony to add versions out of order", async () => {
-      await checkErrorRevert(metaColony.addExtension(extensionManager.address, extensionId, resolver2.address, []), "extension-manager-bad-version");
+      await checkErrorRevert(metaColony.addExtension(extensionId, resolver2.address, []), "extension-manager-bad-version");
 
-      await metaColony.addExtension(extensionManager.address, extensionId, resolver1.address, []);
-      await metaColony.addExtension(extensionManager.address, extensionId, resolver2.address, []);
+      await metaColony.addExtension(extensionId, resolver1.address, []);
+      await metaColony.addExtension(extensionId, resolver2.address, []);
+    });
+
+    it("does not allow the meta colony to pass roles after version 1", async () => {
+      await metaColony.addExtension(extensionId, resolver1.address, [ROOT]);
+
+      await checkErrorRevert(metaColony.addExtension(extensionId, resolver2.address, [ROOT]), "extension-manager-nonempty-roles");
     });
 
     it("does not allow the meta colony to add a null resolver", async () => {
-      await checkErrorRevert(
-        metaColony.addExtension(extensionManager.address, extensionId, ethers.constants.AddressZero, []),
-        "extension-manager-bad-resolver"
-      );
+      await checkErrorRevert(metaColony.addExtension(extensionId, ethers.constants.AddressZero, []), "extension-manager-bad-resolver");
     });
 
     it("does not allow other colonies to add new extensions to the manager", async () => {
       const fakeMetaColony = await IMetaColony.at(colony.address);
 
-      await checkErrorRevert(
-        fakeMetaColony.addExtension(extensionManager.address, extensionId, resolver1.address, []),
-        "extension-manager-not-metacolony"
-      );
+      await checkErrorRevert(fakeMetaColony.addExtension(extensionId, resolver1.address, []), "colony-caller-must-be-meta-colony");
+    });
+
+    it("does not allow anyone but the colony network to communicate directly with the manager", async () => {
+      await checkErrorRevert(extensionManager.addExtension(extensionId, resolver1.address, []), "extension-manager-not-network");
     });
   });
 
   describe("installing extensions (& user authorizations)", () => {
     it("allows a root user to install an extension", async () => {
       await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
-      const extensionAddress = await extensionManager.getExtension(TEST_EXTENSION, 1, colony.address, 1);
+      const extensionAddress = await extensionManager.getExtension(TEST_EXTENSION, colony.address, 1);
 
       const extension = await TestExtension1.at(extensionAddress);
       const owner = await extension.owner();
@@ -163,8 +172,6 @@ contract("ExtensionManager", accounts => {
     });
 
     it("allows an architect user to install an extension in a subdomain only", async () => {
-      await colony.addDomain(1, 0, 1); // Domain 2
-
       // Domain 1 fails
       await checkErrorRevert(
         extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ARCHITECT }),
@@ -206,11 +213,9 @@ contract("ExtensionManager", accounts => {
     });
 
     it("does not allow an extension which requires root permission to be installed in a subdomain", async () => {
-      await colony.addDomain(1, 0, 1); // Domain 2
-
       const extensionId = soliditySha3(shortid.generate());
 
-      await metaColony.addExtension(extensionManager.address, extensionId, resolver1.address, [ROOT_ROLE]);
+      await metaColony.addExtension(extensionId, resolver1.address, [ROOT_ROLE]);
 
       await checkErrorRevert(
         extensionManager.installExtension(extensionId, 1, colony.address, 0, 1, 0, 2, { from: ROOT }),
@@ -225,7 +230,7 @@ contract("ExtensionManager", accounts => {
 
       const extensionId = soliditySha3(shortid.generate());
 
-      await metaColony.addExtension(extensionManager.address, extensionId, resolver1.address, allRoles);
+      await metaColony.addExtension(extensionId, resolver1.address, allRoles);
       await extensionManager.installExtension(extensionId, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
     });
 
@@ -234,11 +239,11 @@ contract("ExtensionManager", accounts => {
 
       const extensionId = soliditySha3(shortid.generate());
 
-      await metaColony.addExtension(extensionManager.address, extensionId, resolver1.address, [ROOT_ROLE, fakeRole]);
+      await metaColony.addExtension(extensionId, resolver1.address, [ROOT_ROLE, fakeRole]);
       await extensionManager.installExtension(extensionId, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
 
       // Check that fakeRole is not part of the role bit array
-      const extensionAddress = await extensionManager.getExtension(extensionId, 1, colony.address, 1);
+      const extensionAddress = await extensionManager.getExtension(extensionId, colony.address, 1);
       const userRoles = await colony.getUserRoles(extensionAddress, 1);
       expect(new BN(parseInt(userRoles, 16)).and(new BN(1).shln(fakeRole))).to.be.zero;
     });
@@ -248,31 +253,54 @@ contract("ExtensionManager", accounts => {
     it("allows authorized users to upgrade an extension", async () => {
       await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
 
-      let extensionAddress = await extensionManager.getExtension(TEST_EXTENSION, 1, colony.address, 1);
+      const extensionAddress = await extensionManager.getExtension(TEST_EXTENSION, colony.address, 1);
       expect(extensionAddress).to.not.equal(ethers.constants.AddressZero);
 
-      // Upgrade from version 1 to 2
-      await extensionManager.upgradeExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
+      let extension = await ColonyExtension.at(extensionAddress);
+      let version = await extension.version();
+      expect(version).to.eq.BN(1);
 
-      extensionAddress = await extensionManager.getExtension(TEST_EXTENSION, 1, colony.address, 1);
-      expect(extensionAddress).to.equal(ethers.constants.AddressZero);
+      await extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: ROOT });
 
-      extensionAddress = await extensionManager.getExtension(TEST_EXTENSION, 2, colony.address, 1);
-      expect(extensionAddress).to.not.equal(ethers.constants.AddressZero);
+      extension = await ColonyExtension.at(extensionAddress);
+      version = await extension.version();
+      expect(version).to.eq.BN(2);
+    });
+
+    it("allows an architect user to upgrade an extension in a subdomain only", async () => {
+      await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
+      await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 2, { from: ROOT });
+
+      // Domain 1 fails
+      await checkErrorRevert(
+        extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: ARCHITECT }),
+        "extension-manager-unauthorized"
+      );
+
+      // Domain 2 succeeds
+      await extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 2, { from: ARCHITECT });
+    });
+
+    it("does not allow a non root or architect user to upgrade an extension", async () => {
+      await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
+      await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 2, { from: ROOT });
+
+      // Domain 1 fails
+      await checkErrorRevert(
+        extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: USER }),
+        "extension-manager-unauthorized"
+      );
+
+      // Domain 2 fails
+      await checkErrorRevert(
+        extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 2, { from: USER }),
+        "extension-manager-unauthorized"
+      );
     });
 
     it("does not allow upgrading a extension which is not installed", async () => {
       await checkErrorRevert(
-        extensionManager.upgradeExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT }),
-        "extension-manager-not-installed"
-      );
-    });
-
-    it("does not allow upgrading a extension by more than one version at a time", async () => {
-      await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
-
-      await checkErrorRevert(
-        extensionManager.upgradeExtension(TEST_EXTENSION, 2, colony.address, 0, 1, 0, 1, { from: ROOT }),
+        extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: ROOT }),
         "extension-manager-not-installed"
       );
     });
@@ -282,16 +310,16 @@ contract("ExtensionManager", accounts => {
 
       // Can't upgrade from version 2 to nonexistent 3
       await checkErrorRevert(
-        extensionManager.upgradeExtension(TEST_EXTENSION, 2, colony.address, 0, 1, 0, 1, { from: ROOT }),
+        extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: ROOT }),
         "extension-manager-bad-version"
       );
     });
   });
 
   describe("removing extensions", () => {
-    it("allows authorized users to uninstall an extension and send ether to the benificiary", async () => {
+    it("allows authorized users to uninstall an extension and send ether to the beneficiary", async () => {
       await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
-      const extensionAddress = await extensionManager.getExtension(TEST_EXTENSION, 1, colony.address, 1);
+      const extensionAddress = await extensionManager.getExtension(TEST_EXTENSION, colony.address, 1);
 
       const hasRoleBefore = await colony.hasUserRole(extensionAddress, 1, FUNDING_ROLE);
       expect(hasRoleBefore).to.be.true;
@@ -303,11 +331,11 @@ contract("ExtensionManager", accounts => {
       await checkErrorRevert(extension.uninstall(), "ds-auth-unauthorized");
 
       await checkErrorRevert(
-        extensionManager.uninstallExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: USER }),
+        extensionManager.uninstallExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: USER }),
         "extension-manager-unauthorized"
       );
 
-      await extensionManager.uninstallExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
+      await extensionManager.uninstallExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: ROOT });
 
       const colonyBalance = await web3GetBalance(colony.address);
       expect(new BN(colonyBalance)).to.eq.BN(100);
@@ -316,9 +344,40 @@ contract("ExtensionManager", accounts => {
       expect(hasRoleAfter).to.be.false;
     });
 
+    it("allows an architect user to uninstall an extension in a subdomain only", async () => {
+      await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
+      await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 2, { from: ROOT });
+
+      // Domain 1 fails
+      await checkErrorRevert(
+        extensionManager.uninstallExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: ARCHITECT }),
+        "extension-manager-unauthorized"
+      );
+
+      // Domain 2 succeeds
+      await extensionManager.uninstallExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 2, { from: ARCHITECT });
+    });
+
+    it("does not allow a non root or architect user to uninstall an extension", async () => {
+      await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT });
+      await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 2, { from: ROOT });
+
+      // Domain 1 fails
+      await checkErrorRevert(
+        extensionManager.uninstallExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: USER }),
+        "extension-manager-unauthorized"
+      );
+
+      // Domain 2 fails
+      await checkErrorRevert(
+        extensionManager.uninstallExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 2, { from: USER }),
+        "extension-manager-unauthorized"
+      );
+    });
+
     it("does not allow authorized users to uninstall an extension which is not installed", async () => {
       await checkErrorRevert(
-        extensionManager.uninstallExtension(TEST_EXTENSION, 1, colony.address, 0, 1, 0, 1, { from: ROOT }),
+        extensionManager.uninstallExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: ROOT }),
         "extension-manager-not-installed"
       );
     });

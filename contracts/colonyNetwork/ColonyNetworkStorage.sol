@@ -92,6 +92,8 @@ contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   uint256 annualMetaColonyStipend; // Storage slot 36
   uint256 lastMetaColonyStipendIssued; // Storage slot 37
 
+  address extensionManagerAddress; // Storage slot 33
+
   modifier calledByColony() {
     require(_isColony[msg.sender], "colony-caller-must-be-colony");
     _;

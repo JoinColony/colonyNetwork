@@ -285,6 +285,23 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return miningResolverAddress The address of the mining cycle resolver currently used by new instances
   function getMiningResolver() public view returns (address miningResolverAddress);
 
+  /// @notice Set the address for the ExtensionManager.
+  /// @param _extensionManagerAddress Address of the ExtensionManager contract
+  function setExtensionManager(address _extensionManagerAddress) public;
+
+  /// @notice Get the address for the ExtensionManager.
+  /// @return extensionManagerAddress Address of the ExtensionManager contract
+  function getExtensionManager() public view returns (address extensionManagerAddress);
+
+  /// @notice Add a new extension/version to the ExtensionManager.
+  /// @dev Calls `ExtensionManager.addExtension`.
+  /// @dev The extension version is queried from the resolver itself.
+  /// @dev The _roles array can be set only for version == 1 (must be empty otherwise).
+  /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param _resolver The deployed resolver containing the extension contract logic
+  /// @param _roles An array containing the roles required by the extension
+  function addExtension(bytes32 _extensionId, address _resolver, uint8[] memory _roles) public;
+
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
   /// @return _feeInverse The inverse of the network fee
   function getFeeInverse() public view returns (uint256 _feeInverse);

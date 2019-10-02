@@ -22,11 +22,12 @@ import "../EtherRouter.sol";
 import "../IColony.sol";
 
 
-contract ColonyExtension is EtherRouter {
+contract ColonyExtension is DSAuth {
+  address resolver; // Align storage with EtherRouter
   IColony colony;
 
   function version() public pure returns (uint256);
   function install(address _colony) public;
-  function upgrade() public;
+  function finishUpgrade() public;
   function uninstall() public;
 }

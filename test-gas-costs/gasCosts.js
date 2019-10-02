@@ -1,15 +1,9 @@
 /* globals artifacts */
 
 import path from "path";
-<<<<<<< HEAD
-||||||| constructed merge base
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
-=======
 import { ethers } from "ethers";
-import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
->>>>>>> Introduce ExtensionManager
 
-import TruffleLoader from "../packages/reputation-miner/TruffleLoader";
 import {
   UINT256_MAX,
   WAD,
@@ -223,7 +217,7 @@ contract("All", function (accounts) {
 
       // 1 transaction payment
       const oneTxExtension = await OneTxPayment.new();
-      await oneTxExtension.install(colony.address, ethers.constants.AddressZero);
+      await oneTxExtension.install(colony.address);
       await colony.setAdministrationRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
       await colony.setFundingRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
 

@@ -19,41 +19,42 @@ pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
 import "../ColonyDataTypes.sol";
-import "../IMetaColony.sol";
+import "../IColonyNetwork.sol";
 import "./ColonyExtension.sol";
 
 
 contract ExtensionManager {
-  IMetaColony metaColony;
+  IColonyNetwork colonyNetwork;
 
+  // [_extensionId] => roles
+  mapping(bytes32 => uint8[]) roles;
   // [_extensionId][version] => resolver
   mapping(bytes32 => mapping(uint256 => address)) resolvers;
-  // [_extensionId][version] => roles
-  mapping(bytes32 => mapping(uint256 => uint8[])) roles;
-  // [_extensionId][version][colony][domainId] => address
-  mapping(bytes32 => mapping(uint256 => mapping(address => mapping(uint256 => address payable)))) installations;
+  // [_extensionId][colony][domainId] => address
+  mapping(bytes32 => mapping(address => mapping(uint256 => address payable))) installations;
 
   event ExtensionAdded(bytes32 indexed extensionId, uint256 version);
   event ExtensionInstalled(bytes32 indexed extensionId, uint256 version, address indexed colony, uint256 indexed domainId);
   event ExtensionUpgraded(bytes32 indexed extensionId, uint256 version, address indexed colony, uint256 indexed domainId);
-  event ExtensionUninstalled(bytes32 indexed extensionId, uint256 version, address indexed colony, uint256 indexed domainId);
+  event ExtensionUninstalled(bytes32 indexed extensionId, address indexed colony, uint256 indexed domainId);
 
-  constructor(address _metaColony) public {
-    metaColony = IMetaColony(_metaColony);
+  constructor(address _colonyNetworkAddress) public {
+    colonyNetwork = IColonyNetwork(_colonyNetworkAddress);
   }
 
   function addExtension(bytes32 _extensionId, address _resolver, uint8[] memory _roles)
     public
   {
-    require(msg.sender == address(metaColony), "extension-manager-not-metacolony");
+    require(msg.sender == address(colonyNetwork), "extension-manager-not-network");
     require(_resolver != address(0x0), "extension-manager-bad-resolver");
 
     uint256 version = getResolverVersion(_resolver);
+    require(version == 1 || _roles.length == 0, "extension-manager-nonempty-roles");
     require(version == 1 || resolvers[_extensionId][version - 1] != address(0x0), "extension-manager-bad-version");
     require(resolvers[_extensionId][version] == address(0x0), "extension-manager-already-added");
 
     resolvers[_extensionId][version] = _resolver;
-    roles[_extensionId][version] = _roles;
+    if (version == 1) { roles[_extensionId] = _roles; }
 
     emit ExtensionAdded(_extensionId, version);
   }
@@ -76,14 +77,14 @@ contract ExtensionManager {
       "extension-manager-bad-version"
     );
     require(
-      installations[_extensionId][_version][_colony][_domainId] == address(0x0),
+      installations[_extensionId][_colony][_domainId] == address(0x0),
       "extension-manager-already-installed"
     );
 
     EtherRouter extension = new EtherRouter();
-    installations[_extensionId][_version][_colony][_domainId] = address(extension);
+    installations[_extensionId][_colony][_domainId] = address(extension);
 
-    assignRoles(_colony, _rootChildSkillIndex, _domainId, _extensionId, _version, true);
+    assignRoles(_colony, _rootChildSkillIndex, _domainId, _extensionId, true);
 
     extension.setResolver(resolvers[_extensionId][_version]);
     ColonyExtension(address(extension)).install(_colony);
@@ -93,7 +94,6 @@ contract ExtensionManager {
 
   function upgradeExtension(
     bytes32 _extensionId,
-    uint256 _version,
     address _colony,
     uint256 _rootChildSkillIndex,
     uint256 _permissionDomainId,
@@ -104,27 +104,22 @@ contract ExtensionManager {
   {
     require(authorized(_colony, _permissionDomainId, _childSkillIndex, _domainId), "extension-manager-unauthorized");
 
-    address payable extension = installations[_extensionId][_version][_colony][_domainId];
+    address payable extension = installations[_extensionId][_colony][_domainId];
     require(extension != address(0x0), "extension-manager-not-installed");
 
-    uint256 newVersion = _version + 1;
+    uint256 newVersion = ColonyExtension(extension).version() + 1;
     require(resolvers[_extensionId][newVersion] != address(0x0), "extension-manager-bad-version");
 
-    installations[_extensionId][_version][_colony][_domainId] = address(0x0);
-    installations[_extensionId][newVersion][_colony][_domainId] = extension;
-
-    assignRoles(_colony, _rootChildSkillIndex, _domainId, _extensionId, _version, false);
-    assignRoles(_colony, _rootChildSkillIndex, _domainId, _extensionId, newVersion, true);
-
     EtherRouter(extension).setResolver(resolvers[_extensionId][newVersion]);
-    ColonyExtension(extension).upgrade();
+    ColonyExtension(extension).finishUpgrade();
+
+    assert(ColonyExtension(extension).version() == newVersion);
 
     emit ExtensionUpgraded(_extensionId, newVersion, _colony, _domainId);
   }
 
   function uninstallExtension(
     bytes32 _extensionId,
-    uint256 _version,
     address payable _colony,
     uint256 _rootChildSkillIndex,
     uint256 _permissionDomainId,
@@ -136,17 +131,17 @@ contract ExtensionManager {
     require(authorized(_colony, _permissionDomainId, _childSkillIndex, _domainId), "extension-manager-unauthorized");
 
     require(
-      installations[_extensionId][_version][_colony][_domainId] != address(0x0),
+      installations[_extensionId][_colony][_domainId] != address(0x0),
       "extension-manager-not-installed"
     );
 
-    assignRoles(_colony, _rootChildSkillIndex, _domainId, _extensionId, _version, false);
+    assignRoles(_colony, _rootChildSkillIndex, _domainId, _extensionId, false);
 
-    ColonyExtension extension = ColonyExtension(installations[_extensionId][_version][_colony][_domainId]);
-    installations[_extensionId][_version][_colony][_domainId] = address(0x0);
+    ColonyExtension extension = ColonyExtension(installations[_extensionId][_colony][_domainId]);
+    installations[_extensionId][_colony][_domainId] = address(0x0);
     extension.uninstall();
 
-    emit ExtensionUninstalled(_extensionId, _version, _colony, _domainId);
+    emit ExtensionUninstalled(_extensionId, _colony, _domainId);
   }
 
   function getResolver(bytes32 _extensionId, uint256 _version)
@@ -157,12 +152,12 @@ contract ExtensionManager {
     return resolvers[_extensionId][_version];
   }
 
-  function getExtension(bytes32 _extensionId, uint256 _version, address _colony, uint256 _domainId)
+  function getExtension(bytes32 _extensionId, address _colony, uint256 _domainId)
     public
     view
     returns (address)
   {
-    return installations[_extensionId][_version][_colony][_domainId];
+    return installations[_extensionId][_colony][_domainId];
   }
 
   function authorized(address _colony, uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId)
@@ -173,14 +168,11 @@ contract ExtensionManager {
     return IColony(_colony).userCanSetRoles(msg.sender, _permissionDomainId, _childSkillIndex, _domainId);
   }
 
+  bytes4 constant VERSION_SIG = bytes4(keccak256("version()"));
+
   function getResolverVersion(address _resolver) internal returns (uint256) {
-    EtherRouter extension = new EtherRouter();
-    extension.setResolver(_resolver);
-
-    uint256 version = ColonyExtension(address(extension)).version();
-    ColonyExtension(address(extension)).uninstall();
-
-    return version;
+    address extension = Resolver(_resolver).lookup(VERSION_SIG);
+    return ColonyExtension(extension).version();
   }
 
   function assignRoles(
@@ -188,14 +180,13 @@ contract ExtensionManager {
     uint256 _rootChildSkillIndex,
     uint256 _domainId,
     bytes32 _extensionId,
-    uint256 _version,
     bool _setTo
   )
     internal
   {
     IColony colony = IColony(_colony);
-    address extension = installations[_extensionId][_version][_colony][_domainId];
-    uint8[] storage extensionRoles = roles[_extensionId][_version];
+    address extension = installations[_extensionId][_colony][_domainId];
+    uint8[] storage extensionRoles = roles[_extensionId];
 
     for (uint256 i; i < extensionRoles.length; i++) {
       if (extensionRoles[i] == uint8(ColonyDataTypes.ColonyRole.Root)) {

@@ -21,10 +21,8 @@ pragma experimental ABIEncoderV2;
 import "../extensions/ColonyExtension.sol";
 
 
-contract TestExtension0 is ColonyExtension {
-  function version() public pure returns (uint256) {
-    return 0;
-  }
+contract TestExtension is ColonyExtension {
+  function version() public pure returns (uint256);
 
   function install(address _colony) public auth {
     require(address(colony) == address(0x0), "extension-already-installed");
@@ -32,7 +30,7 @@ contract TestExtension0 is ColonyExtension {
     colony = IColony(_colony);
   }
 
-  function upgrade() public auth {}
+  function finishUpgrade() public auth {}
 
   function uninstall() public auth {
     selfdestruct(address(uint160(address(colony))));
@@ -40,39 +38,17 @@ contract TestExtension0 is ColonyExtension {
 }
 
 
-contract TestExtension1 is ColonyExtension {
-  function version() public pure returns (uint256) {
-    return 1;
-  }
-
-  function install(address _colony) public auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
-  }
-
-  function upgrade() public auth {}
-
-  function uninstall() public auth {
-    selfdestruct(address(uint160(address(colony))));
-  }
+contract TestExtension0 is TestExtension {
+  function version() public pure returns (uint256) { return 0; }
 }
 
 
-contract TestExtension2 is ColonyExtension {
-  function version() public pure returns (uint256) {
-    return 2;
-  }
+contract TestExtension1 is TestExtension {
+  function version() public pure returns (uint256) { return 1; }
+  function sendEther() external payable {}
+}
 
-  function install(address _colony) public auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
 
-    colony = IColony(_colony);
-  }
-
-  function upgrade() public auth {}
-
-  function uninstall() public auth {
-    selfdestruct(address(uint160(address(colony))));
-  }
+contract TestExtension2 is TestExtension {
+  function version() public pure returns (uint256) { return 2; }
 }

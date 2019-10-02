@@ -48,7 +48,7 @@ contract OneTxPayment is ColonyExtension {
   }
 
   /// @notice Called when upgrading the extension (currently a no-op since this OneTxPayment does not support upgrading)
-  function upgrade() public auth {}
+  function finishUpgrade() public auth {}
 
   /// @notice Called when uninstalling the extension
   function uninstall() public auth {
