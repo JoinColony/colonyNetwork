@@ -10982,7 +10982,7 @@ truffle-resolver@^5.0.13:
     get-installed-path "^4.0.8"
     truffle-provisioner "^0.1.5"
 
-truffle-security@^1.5.5:
+truffle-security@^1.6.0:
   version "1.6.1"
   resolved "https://registry.yarnpkg.com/truffle-security/-/truffle-security-1.6.1.tgz#5eb720d0a09450cd08d4e85e4168a1f98e8f1dbd"
   integrity sha512-FMeQD19437PRJ3i/wK8lKes3ssPTlXon70/XbekcehJlrtFSk8N0WWb8f0cW32508na7wYhc8dGCWtl0ECmKnQ==
