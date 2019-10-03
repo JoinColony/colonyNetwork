@@ -125,9 +125,23 @@ process.env.SOLIDITY_COVERAGE
           expect(value).to.equal(oracleProofObject.value);
         });
 
-        it("should correctly respond to a request for a valid key in an invalid reputation state", async () => {
+        it("should correctly respond to a request for a valid key in a reputation state that never existed", async () => {
           const rootHash = await reputationMiner.getRootHash();
           const url = `http://127.0.0.1:3000/${rootHash.slice(4)}0000/${metaColony.address}/2/${MINER1}`;
+          const res = await request(url);
+          expect(res.statusCode).to.equal(400);
+          expect(JSON.parse(res.body).message).to.equal("Requested reputation does not exist or invalid request");
+        });
+
+        it("should correctly respond to a request for a valid key that didn't exist in a valid past reputation state", async () => {
+          const rootHash = await reputationMiner.getRootHash();
+          const startingBlock = await currentBlock();
+          const startingBlockNumber = startingBlock.number;
+
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          await client._miner.sync(startingBlockNumber); // eslint-disable-line no-underscore-dangle
+
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${accounts[4]}`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);
           expect(JSON.parse(res.body).message).to.equal("Requested reputation does not exist or invalid request");
@@ -141,7 +155,7 @@ process.env.SOLIDITY_COVERAGE
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           await client._miner.sync(startingBlockNumber); // eslint-disable-line no-underscore-dangle
 
-          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${accounts[4]}`;
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/notAKey`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);
           expect(JSON.parse(res.body).message).to.equal("Requested reputation does not exist or invalid request");

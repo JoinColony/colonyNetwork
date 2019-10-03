@@ -97,6 +97,31 @@ class ReputationMinerClient {
 
       // Query users who have given reputation in colony
       this._app.get("/:rootHash/:colonyAddress/:skillId/", async (req, res) => {
+        if (
+          !ethers.utils.isHexString(req.params.rootHash) ||
+          !ethers.utils.isHexString(req.params.colonyAddress) ||
+          !ethers.utils.bigNumberify(req.params.skillId)
+        ) {
+          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+        }
+        const addresses = await this._miner.getAddressesWithReputation(req.params.rootHash, req.params.colonyAddress, req.params.skillId);
+        try {
+          return res.status(200).send({ addresses });
+        } catch (err) {
+          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+        }
+      });
+
+      // Query users who have given reputation in colony
+      this._app.get("/:rootHash/:colonyAddress/:skillId/", async (req, res) => {
+        if (
+          !ethers.utils.isHexString(req.params.rootHash) ||
+          !ethers.utils.isHexString(req.params.colonyAddress) ||
+          !ethers.utils.bigNumberify(req.params.skillId)
+        ) {
+          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+        }
+
         const addresses = await this._miner.getAddressesWithReputation(req.params.rootHash, req.params.colonyAddress, req.params.skillId);
         try {
           return res.status(200).send({ addresses });
@@ -107,6 +132,15 @@ class ReputationMinerClient {
 
       // Query specific reputation values
       this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
+        if (
+          !ethers.utils.isHexString(req.params.rootHash) ||
+          !ethers.utils.isHexString(req.params.colonyAddress) ||
+          !ethers.utils.isHexString(req.params.userAddress) ||
+          !ethers.utils.bigNumberify(req.params.skillId)
+        ) {
+          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+        }
+
         const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
         const currentHash = await this._miner.getRootHash();
         if (currentHash === req.params.rootHash) {
