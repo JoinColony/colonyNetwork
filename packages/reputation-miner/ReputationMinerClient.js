@@ -95,6 +95,16 @@ class ReputationMinerClient {
         return res.status(200).send({ active: activeAddr, inactive: inactiveAddr });
       });
 
+      // Query users who have given reputation in colony
+      this._app.get("/:rootHash/:colonyAddress/:skillId/", async (req, res) => {
+        const addresses = await this._miner.getAddressesWithReputation(req.params.rootHash, req.params.colonyAddress, req.params.skillId);
+        try {
+          return res.status(200).send({ addresses });
+        } catch (err) {
+          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+        }
+      });
+
       // Query specific reputation values
       this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
         const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);

@@ -146,5 +146,16 @@ process.env.SOLIDITY_COVERAGE
           expect(res.statusCode).to.equal(400);
           expect(JSON.parse(res.body).message).to.equal("Requested reputation does not exist or invalid request");
         });
+
+        it("should correctly respond to a request for users that have a particular reputation in a colony", async () => {
+          const rootHash = await reputationMiner.getRootHash();
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/1/`;
+          const res = await request(url);
+          expect(res.statusCode).to.equal(200);
+
+          const { addresses } = JSON.parse(res.body);
+          expect(addresses.length).to.equal(1);
+          expect(addresses[0]).to.equal(MINER1.toLowerCase());
+        });
       });
     });

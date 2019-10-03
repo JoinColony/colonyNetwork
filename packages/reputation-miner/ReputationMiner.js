@@ -1267,6 +1267,24 @@ class ReputationMiner {
     await db.close();
   }
 
+  async getAddressesWithReputation(reputationRootHash, colonyAddress, skillId) {
+    const db = await sqlite.open(this.dbPath, { Promise });
+    const res = await db.all(
+      `SELECT DISTINCT users.address as user_address
+       FROM reputations
+       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+       INNER JOIN users ON users.rowid=reputations.user_rowid
+       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       WHERE reputation_states.root_hash="${reputationRootHash}"
+       AND colonies.address="${colonyAddress.toLowerCase()}"
+       AND reputations.skill_id="${skillId}"
+       AND users.address!="0x0000000000000000000000000000000000000000"`
+    );
+    await db.close();
+    const addresses = res.map(x => x.user_address)
+    return addresses;
+  }
+
   async createDB() {
     const db = await sqlite.open(this.dbPath, { Promise });
     await db.run("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE )");
