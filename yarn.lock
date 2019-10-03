@@ -11638,10 +11638,10 @@ truffle-security@^1.5.2:
     truffle-external-compile "^1.0.8"
     truffle-resolver "^5.0.13"
 
-truffle@^5.0.14:
-  version "5.0.29"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.29.tgz#79f774daa6afbe487aaf691c95ab9b0042e4a56b"
-  integrity sha512-jYAxjzTNgpHDAZ3QQPww8OBouhA8vucDRJmnmw61KwZEpuZZ2gP4uLjSSeHGT0AiFfouz7Aen6dpwTinrNCLWQ==
+truffle@^5.0.39:
+  version "5.0.39"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.39.tgz#5710ba8f60a7184d9eb51d632308f2af0a2e8aff"
+  integrity sha512-2a17t4o6r0rNMpeQXBc51nXigtIaP9/sU8N2zflaazvzYgDgLMZfqh/dir2mTfyybOsrR47NL310p+6+c8u8VA==
   dependencies:
     app-module-path "^2.2.0"
     mocha "5.2.0"
