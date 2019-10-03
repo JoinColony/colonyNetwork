@@ -19,6 +19,7 @@ pragma solidity 0.5.8;
 
 import "../lib/dappsys/auth.sol";
 
+// ignore-file-swc-131 
 
 contract CommonStorage is DSAuth {
   uint256 constant AUTHORITY_SLOT = 0;

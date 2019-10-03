@@ -21,6 +21,7 @@ pragma experimental "ABIEncoderV2";
 import "../lib/dappsys/auth.sol";
 import "./TokenLockingDataTypes.sol";
 
+// ignore-file-swc-131 
 
 contract TokenLockingStorage is TokenLockingDataTypes, DSAuth {
   address resolver;

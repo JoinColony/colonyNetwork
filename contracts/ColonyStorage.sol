@@ -25,6 +25,7 @@ import "./PatriciaTree/PatriciaTreeProofs.sol";
 import "./CommonStorage.sol";
 import "./ColonyDataTypes.sol";
 
+// ignore-file-swc-131 
 
 contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes, DSMath {
   uint256 constant COLONY_NETWORK_SLOT = 6;
