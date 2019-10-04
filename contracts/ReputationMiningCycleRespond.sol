@@ -799,4 +799,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     }
     return reputationKey;
   }
+
+  function testFun(bytes32 u) internal pure returns (bytes memory) {
+    bytes memory x = new bytes(32);
+    assembly {
+        mstore(add(x, 32), u)
+    }
+    return x;
+  }
+
 }

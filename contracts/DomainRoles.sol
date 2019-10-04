@@ -21,7 +21,7 @@ import "../lib/dappsys/roles.sol";
 
 
 contract DomainRoles is DSRoles {
-  mapping(address=>mapping(uint256=>bytes32)) _user_domain_roles;
+  mapping(address=>mapping(uint256=>bytes32)) internal _user_domain_roles;
 
   // New function signatures taking arbitrary domains
 

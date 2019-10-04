@@ -29,7 +29,7 @@ contract ColonyAuthority is CommonAuthority {
   uint8 constant ARCHITECTURE_SUBDOMAIN_ROLE = uint8(ColonyDataTypes.ColonyRole.ArchitectureSubdomain);
   uint8 constant ROOT_ROLE = uint8(ColonyDataTypes.ColonyRole.Root);
 
-  address colony;
+  address internal colony;
 
   constructor(address _colony) public CommonAuthority(_colony) {
     colony = _colony;

@@ -23,8 +23,8 @@ import "./CommonStorage.sol";
 import "./ColonyNetworkDataTypes.sol";
 import "./IMetaColony.sol";
 
-// ignore-file-swc-131 
-
+// ignore-file-swc-131
+// ignore-file-swc-108
 
 contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   // Number of colonies in the network
