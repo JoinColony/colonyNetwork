@@ -308,7 +308,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _slot Expenditure slot
   /// @param _token Token address
   /// @return amount Amount of the payout for that slot/token.
-  function getExpenditurePayout(uint256 _id, uint256 _slot, address _token) public view returns (uint256 amount);
+  function getExpenditureSlotPayout(uint256 _id, uint256 _slot, address _token) public view returns (uint256 amount);
 
   // Implemented in ColonyPayment.sol
   /// @notice Add a new payment in the colony. Secured function to authorised members.

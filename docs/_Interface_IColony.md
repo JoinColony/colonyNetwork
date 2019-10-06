@@ -400,25 +400,6 @@ Get the number of expenditures in the colony.
 |---|---|---|
 |count|uint256|The expenditure count
 
-### `getExpenditurePayout`
-
-Returns an existing expenditure slot's payout for a token.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Expenditure identifier
-|_slot|uint256|Expenditure slot
-|_token|address|Token address
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|amount|uint256|Amount of the payout for that slot/token.
-
 ### `getExpenditureSlot`
 
 Returns an existing expenditure slot.
@@ -436,6 +417,25 @@ Returns an existing expenditure slot.
 |Name|Type|Description|
 |---|---|---|
 |expenditureSlot|ExpenditureSlot|The expenditure slot
+
+### `getExpenditureSlotPayout`
+
+Returns an existing expenditure slot's payout for a token.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Expenditure slot
+|_token|address|Token address
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|amount|uint256|Amount of the payout for that slot/token.
 
 ### `getFundingPot`
 

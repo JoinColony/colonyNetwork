@@ -147,7 +147,7 @@ contract("Colony Expenditure", accounts => {
     it("should allow owners to add a slot payout", async () => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
 
-      const payout = await colony.getExpenditurePayout(expenditureId, SLOT0, token.address);
+      const payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
       expect(payout).to.eq.BN(WAD);
     });
 
@@ -155,8 +155,8 @@ contract("Colony Expenditure", accounts => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, 100, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, otherToken.address, 200, { from: ADMIN });
 
-      const payoutForToken = await colony.getExpenditurePayout(expenditureId, SLOT0, token.address);
-      const payoutForOtherToken = await colony.getExpenditurePayout(expenditureId, SLOT0, otherToken.address);
+      const payoutForToken = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
+      const payoutForOtherToken = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, otherToken.address);
       expect(payoutForToken).to.eq.BN(100);
       expect(payoutForOtherToken).to.eq.BN(200);
     });
@@ -173,12 +173,12 @@ contract("Colony Expenditure", accounts => {
     it("should allow owner to set token payout to zero", async () => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
 
-      let payout = await colony.getExpenditurePayout(expenditureId, SLOT0, token.address);
+      let payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
       expect(payout).to.eq.BN(WAD);
 
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, 0, { from: ADMIN });
 
-      payout = await colony.getExpenditurePayout(expenditureId, SLOT0, token.address);
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
       expect(payout).to.be.zero;
     });
 
@@ -331,7 +331,7 @@ contract("Colony Expenditure", accounts => {
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
 
-      const payout = await colony.getExpenditurePayout(expenditureId, SLOT0, token.address);
+      const payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
       expect(payout).to.be.zero;
     });
 

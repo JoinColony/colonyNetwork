@@ -171,7 +171,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureSlot = expenditureSlots[_id][_slot];
   }
 
-  function getExpenditurePayout(uint256 _id, uint256 _slot, address _token) public view returns (uint256) {
+  function getExpenditureSlotPayout(uint256 _id, uint256 _slot, address _token) public view returns (uint256) {
     return expenditureSlotPayouts[_id][_slot][_token];
   }
 }

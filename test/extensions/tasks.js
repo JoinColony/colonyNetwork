@@ -1788,19 +1788,19 @@ contract("Tasks extension", accounts => {
       });
 
       const task = await tasks.getTask(taskId);
-      const taskPayoutManager1 = await colony.getExpenditurePayout(task.expenditureId, MANAGER_ROLE, ethers.constants.AddressZero);
+      const taskPayoutManager1 = await colony.getExpenditureSlotPayout(task.expenditureId, MANAGER_ROLE, ethers.constants.AddressZero);
       expect(taskPayoutManager1).to.eq.BN(5000);
-      const taskPayoutManager2 = await colony.getExpenditurePayout(task.expenditureId, MANAGER_ROLE, token.address);
+      const taskPayoutManager2 = await colony.getExpenditureSlotPayout(task.expenditureId, MANAGER_ROLE, token.address);
       expect(taskPayoutManager2).to.eq.BN(100);
 
-      const taskPayoutEvaluator1 = await colony.getExpenditurePayout(task.expenditureId, EVALUATOR_ROLE, ethers.constants.AddressZero);
+      const taskPayoutEvaluator1 = await colony.getExpenditureSlotPayout(task.expenditureId, EVALUATOR_ROLE, ethers.constants.AddressZero);
       expect(taskPayoutEvaluator1).to.eq.BN(1000);
-      const taskPayoutEvaluator2 = await colony.getExpenditurePayout(task.expenditureId, EVALUATOR_ROLE, token.address);
+      const taskPayoutEvaluator2 = await colony.getExpenditureSlotPayout(task.expenditureId, EVALUATOR_ROLE, token.address);
       expect(taskPayoutEvaluator2).to.eq.BN(40);
 
-      const taskPayoutWorker1 = await colony.getExpenditurePayout(task.expenditureId, WORKER_ROLE, ethers.constants.AddressZero);
+      const taskPayoutWorker1 = await colony.getExpenditureSlotPayout(task.expenditureId, WORKER_ROLE, ethers.constants.AddressZero);
       expect(taskPayoutWorker1).to.eq.BN(98000);
-      const taskPayoutWorker2 = await colony.getExpenditurePayout(task.expenditureId, WORKER_ROLE, token.address);
+      const taskPayoutWorker2 = await colony.getExpenditureSlotPayout(task.expenditureId, WORKER_ROLE, token.address);
       expect(taskPayoutWorker2).to.eq.BN(200);
     });
 
@@ -1813,13 +1813,13 @@ contract("Tasks extension", accounts => {
       );
       await tasks.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000);
 
-      const taskPayoutManager = await colony.getExpenditurePayout(taskId, MANAGER_ROLE, ethers.constants.AddressZero);
+      const taskPayoutManager = await colony.getExpenditureSlotPayout(taskId, MANAGER_ROLE, ethers.constants.AddressZero);
       expect(taskPayoutManager).to.eq.BN(5000);
 
-      const taskPayoutEvaluator = await colony.getExpenditurePayout(taskId, EVALUATOR_ROLE, ethers.constants.AddressZero);
+      const taskPayoutEvaluator = await colony.getExpenditureSlotPayout(taskId, EVALUATOR_ROLE, ethers.constants.AddressZero);
       expect(taskPayoutEvaluator).to.eq.BN(1000);
 
-      const taskPayoutWorker = await colony.getExpenditurePayout(taskId, WORKER_ROLE, ethers.constants.AddressZero);
+      const taskPayoutWorker = await colony.getExpenditureSlotPayout(taskId, WORKER_ROLE, ethers.constants.AddressZero);
       expect(taskPayoutWorker).to.eq.BN(98000);
     });
 
@@ -2050,9 +2050,9 @@ contract("Tasks extension", accounts => {
       expect(evaluatorSlot.payoutModifier).to.eq.BN(WAD.neg()); // Rating of 1
       expect(workerSlot.payoutModifier).to.eq.BN(WAD.divn(2)); // Implicit rating of 3
 
-      const managerPayout = await colony.getExpenditurePayout(task.expenditureId, MANAGER_ROLE, token.address);
-      const evaluatorPayout = await colony.getExpenditurePayout(task.expenditureId, EVALUATOR_ROLE, token.address);
-      const workerPayout = await colony.getExpenditurePayout(task.expenditureId, WORKER_ROLE, token.address);
+      const managerPayout = await colony.getExpenditureSlotPayout(task.expenditureId, MANAGER_ROLE, token.address);
+      const evaluatorPayout = await colony.getExpenditureSlotPayout(task.expenditureId, EVALUATOR_ROLE, token.address);
+      const workerPayout = await colony.getExpenditureSlotPayout(task.expenditureId, WORKER_ROLE, token.address);
 
       expect(managerPayout).to.eq.BN(MANAGER_PAYOUT);
       expect(evaluatorPayout).to.eq.BN(EVALUATOR_PAYOUT);

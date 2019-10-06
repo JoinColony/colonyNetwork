@@ -536,7 +536,7 @@ contract Tasks is DSMath {
 
     address user = getTaskRoleUser(_id, TaskRole(_roleId));
     address token = colony.getToken();
-    uint256 payout = colony.getExpenditurePayout(tasks[_id].expenditureId, uint256(_roleId), token);
+    uint256 payout = colony.getExpenditureSlotPayout(tasks[_id].expenditureId, uint256(_roleId), token);
     int256 reputation = -int256(add(mul(payout, 2), role.rateFail ? payout : 0) / 2);
 
     uint256 domainId = colony.getExpenditure(tasks[_id].expenditureId).domainId;
