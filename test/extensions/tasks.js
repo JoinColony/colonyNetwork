@@ -2075,7 +2075,7 @@ contract("Tasks extension", accounts => {
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.eq.BN(WORKER_PAYOUT.subn(1));
     });
 
-    it("should let funds be reclaimed after unsatisfactory reviews", async () => {
+    it("should automatically reclaim funds after unsatisfactory reviews", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
       await tasks.makeTask(1, 0, 1, 0, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: MANAGER });
@@ -2085,14 +2085,16 @@ contract("Tasks extension", accounts => {
 
       const task = await tasks.getTask(taskId);
       const expenditure = await colony.getExpenditure(task.expenditureId);
-      await colony.moveFundsBetweenPots(1, 0, 0, 1, expenditure.fundingPotId, WORKER_PAYOUT, token.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, domain1.fundingPotId, expenditure.fundingPotId, WORKER_PAYOUT, token.address);
 
       await assignRoles({ tasks, taskId, manager: MANAGER, worker: WORKER });
       await submitDeliverableAndRatings({ tasks, taskId, workerRating: 1 });
       await tasks.finalizeTask(1, 0, taskId, { from: MANAGER });
 
+      const balanceBefore = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
       await colony.claimExpenditurePayout(task.expenditureId, WORKER_ROLE, token.address);
-      await colony.moveFundsBetweenPots(1, 0, 0, expenditure.fundingPotId, 1, WORKER_PAYOUT, token.address);
+      const balanceAfter = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
+      expect(balanceAfter.sub(balanceBefore)).to.eq.BN(WORKER_PAYOUT);
     });
 
     it("should return error when task is not finalized", async () => {

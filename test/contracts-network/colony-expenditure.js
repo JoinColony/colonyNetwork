@@ -335,28 +335,44 @@ contract("Colony Expenditure", accounts => {
       expect(payout).to.be.zero;
     });
 
-    it("should let funds be reclaimed for payoutModifiers of -1", async () => {
+    it("should automatically reclaim funds for payoutModifiers of -1", async () => {
+      await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
       await colony.setExpenditurePayoutModifier(1, 0, expenditureId, SLOT0, WAD.neg());
 
       const expenditure = await colony.getExpenditure(expenditureId);
       await colony.moveFundsBetweenPots(1, 0, 0, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
-      await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
 
-      await colony.moveFundsBetweenPots(1, 0, 0, expenditure.fundingPotId, domain1.fundingPotId, WAD, token.address);
+      const balanceBefore = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
+      await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
+      const balanceAfter = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
+      expect(balanceAfter.sub(balanceBefore)).to.eq.BN(WAD);
+
+      const potBalance = await colony.getFundingPotBalance(expenditure.fundingPotId, token.address);
+      const potPayout = await colony.getFundingPotPayout(expenditure.fundingPotId, token.address);
+      expect(potBalance).to.be.zero;
+      expect(potPayout).to.be.zero;
     });
 
-    it("should let funds be reclaimed for payoutModifiers between -1 and 0", async () => {
+    it("should automatically reclaim funds for payoutModifiers between -1 and 0", async () => {
+      await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
       await colony.setExpenditurePayoutModifier(1, 0, expenditureId, SLOT0, WAD.divn(3).neg()); // 2/3 payout
 
       const expenditure = await colony.getExpenditure(expenditureId);
       await colony.moveFundsBetweenPots(1, 0, 0, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
-      await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
 
-      await colony.moveFundsBetweenPots(1, 0, 0, expenditure.fundingPotId, domain1.fundingPotId, WAD.divn(3), token.address);
+      const balanceBefore = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
+      await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
+      const balanceAfter = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
+      expect(balanceAfter.sub(balanceBefore)).to.eq.BN(WAD.divn(3));
+
+      const potBalance = await colony.getFundingPotBalance(expenditure.fundingPotId, token.address);
+      const potPayout = await colony.getFundingPotPayout(expenditure.fundingPotId, token.address);
+      expect(potBalance).to.be.zero;
+      expect(potPayout).to.be.zero;
     });
 
     it("if skill is set, should emit two reputation updates", async () => {

@@ -107,13 +107,12 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     FundingPot storage fundingPot = fundingPots[expenditure.fundingPotId];
     assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
 
-    uint256 payout = expenditureSlotPayouts[_id][_slot][_token];
+    uint256 initialPayout = expenditureSlotPayouts[_id][_slot][_token];
     uint256 payoutScalar = uint256(slot.payoutModifier + int256(WAD));
-    uint256 repPayout = wmul(payout, payoutScalar);
-    uint256 tokenPayout = min(payout, repPayout);
-
+    uint256 repPayout = wmul(initialPayout, payoutScalar);
+    uint256 tokenPayout = min(initialPayout, repPayout);
+    uint256 tokenSurplus = sub(initialPayout, tokenPayout);
     expenditureSlotPayouts[_id][_slot][_token] = 0;
-    fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], sub(payout, tokenPayout)); // Let funds be reclaimed
 
     // Process reputation updates if own token
     if (_token == token) {
@@ -125,6 +124,13 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       }
     }
 
+    // Send any surplus back to the domain (for payoutScalars < 1)
+    fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], tokenSurplus);
+    fundingPot.balance[_token] = sub(fundingPot.balance[_token], tokenSurplus);
+    FundingPot storage domainFundingPot = fundingPots[domains[expenditure.domainId].fundingPotId];
+    domainFundingPot.balance[_token] = add(domainFundingPot.balance[_token], tokenSurplus);
+
+    // Finish the payout
     processPayout(expenditure.fundingPotId, _token, tokenPayout, slot.recipient);
   }
 
