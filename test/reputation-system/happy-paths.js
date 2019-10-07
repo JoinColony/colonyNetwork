@@ -194,7 +194,8 @@ contract("Reputation Mining - happy paths", accounts => {
       await repCycle.confirmNewHash(3);
     });
 
-    it("should be able to process a large reputation update log", async () => {
+    it("should be able to process a large reputation update log", async function largeReputationLogTest() {
+      this.timeout(100000000);
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
