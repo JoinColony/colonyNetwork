@@ -35,6 +35,7 @@ import MaliciousReputationMinerWrongNewestReputation from "../../packages/reputa
 import MaliciousReputationMinerClaimNew from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNew";
 import MaliciousReputationMinerUnsure from "../../packages/reputation-miner/test/MaliciousReputationMinerUnsure";
 import MaliciousReputationMinerWrongJRH from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRH";
+import MaliciousReputationMinerWrongJRHRightNNodes from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRHRightNNodes";
 import MaliciousReputationMinerWrongNNodes from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes";
 import MaliciousReputationMinerWrongNNodes2 from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes2";
 import MaliciousReputationMinerAddNewReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerAddNewReputation";
@@ -467,6 +468,34 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await goodClient.confirmJustificationRootHash();
       await checkErrorRevertEthers(badClient.confirmJustificationRootHash(), "colony-reputation-mining-invalid-jrh-proof-1-length");
+
+      // Cleanup
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("with an extra leaf inserted and a leaf removed causing proof lengths to be right, but JT wrong", async () => {
+      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      // Should be 5 updates: 1 for the previous mining cycle and 1x4 for the tasks.
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
+      expect(nInactiveLogEntries).to.eq.BN(5);
+
+      const badClient = new MaliciousReputationMinerWrongJRHRightNNodes(
+        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
+        [500000],
+        [1, 11, 10, 9, 8]
+      );
+      await badClient.initialise(colonyNetwork.address);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await goodClient.confirmJustificationRootHash();
+      await checkErrorRevertEthers(badClient.confirmJustificationRootHash(), "colony-reputation-mining-invalid-jrh-proof-1");
 
       // Cleanup
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
