@@ -399,7 +399,7 @@ contract("Colony Network", accounts => {
 
     it("should be able to create a colony with label in one tx", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColonyWithOptions(token.address, "test", orbitDBAddress, false);
+      const { logs } = await colonyNetwork.createColony(token.address, "test", orbitDBAddress, false);
       const { colonyAddress } = logs[0].args;
 
       const name = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
@@ -413,15 +413,15 @@ contract("Colony Network", accounts => {
 
     it("should be able to create a colony configured with the extension manager in one tx", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColonyWithOptions(token.address, "", "", true);
+      const { logs } = await colonyNetwork.createColony(token.address, "", "", true);
       const { colonyAddress } = logs[0].args;
 
       const name = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
       expect(name).to.equal("");
 
       // No conflict for setting "multiple" null names...
-      await colonyNetwork.createColonyWithOptions(token.address, "", "", true);
-      await colonyNetwork.createColonyWithOptions(token.address, "", "", true);
+      await colonyNetwork.createColony(token.address, "", "", true);
+      await colonyNetwork.createColony(token.address, "", "", true);
 
       const colony = await IColony.at(colonyAddress);
       const extensionManagerAddress = await colonyNetwork.getExtensionManager();
@@ -431,7 +431,7 @@ contract("Colony Network", accounts => {
 
     it("should be able to create a colony with label and configured with the extension manager in one tx", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColonyWithOptions(token.address, "test", orbitDBAddress, true);
+      const { logs } = await colonyNetwork.createColony(token.address, "test", orbitDBAddress, true);
       const { colonyAddress } = logs[0].args;
 
       const name = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);

@@ -127,15 +127,16 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   function createMetaColony(address _tokenAddress) public;
 
   /// @notice Creates a new colony in the network with the latest version available
+  /// @dev This is now deprecated and will be removed in a future version
   /// Note that the token ownership (if there is one) should be transferred to the newly created colony.
-  /// @param _tokenAddress Address of an ERC20 token to serve as the colony token.
   /// Additionally token can optionally support `mint` as defined in `ERC20Extended`.
   /// Support for `mint` is mandatory only for the Meta Colony Token.
+  /// @param _tokenAddress Address of an ERC20 token to serve as the colony token.
   /// @return colonyAddress Address of the newly created colony
   function createColony(address _tokenAddress) public returns (address colonyAddress);
 
-  /// @notice Creates a new colony in the network, with an ENS label.
-  /// Note that the token ownership (if there is one) has to be transferred to the newly created colony
+  /// @notice Overload of the simpler `createColony`. Creates a new colony in the network with a variety of options.
+  /// Note that the token ownership (if there is one) should be transferred to the newly created colony
   /// Additionally token can optionally support `mint` as defined in `ERC20Extended`
   /// Support for `mint` is mandatory only for the Meta Colony Token
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
@@ -144,7 +145,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _orbitdb The path of the orbitDB database associated with the user profile
   /// @param _useExtensionManager If true, give the ExtensionManager the root role in the colony
   /// @return colonyAddress Address of the newly created colony
-  function createColonyWithOptions(
+  function createColony(
     address _tokenAddress,
     uint256 _version,
     string memory _colonyName,
