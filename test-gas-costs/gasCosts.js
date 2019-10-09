@@ -94,7 +94,7 @@ contract("All", function(accounts) {
       const tokenArgs = getTokenArgs();
       const colonyToken = await Token.new(...tokenArgs);
       await colonyToken.unlock();
-      await colonyNetwork.createColony(colonyToken.address);
+      await colonyNetwork.createColony(colonyToken.address, 0, "", "", false);
     });
 
     it("when working with the Meta Colony", async function() {
@@ -278,6 +278,7 @@ contract("All", function(accounts) {
 
       const { colony: newColony, token: newToken } = await setupRandomColony(colonyNetwork);
 
+      await newToken.setOwner(colonyAddress);
       await newColony.mintTokens(workerReputation.add(managerReputation));
       await newColony.claimColonyFunds(newToken.address);
       await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation, managerReputation]);
