@@ -4,7 +4,7 @@ section: Interface
 order: 3
 ---
 
-  
+
 ## Interface Methods
 
 ### `addDomain`
@@ -1302,6 +1302,21 @@ Submit a hashed secret of the rating for work in task `_id` which was performed 
 |_id|uint256|Id of the task
 |_role|uint8|Id of the role, as defined in TaskRole enum
 |_ratingSecret|bytes32|`keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50). Can be generated via `IColony.generateSecret` helper function.
+
+
+### `transferExpenditure`
+
+Updates the expenditure owner. Can only be called by Arbitration role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_id|uint256|Expenditure identifier
+|_newOwner|address|New owner of expenditure
 
 
 ### `transferExpenditure`
