@@ -95,7 +95,7 @@
     "ethereumjs-util": "^6.1.0",
     "ethers": "^4.0.27",
     "ethlint": "^1.2.4",
-    "ganache-cli": "^6.4.3",
+    "ganache-cli": "^6.7.0",
     "husky": "^3.0.0",
     "istanbul": "^0.4.5",
     "jsonfile": "^5.0.0",
