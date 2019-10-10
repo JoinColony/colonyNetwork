@@ -649,11 +649,11 @@ class ReputationMiner {
     if (!entryIndex) {
       entryIndex = await this.getEntryIndex(); // eslint-disable-line no-param-reassign
     }
-    let gasEstimate;
-    if (process.env.SOLIDITY_COVERAGE) {
-      gasEstimate = ethers.utils.bigNumberify(1000000);
-    } else {
+    let gasEstimate = ethers.utils.bigNumberify(1000000);
+    try {
       gasEstimate = await repCycle.estimate.submitRootHash(hash, nNodes, jrh, entryIndex);
+    } catch (err) { // eslint-disable-line no-empty
+
     }
 
     // Submit that entry
@@ -834,12 +834,12 @@ class ReputationMiner {
       .add(this.nReputationsBeforeLatestLog);
     const [, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    let gasEstimate;
 
-    if (process.env.SOLIDITY_COVERAGE) {
-      gasEstimate = ethers.utils.bigNumberify(6000000);
-    } else {
+    let gasEstimate = ethers.utils.bigNumberify(6000000);
+    try {
       gasEstimate = await repCycle.estimate.confirmJustificationRootHash(round, index, siblings1, siblings2);
+    } catch (err) { // eslint-disable-line no-empty
+
     }
     return repCycle.confirmJustificationRootHash(
       round,
@@ -915,17 +915,17 @@ class ReputationMiner {
         siblings
       );
     }
-    let gasEstimate;
 
-    if (process.env.SOLIDITY_COVERAGE) {
-      gasEstimate = ethers.utils.bigNumberify(1000000);
-    } else {
+    let gasEstimate = ethers.utils.bigNumberify(1000000);
+    try {
       gasEstimate = await repCycle.estimate.respondToBinarySearchForChallenge(
         round,
         index,
         intermediateReputationHash,
         siblings
       );
+    } catch (err) { // eslint-disable-line no-empty
+
     }
 
     return repCycle.respondToBinarySearchForChallenge(
@@ -955,11 +955,11 @@ class ReputationMiner {
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
     const [, siblings] = await this.justificationTree.getProof(targetNodeKey);
-    let gasEstimate;
-    if (process.env.SOLIDITY_COVERAGE) {
-      gasEstimate = ethers.utils.bigNumberify(1000000);
-    } else {
+    let gasEstimate = ethers.utils.bigNumberify(1000000);
+    try {
       gasEstimate = await repCycle.estimate.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings);
+    } catch (err){ // eslint-disable-line no-empty
+
     }
 
     return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings, {
@@ -1063,11 +1063,11 @@ class ReputationMiner {
       lastAgreeJustifications.childReputationProof.siblings,
       lastAgreeJustifications.adjacentReputationProof.siblings]
 
-    let gasEstimate;
-    if (process.env.SOLIDITY_COVERAGE) {
-      gasEstimate = ethers.utils.bigNumberify(4000000);
-    } else {
+    let gasEstimate = ethers.utils.bigNumberify(4000000);
+    try {
       gasEstimate = await repCycle.estimate.respondToChallenge(...functionArgs);
+    } catch (err){ // eslint-disable-line no-empty
+
     }
 
     return repCycle.respondToChallenge(...functionArgs,
