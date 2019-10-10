@@ -2,7 +2,7 @@ pragma solidity 0.5.8;
 
 import "./ENS.sol";
 
-// file-ignore-swc-101 This is due to ConsenSys/truffle-security#245 and the bad-line reporting associated with it
+// ignore-file-swc-101 This is due to ConsenSys/truffle-security#245 and the bad-line reporting associated with it
 // (It's really the abi.encodepacked in setSubnodeOwner.
 
 /// @title Modified ENS registry contract.
@@ -43,7 +43,7 @@ contract ENSRegistry is ENS {
   function setSubnodeOwner(bytes32 node, bytes32 label, address owner) public onlyOwner(node) {
     require(records[node].owner != address(0x0), "unowned-node");
     bytes32 subnode = keccak256(abi.encodePacked(node, label));
-    emit NewOwner(node, label, owner); // ignore-swc-101 This is due to ConsenSys/truffle-security#245
+    emit NewOwner(node, label, owner);
     records[subnode].owner = owner;
   }
 
