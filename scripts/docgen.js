@@ -148,7 +148,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
         while (
           contractFileArray[paramLineIndex] &&
           contractFileArray[paramLineIndex].includes("///") &&
-          natspec.params.length !== method.parameters.parameters.length
+          natspec.params.length !== method.parameters.length
         ) {
           // Check whether the current line is a valid param line
           if (contractFileArray[paramLineIndex].includes(" @param ")) {
@@ -184,7 +184,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
         while (
           contractFileArray[returnLineIndex] &&
           contractFileArray[returnLineIndex].includes("///") &&
-          natspec.returns.length !== method.returnParameters.parameters.length
+          natspec.returns.length !== method.returnParameters.length
         ) {
           // Check whether the current line is a valid return line
           if (contractFileArray[returnLineIndex].includes(" @return ")) {
@@ -252,17 +252,17 @@ ${
     : ""
 }
 ${
-  method.parameters && method.parameters.parameters.length
+  method.parameters && method.parameters.length
     ? `
 **Parameters**
-${printParams(method, method.parameters.parameters, method.natspec.params)}`
+${printParams(method, method.parameters, method.natspec.params)}`
     : ""
 }
 ${
-  method.returnParameters && method.returnParameters.parameters.length
+  method.returnParameters && method.returnParameters.length
     ? `
 **Return Parameters**
-${printParams(method, method.returnParameters.parameters, method.natspec.returns)}`
+${printParams(method, method.returnParameters, method.natspec.returns)}`
     : ""
 }
 `
