@@ -217,7 +217,9 @@ contract("Reputation Mining - happy paths", accounts => {
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
     });
 
-    it("should be able to process a large reputation update log even if it's using the solidity patricia tree", async () => {
+    // eslint-disable-next-line max-len
+    it("should be able to process a large reputation update log even if it's using the solidity patricia tree", async function largeReputationLogTestSolidity() {
+      this.timeout(100000000);
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
