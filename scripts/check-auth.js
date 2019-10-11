@@ -34,11 +34,11 @@ function correctAuthModifier(functionDef) {
   }
 
   // Check the first two arguments of the function are _permissionDomainId, _childSkillIndex
-  if (functionDef.parameters.parameters.length > 0 && functionDef.parameters.parameters[0].name !== "_permissionDomainId") {
+  if (functionDef.parameters.length > 0 && functionDef.parameters[0].name !== "_permissionDomainId") {
     valid = false;
     errors.push("First parameter of function is not _permissionDomainId");
   }
-  if (functionDef.parameters.parameters.length > 1 && functionDef.parameters.parameters[1].name !== "_childSkillIndex") {
+  if (functionDef.parameters.length > 1 && functionDef.parameters[1].name !== "_childSkillIndex") {
     valid = false;
     errors.push("Second parameter of function is not _childSkillIndex");
   }
