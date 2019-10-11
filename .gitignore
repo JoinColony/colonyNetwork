@@ -19,3 +19,4 @@ yarn-error.log
 reputations.json
 reputationStates.sqlite
 truffle-security-output.json
+.coverage_contracts
