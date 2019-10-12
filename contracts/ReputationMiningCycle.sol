@@ -670,7 +670,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   function nextPowerOfTwoInclusive(uint256 v) private pure returns (uint) { // solium-disable-line security/no-assign-params
     // Returns the next power of two, or v if v is already a power of two.
     // Doesn't work for zero.
-    v--;
+    v = sub(v, 1);
     v |= v >> 1;
     v |= v >> 2;
     v |= v >> 4;
@@ -679,7 +679,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     v |= v >> 32;
     v |= v >> 64;
     v |= v >> 128;
-    v++;
+    v = add(v, 1);
     return v;
   }
 
@@ -703,10 +703,10 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   function expectedBranchMask(uint256 nNodes, uint256 node) public pure returns (uint256) {
     // Gets the expected branchmask for a patricia tree which has nNodes, with keys from 0 to nNodes -1
     // i.e. the tree is 'full' - there are no missing nodes
-    uint256 mask = nNodes - 1; // Every branchmask in a full tree has at least these 1s set
+    uint256 mask = sub(nNodes, 1); // Every branchmask in a full tree has at least these 1s set
     uint256 xored = mask ^ node; // Where do mask and node differ?
     // Set every bit in the mask from the first bit where they differ to 1
-    uint256 remainderMask = nextPowerOfTwoInclusive(xored + 1) - 1;
+    uint256 remainderMask = sub(nextPowerOfTwoInclusive(add(xored, 1)), 1);
     return mask | remainderMask;
   }
 }
