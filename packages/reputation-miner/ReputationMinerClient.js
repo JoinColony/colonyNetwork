@@ -25,7 +25,6 @@ class ReputationMinerClient {
     this.best12Submissions = [];
     this.filterReputationMiningCycleComplete;
     this.lockedForBlockProcessing;
-    this.lockedForLogProcessing;
 
     if (typeof this._auto === "undefined") {
       this._auto = true;
@@ -138,6 +137,7 @@ class ReputationMinerClient {
       // Initial call to process the existing log from the cycle we're currently in
       await this.processReputationLog();
       this.best12Submissions = await this.getTwelveBestSubmissions();
+      this.miningCycleAddress = await this._miner.colonyNetwork.getReputationMiningCycle(true);
 
       // Have we already submitted any of these? Need to update submissionIndex if so
       const repCycle = await this._miner.getActiveRepCycle();
@@ -155,30 +155,6 @@ class ReputationMinerClient {
           }
         }
       }
-
-      // Add a listener to process log for when a new cycle starts
-      const ReputationMiningCycleComplete = ethers.utils.id("ReputationMiningCycleComplete(bytes32,uint256)");
-      this.filterReputationMiningCycleComplete = {
-        address: this._miner.colonyNetwork.address,
-        topics: [ ReputationMiningCycleComplete ]
-      }
-
-      // If a new mining cycle starts, process the new reputation update log and rehydrate the 12 best submissions
-      await this._miner.realProvider.on(this.filterReputationMiningCycleComplete, async () => {
-        if (this.lockedForLogProcessing) {
-          // This would be quite a big surprise if it happened, but for completeness
-          console.log("WARNING: Somehow, two log updates were triggered. This seems very unlikely, so maybe something is broken...?")
-          return;
-        }
-        this.lockedForLogProcessing = true;
-        // No awaits above this line in this function, otherwise race conditions will rear their head
-        await this.processReputationLog();
-        this.best12Submissions = await this.getTwelveBestSubmissions();
-        this.lockedForLogProcessing = false;
-        if (this.resolveLogProcessingFinished){
-          this.resolveLogProcessingFinished();
-        }
-      });
 
       this._miner.realProvider.polling = true;
       this._miner.realProvider.pollingInterval = 1000;
@@ -221,8 +197,8 @@ class ReputationMinerClient {
    */
   async doBlockChecks(blockNumber) {
   try {
-      if (this.lockedForBlockProcessing || this.lockedForLogProcessing) {
-        console.log("Processing already - block: ", this.lockedForBlockProcessing, "log: ", this.lockedForLogProcessing)
+      if (this.lockedForBlockProcessing) {
+        console.log("Processing already - block: ", this.lockedForBlockProcessing)
         return;
       }
       this.lockedForBlockProcessing = true;
@@ -230,6 +206,14 @@ class ReputationMinerClient {
 
       const block = await this._miner.realProvider.getBlock(blockNumber);
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+
+      if (addr !== this.miningCycleAddress) {
+        // Then the cycle has completed since we last checked. Let's sort out our potential submissions for the next cycle.
+        await this.processReputationLog();
+        this.best12Submissions = await this.getTwelveBestSubmissions();
+        this.miningCycleAddress = addr;
+      }
+
       const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
       const hash = await this._miner.getRootHash();
@@ -373,9 +357,6 @@ class ReputationMinerClient {
     const blockChecksFinished = new Promise((resolve) => {
       this.resolveBlockChecksFinished = resolve;
     });
-    const logProcessingFinished = new Promise((resolve) => {
-      this.resolveLogProcessingFinished = resolve;
-    });
 
     this._miner.realProvider.removeAllListeners('block');
     const blockListenerCount = this._miner.realProvider.listenerCount('block');
@@ -396,10 +377,6 @@ class ReputationMinerClient {
     if (this.lockedForBlockProcessing) {
       await blockChecksFinished;
     }
-    if (this.lockedForLogProcessing) {
-      await logProcessingFinished;
-    }
-
   }
 
   async processReputationLog() {
