@@ -170,6 +170,10 @@ class ReputationMinerClient {
       this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
 
       this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
+
+      // Work out when the confirm timeout should be.
+      const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+      this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24*3600 + 600 - (Date.now()/1000-openTimestamp)) * 1000);
     }
   }
 
@@ -227,7 +231,7 @@ class ReputationMinerClient {
         this.best12Submissions = await this.getTwelveBestSubmissions();
         this.miningCycleAddress = addr;
         if (this.confirmTimeoutCheck) {
-          clearTimeout(this.blockTimeoutCheck);
+          clearTimeout(this.confirmTimeoutCheck);
         }
         // If we don't see this cycle completed in the next day and ten minutes, then report it
         this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24*3600 + 600) * 1000);
@@ -402,7 +406,7 @@ class ReputationMinerClient {
     }
 
     if (this.confirmTimeoutCheck) {
-      clearTimeout(this.blockTimeoutCheck);
+      clearTimeout(this.confirmTimeoutCheck);
     }
 
   }
