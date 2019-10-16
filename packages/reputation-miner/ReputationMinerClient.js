@@ -169,7 +169,7 @@ class ReputationMinerClient {
       this.lockedForBlockProcessing = false;
       this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
 
-      this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 60000);
+      this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
     }
   }
 
@@ -208,7 +208,7 @@ class ReputationMinerClient {
       if (this.blockTimeoutCheck) {
         clearTimeout(this.blockTimeoutCheck);
       }
-      this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 60000);
+      this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
 
       if (this.lockedForBlockProcessing) {
         this._adapter.log(`Processing already - block: ${this.lockedForBlockProcessing}`)
@@ -481,7 +481,7 @@ class ReputationMinerClient {
   }
 
   async reportBlockTimeout() {
-    this._adapter.error("Error: No block seen for 60 seconds. Something is almost certainly wrong!");
+    this._adapter.error("Error: No block seen for five minutes. Something is almost certainly wrong!");
   }
 
   async reportConfirmTimeout() {
