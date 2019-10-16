@@ -2,6 +2,7 @@ const ethers = require("ethers");
 const express = require("express");
 const path = require('path');
 const request = require('request-promise');
+const ConsoleAdapter = require('./adapters/console').default;
 
 const ReputationMiner = require("./ReputationMiner");
 
@@ -15,7 +16,7 @@ class ReputationMinerClient {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ minerAddress, loader, realProviderPort, minerPort = 3000, privateKey, provider, useJsTree, dbPath, auto, oracle, exitOnError }) {
+  constructor({ minerAddress, loader, realProviderPort, minerPort = 3000, privateKey, provider, useJsTree, dbPath, auto, oracle, exitOnError, adapter }) { // eslint-disable-line max-len
     this._loader = loader;
     this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, useJsTree, dbPath });
     this._auto = auto;
@@ -25,6 +26,7 @@ class ReputationMinerClient {
     this.best12Submissions = [];
     this.filterReputationMiningCycleComplete;
     this.lockedForBlockProcessing;
+    this._adapter = adapter;
 
     if (typeof this._auto === "undefined") {
       this._auto = true;
@@ -32,6 +34,10 @@ class ReputationMinerClient {
 
     if (typeof this._oracle === "undefined") {
       this._oracle = true;
+    }
+
+    if (typeof this._adapter === "undefined" ) {
+      this._adapter = ConsoleAdapter;
     }
 
     if (this._oracle) {
@@ -104,7 +110,7 @@ class ReputationMinerClient {
       });
 
       this.server = this._app.listen(minerPort, () => {
-        console.log("⭐️ Reputation oracle running on port ", this.server.address().port);
+        this._adapter.log(`⭐️ Reputation oracle running on port ${this.server.address().port}`);
       });
     }
   }
@@ -123,7 +129,7 @@ class ReputationMinerClient {
     await this._miner.createDB();
     await this._miner.loadState(latestReputationHash);
     if (this._miner.nReputations.eq(0)) {
-      console.log("No existing reputations found - starting from scratch");
+      this._adapter.log("No existing reputations found - starting from scratch");
       await this._miner.sync(startingBlock, true);
     }
 
@@ -132,7 +138,7 @@ class ReputationMinerClient {
     // See if we're talking to Ganache to fix a ganache crash (which, while fun to say, is not fun to see)
     const clientString = await this._miner.realProvider.send("web3_clientVersion");
     this.ganacheClient = clientString.indexOf('TestRPC') !== -1
-    console.log("🏁 Initialised");
+    this._adapter.log("🏁 Initialised");
     if (this._auto) {
       // Initial call to process the existing log from the cycle we're currently in
       await this.processReputationLog();
@@ -162,6 +168,8 @@ class ReputationMinerClient {
       // Do the other checks for whether we can submit or confirm a hash
       this.lockedForBlockProcessing = false;
       this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
+
+      this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 60000);
     }
   }
 
@@ -183,7 +191,7 @@ class ReputationMinerClient {
         this._miner.gasPrice = ethers.utils.hexlify(20000000000);
       }
     } catch (err) {
-      console.log(err);
+      this._adapter.error(`Error during gas estimation: ${err}`);
       this._miner.gasPrice = ethers.utils.hexlify(20000000000);
     }
   }
@@ -196,11 +204,17 @@ class ReputationMinerClient {
    * @return {Promise}
    */
   async doBlockChecks(blockNumber) {
-  try {
+    try {
+      if (this.blockTimeoutCheck) {
+        clearTimeout(this.blockTimeoutCheck);
+      }
+      this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 60000);
+
       if (this.lockedForBlockProcessing) {
-        console.log("Processing already - block: ", this.lockedForBlockProcessing)
+        this._adapter.log(`Processing already - block: ${this.lockedForBlockProcessing}`)
         return;
       }
+
       this.lockedForBlockProcessing = true;
       // DO NOT PUT ANY AWAITS ABOVE THIS LINE OR YOU WILL GET RACE CONDITIONS
 
@@ -212,6 +226,11 @@ class ReputationMinerClient {
         await this.processReputationLog();
         this.best12Submissions = await this.getTwelveBestSubmissions();
         this.miningCycleAddress = addr;
+        if (this.confirmTimeoutCheck) {
+          clearTimeout(this.blockTimeoutCheck);
+        }
+        // If we don't see this cycle completed in the next day and ten minutes, then report it
+        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24*3600 + 600) * 1000);
       }
 
       const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
@@ -227,7 +246,7 @@ class ReputationMinerClient {
           const {entryIndex} = this.best12Submissions[this.submissionIndex];
           const canSubmit = await this._miner.submissionPossible(entryIndex);
           if (canSubmit) {
-            console.log("⏰ Looks like it's time to submit an entry to the current cycle");
+            this._adapter.log("⏰ Looks like it's time to submit an entry to the current cycle");
             this.submissionIndex += 1;
             await this.updateGasEstimate('safeLow');
             await this.submitEntry(entryIndex);
@@ -251,9 +270,9 @@ class ReputationMinerClient {
 
         // Do we have an opponent?
         const oppIndex = index.mod(2).isZero() ? index.add(1) : index.sub(1);
-        // console.log("oppIndex", oppIndex);
+        // this._adapter.log(`oppIndex ${oppIndex}`);
         const oppEntry = disputeRound[oppIndex];
-        // console.log("oppEntry", oppEntry);
+        // this._adapter.log(`oppEntry ${oppEntry}`);
         const oppSubmission = await repCycle.getReputationHashSubmission(oppEntry.firstSubmitter);
 
         if (oppSubmission.proposedNewRootHash === ethers.constants.AddressZero){
@@ -288,7 +307,7 @@ class ReputationMinerClient {
           this.endDoBlockChecks();
           return;
         }
-        // console.log(oppSubmission);
+        // this._adapter.log(oppSubmission);
 
         // Our opponent hasn't timed out yet. We should check if we can respond to something though
         // 1. Do we still need to confirm JRH?
@@ -337,7 +356,7 @@ class ReputationMinerClient {
       }
       this.endDoBlockChecks();
     } catch (err) {
-      console.log("err", err);
+      this._adapter.error(`Error during block checks: ${err}`);
       if (this._exitOnError) {
         process.exit(1);
       }
@@ -361,13 +380,13 @@ class ReputationMinerClient {
     this._miner.realProvider.removeAllListeners('block');
     const blockListenerCount = this._miner.realProvider.listenerCount('block');
     if(blockListenerCount !== 0) {
-      console.log("ERROR: on block listener not removed on client close");
+      this._adapter.error("ERROR: on block listener not removed on client close");
     }
 
     this._miner.realProvider.removeAllListeners(this.filterReputationMiningCycleComplete);
     const reputationMiningCycleCompleteListener = this._miner.realProvider.listenerCount(this.filterReputationMiningCycleComplete);
     if(reputationMiningCycleCompleteListener !== 0) {
-      console.log("ERROR: on ReputationMiningCycleComplete listener not removed on client close");
+      this._adapter.error("ERROR: on ReputationMiningCycleComplete listener not removed on client close");
     }
 
     if (this.server){
@@ -377,12 +396,21 @@ class ReputationMinerClient {
     if (this.lockedForBlockProcessing) {
       await blockChecksFinished;
     }
+
+    if (this.blockTimeoutCheck) {
+      clearTimeout(this.blockTimeoutCheck);
+    }
+
+    if (this.confirmTimeoutCheck) {
+      clearTimeout(this.blockTimeoutCheck);
+    }
+
   }
 
   async processReputationLog() {
-    console.log("📁 Processing reputation update log");
+    this._adapter.log("📁 Processing reputation update log");
     await this._miner.addLogContentsToReputationTree();
-    console.log("💾 Writing new reputation state to database");
+    this._adapter.log("💾 Writing new reputation state to database");
     await this._miner.saveCurrentState();
   }
 
@@ -416,7 +444,7 @@ class ReputationMinerClient {
 
   async submitEntry(entryIndex) {
     const rootHash = await this._miner.getRootHash();
-    console.log("#️⃣ Miner", this._miner.minerAddress ,"submitting new reputation hash", rootHash, "at entry index", entryIndex.toNumber());
+    this._adapter.log(`#️⃣ Miner ${this._miner.minerAddress} submitting new reputation hash ${rootHash} at entry index ${entryIndex.toNumber()}`);
 
     // Submit hash
     let submitRootHashTx = await this._miner.submitRootHash(entryIndex);
@@ -424,17 +452,17 @@ class ReputationMinerClient {
       // Assume we've been given back the submitRootHashTx hash.
       submitRootHashTx = await this._miner.realProvider.getTransaction(submitRootHashTx);
     }
-    console.log("⛏️ Transaction waiting to be mined", submitRootHashTx.hash);
+    this._adapter.log(`⛏️ Transaction waiting to be mined ${submitRootHashTx.hash}`);
 
     await submitRootHashTx.wait();
-    console.log("🆗 New reputation hash submitted successfully");
+    this._adapter.log("🆗 New reputation hash submitted successfully");
   }
 
   async confirmEntry() {
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
-    console.log("⏰ Looks like it's time to confirm the new hash");
+    this._adapter.log("⏰ Looks like it's time to confirm the new hash");
     // Confirm hash
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
@@ -446,10 +474,18 @@ class ReputationMinerClient {
       }
       // This estimate still goes a bit wrong in ganache, it seems, so we add an extra 10%.
       const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: gasEstimate.mul(11).div(10) , gasPrice: this._miner.gasPrice });
-      console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
+      this._adapter.log(`⛏️ Transaction waiting to be mined ${confirmNewHashTx.hash}`);
       await confirmNewHashTx.wait();
-      console.log("✅ New reputation hash confirmed");
+      this._adapter.log("✅ New reputation hash confirmed");
     }
+  }
+
+  async reportBlockTimeout() {
+    this._adapter.error("Error: No block seen for 60 seconds. Something is almost certainly wrong!");
+  }
+
+  async reportConfirmTimeout() {
+    this._adapter.error("Error: We expected to see the mining cycle confirm ten minutes ago. Something might be wrong!");
   }
 }
 

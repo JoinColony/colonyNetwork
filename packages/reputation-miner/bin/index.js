@@ -22,7 +22,8 @@ const {
   syncFrom,
   auto,
   oracle,
-  exitOnError
+  exitOnError,
+  adapter
 } = argv;
 
 if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
@@ -45,5 +46,15 @@ if (network) {
   provider = new ethers.providers.JsonRpcProvider(`http://${localProviderAddress || "localhost"}:${localPort || "8545"}`);
 }
 
-const client = new ReputationMinerClient({ loader, minerAddress, privateKey, provider, useJsTree: true, dbPath, auto, oracle, exitOnError });
+let adapterObject;
+
+if (adapter === 'slack') {
+  adapterObject = require('../adapters/slack').default; // eslint-disable-line global-require
+} else {
+  adapterObject = require('../adapters/console').default; // eslint-disable-line global-require
+}
+
+const client = new ReputationMinerClient(
+  { loader, minerAddress, privateKey, provider, useJsTree: true, dbPath, auto, oracle, exitOnError, adapter:adapterObject }
+);
 client.initialise(colonyNetworkAddress, syncFrom);
