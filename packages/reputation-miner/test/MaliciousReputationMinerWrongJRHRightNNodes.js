@@ -28,7 +28,7 @@ class MaliciousReputationMinerWrongJRHRightNNodes extends ReputationMinerTestWra
     // Mess up the JRH
 
     const jt2 = new PatriciaTreeNoHash();
-    for (let i = 0; i < Object.keys(this.justificationHashes).length; i+= 1){
+    for (let i = 0; i < Object.keys(this.justificationHashes).length; i += 1){
       if (this.entriesToSkip.indexOf(i.toString()) === -1){
         await jt2.insert(
           ethers.utils.hexZeroPad(ethers.utils.hexlify(parseInt(i, 10)), 32),
@@ -42,7 +42,7 @@ class MaliciousReputationMinerWrongJRHRightNNodes extends ReputationMinerTestWra
 
     this.justificationTree = jt2;
 
-    for (let i =0; i< this.entriesToFalsify.length; i += 1){
+    for (let i = 0; i < this.entriesToFalsify.length; i += 1){
       await this.justificationTree.insert(
         ethers.utils.hexZeroPad(ethers.utils.hexlify(parseInt(this.entriesToFalsify[i], 10)), 32),
         `0x${"0".repeat(127)}1`

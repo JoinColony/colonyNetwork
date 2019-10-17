@@ -1154,7 +1154,7 @@ class ReputationMiner {
       applyLogs = true;
     }
     for (let i = 0; i < events.length; i += 1) {
-      console.log(`Syncing mining cycle ${i+1} of ${events.length}...`)
+      console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
       const event = events[i];
       const hash = event.data.slice(0, 66);
       if (applyLogs) {

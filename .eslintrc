@@ -20,7 +20,8 @@
     "no-await-in-loop": "off",
     "no-trailing-spaces": "error",
     "no-multi-spaces": ["error", {"ignoreEOLComments": true}],
-    "eslint-comments/disable-enable-pair": ["error", {"allowWholeFile": true}]
+    "eslint-comments/disable-enable-pair": ["error", {"allowWholeFile": true}],
+    "space-infix-ops": ["error"]
   },
   "parserOptions": {
     "ecmaVersion": 2017

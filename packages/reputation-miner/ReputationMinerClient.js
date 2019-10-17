@@ -14,9 +14,20 @@ class ReputationMinerClient {
   /**
    * Constructor for ReputationMiner
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
-   * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
+   * @param {Object} loader                  The loader for loading the contract interfaces. Usually a TruffleLoader
+   * @param {Number} [realProviderPort]      The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
+   * @param {Number} oraclePort              The port the reputation oracle will serve on
+   * @param {string} privateKey              The private key of the address that is mining, allowing the miner to sign transactions.
+   *                                         If used, `minerAddress` is not needed and will be derived.
+   * @param {Object} provider                Ethers Provider that allows access to an ethereum node.
+   * @param {bool}   useJsTree               Whether to use the Javascript Patricia tree implementation (true) or the solidity implementation (false)
+   * @param {string} dbPath                  Path where to save the database
+   * @param {bool}   auto                    Whether to automatically submit hashes and respond to challenges
+   * @param {bool}   oracle                  Whether to serve requests as a reputation oracle or not
+   * @param {bool}   exitOnError             Whether to exit when an error is hit or not.
+   * @param {Object} adapter                 An object with .log and .error that controls where the output from the miner ends up.
    */
-  constructor({ minerAddress, loader, realProviderPort, minerPort = 3000, privateKey, provider, useJsTree, dbPath, auto, oracle, exitOnError, adapter }) { // eslint-disable-line max-len
+  constructor({ minerAddress, loader, realProviderPort, oraclePort = 3000, privateKey, provider, useJsTree, dbPath, auto, oracle, exitOnError, adapter }) { // eslint-disable-line max-len
     this._loader = loader;
     this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, useJsTree, dbPath });
     this._auto = auto;
@@ -24,7 +35,6 @@ class ReputationMinerClient {
     this._exitOnError = exitOnError;
     this.submissionIndex = 0;
     this.best12Submissions = [];
-    this.filterReputationMiningCycleComplete;
     this.lockedForBlockProcessing;
     this._adapter = adapter;
 
@@ -109,7 +119,7 @@ class ReputationMinerClient {
         }
       });
 
-      this.server = this._app.listen(minerPort, () => {
+      this.server = this._app.listen(oraclePort, () => {
         this._adapter.log(`⭐️ Reputation oracle running on port ${this.server.address().port}`);
       });
     }
@@ -150,7 +160,7 @@ class ReputationMinerClient {
       const block = await this._miner.realProvider.getBlock('latest');
       // Ensure the submission index is reset to the correct point in the best12Submissions array
       this.submissionIndex = 0;
-      for (let i = 0; i < this.best12Submissions.length; i+=1 ){
+      for (let i = 0; i < this.best12Submissions.length; i += 1 ){
         if (block.timestamp >= this.best12Submissions[i].timestamp) {
           const {entryIndex} = this.best12Submissions[i];
           const entryIndexAlreadySubmitted = await repCycle.minerSubmittedEntryIndex(this._miner.minerAddress, entryIndex);
@@ -173,7 +183,7 @@ class ReputationMinerClient {
 
       // Work out when the confirm timeout should be.
       const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-      this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24*3600 + 600 - (Date.now()/1000-openTimestamp)) * 1000);
+      this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24 * 3600 + 600 - (Date.now() / 1000 - openTimestamp)) * 1000);
     }
   }
 
@@ -190,7 +200,7 @@ class ReputationMinerClient {
       const gasEstimates = await request(options);
 
       if (gasEstimates[type]){
-        this._miner.gasPrice = ethers.utils.hexlify(gasEstimates[type]/10 * 1e9);
+        this._miner.gasPrice = ethers.utils.hexlify(gasEstimates[type] / 10 * 1e9);
       } else {
         this._miner.gasPrice = ethers.utils.hexlify(20000000000);
       }
@@ -209,18 +219,16 @@ class ReputationMinerClient {
    */
   async doBlockChecks(blockNumber) {
     try {
-      if (this.blockTimeoutCheck) {
-        clearTimeout(this.blockTimeoutCheck);
-      }
-      this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
-
       if (this.lockedForBlockProcessing) {
-        this._adapter.log(`Processing already - block: ${this.lockedForBlockProcessing}`)
         return;
       }
 
       this.lockedForBlockProcessing = true;
       // DO NOT PUT ANY AWAITS ABOVE THIS LINE OR YOU WILL GET RACE CONDITIONS
+
+      if (this.blockTimeoutCheck) {
+        clearTimeout(this.blockTimeoutCheck);
+      }
 
       const block = await this._miner.realProvider.getBlock(blockNumber);
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
@@ -234,7 +242,7 @@ class ReputationMinerClient {
           clearTimeout(this.confirmTimeoutCheck);
         }
         // If we don't see this cycle completed in the next day and ten minutes, then report it
-        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24*3600 + 600) * 1000);
+        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24 * 3600 + 600) * 1000);
       }
 
       const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
@@ -371,6 +379,7 @@ class ReputationMinerClient {
     if (this.resolveBlockChecksFinished){
       this.resolveBlockChecksFinished();
     }
+    this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
     this.lockedForBlockProcessing = false;
   }
 
@@ -385,12 +394,6 @@ class ReputationMinerClient {
     const blockListenerCount = this._miner.realProvider.listenerCount('block');
     if(blockListenerCount !== 0) {
       this._adapter.error("ERROR: on block listener not removed on client close");
-    }
-
-    this._miner.realProvider.removeAllListeners(this.filterReputationMiningCycleComplete);
-    const reputationMiningCycleCompleteListener = this._miner.realProvider.listenerCount(this.filterReputationMiningCycleComplete);
-    if(reputationMiningCycleCompleteListener !== 0) {
-      this._adapter.error("ERROR: on ReputationMiningCycleComplete listener not removed on client close");
     }
 
     if (this.server){
