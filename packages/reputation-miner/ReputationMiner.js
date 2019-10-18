@@ -62,7 +62,8 @@ class ReputationMiner {
       this.realWallet = new ethers.Wallet(privateKey, this.realProvider);
       this.minerAddress = this.realWallet.address;
       // TODO: Check that this wallet can stake?
-      console.log("Transactions will be signed from ", this.minerAddress);
+      this.minerAddress = this.realWallet.address;
+      console.log("Transactions will be signed from ", this.realWallet.address);
     }
   }
 
@@ -470,7 +471,7 @@ class ReputationMiner {
    */
   async getLogEntryNumberForLogUpdateNumber(_i, blockNumber = "latest") {
     const updateNumber = _i;
-    const repCycle = await this.getActiveRepCycle(blockNumber)
+    const repCycle = await this.getActiveRepCycle(blockNumber);
     const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockTag: blockNumber });
     let lower = ethers.constants.Zero;
     let upper = nLogEntries.sub(1);
@@ -478,6 +479,7 @@ class ReputationMiner {
     while (!upper.eq(lower)) {
       const testIdx = lower.add(upper.sub(lower).div(2));
       const testLogEntry = await repCycle.getReputationUpdateLogEntry(testIdx, { blockTag: blockNumber });
+
       const nPreviousUpdates = ethers.utils.bigNumberify(testLogEntry.nPreviousUpdates);
       if (nPreviousUpdates.gt(updateNumber)) {
         upper = testIdx.sub(1);
@@ -500,10 +502,9 @@ class ReputationMiner {
     }
     // Else it's from a log entry
     const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(updateNumber.sub(this.nReputationsBeforeLatestLog), blockNumber);
-    const repCycle = await this.getActiveRepCycle(blockNumber)
+    const repCycle = await this.getActiveRepCycle(blockNumber);
 
     const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockTag: blockNumber });
-
     const key = await this.getKeyForUpdateInLogEntry(updateNumber.sub(logEntry.nPreviousUpdates).sub(this.nReputationsBeforeLatestLog), logEntry);
     return key;
   }
@@ -1153,7 +1154,7 @@ class ReputationMiner {
       applyLogs = true;
     }
     for (let i = 0; i < events.length; i += 1) {
-      console.log(`Syncing mining cycle ${i+1} of ${events.length}...`)
+      console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
       const event = events[i];
       const hash = event.data.slice(0, 66);
       if (applyLogs) {

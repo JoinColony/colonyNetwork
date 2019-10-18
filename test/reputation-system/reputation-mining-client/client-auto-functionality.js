@@ -164,6 +164,92 @@ process.env.SOLIDITY_COVERAGE
           await miningCycleComplete;
         });
 
+        it("should successfully resume submitting hashes if it's restarted", async function() {
+          const rootHash = await reputationMinerClient._miner.getRootHash();
+          const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
+          const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
+
+          const oldHash = await colonyNetwork.getReputationRootHash();
+
+          const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+          const receive2Submissions = new Promise(function(resolve, reject) {
+            repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nNodes, _jrh, _entryIndex, event) => {
+              const nSubmissions = await repCycle.getNSubmissionsForHash(rootHash, nNodes, jrh);
+              if (nSubmissions.toNumber() === 2) {
+                // Check the reputation cycle submission matches our miner
+                // Validate the miner address in submission is correct
+                event.removeListener();
+                resolve();
+              } else {
+                await mineBlock();
+              }
+            });
+
+            // After 30s, we throw a timeout error
+            setTimeout(() => {
+              reject(new Error("ERROR: timeout while waiting for 12 hash submissions"));
+            }, 30000);
+          });
+
+          // Forward through half of the cycle duration and wait for the client to submit some entries
+          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
+          await receive2Submissions; // It might submit a couple more, but that's fine for the purposes of this test.
+          await reputationMinerClient.close();
+
+          // start up another one.
+          const reputationMinerClient2 = new ReputationMinerClient({
+            loader,
+            realProviderPort,
+            minerAddress: MINER1,
+            useJsTree: true,
+            auto: true
+          });
+          await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
+
+          const receive12Submissions = new Promise(function(resolve, reject) {
+            repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nNodes, _jrh, _entryIndex, event) => {
+              const nSubmissions = await repCycle.getNSubmissionsForHash(rootHash, nNodes, jrh);
+              if (nSubmissions.toNumber() === 12) {
+                // Check the reputation cycle submission matches our miner
+                // Validate the miner address in submission is correct
+                event.removeListener();
+                resolve();
+              } else {
+                await mineBlock();
+              }
+            });
+
+            // After 30s, we throw a timeout error
+            setTimeout(() => {
+              reject(new Error("ERROR: timeout while waiting for 12 hash submissions"));
+            }, 30000);
+          });
+
+          await mineBlock();
+          await receive12Submissions;
+
+          const colonyNetworkEthers = await reputationMinerClient._miner.colonyNetwork;
+          const miningCycleComplete = new Promise(function(resolve, reject) {
+            colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
+              const newHash = await colonyNetwork.getReputationRootHash();
+              expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
+              expect(newHash).to.equal(rootHash, "The network root hash doens't match the one submitted");
+              event.removeListener();
+              resolve();
+            });
+
+            // After 30s, we throw a timeout error
+            setTimeout(() => {
+              reject(new Error("ERROR: timeout while waiting for confirming hash"));
+            }, 30000);
+          });
+
+          // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
+          await forwardTime(MINING_CYCLE_DURATION * 0.6, this);
+          await miningCycleComplete;
+          await reputationMinerClient2.close();
+        });
+
         it("should successfully complete a hash submission if there are 2 good miners", async function() {
           const oldHash = await colonyNetwork.getReputationRootHash();
           const rootHash = await reputationMinerClient._miner.getRootHash();
@@ -174,7 +260,6 @@ process.env.SOLIDITY_COVERAGE
           const receive12Submissions = new Promise(function(resolve, reject) {
             repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nNodes, _jrh, _entryIndex, event) => {
               const nSubmissions = await repCycle.getNSubmissionsForHash(rootHash, nNodes, jrh);
-
               if (nSubmissions.toNumber() === 12) {
                 // Check the reputation cycle submission matches our miners
                 for (let i = 0; i < 12; i += 1) {
@@ -202,12 +287,11 @@ process.env.SOLIDITY_COVERAGE
             }, 30000);
           });
 
-          // Forward through most of the cycle duration and wait for the client to submit all 12 allowed entries
-          await forwardTime(MINING_CYCLE_DURATION * 0.9, this);
-
           // Make a submission from the second client and then await the remaining 11 submissions from the first client
-          await goodClient.addLogContentsToReputationTree();
-          await goodClient.saveCurrentState();
+          await goodClient.loadState(rootHash);
+
+          // Forward time and wait for the client to submit all 12 allowed entries
+          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
           await checkSuccessEthers(goodClient.submitRootHash());
           await receive12Submissions;
 
@@ -228,7 +312,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION * 0.1, this);
+          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
           await miningCycleComplete;
         });
 
@@ -396,9 +480,9 @@ process.env.SOLIDITY_COVERAGE
           await goodClient.saveCurrentState();
           await forwardTime(MINING_CYCLE_DURATION / 2, this);
           await goodClient.submitRootHash();
-          console.log("submitted");
+
           await forwardTime(MINING_CYCLE_DURATION, this);
-          console.log("forard");
+
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
           const receive12Submissions = new Promise(function(resolve, reject) {
             repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nNodes, _jrh, _entryIndex, event) => {

@@ -11,7 +11,20 @@ const ethers = require("ethers");
 const ReputationMinerClient = require("../ReputationMinerClient");
 
 const supportedInfuraNetworks = ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"];
-const { minerAddress, privateKey, colonyNetworkAddress, dbPath, network, localPort, syncFrom, auto } = argv;
+const {
+  minerAddress,
+  privateKey,
+  colonyNetworkAddress,
+  dbPath,
+  network,
+  localPort,
+  localProviderAddress,
+  syncFrom,
+  auto,
+  oracle,
+  exitOnError,
+  adapter
+} = argv;
 
 if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
   console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress and --syncFrom on the command line!");
@@ -30,8 +43,18 @@ if (network) {
   }
   provider = new ethers.providers.InfuraProvider(network);
 } else {
-  provider = new ethers.providers.JsonRpcProvider(`http://localhost:${localPort || "8545"}`);
+  provider = new ethers.providers.JsonRpcProvider(`http://${localProviderAddress || "localhost"}:${localPort || "8545"}`);
 }
 
-const client = new ReputationMinerClient({ loader, minerAddress, privateKey, provider, useJsTree: true, dbPath, auto });
+let adapterObject;
+
+if (adapter === 'slack') {
+  adapterObject = require('../adapters/slack').default; // eslint-disable-line global-require
+} else {
+  adapterObject = require('../adapters/console').default; // eslint-disable-line global-require
+}
+
+const client = new ReputationMinerClient(
+  { loader, minerAddress, privateKey, provider, useJsTree: true, dbPath, auto, oracle, exitOnError, adapter:adapterObject }
+);
 client.initialise(colonyNetworkAddress, syncFrom);

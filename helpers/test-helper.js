@@ -612,8 +612,14 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
   // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
   const repCycle = await getActiveRepCycle(colonyNetwork);
   const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+
   if (nUniqueSubmittedHashes.gtn(0)) {
-    await forwardTime(MINING_CYCLE_DURATION, test);
+    const blockTime = await currentBlockTime();
+    const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+    const cycleTimeElapsed = new BN(blockTime).sub(reputationMiningWindowOpenTimestamp);
+    const cycleTimeRemaining = new BN(MINING_CYCLE_DURATION).sub(cycleTimeElapsed).toNumber();
+
+    await forwardTime(cycleTimeRemaining, test);
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
       await repCycle.confirmNewHash(nUniqueSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.
