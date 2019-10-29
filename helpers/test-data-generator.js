@@ -59,11 +59,10 @@ export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HAS
   return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
 }
 
-export async function assignRoles({ colony, tasks, taskId, manager, evaluator, worker }) {
+export async function assignRoles({ colony, taskId, manager, evaluator, worker }) {
   if (evaluator && manager !== evaluator) {
     await executeSignedTaskChange({
       colony,
-      tasks,
       taskId,
       functionName: "removeTaskEvaluatorRole",
       signers: [manager],
@@ -73,7 +72,6 @@ export async function assignRoles({ colony, tasks, taskId, manager, evaluator, w
 
     await executeSignedRoleAssignment({
       colony,
-      tasks,
       taskId,
       functionName: "setTaskEvaluatorRole",
       signers: [manager, evaluator],
@@ -87,7 +85,6 @@ export async function assignRoles({ colony, tasks, taskId, manager, evaluator, w
 
   await executeSignedRoleAssignment({
     colony,
-    tasks,
     taskId,
     functionName: "setTaskWorkerRole",
     signers,
@@ -96,24 +93,17 @@ export async function assignRoles({ colony, tasks, taskId, manager, evaluator, w
   });
 }
 
-export async function submitDeliverableAndRatings({ colony, tasks, taskId, managerRating = MANAGER_RATING, workerRating = WORKER_RATING }) {
+export async function submitDeliverableAndRatings({ colony, taskId, managerRating = MANAGER_RATING, workerRating = WORKER_RATING }) {
   const managerRatingSecret = soliditySha3(RATING_1_SALT, managerRating);
   const workerRatingSecret = soliditySha3(RATING_2_SALT, workerRating);
-  let evaluator;
-  let worker;
-  if (colony) {
-    const evaluatorRole = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-    const workerRole = await colony.getTaskRole(taskId, WORKER_ROLE);
-    evaluator = evaluatorRole.user;
-    worker = workerRole.user;
-  } else {
-    evaluator = await tasks.getTaskRoleUser(taskId, EVALUATOR_ROLE);
-    worker = await tasks.getTaskRoleUser(taskId, WORKER_ROLE);
-  }
-  await (colony || tasks).submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, managerRatingSecret, { from: worker });
-  await (colony || tasks).submitTaskWorkRating(taskId, WORKER_ROLE, workerRatingSecret, { from: evaluator });
-  await (colony || tasks).revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, RATING_1_SALT, { from: worker });
-  await (colony || tasks).revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, RATING_2_SALT, { from: evaluator });
+
+  const evaluatorRole = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
+  const workerRole = await colony.getTaskRole(taskId, WORKER_ROLE);
+
+  await colony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, managerRatingSecret, { from: workerRole.user });
+  await colony.submitTaskWorkRating(taskId, WORKER_ROLE, workerRatingSecret, { from: evaluatorRole.user });
+  await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, RATING_1_SALT, { from: workerRole.user });
+  await colony.revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, RATING_2_SALT, { from: evaluatorRole.user });
 }
 
 export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId, manager, evaluator, worker }) {
