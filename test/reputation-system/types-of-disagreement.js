@@ -31,7 +31,6 @@ import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/Rep
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 import MaliciousReputationMinerWrongUID from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongUID";
 import MaliciousReputationMinerReuseUID from "../../packages/reputation-miner/test/MaliciousReputationMinerReuseUID";
-import MaliciousReputationMinerWrongNewestReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNewestReputation";
 import MaliciousReputationMinerClaimNew from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNew";
 import MaliciousReputationMinerUnsure from "../../packages/reputation-miner/test/MaliciousReputationMinerUnsure";
 import MaliciousReputationMinerWrongJRH from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRH";
@@ -570,19 +569,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it.skip("if a new reputation's uniqueID is wrong", async () => {
-      // I think this test is now obsoleted. If a new reputation's UID is wrong:
-      // 1. It could be too small. But then either
-      //    a) If we provide the right previousNewRepuationID for the new UID we're claiming, it will be too small
-      //       compared to nNodes in the lastAgree state in the JRHs, and respondToChallenge will fail with
-      //       colony-reputation-mining-proved-uid-inconsistent
-      //    b) If we supply the right previousNewReputationID when compared to lastAgreeState, then respondToChallenge will
-      //       fail with colony-reputation-mining-new-uid-incorrect
-      // 2. It could be too large. We can't provide the right previousNewRepuationID for the new UID we're claiming, so only
-      //    the equivalent of b) above is possible
-      // This doesn't quite hold if the two submissions are both malicious, and agreed on an invliad state for the lastAgreeState.
-      // However, only one will still be able to be 'right', and so the dispute resoultion will continue as intended with at least
-      // one of those submissions being eliminated.
+    it("if a new reputation's uniqueID is wrong", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
@@ -601,76 +588,9 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      await goodClient.confirmJustificationRootHash();
-      await badClient.confirmJustificationRootHash();
-
-      await runBinarySearch(goodClient, badClient);
-
-      await goodClient.confirmBinarySearchResult();
-      await badClient.confirmBinarySearchResult();
-
-      await goodClient.respondToChallenge();
-      await badClient.respondToChallenge();
-
-      // Check
-      const disputeRoundAfter = await repCycle.getDisputeRound(0);
-      const goodDisputedEntryAfterResponseToChallenge = disputeRoundAfter[0];
-      const badDisputedEntryAfterResponseToChallenge = disputeRoundAfter[1];
-      const delta =
-        goodDisputedEntryAfterResponseToChallenge.challengeStepCompleted - badDisputedEntryAfterResponseToChallenge.challengeStepCompleted;
-      expect(delta).to.be.zero;
-      // Both sides have completed the same amount of challenges, but one has proved that a large number already exists
-      // than the other, so when we call invalidate hash, only one will be eliminated.
-
-      // Check that we can't invalidate the one that proved a higher reputation already existed
-      await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-less-reputation-uids-proven");
-
-      await forwardTime(MINING_CYCLE_DURATION / 6, this);
-      await repCycle.invalidateHash(0, 1);
-      await repCycle.confirmNewHash(1);
-
-      const rightHash = await goodClient.getRootHash();
-      const confirmedHash = await colonyNetwork.getReputationRootHash();
-      expect(confirmedHash).to.equal(rightHash);
-    });
-
-    it("if a new reputation's uniqueID is not proved right because a too-old previous ID is proved", async () => {
-      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: accounts[3] });
-
-      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 27, 0xfffffffff);
-      await badClient.initialise(colonyNetwork.address);
-
-      // This client gets the same root hash as goodClient, but will submit the wrong newest reputation hash when
-      // it calls respondToChallenge.
-      const badClient2 = new MaliciousReputationMinerWrongNewestReputation(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
-        27,
-        0xfffffffff
-      );
-      await badClient2.initialise(colonyNetwork.address);
-      await badClient2.addLogContentsToReputationTree();
-
-      await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      await goodClient.confirmJustificationRootHash();
-      await badClient.confirmJustificationRootHash();
-
-      await runBinarySearch(goodClient, badClient);
-
-      await goodClient.confirmBinarySearchResult();
-      await badClient.confirmBinarySearchResult();
-
-      await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-new-uid-incorrect");
-      // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await goodClient.respondToChallenge();
-      const repCycle = await getActiveRepCycle(colonyNetwork);
-      await repCycle.invalidateHash(0, 1);
-      await repCycle.confirmNewHash(1);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-new-uid-incorrect" }
+      });
     });
   });
 

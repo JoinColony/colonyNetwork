@@ -562,41 +562,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
   });
 
   describe("when miner misbehaving during respondToChallenge stage", async () => {
-    it("should correctly check the proof of the previously newest reputation, if necessary", async () => {
-      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-
-      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 27, 0xfffffffff);
-      await badClient.initialise(colonyNetwork.address);
-
-      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 7, 123456);
-      await badClient2.initialise(colonyNetwork.address);
-
-      await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      await badClient2.addLogContentsToReputationTree();
-
-      await goodClient.confirmJustificationRootHash();
-      await badClient.confirmJustificationRootHash();
-
-      await runBinarySearch(goodClient, badClient);
-      await goodClient.confirmBinarySearchResult();
-      await badClient.confirmBinarySearchResult();
-
-      await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-last-state-disagreement");
-
-      // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      const repCycle = await getActiveRepCycle(colonyNetwork);
-
-      await goodClient.respondToChallenge();
-      await repCycle.invalidateHash(0, 1);
-      await repCycle.confirmNewHash(1);
-    });
-
     it("should correctly check the proof of the origin skill reputation, if necessary", async () => {
       await fundColonyWithTokens(
         metaColony,

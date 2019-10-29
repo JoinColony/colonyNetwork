@@ -157,17 +157,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       checkAdjacentReputation(u, b32, adjacentReputationSiblings, agreeStateSiblings, disagreeStateSiblings);
     }
 
-    // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the 'agree' state.
-    // i.e. the reputation they supplied is in the 'agree' state.
-    checkPreviousReputationInState(
-      u,
-      b32,
-      agreeStateSiblings,
-      previousNewReputationSiblings);
-
-    // Save the index for tiebreak scenarios later.
-    saveProvedReputation(u);
-
     confirmChallengeCompleted(u);
 
     // Safety net?
@@ -515,9 +504,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       require(_agreeStateReputationUID == _disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
       emit ProveUIDSuccess(_agreeStateReputationUID, _disagreeStateReputationUID, true);
     } else {
-      require(u[U_PREVIOUS_NEW_REPUTATION_UID] + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
+      require(u[U_AGREE_STATE_NNODES] + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
 
-      emit ProveUIDSuccess(u[U_PREVIOUS_NEW_REPUTATION_UID], _disagreeStateReputationUID, false);
+      emit ProveUIDSuccess(u[U_AGREE_STATE_NNODES], _disagreeStateReputationUID, false);
     }
   }
 
@@ -627,31 +616,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     }
 
     return (nChildUpdates, nParents);
-  }
-
-  function checkPreviousReputationInState(
-    uint256[29] memory u,
-    bytes32[8] memory b32,
-    bytes32[] memory agreeStateSiblings,
-    bytes32[] memory previousNewReputationSiblings
-    ) internal view
-  {
-    // We binary searched to the first disagreement, so the last agreement is the one before
-    uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
-
-    bytes memory previousNewReputationValue = abi.encodePacked(u[U_PREVIOUS_NEW_REPUTATION_VALUE], u[U_PREVIOUS_NEW_REPUTATION_UID]);
-
-    bytes32 reputationRootHash = getImpliedRootNoHashKey(
-      b32[B_PREVIOUS_NEW_REPUTATION_KEY_HASH],
-      previousNewReputationValue,
-      u[U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK],
-      previousNewReputationSiblings
-    );
-    bytes memory jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
-    // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
-    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
-    Submission storage submission = reputationHashSubmissions[disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter];
-    require(impliedRoot == submission.jrh, "colony-reputation-mining-last-state-disagreement");
   }
 
   function checkKeyHashesAdjacent(bytes32 hash1, bytes32 hash2, uint256 branchMask) internal pure returns (bool) {
@@ -777,17 +741,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
     impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
     require(impliedRoot == submission.jrh, "colony-reputation-mining-child-adjacent-proof-invalid");
-  }
-
-  function saveProvedReputation(uint256[29] memory u) internal {
-    // Require that it is at least plausible
-    uint256 delta = disputeRounds[u[U_ROUND]][u[U_IDX]].intermediateReputationNNodes - u[U_PREVIOUS_NEW_REPUTATION_UID];
-    // Could be zero if this is an update to an existing reputation, or it could be 1 if we have just added a new
-    // reputation. Anything else is inconsistent.
-    // We don't care about over/underflowing, and don't want to use `sub` so that this require message is returned.
-    require(delta == u[U_DISAGREE_STATE_NNODES]-u[U_AGREE_STATE_NNODES], "colony-reputation-mining-proved-uid-inconsistent");
-    // Save the index for tiebreak scenarios later.
-    disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = u[U_PREVIOUS_NEW_REPUTATION_UID];
   }
 
   function buildReputationKey(bytes32 colony, bytes32 skill, bytes32 user) internal pure returns (bytes memory) {
