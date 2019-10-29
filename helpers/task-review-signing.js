@@ -4,17 +4,17 @@ import fs from "fs";
 import { ethers } from "ethers";
 import { BigNumber } from "bignumber.js";
 
-export async function executeSignedTaskChange({ colony, taskId, functionName, signers, privKeys, sigTypes, args }) {
-  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, privKeys, sigTypes, args });
-  return colony.executeTaskChange(sigV, sigR, sigS, sigTypes, 0, txData);
+export async function executeSignedTaskChange({ colony, tasks, taskId, functionName, signers, privKeys, sigTypes, args }) {
+  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, tasks, taskId, functionName, signers, privKeys, sigTypes, args });
+  return (colony || tasks).executeTaskChange(sigV, sigR, sigS, sigTypes, 0, txData);
 }
 
-export async function executeSignedRoleAssignment({ colony, taskId, functionName, signers, privKeys, sigTypes, args }) {
-  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, privKeys, sigTypes, args });
-  return colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 0, txData);
+export async function executeSignedRoleAssignment({ colony, tasks, taskId, functionName, signers, privKeys, sigTypes, args }) {
+  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, tasks, taskId, functionName, signers, privKeys, sigTypes, args });
+  return (colony || tasks).executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 0, txData);
 }
 
-export async function getSigsAndTransactionData({ colony, taskId, functionName, signers, privKeys, sigTypes, args }) {
+export async function getSigsAndTransactionData({ colony, tasks, taskId, functionName, signers, privKeys, sigTypes, args }) {
   // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
   // and https://github.com/ethereum/web3.js/issues/2077
   const ethersBNTaskId = ethers.utils.bigNumberify(taskId.toString());
@@ -32,16 +32,17 @@ export async function getSigsAndTransactionData({ colony, taskId, functionName, 
     }
   });
 
-  const txData = await colony.contract.methods[functionName](...convertedArgs).encodeABI();
+  const taskContract = colony || tasks;
+  const txData = await taskContract.contract.methods[functionName](...convertedArgs).encodeABI();
   const sigsPromises = sigTypes.map((type, i) => {
     let privKey = [];
     if (privKeys) {
       privKey = [privKeys[i]];
     }
     if (type === 0) {
-      return createSignatures(colony, ethersBNTaskId, [signers[i]], privKey, 0, txData);
+      return createSignatures(taskContract, ethersBNTaskId, [signers[i]], privKey, 0, txData);
     }
-    return createSignaturesTrezor(colony, ethersBNTaskId, [signers[i]], privKey, 0, txData);
+    return createSignaturesTrezor(taskContract, ethersBNTaskId, [signers[i]], privKey, 0, txData);
   });
   const sigs = await Promise.all(sigsPromises);
   const sigV = sigs.map(sig => sig.sigV[0]);
@@ -50,10 +51,10 @@ export async function getSigsAndTransactionData({ colony, taskId, functionName, 
   return { sigV, sigR, sigS, txData };
 }
 
-export async function createSignatures(colony, taskId, signers, privKeys, value, data) {
-  const sourceAddress = colony.address;
-  const destinationAddress = colony.address;
-  const nonce = await colony.getTaskChangeNonce(taskId);
+export async function createSignatures(taskContract, taskId, signers, privKeys, value, data) {
+  const sourceAddress = taskContract.address;
+  const destinationAddress = taskContract.address;
+  const nonce = await taskContract.getTaskChangeNonce(taskId);
   const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${padLeft(value.toString(16), "64", "0")}${data.slice(2)}${padLeft(
     nonce.toString(16),
     "64",
@@ -92,10 +93,10 @@ export async function createSignatures(colony, taskId, signers, privKeys, value,
   return { sigV, sigR, sigS };
 }
 
-export async function createSignaturesTrezor(colony, taskId, signers, privKeys, value, data) {
-  const sourceAddress = colony.address;
-  const destinationAddress = colony.address;
-  const nonce = await colony.getTaskChangeNonce(taskId);
+export async function createSignaturesTrezor(taskContract, taskId, signers, privKeys, value, data) {
+  const sourceAddress = taskContract.address;
+  const destinationAddress = taskContract.address;
+  const nonce = await taskContract.getTaskChangeNonce(taskId);
   const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${padLeft(value.toString(16), "64", "0")}${data.slice(2)}${padLeft(
     nonce.toString(16),
     "64",
