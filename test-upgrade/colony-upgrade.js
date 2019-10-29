@@ -1,35 +1,35 @@
 /* globals artifacts */
-import { currentBlockTime, getTokenArgs } from "../helpers/test-helper";
+import { currentBlockTime } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import { ROOT_ROLE, SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";
-import { makeTask } from "../helpers/test-data-generator";
+import { makeTask, setupRandomColony } from "../helpers/test-data-generator";
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
-const IColony = artifacts.require("IColony");
-const IMetaColony = artifacts.require("IMetaColony");
 const ColonyTask = artifacts.require("ColonyTask");
 const ColonyPayment = artifacts.require("ColonyPayment");
 const ColonyFunding = artifacts.require("ColonyFunding");
+const ContractRecovery = artifacts.require("ContractRecovery");
 const UpdatedColony = artifacts.require("UpdatedColony");
 const IUpdatedColony = artifacts.require("IUpdatedColony");
-const Token = artifacts.require("Token");
-const ContractRecovery = artifacts.require("ContractRecovery");
 
 contract("Colony contract upgrade", accounts => {
   const ACCOUNT_ONE = accounts[0];
 
+  let colonyNetwork;
   let metaColony;
   let colony;
+  let token;
+
   let colonyTask;
   let colonyPayment;
   let colonyFunding;
-  let token;
-  let colonyNetwork;
+  let contractRecovery;
+
   let updatedColony;
   let updatedColonyVersion;
-  let contractRecovery;
 
   let dueDate;
 
@@ -39,23 +39,17 @@ contract("Colony contract upgrade", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
 
-    dueDate = await currentBlockTime();
+    ({ colony, token } = await setupRandomColony(colonyNetwork));
 
-    const tokenArgs = getTokenArgs();
-    const colonyToken = await Token.new(...tokenArgs);
-    await colonyToken.unlock();
-    const { logs } = await colonyNetwork.createColony(colonyToken.address);
-    const { colonyAddress } = logs[0].args;
-    colony = await IColony.at(colonyAddress);
     colonyTask = await ColonyTask.new();
     colonyPayment = await ColonyPayment.new();
     colonyFunding = await ColonyFunding.new();
     contractRecovery = await ContractRecovery.new();
-    const tokenAddress = await colony.getToken();
-    token = await Token.at(tokenAddress);
 
+    dueDate = await currentBlockTime();
     await makeTask({ colony, dueDate });
     await makeTask({ colony, dueDate: dueDate + 1, hash: SPECIFICATION_HASH_UPDATED });
+
     // Setup new Colony contract version on the Network
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
@@ -70,7 +64,7 @@ contract("Colony contract upgrade", accounts => {
 
     // Upgrade our existing colony
     await colony.upgrade(updatedColonyVersion);
-    updatedColony = await IUpdatedColony.at(colonyAddress);
+    updatedColony = await IUpdatedColony.at(colony.address);
   });
 
   describe("when upgrading Colony contract", function() {

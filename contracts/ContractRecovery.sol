@@ -21,14 +21,13 @@ import "./ColonyDataTypes.sol";
 import "./CommonStorage.sol";
 import "./CommonAuthority.sol";
 import "./IRecovery.sol";
+import "./ContractRecoveryDataTypes.sol";
 
 
 /// @title Used for recovery in both ColonyNetwork and Colony instances
 /// @notice Implements functions defined in IRecovery interface
-contract ContractRecovery is CommonStorage { // ignore-swc-123
+contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignore-swc-123
   uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
-
-  event RecoveryRoleSet(address indexed user, bool setTo);
 
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
     require(_slot != AUTHORITY_SLOT, "colony-common-protected-variable");
