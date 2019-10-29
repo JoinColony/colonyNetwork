@@ -132,28 +132,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return roles bytes32 representation of the roles
   function getUserRoles(address who, uint256 where) public view returns (bytes32 roles);
 
-  /// @notice Emit a negative domain reputation update. Available only to Arbitration role holders.
-  /// @param _permissionDomainId The domainId in which I hold the Arbitration role.
-  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
-  /// (only used if `_permissionDomainId` is different to `_domainId`)
-  /// @param _domainId The domain where the user will lose reputation.
-  /// @param _user The user who will lose reputation.
-  /// @param _amount The (negative) amount of reputation to lose.
-  function emitDomainReputationPenalty(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainId,
-    address _user,
-    int256 _amount
-    ) public;
-
-  /// @notice Emit a negative skill reputation update. Available only to Arbitration role holders.
-  /// @param _permissionDomainId The domainId in which I hold the Arbitration role.
-  /// @param _skillId The skill where the user will lose reputation.
-  /// @param _user The user who will lose reputation.
-  /// @param _amount The (negative) amount of reputation to lose.
-  function emitSkillReputationPenalty(uint256 _permissionDomainId, uint256 _skillId, address _user, int256 _amount) public;
-
   /// @notice Called once when the colony is created to initialise certain storage slot values.
   /// @dev Sets the reward inverse to the uint max 2**256 - 1.
   /// @param _colonyNetworkAddress Address of the colony network

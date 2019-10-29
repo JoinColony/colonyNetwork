@@ -11,8 +11,7 @@ import {
   FUNDING_ROLE,
   ADMINISTRATION_ROLE,
   INITIAL_FUNDING,
-  SPECIFICATION_HASH,
-  GLOBAL_SKILL_ID
+  SPECIFICATION_HASH
 } from "../../helpers/constants";
 
 import { fundColonyWithTokens, makeTask, setupRandomColony } from "../../helpers/test-data-generator";
@@ -279,19 +278,6 @@ contract("ColonyPermissions", accounts => {
       // And child domains!
       await colony.setAdministrationRole(1, 0, USER2, 2, true, { from: USER1 });
       await colony.setAdministrationRole(1, 1, USER2, 3, true, { from: USER1 });
-    });
-
-    it("should allow users with arbitration permission to emit negative reputation penalties", async () => {
-      await colony.setArbitrationRole(1, 0, USER1, 1, true);
-
-      // Domain penalties
-      await colony.emitDomainReputationPenalty(1, 1, 3, USER2, -100, { from: USER1 });
-      await checkErrorRevert(colony.emitDomainReputationPenalty(1, 1, 3, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");
-
-      // Skill penalties
-      await colony.emitSkillReputationPenalty(1, GLOBAL_SKILL_ID, USER2, -100, { from: USER1 });
-      await checkErrorRevert(colony.emitSkillReputationPenalty(1, GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");
-      await checkErrorRevert(colony.emitSkillReputationPenalty(2, GLOBAL_SKILL_ID, USER2, -100, { from: USER1 }), "ds-auth-unauthorized");
     });
 
     it("should allow permissions to propagate to subdomains", async () => {

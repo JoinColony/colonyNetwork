@@ -119,26 +119,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return token;
   }
 
-  function emitDomainReputationPenalty(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainId,
-    address _user,
-    int256 _amount
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
-    require(_amount <= 0, "colony-penalty-cannot-be-positive");
-    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
-  }
-
-  function emitSkillReputationPenalty(uint256 _permissionDomainId, uint256 _skillId, address _user, int256 _amount)
-  public stoppable validGlobalSkill(_skillId)
-  {
-    require(_amount <= 0, "colony-penalty-cannot-be-positive");
-    require(isAuthorized(msg.sender, _permissionDomainId, msg.sig), "ds-auth-unauthorized");
-    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
-  }
-
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
     require(colonyNetworkAddress == address(0x0), "colony-already-initialised-network");
     require(token == address(0x0), "colony-already-initialised-token");
@@ -358,10 +338,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   bytes4 constant SIG5 = bytes4(keccak256("setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)"));
   bytes4 constant SIG6 = bytes4(keccak256("setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)"));
 
-  // Introducing arbitration penalties
-  bytes4 constant SIG7 = bytes4(keccak256("emitDomainReputationPenalty(uint256,uint256,uint256,address,int256)"));
-  bytes4 constant SIG8 = bytes4(keccak256("emitSkillReputationPenalty(uint256,uint256,address,int256)"));
-
   // v3 to v4
   function finishUpgrade() public always {
     // Remove payment/task mutability from multisig
@@ -378,10 +354,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), SIG4, true);
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG5, true);
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG6, true);
-
-    // Add arbitration penalty capabilities
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG7, true);
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG8, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
