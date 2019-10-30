@@ -3,7 +3,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { SPECIFICATION_HASH } from "../../helpers/constants";
-import { web3GetStorageAt, checkErrorRevert } from "../../helpers/test-helper";
+import { web3GetStorageAt, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -61,6 +61,11 @@ contract("Colony Recovery", accounts => {
       await colony.removeRecoveryRole(accounts[0]);
       numRecoveryRoles = await colony.numRecoveryRoles();
       expect(numRecoveryRoles).to.eq.BN(1);
+    });
+
+    it("should emit events when changing recovery roles", async () => {
+      await expectEvent(colony.setRecoveryRole(accounts[1]), "RecoveryRoleSet");
+      await expectEvent(colony.removeRecoveryRole(accounts[1]), "RecoveryRoleSet");
     });
 
     it("should not error when adding recovery roles for existing recovery users", async () => {
