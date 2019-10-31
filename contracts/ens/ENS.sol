@@ -1,4 +1,4 @@
-pragma solidity 0.5.8;
+pragma solidity >=0.5.8 <0.7.0;
 
 
 /// @title The ENS interface.

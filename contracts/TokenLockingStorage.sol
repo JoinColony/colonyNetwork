@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity >=0.5.8 <0.7.0;
 pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/auth.sol";
