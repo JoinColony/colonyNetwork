@@ -57,11 +57,11 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
     const fName = Object.keys(functionsToResolve)[i];
     const sig = `${fName}(${functionsToResolve[fName].inputs.join(",")})`;
     const address = functionsToResolve[fName].definedIn;
-    const sigHash = await soliditySha3(sig).substr(0, 10);
-    // console.log(sig, address); // Uncomment if you get a migration failure to see which function is missing.
-    await resolver.register(sig, address);
-    const destination = await resolver.lookup(sigHash);
-    assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);
+    try {
+      await resolver.register(sig, address);
+    } catch (err) {
+      throw new Error(`${sig} has not been registered correctly. Is it defined?`);
+    }
   }
 }
 

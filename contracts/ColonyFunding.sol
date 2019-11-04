@@ -125,10 +125,12 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     }
 
     // Send any surplus back to the domain (for payoutScalars < 1)
-    fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], tokenSurplus);
-    fundingPot.balance[_token] = sub(fundingPot.balance[_token], tokenSurplus);
-    FundingPot storage domainFundingPot = fundingPots[domains[expenditure.domainId].fundingPotId];
-    domainFundingPot.balance[_token] = add(domainFundingPot.balance[_token], tokenSurplus);
+    if (tokenSurplus > 0) {
+      fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], tokenSurplus);
+      fundingPot.balance[_token] = sub(fundingPot.balance[_token], tokenSurplus);
+      FundingPot storage domainFundingPot = fundingPots[domains[expenditure.domainId].fundingPotId];
+      domainFundingPot.balance[_token] = add(domainFundingPot.balance[_token], tokenSurplus);
+    }
 
     // Finish the payout
     processPayout(expenditure.fundingPotId, _token, tokenPayout, slot.recipient);
@@ -533,7 +535,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       assert(payoutToken.transfer(colonyNetworkAddress, fee));
     }
 
-    emit PayoutClaimed(_fundingPotId, _user, _token, remainder);
+    emit PayoutClaimed(_fundingPotId, _token, remainder);
   }
 
   function calculateNetworkFeeForPayout(uint256 _payout) private view returns (uint256 fee) {
