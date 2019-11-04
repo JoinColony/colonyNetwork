@@ -28,6 +28,7 @@ contract("Colony Expenditure", accounts => {
 
   const RECIPIENT = accounts[3];
   const ADMIN = accounts[4];
+  const ARBITRATOR = accounts[5];
   const USER = accounts[10];
 
   let colony;
@@ -46,6 +47,7 @@ contract("Colony Expenditure", accounts => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.setRewardInverse(100);
     await colony.setAdministrationRole(1, 0, ADMIN, 1, true);
+    await colony.setArbitrationRole(1, 0, ARBITRATOR, 1, true);
     await fundColonyWithTokens(colony, token, UINT256_MAX);
     domain1 = await colony.getDomain(1);
 
@@ -100,8 +102,24 @@ contract("Colony Expenditure", accounts => {
       let expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.owner).to.equal(ADMIN);
 
-      await checkErrorRevert(colony.transferExpenditure(expenditureId, USER), "colony-expenditure-not-owner");
-      await colony.transferExpenditure(expenditureId, USER, { from: ADMIN });
+      const transferSig = "transferExpenditure(uint256,address)"; // Overloaded function
+      await checkErrorRevert(colony.methods[transferSig](expenditureId, USER), "colony-expenditure-not-owner");
+      await colony.methods[transferSig](expenditureId, USER, { from: ADMIN });
+
+      expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.owner).to.equal(USER);
+    });
+
+    it("should allow arbitration users to transfer expenditures", async () => {
+      await colony.makeExpenditure(1, 0, 1, { from: ADMIN });
+      const expenditureId = await colony.getExpenditureCount();
+
+      let expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.owner).to.equal(ADMIN);
+
+      const transferSig = "transferExpenditure(uint256,uint256,uint256,address)"; // Overloaded function
+      await checkErrorRevert(colony.methods[transferSig](1, 0, expenditureId, USER, { from: ADMIN }), "ds-auth-unauthorized");
+      await colony.methods[transferSig](1, 0, expenditureId, USER, { from: ARBITRATOR });
 
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.owner).to.equal(USER);

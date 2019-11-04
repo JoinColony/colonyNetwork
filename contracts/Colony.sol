@@ -332,8 +332,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // Introducing the expenditure
   bytes4 constant SIG3 = bytes4(keccak256("makeExpenditure(uint256,uint256,uint256)"));
-  bytes4 constant SIG4 = bytes4(keccak256("setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)"));
-  bytes4 constant SIG5 = bytes4(keccak256("setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)"));
+  bytes4 constant SIG4 = bytes4(keccak256("transferExpenditure(uint256,uint256,uint256,address)"));
+  bytes4 constant SIG5 = bytes4(keccak256("setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)"));
+  bytes4 constant SIG6 = bytes4(keccak256("setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)"));
 
   // v3 to v4
   function finishUpgrade() public always {
@@ -348,6 +349,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), SIG3, true);
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG4, true);
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG5, true);
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG6, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
