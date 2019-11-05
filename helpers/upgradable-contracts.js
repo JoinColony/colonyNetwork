@@ -61,8 +61,11 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
       try {
         await resolver.register(sig, address);
       } catch (err) {
-        throw new Error(`${sig} has not been registered correctly. Is it defined?`);
+        throw new Error(`${sig} could not be registered. Is it defined?`);
       }
+      const sigHash = soliditySha3(sig).substr(0, 10);
+      const destination = await resolver.lookup(sigHash);
+      assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);
     }
   }
 }
