@@ -78,6 +78,11 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   uint256 paymentCount; // Storage slot 22
   mapping (uint256 => Payment) payments; // Storage slot 23
 
+  uint256 expenditureCount; // Storage slot 24
+  mapping (uint256 => Expenditure) expenditures; // Storage slot 25
+  mapping (uint256 => mapping (uint256 => ExpenditureSlot)) expenditureSlots; // Storage slot 26
+  mapping (uint256 => mapping (uint256 => mapping (address => uint256))) expenditureSlotPayouts; // Storage slot 27
+
   modifier validPayoutAmount(uint256 _amount) {
     require(_amount <= MAX_PAYOUT, "colony-payout-too-large");
     _;
@@ -117,6 +122,26 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
 
   modifier taskFinalized(uint256 _id) {
     require(tasks[_id].status == TaskStatus.Finalized, "colony-task-not-finalized");
+    _;
+  }
+
+  modifier expenditureExists(uint256 _id) {
+    require(_id > 0 && _id <= expenditureCount, "colony-expenditure-does-not-exist");
+    _;
+  }
+
+  modifier expenditureActive(uint256 _id) {
+    require(expenditures[_id].status == ExpenditureStatus.Active, "colony-expenditure-not-active");
+    _;
+  }
+
+  modifier expenditureFinalized(uint256 _id) {
+    require(expenditures[_id].status == ExpenditureStatus.Finalized, "colony-expenditure-not-finalized");
+    _;
+  }
+
+  modifier expenditureOnlyOwner(uint256 _id) {
+    require(expenditures[_id].owner == msg.sender, "colony-expenditure-not-owner");
     _;
   }
 

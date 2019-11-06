@@ -78,9 +78,31 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
     };
 
     // Get the index of the line in which the method is declared
-    const methodLineIndex = contractFileArray.findIndex(line => {
-      return line.includes(`function ${method.name}(`);
+    let methodLineIndex = contractFileArray.findIndex(line => {
+      return line.includes(
+        `function ${method.name}(${method.parameters
+          .map(x => {
+            if (x.typeName.name) {
+              return `${x.typeName.name}${x.storageLocation ? ` ${x.storageLocation}` : ""} ${x.name}`;
+            }
+            if (x.typeName.namePath) {
+              return `${x.typeName.namePath} ${x.name}`;
+            }
+            if (x.typeName.type === "ArrayTypeName") {
+              return `${x.typeName.baseTypeName.name}[${x.typeName.length || ""}]${x.storageLocation ? ` ${x.storageLocation}` : ""} ${x.name}`;
+            }
+            console.log("Unknown parameter type...");
+            return process.exit(1);
+          })
+          .join(", ")})`
+      );
     });
+
+    if (methodLineIndex === -1) {
+      // If the above failed, fall back to just the function name.
+      // This won't work if we overload a function that is defined across multiple lines in the interface
+      methodLineIndex = contractFileArray.findIndex(line => line.includes(`function ${method.name}(`));
+    }
 
     // Set the initial value for the natsepc notice
     let noticeLineIndex = methodLineIndex - 1;

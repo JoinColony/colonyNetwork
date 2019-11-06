@@ -9,9 +9,8 @@ export function parseImplementation(contractName, functionsToResolve, deployedIm
   abi.map(value => {
     const fName = value.name;
     if (functionsToResolve[fName]) {
-      if (functionsToResolve[fName].definedIn !== "") {
-        // It's a Friday afternoon, and I can't be bothered to deal with same name, different signature.
-        // Let's just resolve to not do it? We'd probably just trip ourselves up later.
+      if (functionsToResolve[fName].definedIn !== "" && functionsToResolve[fName].definedIn !== deployedImplementations[contractName]) {
+        // We allow function overloads so long as they are in the same file.
         // eslint-disable-next-line no-console
         console.log(
           "What are you doing!? Defining functions with the same name in different files!? You are going to do yourself a mischief. ",
@@ -51,22 +50,30 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
     return functionsToResolve;
   });
   Object.keys(deployedImplementations).map(name => parseImplementation(name, functionsToResolve, deployedImplementations));
-  for (let i = 0; i < Object.keys(functionsToResolve).length; i += 1) {
+  // Iterate over the ABI again to make sure we get overloads - the functionToResolve is only indexed by name, not signature.
+  for (let i = 0; i < iAbi.length; i += 1) {
     // We do it like this rather than a nice await Promise.all on a mapped array of promises because of
     // https://github.com/paritytech/parity-ethereum/issues/9155
-    const fName = Object.keys(functionsToResolve)[i];
-    const sig = `${fName}(${functionsToResolve[fName].inputs.join(",")})`;
-    const address = functionsToResolve[fName].definedIn;
-    const sigHash = await soliditySha3(sig).substr(0, 10);
-    await resolver.register(sig, address);
-    const destination = await resolver.lookup(sigHash);
-    assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);
+    const fName = iAbi[i].name;
+    if (functionsToResolve[fName]) {
+      const sig = `${fName}(${iAbi[i].inputs.map(parameter => parameter.type).join(",")})`;
+      const address = functionsToResolve[fName].definedIn;
+      try {
+        await resolver.register(sig, address);
+      } catch (err) {
+        throw new Error(`${sig} could not be registered. Is it defined?`);
+      }
+      const sigHash = soliditySha3(sig).substr(0, 10);
+      const destination = await resolver.lookup(sigHash);
+      assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);
+    }
   }
 }
 
-export async function setupColonyVersionResolver(colony, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver) {
+export async function setupColonyVersionResolver(colony, colonyExpenditure, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver) {
   const deployedImplementations = {};
   deployedImplementations.Colony = colony.address;
+  deployedImplementations.ColonyExpenditure = colonyExpenditure.address;
   deployedImplementations.ColonyTask = colonyTask.address;
   deployedImplementations.ColonyPayment = colonyPayment.address;
   deployedImplementations.ColonyFunding = colonyFunding.address;

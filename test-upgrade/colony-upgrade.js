@@ -8,6 +8,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
+const ColonyExpenditure = artifacts.require("ColonyExpenditure");
 const ColonyTask = artifacts.require("ColonyTask");
 const ColonyPayment = artifacts.require("ColonyPayment");
 const ColonyFunding = artifacts.require("ColonyFunding");
@@ -23,11 +24,6 @@ contract("Colony contract upgrade", accounts => {
   let colony;
   let token;
 
-  let colonyTask;
-  let colonyPayment;
-  let colonyFunding;
-  let contractRecovery;
-
   let updatedColony;
   let updatedColonyVersion;
 
@@ -41,10 +37,11 @@ contract("Colony contract upgrade", accounts => {
 
     ({ colony, token } = await setupRandomColony(colonyNetwork));
 
-    colonyTask = await ColonyTask.new();
-    colonyPayment = await ColonyPayment.new();
-    colonyFunding = await ColonyFunding.new();
-    contractRecovery = await ContractRecovery.new();
+    const colonyExpenditure = await ColonyExpenditure.new();
+    const colonyTask = await ColonyTask.new();
+    const colonyPayment = await ColonyPayment.new();
+    const colonyFunding = await ColonyFunding.new();
+    const contractRecovery = await ContractRecovery.new();
 
     dueDate = await currentBlockTime();
     await makeTask({ colony, dueDate });
@@ -54,7 +51,7 @@ contract("Colony contract upgrade", accounts => {
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
     await resolver.register("isUpdated()", updatedColonyContract.address);
-    await setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
+    await setupColonyVersionResolver(updatedColonyContract, colonyExpenditure, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
 
     updatedColonyVersion = await updatedColonyContract.version();
     await metaColony.addNetworkColonyVersion(updatedColonyVersion.toNumber(), resolver.address);

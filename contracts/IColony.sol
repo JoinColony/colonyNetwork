@@ -115,6 +115,17 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return hasRole Boolean indicating whether the given user has the given role in domain
   function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool hasRole);
 
+  /// @notice Check whether a given user has a given role for the colony, in a child domain.
+  /// Calls the function of the same name on the colony's authority contract and an internal inheritence validator function
+  /// @param _user The user whose role we want to check
+  /// @param _domainId Domain in which the caller has the role
+  /// @param _role The role we want to check for
+  /// @param _childSkillIndex The index that the `_childDomainId` is relative to `_domainId`
+  /// @param _childDomainId The domain where we want to use the role
+  /// @return hasRole Boolean indicating whether the given user has the given role in domain
+  function hasInheritedUserRole(address _user, uint256 _domainId, ColonyRole _role, uint256 _childSkillIndex, uint256 _childDomainId)
+    public view returns (bool hasRole);
+
   /// @notice Gets the bytes32 representation of the roles for a user in a given domain
   /// @param who The user whose roles we want to get
   /// @param where The domain where we want to get roles for
@@ -176,6 +187,114 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// is not currently exposed on the Colony's EtherRouter.
   function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
     public view returns (bool isValid);
+
+  // Implemented in ColonyExpenditure.sol
+  /// @notice Add a new expenditure in the colony. Secured function to authorised members.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
+  /// (only used if `_permissionDomainId` is different to `_domainId`)
+  /// @param _domainId The domain where the expenditure belongs
+  /// @return expenditureId Identifier of the newly created expenditure
+  function makeExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId) public returns (uint256 expenditureId);
+
+  /// @notice Updates the expenditure owner. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  /// @param _newOwner New owner of expenditure
+  function transferExpenditure(uint256 _id, address _newOwner) public;
+
+  /// @notice Updates the expenditure owner. Can only be called by Arbitration role.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
+  /// (only used if `_permissionDomainId` is different to `_domainId`)
+  /// @param _id Expenditure identifier
+  /// @param _newOwner New owner of expenditure
+  function transferExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _newOwner) public;
+
+  /// @notice Cancels the expenditure and prevents further editing. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  function cancelExpenditure(uint256 _id) public;
+
+  /// @notice Finalizes the expenditure and prevents further editing. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  function finalizeExpenditure(uint256 _id) public;
+
+  /// @notice Sets the recipient on an expenditure slot. Can only be called by expenditure owner.
+  /// @param _id Id of the expenditure
+  /// @param _slot Slot for the recipient address
+  /// @param _recipient Address of the recipient
+  function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient) public;
+
+  /// @notice Set the token payout on an expenditure slot. Can only be called by expenditure owner.
+  /// @param _id Id of the expenditure
+  /// @param _slot Number of the slot
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amount Payout amount
+  function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount) public;
+
+  /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  /// @param _slot Number of the slot
+  /// @param _skillId Id of the new skill to set
+  function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId) public;
+
+  /// @notice Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
+  /// @dev Note that when determining payouts the payoutModifier is incremented by WAD and converted into payoutScalar
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
+  /// (only used if `_permissionDomainId` is different to `_domainId`)
+  /// @param _id Expenditure identifier
+  /// @param _slot Number of the slot
+  /// @param _payoutModifier Modifier to their payout (between -1 and 1, denominated in WADs, 0 means no modification)
+  function setExpenditurePayoutModifier(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _slot,
+    int256 _payoutModifier
+    ) public;
+
+  /// @notice Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
+  /// (only used if `_permissionDomainId` is different to `_domainId`)
+  /// @param _id Expenditure identifier
+  /// @param _slot Number of the slot
+  /// @param _claimDelay Time (in seconds) to delay claiming payout after finalization
+  function setExpenditureClaimDelay(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _slot,
+    uint256 _claimDelay
+    ) public;
+
+  /// @notice Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
+  /// @param _id Expenditure identifier
+  /// @param _slot Number of the slot
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  function claimExpenditurePayout(uint256 _id, uint256 _slot, address _token) public;
+
+  /// @notice Get the number of expenditures in the colony.
+  /// @return count The expenditure count
+  function getExpenditureCount() public view returns (uint256 count);
+
+  /// @notice Returns an existing expenditure.
+  /// @param _id Expenditure identifier
+  /// @return expenditure The expenditure
+  function getExpenditure(uint256 _id) public view returns (Expenditure memory expenditure);
+
+  /// @notice Returns an existing expenditure slot.
+  /// @param _id Expenditure identifier
+  /// @param _slot Expenditure slot
+  /// @return expenditureSlot The expenditure slot
+  function getExpenditureSlot(uint256 _id, uint256 _slot) public view returns (ExpenditureSlot memory expenditureSlot);
+
+  /// @notice Returns an existing expenditure slot's payout for a token.
+  /// @param _id Expenditure identifier
+  /// @param _slot Expenditure slot
+  /// @param _token Token address
+  /// @return amount Amount of the payout for that slot/token.
+  function getExpenditureSlotPayout(uint256 _id, uint256 _slot, address _token) public view returns (uint256 amount);
 
   // Implemented in ColonyPayment.sol
   /// @notice Add a new payment in the colony. Secured function to authorised members.

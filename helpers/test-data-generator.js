@@ -13,6 +13,7 @@ import {
   RATING_1_SALT,
   RATING_2_SALT,
   MANAGER_ROLE,
+  EVALUATOR_ROLE,
   WORKER_ROLE,
   SPECIFICATION_HASH,
   DELIVERABLE_HASH
@@ -33,6 +34,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const Colony = artifacts.require("Colony");
 const ColonyFunding = artifacts.require("ColonyFunding");
+const ColonyExpenditure = artifacts.require("ColonyExpenditure");
 const ColonyTask = artifacts.require("ColonyTask");
 const ColonyPayment = artifacts.require("ColonyPayment");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -58,7 +60,7 @@ export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HAS
 }
 
 export async function assignRoles({ colony, taskId, manager, evaluator, worker }) {
-  if (manager !== evaluator) {
+  if (evaluator && manager !== evaluator) {
     await executeSignedTaskChange({
       colony,
       taskId,
@@ -89,6 +91,19 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
     sigTypes,
     args: [taskId, worker]
   });
+}
+
+export async function submitDeliverableAndRatings({ colony, taskId, managerRating = MANAGER_RATING, workerRating = WORKER_RATING }) {
+  const managerRatingSecret = soliditySha3(RATING_1_SALT, managerRating);
+  const workerRatingSecret = soliditySha3(RATING_2_SALT, workerRating);
+
+  const evaluatorRole = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
+  const workerRole = await colony.getTaskRole(taskId, WORKER_ROLE);
+
+  await colony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, managerRatingSecret, { from: workerRole.user });
+  await colony.submitTaskWorkRating(taskId, WORKER_ROLE, workerRatingSecret, { from: evaluatorRole.user });
+  await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, RATING_1_SALT, { from: workerRole.user });
+  await colony.revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, RATING_2_SALT, { from: evaluatorRole.user });
 }
 
 export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId, manager, evaluator, worker }) {
@@ -159,9 +174,7 @@ export async function setupRatedTask({
   evaluatorPayout = EVALUATOR_PAYOUT,
   workerPayout = WORKER_PAYOUT,
   managerRating = MANAGER_RATING,
-  managerRatingSalt = RATING_1_SALT,
-  workerRating = WORKER_RATING,
-  workerRatingSalt = RATING_2_SALT
+  workerRating = WORKER_RATING
 }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
@@ -183,13 +196,7 @@ export async function setupRatedTask({
     workerPayout
   });
 
-  const WORKER_RATING_SECRET = soliditySha3(workerRatingSalt, workerRating);
-  const MANAGER_RATING_SECRET = soliditySha3(managerRatingSalt, managerRating);
-  await colony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, MANAGER_RATING_SECRET, { from: worker });
-  await colony.submitTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING_SECRET, { from: evaluator });
-  await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, managerRatingSalt, { from: worker });
-  await colony.revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, workerRatingSalt, { from: evaluator });
-
+  await submitDeliverableAndRatings({ colony, taskId, evaluator, worker, managerRating, workerRating });
   return taskId;
 }
 
@@ -207,9 +214,7 @@ export async function setupFinalizedTask({
   evaluatorPayout,
   workerPayout,
   managerRating,
-  managerRatingSalt,
-  workerRating,
-  workerRatingSalt
+  workerRating
 }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
@@ -230,9 +235,7 @@ export async function setupFinalizedTask({
     evaluatorPayout,
     workerPayout,
     managerRating,
-    managerRatingSalt,
-    workerRating,
-    workerRatingSalt
+    workerRating
   });
 
   await colony.finalizeTask(taskId);
@@ -335,6 +338,7 @@ export async function setupColonyNetwork() {
   const resolverColonyNetworkDeployed = await Resolver.deployed();
   const colonyTemplate = await Colony.new();
   const colonyFunding = await ColonyFunding.new();
+  const colonyExpenditure = await ColonyExpenditure.new();
   const colonyTask = await ColonyTask.new();
   const colonyPayment = await ColonyPayment.new();
   const resolver = await Resolver.new();
@@ -343,7 +347,7 @@ export async function setupColonyNetwork() {
   await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
 
   const colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-  await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
+  await setupColonyVersionResolver(colonyTemplate, colonyExpenditure, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
   const version = await colonyTemplate.version();
   await colonyNetwork.initialise(resolver.address, version);
   // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.

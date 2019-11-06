@@ -74,6 +74,26 @@ contract("ColonyPermissions", accounts => {
       expect(administrationRole).to.be.true;
     });
 
+    it("should let users query for roles in domain and subdomains", async () => {
+      let administrationRole = await colony.hasUserRole(FOUNDER, 1, ADMINISTRATION_ROLE);
+      expect(administrationRole).to.be.true;
+      administrationRole = await colony.hasInheritedUserRole(FOUNDER, 1, ADMINISTRATION_ROLE, 0, 1);
+      expect(administrationRole).to.be.true;
+      administrationRole = await colony.hasInheritedUserRole(FOUNDER, 1, ADMINISTRATION_ROLE, 0, 2);
+      expect(administrationRole).to.be.true;
+      administrationRole = await colony.hasInheritedUserRole(FOUNDER, 1, ADMINISTRATION_ROLE, 1, 3);
+      expect(administrationRole).to.be.true;
+
+      administrationRole = await colony.hasUserRole(USER1, 1, ADMINISTRATION_ROLE);
+      expect(administrationRole).to.be.false;
+      administrationRole = await colony.hasInheritedUserRole(USER1, 1, ADMINISTRATION_ROLE, 0, 1);
+      expect(administrationRole).to.be.false;
+      administrationRole = await colony.hasInheritedUserRole(USER1, 1, ADMINISTRATION_ROLE, 0, 2);
+      expect(administrationRole).to.be.false;
+      administrationRole = await colony.hasInheritedUserRole(USER1, 1, ADMINISTRATION_ROLE, 1, 3);
+      expect(administrationRole).to.be.false;
+    });
+
     it("should allow users with funding permission manipulate funds in their domains only", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
@@ -93,6 +113,21 @@ contract("ColonyPermissions", accounts => {
       const taskId = await makeTask({ colonyNetwork, colony, domainId: 2 });
       const task = await colony.getTask(taskId);
       await colony.moveFundsBetweenPots(2, 0, 0, domain2.fundingPotId, task.fundingPotId, WAD, token.address, { from: USER1 });
+    });
+
+    it("should allow users with administration permission manipulate expenditures in their domains only", async () => {
+      // Founder can create expenditures in domain 1, 2, 3.
+      await colony.makeExpenditure(1, 0, 1, { from: FOUNDER });
+      await colony.makeExpenditure(1, 0, 2, { from: FOUNDER });
+      await colony.makeExpenditure(1, 1, 3, { from: FOUNDER });
+
+      // User1 can only create expenditures in domain 2.
+      await colony.setAdministrationRole(1, 0, USER1, 2, true);
+      hasRole = await colony.hasUserRole(USER1, 2, ADMINISTRATION_ROLE);
+      expect(hasRole).to.be.true;
+
+      await checkErrorRevert(colony.makeExpenditure(1, 0, 1, { from: USER1 }), "ds-auth-unauthorized");
+      await colony.makeExpenditure(2, 0, 2, { from: USER1 });
     });
 
     it("should allow users with administration permission manipulate tasks/payments in their domains only", async () => {

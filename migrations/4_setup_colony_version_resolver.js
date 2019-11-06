@@ -4,6 +4,7 @@ const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts"
 
 const Colony = artifacts.require("./Colony");
 const ColonyFunding = artifacts.require("./ColonyFunding");
+const ColonyExpenditure = artifacts.require("./ColonyExpenditure");
 const ColonyTask = artifacts.require("./ColonyTask");
 const ColonyPayment = artifacts.require("./ColonyPayment");
 const ContractRecovery = artifacts.require("./ContractRecovery");
@@ -16,6 +17,7 @@ module.exports = async function(deployer) {
   // Create a new Colony (version) and setup a new Resolver for it
   const colony = await Colony.new();
   const colonyFunding = await ColonyFunding.new();
+  const colonyExpenditure = await ColonyExpenditure.new();
   const colonyTask = await ColonyTask.new();
   const colonyPayment = await ColonyPayment.new();
   const contractRecovery = await ContractRecovery.deployed();
@@ -26,7 +28,7 @@ module.exports = async function(deployer) {
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
 
   // Register the new Colony contract version with the newly setup Resolver
-  await setupColonyVersionResolver(colony, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
+  await setupColonyVersionResolver(colony, colonyExpenditure, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
   await colonyNetwork.initialise(resolver.address, version);
 
   console.log("### Colony version", version.toString(), "set to Resolver", resolver.address);

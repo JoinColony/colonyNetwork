@@ -71,6 +71,18 @@ Allows the colony to bootstrap itself by having initial reputation and token `_a
 |_amount|int[]|Amount of reputation/tokens for every address
 
 
+### `cancelExpenditure`
+
+Cancels the expenditure and prevents further editing. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+
+
 ### `cancelTask`
 
 Cancel a task at any point before it is finalized. Secured function to authorised members. Any funds assigned to its funding pot can be moved back to the domain via `IColony.moveFundsBetweenPots`.
@@ -93,6 +105,20 @@ Move any funds received by the colony in `_token` denomination to the top-level 
 
 |Name|Type|Description|
 |---|---|---|
+|_token|address|Address of the token, `0x0` value indicates Ether
+
+
+### `claimExpenditurePayout`
+
+Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Number of the slot
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
@@ -185,6 +211,18 @@ Executes a task role update transaction `_data` which is approved and signed by 
 |_mode|uint8[]|How the signature was generated - 0 for Geth-style (usual), 1 for Trezor-style (only Trezor does this)
 |_value|uint256|The transaction value, i.e. number of wei to be sent when the transaction is executed Currently we only accept 0 value transactions but this is kept as a future option
 |_data|bytes|The transaction data
+
+
+### `finalizeExpenditure`
+
+Finalizes the expenditure and prevents further editing. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
 
 
 ### `finalizePayment`
@@ -301,6 +339,72 @@ Get the number of domains in the colony.
 |Name|Type|Description|
 |---|---|---|
 |count|uint256|The domain count. Min 1 as the root domain is created at the same time as the colony
+
+### `getExpenditure`
+
+Returns an existing expenditure.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|expenditure|Expenditure|The expenditure
+
+### `getExpenditureCount`
+
+Get the number of expenditures in the colony.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|count|uint256|The expenditure count
+
+### `getExpenditureSlot`
+
+Returns an existing expenditure slot.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Expenditure slot
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|expenditureSlot|ExpenditureSlot|The expenditure slot
+
+### `getExpenditureSlotPayout`
+
+Returns an existing expenditure slot's payout for a token.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Expenditure slot
+|_token|address|Token address
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|amount|uint256|Amount of the payout for that slot/token.
 
 ### `getFundingPot`
 
@@ -601,6 +705,27 @@ Gets the bytes32 representation of the roles for a user in a given domain
 |---|---|---|
 |roles|bytes32|bytes32 representation of the roles
 
+### `hasInheritedUserRole`
+
+Check whether a given user has a given role for the colony, in a child domain. Calls the function of the same name on the colony's authority contract and an internal inheritence validator function
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|The user whose role we want to check
+|_domainId|uint256|Domain in which the caller has the role
+|_role|ColonyRole|The role we want to check for
+|_childSkillIndex|uint256|The index that the `_childDomainId` is relative to `_domainId`
+|_childDomainId|uint256|The domain where we want to use the role
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|hasRole|bool|Boolean indicating whether the given user has the given role in domain
+
 ### `hasUserRole`
 
 Check whether a given user has a given role for the colony. Calls the function of the same name on the colony's authority contract.
@@ -633,6 +758,25 @@ Called once when the colony is created to initialise certain storage slot values
 |_colonyNetworkAddress|address|Address of the colony network
 |_token|address|Address of the colony ERC20 Token
 
+
+### `makeExpenditure`
+
+Add a new expenditure in the colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_domainId|uint256|The domain where the expenditure belongs
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|expenditureId|uint256|Identifier of the newly created expenditure
 
 ### `makeTask`
 
@@ -810,6 +954,82 @@ Set new colony architecture role. Can be called by root role or architecture rol
 |_user|address|User we want to give an architecture role to
 |_domainId|uint256|Domain in which we are giving user the role
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
+
+
+### `setExpenditureClaimDelay`
+
+Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Number of the slot
+|_claimDelay|uint256|Time (in seconds) to delay claiming payout after finalization
+
+
+### `setExpenditurePayout`
+
+Set the token payout on an expenditure slot. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the expenditure
+|_slot|uint256|Number of the slot
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_amount|uint256|Payout amount
+
+
+### `setExpenditurePayoutModifier`
+
+Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
+
+*Note: Note that when determining payouts the payoutModifier is incremented by WAD and converted into payoutScalar*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Number of the slot
+|_payoutModifier|int256|Modifier to their payout (between -1 and 1, denominated in WADs, 0 means no modification)
+
+
+### `setExpenditureRecipient`
+
+Sets the recipient on an expenditure slot. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the expenditure
+|_slot|uint256|Slot for the recipient address
+|_recipient|address|Address of the recipient
+
+
+### `setExpenditureSkill`
+
+Sets the skill on an expenditure slot. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Number of the slot
+|_skillId|uint256|Id of the new skill to set
 
 
 ### `setFundingRole`
@@ -1082,6 +1302,34 @@ Submit a hashed secret of the rating for work in task `_id` which was performed 
 |_id|uint256|Id of the task
 |_role|uint8|Id of the role, as defined in TaskRole enum
 |_ratingSecret|bytes32|`keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50). Can be generated via `IColony.generateSecret` helper function.
+
+
+### `transferExpenditure`
+
+Updates the expenditure owner. Can only be called by Arbitration role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_id|uint256|Expenditure identifier
+|_newOwner|address|New owner of expenditure
+
+
+### `transferExpenditure`
+
+Updates the expenditure owner. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_newOwner|address|New owner of expenditure
 
 
 ### `updateColonyOrbitDB`

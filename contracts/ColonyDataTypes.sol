@@ -75,6 +75,42 @@ contract ColonyDataTypes {
   /// @param rewardInverse The reward inverse value
   event ColonyRewardInverseSet(uint256 rewardInverse);
 
+  /// @notice Event logged when a new expenditure is added
+  /// @param expenditureId The newly added expenditure id
+  event ExpenditureAdded(uint256 expenditureId);
+
+  /// @notice Event logged when a new expenditure is transferred
+  /// @param expenditureId The expenditure id
+  /// @param owner The new owner of the expenditure
+  event ExpenditureTransferred(uint256 indexed expenditureId, address indexed owner);
+
+  /// @notice Event logged when a expenditure has been cancelled
+  /// @param expenditureId Id of the cancelled expenditure
+  event ExpenditureCancelled(uint256 indexed expenditureId);
+
+  /// @notice Event logged when a expenditure has been finalized
+  /// @param expenditureId Id of the finalized expenditure
+  event ExpenditureFinalized(uint256 indexed expenditureId);
+
+  /// @notice Event logged when an expenditure's recipient is set
+  /// @param expenditureId Id of the expenditure
+  /// @param slot Expenditure slot of the recipient
+  /// @param recipient Address of the recipient
+  event ExpenditureRecipientSet(uint256 indexed expenditureId, uint256 indexed slot, address indexed recipient);
+
+  /// @notice Event logged when a expenditure's skill changes
+  /// @param expenditureId Id of the expenditure
+  /// @param slot Slot receiving the skill
+  /// @param skillId Id of the set skill
+  event ExpenditureSkillSet(uint256 indexed expenditureId, uint256 indexed slot, uint256 indexed skillId);
+
+  /// @notice Event logged when a expenditure payout changes
+  /// @param expenditureId Id of the expenditure
+  /// @param slot Expenditure slot of the payout being changed
+  /// @param token Token of the payout funding
+  /// @param amount Amount of the payout funding
+  event ExpenditurePayoutSet(uint256 indexed expenditureId, uint256 indexed slot, address indexed token, uint256 amount);
+
   /// @notice Event logged when a new payment is added
   /// @param paymentId The newly added payment id
   event PaymentAdded(uint256 paymentId);
@@ -135,7 +171,7 @@ contract ColonyDataTypes {
   /// @param fundingPotId Id of the funding pot where payout comes from
   /// @param token Token of the payout claim
   /// @param amount Amount of the payout claimed, after network fee was deducted
-  event PayoutClaimed(uint256 indexed fundingPotId, address token, uint256 amount);
+  event PayoutClaimed(uint256 indexed fundingPotId, address indexed token, uint256 amount);
 
   /// @notice Event logged when a task has been canceled
   /// @param taskId Id of the canceled task
@@ -163,6 +199,23 @@ contract ColonyDataTypes {
     // Time of creation (in seconds)
     uint256 blockTimestamp;
   }
+
+  struct Expenditure {
+    ExpenditureStatus status;
+    address owner;
+    uint256 fundingPotId;
+    uint256 domainId;
+    uint256 finalizedTimestamp;
+  }
+
+  struct ExpenditureSlot {
+    address payable recipient;
+    uint256 claimDelay;
+    int256 payoutModifier;
+    uint256[] skills;
+  }
+
+  enum ExpenditureStatus { Active, Cancelled, Finalized }
 
   struct Payment {
     address payable recipient;
@@ -212,7 +265,7 @@ contract ColonyDataTypes {
 
   // We do have 1 "special" funding pot with id 0 for rewards which will carry the "Unassigned" type.
   // as they are unrelated to other entities in the Colony the same way the remaining funding pots are releated to domains, tasks and payouts.
-  enum FundingPotAssociatedType { Unassigned, Domain, Task, Payment }
+  enum FundingPotAssociatedType { Unassigned, Domain, Task, Payment, Expenditure }
 
   struct FundingPot {
     // Funding pots can store multiple token balances, for ETH use 0x0 address

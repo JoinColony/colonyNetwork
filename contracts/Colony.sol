@@ -93,6 +93,20 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return ColonyAuthority(address(authority)).hasUserRole(_user, _domainId, uint8(_role));
   }
 
+  function hasInheritedUserRole(
+    address _user,
+    uint256 _domainId,
+    ColonyRole _role,
+    uint256 _childSkillIndex,
+    uint256 _childDomainId
+  ) public view returns (bool)
+  {
+    return (
+      hasUserRole(_user, _domainId, _role) &&
+      (_domainId == _childDomainId || validateDomainInheritance(_domainId, _childSkillIndex, _childDomainId))
+    );
+  }
+
   function getUserRoles(address who, uint256 where) public view returns (bytes32) {
     return ColonyAuthority(address(authority)).getUserRoles(who, where);
   }
@@ -312,17 +326,30 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     );
   }
 
+  // Removing payment/task domain mutability
   bytes4 constant SIG1 = bytes4(keccak256("setTaskDomain(uint256,uint256)"));
   bytes4 constant SIG2 = bytes4(keccak256("setPaymentDomain(uint256,uint256,uint256,uint256)"));
 
+  // Introducing the expenditure
+  bytes4 constant SIG3 = bytes4(keccak256("makeExpenditure(uint256,uint256,uint256)"));
+  bytes4 constant SIG4 = bytes4(keccak256("transferExpenditure(uint256,uint256,uint256,address)"));
+  bytes4 constant SIG5 = bytes4(keccak256("setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)"));
+  bytes4 constant SIG6 = bytes4(keccak256("setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)"));
+
   // v3 to v4
   function finishUpgrade() public always {
-    // Remove from multisig
+    // Remove payment/task mutability from multisig
     delete reviewers[SIG1];
 
-    // Remove from authority
+    // Remove payment/task mutability from authority
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), SIG2, false);
+
+    // Add expenditure capabilities
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), SIG3, true);
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG4, true);
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG5, true);
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG6, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
