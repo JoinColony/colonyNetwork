@@ -205,9 +205,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
       await checkErrorRevert(
         repCycle.respondToChallenge(
-          [0, 10000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          ["0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00"],
-          [],
+          [0, 10000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          ["0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00"],
           [],
           [],
           [],
@@ -598,7 +597,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 14, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
-      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 17, 123456);
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 14, 123456);
       await badClient2.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -668,7 +667,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 28, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
-      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 20, 123456);
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 17, 123456);
       await badClient2.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -755,9 +754,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
       await checkErrorRevert(
         repCycle.respondToChallenge(
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          ["0x00", skillId, userAddress, "0x00", "0x00", "0x00", "0x00", "0x00"],
-          [],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          ["0x00", skillId, userAddress, "0x00", "0x00", "0x00", "0x00"],
           [],
           [],
           [],
@@ -770,9 +768,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
       await checkErrorRevert(
         repCycle.respondToChallenge(
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [colonyAddress, "0x00", userAddress, "0x00", "0x00", "0x00", "0x00", "0x00"],
-          [],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [colonyAddress, "0x00", userAddress, "0x00", "0x00", "0x00", "0x00"],
           [],
           [],
           [],
@@ -785,9 +782,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
       await checkErrorRevert(
         repCycle.respondToChallenge(
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [colonyAddress, skillId, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00"],
-          [],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [colonyAddress, skillId, "0x00", "0x00", "0x00", "0x00", "0x00"],
           [],
           [],
           [],
@@ -800,9 +796,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
       await checkErrorRevert(
         repCycle.respondToChallenge(
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [colonyAddress, skillId, userAddress, "0x00", "0x00", "0x00", "0x00", "0x00"],
-          [],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [colonyAddress, skillId, userAddress, "0x00", "0x00", "0x00", "0x00"],
           [],
           [],
           [],
@@ -836,9 +831,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
       await checkErrorRevert(
         repCycle.respondToChallenge(
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          ["0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00"],
-          [],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          ["0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00"],
           [],
           [],
           [],

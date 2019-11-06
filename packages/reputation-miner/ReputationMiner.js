@@ -154,7 +154,6 @@ class ReputationMiner {
     }
     const prevKey = await this.getKeyForUpdateNumber(totalnUpdates.sub(1), blockNumber);
     const justUpdatedProof = await this.getReputationProofObject(prevKey);
-    const newestReputationProof = await this.getNewestReputationProofObject(totalnUpdates);
     const interimHash = await this.reputationTree.getRootHash();
     const jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     const nextUpdateProof = {};
@@ -169,8 +168,7 @@ class ReputationMiner {
         nNodes: this.nReputations.toString(),
         jhLeafValue,
         justUpdatedProof,
-        nextUpdateProof,
-        newestReputationProof
+        nextUpdateProof
       })
     );
   }
@@ -350,7 +348,6 @@ class ReputationMiner {
       const prevKey = await this.getKeyForUpdateNumber(updateNumber.sub(1), blockNumber);
       justUpdatedProof = await this.getReputationProofObject(prevKey);
     }
-    const newestReputationProof = await this.getNewestReputationProofObject(updateNumber);
     const tx = await this.justificationTree.insert(ReputationMiner.getHexString(updateNumber, 64), jhLeafValue, { gasLimit: 4000000 });
     if (!this.useJsTree) {
       await tx.wait();
@@ -374,7 +371,6 @@ class ReputationMiner {
         jhLeafValue,
         justUpdatedProof,
         nextUpdateProof,
-        newestReputationProof,
         originReputationProof,
         childReputationProof,
         adjacentReputationProof,
@@ -608,18 +604,6 @@ class ReputationMiner {
   // eslint-disable-next-line class-methods-use-this
   getAmount(i, amount) {
     return amount;
-  }
-
-  /**
-   * Get the key and value of the most recently added reputation (i.e. the one with the highest UID),
-   * and proof (branchMask and siblings) that it exists in the current reputation state.
-   * @return {Promise}    The returned promise will resolve to `[key, value, branchMask, siblings]`
-   */
-  // eslint-disable-next-line no-unused-vars
-  async getNewestReputationProofObject(i) {
-    // i is unused here, but is used in the Malicious3 mining client.
-    const key = Object.keys(this.reputations)[this.nReputations - 1];
-    return this.getReputationProofObject(key);
   }
 
   /**
@@ -1025,7 +1009,6 @@ class ReputationMiner {
         ReputationMiner.getHexString(agreeStateBranchMask),
         firstDisagreeJustifications.justUpdatedProof.nNodes,
         ReputationMiner.getHexString(disagreeStateBranchMask),
-        lastAgreeJustifications.newestReputationProof.branchMask,
         logEntryNumber,
         "0",
         lastAgreeJustifications.originReputationProof.branchMask,
@@ -1033,8 +1016,6 @@ class ReputationMiner {
         lastAgreeJustifications.nextUpdateProof.uid,
         firstDisagreeJustifications.justUpdatedProof.reputation,
         firstDisagreeJustifications.justUpdatedProof.uid,
-        lastAgreeJustifications.newestReputationProof.reputation,
-        lastAgreeJustifications.newestReputationProof.uid,
         lastAgreeJustifications.originReputationProof.reputation,
         lastAgreeJustifications.originReputationProof.uid,
         lastAgreeJustifications.childReputationProof.branchMask,
@@ -1051,7 +1032,6 @@ class ReputationMiner {
       [
         ...ReputationMiner.breakKeyInToElements(reputationKey).map(x => ethers.utils.hexZeroPad(x, 32)),
         soliditySha3(reputationKey),
-        soliditySha3(lastAgreeJustifications.newestReputationProof.key),
         soliditySha3(lastAgreeJustifications.adjacentReputationProof.key),
         soliditySha3(lastAgreeJustifications.originAdjacentReputationProof.key),
         soliditySha3(lastAgreeJustifications.childAdjacentReputationProof.key),
@@ -1059,7 +1039,6 @@ class ReputationMiner {
       firstDisagreeJustifications.justUpdatedProof.siblings,
       agreeStateSiblings,
       disagreeStateSiblings,
-      lastAgreeJustifications.newestReputationProof.siblings,
       lastAgreeJustifications.originReputationProof.siblings,
       lastAgreeJustifications.childReputationProof.siblings,
       lastAgreeJustifications.adjacentReputationProof.siblings]

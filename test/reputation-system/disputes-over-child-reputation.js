@@ -342,7 +342,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         "0xfffffffffffffffffffffff"
       );
 
-      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 18, 123456);
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 15, 123456);
       await badClient2.initialise(colonyNetwork.address);
 
       // Moving the state to the bad client
@@ -423,7 +423,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         "0xfffffffffffffffffffffff"
       );
 
-      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 21, 123456);
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 18, 123456);
       await badClient2.initialise(colonyNetwork.address);
 
       // Moving the state to the bad client
