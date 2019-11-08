@@ -32,7 +32,6 @@ import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/te
 import MaliciousReputationMinerWrongUID from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongUID";
 import MaliciousReputationMinerReuseUID from "../../packages/reputation-miner/test/MaliciousReputationMinerReuseUID";
 import MaliciousReputationMinerClaimNew from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNew";
-import MaliciousReputationMinerUnsure from "../../packages/reputation-miner/test/MaliciousReputationMinerUnsure";
 import MaliciousReputationMinerWrongJRH from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRH";
 import MaliciousReputationMinerWrongJRHRightNNodes from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRHRightNNodes";
 import MaliciousReputationMinerWrongNNodes from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes";
@@ -595,64 +594,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
   });
 
   describe("should correctly resolve dispute over reputation value", () => {
-    it.skip("if a too high previous reputation larger than nNodes is provided", async () => {
-      // I think this test is impossible to write, now.
-      // This test requires (essentially) that intermediateReputationNNodes - previousNewReputationUID is > 1, and get to saveProvedReputation
-      // without tripping another require.
-      // intermediateReputationNNodes is the same as DisagreeStateNNodes (so we could get rid of one, but that's for another PR...), so we need
-      // disagreeStateNNodes - previousNewReputationUID > 1. We now enforce that DisagreeStateNNodes - AgreeStateNNodes is either 1 or 0, based on
-      // whether the submitter claims a new node was added or not. Making the most optimistic substitution, we require that
-      // 1 + AgreeStateNNodes - previousNewREputationUID > 1, or AgreeStateNNodes > previousNewReputationUID
-      // Unfortunately, agreeStateNNodes is either equal to or one less than previousNewReputationUID, depending on whether a new node
-      // is added or not.
-      // So skipping this test, and leaving in the require for now in case I am wrong. This seems like a _very_ good candidate for an experimentation
-      // with formal proofs, though....
-
-      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-
-      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-      const repCycle = await getActiveRepCycle(colonyNetwork);
-
-      // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
-      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      expect(nInactiveLogEntries).to.eq.BN(13);
-
-      const badClient = new MaliciousReputationMinerUnsure({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 20, 0xffff);
-      await badClient.initialise(colonyNetwork.address);
-
-      await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-      await goodClient.confirmJustificationRootHash();
-      await badClient.confirmJustificationRootHash();
-
-      await runBinarySearch(goodClient, badClient);
-
-      await goodClient.confirmBinarySearchResult();
-      await badClient.confirmBinarySearchResult();
-
-      await goodClient.respondToChallenge();
-      await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-proved-uid-inconsistent");
-
-      // Check badClient respondToChallenge failed
-      const disputeRoundAfter = await repCycle.getDisputeRound(0);
-      const [goodDisputedEntryAfterResponseToChallenge, badDisputedEntryAfterResponseToChallenge] = disputeRoundAfter;
-      const delta =
-        goodDisputedEntryAfterResponseToChallenge.challengeStepCompleted - badDisputedEntryAfterResponseToChallenge.challengeStepCompleted;
-      expect(delta).to.eq.BN(2);
-
-      await forwardTime(MINING_CYCLE_DURATION / 6, this);
-      await repCycle.invalidateHash(0, 1);
-      await repCycle.confirmNewHash(1);
-
-      const rightHash = await goodClient.getRootHash();
-      const confirmedHash = await colonyNetwork.getReputationRootHash();
-      expect(confirmedHash).to.equal(rightHash);
-    });
-
     it("if a reputation decay calculation is wrong", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 

@@ -1,5 +1,4 @@
 import path from "path";
-import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
@@ -28,7 +27,6 @@ import { DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION } from "../../hel
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
-import MaliciousReputationMinerClaimNew from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNew";
 import MaliciousReputationMinerClaimNoOriginReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNoOriginReputation";
 import MaliciousReputationMinerClaimNoUserChildReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNoUserChildReputation"; // eslint-disable-line max-len
 import MaliciousReputationMinerClaimWrongOriginReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongOriginReputation"; // eslint-disable-line max-len
@@ -1265,162 +1263,5 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       });
       await repCycle.confirmNewHash(2);
     });
-  });
-
-  it.skip("dispute should resolve if a bad actor responds on behalf of the good submission omitting some proofs that exist", async () => {
-    // This test is no longer possible to run - see the explanation in the PR 533.
-    await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-    // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
-    // any update caused by the second task
-    await setupFinalizedTask({
-      colonyNetwork,
-      colony: metaColony,
-      skillId: 5,
-      managerPayout: 1000000000000,
-      evaluatorPayout: 1000000000,
-      workerPayout: 5000000000000,
-      managerRating: 3,
-      workerRating: 3,
-      worker: MINER2
-    });
-
-    await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
-
-    // Task two payouts are more so that the reputation should be zero afterwards
-    await setupFinalizedTask({
-      colonyNetwork,
-      colony: metaColony,
-      skill: 4,
-      managerPayout: 10000000000000,
-      evaluatorPayout: 10000000000,
-      workerPayout: 50000000000000,
-      managerRating: 1,
-      workerRating: 1,
-      worker: MINER2
-    });
-
-    await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
-
-    await goodClient.resetDB();
-    await goodClient.saveCurrentState();
-
-    // The update log should contain the person being rewarded for the previous
-    // update cycle, and reputation updates for one task completion (manager, worker (domain and skill), evaluator);
-    // That's five in total.
-    const repCycle = await getActiveRepCycle(colonyNetwork);
-    const nLogEntries = await repCycle.getReputationUpdateLogLength();
-    expect(nLogEntries).to.eq.BN(5);
-
-    const badClient = new MaliciousReputationMinerClaimNew(
-      { loader, minerAddress: MINER2, realProviderPort, useJsTree },
-      30 // Passing in update number for skillId: 1, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
-    );
-    await badClient.initialise(colonyNetwork.address);
-
-    // Moving the state to the bad client
-    await badClient.initialise(colonyNetwork.address);
-    const currentGoodClientState = await goodClient.getRootHash();
-    await badClient.loadState(currentGoodClientState);
-
-    await forwardTime(MINING_CYCLE_DURATION / 2, this);
-    await goodClient.addLogContentsToReputationTree();
-    await goodClient.submitRootHash();
-    await badClient.addLogContentsToReputationTree();
-    await badClient.submitRootHash();
-    await forwardTime(MINING_CYCLE_DURATION / 2, this);
-
-    await goodClient.submitJustificationRootHash();
-    await badClient.submitJustificationRootHash();
-
-    await goodClient.respondToBinarySearchForChallenge();
-    await badClient.respondToBinarySearchForChallenge();
-    await goodClient.respondToBinarySearchForChallenge();
-    await badClient.respondToBinarySearchForChallenge();
-    await goodClient.respondToBinarySearchForChallenge();
-    await badClient.respondToBinarySearchForChallenge();
-    await goodClient.respondToBinarySearchForChallenge();
-    await badClient.respondToBinarySearchForChallenge();
-    await goodClient.respondToBinarySearchForChallenge();
-    await badClient.respondToBinarySearchForChallenge();
-    await goodClient.respondToBinarySearchForChallenge();
-    await badClient.respondToBinarySearchForChallenge();
-
-    await goodClient.confirmBinarySearchResult();
-    await badClient.confirmBinarySearchResult();
-
-    // Now get all the information needed to fire off a respondToChallenge call
-    const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
-    const disputeRound = await repCycle.getDisputeRound(round);
-    const disputedEntry = disputeRound[index];
-
-    const firstDisagreeIdx = new BN(disputedEntry.lowerBound.toString());
-    const lastAgreeIdx = firstDisagreeIdx.subn(1);
-    const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
-    const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
-    const [disagreeStateBranchMask, disagreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
-    const logEntryNumber = await goodClient.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
-
-    // This is an incorrect response coming from a bad actor, but claiming to be responding on behalf of the good client
-    repCycle.respondToChallenge(
-      [
-        round.toString(),
-        index.toString(),
-        goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask.toString(),
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.nNodes.toString(),
-        agreeStateBranchMask.toString(),
-        goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.nNodes.toString(),
-        disagreeStateBranchMask.toString(),
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.branchMask,
-        logEntryNumber.toString(),
-        0,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.branchMask,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.reputation,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.uid,
-        goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.reputation,
-        goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.uid,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.reputation,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.uid,
-        0,
-        // This is the right line.
-        // goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.reputation,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.uid,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].childReputationProof.branchMask,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].childReputationProof.reputation,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].childReputationProof.uid,
-        "0",
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.branchMask,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.reputation,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.uid,
-        "0"
-      ],
-      [
-        reputationKey,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.key,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.key
-      ],
-      goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.siblings,
-      agreeStateSiblings,
-      disagreeStateSiblings,
-      goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.siblings,
-      goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.siblings,
-      goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].childReputationProof.siblings,
-      goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.siblings,
-      { gasLimit: 4000000 }
-    );
-
-    // Now respond with the bad client
-    await badClient.respondToChallenge();
-
-    // Try and respond as a good actor
-    await goodClient.respondToChallenge();
-
-    // Try and complete this mining cycle.
-    await forwardTime(MINING_CYCLE_DURATION / 6, this);
-    await repCycle.invalidateHash(0, 1);
-    await repCycle.confirmNewHash(1);
-    const acceptedHash = await colonyNetwork.getReputationRootHash();
-    const goodHash = await goodClient.getRootHash();
-    expect(acceptedHash).to.equal(goodHash);
   });
 });
