@@ -105,56 +105,50 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 5. The branchMask of the proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
   /// * 6. The number of nodes this hash considers to be present in the first reputation state the two hashes in this challenge disagree on
   /// * 7. The branchMask of the proof that reputation root hash of the first reputation state the two hashes in this challenge disagree on is in this submitted hash's justification tree
-  /// * 8. The branchMask of the proof for the most recently added reputation state in this hash's state tree in the last reputation state the two hashes in this challenge agreed on
-  /// * 9. The index of the log entry that the update in question was implied by. Each log entry can imply multiple reputation updates, and so we expect the clients to pass
+  /// * 8. The index of the log entry that the update in question was implied by. Each log entry can imply multiple reputation updates, and so we expect the clients to pass
   ///      the log entry index corresponding to the update to avoid us having to iterate over the log.
-  /// * 10. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
-  /// * 11. Origin skill reputation branch mask. Nonzero for child reputation updates.
+  /// * 9. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
+  /// * 10. Origin skill reputation branch mask. Nonzero for child reputation updates.
   ///
-  /// * 12. The amount of reputation that the entry in the tree under dispute has in the agree state
-  /// * 13. The UID that the entry in the tree under dispute has in the agree state
-  /// * 14. The amount of reputation that the entry in the tree under dispute has in the disagree state
-  /// * 15. The UID that the entry in the tree under dispute has in the disagree state
-  /// * 16. The amount of reputation that the most recently added entry in the tree has in the state being disputed
-  /// * 17. The UID that the most recently added entry in the tree has in the state being disputed
-  /// * 18. The amount of reputation that the user's origin reputation entry in the tree has in the state being disputed
-  /// * 19. The UID that the user's origin reputation entry in the tree has in the state being disputed
-  /// * 20. The branchMask of the proof that the child reputation for the user being updated is in the agree state
-  /// * 21. The amount of reputation that the child reputation for the user being updated is in the agree state
-  /// * 22. The UID of the child reputation for the user being updated in the agree state
-  /// * 23. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
-  /// * 24. The branchMask of the proof that the reputation adjacent to the new reputation being inserted is in the agree state
-  /// * 25. The amount of reputation that the reputation adjacent to a new reputation being inserted has in the agree state
-  /// * 26. The UID of the reputation adjacent to the new reputation being inserted
-  /// * 27. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
-  /// * 28. The value of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
-  /// * 29. The value of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
+  /// * 11. The amount of reputation that the entry in the tree under dispute has in the agree state
+  /// * 12. The UID that the entry in the tree under dispute has in the agree state
+  /// * 13. The amount of reputation that the entry in the tree under dispute has in the disagree state
+  /// * 14. The UID that the entry in the tree under dispute has in the disagree state
+  /// * 15. The amount of reputation that the user's origin reputation entry in the tree has in the state being disputed
+  /// * 16. The UID that the user's origin reputation entry in the tree has in the state being disputed
+  /// * 17. The branchMask of the proof that the child reputation for the user being updated is in the agree state
+  /// * 18. The amount of reputation that the child reputation for the user being updated is in the agree state
+  /// * 19. The UID of the child reputation for the user being updated in the agree state
+  /// * 20. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
+  /// * 21. The branchMask of the proof that the reputation adjacent to the new reputation being inserted is in the agree state
+  /// * 22. The amount of reputation that the reputation adjacent to a new reputation being inserted has in the agree state
+  /// * 23. The UID of the reputation adjacent to the new reputation being inserted
+  /// * 24. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
+  /// * 25. The value of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
+  /// * 26. The value of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
   /// @param b32 A `bytes32[8]` array. The elements of this array, in order are:
   /// * 1. The colony address in the key of the reputation being changed that the disagreement is over.
   /// * 2. The skillid in the key of the reputation being changed that the disagreement is over.
   /// * 3. The user address in the key of the reputation being changed that the disagreement is over.
   /// * 4. The keccak256 hash of the key of the reputation being changed that the disagreement is over.
-  /// * 5. The keccak256 hash of the key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// * 6. The keccak256 hash of the key for a reputation already in the tree adjacent to the new reputation being inserted, if required.
-  /// * 7. The keccak256 hash of the key of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
-  /// * 8. The keccak256 hash of the key of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
+  /// * 5. The keccak256 hash of the key for a reputation already in the tree adjacent to the new reputation being inserted, if required.
+  /// * 6. The keccak256 hash of the key of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
+  /// * 7. The keccak256 hash of the key of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
   /// @dev note that these are all bytes32; the address should be left padded from 20 bytes to 32 bytes. Strictly, I do not believe the padding matters, but you should use 0s for your own sanity!
   /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
   /// @param agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
   /// @param disagreeStateSiblings The siblings of the Merkle proof that the first reputation state the submitted hashes disagreed on is in this submitted hash's justification tree
-  /// @param previousNewReputationSiblings The siblings of the Merkle proof of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @param userOriginReputationSiblings Nonzero for child updates only. The siblings of the Merkle proof of the user's origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @param childReputationSiblings Nonzero for child updates of a colony-wide global skill. The siblings of the Merkle proof of the child skill reputation of the user in the same skill this global update is for
   /// @param adjacentReputationSiblings Nonzero for updates involving insertion of a new skill. The siblings of the Merkle proof of a reputation in the agree state that ends adjacent to the new reputation
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
-    uint256[29] memory u, //An array of 29 UINT Params, ordered as given above.
-    bytes32[8] memory b32,
+    uint256[26] memory u, //An array of 26 UINT Params, ordered as given above.
+    bytes32[7] memory b32,
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
-    bytes32[] memory previousNewReputationSiblings,
     bytes32[] memory userOriginReputationSiblings,
     bytes32[] memory childReputationSiblings,
     bytes32[] memory adjacentReputationSiblings) public;

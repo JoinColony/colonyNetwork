@@ -170,7 +170,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         upperBound: 0,
         intermediateReputationHash: 0x0,
         intermediateReputationNNodes: 0,
-        provedPreviousReputationUID: 0,
         targetHashDuringSearch: jrh,
         hash1: 0x00,
         hash2: 0x00
@@ -264,15 +263,13 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
       // Require that this is not better than its opponent.
       require(disputeRounds[round][opponentIdx].challengeStepCompleted >= disputeRounds[round][idx].challengeStepCompleted, "colony-reputation-mining-less-challenge-rounds-completed");
-      require(disputeRounds[round][opponentIdx].provedPreviousReputationUID >= disputeRounds[round][idx].provedPreviousReputationUID, "colony-reputation-mining-less-reputation-uids-proven");
 
       // Require that it has failed a challenge (i.e. failed to respond in time)
       require(now - disputeRounds[round][idx].lastResponseTimestamp >= 600, "colony-reputation-mining-not-timed-out"); // Timeout is ten minutes here.
 
       // Work out whether we are invalidating just the supplied idx or its opponent too.
       bool eliminateOpponent = false;
-      if (disputeRounds[round][opponentIdx].challengeStepCompleted == disputeRounds[round][idx].challengeStepCompleted &&
-      disputeRounds[round][opponentIdx].provedPreviousReputationUID == disputeRounds[round][idx].provedPreviousReputationUID) {
+      if (disputeRounds[round][opponentIdx].challengeStepCompleted == disputeRounds[round][idx].challengeStepCompleted) {
         eliminateOpponent = true;
       }
 
@@ -651,7 +648,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     disputeRounds[roundNumber][index].upperBound = submission.jrhNNodes - 1;
     disputeRounds[roundNumber][index].lowerBound = 0;
     disputeRounds[roundNumber][index].targetHashDuringSearch = submission.jrh;
-    disputeRounds[roundNumber][index].provedPreviousReputationUID = 0;
     if (submission.jrhNNodes != 0) {
       // If this submission has confirmed their JRH, we give ourselves credit for it in the next round - it's possible
       // that a submission got a bye without confirming a JRH, which will not have this starting '1'.
