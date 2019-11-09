@@ -106,7 +106,7 @@
     "nyc": "^14.1.1",
     "openzeppelin-solidity": "^2.2.0",
     "pre-commit": "^1.2.2",
-    "prettier": "^1.18.0",
+    "prettier": "^1.19.1",
     "rimraf": "^3.0.0",
     "shortid": "^2.2.14",
     "solidity-coverage": "0.7.0-beta.2",
