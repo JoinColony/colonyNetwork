@@ -95,6 +95,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ARBITRATION_ROLE, "emitDomainReputationPenalty(uint256,uint256,uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "emitSkillReputationPenalty(uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)");
+    addRoleCapability(ARCHITECTURE_ROLE, "setUserRoles(uint256,uint256,address,uint256,bytes32,bool)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

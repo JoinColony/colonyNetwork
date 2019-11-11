@@ -361,5 +361,38 @@ contract("ColonyPermissions", (accounts) => {
       const roles2 = await colony.getUserRoles(USER2, 2);
       expect(roles2).to.equal(ethers.utils.hexZeroPad(roleAdministration, 32));
     });
+
+    it("should be able to set many roles at once", async () => {
+      const roleRoot = ethers.utils.bigNumberify(2 ** 1).toHexString();
+      const roleArbitration = ethers.utils.bigNumberify(2 ** 2).toHexString();
+      const roleFunding = ethers.utils.bigNumberify(2 ** 5).toHexString();
+
+      const rolesRoot = ethers.utils.hexZeroPad(ethers.utils.bigNumberify(roleRoot | roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
+      const rolesArch = ethers.utils.hexZeroPad(ethers.utils.bigNumberify(roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
+
+      let userRoles;
+      await colony.setArchitectureRole(1, 0, USER1, 1, true);
+
+      // Root can set root roles
+      await colony.setUserRoles(1, 0, USER2, 1, rolesRoot, true, { from: FOUNDER });
+      userRoles = await colony.getUserRoles(USER2, 1);
+      expect(userRoles).to.equal(rolesRoot);
+
+      // But not in subdomains!
+      await checkErrorRevert(colony.setUserRoles(1, 0, USER2, 2, rolesRoot, true, { from: FOUNDER }), "colony-bad-domain-for-role");
+
+      // But can set arch roles in subdomains
+      await colony.setUserRoles(1, 0, USER2, 2, rolesArch, true, { from: FOUNDER });
+      userRoles = await colony.getUserRoles(USER2, 2);
+      expect(userRoles).to.equal(rolesArch);
+
+      // Arch cannot set root roles!
+      await checkErrorRevert(colony.setUserRoles(1, 0, USER2, 1, rolesRoot, true, { from: USER1 }), "ds-auth-only-authorized-in-child-domain");
+
+      // But can set arch roles in subdomains
+      await colony.setUserRoles(1, 1, USER2, 3, rolesArch, true, { from: USER1 });
+      userRoles = await colony.getUserRoles(USER2, 3);
+      expect(userRoles).to.equal(rolesArch);
+    });
   });
 });

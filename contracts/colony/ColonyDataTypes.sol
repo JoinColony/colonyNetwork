@@ -289,4 +289,6 @@ contract ColonyDataTypes {
   }
 
   uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs
+  bytes32 constant ROOT_ROLES = bytes32(uint256(1)) << uint8(ColonyRole.Recovery) | bytes32(uint256(1)) << uint8(ColonyRole.Root);
+  bytes32 constant BYTES32_1 = bytes32(uint256(1));
 }
