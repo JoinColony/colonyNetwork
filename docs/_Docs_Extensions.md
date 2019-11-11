@@ -42,7 +42,10 @@ The `OneTxPayment` extension adds this functionality by adding a `makePayment` f
 
 Extension therefore requires `Administration` and `Funding` roles to function.
 
-## OldRoles
+## OldRoles (deprecated)
+
+_This extension has been deprecated as of commit `dc0e82c4685d9c1a4410a01173f30ac87f394fae`_
+
 In earlier versions of the colonyNetwork, only two roles existed for permissioned accounts: "Founder", and "Admin"
 
 The `OldRoles` extension bundles the roles in the `glider` release together into super-roles that have the same abilities as the original "Founder" (root) and "Admin" (funding, administration, architecture) roles.

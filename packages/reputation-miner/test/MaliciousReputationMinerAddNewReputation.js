@@ -11,8 +11,12 @@ class MaliciousReputationMinerAddNewReputation extends ReputationMinerTestWrappe
     await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber);
     // Add a new reputation in the tree if this is when we've been told to do it.
     if (updateNumber.toString() === this.entryToFalsify) {
-      const key = MaliciousReputationMinerAddNewReputation.getKey(0xdeadbeef, 0xdeadbeef, 0xdeadbeef);
-      await this.reputationTree.insert(key, 0xdeadbeef, { gasLimit: 4000000 });
+      const key = MaliciousReputationMinerAddNewReputation.getKey(
+        "0x00000000000000000000000000000000deadbeef",
+        0xdeadbeef,
+        "0x00000000000000000000000000000000deadbeef"
+      );
+      await this.reputationTree.insert(key, "0xdeadbeef", { gasLimit: 4000000 });
     }
   }
 }

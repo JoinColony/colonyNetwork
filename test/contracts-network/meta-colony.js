@@ -2,14 +2,12 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { soliditySha3 } from "web3-utils";
-import { INITIAL_FUNDING, DELIVERABLE_HASH, GLOBAL_SKILL_ID } from "../../helpers/constants";
+import { INITIAL_FUNDING, SPECIFICATION_HASH, GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { checkErrorRevert, removeSubdomainLimit } from "../../helpers/test-helper";
 import { executeSignedTaskChange } from "../../helpers/task-review-signing";
 
 import {
   fundColonyWithTokens,
-  setupAssignedTask,
-  setupFundedTask,
   setupFinalizedTask,
   makeTask,
   setupColonyNetwork,
@@ -23,7 +21,6 @@ chai.use(bnChai(web3.utils.BN));
 contract("Meta Colony", accounts => {
   const MANAGER = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
-  const WORKER = accounts[2];
 
   let metaColony;
   let clnyToken;
@@ -386,6 +383,7 @@ contract("Meta Colony", accounts => {
     });
   });
 
+  // NOTE: Does this test block really belong here?
   describe("when setting domain and skill on task", () => {
     beforeEach(async () => {
       ({ colony, token } = await setupRandomColony(colonyNetwork));
@@ -393,111 +391,16 @@ contract("Meta Colony", accounts => {
 
     it("should be able to set domain on task", async () => {
       await colony.addDomain(1, 0, 1);
-      const taskId = await makeTask({ colony });
 
-      await executeSignedTaskChange({
-        colony,
-        functionName: "setTaskDomain",
-        taskId,
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, 2]
-      });
+      const { logs } = await colony.makeTask(1, 0, SPECIFICATION_HASH, 2, 0, 0);
+      const { taskId } = logs[0].args;
 
       const task = await colony.getTask(taskId);
       expect(task.domainId).to.eq.BN(2);
     });
 
-    it("should NOT allow a non-manager to set domain on task", async () => {
-      await colony.addDomain(1, 0, 1);
-      const taskId = await makeTask({ colony });
-      await checkErrorRevert(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [OTHER_ACCOUNT],
-          sigTypes: [0],
-          args: [taskId, 2]
-        }),
-        "colony-task-signatures-do-not-match-reviewer-1"
-      );
-
-      const task = await colony.getTask(taskId);
-      expect(task.domainId).to.eq.BN(1);
-    });
-
-    it("should NOT allow a non-worker to set domain on task", async () => {
-      await colony.addDomain(1, 0, 1);
-      const taskId = await setupAssignedTask({ colony });
-      await checkErrorRevert(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [MANAGER, OTHER_ACCOUNT],
-          sigTypes: [0, 0],
-          args: [taskId, 2]
-        }),
-        "colony-task-signatures-do-not-match-reviewer-2"
-      );
-
-      const task = await colony.getTask(taskId);
-      expect(task.domainId).to.eq.BN(1);
-    });
-
-    it("should NOT be able to set a domain on nonexistent task", async () => {
-      const taskId = await makeTask({ colony });
-      const nonexistentTaskId = taskId.addn(10);
-
-      await checkErrorRevert(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [MANAGER],
-          sigTypes: [0],
-          args: [nonexistentTaskId, 1]
-        }),
-        "colony-task-does-not-exist"
-      );
-    });
-
     it("should NOT be able to set a nonexistent domain on task", async () => {
-      const taskId = await makeTask({ colony });
-
-      await checkErrorRevert(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [MANAGER],
-          sigTypes: [0],
-          args: [taskId, 20]
-        }),
-        "colony-task-change-execution-failed"
-      );
-
-      const task = await colony.getTask(taskId);
-      expect(task.domainId).to.eq.BN(1);
-    });
-
-    it("should NOT be able to set a domain on completed task", async () => {
-      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupFundedTask({ colonyNetwork, colony });
-      await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
-
-      await checkErrorRevert(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [MANAGER, WORKER],
-          sigTypes: [0, 0],
-          args: [taskId, 1]
-        }),
-        "colony-task-change-execution-failed"
-      );
+      await checkErrorRevert(colony.makeTask(1, 0, SPECIFICATION_HASH, 2, 0, 0), "ds-auth-child-domain-does-not-exist");
     });
 
     it("should be able to set global skill on task", async () => {

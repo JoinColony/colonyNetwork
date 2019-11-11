@@ -62,7 +62,8 @@ class ReputationMiner {
       this.realWallet = new ethers.Wallet(privateKey, this.realProvider);
       this.minerAddress = this.realWallet.address;
       // TODO: Check that this wallet can stake?
-      console.log("Transactions will be signed from ", this.minerAddress);
+      this.minerAddress = this.realWallet.address;
+      console.log("Transactions will be signed from ", this.realWallet.address);
     }
   }
 
@@ -95,6 +96,7 @@ class ReputationMiner {
 
       const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
       const contract = await contractFactory.deploy();
+      await contract.deployed();
       this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
 
@@ -117,10 +119,12 @@ class ReputationMiner {
         this.patriciaTreeNoHashContractDef.bytecode,
         this.ganacheWallet
       );
+
       const contract = await contractFactory.deploy();
+      await contract.deployed();
+
       this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeNoHashContractDef.abi, this.ganacheWallet);
     }
-
     this.justificationHashes = {};
     this.reverseReputationHashLookup = {};
     const repCycle = await this.getActiveRepCycle(blockNumber)
@@ -150,11 +154,13 @@ class ReputationMiner {
     }
     const prevKey = await this.getKeyForUpdateNumber(totalnUpdates.sub(1), blockNumber);
     const justUpdatedProof = await this.getReputationProofObject(prevKey);
-    const newestReputationProof = await this.getNewestReputationProofObject(totalnUpdates);
     const interimHash = await this.reputationTree.getRootHash();
     const jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     const nextUpdateProof = {};
-    await this.justificationTree.insert(ReputationMiner.getHexString(totalnUpdates, 64), jhLeafValue, { gasLimit: 4000000 });
+    const tx = await this.justificationTree.insert(ReputationMiner.getHexString(totalnUpdates, 64), jhLeafValue, { gasLimit: 4000000 });
+    if (!this.useJsTree) {
+      await tx.wait();
+    }
 
     this.justificationHashes[ReputationMiner.getHexString(totalnUpdates, 64)] = JSON.parse(
       JSON.stringify({
@@ -162,8 +168,7 @@ class ReputationMiner {
         nNodes: this.nReputations.toString(),
         jhLeafValue,
         justUpdatedProof,
-        nextUpdateProof,
-        newestReputationProof
+        nextUpdateProof
       })
     );
   }
@@ -238,7 +243,7 @@ class ReputationMiner {
       // is very slightly less than one (0.5 ** (1/2160) for a 1-hr mining cycle, 0.5 ** (1/90) for a 24-hr cycle).
       // Disabling prettier on the next line so we can have these two values aligned so it's easy to see
       // the fraction will be slightly less than one.
-      const numerator   = ethers.utils.bigNumberify("992327946262944");
+      const numerator = ethers.utils.bigNumberify("992327946262944");
       const denominator = ethers.utils.bigNumberify("1000000000000000");
 
       const newReputation = reputation.mul(numerator).div(denominator);
@@ -343,8 +348,10 @@ class ReputationMiner {
       const prevKey = await this.getKeyForUpdateNumber(updateNumber.sub(1), blockNumber);
       justUpdatedProof = await this.getReputationProofObject(prevKey);
     }
-    const newestReputationProof = await this.getNewestReputationProofObject(updateNumber);
-    await this.justificationTree.insert(ReputationMiner.getHexString(updateNumber, 64), jhLeafValue, { gasLimit: 4000000 });
+    const tx = await this.justificationTree.insert(ReputationMiner.getHexString(updateNumber, 64), jhLeafValue, { gasLimit: 4000000 });
+    if (!this.useJsTree) {
+      await tx.wait();
+    }
 
     const key = await this.getKeyForUpdateNumber(updateNumber, blockNumber);
     const nextUpdateProof = await this.getReputationProofObject(key);
@@ -364,7 +371,6 @@ class ReputationMiner {
         jhLeafValue,
         justUpdatedProof,
         nextUpdateProof,
-        newestReputationProof,
         originReputationProof,
         childReputationProof,
         adjacentReputationProof,
@@ -461,7 +467,7 @@ class ReputationMiner {
    */
   async getLogEntryNumberForLogUpdateNumber(_i, blockNumber = "latest") {
     const updateNumber = _i;
-    const repCycle = await this.getActiveRepCycle(blockNumber)
+    const repCycle = await this.getActiveRepCycle(blockNumber);
     const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockTag: blockNumber });
     let lower = ethers.constants.Zero;
     let upper = nLogEntries.sub(1);
@@ -469,6 +475,7 @@ class ReputationMiner {
     while (!upper.eq(lower)) {
       const testIdx = lower.add(upper.sub(lower).div(2));
       const testLogEntry = await repCycle.getReputationUpdateLogEntry(testIdx, { blockTag: blockNumber });
+
       const nPreviousUpdates = ethers.utils.bigNumberify(testLogEntry.nPreviousUpdates);
       if (nPreviousUpdates.gt(updateNumber)) {
         upper = testIdx.sub(1);
@@ -491,10 +498,9 @@ class ReputationMiner {
     }
     // Else it's from a log entry
     const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(updateNumber.sub(this.nReputationsBeforeLatestLog), blockNumber);
-    const repCycle = await this.getActiveRepCycle(blockNumber)
+    const repCycle = await this.getActiveRepCycle(blockNumber);
 
     const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockTag: blockNumber });
-
     const key = await this.getKeyForUpdateInLogEntry(updateNumber.sub(logEntry.nPreviousUpdates).sub(this.nReputationsBeforeLatestLog), logEntry);
     return key;
   }
@@ -570,7 +576,7 @@ class ReputationMiner {
    * @param  {bigNumber or string} nNodes           The number of nodes in the reputation state Tree
    * @return {string}                               The correctly formatted hex string for inclusion in the justification tree
    */
-  getJRHEntryValueAsBytes(_reputationState, nNodes) { //eslint-disable-line
+  getJRHEntryValueAsBytes(_reputationState, nNodes) { // eslint-disable-line class-methods-use-this
     let reputationState = _reputationState.toString(16);
     if (reputationState.substring(0, 2) === "0x") {
       reputationState = reputationState.slice(2);
@@ -584,7 +590,7 @@ class ReputationMiner {
    * @param  {bigNumber or string} uid        The global UID assigned to this reputation
    * @return {string}            Appropriately formatted hex string
    */
-  getValueAsBytes(reputation, uid) { //eslint-disable-line
+  getValueAsBytes(reputation, uid) { // eslint-disable-line class-methods-use-this
     return `0x${new BN(reputation.toString()).toString(16, 64)}${new BN(uid.toString()).toString(16, 64)}`;
   }
 
@@ -598,18 +604,6 @@ class ReputationMiner {
   // eslint-disable-next-line class-methods-use-this
   getAmount(i, amount) {
     return amount;
-  }
-
-  /**
-   * Get the key and value of the most recently added reputation (i.e. the one with the highest UID),
-   * and proof (branchMask and siblings) that it exists in the current reputation state.
-   * @return {Promise}    The returned promise will resolve to `[key, value, branchMask, siblings]`
-   */
-  // eslint-disable-next-line no-unused-vars
-  async getNewestReputationProofObject(i) {
-    // i is unused here, but is used in the Malicious3 mining client.
-    const key = Object.keys(this.reputations)[this.nReputations - 1];
-    return this.getReputationProofObject(key);
   }
 
   /**
@@ -640,11 +634,11 @@ class ReputationMiner {
     if (!entryIndex) {
       entryIndex = await this.getEntryIndex(); // eslint-disable-line no-param-reassign
     }
-    let gasEstimate;
-    if (process.env.SOLIDITY_COVERAGE) {
-      gasEstimate = ethers.utils.bigNumberify(1000000);
-    } else {
+    let gasEstimate = ethers.utils.bigNumberify(1000000);
+    try {
       gasEstimate = await repCycle.estimate.submitRootHash(hash, nNodes, jrh, entryIndex);
+    } catch (err) { // eslint-disable-line no-empty
+
     }
 
     // Submit that entry
@@ -815,7 +809,7 @@ class ReputationMiner {
    * @return {Promise}
    */
   async confirmJustificationRootHash() {
-    const [branchMask1, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
+    const [, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
     const repCycle = await this.getActiveRepCycle();
     const nLogEntries = await repCycle.getReputationUpdateLogLength();
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.sub(1));
@@ -823,20 +817,19 @@ class ReputationMiner {
       .bigNumberify(lastLogEntry.nUpdates)
       .add(lastLogEntry.nPreviousUpdates)
       .add(this.nReputationsBeforeLatestLog);
-    const [branchMask2, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
+    const [, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    let gasEstimate;
-    if (process.env.SOLIDITY_COVERAGE) {
-      gasEstimate = ethers.utils.bigNumberify(6000000);
-    } else {
-      gasEstimate = await repCycle.estimate.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2);
+
+    let gasEstimate = ethers.utils.bigNumberify(6000000);
+    try {
+      gasEstimate = await repCycle.estimate.confirmJustificationRootHash(round, index, siblings1, siblings2);
+    } catch (err) { // eslint-disable-line no-empty
+
     }
     return repCycle.confirmJustificationRootHash(
       round,
       index,
-      branchMask1,
       siblings1,
-      branchMask2,
       siblings2,
       { gasLimit: gasEstimate, gasPrice: this.gasPrice }
     );
@@ -907,25 +900,23 @@ class ReputationMiner {
         siblings
       );
     }
-    let gasEstimate;
 
-    if (process.env.SOLIDITY_COVERAGE) {
-      gasEstimate = ethers.utils.bigNumberify(1000000);
-    } else {
+    let gasEstimate = ethers.utils.bigNumberify(1000000);
+    try {
       gasEstimate = await repCycle.estimate.respondToBinarySearchForChallenge(
         round,
         index,
         intermediateReputationHash,
-        branchMask.toString(),
         siblings
       );
+    } catch (err) { // eslint-disable-line no-empty
+
     }
 
     return repCycle.respondToBinarySearchForChallenge(
       round,
       index,
       intermediateReputationHash,
-      branchMask.toString(),
       siblings,
       {
         gasLimit: gasEstimate,
@@ -948,15 +939,15 @@ class ReputationMiner {
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
-    const [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
-    let gasEstimate;
-    if (process.env.SOLIDITY_COVERAGE) {
-      gasEstimate = ethers.utils.bigNumberify(1000000);
-    } else {
-      gasEstimate = await repCycle.estimate.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings);
+    const [, siblings] = await this.justificationTree.getProof(targetNodeKey);
+    let gasEstimate = ethers.utils.bigNumberify(1000000);
+    try {
+      gasEstimate = await repCycle.estimate.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings);
+    } catch (err){ // eslint-disable-line no-empty
+
     }
 
-    return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings, {
+    return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings, {
       gasLimit: gasEstimate,
       gasPrice: this.gasPrice
     });
@@ -1018,7 +1009,6 @@ class ReputationMiner {
         ReputationMiner.getHexString(agreeStateBranchMask),
         firstDisagreeJustifications.justUpdatedProof.nNodes,
         ReputationMiner.getHexString(disagreeStateBranchMask),
-        lastAgreeJustifications.newestReputationProof.branchMask,
         logEntryNumber,
         "0",
         lastAgreeJustifications.originReputationProof.branchMask,
@@ -1026,8 +1016,6 @@ class ReputationMiner {
         lastAgreeJustifications.nextUpdateProof.uid,
         firstDisagreeJustifications.justUpdatedProof.reputation,
         firstDisagreeJustifications.justUpdatedProof.uid,
-        lastAgreeJustifications.newestReputationProof.reputation,
-        lastAgreeJustifications.newestReputationProof.uid,
         lastAgreeJustifications.originReputationProof.reputation,
         lastAgreeJustifications.originReputationProof.uid,
         lastAgreeJustifications.childReputationProof.branchMask,
@@ -1044,7 +1032,6 @@ class ReputationMiner {
       [
         ...ReputationMiner.breakKeyInToElements(reputationKey).map(x => ethers.utils.hexZeroPad(x, 32)),
         soliditySha3(reputationKey),
-        soliditySha3(lastAgreeJustifications.newestReputationProof.key),
         soliditySha3(lastAgreeJustifications.adjacentReputationProof.key),
         soliditySha3(lastAgreeJustifications.originAdjacentReputationProof.key),
         soliditySha3(lastAgreeJustifications.childAdjacentReputationProof.key),
@@ -1052,16 +1039,15 @@ class ReputationMiner {
       firstDisagreeJustifications.justUpdatedProof.siblings,
       agreeStateSiblings,
       disagreeStateSiblings,
-      lastAgreeJustifications.newestReputationProof.siblings,
       lastAgreeJustifications.originReputationProof.siblings,
       lastAgreeJustifications.childReputationProof.siblings,
       lastAgreeJustifications.adjacentReputationProof.siblings]
 
-    let gasEstimate;
-    if (process.env.SOLIDITY_COVERAGE) {
-      gasEstimate = ethers.utils.bigNumberify(4000000);
-    } else {
+    let gasEstimate = ethers.utils.bigNumberify(4000000);
+    try {
       gasEstimate = await repCycle.estimate.respondToChallenge(...functionArgs);
+    } catch (err){ // eslint-disable-line no-empty
+
     }
 
     return repCycle.respondToChallenge(...functionArgs,
@@ -1111,7 +1097,10 @@ class ReputationMiner {
       value = this.getValueAsBytes(newValue, this.nReputations.add(1), index);
       this.nReputations = this.nReputations.add(1);
     }
-    await this.reputationTree.insert(key, value, { gasLimit: 4000000 });
+    const tx = await this.reputationTree.insert(key, value, { gasLimit: 4000000 });
+    if (!this.useJsTree) {
+      await tx.wait();
+    }
     // If successful, add to our JSON.
     this.reputations[key] = value;
     return true;
@@ -1144,7 +1133,7 @@ class ReputationMiner {
       applyLogs = true;
     }
     for (let i = 0; i < events.length; i += 1) {
-      console.log(`Syncing mining cycle ${i+1} of ${events.length}...`)
+      console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
       const event = events[i];
       const hash = event.data.slice(0, 66);
       if (applyLogs) {
@@ -1248,6 +1237,8 @@ class ReputationMiner {
 
       const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
       const contract = await contractFactory.deploy();
+      await contract.deployed();
+
       this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
 
@@ -1263,7 +1254,10 @@ class ReputationMiner {
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
       const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
-      await this.reputationTree.insert(key, row.value, { gasLimit: 4000000 });
+      const tx = await this.reputationTree.insert(key, row.value, { gasLimit: 4000000 });
+      if (!this.useJsTree) {
+        await tx.wait();
+      }
       this.reputations[key] = row.value;
     }
     const currentStateHash = await this.reputationTree.getRootHash();

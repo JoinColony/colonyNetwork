@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import parser from "solidity-parser-antlr";
 import fs from "fs";
 import path from "path";
@@ -27,8 +26,6 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/ens/ENS.sol",
       "contracts/ens/ENSRegistry.sol",
       "contracts/extensions/ExtensionFactory.sol",
-      "contracts/extensions/OldRoles.sol",
-      "contracts/extensions/OldRolesFactory.sol",
       "contracts/extensions/OneTxPayment.sol",
       "contracts/extensions/OneTxPaymentFactory.sol",
       "contracts/gnosis/MultiSigWallet.sol",
@@ -50,6 +47,7 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/testHelpers/NoLimitSubdomains.sol",
       "contracts/testHelpers/TaskSkillEditing.sol",
       "contracts/testHelpers/FunctionsNotAvailableOnColony.sol",
+      "contracts/testHelpers/TransferTest.sol",
       "contracts/ERC20Extended.sol",
       "contracts/EtherRouter.sol",
       "contracts/IRecovery.sol",

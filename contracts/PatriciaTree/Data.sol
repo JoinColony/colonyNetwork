@@ -93,7 +93,6 @@ library Data {
       newNodeHash = value;
     } else if (prefix.length >= e.label.length) {  // NOTE: how could a common prefix be longer than either label?
       // Partial match, just follow the path
-      assert(suffix.length > 1);
       Node memory n = self.nodes[e.node];
       (head, tail) = chopFirstBit(suffix);
       n.children[head] = insertAtEdge(self, n.children[head], tail, value);

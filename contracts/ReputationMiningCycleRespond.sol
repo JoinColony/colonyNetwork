@@ -60,38 +60,34 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_AGREE_STATE_BRANCH_MASK = 4;
   uint constant U_DISAGREE_STATE_NNODES = 5;
   uint constant U_DISAGREE_STATE_BRANCH_MASK = 6;
-  uint constant U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK = 7;
-  uint constant U_LOG_ENTRY_NUMBER = 8;
-  uint constant U_DECAY_TRANSITION = 9;
-  uint constant U_USER_ORIGIN_SKILL_REPUTATION_BRANCH_MASK = 10;
+  uint constant U_LOG_ENTRY_NUMBER = 7;
+  uint constant U_DECAY_TRANSITION = 8;
+  uint constant U_USER_ORIGIN_SKILL_REPUTATION_BRANCH_MASK = 9;
 
-  uint constant U_AGREE_STATE_REPUTATION_VALUE = 11;
-  uint constant U_AGREE_STATE_REPUTATION_UID = 12;
-  uint constant U_DISAGREE_STATE_REPUTATION_VALUE = 13;
-  uint constant U_DISAGREE_STATE_REPUTATION_UID= 14;
-  uint constant U_PREVIOUS_NEW_REPUTATION_VALUE = 15;
-  uint constant U_PREVIOUS_NEW_REPUTATION_UID = 16;
-  uint constant U_USER_ORIGIN_REPUTATION_VALUE = 17;
-  uint constant U_USER_ORIGIN_REPUTATION_UID = 18;
-  uint constant U_CHILD_REPUTATION_BRANCH_MASK = 19;
-  uint constant U_CHILD_REPUTATION_VALUE = 20;
-  uint constant U_CHILD_REPUTATION_UID = 21;
-  uint constant U_GLOBAL_CHILD_UPDATE = 22;
-  uint constant U_ADJACENT_REPUTATION_BRANCH_MASK = 23;
-  uint constant U_ADJACENT_REPUTATION_VALUE = 24;
-  uint constant U_ADJACENT_REPUTATION_UID = 25;
-  uint constant U_NEW_REPUTATION = 26;
-  uint constant U_USER_ORIGIN_ADJACENT_REPUTATION_VALUE = 27;
-  uint constant U_CHILD_ADJACENT_REPUTATION_VALUE = 28;
+  uint constant U_AGREE_STATE_REPUTATION_VALUE = 10;
+  uint constant U_AGREE_STATE_REPUTATION_UID = 11;
+  uint constant U_DISAGREE_STATE_REPUTATION_VALUE = 12;
+  uint constant U_DISAGREE_STATE_REPUTATION_UID= 13;
+  uint constant U_USER_ORIGIN_REPUTATION_VALUE = 14;
+  uint constant U_USER_ORIGIN_REPUTATION_UID = 15;
+  uint constant U_CHILD_REPUTATION_BRANCH_MASK = 16;
+  uint constant U_CHILD_REPUTATION_VALUE = 17;
+  uint constant U_CHILD_REPUTATION_UID = 18;
+  uint constant U_GLOBAL_CHILD_UPDATE = 19;
+  uint constant U_ADJACENT_REPUTATION_BRANCH_MASK = 20;
+  uint constant U_ADJACENT_REPUTATION_VALUE = 21;
+  uint constant U_ADJACENT_REPUTATION_UID = 22;
+  uint constant U_NEW_REPUTATION = 23;
+  uint constant U_USER_ORIGIN_ADJACENT_REPUTATION_VALUE = 24;
+  uint constant U_CHILD_ADJACENT_REPUTATION_VALUE = 25;
 
   uint constant B_REPUTATION_KEY_COLONY = 0;
   uint constant B_REPUTATION_KEY_SKILLID = 1;
   uint constant B_REPUTATION_KEY_USER = 2;
   uint constant B_REPUTATION_KEY_HASH = 3;
-  uint constant B_PREVIOUS_NEW_REPUTATION_KEY_HASH = 4;
-  uint constant B_ADJACENT_REPUTATION_KEY_HASH = 5;
-  uint constant B_ORIGIN_ADJACENT_REPUTATION_KEY_HASH = 6;
-  uint constant B_CHILD_ADJACENT_REPUTATION_KEY_HASH = 7;
+  uint constant B_ADJACENT_REPUTATION_KEY_HASH = 4;
+  uint constant B_ORIGIN_ADJACENT_REPUTATION_KEY_HASH = 5;
+  uint constant B_CHILD_ADJACENT_REPUTATION_KEY_HASH = 6;
 
   uint constant DECAY_NUMERATOR =    992327946262944; // 24-hr mining cycles
   uint constant DECAY_DENOMINATOR = 1000000000000000;
@@ -101,12 +97,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function respondToChallenge(
-    uint256[29] memory u, //An array of 29 UINT Params, ordered as given above.
-    bytes32[8] memory b32, // An array of 8 bytes32 params, ordered as given above
+    uint256[26] memory u, //An array of 27 UINT Params, ordered as given above.
+    bytes32[7] memory b32, // An array of 7 bytes32 params, ordered as given above
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
-    bytes32[] memory previousNewReputationSiblings,
     bytes32[] memory userOriginReputationSiblings,
     bytes32[] memory childReputationSiblings,
     bytes32[] memory adjacentReputationSiblings
@@ -157,17 +152,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       checkAdjacentReputation(u, b32, adjacentReputationSiblings, agreeStateSiblings, disagreeStateSiblings);
     }
 
-    // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the 'agree' state.
-    // i.e. the reputation they supplied is in the 'agree' state.
-    checkPreviousReputationInState(
-      u,
-      b32,
-      agreeStateSiblings,
-      previousNewReputationSiblings);
-
-    // Save the index for tiebreak scenarios later.
-    saveProvedReputation(u);
-
     confirmChallengeCompleted(u);
 
     // Safety net?
@@ -181,8 +165,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   /////////////////////////
 
   function checkAdjacentReputation(
-    uint256[29] memory u,
-    bytes32[8] memory b32,
+    uint256[26] memory u,
+    bytes32[7] memory b32,
     bytes32[] memory adjacentReputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings
@@ -244,8 +228,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function buildNewSiblingsArray(
-    uint256[29] memory u,
-    bytes32[8] memory b32,
+    uint256[26] memory u,
+    bytes32[7] memory b32,
     uint256 firstDifferenceBit,
     bytes32[] memory adjacentReputationSiblings
     ) internal pure returns (bytes32[] memory)
@@ -294,8 +278,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function checkUserOriginReputation(
-    uint256[29] memory u,
-    bytes32[8] memory b32,
+    uint256[26] memory u,
+    bytes32[7] memory b32,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory userOriginReputationSiblings) internal view
   {
@@ -316,8 +300,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function checkChildReputation(
-    uint256[29] memory u,
-    bytes32[8] memory b32,
+    uint256[26] memory u,
+    bytes32[7] memory b32,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory childReputationSiblings) internal view
   {
@@ -339,7 +323,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       b32[B_CHILD_ADJACENT_REPUTATION_KEY_HASH]);
   }
 
-  function confirmChallengeCompleted(uint256[29] memory u) internal {
+  function confirmChallengeCompleted(uint256[26] memory u) internal {
     // If everthing checked out, note that we've responded to the challenge.
     disputeRounds[u[U_ROUND]][u[U_IDX]].challengeStepCompleted += 1;
     disputeRounds[u[U_ROUND]][u[U_IDX]].lastResponseTimestamp = now;
@@ -348,7 +332,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     emit ChallengeCompleted(submission.proposedNewRootHash, submission.nNodes, submission.jrh);
   }
 
-  function checkKey(uint256[29] memory u, bytes32[8] memory b32) internal view {
+  function checkKey(uint256[26] memory u, bytes32[7] memory b32) internal view {
     // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
@@ -360,14 +344,14 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     }
   }
 
-  function checkKeyDecay(uint256[29] memory u, uint256 _updateNumber) internal pure {
+  function checkKeyDecay(uint256[26] memory u, uint256 _updateNumber) internal pure {
     // We check that the reputation UID is right for the decay transition being disputed.
     // The key is then implicitly checked when they prove that the key+value they supplied is in the
     // right intermediate state in their justification tree.
     require(u[U_AGREE_STATE_REPUTATION_UID]-1 == _updateNumber, "colony-reputation-mining-uid-not-decay");
   }
 
-  function checkKeyLogEntry(uint256[29] memory u, bytes32[8] memory b32) internal view {
+  function checkKeyLogEntry(uint256[26] memory u, bytes32[7] memory b32) internal view {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
     uint256 expectedSkillId;
@@ -386,7 +370,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     );
   }
 
-  function getExpectedSkillIdAndAddress(uint256[29] memory u, ReputationLogEntry storage logEntry) internal view
+  function getExpectedSkillIdAndAddress(uint256[26] memory u, ReputationLogEntry storage logEntry) internal view
   returns (uint256 expectedSkillId, address expectedAddress)
   {
     uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
@@ -417,8 +401,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveBeforeReputationValue(
-    uint256[29] memory u,
-    bytes32[8] memory b32,
+    uint256[26] memory u,
+    bytes32[7] memory b32,
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings
   ) internal view
@@ -459,8 +443,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveAfterReputationValue(
-    uint256[29] memory u,
-    bytes32[8] memory b32,
+    uint256[26] memory u,
+    bytes32[7] memory b32,
     bytes32[] memory reputationSiblings,
     bytes32[] memory disagreeStateSiblings
   ) internal view
@@ -489,7 +473,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function performReputationCalculation(
-    uint256[29] memory u
+    uint256[26] memory u
   ) internal
   {
 
@@ -505,7 +489,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveUID(
-    uint256[29] memory u,
+    uint256[26] memory u,
     uint256 _agreeStateReputationUID,
     uint256 _disagreeStateReputationUID
   ) internal
@@ -515,14 +499,14 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       require(_agreeStateReputationUID == _disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
       emit ProveUIDSuccess(_agreeStateReputationUID, _disagreeStateReputationUID, true);
     } else {
-      require(u[U_PREVIOUS_NEW_REPUTATION_UID] + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
+      require(u[U_AGREE_STATE_NNODES] + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
 
-      emit ProveUIDSuccess(u[U_PREVIOUS_NEW_REPUTATION_UID], _disagreeStateReputationUID, false);
+      emit ProveUIDSuccess(u[U_AGREE_STATE_NNODES], _disagreeStateReputationUID, false);
     }
   }
 
   function proveValue(
-    uint256[29] memory u,
+    uint256[26] memory u,
     int256 _agreeStateReputationValue,
     int256 _disagreeStateReputationValue
   ) internal
@@ -601,7 +585,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   // Get the update number relative in the context of the log entry currently considered
   // e.g. for log entry with 6 updates, the relative update number range is [0 .. 5] (inclusive)
-  function getRelativeUpdateNumber(uint256[29] memory u, ReputationLogEntry memory logEntry) internal view returns (uint256) {
+  function getRelativeUpdateNumber(uint256[26] memory u, ReputationLogEntry memory logEntry) internal view returns (uint256) {
     uint256 nNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
     uint256 updateNumber = sub(sub(disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound, 1), nNodes);
 
@@ -615,7 +599,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     return relativeUpdateNumber;
   }
 
-  function getChildAndParentNUpdatesForLogEntry(uint256[29] memory u) internal view returns (uint128, uint128) {
+  function getChildAndParentNUpdatesForLogEntry(uint256[26] memory u) internal view returns (uint128, uint128) {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     uint128 nParents = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId).nParents;
 
@@ -629,31 +613,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     return (nChildUpdates, nParents);
   }
 
-  function checkPreviousReputationInState(
-    uint256[29] memory u,
-    bytes32[8] memory b32,
-    bytes32[] memory agreeStateSiblings,
-    bytes32[] memory previousNewReputationSiblings
-    ) internal view
-  {
-    // We binary searched to the first disagreement, so the last agreement is the one before
-    uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
-
-    bytes memory previousNewReputationValue = abi.encodePacked(u[U_PREVIOUS_NEW_REPUTATION_VALUE], u[U_PREVIOUS_NEW_REPUTATION_UID]);
-
-    bytes32 reputationRootHash = getImpliedRootNoHashKey(
-      b32[B_PREVIOUS_NEW_REPUTATION_KEY_HASH],
-      previousNewReputationValue,
-      u[U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK],
-      previousNewReputationSiblings
-    );
-    bytes memory jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
-    // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
-    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
-    Submission storage submission = reputationHashSubmissions[disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter];
-    require(impliedRoot == submission.jrh, "colony-reputation-mining-last-state-disagreement");
-  }
-
   function checkKeyHashesAdjacent(bytes32 hash1, bytes32 hash2, uint256 branchMask) internal pure returns (bool) {
     // The bit that would be added to the branchmask is based on where the (hashes of the) two keys first differ.
     uint256 firstDifferenceBit = uint256(Bits.highestBitSet(uint256(hash1 ^ hash2)));
@@ -664,8 +623,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function checkUserOriginReputationInState(
-    uint256[29] memory u,
-    bytes32[8] memory b32,
+    uint256[26] memory u,
+    bytes32[7] memory b32,
     bytes32[] memory agreeStateSiblings,
     bytes32 userOriginReputationKeyHash,
     bytes32[] memory userOriginReputationStateSiblings
@@ -723,7 +682,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function checkChildReputationInState(
-    uint256[29] memory u,
+    uint256[26] memory u,
     bytes32[] memory agreeStateSiblings,
     bytes memory childReputationKey,
     bytes32[] memory childReputationStateSiblings,
@@ -777,17 +736,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
     impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
     require(impliedRoot == submission.jrh, "colony-reputation-mining-child-adjacent-proof-invalid");
-  }
-
-  function saveProvedReputation(uint256[29] memory u) internal {
-    // Require that it is at least plausible
-    uint256 delta = disputeRounds[u[U_ROUND]][u[U_IDX]].intermediateReputationNNodes - u[U_PREVIOUS_NEW_REPUTATION_UID];
-    // Could be zero if this is an update to an existing reputation, or it could be 1 if we have just added a new
-    // reputation. Anything else is inconsistent.
-    // We don't care about over/underflowing, and don't want to use `sub` so that this require message is returned.
-    require(delta == u[U_DISAGREE_STATE_NNODES]-u[U_AGREE_STATE_NNODES], "colony-reputation-mining-proved-uid-inconsistent");
-    // Save the index for tiebreak scenarios later.
-    disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = u[U_PREVIOUS_NEW_REPUTATION_UID];
   }
 
   function buildReputationKey(bytes32 colony, bytes32 skill, bytes32 user) internal pure returns (bytes memory) {

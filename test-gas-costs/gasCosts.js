@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-console, prefer-arrow-callback */
 
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
@@ -277,13 +276,7 @@ contract("All", function(accounts) {
       const workerReputation = WAD.muln(200);
       const managerReputation = WAD.muln(100);
 
-      const tokenArgs = getTokenArgs();
-      const newToken = await Token.new(...tokenArgs);
-      await newToken.unlock();
-      const { logs } = await colonyNetwork.createColony(newToken.address);
-      const { colonyAddress } = logs[0].args;
-      const newColony = await IColony.at(colonyAddress);
-      await newToken.setOwner(colonyAddress);
+      const { colony: newColony, token: newToken } = await setupRandomColony(colonyNetwork);
 
       await newColony.mintTokens(workerReputation.add(managerReputation));
       await newColony.claimColonyFunds(newToken.address);

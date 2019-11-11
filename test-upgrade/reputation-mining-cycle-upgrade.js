@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable prefer-arrow-callback */
 import { setupReputationMiningCycleResolver } from "../helpers/upgradable-contracts";
 import { advanceMiningCycleNoContest } from "../helpers/test-helper";
 

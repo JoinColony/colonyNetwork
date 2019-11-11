@@ -18,6 +18,8 @@ import { fundColonyWithTokens, makeTask, setupRandomColony } from "../../helpers
 import { checkErrorRevert } from "../../helpers/test-helper";
 import { executeSignedRoleAssignment } from "../../helpers/task-review-signing";
 
+const ethers = require("ethers");
+
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
@@ -72,6 +74,26 @@ contract("ColonyPermissions", accounts => {
       expect(administrationRole).to.be.true;
     });
 
+    it("should let users query for roles in domain and subdomains", async () => {
+      let administrationRole = await colony.hasUserRole(FOUNDER, 1, ADMINISTRATION_ROLE);
+      expect(administrationRole).to.be.true;
+      administrationRole = await colony.hasInheritedUserRole(FOUNDER, 1, ADMINISTRATION_ROLE, 0, 1);
+      expect(administrationRole).to.be.true;
+      administrationRole = await colony.hasInheritedUserRole(FOUNDER, 1, ADMINISTRATION_ROLE, 0, 2);
+      expect(administrationRole).to.be.true;
+      administrationRole = await colony.hasInheritedUserRole(FOUNDER, 1, ADMINISTRATION_ROLE, 1, 3);
+      expect(administrationRole).to.be.true;
+
+      administrationRole = await colony.hasUserRole(USER1, 1, ADMINISTRATION_ROLE);
+      expect(administrationRole).to.be.false;
+      administrationRole = await colony.hasInheritedUserRole(USER1, 1, ADMINISTRATION_ROLE, 0, 1);
+      expect(administrationRole).to.be.false;
+      administrationRole = await colony.hasInheritedUserRole(USER1, 1, ADMINISTRATION_ROLE, 0, 2);
+      expect(administrationRole).to.be.false;
+      administrationRole = await colony.hasInheritedUserRole(USER1, 1, ADMINISTRATION_ROLE, 1, 3);
+      expect(administrationRole).to.be.false;
+    });
+
     it("should allow users with funding permission manipulate funds in their domains only", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
@@ -91,6 +113,21 @@ contract("ColonyPermissions", accounts => {
       const taskId = await makeTask({ colonyNetwork, colony, domainId: 2 });
       const task = await colony.getTask(taskId);
       await colony.moveFundsBetweenPots(2, 0, 0, domain2.fundingPotId, task.fundingPotId, WAD, token.address, { from: USER1 });
+    });
+
+    it("should allow users with administration permission manipulate expenditures in their domains only", async () => {
+      // Founder can create expenditures in domain 1, 2, 3.
+      await colony.makeExpenditure(1, 0, 1, { from: FOUNDER });
+      await colony.makeExpenditure(1, 0, 2, { from: FOUNDER });
+      await colony.makeExpenditure(1, 1, 3, { from: FOUNDER });
+
+      // User1 can only create expenditures in domain 2.
+      await colony.setAdministrationRole(1, 0, USER1, 2, true);
+      hasRole = await colony.hasUserRole(USER1, 2, ADMINISTRATION_ROLE);
+      expect(hasRole).to.be.true;
+
+      await checkErrorRevert(colony.makeExpenditure(1, 0, 1, { from: USER1 }), "ds-auth-unauthorized");
+      await colony.makeExpenditure(2, 0, 2, { from: USER1 });
     });
 
     it("should allow users with administration permission manipulate tasks/payments in their domains only", async () => {
@@ -238,7 +275,7 @@ contract("ColonyPermissions", accounts => {
       await colony.setFundingRole(1, 0, USER2, 1, true, { from: USER1 });
       await colony.setAdministrationRole(1, 0, USER2, 1, true, { from: USER1 });
 
-      // // And child domains!
+      // And child domains!
       await colony.setAdministrationRole(1, 0, USER2, 2, true, { from: USER1 });
       await colony.setAdministrationRole(1, 1, USER2, 3, true, { from: USER1 });
     });
@@ -276,6 +313,24 @@ contract("ColonyPermissions", accounts => {
 
     it("should not allow users to pass a too-large child skill index", async () => {
       await checkErrorRevert(colony.makeTask(1, 100, SPECIFICATION_HASH, 2, 0, 0), "colony-network-out-of-range-child-skill-index");
+    });
+
+    it("should be able to get all user roles", async () => {
+      const roleRecovery = ethers.utils.bigNumberify(2 ** 0).toHexString();
+      const roleRoot = ethers.utils.bigNumberify(2 ** 1).toHexString();
+      const roleArbitration = ethers.utils.bigNumberify(2 ** 2).toHexString();
+      const roleArchitecture = ethers.utils.bigNumberify(2 ** 3).toHexString();
+      const roleArchitectureSubdomain = ethers.utils.bigNumberify(2 ** 4).toHexString();
+      const roleFunding = ethers.utils.bigNumberify(2 ** 5).toHexString();
+      const roleAdministration = ethers.utils.bigNumberify(2 ** 6).toHexString();
+
+      const roles1 = await colony.getUserRoles(FOUNDER, 1);
+      const allRoles = roleRecovery | roleRoot | roleArbitration | roleArchitecture | roleArchitectureSubdomain | roleFunding | roleAdministration; // eslint-disable-line no-bitwise
+      expect(roles1).to.equal(ethers.utils.hexZeroPad(ethers.utils.bigNumberify(allRoles).toHexString(), 32));
+
+      await colony.setAdministrationRole(1, 0, USER2, 2, true, { from: FOUNDER });
+      const roles2 = await colony.getUserRoles(USER2, 2);
+      expect(roles2).to.equal(ethers.utils.hexZeroPad(roleAdministration, 32));
     });
   });
 });

@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-console */
 
 const { setupUpgradableTokenLocking } = require("../helpers/upgradable-contracts");
 

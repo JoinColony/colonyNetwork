@@ -52,10 +52,6 @@ contract ReputationMiningCycleDataTypes {
     uint256 upperBound;                   // During the binary search, the highest index in the justification tree that might still be the
                                           // first place where the two submissions differ.
                                           // When the binary search is complete, lowerBound and upperBound are equal
-    uint256 provedPreviousReputationUID;  // If the disagreement between this submission and its opponent is related to the insertion of a
-                                          // new leaf, the submitters also submit proof of a reputation in a state that the two agree on. The
-                                          // UID that reputation has is stored here, and whichever submission proves the higher existing UID is
-                                          // deemed correct, assuming it also matches the UID for the new reputation being inserted.
     bytes32 targetHashDuringSearch;       // The hash we are requesting proofs for as the next stage of the binary search, if it is running
     bytes32 hash1;                        // The hash that is the immediate child on the left hand side of the last hash that was proved during
                                           // the binary search

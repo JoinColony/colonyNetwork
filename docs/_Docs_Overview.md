@@ -63,12 +63,12 @@ Colony supports an ENS integration, which defines a custom ENS registry for use 
   * `ENSRegistry.sol`
 
 
-Colony also supports the creation of extension contracts for use with other smart contracts or dapps. There are 2 officially supported extensions: OldRoles, and OneTxPayment.
+Colony also supports the creation of extension contracts for use with other smart contracts or dapps. There is one officially supported extension, the OneTxPayment (the OldRoles extension has been deprecated).
   * `ExtensionFactory.sol`
-  * `OldRoles.sol`
-  * `OldRolesFactory.sol`
   * `OneTxPayment.sol`
   * `OneTxPaymentFactory.sol`
+  * `OldRoles.sol` (deprecated)
+  * `OldRolesFactory.sol` (deprecated)
 
 ## Logic Entities
 Broadly speaking, the Colony Network can be divided into four logical entities:

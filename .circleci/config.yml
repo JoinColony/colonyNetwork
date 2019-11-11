@@ -19,9 +19,9 @@ step_restore_cache: &step_restore_cache
       - node-modules-{{ checksum "yarn.lock" }}
 step_setup_global_packages: &step_setup_global_packages
   run:
-    name: "Set up global packages"
+    name: "Set up global packages" # Can remove --ignore-engines once node is bumped to 10.13.0
     command: |
-      yarn --pure-lockfile --network-concurrency 1
+      yarn --pure-lockfile --network-concurrency 1 --ignore-engines
       git submodule update --remote --init
       yarn run provision:token:contracts
 step_pull_solc_docker: &step_pull_solc_docker

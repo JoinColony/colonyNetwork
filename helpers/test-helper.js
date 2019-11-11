@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-console */
 import shortid from "shortid";
 import chai from "chai";
 import { asciiToHex } from "web3-utils";
@@ -356,7 +355,7 @@ export function makeReputationKey(colonyAddress, skillBN, accountAddress = undef
 
 // Note: value can be anything with a `.toString()` method -- a string, number, or BN.
 export function makeReputationValue(value, reputationId) {
-  return `0x${(new BN(value.toString())).toString(16, 64)}${(new BN(reputationId)).toString(16, 64)}`; // eslint-disable-line
+  return `0x${new BN(value.toString()).toString(16, 64)}${new BN(reputationId).toString(16, 64)}`;
 }
 
 export async function getValidEntryNumber(colonyNetwork, account, hash, startingEntryNumber = 1) {
@@ -613,15 +612,21 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
   // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
   const repCycle = await getActiveRepCycle(colonyNetwork);
   const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+
   if (nUniqueSubmittedHashes.gtn(0)) {
-    await forwardTime(MINING_CYCLE_DURATION, test);
+    const blockTime = await currentBlockTime();
+    const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+    const cycleTimeElapsed = new BN(blockTime).sub(reputationMiningWindowOpenTimestamp);
+    const cycleTimeRemaining = new BN(MINING_CYCLE_DURATION).sub(cycleTimeElapsed).toNumber();
+
+    await forwardTime(cycleTimeRemaining, test);
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
       await repCycle.confirmNewHash(nUniqueSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.
       // But for now, that's okay.
     } else {
       // We shouldn't get here. If this fires during a test, you haven't finished writing the test.
-      console.log("We're mid dispute process, and can't untangle from here"); // eslint-disable-line no-console
+      console.log("We're mid dispute process, and can't untangle from here");
       // process.exit(1);
       return false;
     }

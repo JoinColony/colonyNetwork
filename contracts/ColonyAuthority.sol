@@ -29,7 +29,7 @@ contract ColonyAuthority is CommonAuthority {
   uint8 constant ARCHITECTURE_SUBDOMAIN_ROLE = uint8(ColonyDataTypes.ColonyRole.ArchitectureSubdomain);
   uint8 constant ROOT_ROLE = uint8(ColonyDataTypes.ColonyRole.Root);
 
-  address colony;
+  address internal colony;
 
   constructor(address _colony) public CommonAuthority(_colony) {
     colony = _colony;
@@ -38,7 +38,6 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ADMINISTRATION_ROLE, "makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)");
     addRoleCapability(ADMINISTRATION_ROLE, "addPayment(uint256,uint256,address,address,uint256,uint256,uint256)");
     addRoleCapability(ADMINISTRATION_ROLE, "setPaymentRecipient(uint256,uint256,uint256,address)");
-    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentDomain(uint256,uint256,uint256,uint256)");
     addRoleCapability(ADMINISTRATION_ROLE, "setPaymentSkill(uint256,uint256,uint256,uint256)");
     addRoleCapability(ADMINISTRATION_ROLE, "setPaymentPayout(uint256,uint256,uint256,address,uint256)");
     addRoleCapability(ADMINISTRATION_ROLE, "finalizePayment(uint256,uint256,uint256)");
@@ -80,6 +79,12 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "updateColonyOrbitDB(string)");
     addRoleCapability(ROOT_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
+
+    // Added in colony v4
+    addRoleCapability(ADMINISTRATION_ROLE, "makeExpenditure(uint256,uint256,uint256)");
+    addRoleCapability(ARBITRATION_ROLE, "transferExpenditure(uint256,uint256,uint256,address)");
+    addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)");
+    addRoleCapability(ARBITRATION_ROLE, "setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

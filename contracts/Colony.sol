@@ -93,6 +93,24 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return ColonyAuthority(address(authority)).hasUserRole(_user, _domainId, uint8(_role));
   }
 
+  function hasInheritedUserRole(
+    address _user,
+    uint256 _domainId,
+    ColonyRole _role,
+    uint256 _childSkillIndex,
+    uint256 _childDomainId
+  ) public view returns (bool)
+  {
+    return (
+      hasUserRole(_user, _domainId, _role) &&
+      (_domainId == _childDomainId || validateDomainInheritance(_domainId, _childSkillIndex, _childDomainId))
+    );
+  }
+
+  function getUserRoles(address who, uint256 where) public view returns (bytes32) {
+    return ColonyAuthority(address(authority)).getUserRoles(who, where);
+  }
+
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
   }
@@ -111,7 +129,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), TaskRole.Manager, TaskRole.Worker);
     setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
     setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("setTaskDomain(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
     // We are setting a manager to both reviewers, but it will require just one signature from manager
     setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Manager);
     setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Evaluator);
@@ -309,22 +326,34 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     );
   }
 
+  // Removing payment/task domain mutability
+  bytes4 constant SIG1 = bytes4(keccak256("setTaskDomain(uint256,uint256)"));
+  bytes4 constant SIG2 = bytes4(keccak256("setPaymentDomain(uint256,uint256,uint256,uint256)"));
+
+  // Introducing the expenditure
+  bytes4 constant SIG3 = bytes4(keccak256("makeExpenditure(uint256,uint256,uint256)"));
+  bytes4 constant SIG4 = bytes4(keccak256("transferExpenditure(uint256,uint256,uint256,address)"));
+  bytes4 constant SIG5 = bytes4(keccak256("setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)"));
+  bytes4 constant SIG6 = bytes4(keccak256("setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)"));
+
+  // v3 to v4
   function finishUpgrade() public always {
-    // Nothing here for v2 to v3, but it needs to be defined.
+    // Remove payment/task mutability from multisig
+    delete reviewers[SIG1];
+
+    // Remove payment/task mutability from authority
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), SIG2, false);
+
+    // Add expenditure capabilities
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), SIG3, true);
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG4, true);
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG5, true);
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG6, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
-    bool protected = false;
-    uint256 networkAddressSlot;
-    assembly {
-      // Use this if statement once https://github.com/sc-forks/solidity-coverage/issues/287 fixed
-      // if eq(slot, colonyNetworkAddress_slot) { protected := 1 }
-      networkAddressSlot := colonyNetworkAddress_slot
-    }
-    if (networkAddressSlot==_slot) {
-      protected = true;
-    }
-    require(!protected, "colony-protected-variable");
+    require(_slot != COLONY_NETWORK_SLOT, "colony-protected-variable");
   }
 
   function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {

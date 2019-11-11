@@ -618,7 +618,7 @@ Query if a contract implements an interface
 
 |Name|Type|Description|
 |---|---|---|
-|bool|bool|
+|status|bool|`true` if the contract implements `interfaceID`
 
 ### `updateColonyOrbitDB`
 

@@ -18,10 +18,12 @@
 pragma solidity >=0.5.8; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
+import "./ContractRecoveryDataTypes.sol";
+
 
 /// @title Recovery interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
-contract IRecovery {
+contract IRecovery is ContractRecoveryDataTypes {
   /// @notice Put colony network mining into recovery mode.
   /// Can only be called by user with recovery role.
   function enterRecoveryMode() public;

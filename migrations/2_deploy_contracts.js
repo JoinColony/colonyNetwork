@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-undef, no-console */
 
 const ContractRecovery = artifacts.require("./ContractRecovery");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
@@ -9,7 +8,6 @@ const ColonyNetworkENS = artifacts.require("./ColonyNetworkENS");
 const ReputationMiningCycle = artifacts.require("./ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("./ReputationMiningCycleRespond");
 const OneTxPaymentFactory = artifacts.require("./extensions/OneTxPaymentFactory");
-const OldRolesFactory = artifacts.require("./extensions/OldRolesFactory");
 
 const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
@@ -32,5 +30,4 @@ module.exports = (deployer, network) => {
   deployer.deploy(Resolver);
   deployer.deploy(ContractRecovery);
   deployer.deploy(OneTxPaymentFactory);
-  deployer.deploy(OldRolesFactory);
 };

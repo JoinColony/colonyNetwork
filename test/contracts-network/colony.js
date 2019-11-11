@@ -22,6 +22,7 @@ chai.use(bnChai(web3.utils.BN));
 
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const TransferTest = artifacts.require("TransferTest");
 
 contract("Colony", accounts => {
   let colony;
@@ -52,6 +53,13 @@ contract("Colony", accounts => {
       await colony.send(1);
       const colonyBalance = await web3GetBalance(colony.address);
       expect(colonyBalance).to.eq.BN(1);
+    });
+
+    it("should accept ether from a contract using .transfer", async () => {
+      const transferTest = await TransferTest.new({ value: 10 });
+      await transferTest.fireTransfer(colony.address, 10);
+      const colonyBalance = await web3GetBalance(colony.address);
+      expect(colonyBalance).to.eq.BN(10);
     });
 
     it("should not have owner", async () => {

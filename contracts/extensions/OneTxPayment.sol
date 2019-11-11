@@ -23,6 +23,7 @@ import "./../ColonyDataTypes.sol";
 import "./../IColony.sol";
 import "./../IColonyNetwork.sol";
 
+// ignore-file-swc-108
 
 contract OneTxPayment {
   bytes4 constant ADD_PAYMENT_SIG = bytes4(keccak256("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"));
