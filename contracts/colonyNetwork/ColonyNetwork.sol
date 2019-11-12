@@ -127,7 +127,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return extensionManagerAddress;
   }
 
-  function addExtension(bytes32 _extensionId, address _resolver, uint8[] memory _roles)
+  function addExtension(bytes32 _extensionId, address _resolver, bytes32 _roles)
   public stoppable calledByMetaColony
   {
     ExtensionManager(extensionManagerAddress).addExtension(_extensionId, _resolver, _roles);

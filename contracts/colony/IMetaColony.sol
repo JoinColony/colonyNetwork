@@ -69,6 +69,6 @@ contract IMetaColony is IColony {
   /// @dev The extension version is queried from the resolver itself.
   /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param _resolver The deployed resolver containing the extension contract logic
-  /// @param _roles An array containing the roles required by the extension
-  function addExtension(bytes32 _extensionId, address _resolver, uint8[] memory _roles) public;
+  /// @param _roles A byte array containing the roles required by the extension
+  function addExtension(bytes32 _extensionId, address _resolver, bytes32 _roles) public;
 }

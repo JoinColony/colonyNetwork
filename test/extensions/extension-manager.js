@@ -7,7 +7,7 @@ import { BN } from "bn.js";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { checkErrorRevert, web3GetBalance } from "../../helpers/test-helper";
+import { checkErrorRevert, web3GetBalance, rolesToBytes32 } from "../../helpers/test-helper";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 import { ROOT_ROLE, ARBITRATION_ROLE, ARCHITECTURE_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE } from "../../helpers/constants";
@@ -67,8 +67,9 @@ contract("ExtensionManager", accounts => {
     resolver0 = await setupResolver(0);
     resolver1 = await setupResolver(1);
     resolver2 = await setupResolver(2);
-    await metaColony.addExtension(TEST_EXTENSION, resolver1.address, [FUNDING_ROLE, ADMINISTRATION_ROLE]);
-    await metaColony.addExtension(TEST_EXTENSION, resolver2.address, []);
+
+    await metaColony.addExtension(TEST_EXTENSION, resolver1.address, rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]));
+    await metaColony.addExtension(TEST_EXTENSION, resolver2.address, ethers.constants.HashZero);
   });
 
   beforeEach(async () => {
@@ -110,46 +111,57 @@ contract("ExtensionManager", accounts => {
 
     it("allows the meta colony to add new extensions to the manager", async () => {
       // Versions start at 1
-      await checkErrorRevert(metaColony.addExtension(extensionId, resolver0.address, []), "extension-manager-bad-version");
+      await checkErrorRevert(metaColony.addExtension(extensionId, resolver0.address, ethers.constants.HashZero), "extension-manager-bad-version");
 
-      await metaColony.addExtension(extensionId, resolver1.address, []);
-      await metaColony.addExtension(extensionId, resolver2.address, []);
+      await metaColony.addExtension(extensionId, resolver1.address, ethers.constants.HashZero);
+      await metaColony.addExtension(extensionId, resolver2.address, ethers.constants.HashZero);
 
       const resolverAddress = await extensionManager.getResolver(extensionId, 1);
       expect(resolverAddress).to.equal(resolver1.address);
     });
 
     it("does not allow the meta colony to overwrite existing extensions", async () => {
-      await metaColony.addExtension(extensionId, resolver1.address, []);
+      await metaColony.addExtension(extensionId, resolver1.address, ethers.constants.HashZero);
 
-      await checkErrorRevert(metaColony.addExtension(extensionId, resolver1.address, []), "extension-manager-already-added");
+      await checkErrorRevert(metaColony.addExtension(extensionId, resolver1.address, ethers.constants.HashZero), "extension-manager-already-added");
     });
 
     it("does not allow the meta colony to add versions out of order", async () => {
-      await checkErrorRevert(metaColony.addExtension(extensionId, resolver2.address, []), "extension-manager-bad-version");
+      await checkErrorRevert(metaColony.addExtension(extensionId, resolver2.address, ethers.constants.HashZero), "extension-manager-bad-version");
 
-      await metaColony.addExtension(extensionId, resolver1.address, []);
-      await metaColony.addExtension(extensionId, resolver2.address, []);
+      await metaColony.addExtension(extensionId, resolver1.address, ethers.constants.HashZero);
+      await metaColony.addExtension(extensionId, resolver2.address, ethers.constants.HashZero);
     });
 
     it("does not allow the meta colony to pass roles after version 1", async () => {
-      await metaColony.addExtension(extensionId, resolver1.address, [ROOT]);
+      await metaColony.addExtension(extensionId, resolver1.address, rolesToBytes32([ROOT_ROLE]));
 
-      await checkErrorRevert(metaColony.addExtension(extensionId, resolver2.address, [ROOT]), "extension-manager-nonempty-roles");
+      await checkErrorRevert(
+        metaColony.addExtension(extensionId, resolver2.address, rolesToBytes32([ROOT_ROLE])),
+        "extension-manager-nonempty-roles"
+      );
     });
 
     it("does not allow the meta colony to add a null resolver", async () => {
-      await checkErrorRevert(metaColony.addExtension(extensionId, ethers.constants.AddressZero, []), "extension-manager-bad-resolver");
+      await checkErrorRevert(
+        metaColony.addExtension(extensionId, ethers.constants.AddressZero, ethers.constants.HashZero),
+        "extension-manager-bad-resolver"
+      );
     });
 
     it("does not allow other colonies to add new extensions to the manager", async () => {
       const fakeMetaColony = await IMetaColony.at(colony.address);
-
-      await checkErrorRevert(fakeMetaColony.addExtension(extensionId, resolver1.address, []), "colony-caller-must-be-meta-colony");
+      await checkErrorRevert(
+        fakeMetaColony.addExtension(extensionId, resolver1.address, ethers.constants.HashZero),
+        "colony-caller-must-be-meta-colony"
+      );
     });
 
     it("does not allow anyone but the colony network to communicate directly with the manager", async () => {
-      await checkErrorRevert(extensionManager.addExtension(extensionId, resolver1.address, []), "extension-manager-not-network");
+      await checkErrorRevert(
+        extensionManager.addExtension(extensionId, resolver1.address, ethers.constants.HashZero),
+        "extension-manager-not-network"
+      );
     });
   });
 
@@ -246,13 +258,10 @@ contract("ExtensionManager", accounts => {
     it("does not allow an extension which requires root permission to be enabled in a subdomain", async () => {
       const extensionId = soliditySha3(shortid.generate());
 
-      await metaColony.addExtension(extensionId, resolver1.address, [ROOT_ROLE]);
+      await metaColony.addExtension(extensionId, resolver1.address, rolesToBytes32([ROOT_ROLE]));
       await extensionManager.installExtension(extensionId, 1, colony.address);
 
-      await checkErrorRevert(
-        extensionManager.enableExtension(extensionId, colony.address, 0, 1, 0, 2, { from: ROOT }),
-        "extension-manager-bad-domain"
-      );
+      await checkErrorRevert(extensionManager.enableExtension(extensionId, colony.address, 0, 1, 0, 2, { from: ROOT }), "colony-bad-domain-for-role");
 
       await extensionManager.enableExtension(extensionId, colony.address, 0, 1, 0, 1, { from: ROOT });
     });
@@ -261,23 +270,9 @@ contract("ExtensionManager", accounts => {
       const allRoles = [ROOT_ROLE, ARBITRATION_ROLE, ARCHITECTURE_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE];
       const extensionId = soliditySha3(shortid.generate());
 
-      await metaColony.addExtension(extensionId, resolver1.address, allRoles);
+      await metaColony.addExtension(extensionId, resolver1.address, rolesToBytes32(allRoles));
       await extensionManager.installExtension(extensionId, 1, colony.address);
       await extensionManager.enableExtension(extensionId, colony.address, 0, 1, 0, 1, { from: ROOT });
-    });
-
-    it("allows an extension to be enabled with non-existent roles, without erroring", async () => {
-      const fakeRole = 100;
-      const extensionId = soliditySha3(shortid.generate());
-
-      await metaColony.addExtension(extensionId, resolver1.address, [ROOT_ROLE, fakeRole]);
-      await extensionManager.installExtension(extensionId, 1, colony.address);
-      await extensionManager.enableExtension(extensionId, colony.address, 0, 1, 0, 1, { from: ROOT });
-
-      // Check that fakeRole is not part of the role bit array
-      const extensionAddress = await extensionManager.getExtension(extensionId, colony.address);
-      const userRoles = await colony.getUserRoles(extensionAddress, 1);
-      expect(new BN(parseInt(userRoles, 16)).and(new BN(1).shln(fakeRole))).to.be.zero;
     });
   });
 

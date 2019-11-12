@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID, FUNDING_ROLE, ADMINISTRATION_ROLE } from "../../helpers/constants";
-import { checkErrorRevert, web3GetCode } from "../../helpers/test-helper";
+import { checkErrorRevert, web3GetCode, rolesToBytes32 } from "../../helpers/test-helper";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 
@@ -41,7 +41,7 @@ contract("One transaction payments", (accounts) => {
     const oneTxPayment = await OneTxPayment.new();
     const resolver = await Resolver.new();
     await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPayment.address }, resolver);
-    await metaColony.addExtension(ONE_TX_PAYMENT, resolver.address, [FUNDING_ROLE, ADMINISTRATION_ROLE]);
+    await metaColony.addExtension(ONE_TX_PAYMENT, resolver.address, rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]));
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();

@@ -27,7 +27,7 @@ contract ExtensionManager {
   IColonyNetwork colonyNetwork;
 
   // [_extensionId] => roles
-  mapping(bytes32 => uint8[]) roles;
+  mapping(bytes32 => bytes32) roles;
   // [_extensionId][version] => resolver
   mapping(bytes32 => mapping(uint256 => address)) resolvers;
   // [_extensionId][colony] => address
@@ -46,14 +46,14 @@ contract ExtensionManager {
     colonyNetwork = IColonyNetwork(_colonyNetworkAddress);
   }
 
-  function addExtension(bytes32 _extensionId, address _resolver, uint8[] memory _roles)
+  function addExtension(bytes32 _extensionId, address _resolver, bytes32 _roles)
     public
   {
     require(msg.sender == address(colonyNetwork), "extension-manager-not-network");
     require(_resolver != address(0x0), "extension-manager-bad-resolver");
 
     uint256 version = getResolverVersion(_resolver);
-    require(version == 1 || _roles.length == 0, "extension-manager-nonempty-roles");
+    require(version == 1 || _roles == 0, "extension-manager-nonempty-roles");
     require(version == 1 || resolvers[_extensionId][version - 1] != address(0x0), "extension-manager-bad-version");
     require(resolvers[_extensionId][version] == address(0x0), "extension-manager-already-added");
 
@@ -121,7 +121,10 @@ contract ExtensionManager {
   {
     require(authorized(_colony, _permissionDomainId, _childSkillIndex, _domainId), "extension-manager-unauthorized");
 
-    assignRoles(_colony, _rootChildSkillIndex, _domainId, _extensionId, true);
+    address extension = installations[_extensionId][_colony];
+    bytes32 userRoles = roles[_extensionId];
+
+    IColony(_colony).setUserRoles(1, _rootChildSkillIndex, extension, _domainId, userRoles, true);
 
     emit ExtensionEnabled(_extensionId, _colony, _domainId);
   }
@@ -138,9 +141,20 @@ contract ExtensionManager {
   {
     require(authorized(_colony, _permissionDomainId, _childSkillIndex, _domainId), "extension-manager-unauthorized");
 
-    assignRoles(_colony, _rootChildSkillIndex, _domainId, _extensionId, false);
+    address extension = installations[_extensionId][_colony];
+    bytes32 userRoles = roles[_extensionId];
+
+    IColony(_colony).setUserRoles(1, _rootChildSkillIndex, extension, _domainId, userRoles, false);
 
     emit ExtensionDisabled(_extensionId, _colony, _domainId);
+  }
+
+  function getRoles(bytes32 _extensionId)
+    public
+    view
+    returns (bytes32)
+  {
+    return roles[_extensionId];
   }
 
   function getResolver(bytes32 _extensionId, uint256 _version)
@@ -176,34 +190,5 @@ contract ExtensionManager {
   function getResolverVersion(address _resolver) internal returns (uint256) {
     address extension = Resolver(_resolver).lookup(VERSION_SIG);
     return ColonyExtension(extension).version();
-  }
-
-  function assignRoles(
-    address _colony,
-    uint256 _rootChildSkillIndex,
-    uint256 _domainId,
-    bytes32 _extensionId,
-    bool _setTo
-  )
-    internal
-  {
-    IColony colony = IColony(_colony);
-    address extension = installations[_extensionId][_colony];
-    uint8[] storage extensionRoles = roles[_extensionId];
-
-    for (uint256 i; i < extensionRoles.length; i++) {
-      if (extensionRoles[i] == uint8(ColonyDataTypes.ColonyRole.Root)) {
-        require(_domainId == 1, "extension-manager-bad-domain");
-        colony.setRootRole(extension, _setTo);
-      } else if (extensionRoles[i] == uint8(ColonyDataTypes.ColonyRole.Arbitration)) {
-        colony.setArbitrationRole(1, _rootChildSkillIndex, extension, _domainId, _setTo);
-      } else if (extensionRoles[i] == uint8(ColonyDataTypes.ColonyRole.Architecture)) {
-        colony.setArchitectureRole(1, _rootChildSkillIndex, extension, _domainId, _setTo);
-      } else if (extensionRoles[i] == uint8(ColonyDataTypes.ColonyRole.Funding)) {
-        colony.setFundingRole(1, _rootChildSkillIndex, extension, _domainId, _setTo);
-      } else if (extensionRoles[i] == uint8(ColonyDataTypes.ColonyRole.Administration)) {
-        colony.setAdministrationRole(1, _rootChildSkillIndex, extension, _domainId, _setTo);
-      }
-    }
   }
 }

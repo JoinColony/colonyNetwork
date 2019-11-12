@@ -321,7 +321,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork(colonyNetworkAddress).setExtensionManager(_extensionManagerAddress);
   }
 
-  function addExtension(bytes32 _extensionId, address _resolver, uint8[] memory _roles)
+  function addExtension(bytes32 _extensionId, address _resolver, bytes32 _roles)
   public stoppable auth
   {
     IColonyNetwork(colonyNetworkAddress).addExtension(_extensionId, _resolver, _roles);
