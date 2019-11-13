@@ -859,64 +859,59 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    [{ word: "high", badClient1Argument: 1, badClient2Argument: 1 }, { word: "low", badClient1Argument: 9, badClient2Argument: -1 }].forEach(
-      async args => {
-        it(`should fail to respondToChallenge if supplied log entry does not correspond to the entry under disagreement and supplied log entry
-          is too ${args.word}`, async () => {
-          await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
+    [
+      { word: "high", badClient1Argument: 1, badClient2Argument: 1 },
+      { word: "low", badClient1Argument: 9, badClient2Argument: -1 }
+    ].forEach(async args => {
+      it(`should fail to respondToChallenge if supplied log entry does not correspond to the entry under disagreement and supplied log entry
+        is too ${args.word}`, async () => {
+        await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
 
-          await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(2));
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+        await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(2));
+        await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+        await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
-          await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-          const repCycle = await getActiveRepCycle(colonyNetwork);
+        await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+        const repCycle = await getActiveRepCycle(colonyNetwork);
 
-          await goodClient.addLogContentsToReputationTree();
+        await goodClient.addLogContentsToReputationTree();
 
-          const badClient = new MaliciousReputationMinerExtraRep(
-            { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
-            args.badClient1Argument,
-            10
-          );
-          await badClient.initialise(colonyNetwork.address);
+        const badClient = new MaliciousReputationMinerExtraRep(
+          { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
+          args.badClient1Argument,
+          10
+        );
+        await badClient.initialise(colonyNetwork.address);
 
-          const badClient2 = new MaliciousReputationMinerWrongProofLogEntry(
-            { loader, realProviderPort, useJsTree, minerAddress: MINER3 },
-            args.badClient2Argument
-          );
-          await badClient2.initialise(colonyNetwork.address);
+        const badClient2 = new MaliciousReputationMinerWrongProofLogEntry(
+          { loader, realProviderPort, useJsTree, minerAddress: MINER3 },
+          args.badClient2Argument
+        );
+        await badClient2.initialise(colonyNetwork.address);
 
-          await submitAndForwardTimeToDispute([badClient, badClient2], this);
+        await submitAndForwardTimeToDispute([badClient, badClient2], this);
 
-          await badClient.confirmJustificationRootHash();
-          await badClient2.confirmJustificationRootHash();
+        await badClient.confirmJustificationRootHash();
+        await badClient2.confirmJustificationRootHash();
 
-          await runBinarySearch(badClient, badClient2);
+        await runBinarySearch(badClient, badClient2);
 
-          await goodClient.confirmBinarySearchResult();
-          await badClient.confirmBinarySearchResult();
+        await goodClient.confirmBinarySearchResult();
+        await badClient.confirmBinarySearchResult();
 
-          if (args.word === "high") {
-            await checkErrorRevertEthers(
-              badClient2.respondToChallenge(),
-              "colony-reputation-mining-update-number-part-of-previous-log-entry-updates"
-            );
-          } else {
-            await checkErrorRevertEthers(
-              badClient2.respondToChallenge(),
-              "colony-reputation-mining-update-number-part-of-following-log-entry-updates"
-            );
-          }
+        if (args.word === "high") {
+          await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-update-number-part-of-previous-log-entry-updates");
+        } else {
+          await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-update-number-part-of-following-log-entry-updates");
+        }
 
-          // Cleanup
-          await forwardTime(MINING_CYCLE_DURATION / 6, this);
-          await goodClient.respondToChallenge();
-          await repCycle.invalidateHash(0, 0);
-          await repCycle.confirmNewHash(1);
-        });
-      }
-    );
+        // Cleanup
+        await forwardTime(MINING_CYCLE_DURATION / 6, this);
+        await goodClient.respondToChallenge();
+        await repCycle.invalidateHash(0, 0);
+        await repCycle.confirmNewHash(1);
+      });
+    });
   });
 
   describe("when miner misbehaving during confirmNewHash stage", async () => {

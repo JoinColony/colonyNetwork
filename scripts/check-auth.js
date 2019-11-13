@@ -55,7 +55,7 @@ function correctAuthModifier(functionDef) {
   }
   // Check that the second is either a lookup of a domainId, or _domainId
   const arg2 = authDec.arguments[2];
-  if (arg2.name !== "_domainId" && (arg2.type === "MemberAccess" && arg2.memberName !== "domainId")) {
+  if (arg2.name !== "_domainId" && arg2.type === "MemberAccess" && arg2.memberName !== "domainId") {
     valid = false;
     errors.push("Second parameter to auth is not _domainId or a lookup thereof");
   }
