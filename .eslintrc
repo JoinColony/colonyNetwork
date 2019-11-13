@@ -17,6 +17,7 @@
     "import/named": "off",
     "no-console": "off",
     "no-unused-expressions": "off",
+    "eslint-comments/no-unlimited-disable": "off",
     "no-await-in-loop": "off",
     "no-trailing-spaces": "error",
     "no-multi-spaces": ["error", {"ignoreEOLComments": true}],
