@@ -14,7 +14,7 @@ function correctRecoveryModifier(functionDef) {
   const isPrivate = ["private", "internal"].indexOf(functionDef.visibility) > -1;
   const isView = ["view", "pure"].indexOf(functionDef.stateMutability) > -1;
   const hasModifier = functionDef.modifiers.filter(mod => ["stoppable", "recovery", "always"].indexOf(mod.name) > -1).length > 0;
-  return isPrivate || (isView || hasModifier);
+  return isPrivate || isView || hasModifier;
 }
 
 walkSync("./contracts/").forEach(contractName => {
