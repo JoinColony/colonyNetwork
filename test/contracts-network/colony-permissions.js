@@ -7,7 +7,6 @@ import {
   ROOT_ROLE,
   ARBITRATION_ROLE,
   ARCHITECTURE_ROLE,
-  ARCHITECTURE_SUBDOMAIN_ROLE,
   FUNDING_ROLE,
   ADMINISTRATION_ROLE,
   INITIAL_FUNDING,
@@ -62,14 +61,12 @@ contract("ColonyPermissions", accounts => {
       const rootRole = await colony.hasUserRole(FOUNDER, 1, ROOT_ROLE);
       const arbitrationRole = await colony.hasUserRole(FOUNDER, 1, ARBITRATION_ROLE);
       const architectureRole = await colony.hasUserRole(FOUNDER, 1, ARCHITECTURE_ROLE);
-      const architectureSubdomainRole = await colony.hasUserRole(FOUNDER, 1, ARCHITECTURE_SUBDOMAIN_ROLE);
       const fundingRole = await colony.hasUserRole(FOUNDER, 1, FUNDING_ROLE);
       const administrationRole = await colony.hasUserRole(FOUNDER, 1, ADMINISTRATION_ROLE);
 
       expect(rootRole).to.be.true;
       expect(arbitrationRole).to.be.true;
       expect(architectureRole).to.be.true;
-      expect(architectureSubdomainRole).to.be.true;
       expect(fundingRole).to.be.true;
       expect(administrationRole).to.be.true;
     });
@@ -243,13 +240,9 @@ contract("ColonyPermissions", accounts => {
       await colony.setArchitectureRole(1, 0, USER2, 2, true, { from: USER1 });
       hasRole = await colony.hasUserRole(USER2, 2, ARCHITECTURE_ROLE);
       expect(hasRole).to.be.true;
-      hasRole = await colony.hasUserRole(USER2, 2, ARCHITECTURE_SUBDOMAIN_ROLE);
-      expect(hasRole).to.be.true;
 
       await colony.setArchitectureRole(1, 0, USER2, 2, false, { from: USER1 });
       hasRole = await colony.hasUserRole(USER2, 2, ARCHITECTURE_ROLE);
-      expect(hasRole).to.be.false;
-      hasRole = await colony.hasUserRole(USER2, 2, ARCHITECTURE_SUBDOMAIN_ROLE);
       expect(hasRole).to.be.false;
 
       // But not permissions in the domain itself!
@@ -320,12 +313,11 @@ contract("ColonyPermissions", accounts => {
       const roleRoot = ethers.utils.bigNumberify(2 ** 1).toHexString();
       const roleArbitration = ethers.utils.bigNumberify(2 ** 2).toHexString();
       const roleArchitecture = ethers.utils.bigNumberify(2 ** 3).toHexString();
-      const roleArchitectureSubdomain = ethers.utils.bigNumberify(2 ** 4).toHexString();
       const roleFunding = ethers.utils.bigNumberify(2 ** 5).toHexString();
       const roleAdministration = ethers.utils.bigNumberify(2 ** 6).toHexString();
 
       const roles1 = await colony.getUserRoles(FOUNDER, 1);
-      const allRoles = roleRecovery | roleRoot | roleArbitration | roleArchitecture | roleArchitectureSubdomain | roleFunding | roleAdministration; // eslint-disable-line no-bitwise
+      const allRoles = roleRecovery | roleRoot | roleArbitration | roleArchitecture | roleFunding | roleAdministration; // eslint-disable-line no-bitwise
       expect(roles1).to.equal(ethers.utils.hexZeroPad(ethers.utils.bigNumberify(allRoles).toHexString(), 32));
 
       await colony.setAdministrationRole(1, 0, USER2, 2, true, { from: FOUNDER });
