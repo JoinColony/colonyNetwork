@@ -209,6 +209,10 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     if (_permissionDomainId != _childDomainId) {
       require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-inheritence");
     }
+    _;
+  }
+
+  modifier archSubdomain(uint256 _permissionDomainId, uint256 _childDomainId) {
     if (canCallOnlyBecauseArchitect(msg.sender, _permissionDomainId, msg.sig)) {
       require(_permissionDomainId != _childDomainId, "ds-auth-only-authorized-in-child-domain");
     }
@@ -221,9 +225,9 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     return childSkillId == domains[childDomainId].skillId;
   }
 
-  // Checks to see if the permission comes ONLY from the ArchitectureSubdomain role (i.e. user does not have root, etc.)
+  // Checks to see if the permission comes ONLY from the Architecture role (i.e. user does not have root, etc.)
   function canCallOnlyBecauseArchitect(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
-    return DomainRoles(address(authority)).canCallOnlyBecause(src, domainId, uint8(ColonyRole.ArchitectureSubdomain), address(this), sig);
+    return DomainRoles(address(authority)).canCallOnlyBecause(src, domainId, uint8(ColonyRole.Architecture), address(this), sig);
   }
 
   function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
