@@ -23,7 +23,7 @@ import "./IColony.sol";
 
 /// @title MetaColony interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
-contract IMetaColony is IColony {
+abstract contract IMetaColony is IColony {
   /// @notice Mints CLNY in the Meta Colony and transfers them to the colony network.
   /// Only allowed to be called on the Meta Colony by the colony network.
   /// @param _wad Amount to mint and transfer to the colony network

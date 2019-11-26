@@ -24,7 +24,7 @@ import "./ColonyDataTypes.sol";
 
 /// @title Colony interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
-contract IColony is ColonyDataTypes, IRecovery {
+abstract contract IColony is ColonyDataTypes, IRecovery {
   // Implemented in DSAuth.sol
   /// @notice Get the `ColonyAuthority` for the colony.
   /// @return colonyAuthority The `ColonyAuthority` contract address

@@ -23,7 +23,7 @@ import "./ContractRecoveryDataTypes.sol";
 
 /// @title Recovery interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
-contract IRecovery is ContractRecoveryDataTypes {
+abstract contract IRecovery is ContractRecoveryDataTypes {
   /// @notice Put colony network mining into recovery mode.
   /// Can only be called by user with recovery role.
   function enterRecoveryMode() public;

@@ -24,7 +24,7 @@ import "./ColonyNetworkDataTypes.sol";
 
 /// @title Colony Network interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
-contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
+abstract contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
 
   /// @notice Query if a contract implements an interface
   /// @param interfaceID The interface identifier, as specified in ERC-165

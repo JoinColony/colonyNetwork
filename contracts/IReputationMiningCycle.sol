@@ -21,7 +21,7 @@ pragma experimental "ABIEncoderV2";
 import "./ReputationMiningCycleDataTypes.sol";
 
 
-contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
+abstract contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice The getter for the disputeRounds mapping.
   /// @param _round The dispute round to query
   /// @return submissions An array of DisputedEntrys struct for the round.

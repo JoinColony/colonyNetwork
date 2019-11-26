@@ -61,15 +61,15 @@ contract DomainRoles is DSRoles {
 
   // Support old function signatures for root domain
 
-  function setUserRole(address who, uint8 role, bool enabled) public auth {
+  function setUserRole(address who, uint8 role, bool enabled) public override auth {
     return setUserRole(who, 1, role, enabled);
   }
 
-  function hasUserRole(address who, uint8 role) public view returns (bool) {
+  function hasUserRole(address who, uint8 role) public override view returns (bool) {
     return hasUserRole(who, 1, role);
   }
 
-  function canCall(address caller, address code, bytes4 sig) public view returns (bool) {
+  function canCall(address caller, address code, bytes4 sig) public override view returns (bool) {
     return canCall(caller, 1, code, sig);
   }
 

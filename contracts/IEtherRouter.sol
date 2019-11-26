@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 // address / address payable conversion issues where we want to use this.
 
 
-contract IEtherRouter {
+abstract contract IEtherRouter {
   /// @notice Sets the resolver address. This is used in the routing of all delegatecalls by the EtherRouter.
   /// @param _resolver Address of the new Resolver
   function setResolver(address _resolver) public;

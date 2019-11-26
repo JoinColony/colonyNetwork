@@ -172,7 +172,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     _;
   }
 
-  modifier auth {
+  modifier auth override {
     require(isAuthorized(msg.sender, 1, msg.sig), "ds-auth-unauthorized");
     _;
   }

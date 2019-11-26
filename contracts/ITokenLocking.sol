@@ -21,7 +21,7 @@ pragma experimental "ABIEncoderV2";
 import "./TokenLockingDataTypes.sol";
 
 
-contract ITokenLocking is TokenLockingDataTypes {
+abstract contract ITokenLocking is TokenLockingDataTypes {
 
   /// @notice Set the ColonyNetwork contract address.
   /// @dev ColonyNetwork is used for checking if sender is a colony created on colony network.
