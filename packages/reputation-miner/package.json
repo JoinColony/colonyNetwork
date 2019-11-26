@@ -24,7 +24,7 @@
     "slack": "^11.0.2",
     "sqlite": "^3.0.2",
     "web3-utils": "^1.0.0",
-    "yargs": "^14.0.0"
+    "yargs": "^15.0.1"
   },
   "devDependencies": {
     "@babel/polyfill": "^7.4.4",
