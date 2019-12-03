@@ -18,10 +18,10 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "./ColonyStorage.sol";
+import "./ColonyCommon.sol";
 
 
-contract ColonyPayment is ColonyStorage {
+contract ColonyPayment is ColonyCommon {
   function addPayment(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,

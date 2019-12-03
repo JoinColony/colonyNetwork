@@ -5,3 +5,6 @@
 	path = lib/colonyToken
 	url = https://github.com/JoinColony/colonyToken.git
   branch = master
+[submodule "lib/tabookey-gasless"]
+	path = lib/tabookey-gasless
+	url = https://github.com/tabookey/tabookey-gasless.git

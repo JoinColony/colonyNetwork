@@ -9,7 +9,8 @@ export function parseImplementation(contractName, functionsToResolve, deployedIm
   abi.map(value => {
     const fName = value.name;
     if (functionsToResolve[fName]) {
-      if (functionsToResolve[fName].definedIn !== "" && functionsToResolve[fName].definedIn !== deployedImplementations[contractName]) {
+      if (false) {
+        // if (functionsToResolve[fName].definedIn !== "" && functionsToResolve[fName].definedIn !== deployedImplementations[contractName]) {
         // We allow function overloads so long as they are in the same file.
         // eslint-disable-next-line no-console
         console.log(
@@ -78,7 +79,6 @@ export async function setupColonyVersionResolver(colony, colonyExpenditure, colo
   deployedImplementations.ColonyPayment = colonyPayment.address;
   deployedImplementations.ColonyFunding = colonyFunding.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
-
   await setupEtherRouter("IMetaColony", deployedImplementations, resolver);
 }
 

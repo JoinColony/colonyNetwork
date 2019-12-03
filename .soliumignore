@@ -5,3 +5,4 @@ test
 lib
 packages
 contracts/Migrations.sol
+contracts/GSN/*.sol

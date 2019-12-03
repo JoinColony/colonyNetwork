@@ -18,10 +18,10 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "./ColonyStorage.sol";
+import "./ColonyCommon.sol";
 
 
-contract ColonyExpenditure is ColonyStorage {
+contract ColonyExpenditure is ColonyCommon {
   int256 constant MAX_PAYOUT_MODIFIER = int256(WAD);
   int256 constant MIN_PAYOUT_MODIFIER = -int256(WAD);
 
@@ -44,7 +44,7 @@ contract ColonyExpenditure is ColonyStorage {
 
     expenditures[expenditureCount] = Expenditure({
       status: ExpenditureStatus.Active,
-      owner: msg.sender,
+      owner: _msgSender(),
       fundingPotId: fundingPotCount,
       domainId: _domainId,
       finalizedTimestamp: 0

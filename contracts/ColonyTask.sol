@@ -18,10 +18,10 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "./ColonyStorage.sol";
+import "./ColonyCommon.sol";
 
 
-contract ColonyTask is ColonyStorage {
+contract ColonyTask is ColonyCommon {
   uint256 constant RATING_COMMIT_TIMEOUT = 5 days;
   uint256 constant RATING_REVEAL_TIMEOUT = 5 days;
 
@@ -29,9 +29,9 @@ contract ColonyTask is ColonyStorage {
     // Manager rated by worker
     // Worker rated by evaluator
     if (_role == TaskRole.Manager) {
-      require(tasks[_id].roles[uint8(TaskRole.Worker)].user == msg.sender, "colony-user-cannot-rate-task-manager");
+      require(tasks[_id].roles[uint8(TaskRole.Worker)].user == _msgSender(), "colony-user-cannot-rate-task-manager");
     } else if (_role == TaskRole.Worker) {
-      require(tasks[_id].roles[uint8(TaskRole.Evaluator)].user == msg.sender, "colony-user-cannot-rate-task-worker");
+      require(tasks[_id].roles[uint8(TaskRole.Evaluator)].user == _msgSender(), "colony-user-cannot-rate-task-worker");
     } else {
       revert("colony-unsupported-role-to-rate");
     }
@@ -115,8 +115,8 @@ contract ColonyTask is ColonyStorage {
     task.domainId = _domainId;
     task.skills = new uint256[](1);
     tasks[taskCount] = task;
-    tasks[taskCount].roles[uint8(TaskRole.Manager)].user = msg.sender;
-    tasks[taskCount].roles[uint8(TaskRole.Evaluator)].user = msg.sender;
+    tasks[taskCount].roles[uint8(TaskRole.Manager)].user = _msgSender();
+    tasks[taskCount].roles[uint8(TaskRole.Evaluator)].user = _msgSender();
 
     if (_skillId > 0) {
       this.setTaskSkill(taskCount, _skillId);

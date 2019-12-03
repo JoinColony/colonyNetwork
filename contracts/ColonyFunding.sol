@@ -18,11 +18,11 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "./ColonyStorage.sol";
+import "./ColonyCommon.sol";
 import "./ITokenLocking.sol";
 
 
-contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
+contract ColonyFunding is ColonyCommon, PatriciaTreeProofs { // ignore-swc-123
   function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, TaskRole.Manager, _token, _amount);
     emit TaskPayoutSet(_id, TaskRole.Manager, _token, _amount);
@@ -320,7 +320,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     uint256 userReputation = checkReputation(
       rewardPayoutCycles[_payoutId].reputationState,
       domains[1].skillId,
-      msg.sender,
+      _msgSender(),
       key,
       value,
       branchMask,
@@ -336,10 +336,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     fundingPots[0].balance[tokenAddress] = sub(fundingPots[0].balance[tokenAddress], reward);
 
-    assert(ERC20Extended(tokenAddress).transfer(msg.sender, remainder));
+    assert(ERC20Extended(tokenAddress).transfer(_msgSender(), remainder));
     assert(ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee));
 
-    emit RewardPayoutClaimed(_payoutId, msg.sender, fee, remainder);
+    emit RewardPayoutClaimed(_payoutId, _msgSender(), fee, remainder);
   }
 
   function finalizeRewardPayout(uint256 _payoutId) public stoppable {
@@ -410,8 +410,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
 
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
-    uint256 userDepositTimestamp = tokenLocking.getUserLock(token, msg.sender).timestamp;
-    uint256 userTokens = tokenLocking.getUserLock(token, msg.sender).balance;
+    uint256 userDepositTimestamp = tokenLocking.getUserLock(token, _msgSender()).timestamp;
+    uint256 userTokens = tokenLocking.getUserLock(token, _msgSender()).balance;
 
     require(userDepositTimestamp < payout.blockTimestamp, "colony-reward-payout-deposit-too-recent");
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
@@ -438,7 +438,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     uint256 reward = (mul(squareRoots[4], squareRoots[6]) / squareRoots[5]) ** 2;
 
-    tokenLocking.unlockTokenForUser(token, msg.sender, payoutId);
+    tokenLocking.unlockTokenForUser(token, _msgSender(), payoutId);
 
     return (payout.tokenAddress, reward);
   }

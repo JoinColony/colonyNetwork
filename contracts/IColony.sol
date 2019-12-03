@@ -735,4 +735,23 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Total amount of tokens in funding pots other than the rewards pot (id 0)
   function getNonRewardPotsTotal(address _token) public view returns (uint256 amount);
+
+  function enableGSN(address relayHub) public;
+
+  function acceptRelayedCall(
+    address relay,
+    address from,
+    bytes memory encodedFunction,
+    uint256 transactionFee,
+    uint256 gasPrice,
+    uint256 gasLimit,
+    uint256 nonce,
+    bytes memory approvalData,
+    uint256 maxPossibleCharge
+  ) public;
+
+  function preRelayedCall(bytes calldata context) external returns (bytes32);
+  function postRelayedCall(bytes calldata context, bool success, uint actualCharge, bytes32 preRetVal) external;
+
+
 }

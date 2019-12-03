@@ -18,11 +18,11 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
-import "./ColonyStorage.sol";
+import "./ColonyCommon.sol";
 import "./IEtherRouter.sol";
 
 
-contract Colony is ColonyStorage, PatriciaTreeProofs {
+contract Colony is ColonyCommon, PatriciaTreeProofs {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
@@ -194,6 +194,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function updateColonyOrbitDB(string memory orbitdb) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).updateColonyOrbitDB(orbitdb);
+  }
+
+  function enableGSN(address relayHub) public auth {
+    _relayHub = relayHub;
   }
 
   function addGlobalSkill() public

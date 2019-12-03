@@ -17,6 +17,7 @@
     "clean:test:contracts": "rimraf ./contracts/*Updated*.*",
     "clean:contracts": "rimraf ./build/contracts/*",
     "provision:token:contracts": "truffle compile && truffle compile --contracts_directory 'lib/dappsys/[!note][!stop][!proxy][!thing][!token]*.sol' && bash ./scripts/provision-token-contracts.sh",
+    "provision:gsn:contracts": "truffle compile && truffle compile --contracts_directory 'lib/tabookey-gasless/contracts/RelayHub.sol' && bash ./scripts/provision-gsn-contracts.sh",
     "start:blockchain:client": "bash ./scripts/start-blockchain-client.sh",
     "stop:blockchain:client": "bash ./scripts/stop-blockchain-client.sh",
     "start:blockchain:client:2to3": "yarn run ganache-cli --fork https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d@8046998 --unlock 0x56a9212f7f495fadce1f27967bef5158199b36c7 --unlock 0xf780ee9f9e50248e7f8433a132a4b0b00b3da313 --noVMErrorsOnRPCResponse >/dev/null 2>&1",
