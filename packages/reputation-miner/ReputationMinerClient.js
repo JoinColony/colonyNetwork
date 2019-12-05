@@ -178,15 +178,25 @@ class ReputationMinerClient {
     // See if we're talking to Ganache to fix a ganache crash (which, while fun to say, is not fun to see)
     const clientString = await this._miner.realProvider.send("web3_clientVersion");
     this.ganacheClient = clientString.indexOf('TestRPC') !== -1
-    this._adapter.log("🏁 Initialised");
+
+    // Initial call to process the existing log from the cycle we're currently in
+    await this.processReputationLog();
+    this._miner.realProvider.polling = true;
+    this._miner.realProvider.pollingInterval = 1000;
+
+    this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
+
+    // Work out when the confirm timeout should be.
+    const repCycle = await this._miner.getActiveRepCycle();
+    const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+    this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24 * 3600 + 600 - (Date.now() / 1000 - openTimestamp)) * 1000);
+
+    this.miningCycleAddress = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+
     if (this._auto) {
-      // Initial call to process the existing log from the cycle we're currently in
-      await this.processReputationLog();
       this.best12Submissions = await this.getTwelveBestSubmissions();
-      this.miningCycleAddress = await this._miner.colonyNetwork.getReputationMiningCycle(true);
 
       // Have we already submitted any of these? Need to update submissionIndex if so
-      const repCycle = await this._miner.getActiveRepCycle();
       const block = await this._miner.realProvider.getBlock('latest');
       // Ensure the submission index is reset to the correct point in the best12Submissions array
       this.submissionIndex = 0;
@@ -201,20 +211,11 @@ class ReputationMinerClient {
           }
         }
       }
-
-      this._miner.realProvider.polling = true;
-      this._miner.realProvider.pollingInterval = 1000;
-
-      // Do the other checks for whether we can submit or confirm a hash
-      this.lockedForBlockProcessing = false;
-      this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
-
-      this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
-
-      // Work out when the confirm timeout should be.
-      const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-      this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24 * 3600 + 600 - (Date.now() / 1000 - openTimestamp)) * 1000);
     }
+    // Set up the listener to take actions on each block
+    this.lockedForBlockProcessing = false;
+    this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
+    this._adapter.log("🏁 Initialised");
   }
 
   async updateGasEstimate(type) {
@@ -264,9 +265,14 @@ class ReputationMinerClient {
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
 
       if (addr !== this.miningCycleAddress) {
-        // Then the cycle has completed since we last checked. Let's sort out our potential submissions for the next cycle.
+        // Then the cycle has completed since we last checked. Let's process the reputation log
         await this.processReputationLog();
-        this.best12Submissions = await this.getTwelveBestSubmissions();
+
+        // And if appropriate, sort out our potential submissions for the next cycle.
+        if (this._auto){
+          this.best12Submissions = await this.getTwelveBestSubmissions();
+        }
+
         this.miningCycleAddress = addr;
         if (this.confirmTimeoutCheck) {
           clearTimeout(this.confirmTimeoutCheck);
@@ -274,6 +280,9 @@ class ReputationMinerClient {
         // If we don't see this cycle completed in the next day and ten minutes, then report it
         this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24 * 3600 + 600) * 1000);
       }
+
+      // If we're not auto-mining, then we don't need to do anything else.
+      if (!this._auto) return;
 
       const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
