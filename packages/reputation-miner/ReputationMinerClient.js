@@ -256,6 +256,7 @@ class ReputationMinerClient {
 
       this.lockedForBlockProcessing = true;
       // DO NOT PUT ANY AWAITS ABOVE THIS LINE OR YOU WILL GET RACE CONDITIONS
+      // If you leave this function after this line, make sure to call this.endDoBlockChecks() to unlock
 
       if (this.blockTimeoutCheck) {
         clearTimeout(this.blockTimeoutCheck);
@@ -282,7 +283,10 @@ class ReputationMinerClient {
       }
 
       // If we're not auto-mining, then we don't need to do anything else.
-      if (!this._auto) return;
+      if (!this._auto) {
+        this.endDoBlockChecks();
+        return;
+      }
 
       const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
