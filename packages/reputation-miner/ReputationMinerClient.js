@@ -191,7 +191,7 @@ class ReputationMinerClient {
     const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
     this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24 * 3600 + 600 - (Date.now() / 1000 - openTimestamp)) * 1000);
 
-    this.miningCycleAddress = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+    this.miningCycleAddress = repCycle.address;
 
     if (this._auto) {
       this.best12Submissions = await this.getTwelveBestSubmissions();
