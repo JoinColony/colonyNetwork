@@ -193,7 +193,7 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryManager.user).to.equal(MANAGER);
-      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT.muln(3).divn(2));
+      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT);
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       expect(repLogEntryEvaluator.user).to.equal(accounts[1]);
@@ -201,11 +201,14 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryWorker1 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
       expect(repLogEntryWorker1.user).to.equal(WORKER);
-      expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT);
+      expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT.divn(2));
 
+      // The entry for the worker's skill shouldn't have the penalty applied - their ability to perform a
+      // task is unrelated to their ability to rate the manager. So they only have their domain reward penalised
+      // (i.e. the one tested above) but not the skill reward.
       const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(4);
       expect(repLogEntryWorker2.user).to.equal(WORKER);
-      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT.muln(3).divn(2));
+      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT);
     });
 
     it("should set the correct reputation change amount in log when evaluator has failed to rate", async function() {
@@ -226,11 +229,11 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryWorker1 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
       expect(repLogEntryWorker1.user).to.equal(WORKER);
-      expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT.muln(3).divn(2));
+      expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT);
 
       const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(4);
       expect(repLogEntryWorker2.user).to.equal(WORKER);
-      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT.muln(3).divn(2));
+      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT);
     });
 
     it("should set the correct reputation change amount in log when worker has failed to rate", async function() {
@@ -244,7 +247,7 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryManager.user).to.equal(MANAGER);
-      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT.muln(3).divn(2));
+      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT);
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       expect(repLogEntryEvaluator.user).to.equal(accounts[1]);

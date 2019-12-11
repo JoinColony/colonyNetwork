@@ -591,7 +591,7 @@ contract ColonyTask is ColonyStorage {
     Role storage evaluatorRole = tasks[_id].roles[uint8(TaskRole.Evaluator)];
 
     if (workerRole.rating == TaskRatings.None) {
-      workerRole.rating = TaskRatings.Excellent;
+      workerRole.rating = TaskRatings.Satisfactory;
       // The evaluator had one job!
       evaluatorRole.rateFail = true;
       evaluatorRole.rating = TaskRatings.Unsatisfactory;
@@ -601,7 +601,7 @@ contract ColonyTask is ColonyStorage {
 
     if (managerRole.rating == TaskRatings.None) {
       workerRole.rateFail = true;
-      managerRole.rating = TaskRatings.Excellent;
+      managerRole.rating = TaskRatings.Satisfactory;
     }
   }
 
