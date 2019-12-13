@@ -45,6 +45,20 @@ Add a new payment in the colony. Secured function to authorised members.
 |---|---|---|
 |paymentId|uint256|Identifier of the newly created payment
 
+### `approveStake`
+
+Allow the _approvee to obligate some amount of tokens as a stake.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_approvee|address|Address of the account we are willing to let obligate us.
+|_domainId|uint256|Domain in which we are willing to be obligated.
+|_amount|uint256|Amount of internal token up to which we are willing to be obligated.
+
+
 ### `authority`
 
 Get the `ColonyAuthority` for the colony.
@@ -176,6 +190,20 @@ Mark a task as complete after the due date has passed. This allows the task to b
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256|Id of the task
+
+
+### `deobligateStake`
+
+Deobligate the user some amount of tokens, releasing the stake.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are deobligating.
+|_domainId|uint256|Domain in which we are deobligating the user.
+|_amount|uint256|Amount of internal token we are deobligating.
 
 
 ### `executeTaskChange`
@@ -817,6 +845,20 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
+### `obligateStake`
+
+Obligate the user some amount of tokens as a stake.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are obligating.
+|_domainId|uint256|Domain in which we are obligating the user.
+|_amount|uint256|Amount of internal token we are obligating.
+
+
 ### `owner`
 
 Get the colony `owner` address. This should be address(0x0) at all times.
@@ -1235,6 +1277,24 @@ Assigning worker role. Can only be set if there is no one currently assigned to 
 |---|---|---|
 |_id|uint256|Id of the task
 |_user|address|Address of the user we want to give a worker role to
+
+
+### `slashStake`
+
+Slash some amount of tokens. Can be called by the arbitration role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action.
+|_childSkillIndex|uint256|The child index in `_permissionDomainId` where we can find `_domainId`.
+|_obligator|address|Address of the account who set the obligation.
+|_user|address|Address of the account we are slashing.
+|_domainId|uint256|Domain in which we are slashing the user.
+|_amount|uint256|Amount of internal token we are slashing.
+|_beneficiary|address|Recipient of the slashed tokens (pass 0x0 to burn).
 
 
 ### `startNextRewardPayout`

@@ -67,6 +67,30 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @param _amount Amount of stake to slash
   function punishStakers(address[] memory _stakers, address _beneficiary, uint256 _amount) public;
 
+  /// @notice Allow the _colony to obligate some amount of tokens as a stake.
+  /// @param _colony Address of the colony we are willing to let obligate us.
+  /// @param _amount Amount of that colony's internal token up to which we are willing to be obligated.
+  function approveStake(address _colony, uint256 _amount) public;
+
+  /// @notice Obligate the user some amount of tokens as a stake.
+  /// Can only be called by a colony.
+  /// @param _user Address of the account we are obligating.
+  /// @param _amount Amount of the colony's internal token we are obligating.
+  function obligateStake(address _user, uint256 _amount) public;
+
+  /// @notice Deobligate the user some amount of tokens, releasing the stake.
+  /// Can only be called by a colony.
+  /// @param _user Address of the account we are deobligating.
+  /// @param _amount Amount of colony's internal token we are deobligating.
+  function deobligateStake(address _user, uint256 _amount) public;
+
+  /// @notice Slash some amount of tokens.
+  /// Can only be called by a colony.
+  /// @param _user Address of the account we are slashing.
+  /// @param _amount Amount of colony's internal token we are slashing.
+  /// @param _beneficiary Recipient of the slashed tokens (pass 0x0 to burn).
+  function slashStake(address _user, uint256 _amount, address _beneficiary) public;
+
   /// @notice Get global lock count for a specific token.
   /// @param _token Address of the token
   /// @return lockCount Global token lock count

@@ -56,6 +56,8 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     _;
   }
 
+  // Public functions
+
   function setColonyNetwork(address _colonyNetwork) public auth {
     colonyNetwork = _colonyNetwork;
 
@@ -104,18 +106,8 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
 
     Lock storage lock = userLocks[_token][msg.sender];
-
-    uint256 prevWeight = lock.balance;
-    uint256 currWeight = _amount;
-
-    // Needed to prevent overflows in the timestamp calculation
-    while ((prevWeight >= UINT192_MAX) || (currWeight >= UINT192_MAX)) {
-      prevWeight /= 2;
-      currWeight /= 2;
-    }
-
     uint256 newAmount = add(lock.balance, _amount);
-    uint256 newTimestamp = add(mul(prevWeight, lock.timestamp), mul(currWeight, now)) / add(prevWeight, currWeight);
+    uint256 newTimestamp = getNewTimestamp(lock.balance, _amount, lock.timestamp, now);
     userLocks[_token][msg.sender] = Lock(totalLockCount[_token], newAmount, newTimestamp);
 
     emit UserTokenDeposited(_token, msg.sender, newAmount, newTimestamp);
@@ -149,11 +141,63 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     }
   }
 
+  function approveStake(address _colony, uint256 _amount) public {
+    address token = IColony(_colony).getToken();
+
+    approvals[msg.sender][token][_colony] = add(approvals[msg.sender][token][_colony], _amount);
+  }
+
+  function obligateStake(address _user, uint256 _amount) public calledByColony() {
+    address token = IColony(msg.sender).getToken();
+
+    approvals[_user][token][msg.sender] = sub(approvals[_user][token][msg.sender], _amount);
+    obligations[_user][token][msg.sender] = add(obligations[_user][token][msg.sender], _amount);
+    totalObligations[_user][token] = add(totalObligations[_user][token], _amount);
+
+    require(userLocks[token][_user].balance >= totalObligations[_user][token], "colony-token-locking-insufficient-deposit");
+  }
+
+  function deobligateStake(address _user, uint256 _amount) public calledByColony() {
+    address token = IColony(msg.sender).getToken();
+
+    obligations[_user][token][msg.sender] = sub(obligations[_user][token][msg.sender], _amount);
+    totalObligations[_user][token] = sub(totalObligations[_user][token], _amount);
+  }
+
+  function slashStake(address _user, uint256 _amount, address _beneficiary) public calledByColony() {
+    address token = IColony(msg.sender).getToken();
+
+    obligations[_user][token][msg.sender] = sub(obligations[_user][token][msg.sender], _amount);
+    totalObligations[_user][token] = sub(totalObligations[_user][token], _amount);
+
+    // Transfer the the tokens
+    Lock storage userLock = userLocks[token][_user];
+    Lock storage beneficiaryLock = userLocks[token][_beneficiary];
+    userLock.balance = sub(userLock.balance, _amount);
+    beneficiaryLock.timestamp = getNewTimestamp(beneficiaryLock.balance, _amount, beneficiaryLock.timestamp, userLock.timestamp);
+    beneficiaryLock.balance = add(beneficiaryLock.balance, _amount);
+  }
+
   function getTotalLockCount(address _token) public view returns (uint256) {
     return totalLockCount[_token];
   }
 
   function getUserLock(address _token, address _user) public view returns (Lock memory lock) {
     lock = userLocks[_token][_user];
+  }
+
+  // Internal functions
+
+  function getNewTimestamp(uint256 _prevWeight, uint256 _currWeight, uint256 _prevTime, uint256 _currTime) internal pure returns (uint256) {
+    uint256 prevWeight = _prevWeight;
+    uint256 currWeight = _currWeight;
+
+    // Needed to prevent overflows in the timestamp calculation
+    while ((prevWeight >= UINT192_MAX) || (currWeight >= UINT192_MAX)) {
+      prevWeight /= 2;
+      currWeight /= 2;
+    }
+
+    return add(mul(prevWeight, _prevTime), mul(currWeight, _currTime)) / add(prevWeight, currWeight);
   }
 }

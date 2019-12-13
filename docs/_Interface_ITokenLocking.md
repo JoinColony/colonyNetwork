@@ -7,6 +7,32 @@ order: 5
   
 ## Interface Methods
 
+### `approveStake`
+
+Allow the _colony to obligate some amount of tokens as a stake.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colony|address|Address of the colony we are willing to let obligate us.
+|_amount|uint256|Amount of that colony's internal token up to which we are willing to be obligated.
+
+
+### `deobligateStake`
+
+Deobligate the user some amount of tokens, releasing the stake. Can only be called by a colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are deobligating.
+|_amount|uint256|Amount of colony's internal token we are deobligating.
+
+
 ### `deposit`
 
 Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
@@ -97,6 +123,19 @@ Locks everyones' tokens on `_token` address.
 |---|---|---|
 |lockCount|uint256|Updated total token lock count
 
+### `obligateStake`
+
+Obligate the user some amount of tokens as a stake. Can only be called by a colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are obligating.
+|_amount|uint256|Amount of the colony's internal token we are obligating.
+
+
 ### `punishStakers`
 
 Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
@@ -123,6 +162,20 @@ Set the ColonyNetwork contract address.
 |Name|Type|Description|
 |---|---|---|
 |_colonyNetwork|address|Address of the ColonyNetwork
+
+
+### `slashStake`
+
+Slash some amount of tokens. Can only be called by a colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are slashing.
+|_amount|uint256|Amount of colony's internal token we are slashing.
+|_beneficiary|address|Recipient of the slashed tokens (pass 0x0 to burn).
 
 
 ### `unlockTokenForUser`

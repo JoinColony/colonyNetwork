@@ -730,4 +730,41 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Total amount of tokens in funding pots other than the rewards pot (id 0)
   function getNonRewardPotsTotal(address _token) public view returns (uint256 amount);
+
+  /// @notice Allow the _approvee to obligate some amount of tokens as a stake.
+  /// @param _approvee Address of the account we are willing to let obligate us.
+  /// @param _domainId Domain in which we are willing to be obligated.
+  /// @param _amount Amount of internal token up to which we are willing to be obligated.
+  function approveStake(address _approvee, uint256 _domainId, uint256 _amount) public;
+
+  /// @notice Obligate the user some amount of tokens as a stake.
+  /// @param _user Address of the account we are obligating.
+  /// @param _domainId Domain in which we are obligating the user.
+  /// @param _amount Amount of internal token we are obligating.
+  function obligateStake(address _user, uint256 _domainId, uint256 _amount) public;
+
+  /// @notice Deobligate the user some amount of tokens, releasing the stake.
+  /// @param _user Address of the account we are deobligating.
+  /// @param _domainId Domain in which we are deobligating the user.
+  /// @param _amount Amount of internal token we are deobligating.
+  function deobligateStake(address _user, uint256 _domainId, uint256 _amount) public;
+
+  /// @notice Slash some amount of tokens.
+  /// Can be called by the arbitration role.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action.
+  /// @param _childSkillIndex The child index in `_permissionDomainId` where we can find `_domainId`.
+  /// @param _obligator Address of the account who set the obligation.
+  /// @param _user Address of the account we are slashing.
+  /// @param _domainId Domain in which we are slashing the user.
+  /// @param _amount Amount of internal token we are slashing.
+  /// @param _beneficiary Recipient of the slashed tokens (pass 0x0 to burn).
+  function slashStake(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _obligator,
+    address _user,
+    uint256 _domainId,
+    uint256 _amount,
+    address _beneficiary
+    ) public;
 }

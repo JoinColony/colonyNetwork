@@ -275,6 +275,38 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     return nonRewardPotsTotal[_token];
   }
 
+  function approveStake(address _approvee, uint256 _domainId, uint256 _amount) public stoppable {
+    approvals[msg.sender][_approvee][_domainId] = add(approvals[msg.sender][_approvee][_domainId], _amount);
+  }
+
+  function obligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
+    approvals[_user][msg.sender][_domainId] = sub(approvals[_user][msg.sender][_domainId], _amount);
+    obligations[_user][msg.sender][_domainId] = add(obligations[_user][msg.sender][_domainId], _amount);
+
+    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).obligateStake(_user, _amount);
+  }
+
+  function deobligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
+    obligations[_user][msg.sender][_domainId] = sub(obligations[_user][msg.sender][_domainId], _amount);
+
+    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).deobligateStake(_user, _amount);
+  }
+
+  function slashStake(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _obligator,
+    address _user,
+    uint256 _domainId,
+    uint256 _amount,
+    address _beneficiary
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    obligations[_user][_obligator][_domainId] = sub(obligations[_user][_obligator][_domainId], _amount);
+
+    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).slashStake(_user, _amount, _beneficiary);
+  }
+
   function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
   public stoppable auth
   {
