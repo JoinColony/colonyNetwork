@@ -34,6 +34,7 @@ class ReputationMinerClient {
     this._oracle = oracle;
     this._exitOnError = exitOnError;
     this.submissionIndex = 0;
+    this.blocksSinceCycleCompleted = 0;
     this.best12Submissions = [];
     this.lockedForBlockProcessing;
     this._adapter = adapter;
@@ -256,7 +257,7 @@ class ReputationMinerClient {
 
       this.lockedForBlockProcessing = true;
       // DO NOT PUT ANY AWAITS ABOVE THIS LINE OR YOU WILL GET RACE CONDITIONS
-      // If you leave this function after this line, make sure to call this.endDoBlockChecks() to unlock
+      // When you leave this function, make sure to call this.endDoBlockChecks() to unlock
 
       if (this.blockTimeoutCheck) {
         clearTimeout(this.blockTimeoutCheck);
@@ -264,9 +265,14 @@ class ReputationMinerClient {
 
       const block = await this._miner.realProvider.getBlock(blockNumber);
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
-
       if (addr !== this.miningCycleAddress) {
-        // Then the cycle has completed since we last checked. Let's process the reputation log
+        // Then the cycle has completed since we last checked. Let's process the reputation log if it's been ten blocks
+        if (this.blocksSinceCycleCompleted < 10) {
+          this.blocksSinceCycleCompleted += 1;
+		  if (this.blocksSinceCycleCompleted === 1) { this._adapter.log("⏰ Waiting for ten blocks before processing next log") };
+          this.endDoBlockChecks();
+          return;
+        }
         await this.processReputationLog();
 
         // And if appropriate, sort out our potential submissions for the next cycle.
@@ -275,6 +281,8 @@ class ReputationMinerClient {
         }
 
         this.miningCycleAddress = addr;
+        this.blocksSinceCycleCompleted = 0;
+
         if (this.confirmTimeoutCheck) {
           clearTimeout(this.confirmTimeoutCheck);
         }
