@@ -232,6 +232,8 @@ process.env.SOLIDITY_COVERAGE
             }, 30000);
           });
 
+          let oracleCheckInterval;
+
           const rootHashBeforeUpdate = await oracleClient._miner.reputationTree.getRootHash();
           // Wait for the oracle to follow
           const oracleUpdated = new Promise(function(resolve, reject) {
@@ -243,10 +245,10 @@ process.env.SOLIDITY_COVERAGE
                 await forwardTime(1, this);
               }
             };
-            setInterval(checkOracle.bind(this), 5000);
+            oracleCheckInterval = setInterval(checkOracle.bind(this), 1000);
             setTimeout(() => {
               reject(new Error("ERROR: timeout while waiting for oracle to update"));
-            }, 30000);
+            }, 100000);
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
@@ -254,6 +256,8 @@ process.env.SOLIDITY_COVERAGE
           await miningCycleComplete;
 
           await oracleUpdated;
+
+          clearTimeout(oracleCheckInterval);
           await oracleClient.close();
         });
 
@@ -401,7 +405,7 @@ process.env.SOLIDITY_COVERAGE
             // After 30s, we throw a timeout error
             setTimeout(() => {
               reject(new Error("ERROR: timeout while waiting for confirming hash"));
-            }, 30000);
+            }, 60000);
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
