@@ -266,10 +266,17 @@ class ReputationMinerClient {
       const block = await this._miner.realProvider.getBlock(blockNumber);
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
       if (addr !== this.miningCycleAddress) {
-        // Then the cycle has completed since we last checked. Let's process the reputation log if it's been ten blocks
+        // Then the cycle has completed since we last checked.
+        if (this.confirmTimeoutCheck) {
+          clearTimeout(this.confirmTimeoutCheck);
+        }
+        // If we don't see this next cycle completed in the next day and ten minutes, then report it
+        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24 * 3600 + 600) * 1000);
+
+        // Let's process the reputation log if it's been ten blocks
         if (this.blocksSinceCycleCompleted < 10) {
           this.blocksSinceCycleCompleted += 1;
-		  if (this.blocksSinceCycleCompleted === 1) { this._adapter.log("⏰ Waiting for ten blocks before processing next log") };
+		      if (this.blocksSinceCycleCompleted === 1) { this._adapter.log("⏰ Waiting for ten blocks before processing next log") };
           this.endDoBlockChecks();
           return;
         }
@@ -283,11 +290,7 @@ class ReputationMinerClient {
         this.miningCycleAddress = addr;
         this.blocksSinceCycleCompleted = 0;
 
-        if (this.confirmTimeoutCheck) {
-          clearTimeout(this.confirmTimeoutCheck);
-        }
-        // If we don't see this cycle completed in the next day and ten minutes, then report it
-        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24 * 3600 + 600) * 1000);
+
       }
 
       // If we're not auto-mining, then we don't need to do anything else.
@@ -423,6 +426,9 @@ class ReputationMinerClient {
       if (this._exitOnError) {
         process.exit(1);
       }
+      // Note we don't call this.endDoBlockChecks here... this is a deliberate choice on my part; depending on what the error is,
+      // we might no longer be in a sane state, and might have only half-processed the reputation log, or similar. So playing it safe,
+      // and not unblocking the doBlockCheck function.
     }
   }
 
