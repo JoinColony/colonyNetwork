@@ -288,6 +288,25 @@ contract IColony is ColonyDataTypes, IRecovery {
     uint256 _claimDelay
     ) public;
 
+  /// @notice Set arbitrary state on an expenditure slot. Can only be called by Arbitration role.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
+  /// (only used if `_permissionDomainId` is different to `_domainId`)
+  /// @param _id Expenditure identifier
+  /// @param _slot Number of the top-level storage slot
+  /// @param _mask Array of booleans indicated whether a key is a mapping (F) or offset (T).
+  /// @param _keys Array of additional keys (mappings & offsets)
+  /// @param _value Value to set at location
+  function setExpenditureState(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _slot,
+    bool[] memory _mask,
+    bytes32[] memory _keys,
+    bytes32 _value
+    ) public;
+
   /// @notice Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot

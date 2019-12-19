@@ -1,6 +1,7 @@
 /* global artifacts */
 import chai from "chai";
 import bnChai from "bn-chai";
+import { BN } from "bn.js";
 
 import { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { checkErrorRevert, getTokenArgs, forwardTime, getBlockTime } from "../../helpers/test-helper";
@@ -30,6 +31,10 @@ contract("Colony Expenditure", (accounts) => {
   const ADMIN = accounts[4];
   const ARBITRATOR = accounts[5];
   const USER = accounts[10];
+
+  const EXPENDITURES_SLOT = 25;
+  const EXPENDITURESLOTS_SLOT = 26;
+  const EXPENDITURESLOTPAYOUTS_SLOT = 27;
 
   let colony;
   let token;
@@ -541,6 +546,169 @@ contract("Colony Expenditure", (accounts) => {
 
       await colony.cancelExpenditure(expenditureId, { from: ADMIN });
       await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, domain1.fundingPotId, WAD, token.address);
+    });
+  });
+
+  describe("when arbitrating expenditures", () => {
+    let expenditureId;
+
+    const MAPPING = false;
+    const OFFSET = true;
+
+    function bn2bytes32(x, size = 64) {
+      return `0x${x.toString(16, size)}`;
+    }
+
+    beforeEach(async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1, { from: ADMIN });
+      expenditureId = await colony.getExpenditureCount();
+    });
+
+    it("should allow arbitration users to update expenditure status/owner", async () => {
+      const mask = [OFFSET];
+      const keys = [bn2bytes32(new BN(0))];
+      const value = bn2bytes32(new BN(USER.slice(2), 16), 62) + new BN(CANCELLED).toString(16, 2);
+
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, value, { from: ARBITRATOR });
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.status).to.eq.BN(CANCELLED);
+      expect(expenditure.owner).to.equal(USER);
+    });
+
+    it("should not allow arbitration users to update expenditure fundingPotId", async () => {
+      const mask = [OFFSET];
+      const keys = [bn2bytes32(new BN(1))];
+      const value = "0x0";
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, value, { from: ARBITRATOR }),
+        "colony-expenditure-bad-offset"
+      );
+    });
+
+    it("should not allow arbitration users to update expenditure domainId", async () => {
+      const mask = [OFFSET];
+      const keys = [bn2bytes32(new BN(2))];
+      const value = "0x0";
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, value, { from: ARBITRATOR }),
+        "colony-expenditure-bad-offset"
+      );
+    });
+
+    it("should allow arbitration users to update expenditure finalizedTimestamp", async () => {
+      const mask = [OFFSET];
+      const keys = [bn2bytes32(new BN(3))];
+      const value = bn2bytes32(new BN(100));
+
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, value, { from: ARBITRATOR });
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.finalizedTimestamp).to.eq.BN(100);
+    });
+
+    it("should allow arbitration users to update expenditure slot recipient", async () => {
+      const mask = [MAPPING];
+      const keys = ["0x0"];
+      const value = bn2bytes32(new BN(USER.slice(2), 16));
+
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
+
+      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.recipient).to.equal(USER);
+    });
+
+    it("should allow arbitration users to update expenditure slot claimDelay", async () => {
+      const mask = [MAPPING, OFFSET];
+      const keys = ["0x0", bn2bytes32(new BN(1))];
+      const value = bn2bytes32(new BN(100));
+
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
+
+      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.claimDelay).to.eq.BN(100);
+    });
+
+    it("should allow arbitration users to update expenditure slot payoutModifier", async () => {
+      const mask = [MAPPING, OFFSET];
+      const keys = ["0x0", bn2bytes32(new BN(2))];
+      const value = bn2bytes32(new BN(100));
+
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
+
+      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.payoutModifier).to.eq.BN(100);
+    });
+
+    it("should allow arbitration users to update expenditure slot skills", async () => {
+      await colony.setExpenditureSkill(expenditureId, 0, GLOBAL_SKILL_ID, { from: ADMIN });
+
+      const mask = [MAPPING, OFFSET, OFFSET];
+      const keys = ["0x0", bn2bytes32(new BN(3)), bn2bytes32(new BN(0))];
+      const value = bn2bytes32(new BN(100));
+
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
+
+      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.skills[0]).to.eq.BN(100);
+    });
+
+    it("should allow arbitration users to update expenditure slot payouts", async () => {
+      const mask = [MAPPING, MAPPING];
+      const keys = ["0x0", bn2bytes32(new BN(token.address.slice(2), 16))];
+      const value = bn2bytes32(new BN(100));
+
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTPAYOUTS_SLOT, mask, keys, value, { from: ARBITRATOR });
+
+      const expenditureSlotPayout = await colony.getExpenditureSlotPayout(expenditureId, 0, token.address);
+      expect(expenditureSlotPayout).to.eq.BN(100);
+    });
+
+    it("should not allow arbitration users to pass empty keys", async () => {
+      const mask = [];
+      const keys = [];
+      const value = "0x0";
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, value, { from: ARBITRATOR }),
+        "colony-expenditure-no-keys"
+      );
+    });
+
+    it("should not allow arbitration users to pass invalid slots", async () => {
+      const mask = [OFFSET];
+      const keys = ["0x0"];
+      const value = "0x0";
+      const invalidSlot = 10;
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, invalidSlot, mask, keys, value, { from: ARBITRATOR }),
+        "colony-expenditure-bad-slot"
+      );
+    });
+
+    it("should not allow arbitration users to pass an inconsistent mask", async () => {
+      const mask = [];
+      const keys = ["0x0"];
+      const value = "0x0";
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, value, { from: ARBITRATOR }),
+        "colony-expenditure-bad-mask"
+      );
+    });
+
+    it("should not allow arbitration users to pass offsets greater than 1024", async () => {
+      const mask = [OFFSET];
+      const keys = [bn2bytes32(new BN(1025))];
+      const value = bn2bytes32(new BN(100));
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR }),
+        "colony-expenditure-large-offset"
+      );
     });
   });
 });

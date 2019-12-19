@@ -1164,6 +1164,24 @@ Sets the skill on an expenditure slot. Can only be called by expenditure owner.
 |_skillId|uint256|Id of the new skill to set
 
 
+### `setExpenditureState`
+
+Set arbitrary state on an expenditure slot. Can only be called by Arbitration role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Number of the top-level storage slot
+|_mask|bool[]|Array of booleans indicated whether a key is a mapping (F) or offset (T).
+|_keys|bytes32[]|Array of additional keys (mappings & offsets)
+|_value|bytes32|Value to set at location
+
+
 ### `setFundingRole`
 
 Set new colony funding role. Can be called by root role or architecture role.

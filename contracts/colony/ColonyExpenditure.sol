@@ -68,6 +68,7 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureTransferred(_id, _newOwner);
   }
 
+  // Can deprecate
   function transferExpenditureViaArbitration(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -174,6 +175,43 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureSlots[_id][_slot].claimDelay = _claimDelay;
   }
 
+  uint256 constant EXPENDITURES_SLOT = 25;
+  uint256 constant EXPENDITURESLOTS_SLOT = 26;
+  uint256 constant EXPENDITURESLOTPAYOUTS_SLOT = 27;
+
+  function setExpenditureState(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _slot,
+    bool[] memory _mask,
+    bytes32[] memory _keys,
+    bytes32 _value
+  )
+    public
+    stoppable
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
+  {
+    require(_keys.length > 0, "colony-expenditure-no-keys");
+
+    require(
+      _slot == EXPENDITURES_SLOT ||
+      _slot == EXPENDITURESLOTS_SLOT ||
+      _slot == EXPENDITURESLOTPAYOUTS_SLOT,
+      "colony-expenditure-bad-slot"
+    );
+
+    // Only allow editing expenditure status, owner, and finalizedTimestamp
+    //  Note that status + owner occupy one slot
+    if (_slot == EXPENDITURES_SLOT) {
+      uint256 offset = uint256(_keys[0]);
+      require(_keys.length == 1, "colony-expenditure-bad-keys");
+      require(offset == 0 || offset == 3, "colony-expenditure-bad-offset");
+    }
+
+    executeStateChange(keccak256(abi.encode(_id, _slot)), _mask, _keys, _value);
+  }
+
   // Public view functions
 
   function getExpenditureCount() public view returns (uint256) {
@@ -190,5 +228,47 @@ contract ColonyExpenditure is ColonyStorage {
 
   function getExpenditureSlotPayout(uint256 _id, uint256 _slot, address _token) public view returns (uint256) {
     return expenditureSlotPayouts[_id][_slot][_token];
+  }
+
+  // Internal functions
+
+  bool constant MAPPING = false;
+  bool constant OFFSET = true;
+  uint256 constant MAX_OFFSET = 1024; // Prevent writing to arbitrary storage slots
+
+  function executeStateChange(
+    bytes32 _slot,
+    bool[] memory _mask,
+    bytes32[] memory _keys,
+    bytes32 _value
+  )
+    internal
+  {
+    require(_keys.length == _mask.length, "colony-expenditure-bad-mask");
+
+    bytes32 value = _value;
+    bytes32 slot = _slot;
+
+    // See https://solidity.readthedocs.io/en/v0.5.14/miscellaneous.html
+    for (uint256 i; i < _keys.length; i++) {
+
+      if (_mask[i] == MAPPING) {
+        slot = keccak256(abi.encode(_keys[i], slot));
+      }
+
+      if (_mask[i] == OFFSET) {
+        require(uint256(_keys[i]) <= MAX_OFFSET, "colony-expenditure-large-offset");
+
+        slot = bytes32(add(uint256(_keys[i]), uint256(slot)));
+        if (i != _keys.length - 1) { // If not last offset
+          slot = keccak256(abi.encode(slot));
+        }
+      }
+
+    }
+
+    assembly {
+      sstore(slot, value) // ignore-swc-124
+    }
   }
 }
