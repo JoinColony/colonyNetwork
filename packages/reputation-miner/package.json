@@ -30,6 +30,6 @@
     "@babel/polyfill": "^7.4.4",
     "@babel/preset-env": "^7.5.4",
     "@babel/register": "^7.4.4",
-    "babel-plugin-istanbul": "^5.1.4"
+    "babel-plugin-istanbul": "^6.0.0"
   }
 }
