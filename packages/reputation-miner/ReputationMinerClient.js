@@ -102,31 +102,13 @@ class ReputationMinerClient {
           !ethers.utils.isHexString(req.params.colonyAddress) ||
           !ethers.utils.bigNumberify(req.params.skillId)
         ) {
-          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+          return res.status(400).send({ message: "One of the parameters was incorrect" });
         }
         const addresses = await this._miner.getAddressesWithReputation(req.params.rootHash, req.params.colonyAddress, req.params.skillId);
         try {
           return res.status(200).send({ addresses });
         } catch (err) {
-          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
-        }
-      });
-
-      // Query users who have given reputation in colony
-      this._app.get("/:rootHash/:colonyAddress/:skillId/", async (req, res) => {
-        if (
-          !ethers.utils.isHexString(req.params.rootHash) ||
-          !ethers.utils.isHexString(req.params.colonyAddress) ||
-          !ethers.utils.bigNumberify(req.params.skillId)
-        ) {
-          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
-        }
-
-        const addresses = await this._miner.getAddressesWithReputation(req.params.rootHash, req.params.colonyAddress, req.params.skillId);
-        try {
-          return res.status(200).send({ addresses });
-        } catch (err) {
-          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+          return res.status(500).send({ message: "An error occurred querying the reputation" });
         }
       });
 
@@ -138,7 +120,7 @@ class ReputationMinerClient {
           !ethers.utils.isHexString(req.params.userAddress) ||
           !ethers.utils.bigNumberify(req.params.skillId)
         ) {
-          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+          return res.status(400).send({ message: "One of the parameters was incorrect" });
         }
 
         const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
@@ -150,7 +132,7 @@ class ReputationMinerClient {
             proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
             return res.status(200).send(proof);
           }
-          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+          return res.status(400).send({ message: "Requested reputation does not exist" });
         }
 
         try {
@@ -159,7 +141,7 @@ class ReputationMinerClient {
           proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
           return res.status(200).send(proof);
         } catch (err) {
-          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+          return res.status(500).send({ message: "An error occurred querying the reputation" });
         }
       });
 
