@@ -136,7 +136,11 @@ class ReputationMinerClient {
         }
 
         try {
-          const [branchMask, siblings, value] = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
+          const historicalProof = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
+          if (historicalProof instanceof Error) {
+            return res.status(400).send({ message: historicalProof.message.replace("Error: ") });
+          }
+          const [branchMask, siblings, value] = historicalProof;
           const proof = { branchMask: `${branchMask.toString(16)}`, siblings, key, value };
           proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
           return res.status(200).send(proof);

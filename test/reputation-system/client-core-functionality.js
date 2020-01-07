@@ -127,10 +127,10 @@ process.env.SOLIDITY_COVERAGE
 
         it("should correctly respond to a request for a valid key in a reputation state that never existed", async () => {
           const rootHash = await reputationMiner.getRootHash();
-          const url = `http://127.0.0.1:3000/${rootHash.slice(4)}0000/${metaColony.address}/2/${MINER1}`;
+          const url = `http://127.0.0.1:3000/0x${rootHash.slice(8)}000000/${metaColony.address}/2/${MINER1}`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);
-          expect(JSON.parse(res.body).message).to.equal("Requested reputation does not exist or invalid request");
+          expect(JSON.parse(res.body).message).to.equal("No such reputation state");
         });
 
         it("should correctly respond to a request for a valid key that didn't exist in a valid past reputation state", async () => {
@@ -144,7 +144,7 @@ process.env.SOLIDITY_COVERAGE
           const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${accounts[4]}`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);
-          expect(JSON.parse(res.body).message).to.equal("Requested reputation does not exist or invalid request");
+          expect(JSON.parse(res.body).message).to.equal("Requested reputation does not exist");
         });
 
         it("should correctly respond to a request for an invalid key in a valid past reputation state", async () => {
@@ -158,7 +158,7 @@ process.env.SOLIDITY_COVERAGE
           const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/notAKey`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);
-          expect(JSON.parse(res.body).message).to.equal("Requested reputation does not exist or invalid request");
+          expect(JSON.parse(res.body).message).to.equal("One of the parameters was incorrect");
         });
 
         it("should correctly respond to a request for users that have a particular reputation in a colony", async () => {
