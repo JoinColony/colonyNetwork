@@ -8,6 +8,8 @@ const ReputationMiner = require("./ReputationMiner");
 
 const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
 const miningCycleDuration = ethers.utils.bigNumberify(60).mul(60).mul(24); // 24 hours
+const MINUTE_IN_SECONDS = 60;
+const DAY_IN_SECONDS = 3600 * 24;
 const constant = ethers.utils.bigNumberify(2).pow(256).sub(1).div(miningCycleDuration);
 
 class ReputationMinerClient {
@@ -190,7 +192,10 @@ class ReputationMinerClient {
     // Work out when the confirm timeout should be.
     const repCycle = await this._miner.getActiveRepCycle();
     const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24 * 3600 + 600 - (Date.now() / 1000 - openTimestamp)) * 1000);
+    this.confirmTimeoutCheck = setTimeout(
+      this.reportConfirmTimeout.bind(this),
+      (DAY_IN_SECONDS + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
+    );
 
     this.miningCycleAddress = repCycle.address;
 
@@ -271,7 +276,7 @@ class ReputationMinerClient {
           clearTimeout(this.confirmTimeoutCheck);
         }
         // If we don't see this next cycle completed in the next day and ten minutes, then report it
-        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (24 * 3600 + 600) * 1000);
+        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (DAY_IN_SECONDS + 10 * MINUTE_IN_SECONDS) * 1000);
 
         // Let's process the reputation log if it's been ten blocks
         if (this.blocksSinceCycleCompleted < 10) {
@@ -425,10 +430,10 @@ class ReputationMinerClient {
       this._adapter.error(`Error during block checks: ${err}`);
       if (this._exitOnError) {
         process.exit(1);
+        // Note we don't call this.endDoBlockChecks here... this is a deliberate choice on my part; depending on what the error is,
+        // we might no longer be in a sane state, and might have only half-processed the reputation log, or similar. So playing it safe,
+        // and not unblocking the doBlockCheck function.
       }
-      // Note we don't call this.endDoBlockChecks here... this is a deliberate choice on my part; depending on what the error is,
-      // we might no longer be in a sane state, and might have only half-processed the reputation log, or similar. So playing it safe,
-      // and not unblocking the doBlockCheck function.
     }
   }
 
