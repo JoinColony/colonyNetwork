@@ -95,8 +95,34 @@ class ReputationMinerClient {
         return res.status(200).send({ active: activeAddr, inactive: inactiveAddr });
       });
 
+      // Query users who have given reputation in colony
+      this._app.get("/:rootHash/:colonyAddress/:skillId/", async (req, res) => {
+        if (
+          !ethers.utils.isHexString(req.params.rootHash) ||
+          !ethers.utils.isHexString(req.params.colonyAddress) ||
+          !ethers.utils.bigNumberify(req.params.skillId)
+        ) {
+          return res.status(400).send({ message: "One of the parameters was incorrect" });
+        }
+        const addresses = await this._miner.getAddressesWithReputation(req.params.rootHash, req.params.colonyAddress, req.params.skillId);
+        try {
+          return res.status(200).send({ addresses });
+        } catch (err) {
+          return res.status(500).send({ message: "An error occurred querying the reputation" });
+        }
+      });
+
       // Query specific reputation values
       this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
+        if (
+          !ethers.utils.isHexString(req.params.rootHash) ||
+          !ethers.utils.isHexString(req.params.colonyAddress) ||
+          !ethers.utils.isHexString(req.params.userAddress) ||
+          !ethers.utils.bigNumberify(req.params.skillId)
+        ) {
+          return res.status(400).send({ message: "One of the parameters was incorrect" });
+        }
+
         const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
         const currentHash = await this._miner.getRootHash();
         if (currentHash === req.params.rootHash) {
@@ -106,16 +132,20 @@ class ReputationMinerClient {
             proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
             return res.status(200).send(proof);
           }
-          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+          return res.status(400).send({ message: "Requested reputation does not exist" });
         }
 
         try {
-          const [branchMask, siblings, value] = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
+          const historicalProof = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
+          if (historicalProof instanceof Error) {
+            return res.status(400).send({ message: historicalProof.message.replace("Error: ") });
+          }
+          const [branchMask, siblings, value] = historicalProof;
           const proof = { branchMask: `${branchMask.toString(16)}`, siblings, key, value };
           proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
           return res.status(200).send(proof);
         } catch (err) {
-          return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+          return res.status(500).send({ message: "An error occurred querying the reputation" });
         }
       });
 
