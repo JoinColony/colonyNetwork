@@ -26,6 +26,8 @@ import "../IColonyNetwork.sol";
 contract VotingBase is DSMath {
 
   // Constants
+  uint256 constant UINT256_MAX = 2**256 - 1;
+  uint256 constant VOTE_PERIOD = 1 days;
   uint256 constant REVEAL_PERIOD = 2 days;
 
   // Initialization data
@@ -42,9 +44,10 @@ contract VotingBase is DSMath {
 
   struct Poll {
     bool executed;
-    uint256 closes;
+    uint256 createdAt;
+    uint256 skillRep;
+    uint256[2] stakes; // [nay, yay]
     uint256[2] votes; // [nay, yay]
-    uint256 maxVotes;
     bytes action;
   }
 
@@ -75,9 +78,9 @@ contract VotingBase is DSMath {
 
   function getPollState(uint256 _pollId) public view returns (PollState) {
     Poll storage poll = polls[_pollId];
-    if (now < poll.closes) {
+    if (now < poll.createdAt + VOTE_PERIOD) {
       return PollState.Open;
-    } else if (now < add(poll.closes, REVEAL_PERIOD)) {
+    } else if (now < poll.createdAt + VOTE_PERIOD + REVEAL_PERIOD) {
       return PollState.Reveal;
     } else if (!poll.executed) {
       return PollState.Closed;

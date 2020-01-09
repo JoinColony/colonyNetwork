@@ -31,16 +31,15 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     uint256 skillId;
   }
 
-  mapping (uint256 => RepInfo) repInfo;
+  mapping (uint256 => RepInfo) repInfos;
 
   // The UserVote type here is just the bytes32 voteSecret
-
   mapping (address => mapping (uint256 => bytes32)) userVotes;
 
-  function createPoll(
+  // Public functions
+
+  function createRootPoll(
     bytes memory _action,
-    uint256 _duration,
-    uint256 _skillId,
     bytes memory _key,
     bytes memory _value,
     uint256 _branchMask,
@@ -48,14 +47,30 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
   )
     public
   {
-    pollCount += 1;
+    uint256 rootSkillId = colony.getDomain(1).skillId;
+    createPoll(_action, rootSkillId, _key, _value, _branchMask, _siblings);
+  }
 
-    repInfo[pollCount].rootHash = colonyNetwork.getReputationRootHash();
-    repInfo[pollCount].skillId = _skillId;
+  function createDomainPoll(
+    uint256 _domainId,
+    uint256 _childSkillIndex,
+    bytes memory _action,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    public
+  {
+    uint256 domainSkillId = colony.getDomain(_domainId).skillId;
+    uint256 actionDomainSkillId = getActionDomainSkillId(_action);
 
-    polls[pollCount].closes = add(now, _duration);
-    polls[pollCount].maxVotes = checkReputation(pollCount, address(0x0), _key, _value, _branchMask, _siblings);
-    polls[pollCount].action = _action;
+    if (domainSkillId != actionDomainSkillId) {
+      uint256 childSkillId = colonyNetwork.getChildSkillId(domainSkillId, _childSkillIndex);
+      require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
+    }
+
+    createPoll(_action, domainSkillId, _key, _value, _branchMask, _siblings);
   }
 
   function submitVote(uint256 _pollId, bytes32 _voteSecret) public {
@@ -92,6 +107,34 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     }
   }
 
+  // Public view functions
+
+  function getPollRepInfo(uint256 _pollId) public view returns (RepInfo memory repInfo) {
+    repInfo = repInfos[_pollId];
+  }
+
+  // Internal functions
+
+  function createPoll(
+    bytes memory _action,
+    uint256 _skillId,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    internal
+  {
+    pollCount += 1;
+
+    repInfos[pollCount].rootHash = colonyNetwork.getReputationRootHash();
+    repInfos[pollCount].skillId = _skillId;
+
+    polls[pollCount].createdAt = now;
+    polls[pollCount].skillRep = checkReputation(pollCount, address(0x0), _key, _value, _branchMask, _siblings);
+    polls[pollCount].action = _action;
+  }
+
   function checkReputation(
     uint256 _pollId,
     address _who,
@@ -103,7 +146,7 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     internal view returns (uint256)
   {
     bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
-    require(repInfo[_pollId].rootHash == impliedRoot, "voting-rep-invalid-root-hash");
+    require(repInfos[_pollId].rootHash == impliedRoot, "voting-rep-invalid-root-hash");
 
     uint256 reputationValue;
     address keyColonyAddress;
@@ -118,10 +161,28 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     }
 
     require(keyColonyAddress == address(colony), "voting-rep-invalid-colony-address");
-    require(keySkill == repInfo[_pollId].skillId, "voting-rep-invalid-skill-id");
+    require(keySkill == repInfos[_pollId].skillId, "voting-rep-invalid-skill-id");
     require(keyUserAddress == _who, "voting-rep-invalid-user-address");
 
     return reputationValue;
+  }
+
+  function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
+    uint256 permissionDomainId;
+    uint256 childSkillIndex;
+
+    assembly {
+      permissionDomainId := mload(add(_action, 0x24))
+      childSkillIndex := mload(add(_action, 0x44))
+    }
+
+    uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
+
+    if (childSkillIndex == UINT256_MAX) {
+      return permissionSkillId;
+    } else {
+      return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
+    }
   }
 
 }

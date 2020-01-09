@@ -5,7 +5,7 @@ import bnChai from "bn-chai";
 import shortid from "shortid";
 import { soliditySha3 } from "web3-utils";
 
-import { WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, DEFAULT_STAKE } from "../../helpers/constants";
+import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, DEFAULT_STAKE } from "../../helpers/constants";
 import { checkErrorRevert, makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime, encodeTxData } from "../../helpers/test-helper";
 
 import {
@@ -25,6 +25,9 @@ const VotingReputationFactory = artifacts.require("VotingReputationFactory");
 
 contract("Voting Reputation", accounts => {
   let colony;
+  let domain1;
+  let domain2;
+  let domain3;
   let metaColony;
   let colonyNetwork;
 
@@ -53,30 +56,45 @@ contract("Voting Reputation", accounts => {
 
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
+
+    await colony.addDomain(1, 0, 1);
+    await colony.addDomain(1, 0, 1);
+    domain1 = await colony.getDomain(1);
+    domain2 = await colony.getDomain(2);
+    domain3 = await colony.getDomain(3);
+
     await votingFactory.deployExtension(colony.address);
     const votingAddress = await votingFactory.deployedExtensions(colony.address);
     voting = await VotingReputation.at(votingAddress);
 
     reputationTree = new PatriciaTree();
     await reputationTree.insert(
-      makeReputationKey(colony.address, 1), // Colony total
+      makeReputationKey(colony.address, domain1.skillId), // Colony total
       makeReputationValue(WAD2.add(WAD), 1)
     );
     await reputationTree.insert(
-      makeReputationKey(colony.address, 1, USER0), // All good
+      makeReputationKey(colony.address, domain1.skillId, USER0), // All good
       makeReputationValue(WAD, 2)
     );
     await reputationTree.insert(
-      makeReputationKey(metaColony.address, 1, USER0), // Wrong colony
+      makeReputationKey(metaColony.address, domain1.skillId, USER0), // Wrong colony
       makeReputationValue(WAD, 3)
     );
     await reputationTree.insert(
-      makeReputationKey(colony.address, 2, USER0), // Wrong skill
+      makeReputationKey(colony.address, 1234, USER0), // Wrong skill
       makeReputationValue(WAD, 4)
     );
     await reputationTree.insert(
-      makeReputationKey(colony.address, 1, USER1), // Wrong user (and 2x value)
+      makeReputationKey(colony.address, domain1.skillId, USER1), // Wrong user (and 2x value)
       makeReputationValue(WAD2, 5)
+    );
+    await reputationTree.insert(
+      makeReputationKey(colony.address, domain2.skillId), // Colony total, domain 2
+      makeReputationValue(WAD, 6)
+    );
+    await reputationTree.insert(
+      makeReputationKey(colony.address, domain3.skillId), // Colony total, domain 3
+      makeReputationValue(WAD, 7)
     );
 
     const rootHash = await reputationTree.getRootHash();
@@ -96,19 +114,86 @@ contract("Voting Reputation", accounts => {
     });
   });
 
+  describe("creating polls", async () => {
+    it("can create a root poll", async () => {
+      const key = makeReputationKey(colony.address, domain1.skillId);
+      const value = makeReputationValue(WAD2.add(WAD), 1);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createRootPoll(action, key, value, mask, siblings);
+
+      const pollId = await voting.getPollCount();
+      const repInfo = await voting.getPollRepInfo(pollId);
+      expect(repInfo.skillId).to.eq.BN(domain1.skillId);
+    });
+
+    it("can create a domain poll in the root domain", async () => {
+      const key = makeReputationKey(colony.address, domain1.skillId);
+      const value = makeReputationValue(WAD.muln(3), 1);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      // Create poll in domain of action (1)
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createDomainPoll(1, UINT256_MAX, action, key, value, mask, siblings);
+
+      const pollId = await voting.getPollCount();
+      const repInfo = await voting.getPollRepInfo(pollId);
+      expect(repInfo.skillId).to.eq.BN(domain1.skillId);
+    });
+
+    it("can create a domain poll in a child domain", async () => {
+      const key = makeReputationKey(colony.address, domain2.skillId);
+      const value = makeReputationValue(WAD, 6);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      // Create poll in domain of action (2)
+      const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
+      await voting.createDomainPoll(2, UINT256_MAX, action, key, value, mask, siblings);
+
+      const pollId = await voting.getPollCount();
+      const repInfo = await voting.getPollRepInfo(pollId);
+      expect(repInfo.skillId).to.eq.BN(domain2.skillId);
+    });
+
+    it("can escalate a domain poll", async () => {
+      const key = makeReputationKey(colony.address, domain1.skillId);
+      const value = makeReputationValue(WAD.muln(3), 1);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      // Create poll in parent domain (1) of action (2)
+      const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
+      await voting.createDomainPoll(1, 0, action, key, value, mask, siblings);
+
+      const pollId = await voting.getPollCount();
+      const repInfo = await voting.getPollRepInfo(pollId);
+      expect(repInfo.skillId).to.eq.BN(domain1.skillId);
+    });
+
+    it("cannot escalate a domain poll with an invalid domain proof", async () => {
+      const key = makeReputationKey(colony.address, domain3.skillId);
+      const value = makeReputationValue(WAD, 7);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      // Provide proof for (3) instead of (2)
+      const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
+      await checkErrorRevert(voting.createDomainPoll(1, 1, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
+    });
+  });
+
   describe("voting on polls", async () => {
     let key, value, mask, siblings, pollId; // eslint-disable-line one-var
 
     beforeEach(async () => {
-      key = makeReputationKey(colony.address, 1);
+      key = makeReputationKey(colony.address, domain1.skillId);
       value = makeReputationValue(WAD2.add(WAD), 1);
       [mask, siblings] = await reputationTree.getProof(key);
 
-      const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 1, 0, 0]);
-      await voting.createPoll(action, SECONDS_PER_DAY, 1, key, value, mask, siblings);
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createRootPoll(action, key, value, mask, siblings);
       pollId = await voting.getPollCount();
 
-      key = makeReputationKey(colony.address, 1, USER0);
+      key = makeReputationKey(colony.address, domain1.skillId, USER0);
       value = makeReputationValue(WAD, 2);
       [mask, siblings] = await reputationTree.getProof(key);
     });
@@ -126,7 +211,7 @@ contract("Voting Reputation", accounts => {
       await forwardTime(SECONDS_PER_DAY, this);
       await voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 });
 
-      key = makeReputationKey(colony.address, 1, USER1);
+      key = makeReputationKey(colony.address, domain1.skillId, USER1);
       value = makeReputationValue(WAD2, 5);
       [mask, siblings] = await reputationTree.getProof(key);
       await voting.revealVote(pollId, SALT, true, key, value, mask, siblings, { from: USER1 });
@@ -188,10 +273,10 @@ contract("Voting Reputation", accounts => {
       await repCycle.confirmNewHash(0);
 
       // Create new poll with new reputation state
-      const keyColony = makeReputationKey(colony.address, 1);
+      const keyColony = makeReputationKey(colony.address, domain1.skillId);
       const valueColony = makeReputationValue(WAD2.add(WAD), 1);
       const [maskColony, siblingsColony] = await reputationTree.getProof(keyColony);
-      await voting.createPoll(FAKE, SECONDS_PER_DAY, 1, keyColony, valueColony, maskColony, siblingsColony);
+      await voting.createRootPoll(FAKE, keyColony, valueColony, maskColony, siblingsColony);
 
       const pollId2 = await voting.getPollCount();
 
@@ -243,11 +328,11 @@ contract("Voting Reputation", accounts => {
     let pollId;
 
     beforeEach(async () => {
-      const key = makeReputationKey(colony.address, 1);
+      const key = makeReputationKey(colony.address, domain1.skillId);
       const value = makeReputationValue(WAD2.add(WAD), 1);
       const [mask, siblings] = await reputationTree.getProof(key);
 
-      await voting.createPoll(FAKE, SECONDS_PER_DAY, 1, key, value, mask, siblings);
+      await voting.createRootPoll(FAKE, key, value, mask, siblings);
       pollId = await voting.getPollCount();
     });
 
@@ -277,7 +362,7 @@ contract("Voting Reputation", accounts => {
 
       // Invalid colony address
       let key, value, mask, siblings; // eslint-disable-line one-var
-      key = makeReputationKey(metaColony.address, 1, USER0);
+      key = makeReputationKey(metaColony.address, domain1.skillId, USER0);
       value = makeReputationValue(WAD, 3);
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
@@ -286,13 +371,13 @@ contract("Voting Reputation", accounts => {
       );
 
       // Invalid skill id
-      key = makeReputationKey(colony.address, 2, USER0);
+      key = makeReputationKey(colony.address, 1234, USER0);
       value = makeReputationValue(WAD, 4);
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 }), "voting-rep-invalid-skill-id");
 
       // Invalid user address
-      key = makeReputationKey(colony.address, 1, USER1);
+      key = makeReputationKey(colony.address, domain1.skillId, USER1);
       value = makeReputationValue(WAD2, 5);
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 }), "voting-rep-invalid-user-address");
