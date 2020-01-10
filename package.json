@@ -112,7 +112,7 @@
     "solidity-coverage": "0.7.0",
     "solidity-parser-antlr": "^0.4.11",
     "solidity-steamroller": "^1.1.0",
-    "truffle": "^5.1.4",
+    "truffle": "^5.1.8",
     "truffle-hdwallet-provider": "^1.0.9",
     "truffle-security": "^1.6.2",
     "web3-utils": "^1.0.0"
