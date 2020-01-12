@@ -15,6 +15,7 @@ import {
 } from "../../helpers/test-data-generator";
 
 import {
+  X,
   INT256_MAX,
   INT128_MAX,
   INT128_MIN,
@@ -27,6 +28,7 @@ import {
   WORKER_PAYOUT,
   MAX_PAYOUT,
   SECONDS_PER_DAY,
+  GLOBAL_SKILL_ID,
   MANAGER_ROLE,
   WORKER_ROLE,
   RATING_1_SALT,
@@ -288,7 +290,7 @@ contract("Reputation Updates", (accounts) => {
 
     it("should calculate nUpdates correctly when making a log", async () => {
       await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
-      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, X, 1);
       await metaColony.addDomain(1, 1, 2);
       await metaColony.addDomain(1, 2, 3);
       await metaColony.addDomain(1, 3, 4);
@@ -346,12 +348,12 @@ contract("Reputation Updates", (accounts) => {
 
     it("should set the correct domain and skill reputation change amount in log for payments", async () => {
       const RECIPIENT = accounts[3];
-      await metaColony.addPayment(1, 0, RECIPIENT, clnyToken.address, WAD, 1, 3);
+      await metaColony.addPayment(1, X, RECIPIENT, clnyToken.address, WAD, 1, GLOBAL_SKILL_ID);
       const paymentId = await metaColony.getPaymentCount();
 
       const payment = await metaColony.getPayment(paymentId);
-      await metaColony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), clnyToken.address);
-      await metaColony.finalizePayment(1, 0, paymentId);
+      await metaColony.moveFundsBetweenPots(1, X, X, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), clnyToken.address);
+      await metaColony.finalizePayment(1, X, paymentId);
       await metaColony.claimPayment(paymentId, clnyToken.address);
 
       const reputationUpdateLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
@@ -376,12 +378,12 @@ contract("Reputation Updates", (accounts) => {
       await otherToken.unlock();
       await fundColonyWithTokens(metaColony, otherToken, WAD.muln(2));
 
-      await metaColony.addPayment(1, 0, RECIPIENT, otherToken.address, WAD, 1, 3);
+      await metaColony.addPayment(1, X, RECIPIENT, otherToken.address, WAD, 1, GLOBAL_SKILL_ID);
       const paymentId = await metaColony.getPaymentCount();
 
       const payment = await metaColony.getPayment(paymentId);
-      await metaColony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), otherToken.address);
-      await metaColony.finalizePayment(1, 0, paymentId);
+      await metaColony.moveFundsBetweenPots(1, X, X, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), otherToken.address);
+      await metaColony.finalizePayment(1, X, paymentId);
       await metaColony.claimPayment(paymentId, otherToken.address);
 
       const reputationUpdateLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();

@@ -23,7 +23,7 @@ import {
   fundColonyWithTokens,
 } from "../../helpers/test-data-generator";
 
-import { DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION } from "../../helpers/constants";
+import { X, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION } from "../../helpers/constants";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
@@ -57,7 +57,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
   // Initialise global skills tree: 3, local skills tree 1 -> 4 -> 5
   //                                                      \-> 2
-  await metaColony.addDomain(1, 0, 1);
+  await metaColony.addDomain(1, X, 1);
   await metaColony.addDomain(1, 1, 2);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);

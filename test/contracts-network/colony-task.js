@@ -5,6 +5,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import {
+  X,
   WAD,
   MANAGER_ROLE,
   EVALUATOR_ROLE,
@@ -84,7 +85,7 @@ contract("ColonyTask", (accounts) => {
 
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.setRewardInverse(100);
-    await colony.setAdministrationRole(1, 0, COLONY_ADMIN, 1, true);
+    await colony.setAdministrationRole(1, X, COLONY_ADMIN, 1, true);
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
@@ -105,7 +106,7 @@ contract("ColonyTask", (accounts) => {
 
     it("should fail if a non-admin user tries to make a task", async () => {
       const taskCountBefore = await colony.getTaskCount();
-      await checkErrorRevert(colony.makeTask(1, 0, SPECIFICATION_HASH, 1, 1, 0, { from: OTHER }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.makeTask(1, X, SPECIFICATION_HASH, 1, 1, 0, { from: OTHER }), "ds-auth-unauthorized");
       const taskCountAfter = await colony.getTaskCount();
       expect(taskCountBefore).to.be.eq.BN(taskCountAfter);
     });
@@ -166,14 +167,14 @@ contract("ColonyTask", (accounts) => {
     });
 
     it("should set the task domain correctly", async () => {
-      await colony.addDomain(1, 0, 1);
+      await colony.addDomain(1, X, 1);
       const taskId = await makeTask({ colonyNetwork, colony, domainId: 2 });
       const task = await colony.getTask(taskId);
       expect(task.domainId).to.eq.BN(2);
     });
 
     it("should log TaskAdded and FundingPotAdded events", async () => {
-      await expectAllEvents(colony.makeTask(1, 0, SPECIFICATION_HASH, 1, 3, 0), ["TaskAdded", "FundingPotAdded"]);
+      await expectAllEvents(colony.makeTask(1, X, SPECIFICATION_HASH, 1, 3, 0), ["TaskAdded", "FundingPotAdded"]);
     });
 
     it("should optionally set the skill and due date", async () => {
@@ -1351,12 +1352,12 @@ contract("ColonyTask", (accounts) => {
       // but we need some Ether, too
       await colony.send(101);
       await colony.claimColonyFunds(ethers.constants.AddressZero);
-      await colony.moveFundsBetweenPots(1, 0, 0, 1, taskPotId, 100, ethers.constants.AddressZero);
+      await colony.moveFundsBetweenPots(1, X, X, 1, taskPotId, 100, ethers.constants.AddressZero);
 
       // And another token
       await otherToken.mint(colony.address, 101);
       await colony.claimColonyFunds(otherToken.address);
-      await colony.moveFundsBetweenPots(1, 0, 0, 1, taskPotId, 100, otherToken.address);
+      await colony.moveFundsBetweenPots(1, X, X, 1, taskPotId, 100, otherToken.address);
 
       // Keep track of original Ether balance in funding pots
       const originalDomainEtherBalance = await colony.getFundingPotBalance(domain.fundingPotId, ethers.constants.AddressZero);
@@ -1378,9 +1379,9 @@ contract("ColonyTask", (accounts) => {
         args: [taskId],
       });
 
-      await colony.moveFundsBetweenPots(1, 0, 0, taskPotId, domain.fundingPotId, originalTaskEtherBalance, ethers.constants.AddressZero);
-      await colony.moveFundsBetweenPots(1, 0, 0, taskPotId, domain.fundingPotId, originalTaskTokenBalance, token.address);
-      await colony.moveFundsBetweenPots(1, 0, 0, taskPotId, domain.fundingPotId, originalTaskOtherTokenBalance, otherToken.address);
+      await colony.moveFundsBetweenPots(1, X, X, taskPotId, domain.fundingPotId, originalTaskEtherBalance, ethers.constants.AddressZero);
+      await colony.moveFundsBetweenPots(1, X, X, taskPotId, domain.fundingPotId, originalTaskTokenBalance, token.address);
+      await colony.moveFundsBetweenPots(1, X, X, taskPotId, domain.fundingPotId, originalTaskOtherTokenBalance, otherToken.address);
 
       const cancelledTaskEtherBalance = await colony.getFundingPotBalance(taskPotId, ethers.constants.AddressZero);
       const cancelledDomainEtherBalance = await colony.getFundingPotBalance(domain.fundingPotId, ethers.constants.AddressZero);

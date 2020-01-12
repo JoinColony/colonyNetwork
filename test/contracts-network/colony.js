@@ -5,6 +5,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import {
+  X,
   UINT256_MAX,
   MANAGER_RATING,
   WORKER_RATING,
@@ -143,7 +144,7 @@ contract("Colony", (accounts) => {
 
   describe("when adding domains", () => {
     it("should log DomainAdded and FundingPotAdded events", async () => {
-      await expectAllEvents(colony.addDomain(1, 0, 1), ["DomainAdded", "FundingPotAdded"]);
+      await expectAllEvents(colony.addDomain(1, X, 1), ["DomainAdded", "FundingPotAdded"]);
     });
   });
 

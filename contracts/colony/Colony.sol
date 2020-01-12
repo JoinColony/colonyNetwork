@@ -101,7 +101,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   {
     return (
       hasUserRole(_user, _domainId, _role) &&
-      (_domainId == _childDomainId || validateDomainInheritance(_domainId, _childSkillIndex, _childDomainId))
+      validateDomainInheritance(_domainId, _childSkillIndex, _childDomainId)
     );
   }
 
