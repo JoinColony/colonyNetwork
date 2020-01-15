@@ -60,8 +60,10 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
 
   // Keeps track of all reward payout cycles
   mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles; // Storage slot 16
-  // Active payouts for particular token address. Assures that one token is used for only one active payout
-  mapping (address => uint256) activeRewardPayouts; // Storage slot 17
+
+  // Was used for old-style reward payouts. However, no colonies ever used them, so this slot (and the slots pointed to
+  // by the mapping) should all be empty, and in theory available for reuse.
+  mapping (address => uint256) DEPRECATED_activeRewardPayouts; // Storage slot 17
 
   // This keeps track of how much of the colony's funds that it owns have been moved into funding pots other than pot 0,
   // which (by definition) have also had the reward amount siphoned off and put in to pot 0.
@@ -82,6 +84,8 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   mapping (uint256 => Expenditure) expenditures; // Storage slot 25
   mapping (uint256 => mapping (uint256 => ExpenditureSlot)) expenditureSlots; // Storage slot 26
   mapping (uint256 => mapping (uint256 => mapping (address => uint256))) expenditureSlotPayouts; // Storage slot 27
+
+  mapping (address => uint256) possiblyPendingRewardPayments; // Storage slot 28
 
   modifier validPayoutAmount(uint256 _amount) {
     require(_amount <= MAX_PAYOUT, "colony-payout-too-large");
