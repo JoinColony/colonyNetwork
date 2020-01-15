@@ -276,8 +276,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   {
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 totalLockCount = tokenLocking.lockToken(token);
-
-    require(activeRewardPayouts[_token] == 0, "colony-reward-payout-token-active");
+    uint256 thisPayoutAmount = sub(fundingPots[0].balance[_token], possiblyPendingRewardPayments[_token]);
+    require(thisPayoutAmount > 0, "colony-reward-payout-no-rewards");
+    possiblyPendingRewardPayments[_token] = add(possiblyPendingRewardPayments[_token], thisPayoutAmount);
 
     uint256 totalTokens = sub(ERC20Extended(token).totalSupply(), ERC20Extended(token).balanceOf(address(this)));
     require(totalTokens > 0, "colony-reward-payout-invalid-total-tokens");
@@ -294,15 +295,15 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     );
     require(colonyWideReputation > 0, "colony-reward-payout-invalid-colony-wide-reputation");
 
-    activeRewardPayouts[_token] = totalLockCount;
-
     rewardPayoutCycles[totalLockCount] = RewardPayoutCycle(
       rootHash,
       colonyWideReputation,
       totalTokens,
-      fundingPots[0].balance[_token],
+      thisPayoutAmount,
       _token,
-      block.timestamp
+      block.timestamp,
+      thisPayoutAmount,
+      false
     );
 
     emit RewardPayoutCycleStarted(totalLockCount);
@@ -335,6 +336,11 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     uint remainder = sub(reward, fee);
 
     fundingPots[0].balance[tokenAddress] = sub(fundingPots[0].balance[tokenAddress], reward);
+    possiblyPendingRewardPayments[rewardPayoutCycles[_payoutId].tokenAddress] = sub(
+      possiblyPendingRewardPayments[rewardPayoutCycles[_payoutId].tokenAddress],
+      reward
+    );
+    rewardPayoutCycles[_payoutId].amountRemaining = sub(rewardPayoutCycles[_payoutId].amountRemaining, reward);
 
     assert(ERC20Extended(tokenAddress).transfer(msg.sender, remainder));
     assert(ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee));
@@ -345,11 +351,11 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   function finalizeRewardPayout(uint256 _payoutId) public stoppable {
     RewardPayoutCycle memory payout = rewardPayoutCycles[_payoutId];
     require(payout.reputationState != 0x00, "colony-reward-payout-does-not-exist");
-    require(activeRewardPayouts[payout.tokenAddress] > 0, "colony-reward-payout-token-not-active");
-    require(_payoutId == activeRewardPayouts[payout.tokenAddress], "colony-reward-payout-not-most-recent");
+    require(!payout.finalized, "colony-reward-payout-not-active");
     require(block.timestamp - payout.blockTimestamp > 60 days, "colony-reward-payout-active");
 
-    activeRewardPayouts[payout.tokenAddress] = 0;
+    rewardPayoutCycles[_payoutId].finalized = true;
+    possiblyPendingRewardPayments[payout.tokenAddress] = sub(possiblyPendingRewardPayments[payout.tokenAddress], payout.amountRemaining);
 
     emit RewardPayoutCycleEnded(_payoutId);
   }
