@@ -516,8 +516,16 @@ contract("Colony Reward Payouts", accounts => {
 
     it("should not be able to finalize payout if payoutId does not exist", async () => {
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      await checkErrorRevert(colony.finalizeRewardPayout(10), "colony-reward-payout-does-not-exist");
+    });
 
-      await checkErrorRevert(colony.finalizeRewardPayout(10), "colony-reward-payout-token-not-active");
+    it("should not be able to refinalize an old payout", async () => {
+      const tx = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      const firstPayoutId = tx.logs[0].args.rewardPayoutId;
+      await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
+      await colony.finalizeRewardPayout(firstPayoutId);
+      await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      await checkErrorRevert(colony.finalizeRewardPayout(firstPayoutId), "colony-reward-payout-not-most-recent");
     });
 
     it("should not be able to claim the same payout twice", async () => {

@@ -277,7 +277,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 totalLockCount = tokenLocking.lockToken(token);
 
-    require(!activeRewardPayouts[_token], "colony-reward-payout-token-active");
+    require(activeRewardPayouts[_token] == 0, "colony-reward-payout-token-active");
 
     uint256 totalTokens = sub(ERC20Extended(token).totalSupply(), ERC20Extended(token).balanceOf(address(this)));
     require(totalTokens > 0, "colony-reward-payout-invalid-total-tokens");
@@ -294,7 +294,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     );
     require(colonyWideReputation > 0, "colony-reward-payout-invalid-colony-wide-reputation");
 
-    activeRewardPayouts[_token] = true;
+    activeRewardPayouts[_token] = totalLockCount;
 
     rewardPayoutCycles[totalLockCount] = RewardPayoutCycle(
       rootHash,
@@ -344,11 +344,12 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
   function finalizeRewardPayout(uint256 _payoutId) public stoppable {
     RewardPayoutCycle memory payout = rewardPayoutCycles[_payoutId];
-
-    require(activeRewardPayouts[payout.tokenAddress], "colony-reward-payout-token-not-active");
+    require(payout.reputationState != 0x00, "colony-reward-payout-does-not-exist");
+    require(activeRewardPayouts[payout.tokenAddress] > 0, "colony-reward-payout-token-not-active");
+    require(_payoutId == activeRewardPayouts[payout.tokenAddress], "colony-reward-payout-not-most-recent");
     require(block.timestamp - payout.blockTimestamp > 60 days, "colony-reward-payout-active");
 
-    activeRewardPayouts[payout.tokenAddress] = false;
+    activeRewardPayouts[payout.tokenAddress] = 0;
 
     emit RewardPayoutCycleEnded(_payoutId);
   }
