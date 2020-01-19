@@ -124,8 +124,8 @@ contract("Voting Reputation", accounts => {
       await voting.createRootPoll(action, key, value, mask, siblings);
 
       const pollId = await voting.getPollCount();
-      const repInfo = await voting.getPollRepInfo(pollId);
-      expect(repInfo.skillId).to.eq.BN(domain1.skillId);
+      const poll = await voting.getPoll(pollId);
+      expect(poll.skillId).to.eq.BN(domain1.skillId);
     });
 
     it("can create a domain poll in the root domain", async () => {
@@ -138,8 +138,8 @@ contract("Voting Reputation", accounts => {
       await voting.createDomainPoll(1, UINT256_MAX, action, key, value, mask, siblings);
 
       const pollId = await voting.getPollCount();
-      const repInfo = await voting.getPollRepInfo(pollId);
-      expect(repInfo.skillId).to.eq.BN(domain1.skillId);
+      const poll = await voting.getPoll(pollId);
+      expect(poll.skillId).to.eq.BN(domain1.skillId);
     });
 
     it("can create a domain poll in a child domain", async () => {
@@ -152,8 +152,8 @@ contract("Voting Reputation", accounts => {
       await voting.createDomainPoll(2, UINT256_MAX, action, key, value, mask, siblings);
 
       const pollId = await voting.getPollCount();
-      const repInfo = await voting.getPollRepInfo(pollId);
-      expect(repInfo.skillId).to.eq.BN(domain2.skillId);
+      const poll = await voting.getPoll(pollId);
+      expect(poll.skillId).to.eq.BN(domain2.skillId);
     });
 
     it("can escalate a domain poll", async () => {
@@ -166,8 +166,8 @@ contract("Voting Reputation", accounts => {
       await voting.createDomainPoll(1, 0, action, key, value, mask, siblings);
 
       const pollId = await voting.getPollCount();
-      const repInfo = await voting.getPollRepInfo(pollId);
-      expect(repInfo.skillId).to.eq.BN(domain1.skillId);
+      const poll = await voting.getPoll(pollId);
+      expect(poll.skillId).to.eq.BN(domain1.skillId);
     });
 
     it("cannot escalate a domain poll with an invalid domain proof", async () => {
@@ -178,6 +178,67 @@ contract("Voting Reputation", accounts => {
       // Provide proof for (3) instead of (2)
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
       await checkErrorRevert(voting.createDomainPoll(1, 1, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
+    });
+
+    it("can stake on a poll", async () => {
+      const key = makeReputationKey(colony.address, domain1.skillId);
+      const value = makeReputationValue(WAD2.add(WAD), 1);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createRootPoll(action, key, value, mask, siblings);
+
+      const pollId = await voting.getPollCount();
+      await voting.stakePoll(pollId, 1, true, 100, { from: USER0 });
+      await voting.stakePoll(pollId, 1, true, 100, { from: USER1 });
+
+      const poll = await voting.getPoll(pollId);
+      expect(poll.stakes[0]).to.be.zero;
+      expect(poll.stakes[1]).to.eq.BN(200);
+
+      const stake0 = await voting.getStake(pollId, USER0, true);
+      const stake1 = await voting.getStake(pollId, USER1, true);
+      expect(stake0).to.eq.BN(100);
+      expect(stake1).to.eq.BN(100);
+    });
+
+    it("cannot stake on both sides of a poll", async () => {
+      const key = makeReputationKey(colony.address, domain1.skillId);
+      const value = makeReputationValue(WAD2.add(WAD), 1);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createRootPoll(action, key, value, mask, siblings);
+
+      const pollId = await voting.getPollCount();
+      await voting.stakePoll(pollId, 1, true, 100, { from: USER0 });
+
+      await checkErrorRevert(voting.stakePoll(pollId, 1, false, 100, { from: USER0 }), "voting-rep-cannot-stake-both-sides");
+    });
+
+    it("cannot stake more than the required stake", async () => {
+      const key = makeReputationKey(colony.address, domain1.skillId);
+      const value = makeReputationValue(WAD2.add(WAD), 1);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createRootPoll(action, key, value, mask, siblings);
+
+      const totalStake = WAD.muln(3).divn(1000);
+      const pollId = await voting.getPollCount();
+      await checkErrorRevert(voting.stakePoll(pollId, 1, true, totalStake.addn(1), { from: USER0 }), "voting-rep-stake-too-large");
+    });
+
+    it("cannot stake with an invalid domainId", async () => {
+      const key = makeReputationKey(colony.address, domain1.skillId);
+      const value = makeReputationValue(WAD2.add(WAD), 1);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createRootPoll(action, key, value, mask, siblings);
+
+      const pollId = await voting.getPollCount();
+      await checkErrorRevert(voting.stakePoll(pollId, 2, true, 100, { from: USER0 }), "voting-rep-bad-stake-domain");
     });
   });
 
@@ -217,7 +278,7 @@ contract("Voting Reputation", accounts => {
       await voting.revealVote(pollId, SALT, true, key, value, mask, siblings, { from: USER1 });
 
       // See final counts
-      const { votes } = await voting.getPollInfo(pollId);
+      const { votes } = await voting.getPoll(pollId);
       expect(votes[0]).to.eq.BN(WAD);
       expect(votes[1]).to.eq.BN(WAD2);
     });
@@ -244,7 +305,7 @@ contract("Voting Reputation", accounts => {
       await voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 });
 
       // Vote didn't count
-      const { votes } = await voting.getPollInfo(pollId);
+      const { votes } = await voting.getPoll(pollId);
       expect(votes[0]).to.be.zero;
       expect(votes[1]).to.be.zero;
     });

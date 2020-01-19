@@ -18,25 +18,52 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
+import "../IColony.sol";
+import "../IColonyNetwork.sol";
 import "../PatriciaTree/PatriciaTreeProofs.sol";
-import "./VotingBase.sol";
+import "../../lib/dappsys/math.sol";
 
 
-contract VotingReputation is VotingBase, PatriciaTreeProofs {
+contract VotingReputation is DSMath, PatriciaTreeProofs {
 
-  constructor(address _colony) public VotingBase(_colony) {}
+  // Constants
+  uint256 constant UINT256_MAX = 2**256 - 1;
+  uint256 constant STAKE_INVERSE = 1000;
+  uint256 constant VOTE_PERIOD = 1 days;
+  uint256 constant REVEAL_PERIOD = 2 days;
 
-  struct RepInfo {
-    bytes32 rootHash;
-    uint256 skillId;
+  // Initialization data
+  IColony colony;
+  IColonyNetwork colonyNetwork;
+
+  constructor(address _colony) public {
+    colony = IColony(_colony);
+    colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
   }
 
-  mapping (uint256 => RepInfo) repInfos;
+  // Data structures
+  enum PollState { Open, Reveal, Closed, Executed }
+
+  struct Poll {
+    bool executed;
+    uint256 createdAt;
+    bytes32 rootHash;
+    uint256 skillId;
+    uint256 skillRep;
+    uint256[2] stakes; // [nay, yay]
+    uint256[2] votes; // [nay, yay]
+    bytes action;
+  }
+
+  // Storage
+  uint256 pollCount;
+  mapping (uint256 => Poll) polls;
+  mapping (uint256 => mapping (address => mapping (bool => uint256))) stakers;
 
   // The UserVote type here is just the bytes32 voteSecret
   mapping (address => mapping (uint256 => bytes32)) userVotes;
 
-  // Public functions
+  // Public functions (interface)
 
   function createRootPoll(
     bytes memory _action,
@@ -73,6 +100,39 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     createPoll(_action, domainSkillId, _key, _value, _branchMask, _siblings);
   }
 
+  function stakePoll(uint256 _pollId, uint256 _domainId, bool _vote, uint256 _amount) public {
+    Poll storage poll = polls[_pollId];
+
+    // TODO: can we keep the domainId on the poll somewhere? This seems like a wasteful external call.
+    //   But if it's 10 external calls per word of storage, then < 10 stakers makes this cheaper.
+    require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-stake-domain");
+    require(stakers[_pollId][msg.sender][!_vote] == 0, "voting-rep-cannot-stake-both-sides");
+
+    // TODO: come up with something better than `bool2vote`. Maybe an enum?
+    uint256 currentStake = poll.stakes[bool2vote(_vote)];
+    uint256 requiredStake = poll.skillRep / STAKE_INVERSE;
+
+    require(add(currentStake, _amount) <= requiredStake, "voting-rep-stake-too-large");
+
+    poll.stakes[bool2vote(_vote)] = add(poll.stakes[bool2vote(_vote)], _amount);
+    stakers[_pollId][msg.sender][_vote] = add(stakers[_pollId][msg.sender][_vote], _amount);
+
+    // TODO: add implementation!
+    // colony.obligateStake(msg.sender, _domainId, _amount);
+  }
+
+  function executePoll(uint256 _pollId) public returns (bool) {
+    require(getPollState(_pollId) != PollState.Executed, "voting-base-poll-already-executed");
+    require(getPollState(_pollId) == PollState.Closed, "voting-base-poll-not-closed");
+
+    Poll storage poll = polls[_pollId];
+    poll.executed = true;
+
+    if (poll.votes[0] < poll.votes[1]) {
+      return executeCall(address(colony), poll.action);
+    }
+  }
+
   function submitVote(uint256 _pollId, bytes32 _voteSecret) public {
     require(getPollState(_pollId) == PollState.Open, "voting-rep-poll-not-open");
     userVotes[msg.sender][_pollId] = _voteSecret;
@@ -103,14 +163,35 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     // Increment the vote if poll in reveal, otherwise skip
     // NOTE: since there's no locking, we could just `require` PollState.Reveal
     if (getPollState(_pollId) == PollState.Reveal) {
-      polls[_pollId].votes[_vote ? 1 : 0] += userReputation;
+      polls[_pollId].votes[bool2vote(_vote)] += userReputation;
     }
   }
 
   // Public view functions
 
-  function getPollRepInfo(uint256 _pollId) public view returns (RepInfo memory repInfo) {
-    repInfo = repInfos[_pollId];
+  function getPollCount() public view returns (uint256) {
+    return pollCount;
+  }
+
+  function getPoll(uint256 _pollId) public view returns (Poll memory poll) {
+    poll = polls[_pollId];
+  }
+
+  function getStake(uint256 _pollId, address _staker, bool _vote) public view returns (uint256) {
+    return stakers[_pollId][_staker][_vote];
+  }
+
+  function getPollState(uint256 _pollId) public view returns (PollState) {
+    Poll storage poll = polls[_pollId];
+    if (now < poll.createdAt + VOTE_PERIOD) {
+      return PollState.Open;
+    } else if (now < poll.createdAt + VOTE_PERIOD + REVEAL_PERIOD) {
+      return PollState.Reveal;
+    } else if (!poll.executed) {
+      return PollState.Closed;
+    } else {
+      return PollState.Executed;
+    }
   }
 
   // Internal functions
@@ -127,8 +208,8 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
   {
     pollCount += 1;
 
-    repInfos[pollCount].rootHash = colonyNetwork.getReputationRootHash();
-    repInfos[pollCount].skillId = _skillId;
+    polls[pollCount].rootHash = colonyNetwork.getReputationRootHash();
+    polls[pollCount].skillId = _skillId;
 
     polls[pollCount].createdAt = now;
     polls[pollCount].skillRep = checkReputation(pollCount, address(0x0), _key, _value, _branchMask, _siblings);
@@ -146,7 +227,7 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     internal view returns (uint256)
   {
     bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
-    require(repInfos[_pollId].rootHash == impliedRoot, "voting-rep-invalid-root-hash");
+    require(polls[_pollId].rootHash == impliedRoot, "voting-rep-invalid-root-hash");
 
     uint256 reputationValue;
     address keyColonyAddress;
@@ -161,7 +242,7 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     }
 
     require(keyColonyAddress == address(colony), "voting-rep-invalid-colony-address");
-    require(keySkill == repInfos[_pollId].skillId, "voting-rep-invalid-skill-id");
+    require(keySkill == polls[_pollId].skillId, "voting-rep-invalid-skill-id");
     require(keyUserAddress == _who, "voting-rep-invalid-user-address");
 
     return reputationValue;
@@ -185,4 +266,22 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     }
   }
 
+  function executeCall(address to, bytes memory data) internal returns (bool success) {
+    assembly {
+              // call contract at address a with input mem[in…(in+insize))
+              //   providing g gas and v wei and output area mem[out…(out+outsize))
+              //   returning 0 on error (eg. out of gas) and 1 on success
+
+              // call(g,   a,  v, in,              insize,      out, outsize)
+      success := call(gas, to, 0, add(data, 0x20), mload(data), 0, 0)
+    }
+  }
+
+  function getVoteSecret(bytes32 _salt, bool _vote) internal pure returns (bytes32) {
+    return keccak256(abi.encodePacked(_salt, _vote));
+  }
+
+  function bool2vote(bool _vote) internal pure returns (uint256) {
+    return _vote ? 1 : 0;
+  }
 }
