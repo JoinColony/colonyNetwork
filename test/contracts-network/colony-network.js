@@ -514,7 +514,6 @@ contract("Colony Network", accounts => {
       const hash = namehash.hash("test.colony.joincolony.eth");
       const { colony } = await setupRandomColony(colonyNetwork);
       await colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[0] });
-      await colony.finishUpgrade2To3();
       await colony.updateColonyOrbitDB("anotherstring", { from: accounts[0] });
       // Get stored orbitdb address
       const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
@@ -523,7 +522,6 @@ contract("Colony Network", accounts => {
 
     it("should not allow a colony to change its orbitDBAddress without having registered a label", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
-      await colony.finishUpgrade2To3();
       await checkErrorRevert(colony.updateColonyOrbitDB("anotherstring", { from: accounts[0] }), "colony-colony-not-labeled");
     });
   });

@@ -272,14 +272,6 @@ A function to be called after an upgrade has been done from v2 to v3.
 
 
 
-### `finishUpgrade2To3`
-
-A function to be called after an upgrade has been done from v2 to v3.
-
-*Note: Sets up the permission for those with root permission to be able to call updateColonyOrbitDB, which is new in v3*
-
-
-
 ### `generateSecret`
 
 Helper function used to generage consistently the rating secret using salt value `_salt` and value to hide `_value`
@@ -1306,6 +1298,19 @@ Submit a hashed secret of the rating for work in task `_id` which was performed 
 
 ### `transferExpenditure`
 
+Updates the expenditure owner. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_newOwner|address|New owner of expenditure
+
+
+### `transferExpenditure`
+
 Updates the expenditure owner. Can only be called by Arbitration role.
 
 
@@ -1315,19 +1320,6 @@ Updates the expenditure owner. Can only be called by Arbitration role.
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
-|_id|uint256|Expenditure identifier
-|_newOwner|address|New owner of expenditure
-
-
-### `transferExpenditure`
-
-Updates the expenditure owner. Can only be called by expenditure owner.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
 |_id|uint256|Expenditure identifier
 |_newOwner|address|New owner of expenditure
 
