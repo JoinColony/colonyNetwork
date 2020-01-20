@@ -301,31 +301,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit ColonyUpgraded(currentVersion, _newVersion);
   }
 
-  function finishUpgrade2To3() public always {
-    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
-
-    colonyAuthority.setRoleCapability(
-     uint8(ColonyDataTypes.ColonyRole.ArchitectureSubdomain),
-      address(this),
-      bytes4(keccak256("setArbitrationRole(uint256,uint256,address,uint256,bool)")),
-      true
-    );
-
-    colonyAuthority.setRoleCapability(
-     uint8(ColonyDataTypes.ColonyRole.Root),
-      address(this),
-      bytes4(keccak256("setArbitrationRole(uint256,uint256,address,uint256,bool)")),
-      true
-    );
-
-    colonyAuthority.setRoleCapability(
-     uint8(ColonyDataTypes.ColonyRole.Root),
-      address(this),
-      bytes4(keccak256("updateColonyOrbitDB(string)")),
-      true
-    );
-  }
-
   // Removing payment/task domain mutability
   bytes4 constant SIG1 = bytes4(keccak256("setTaskDomain(uint256,uint256)"));
   bytes4 constant SIG2 = bytes4(keccak256("setPaymentDomain(uint256,uint256,uint256,uint256)"));
