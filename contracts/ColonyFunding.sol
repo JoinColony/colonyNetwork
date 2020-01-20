@@ -276,9 +276,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   {
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 totalLockCount = tokenLocking.lockToken(token);
-    uint256 thisPayoutAmount = sub(fundingPots[0].balance[_token], possiblyPendingRewardPayments[_token]);
+    uint256 thisPayoutAmount = sub(fundingPots[0].balance[_token], pendingRewardPayments[_token]);
     require(thisPayoutAmount > 0, "colony-reward-payout-no-rewards");
-    possiblyPendingRewardPayments[_token] = add(possiblyPendingRewardPayments[_token], thisPayoutAmount);
+    pendingRewardPayments[_token] = add(pendingRewardPayments[_token], thisPayoutAmount);
 
     uint256 totalTokens = sub(ERC20Extended(token).totalSupply(), ERC20Extended(token).balanceOf(address(this)));
     require(totalTokens > 0, "colony-reward-payout-invalid-total-tokens");
@@ -336,8 +336,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     uint remainder = sub(reward, fee);
 
     fundingPots[0].balance[tokenAddress] = sub(fundingPots[0].balance[tokenAddress], reward);
-    possiblyPendingRewardPayments[rewardPayoutCycles[_payoutId].tokenAddress] = sub(
-      possiblyPendingRewardPayments[rewardPayoutCycles[_payoutId].tokenAddress],
+    pendingRewardPayments[rewardPayoutCycles[_payoutId].tokenAddress] = sub(
+      pendingRewardPayments[rewardPayoutCycles[_payoutId].tokenAddress],
       reward
     );
     rewardPayoutCycles[_payoutId].amountRemaining = sub(rewardPayoutCycles[_payoutId].amountRemaining, reward);
@@ -351,11 +351,11 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   function finalizeRewardPayout(uint256 _payoutId) public stoppable {
     RewardPayoutCycle memory payout = rewardPayoutCycles[_payoutId];
     require(payout.reputationState != 0x00, "colony-reward-payout-does-not-exist");
-    require(!payout.finalized, "colony-reward-payout-not-active");
+    require(!payout.finalized, "colony-reward-payout-already-finalized");
     require(block.timestamp - payout.blockTimestamp > 60 days, "colony-reward-payout-active");
 
     rewardPayoutCycles[_payoutId].finalized = true;
-    possiblyPendingRewardPayments[payout.tokenAddress] = sub(possiblyPendingRewardPayments[payout.tokenAddress], payout.amountRemaining);
+    pendingRewardPayments[payout.tokenAddress] = sub(pendingRewardPayments[payout.tokenAddress], payout.amountRemaining);
 
     emit RewardPayoutCycleEnded(_payoutId);
   }

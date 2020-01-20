@@ -303,8 +303,6 @@ contract("Colony Reward Payouts", accounts => {
     });
 
     it("should be able to collect rewards from multiple payouts of the same token", async () => {
-      await colony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
-
       const tx1 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId1 = tx1.logs[0].args.rewardPayoutId;
 
@@ -347,8 +345,8 @@ contract("Colony Reward Payouts", accounts => {
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
-      const domain = await colony.getDomain(1);
-      const rootDomainSkill = domain.skillId;
+      const rootDomain = await colony.getDomain(1);
+      const rootDomainSkill = rootDomain.skillId;
       const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
       const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       colonyWideReputationProof = [key, value, branchMask, siblings];
@@ -371,7 +369,7 @@ contract("Colony Reward Payouts", accounts => {
       const payoutId2 = tx2.logs[0].args.rewardPayoutId;
 
       const payout2 = await colony.getRewardPayoutInfo(payoutId2);
-      assert.equal(payout2.amount, new BN(payout.amountRemaining, 10).addn(100).toString(), "Payout has unexpected amount");
+      assert.equal(payout2.amount, new BN(payout.amountRemaining).addn(100).toString(), "Payout has unexpected amount");
     });
 
     it("should be able to collect rewards from multiple payouts of different token", async () => {
@@ -573,7 +571,7 @@ contract("Colony Reward Payouts", accounts => {
       await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
       await colony.finalizeRewardPayout(payoutId);
 
-      await checkErrorRevert(colony.finalizeRewardPayout(payoutId, { from: userAddress1 }), "colony-reward-payout-not-active");
+      await checkErrorRevert(colony.finalizeRewardPayout(payoutId, { from: userAddress1 }), "colony-reward-payout-already-finalized");
     });
 
     it("should not be able to finalize payout if payout is still active", async () => {
@@ -594,7 +592,7 @@ contract("Colony Reward Payouts", accounts => {
       await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
       await colony.finalizeRewardPayout(firstPayoutId);
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
-      await checkErrorRevert(colony.finalizeRewardPayout(firstPayoutId), "colony-reward-payout-not-active");
+      await checkErrorRevert(colony.finalizeRewardPayout(firstPayoutId), "colony-reward-payout-already-finalized");
     });
 
     it("should not be able to claim the same payout twice", async () => {
