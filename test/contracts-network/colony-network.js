@@ -4,7 +4,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent, getColonyEditable } from "../../helpers/test-helper";
-import { GLOBAL_SKILL_ID } from "../../helpers/constants";
+import { CURR_VERSION, GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
@@ -59,7 +59,7 @@ contract("Colony Network", accounts => {
 
     it("should have the correct current Colony version set", async () => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      expect(currentColonyVersion).to.eq.BN(3);
+      expect(currentColonyVersion).to.eq.BN(CURR_VERSION);
     });
 
     it("should have the Resolver for current Colony version set", async () => {
