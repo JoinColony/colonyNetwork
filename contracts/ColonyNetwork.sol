@@ -124,16 +124,31 @@ contract ColonyNetwork is ColonyNetworkStorage {
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
 
+  function createColony(address _tokenAddress, uint256 _version) public
+  stoppable
+  returns (address)
+  {
+    require(colonyVersionResolver[_version] != address(0x00), "colony-network-invalid-version");
+    return createColonyFunctionality(_tokenAddress, _version);
+  }
+
   function createColony(address _tokenAddress) public
   stoppable
   returns (address)
   {
     require(currentColonyVersion > 0, "colony-network-not-initialised-cannot-create-colony");
+    return createColonyFunctionality(_tokenAddress, currentColonyVersion);
+  }
+
+  function createColonyFunctionality(address _tokenAddress, uint256 _version) internal
+  stoppable
+  returns (address)
+  {
     require(_tokenAddress != address(0x0), "colony-token-invalid-address");
     EtherRouter etherRouter = new EtherRouter();
     IColony colony = IColony(address(etherRouter));
-    address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion]; // ignore-swc-107
-    etherRouter.setResolver(resolverForLatestColonyVersion); // ignore-swc-113
+    address resolverForColonyVersion = colonyVersionResolver[_version]; // ignore-swc-107
+    etherRouter.setResolver(resolverForColonyVersion); // ignore-swc-113
 
     // Creating new instance of colony's authority
     ColonyAuthority colonyAuthority = new ColonyAuthority(address(colony));
