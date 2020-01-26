@@ -29,7 +29,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   // Constants
   uint256 constant UINT256_MAX = 2**256 - 1;
   uint256 constant STAKE_INVERSE = 1000;
-  uint256 constant VOTE_PERIOD = 1 days;
+  uint256 constant VOTE_PERIOD = 2 days;
   uint256 constant REVEAL_PERIOD = 2 days;
 
   // Initialization data

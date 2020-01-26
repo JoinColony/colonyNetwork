@@ -36,13 +36,15 @@ contract("Voting Reputation", accounts => {
 
   let reputationTree;
 
+  const VOTE_WINDOW = SECONDS_PER_DAY * 2;
+  const REVEAL_WINDOW = SECONDS_PER_DAY * 2;
+
   const USER0 = accounts[0];
   const USER1 = accounts[1];
   const MINER = accounts[5];
 
   const SALT = soliditySha3(shortid.generate());
   const FAKE = soliditySha3(shortid.generate());
-  const WAD2 = WAD.muln(2);
 
   before(async () => {
     colonyNetwork = await setupColonyNetwork();
@@ -70,7 +72,7 @@ contract("Voting Reputation", accounts => {
     reputationTree = new PatriciaTree();
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId), // Colony total
-      makeReputationValue(WAD2.add(WAD), 1)
+      makeReputationValue(WAD.muln(3), 1)
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER0), // All good
@@ -86,7 +88,7 @@ contract("Voting Reputation", accounts => {
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER1), // Wrong user (and 2x value)
-      makeReputationValue(WAD2, 5)
+      makeReputationValue(WAD.muln(2), 5)
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain2.skillId), // Colony total, domain 2
@@ -117,7 +119,7 @@ contract("Voting Reputation", accounts => {
   describe("creating polls", async () => {
     it("can create a root poll", async () => {
       const key = makeReputationKey(colony.address, domain1.skillId);
-      const value = makeReputationValue(WAD2.add(WAD), 1);
+      const value = makeReputationValue(WAD.muln(3), 1);
       const [mask, siblings] = await reputationTree.getProof(key);
 
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
@@ -182,7 +184,7 @@ contract("Voting Reputation", accounts => {
 
     it("can stake on a poll", async () => {
       const key = makeReputationKey(colony.address, domain1.skillId);
-      const value = makeReputationValue(WAD2.add(WAD), 1);
+      const value = makeReputationValue(WAD.muln(3), 1);
       const [mask, siblings] = await reputationTree.getProof(key);
 
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
@@ -204,7 +206,7 @@ contract("Voting Reputation", accounts => {
 
     it("cannot stake on both sides of a poll", async () => {
       const key = makeReputationKey(colony.address, domain1.skillId);
-      const value = makeReputationValue(WAD2.add(WAD), 1);
+      const value = makeReputationValue(WAD.muln(3), 1);
       const [mask, siblings] = await reputationTree.getProof(key);
 
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
@@ -218,7 +220,7 @@ contract("Voting Reputation", accounts => {
 
     it("cannot stake more than the required stake", async () => {
       const key = makeReputationKey(colony.address, domain1.skillId);
-      const value = makeReputationValue(WAD2.add(WAD), 1);
+      const value = makeReputationValue(WAD.muln(3), 1);
       const [mask, siblings] = await reputationTree.getProof(key);
 
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
@@ -231,7 +233,7 @@ contract("Voting Reputation", accounts => {
 
     it("cannot stake with an invalid domainId", async () => {
       const key = makeReputationKey(colony.address, domain1.skillId);
-      const value = makeReputationValue(WAD2.add(WAD), 1);
+      const value = makeReputationValue(WAD.muln(3), 1);
       const [mask, siblings] = await reputationTree.getProof(key);
 
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
@@ -247,7 +249,7 @@ contract("Voting Reputation", accounts => {
 
     beforeEach(async () => {
       key = makeReputationKey(colony.address, domain1.skillId);
-      value = makeReputationValue(WAD2.add(WAD), 1);
+      value = makeReputationValue(WAD.muln(3), 1);
       [mask, siblings] = await reputationTree.getProof(key);
 
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
@@ -261,7 +263,7 @@ contract("Voting Reputation", accounts => {
 
     it("can rate and reveal for a poll", async () => {
       await voting.submitVote(pollId, soliditySha3(SALT, false), { from: USER0 });
-      await forwardTime(SECONDS_PER_DAY, this);
+      await forwardTime(VOTE_WINDOW, this);
       await voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 });
     });
 
@@ -269,25 +271,25 @@ contract("Voting Reputation", accounts => {
       await voting.submitVote(pollId, soliditySha3(SALT, false), { from: USER0 });
       await voting.submitVote(pollId, soliditySha3(SALT, true), { from: USER1 });
 
-      await forwardTime(SECONDS_PER_DAY, this);
+      await forwardTime(VOTE_WINDOW, this);
       await voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 });
 
       key = makeReputationKey(colony.address, domain1.skillId, USER1);
-      value = makeReputationValue(WAD2, 5);
+      value = makeReputationValue(WAD.muln(2), 5);
       [mask, siblings] = await reputationTree.getProof(key);
       await voting.revealVote(pollId, SALT, true, key, value, mask, siblings, { from: USER1 });
 
       // See final counts
       const { votes } = await voting.getPoll(pollId);
       expect(votes[0]).to.eq.BN(WAD);
-      expect(votes[1]).to.eq.BN(WAD2);
+      expect(votes[1]).to.eq.BN(WAD.muln(2));
     });
 
     it("can update votes, but only last one counts", async () => {
       await voting.submitVote(pollId, soliditySha3(SALT, false), { from: USER0 });
       await voting.submitVote(pollId, soliditySha3(SALT, true), { from: USER0 });
 
-      await forwardTime(SECONDS_PER_DAY, this);
+      await forwardTime(VOTE_WINDOW, this);
 
       // Revealing first vote fails
       await checkErrorRevert(voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 }), "voting-rep-secret-no-match");
@@ -299,8 +301,7 @@ contract("Voting Reputation", accounts => {
     it("can reveal votes after poll closes, but doesn't count", async () => {
       await voting.submitVote(pollId, soliditySha3(SALT, false), { from: USER0 });
 
-      // Close the poll (1 day voting, 2 day reveal)
-      await forwardTime(SECONDS_PER_DAY * 3, this);
+      await forwardTime(VOTE_WINDOW + REVEAL_WINDOW, this);
 
       await voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 });
 
@@ -313,7 +314,7 @@ contract("Voting Reputation", accounts => {
     it("cannot reveal a vote twice, and so cannot vote twice", async () => {
       await voting.submitVote(pollId, soliditySha3(SALT, false), { from: USER0 });
 
-      await forwardTime(SECONDS_PER_DAY, this);
+      await forwardTime(VOTE_WINDOW, this);
 
       await voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 });
       await checkErrorRevert(voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 }), "voting-rep-secret-no-match");
@@ -335,7 +336,7 @@ contract("Voting Reputation", accounts => {
 
       // Create new poll with new reputation state
       const keyColony = makeReputationKey(colony.address, domain1.skillId);
-      const valueColony = makeReputationValue(WAD2.add(WAD), 1);
+      const valueColony = makeReputationValue(WAD.muln(3), 1);
       const [maskColony, siblingsColony] = await reputationTree.getProof(keyColony);
       await voting.createRootPoll(FAKE, keyColony, valueColony, maskColony, siblingsColony);
 
@@ -343,7 +344,7 @@ contract("Voting Reputation", accounts => {
 
       await voting.submitVote(pollId2, soliditySha3(SALT, false), { from: USER0 });
 
-      await forwardTime(SECONDS_PER_DAY, this);
+      await forwardTime(VOTE_WINDOW, this);
 
       const [mask2, siblings2] = await reputationTree.getProof(key);
       await voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 });
@@ -355,12 +356,12 @@ contract("Voting Reputation", accounts => {
 
       await voting.submitVote(pollId, soliditySha3(SALT, true), { from: USER0 });
 
-      await forwardTime(SECONDS_PER_DAY, this);
+      await forwardTime(VOTE_WINDOW, this);
       await voting.revealVote(pollId, SALT, true, key, value, mask, siblings, { from: USER0 });
 
       await checkErrorRevert(voting.executePoll(pollId), "voting-base-poll-not-closed");
 
-      await forwardTime(SECONDS_PER_DAY * 2, this);
+      await forwardTime(REVEAL_WINDOW * 2, this);
       const taskCountPrev = await colony.getTaskCount();
       await voting.executePoll(pollId);
       const taskCountPost = await colony.getTaskCount();
@@ -374,10 +375,10 @@ contract("Voting Reputation", accounts => {
 
       await voting.submitVote(pollId, soliditySha3(SALT, false), { from: USER0 });
 
-      await forwardTime(SECONDS_PER_DAY, this);
+      await forwardTime(VOTE_WINDOW, this);
       await voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 });
 
-      await forwardTime(SECONDS_PER_DAY * 2, this);
+      await forwardTime(REVEAL_WINDOW * 2, this);
       const taskCountPrev = await colony.getTaskCount();
       await voting.executePoll(pollId);
       const taskCountPost = await colony.getTaskCount();
@@ -390,7 +391,7 @@ contract("Voting Reputation", accounts => {
 
     beforeEach(async () => {
       const key = makeReputationKey(colony.address, domain1.skillId);
-      const value = makeReputationValue(WAD2.add(WAD), 1);
+      const value = makeReputationValue(WAD.muln(3), 1);
       const [mask, siblings] = await reputationTree.getProof(key);
 
       await voting.createRootPoll(FAKE, key, value, mask, siblings);
@@ -398,7 +399,7 @@ contract("Voting Reputation", accounts => {
     });
 
     it("cannot submit a vote if voting is closed", async () => {
-      await forwardTime(SECONDS_PER_DAY * 2, this);
+      await forwardTime(VOTE_WINDOW, this);
       await checkErrorRevert(voting.submitVote(pollId, soliditySha3(SALT, false)), "voting-rep-poll-not-open");
     });
 
@@ -409,14 +410,14 @@ contract("Voting Reputation", accounts => {
 
     it("cannot reveal a vote with a bad secret", async () => {
       await voting.submitVote(pollId, soliditySha3(SALT, false));
-      await forwardTime(SECONDS_PER_DAY, this);
+      await forwardTime(VOTE_WINDOW, this);
       await checkErrorRevert(voting.revealVote(pollId, SALT, true, FAKE, FAKE, 0, []), "voting-rep-secret-no-match");
     });
 
     // VotingReputation specific
     it("cannot reveal a vote with a bad proof", async () => {
       await voting.submitVote(pollId, soliditySha3(SALT, false), { from: USER0 });
-      await forwardTime(SECONDS_PER_DAY, this);
+      await forwardTime(VOTE_WINDOW, this);
 
       // Invalid proof (wrong root hash)
       await checkErrorRevert(voting.revealVote(pollId, SALT, false, FAKE, FAKE, 0, [], { from: USER0 }), "voting-rep-invalid-root-hash");
@@ -439,7 +440,7 @@ contract("Voting Reputation", accounts => {
 
       // Invalid user address
       key = makeReputationKey(colony.address, domain1.skillId, USER1);
-      value = makeReputationValue(WAD2, 5);
+      value = makeReputationValue(WAD.muln(2), 5);
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(voting.revealVote(pollId, SALT, false, key, value, mask, siblings, { from: USER0 }), "voting-rep-invalid-user-address");
     });
