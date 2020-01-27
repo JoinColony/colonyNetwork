@@ -129,7 +129,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   returns (address)
   {
     require(colonyVersionResolver[_version] != address(0x00), "colony-network-invalid-version");
-    return createColonyFunctionality(_tokenAddress, _version);
+    return createColonyFromVersion(_tokenAddress, _version);
   }
 
   function createColony(address _tokenAddress) public
@@ -137,10 +137,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
   returns (address)
   {
     require(currentColonyVersion > 0, "colony-network-not-initialised-cannot-create-colony");
-    return createColonyFunctionality(_tokenAddress, currentColonyVersion);
+    return createColonyFromVersion(_tokenAddress, currentColonyVersion);
   }
 
-  function createColonyFunctionality(address _tokenAddress, uint256 _version) internal
+  function createColonyFromVersion(address _tokenAddress, uint256 _version) internal
   stoppable
   returns (address)
   {
