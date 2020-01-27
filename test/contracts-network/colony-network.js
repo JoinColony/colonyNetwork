@@ -187,6 +187,12 @@ contract("Colony Network", accounts => {
       const token = await Token.new(...getTokenArgs());
       await token.unlock();
       await colonyNetwork.createColony(token.address, oldVersion);
+
+      const colonyAddress = await colonyNetwork.getColony(2);
+
+      const colonyEtherRouter = await EtherRouter.at(colonyAddress);
+      const colonyResolver = await colonyEtherRouter.resolver();
+      expect(colonyResolver.toLowerCase()).to.equal(newResolverAddress);
     });
 
     it("should not users to create a new colony at a version that doesn't exist", async () => {
