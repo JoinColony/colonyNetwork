@@ -419,7 +419,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     require(userReputation > 0, "colony-reward-payout-invalid-user-reputation");
 
     // squareRoots[0] - square root of userReputation
-    // squareRoots[1] - square root of userTokens
+    // squareRoots[1] - square root of userTokens (deposited in TokenLocking)
     // squareRoots[2] - square root of payout.colonyWideReputation
     // squareRoots[3] - square root of totalTokens
     // squareRoots[4] - square root of numerator

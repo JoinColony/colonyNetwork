@@ -145,7 +145,7 @@ Claim the reward payout at `_payoutId`. User needs to provide their reputation a
 |Name|Type|Description|
 |---|---|---|
 |_payoutId|uint256|Id of the reward payout
-|_squareRoots|uint256[7]|Square roots of values used in equation: `_squareRoots[0]` - square root of user reputation, `_squareRoots[1]` - square root of user tokens, `_squareRoots[2]` - square root of total reputation, `_squareRoots[3]` - square root of total tokens, `_squareRoots[4]` - square root of numerator (user reputation * user tokens), `_squareRoots[5]` - square root of denominator (total reputation * total tokens), `_squareRoots[6]` - square root of payout amount.
+|_squareRoots|uint256[7]|Square roots of values used in equation: `_squareRoots[0]` - square root of user reputation, `_squareRoots[1]` - square root of user tokens (deposited in TokenLocking), `_squareRoots[2]` - square root of total reputation, `_squareRoots[3]` - square root of total tokens, `_squareRoots[4]` - square root of numerator (user reputation * user tokens), `_squareRoots[5]` - square root of denominator (total reputation * total tokens), `_squareRoots[6]` - square root of payout amount.
 |key|bytes|Some Reputation hash tree key
 |value|bytes|Reputation value
 |branchMask|uint256|The branchmask of the proof
