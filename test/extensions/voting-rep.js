@@ -3,6 +3,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import shortid from "shortid";
+import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, DEFAULT_STAKE } from "../../helpers/constants";
@@ -383,6 +384,41 @@ contract("Voting Reputation", accounts => {
       await voting.executePoll(pollId);
       const taskCountPost = await colony.getTaskCount();
       expect(taskCountPost).to.eq.BN(taskCountPrev);
+    });
+
+    it("cannot take an action if there is insufficient voting power (state change actions)", async () => {
+      await colony.setArbitrationRole(1, 0, voting.address, 1, true);
+
+      key = makeReputationKey(colony.address, domain1.skillId);
+      value = makeReputationValue(WAD.muln(3), 1);
+      [mask, siblings] = await reputationTree.getProof(key);
+
+      // Set first slot of first expenditure struct to 0x0
+      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, 1, 0, [], [], ethers.constants.HashZero]);
+
+      // Create two polls for same variable
+      await voting.createDomainPoll(1, UINT256_MAX, action, key, value, mask, siblings);
+      const pollId1 = await voting.getPollCount();
+      await voting.createDomainPoll(1, UINT256_MAX, action, key, value, mask, siblings);
+      const pollId2 = await voting.getPollCount();
+
+      key = makeReputationKey(colony.address, domain1.skillId, USER0);
+      value = makeReputationValue(WAD, 2);
+      [mask, siblings] = await reputationTree.getProof(key);
+
+      await voting.submitVote(pollId1, soliditySha3(SALT, true), { from: USER0 });
+      await voting.submitVote(pollId2, soliditySha3(SALT, true), { from: USER0 });
+
+      await forwardTime(VOTE_WINDOW, this);
+
+      await voting.revealVote(pollId1, SALT, true, key, value, mask, siblings, { from: USER0 });
+      await voting.revealVote(pollId2, SALT, true, key, value, mask, siblings, { from: USER0 });
+
+      await forwardTime(REVEAL_WINDOW, this);
+
+      await voting.executePoll(pollId1);
+
+      await checkErrorRevert(voting.executePoll(pollId2), "voting-rep-insufficient-vote-power");
     });
   });
 

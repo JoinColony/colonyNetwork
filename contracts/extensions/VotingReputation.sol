@@ -31,6 +31,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   uint256 constant STAKE_INVERSE = 1000;
   uint256 constant VOTE_PERIOD = 2 days;
   uint256 constant REVEAL_PERIOD = 2 days;
+  bytes4 constant CHANGE_FUNC = bytes4(keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"));
 
   // Initialization data
   IColony colony;
@@ -62,6 +63,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   // The UserVote type here is just the bytes32 voteSecret
   mapping (address => mapping (uint256 => bytes32)) userVotes;
+
+  mapping (bytes32 => uint256) pastVotes;
 
   // Public functions (interface)
 
@@ -127,6 +130,15 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     Poll storage poll = polls[_pollId];
     poll.executed = true;
+
+    if (getSig(poll.action) == CHANGE_FUNC) {
+      bytes32 slot = encodeSlot(poll.action);
+      uint256 votePower = add(poll.votes[0], poll.votes[1]);
+
+      require(pastVotes[slot] < votePower, "voting-rep-insufficient-vote-power");
+
+      pastVotes[slot] = votePower;
+    }
 
     if (poll.votes[0] < poll.votes[1]) {
       return executeCall(address(colony), poll.action);
@@ -283,5 +295,18 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   function bool2vote(bool _vote) internal pure returns (uint256) {
     return _vote ? 1 : 0;
+  }
+
+  function getSig(bytes memory action) internal returns (bytes4 sig) {
+    assembly {
+      sig := mload(add(action, 0x20))
+    }
+  }
+
+  function encodeSlot(bytes memory action) internal returns (bytes32 slot) {
+    assembly {
+      // Hash all but last (value) byte, since mload(action) gives length+32
+      slot := keccak256(action, mload(action))
+    }
   }
 }
