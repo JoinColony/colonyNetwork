@@ -728,9 +728,9 @@ export async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nN
       }
     });
 
-    // After 30s, we throw a timeout error
+    // After 60s, we throw a timeout error
     setTimeout(() => {
-      reject(new Error("ERROR: timeout while waiting for 12 hash submissions"));
-    }, 30000);
+      reject(new Error("Timeout while waiting for 12 hash submissions"));
+    }, 60 * 1000);
   });
 }
