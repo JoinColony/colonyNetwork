@@ -720,7 +720,7 @@ export async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nN
   return new Promise(function(resolve, reject) {
     repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nNodes, _jrh, _entryIndex, event) => {
       const nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nNodes, jrh);
-      if (nSubmissions.toNumber() === n) {
+      if (nSubmissions.toNumber() >= n) {
         event.removeListener();
         resolve();
       } else {
