@@ -8,6 +8,8 @@ const INT256_MAX = new BN(0).notn(255);
 const INT128_MAX = new BN(2).pow(new BN(127)).sub(new BN(1));
 const INT128_MIN = new BN(2).pow(new BN(127)).mul(new BN(-1));
 
+const CURR_VERSION = 4;
+
 const RECOVERY_ROLE = 0;
 const ROOT_ROLE = 1;
 const ARBITRATION_ROLE = 2;
@@ -66,6 +68,7 @@ module.exports = {
   INT256_MAX,
   INT128_MAX,
   INT128_MIN,
+  CURR_VERSION,
   RECOVERY_ROLE,
   ROOT_ROLE,
   ARBITRATION_ROLE,

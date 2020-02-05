@@ -26,7 +26,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 3; }
+  function version() public pure returns (uint256 colonyVersion) { return 4; }
 
   function setRootRole(address _user, bool _setTo) public stoppable auth {
     ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
@@ -299,31 +299,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // we need to do once we know what's in it!
     this.finishUpgrade();
     emit ColonyUpgraded(currentVersion, _newVersion);
-  }
-
-  function finishUpgrade2To3() public always {
-    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
-
-    colonyAuthority.setRoleCapability(
-     uint8(ColonyDataTypes.ColonyRole.ArchitectureSubdomain),
-      address(this),
-      bytes4(keccak256("setArbitrationRole(uint256,uint256,address,uint256,bool)")),
-      true
-    );
-
-    colonyAuthority.setRoleCapability(
-     uint8(ColonyDataTypes.ColonyRole.Root),
-      address(this),
-      bytes4(keccak256("setArbitrationRole(uint256,uint256,address,uint256,bool)")),
-      true
-    );
-
-    colonyAuthority.setRoleCapability(
-     uint8(ColonyDataTypes.ColonyRole.Root),
-      address(this),
-      bytes4(keccak256("updateColonyOrbitDB(string)")),
-      true
-    );
   }
 
   // Removing payment/task domain mutability
