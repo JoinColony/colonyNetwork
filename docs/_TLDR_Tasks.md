@@ -39,7 +39,7 @@ Every task has three roles associated with it which determine permissions for ed
 
 Once created, some changes to a task require the signature of multiple roles. See the colonyJS [Task Lifecycle](/colonyjs/topics-task-lifecycle/) and [Using Multisignature](/colonyjs/topics-using-multisignature/) documentation for for further information about role permissions and multi-sig operations.
 
-Additionally, in the first version of the Colony Network, the creation and modification of tasks is mediated by `auth` roles as described in the [AuthorityClient API](/colonyjs/topics-managing-permissions/).
+Additionally, in the first version of the Colony Network, the creation and modification of tasks is mediated by `auth` roles as described in the [Colony Roles](/colonyjs/topics-colony-roles/).
 
 ## The Task Life-cycle
 
