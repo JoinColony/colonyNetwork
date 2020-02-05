@@ -257,9 +257,10 @@ class ReputationMinerClient {
   async doBlockChecks(blockNumber) {
     try {
       if (this.lockedForBlockProcessing) {
+        this.blockSeenWhileLocked = blockNumber;
         return;
       }
-
+      this.blockSeenWhileLocked = false;
       this.lockedForBlockProcessing = true;
       // DO NOT PUT ANY AWAITS ABOVE THIS LINE OR YOU WILL GET RACE CONDITIONS
       // When you leave this function, make sure to call this.endDoBlockChecks() to unlock
@@ -443,6 +444,10 @@ class ReputationMinerClient {
     }
     this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
     this.lockedForBlockProcessing = false;
+    if (this.blockSeenWhileLocked){
+      // NB Not an async call - we do not want to wait here for the block checks to complete.
+      this.doBlockChecks(this.blockSeenWhileLocked);
+    }
   }
 
   async close() {
