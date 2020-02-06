@@ -283,7 +283,8 @@ process.env.SOLIDITY_COVERAGE
           const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, 12);
 
           // Make a submission from the second client and then await the remaining 11 submissions from the first client
-          await goodClient.loadState(rootHash);
+          await goodClient.loadState(oldHash);
+          await goodClient.addLogContentsToReputationTree();
 
           // Forward time and wait for the client to submit all 12 allowed entries
           await forwardTime(MINING_CYCLE_DURATION * 0.5, this);

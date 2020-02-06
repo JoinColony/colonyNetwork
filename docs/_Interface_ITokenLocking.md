@@ -4,7 +4,7 @@ section: Interface
 order: 5
 ---
 
-  
+
 ## Interface Methods
 
 ### `approveStake`
@@ -19,6 +19,19 @@ Allow the colony to obligate some amount of tokens as a stake. Can only be calle
 |_colony|address|Address of the colony we are willing to let obligate us.
 |_amount|uint256|Amount of that colony's internal token up to which we are willing to be obligated.
 |_token|address|The colony's internal token address
+
+
+### `burn`
+
+Function called to burn CLNY tokens held by TokenLocking.
+
+*Note: While public, it can only be called successfully by the current ReputationMiningCycle.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|Amount of CLNY to burn
 
 
 ### `claim`
@@ -186,7 +199,7 @@ Obligate the user some amount of tokens as a stake. Can only be called by a colo
 
 ### `punishStakers`
 
-Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
+Function called to punish people who staked CLNY against a new reputation root hash that turned out to be incorrect.
 
 *Note: While public, it can only be called successfully by the current ReputationMiningCycle.*
 
@@ -195,8 +208,21 @@ Function called to punish people who staked against a new reputation root hash t
 |Name|Type|Description|
 |---|---|---|
 |_stakers|address[]|Array of the addresses of stakers to punish
-|_beneficiary|address|Address of beneficiary to receive forfeited stake
-|_amount|uint256|Amount of stake to slash
+|_amount|uint256|Amount of stake to slash (each)
+
+
+### `reward`
+
+Function called to reward people during reputation mining disputes in CLNY.
+
+*Note: While public, it can only be called successfully by the current ReputationMiningCycle.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_recipient|address|The address to reward
+|_amount|uint256|Amount of CLNY to award
 
 
 ### `setColonyNetwork`
@@ -258,6 +284,19 @@ Increments the lock counter to `_lockId` for the `_user` if user's lock count is
 
 ### `withdraw`
 
+DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to withdraw from
+|_amount|uint256|Amount to withdraw
+
+
+### `withdraw`
+
 Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
 
 
@@ -268,16 +307,3 @@ Withdraw `_amount` of deposited tokens. Can only be called if user tokens are no
 |_token|address|Address of the token to withdraw from
 |_amount|uint256|Amount to withdraw
 |_force|bool|Pass true to forcibly unlock the token
-
-
-### `withdraw`
-
-DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_token|address|Address of the token to withdraw from
-|_amount|uint256|Amount to withdraw

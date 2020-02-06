@@ -94,7 +94,7 @@ contract ColonyNetworkDataTypes {
   /// @param label The label registered
   event ColonyLabelRegistered(address indexed colony, bytes32 label);
 
-  event ReputationMinerPenalised(address miner, address beneficiary, uint256 tokensLost);
+  event ReputationMinerPenalised(address miner, uint256 tokensLost);
 
   struct Skill {
     // total number of parent skills

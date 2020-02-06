@@ -255,4 +255,14 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param jrh The JRH of that was submitted
   /// @return count The number of submissions - should be 0-12, as up to twelve submissions can be made
   function getNSubmissionsForHash(bytes32 hash, uint256 nNodes, bytes32 jrh) public view returns (uint256 count);
+
+  /// @notice Returns whether a particular address has been involved in the current mining cycle. This might be
+  /// from submitting a hash, or from defending one during a dispute.
+  /// @param _user The address whose involvement being queried
+  /// @return bool Whether the address has been involved in the current mining cycle
+  function userInvolvedInMiningCycle(address _user) public view returns (bool involved);
+
+  /// @notice Returns the amount of CLNY given for defending a hash during the current dispute cycle
+  /// @return uint256 The amount of CLNY given.
+  function getDisputeRewardIncrement() public view returns (uint256 _reward);
 }

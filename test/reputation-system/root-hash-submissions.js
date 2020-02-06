@@ -21,6 +21,7 @@ import {
   finishReputationMiningCycle,
   runBinarySearch,
   checkErrorRevertEthers,
+  currentBlock
 } from "../../helpers/test-helper";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -552,10 +553,9 @@ contract("Reputation mining - root hash submissions", (accounts) => {
   });
 
   describe("when rewarding and punishing good and bad submissions", () => {
-    it("should punish all stakers if they misbehave (and report a bad hash)", async () => {
+    it("should punish stakes who submit a bad hash and reward those who defend a hash", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      const invalidatorLockBefore = await tokenLocking.getUserLock(clnyToken.address, accounts[0]);
       const userLockMiner1Before = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       const userLockMiner2Before = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       const userLockMiner3Before = await tokenLocking.getUserLock(clnyToken.address, MINER3);
@@ -574,21 +574,38 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       await badClient2.submitRootHash();
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const rewardIncrement = await repCycle.getDisputeRewardIncrement();
+
+      const blockBeforeChallenge = await currentBlock();
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
 
-      const invalidatorLock = await tokenLocking.getUserLock(clnyToken.address, accounts[0]);
-      expect(invalidatorLock.balance, "Account was not rewarded properly").to.eq.BN(new BN(invalidatorLockBefore.balance).add(MIN_STAKE.muln(2)));
+      const miner1NonceBefore = await web3.eth.getTransactionCount(MINER1, blockBeforeChallenge.number);
+      const miner1NonceAfter = await web3.eth.getTransactionCount(MINER1);
+
+      const miner2NonceBefore = await web3.eth.getTransactionCount(MINER2, blockBeforeChallenge.number);
+      const miner2NonceAfter = await web3.eth.getTransactionCount(MINER2);
+      const miner1SuccessfulDefences = miner1NonceAfter - miner1NonceBefore;
+      // The bad miner has one of these transactions that fails
+      const miner2SuccessfulDefences = miner2NonceAfter - miner2NonceBefore - 1;
+
+      // Good responder will get rewardIncrement * number of times they defended a submission
+      const miner1Gain = rewardIncrement.muln(miner1SuccessfulDefences);
+
+      // Bad submitters will lose MIN_STAKE but gain rewardIncrement * number of times they defended their submission
+      const miner2Loss = MIN_STAKE.sub(rewardIncrement.muln(miner2SuccessfulDefences));
+      const miner3Loss = MIN_STAKE;
 
       const userLockMiner1 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-      expect(userLockMiner1.balance, "Account was not rewarded properly").to.eq.BN(new BN(userLockMiner1Before.balance));
+      expect(userLockMiner1.balance, "Account was not rewarded properly").to.eq.BN(new BN(userLockMiner1Before.balance).add(miner1Gain));
 
       const userLockMiner2 = await tokenLocking.getUserLock(clnyToken.address, MINER2);
-      expect(userLockMiner2.balance, "Account was not punished properly").to.eq.BN(new BN(userLockMiner2Before.balance).sub(MIN_STAKE));
+      expect(userLockMiner2.balance, "Account was not punished properly").to.eq.BN(new BN(userLockMiner2Before.balance).sub(miner2Loss));
 
       const userLockMiner3 = await tokenLocking.getUserLock(clnyToken.address, MINER3);
-      expect(userLockMiner3.balance, "Account was not punished properly").to.eq.BN(new BN(userLockMiner3Before.balance).sub(MIN_STAKE));
+      expect(userLockMiner3.balance, "Account was not punished properly").to.eq.BN(new BN(userLockMiner3Before.balance).sub(miner3Loss));
     });
 
     it("should reward all stakers if they submitted the agreed new hash", async () => {

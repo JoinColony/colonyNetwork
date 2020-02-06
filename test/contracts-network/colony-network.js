@@ -142,7 +142,7 @@ contract("Colony Network", (accounts) => {
 
     it('should not allow "punishStakers" to be called from an account that is not the mining cycle', async () => {
       await checkErrorRevert(
-        colonyNetwork.punishStakers([accounts[0], accounts[1]], ethers.constants.AddressZero, MIN_STAKE),
+        colonyNetwork.punishStakers([accounts[0], accounts[1]], MIN_STAKE),
         "colony-reputation-mining-sender-not-active-reputation-cycle"
       );
     });

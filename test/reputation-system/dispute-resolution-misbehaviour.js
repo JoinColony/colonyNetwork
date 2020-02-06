@@ -258,10 +258,10 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await checkErrorRevert(repCycle.invalidateHash(0, 3), "colony-reputation-mining-submission-window-still-open");
       // Cleanup
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
-      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await repCycle.invalidateHash(0, 3);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
@@ -323,6 +323,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[1]);
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[2], clients[3]);
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[5]);
+      for (let i = 0; i < 8; i += 1) {
+        await clients[i].confirmJustificationRootHash();
+      }
 
       console.log("Starting round 2");
 
@@ -408,12 +411,12 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       // Round 1 finished. Move to round 2
 
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[2]);
-      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[8], clients[4]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[8]);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[6]);
 
       // Round 2 finished.
 
-      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[8]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[4]);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[6]);
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[6]);
       await repCycle.confirmNewHash(4);
