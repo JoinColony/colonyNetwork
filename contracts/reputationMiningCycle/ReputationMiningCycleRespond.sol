@@ -24,7 +24,6 @@ import "./../tokenLocking/ITokenLocking.sol";
 import {Bits} from "./../patriciaTree/Bits.sol";
 import "./ReputationMiningCycleCommon.sol";
 
-
 // TODO (post CCv1, possibly never): Can we handle all possible disputes regarding the very first hash that should be set?
 // Currently, at the very least, we can't handle a dispute if the very first entry is disputed.
 // A possible workaround would be to 'kick off' reputation mining with a known dummy state...
@@ -748,5 +747,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
         mstore(add(reputationKey, 52), skill)
     }
     return reputationKey;
+  }
+
+  function getDisputeRewardIncrement() public view returns (uint256) {
+    return disputeRewardIncrement();
   }
 }

@@ -19,7 +19,7 @@ pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
 import "./../../lib/dappsys/math.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../IColonyNetwork.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ReputationMiningCycleCommon.sol";
@@ -407,7 +407,6 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   {
     require(submissionWindowClosed(), "colony-reputation-mining-cycle-submissions-not-closed");
     require(index < disputeRounds[round].length, "colony-reputation-mining-index-beyond-round-length");
-
     Submission storage submission = reputationHashSubmissions[disputeRounds[round][index].firstSubmitter];
     // Require we've not confirmed the JRH already.
     require(submission.jrhNLeaves == 0, "colony-reputation-jrh-hash-already-verified");
@@ -732,5 +731,4 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   function getOpponentIdx(uint256 _idx) private pure returns (uint256) {
     return _idx % 2 == 1 ? _idx - 1 : _idx + 1;
   }
-
 }

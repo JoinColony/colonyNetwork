@@ -338,6 +338,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[1]);
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[2], clients[3]);
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[5]);
+      for (let i = 0; i < 8; i += 1) {
+        await clients[i].confirmJustificationRootHash();
+      }
 
       console.log("Starting round 2");
 

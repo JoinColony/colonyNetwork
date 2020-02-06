@@ -185,6 +185,17 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     ERC20Extended(clnyToken).burn(_amount);
   }
 
+  function reward(address _recipient, uint256 _amount) public onlyReputationMiningCycle {
+    address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
+    // TODO: Gain rep?
+    userLocks[clnyToken][_recipient].balance = add(userLocks[clnyToken][_recipient].balance, _amount);
+  }
+
+  function burn(uint256 _amount) public onlyReputationMiningCycle {
+    address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
+    ERC20Extended(clnyToken).burn(_amount);
+  }
+
   function getTotalLockCount(address _token) public view returns (uint256) {
     return totalLockCount[_token];
   }
