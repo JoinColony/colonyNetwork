@@ -607,6 +607,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const rewardIncrement = await repCycle.getDisputeRewardSize();
 
       const blockBeforeChallenge = await currentBlock();
+
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
