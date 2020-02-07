@@ -311,6 +311,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       }
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
+
+      console.log("Starting disputes");
+
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[0], clients[1], {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
       });
@@ -321,6 +324,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
       });
 
+      console.log("Starting round 2");
+
       // This is the first pairing in round 2
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[0], clients[2], {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
@@ -329,6 +334,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
         accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[4]),
         "colony-reputation-mining-previous-dispute-round-not-complete"
       );
+
+      console.log("Cleaning up");
 
       // Now clean up
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[6], clients[7], {
