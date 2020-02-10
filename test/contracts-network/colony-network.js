@@ -152,6 +152,60 @@ contract("Colony Network", accounts => {
     });
   });
 
+  describe("when creating new colonies at a specific version", () => {
+    beforeEach(async () => {
+      // The new resolver also needs to know a load of functions to let createColony work...
+      const copyWiring = async function(resolverFrom, resolverTo, functionSig) {
+        const sig = await resolverFrom.stringToSig(functionSig);
+        const functionLocation = await resolverFrom.lookup(sig);
+        await resolverTo.register(functionSig, functionLocation);
+      };
+
+      const metaColonyAsEtherRouter = await EtherRouter.at(metaColony.address);
+      const wiredResolverAddress = await metaColonyAsEtherRouter.resolver();
+      const wiredResolver = await Resolver.at(wiredResolverAddress);
+
+      const r = await Resolver.at(newResolverAddress);
+
+      await copyWiring(wiredResolver, r, "initialiseColony(address,address)");
+      await copyWiring(wiredResolver, r, "setRecoveryRole(address)");
+      await copyWiring(wiredResolver, r, "setRootRole(address,bool)");
+      await copyWiring(wiredResolver, r, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
+      await copyWiring(wiredResolver, r, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
+      await copyWiring(wiredResolver, r, "setFundingRole(uint256,uint256,address,uint256,bool)");
+      await copyWiring(wiredResolver, r, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
+
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
+      const oldVersion = currentColonyVersion.subn(1);
+      await metaColony.addNetworkColonyVersion(oldVersion, newResolverAddress);
+    });
+
+    it("should allow users to create a new colony at a specific older version", async () => {
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
+      const oldVersion = currentColonyVersion.subn(1);
+
+      const token = await Token.new(...getTokenArgs());
+      await token.unlock();
+      await colonyNetwork.createColony(token.address, oldVersion);
+
+      const colonyAddress = await colonyNetwork.getColony(2);
+
+      const colonyEtherRouter = await EtherRouter.at(colonyAddress);
+      const colonyResolver = await colonyEtherRouter.resolver();
+      expect(colonyResolver.toLowerCase()).to.equal(newResolverAddress);
+    });
+
+    it("should not users to create a new colony at a version that doesn't exist", async () => {
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
+      const nonexistentVersion = currentColonyVersion.addn(1);
+
+      const token = await Token.new(...getTokenArgs());
+      await token.unlock();
+      await checkErrorRevert(colonyNetwork.createColony(token.address, nonexistentVersion), "colony-network-invalid-version");
+      await checkErrorRevert(colonyNetwork.createColony(token.address, 0), "colony-network-invalid-version");
+    });
+  });
+
   describe("when creating new colonies", () => {
     it("should allow users to create new colonies", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);

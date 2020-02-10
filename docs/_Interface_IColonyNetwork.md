@@ -90,7 +90,25 @@ Calculate raw miner weight in WADs.
 
 ### `createColony`
 
-Creates a new colony in the network. Note that the token ownership (if there is one) has to be transferred to the newly created colony.
+Creates a new colony in the network at a specific version. Not recommended unless you are confident in what you're doing. Note that the token ownership (if there is one) has to be transferred to the newly created colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
+|_version|uint256|The version of colony to deploy. Additionally token can optionally support `mint` as defined in `ERC20Extended`. Support for `mint` is mandatory only for the Meta Colony Token.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
+Creates a new colony in the network with the latest version available Note that the token ownership (if there is one) has to be transferred to the newly created colony.
 
 
 **Parameters**
