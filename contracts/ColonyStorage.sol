@@ -60,8 +60,8 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
 
   // Keeps track of all reward payout cycles
   mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles; // Storage slot 16
-  // Active payouts for particular token address. Assures that one token is used for only one active payout
-  mapping (address => uint256) activeRewardPayouts; // Storage slot 17
+
+  mapping (address => uint256) pendingRewardPayments; // Storage slot 17
 
   // This keeps track of how much of the colony's funds that it owns have been moved into funding pots other than pot 0,
   // which (by definition) have also had the reward amount siphoned off and put in to pot 0.

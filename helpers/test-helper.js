@@ -734,3 +734,35 @@ export async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nN
     }, 60 * 1000);
   });
 }
+
+export async function getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId, userAddress) {
+  const payout = await colony.getRewardPayoutInfo(payoutId);
+
+  const squareRoots = [0, 0, 0, 0, 0, 0, 0];
+
+  const rootDomain = await colony.getDomain(1);
+  const rootDomainSkill = rootDomain.skillId;
+
+  const userReputationKey = makeReputationKey(colony.address, rootDomainSkill, userAddress);
+  const userProof = await client.getReputationProofObject(userReputationKey);
+
+  squareRoots[0] = bnSqrt(new BN(userProof.reputation.slice(2), 16));
+
+  const colonyTokenAddress = await colony.getToken();
+
+  const lock = await tokenLocking.getUserLock(colonyTokenAddress, userAddress);
+  squareRoots[1] = bnSqrt(new BN(lock.balance, 10));
+
+  const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
+  const colonyProof = await client.getReputationProofObject(colonyWideReputationKey);
+  squareRoots[2] = bnSqrt(new BN(colonyProof.reputation.slice(2), 16), true);
+
+  squareRoots[3] = bnSqrt(new BN(payout.totalTokens, 10), true);
+
+  squareRoots[4] = bnSqrt(squareRoots[0].mul(squareRoots[1])); // Numerator
+  squareRoots[5] = bnSqrt(squareRoots[2].mul(squareRoots[3]), true); // Denominator
+
+  squareRoots[6] = bnSqrt(new BN(payout.amount, 10));
+
+  return { squareRoots, userProof };
+}

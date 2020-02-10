@@ -198,6 +198,10 @@ contract ColonyDataTypes {
     address tokenAddress;
     // Time of creation (in seconds)
     uint256 blockTimestamp;
+    // How many tokens remain to be paid out.
+    uint256 amountRemaining;
+    // Whether this payout is active or not.
+    bool finalized;
   }
 
   struct Expenditure {

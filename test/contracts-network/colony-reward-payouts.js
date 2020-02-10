@@ -17,7 +17,8 @@ import {
   currentBlockTime,
   bnSqrt,
   makeReputationKey,
-  advanceMiningCycleNoContest
+  advanceMiningCycleNoContest,
+  getRewardClaimSquareRootsAndProofs
 } from "../../helpers/test-helper";
 
 import { fundColonyWithTokens, setupFinalizedTask, giveUserCLNYTokensAndStake, setupRandomColony } from "../../helpers/test-data-generator";
@@ -244,7 +245,9 @@ contract("Colony Reward Payouts", accounts => {
       let { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       colonyWideReputationProof = [key, value, branchMask, siblings];
 
-      const { logs } = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      await newColony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, newToken.address);
+
+      const { logs } = await newColony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
 
       const userReputationKey = makeReputationKey(newColony.address, domainSkill, userAddress1);
@@ -259,6 +262,7 @@ contract("Colony Reward Payouts", accounts => {
 
     it("should not be able to start a reward payout if no one holds colony tokens", async () => {
       const { colony: newColony, token: newToken } = await setupRandomColony(colonyNetwork);
+      await fundColonyWithTokens(newColony, newToken, INITIAL_FUNDING);
 
       await newToken.setOwner(newColony.address);
       await newColony.mintTokens(userTokens);
@@ -276,17 +280,96 @@ contract("Colony Reward Payouts", accounts => {
       const colonyWideReputationKey = makeReputationKey(newColony.address, rootDomainSkill);
       const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       colonyWideReputationProof = [key, value, branchMask, siblings];
+      await newColony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, newToken.address);
 
       await checkErrorRevert(
-        newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof),
+        newColony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof),
         "colony-reward-payout-invalid-total-tokens"
       );
     });
 
-    it("should not be able to create parallel payouts of the same token", async () => {
+    it("should not be able to create parallel payouts of the same token if there are no more tokens to pay out", async () => {
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      await checkErrorRevert(colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof), "colony-reward-payout-no-rewards");
+    });
 
-      await checkErrorRevert(colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof), "colony-reward-payout-token-active");
+    it("should be able to create parallel payouts of the same token", async () => {
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
+
+      await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
+
+      await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+    });
+
+    it("should be able to collect rewards from multiple payouts of the same token", async () => {
+      const tx1 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      const payoutId1 = tx1.logs[0].args.rewardPayoutId;
+
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
+
+      const tx2 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      const payoutId2 = tx2.logs[0].args.rewardPayoutId;
+      const { squareRoots } = await getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId2, userAddress1);
+
+      await colony.claimRewardPayout(payoutId1, initialSquareRoots, ...userReputationProof1, { from: userAddress1 });
+      await colony.claimRewardPayout(payoutId2, squareRoots, ...userReputationProof1, { from: userAddress1 });
+    });
+
+    it("should use unclaimed payouts from previous unclaimed rewards to fund new ones", async () => {
+      const tx1 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      const payoutId1 = tx1.logs[0].args.rewardPayoutId;
+      await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
+
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
+      await colony.finalizeRewardPayout(payoutId1);
+
+      const tx2 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      const payoutId2 = tx2.logs[0].args.rewardPayoutId;
+
+      const payout2 = await colony.getRewardPayoutInfo(payoutId2);
+      assert.equal(
+        payout2.amount,
+        initialFunding
+          .divn(100)
+          .addn(100)
+          .toString(),
+        "Payout has unexpected amount"
+      );
+    });
+
+    it("should use only the unclaimed payouts from partially-claimed previous rewards to fund new ones", async () => {
+      await colony.bootstrapColony([userAddress2], [userReputation.divn(2)]);
+      await token.burn(userReputation.divn(2), { from: userAddress2 });
+
+      await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
+
+      const rootDomain = await colony.getDomain(1);
+      const rootDomainSkill = rootDomain.skillId;
+      const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
+      const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
+      colonyWideReputationProof = [key, value, branchMask, siblings];
+
+      const tx1 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      const payoutId1 = tx1.logs[0].args.rewardPayoutId;
+      const { squareRoots, userProof } = await getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId1, userAddress1);
+
+      await colony.claimRewardPayout(payoutId1, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
+        from: userAddress1
+      });
+      const payout = await colony.getRewardPayoutInfo(payoutId1);
+
+      await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
+
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
+      await colony.finalizeRewardPayout(payoutId1);
+
+      const tx2 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      const payoutId2 = tx2.logs[0].args.rewardPayoutId;
+
+      const payout2 = await colony.getRewardPayoutInfo(payoutId2);
+      assert.equal(payout2.amount, new BN(payout.amountRemaining).addn(100).toString(), "Payout has unexpected amount");
     });
 
     it("should be able to collect rewards from multiple payouts of different token", async () => {
@@ -307,6 +390,8 @@ contract("Colony Reward Payouts", accounts => {
 
     it("should not be able to claim payout if colony-wide reputation is 0", async () => {
       const { colony: newColony, token: newToken } = await setupRandomColony(colonyNetwork);
+      await fundColonyWithTokens(newColony, newToken, INITIAL_FUNDING);
+
       await newColony.setRewardInverse(100);
       await newToken.mint(userAddress1, 10);
 
@@ -322,8 +407,10 @@ contract("Colony Reward Payouts", accounts => {
       const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       colonyWideReputationProof = [key, value, branchMask, siblings];
 
+      await newColony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, newToken.address);
+
       await checkErrorRevert(
-        newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof),
+        newColony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof),
         "colony-reward-payout-invalid-colony-wide-reputation"
       );
     });
@@ -339,28 +426,17 @@ contract("Colony Reward Payouts", accounts => {
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
       const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
-      let { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
+      const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       colonyWideReputationProof = [key, value, branchMask, siblings];
 
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
 
-      const userReputation3Sqrt = bnSqrt(userReputation3);
-      const totalReputationSqrt = bnSqrt(userReputation.add(userReputation3));
-      const totalTokensSqrt = bnSqrt(totalTokens);
-
-      const denominatorSqrt = bnSqrt(userTokens.mul(userReputation.add(userReputation3)));
-      const balance = await colony.getFundingPotBalance(0, otherToken.address);
-      const amountAvailableForPayoutSqrt = bnSqrt(balance);
-
-      const squareRoots = [userReputation3Sqrt, 0, totalReputationSqrt, totalTokensSqrt, 0, denominatorSqrt, amountAvailableForPayoutSqrt];
-
-      const userReputationKey = makeReputationKey(colony.address, rootDomainSkill, userAddress3);
-      ({ key, value, branchMask, siblings } = await client.getReputationProofObject(userReputationKey));
-      const userReputationProof3 = [key, value, branchMask, siblings];
-
+      const { squareRoots, userProof } = await getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId, userAddress3);
       await checkErrorRevert(
-        colony.claimRewardPayout(payoutId, squareRoots, ...userReputationProof3, { from: userAddress3 }),
+        colony.claimRewardPayout(payoutId, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
+          from: userAddress3
+        }),
         "colony-reward-payout-invalid-user-tokens"
       );
     });
@@ -380,7 +456,7 @@ contract("Colony Reward Payouts", accounts => {
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
       const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
-      let { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
+      const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       colonyWideReputationProof = [key, value, branchMask, siblings];
 
       await token.transfer(userAddress3, userTokens3, { from: userAddress1 });
@@ -391,21 +467,12 @@ contract("Colony Reward Payouts", accounts => {
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
 
-      const userTokens3Sqrt = bnSqrt(userTokens3);
-      const totalReputationSqrt = bnSqrt(totalReputation.add(userTokens3), true);
-      const totalTokensSqrt = bnSqrt(userTokens.add(userTokens3), true);
-      const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt), true);
-      const balance = await colony.getFundingPotBalance(0, otherToken.address);
-      const amountAvailableForPayoutSqrt = bnSqrt(balance);
-
-      const squareRoots = [0, userTokens3Sqrt, totalReputationSqrt, totalTokensSqrt, 0, denominatorSqrt, amountAvailableForPayoutSqrt];
-
-      const userReputationKey = makeReputationKey(colony.address, rootDomainSkill, userAddress3);
-      ({ key, value, branchMask, siblings } = await client.getReputationProofObject(userReputationKey));
-      const userReputationProof3 = [key, value, branchMask, siblings];
+      const { squareRoots, userProof } = await getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId, userAddress3);
 
       await checkErrorRevert(
-        colony.claimRewardPayout(payoutId, squareRoots, ...userReputationProof3, { from: userAddress3 }),
+        colony.claimRewardPayout(payoutId, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
+          from: userAddress3
+        }),
         "colony-reward-payout-invalid-user-reputation"
       );
     });
@@ -504,7 +571,7 @@ contract("Colony Reward Payouts", accounts => {
       await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
       await colony.finalizeRewardPayout(payoutId);
 
-      await checkErrorRevert(colony.finalizeRewardPayout(payoutId, { from: userAddress1 }), "colony-reward-payout-token-not-active");
+      await checkErrorRevert(colony.finalizeRewardPayout(payoutId, { from: userAddress1 }), "colony-reward-payout-already-finalized");
     });
 
     it("should not be able to finalize payout if payout is still active", async () => {
@@ -525,7 +592,7 @@ contract("Colony Reward Payouts", accounts => {
       await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
       await colony.finalizeRewardPayout(firstPayoutId);
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
-      await checkErrorRevert(colony.finalizeRewardPayout(firstPayoutId), "colony-reward-payout-not-most-recent");
+      await checkErrorRevert(colony.finalizeRewardPayout(firstPayoutId), "colony-reward-payout-already-finalized");
     });
 
     it("should not be able to claim the same payout twice", async () => {
@@ -622,32 +689,13 @@ contract("Colony Reward Payouts", accounts => {
       ({ logs } = await colony2.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof2));
       const payoutId2 = logs[0].args.rewardPayoutId;
 
-      const userReputationSqrt = bnSqrt(userReputation);
-      const userTokensSqrt = bnSqrt(userTokens);
-      const totalReputationSqrt = bnSqrt(userReputation, true);
-      // Both colony1 and colony2 are giving the user `userReputation` amount of tokens
-      const totalTokensSqrt = bnSqrt(userReputation.muln(2), true);
-      const numeratorSqrt = bnSqrt(userReputationSqrt.mul(userTokensSqrt));
-      const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt), true);
-      const balance = await colony.getFundingPotBalance(0, otherToken.address);
-      const totalAmountAvailableForPayoutSqrt = bnSqrt(balance);
+      const { squareRoots, userProof } = await getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony1, payoutId1, userAddress1);
 
-      const squareRoots = [
-        userReputationSqrt,
-        userTokensSqrt,
-        totalReputationSqrt,
-        totalTokensSqrt,
-        numeratorSqrt,
-        denominatorSqrt,
-        totalAmountAvailableForPayoutSqrt
-      ];
+      await colony1.claimRewardPayout(payoutId1, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
+        from: userAddress1
+      });
 
-      let userReputationKey = makeReputationKey(colony1.address, rootDomainSkill1, userAddress1);
-      ({ key, value, branchMask, siblings } = await client.getReputationProofObject(userReputationKey));
-      const userReputationProofForColony1 = [key, value, branchMask, siblings];
-      await colony1.claimRewardPayout(payoutId1, squareRoots, ...userReputationProofForColony1, { from: userAddress1 });
-
-      userReputationKey = makeReputationKey(colony2.address, rootDomainSkill2, userAddress1);
+      const userReputationKey = makeReputationKey(colony2.address, rootDomainSkill2, userAddress1);
       ({ key, value, branchMask, siblings } = await client.getReputationProofObject(userReputationKey));
       const userReputationProofForColony2 = [key, value, branchMask, siblings];
       await colony2.claimRewardPayout(payoutId2, squareRoots, ...userReputationProofForColony2, { from: userAddress1 });
@@ -735,36 +783,19 @@ contract("Colony Reward Payouts", accounts => {
       await newToken.approve(tokenLocking.address, userReputation, { from: userAddress1 });
       await tokenLocking.deposit(newToken.address, userReputation, { from: userAddress1 });
 
+      await colony1.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
+      await colony2.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
+
       ({ logs } = await colony1.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof1));
       const payoutId1 = logs[0].args.rewardPayoutId;
       await colony2.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof2);
 
-      const userReputationSqrt = bnSqrt(userReputation);
-      const userTokensSqrt = bnSqrt(userTokens);
-      const totalReputationSqrt = bnSqrt(userReputation, true);
-      // Both colony1 and colony2 are giving the user `userReputation` amount of tokens
-      const totalTokensSqrt = bnSqrt(userReputation.muln(2), true);
-      const numeratorSqrt = bnSqrt(userReputationSqrt.mul(userTokensSqrt));
-      const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt), true);
-      const balance = await colony.getFundingPotBalance(0, otherToken.address);
-      const totalAmountAvailableForPayoutSqrt = bnSqrt(balance);
-
-      const squareRoots = [
-        userReputationSqrt,
-        userTokensSqrt,
-        totalReputationSqrt,
-        totalTokensSqrt,
-        numeratorSqrt,
-        denominatorSqrt,
-        totalAmountAvailableForPayoutSqrt
-      ];
-
-      const userReputationKey = makeReputationKey(colony2.address, rootDomainSkill2, userAddress1);
-      ({ key, value, branchMask, siblings } = await client.getReputationProofObject(userReputationKey));
-      const userReputationProofForColony2 = [key, value, branchMask, siblings];
+      const { squareRoots, userProof } = await getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId1, userAddress1);
 
       await checkErrorRevert(
-        colony2.claimRewardPayout(payoutId1, squareRoots, ...userReputationProofForColony2, { from: userAddress1 }),
+        colony2.claimRewardPayout(payoutId1, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
+          from: userAddress1
+        }),
         "colony-reputation-invalid-root-hash"
       );
     });
@@ -855,6 +886,8 @@ contract("Colony Reward Payouts", accounts => {
         await tokenLocking.deposit(newToken.address, tokensPerUser, { from: userAddress3 });
         await forwardTime(1, this);
 
+        await newColony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, payoutToken.address);
+
         const { logs } = await newColony.startNextRewardPayout(payoutToken.address, ...colonyWideReputationProof);
         const payoutId = logs[0].args.rewardPayoutId;
 
@@ -881,31 +914,11 @@ contract("Colony Reward Payouts", accounts => {
         reward = reward.sub(fee);
 
         // Calculating square roots locally, to avoid big gas costs. This can be proven on chain easily
-        const userReputationSqrt = bnSqrt(reputationPerUser);
-        const userTokensSqrt = bnSqrt(userLockedTokens);
-        const totalReputationSqrt = bnSqrt(data.totalReputation, true);
-        const totalTokensSqrt = bnSqrt(totalTokensHeldByUsers, true);
-        const numeratorSqrt = bnSqrt(numerator);
-        const denominatorSqrt = bnSqrt(totalTokensSqrt.mul(totalReputationSqrt), true);
-        const amountAvailableForPayoutSqrt = bnSqrt(amountAvailableForPayout);
-
-        const squareRoots = [
-          userReputationSqrt,
-          userTokensSqrt,
-          totalReputationSqrt,
-          totalTokensSqrt,
-          numeratorSqrt,
-          denominatorSqrt,
-          amountAvailableForPayoutSqrt
-        ];
-
-        let userReputationKey = makeReputationKey(newColony.address, rootDomainSkill, userAddress1);
-        ({ key, value, branchMask, siblings } = await client.getReputationProofObject(userReputationKey));
-        const userReputationProofForColony1 = [key, value, branchMask, siblings];
+        const { squareRoots, userProof } = await getRewardClaimSquareRootsAndProofs(client, tokenLocking, newColony, payoutId, userAddress1);
 
         const colonyNetworkBalanceBeforeClaim1 = await payoutToken.balanceOf(colonyNetwork.address);
 
-        await newColony.claimRewardPayout(payoutId, squareRoots, ...userReputationProofForColony1, {
+        await newColony.claimRewardPayout(payoutId, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
           from: userAddress1
         });
 
@@ -929,7 +942,7 @@ contract("Colony Reward Payouts", accounts => {
         console.log("Total Amount: ", amountAvailableForPayout.toString());
         console.log("Remaining after claim 1: ", remainingAfterClaim1.toString());
 
-        userReputationKey = makeReputationKey(newColony.address, rootDomainSkill, userAddress2);
+        let userReputationKey = makeReputationKey(newColony.address, rootDomainSkill, userAddress2);
         ({ key, value, branchMask, siblings } = await client.getReputationProofObject(userReputationKey));
         const userReputationProofForColony2 = [key, value, branchMask, siblings];
 
