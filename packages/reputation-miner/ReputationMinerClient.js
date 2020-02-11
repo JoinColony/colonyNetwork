@@ -537,12 +537,12 @@ class ReputationMinerClient {
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
       let gasEstimate;
-      if (this._miner.ganacheClient) {
+      if (this._miner.isGanacheClient) {
         gasEstimate = ethers.utils.bigNumberify(2500000);
       } else {
         gasEstimate = await repCycle.estimate.confirmNewHash(round);
       }
-      gasEstimate = this._miner.padGasEstimateIfNecessary(gasEstimate);
+      gasEstimate = this._miner.padGasEstimateIfGanache(gasEstimate);
 
       const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: gasEstimate, gasPrice: this._miner.gasPrice });
       this._adapter.log(`⛏️ Transaction waiting to be mined ${confirmNewHashTx.hash}`);
