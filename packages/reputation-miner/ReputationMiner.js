@@ -107,7 +107,7 @@ class ReputationMiner {
     // Are we using ganache? If so, note this so we add safety margin to gas estimates because ganache sucks at that
     // See if we're talking to Ganache to fix a ganache crash (which, while fun to say, is not fun to see)
     const clientString = await this.realProvider.send("web3_clientVersion");
-    this.ganacheClient = clientString.indexOf('TestRPC') !== -1;
+    this.isGanacheClient = clientString.indexOf('TestRPC') !== -1;
   }
 
   /**
@@ -645,7 +645,7 @@ class ReputationMiner {
     } catch (err) { // eslint-disable-line no-empty
 
     }
-    gasEstimate = this.padGasEstimateIfNecessary(gasEstimate);
+    gasEstimate = this.padGasEstimateIfGanache(gasEstimate);
 
     // Submit that entry
     return repCycle.submitRootHash(hash, nNodes, jrh, entryIndex, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
@@ -832,7 +832,7 @@ class ReputationMiner {
     } catch (err) { // eslint-disable-line no-empty
 
     }
-    gasEstimate = this.padGasEstimateIfNecessary(gasEstimate);
+    gasEstimate = this.padGasEstimateIfGanache(gasEstimate);
 
     return repCycle.confirmJustificationRootHash(
       round,
@@ -920,7 +920,7 @@ class ReputationMiner {
     } catch (err) { // eslint-disable-line no-empty
 
     }
-    gasEstimate = this.padGasEstimateIfNecessary(gasEstimate);
+    gasEstimate = this.padGasEstimateIfGanache(gasEstimate);
     return repCycle.respondToBinarySearchForChallenge(
       round,
       index,
@@ -954,7 +954,7 @@ class ReputationMiner {
     } catch (err){ // eslint-disable-line no-empty
 
     }
-    gasEstimate = this.padGasEstimateIfNecessary(gasEstimate);
+    gasEstimate = this.padGasEstimateIfGanache(gasEstimate);
 
     return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings, {
       gasLimit: gasEstimate,
@@ -1058,7 +1058,7 @@ class ReputationMiner {
     } catch (err){ // eslint-disable-line no-empty
 
     }
-    gasEstimate = this.padGasEstimateIfNecessary(gasEstimate);
+    gasEstimate = this.padGasEstimateIfGanache(gasEstimate);
 
     return repCycle.respondToChallenge(...functionArgs,
       { gasLimit: gasEstimate, gasPrice: this.gasPrice }
@@ -1192,10 +1192,9 @@ class ReputationMiner {
     }
   }
 
-  padGasEstimateIfNecessary(_gasEstimate){
-    let gasEstimate = _gasEstimate;
-    if (this.ganacheClient) {
-      gasEstimate = `0x${new BN(gasEstimate.toString()).mul(new BN("11")).div(new BN("10")).toString(16)}`;
+  padGasEstimateIfGanache(gasEstimate){
+    if (this.isGanacheClient) {
+      return `0x${new BN(gasEstimate.toString()).mul(new BN("11")).div(new BN("10")).toString(16)}`;
     }
     return gasEstimate;
   }
