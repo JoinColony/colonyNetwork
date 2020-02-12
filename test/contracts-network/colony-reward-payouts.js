@@ -845,7 +845,6 @@ contract("Colony Reward Payouts", accounts => {
       it(`should calculate fairly precise reward payout for:
         user reputation/tokens: ${data.totalReputation.divn(3).toString()}
         total reputation/tokens: ${data.totalReputation.toString()}`, async () => {
-
         const { colony: newColony, token: newToken } = await setupRandomColony(colonyNetwork);
         await newToken.setOwner(colony.address);
 
