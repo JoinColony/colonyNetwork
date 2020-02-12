@@ -1901,12 +1901,12 @@ contract("ColonyTask", accounts => {
       await addTaskSkillEditingFunctions(colonyNetwork);
     });
 
-    it("should allow a task with 45 skills to finalise", async () => {
+    it("should allow a task with 42 skills to finalise", async () => {
       // 60 was an overestimate, it seems - I can't go much higher than this.
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       const taskSkillEditingColony = await TaskSkillEditing.at(colony.address);
-      for (let i = 0; i < 45; i += 1) {
+      for (let i = 0; i < 42; i += 1) {
         await taskSkillEditingColony.addTaskSkill(taskId, GLOBAL_SKILL_ID);
       }
       await expectEvent(colony.finalizeTask(taskId), "TaskFinalized");
