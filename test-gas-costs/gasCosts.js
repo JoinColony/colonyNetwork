@@ -278,7 +278,7 @@ contract("All", function(accounts) {
 
       const { colony: newColony, token: newToken } = await setupRandomColony(colonyNetwork);
 
-      await newToken.setOwner(colonyAddress);
+      await newToken.setOwner(colony.address);
       await newColony.mintTokens(workerReputation.add(managerReputation));
       await newColony.claimColonyFunds(newToken.address);
       await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation, managerReputation]);

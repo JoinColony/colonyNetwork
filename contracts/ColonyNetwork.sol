@@ -142,15 +142,16 @@ contract ColonyNetwork is ColonyNetworkStorage {
   ) public stoppable returns (address)
   {
     uint256 version = (_version == 0) ? currentColonyVersion : _version;
-    address colonyAddress = deployColony(_tokenAddress version);
+    address colonyAddress = deployColony(_tokenAddress, version);
 
     if (bytes(_colonyName).length > 0) {
       IColony(colonyAddress).registerColonyLabel(_colonyName, _orbitdb);
     }
 
-    if (_useExtensionManager) {
-      IColony(colonyAddress).setRootRole(extensionManagerAddress, true);
-    }
+    // TODO: Uncomment this after merging colonyNetwork#714
+    // if (_useExtensionManager) {
+    //   IColony(colonyAddress).setRootRole(extensionManagerAddress, true);
+    // }
 
     setFounderPermissions(colonyAddress);
     return colonyAddress;
