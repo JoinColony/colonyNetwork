@@ -25,7 +25,7 @@ module.exports = {
       network_id: 1999,
       account_keys_path: "./ganache-accounts.json",
       vmErrorsOnRPCResponse: false,
-      total_accounts: 12
+      total_accounts: 18
     },
     onCompileComplete: provisionTokenContracts
 }

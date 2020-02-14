@@ -146,7 +146,15 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   }
 
   function challengeRoundComplete(uint256 round) public view returns (bool) {
-    return nHashesCompletedChallengeRound[round] == disputeRounds[round].length;
+    if (!submissionWindowClosed()) {
+      return false;
+    }
+    for (uint i = firstIncompleteRound; i <= round; i += 1) {
+      if (nHashesCompletedChallengeRound[i] != disputeRounds[i].length) {
+        return false;
+      }
+    }
+    return true;
   }
 
   function submitRootHash(bytes32 newHash, uint256 nNodes, bytes32 jrh, uint256 entryIndex) public
@@ -229,14 +237,15 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       // this is the slot after the last entry, and so our opponentIdx will be the last entry
       // We just move the opponent on, and nothing else happens.
 
-      if (round == 0) {
-        // If we're in round zero, require that no more submissions can be made
-        require(submissionWindowClosed(), "colony-reputation-mining-submission-window-still-open");
-      } else {
-        // Otherwise, ensure that the previous round is complete, and this entry wouldn't possibly get an opponent later on.
+      // In all cases, if the window is still open, the submission could still get an opponent
+      require(submissionWindowClosed(), "colony-reputation-mining-submission-window-still-open");
+      // If we are past the first round, check that all previous rounds are complete (i.e we won't get an opponent)
+      if (round > 0) {
         require(challengeRoundComplete(round - 1), "colony-reputation-mining-previous-dispute-round-not-complete");
       }
-
+      // All previous rounds are complete, so update variable to allow loop to short-circuit in future
+      // Note that this round is not necessarily complete - there could still be ongoing disputes in this round
+      firstIncompleteRound = round;
 
       // Prevent us invalidating the final hash
       require(disputeRounds[round].length > 1, "colony-reputation-mining-cannot-invalidate-final-hash");

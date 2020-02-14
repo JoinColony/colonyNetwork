@@ -459,6 +459,28 @@ export async function advanceMiningCycleNoContest({ colonyNetwork, client, miner
   await repCycle.confirmNewHash(0);
 }
 
+export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, test, client1) {
+  const repCycle = await getActiveRepCycle(colonyNetwork);
+  const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
+  // Make a submission from client1
+  const submission1before = await repCycle.getReputationHashSubmission(client1.minerAddress);
+
+  // Submit JRH for submission 1 if needed
+  // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
+  if (submission1before.jrhNNodes === "0") {
+    await checkSuccessEthers(client1.confirmJustificationRootHash(), "Client1 was unable to confirmJustificationRootHash");
+  } else {
+    await checkSuccessEthers(client1.respondToBinarySearchForChallenge(), "Client 1 was unable to respondToBinarySearchForChallenge");
+  }
+
+  // Timeout the other client
+  await forwardTime(600, test);
+  const toInvalidateIdx = idx1.mod(2) === 1 ? idx1.sub(1) : idx1.add(1);
+
+  const accounts = await web3GetAccounts();
+  return repCycle.invalidateHash(round1, toInvalidateIdx, { from: accounts[5] });
+}
+
 export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test, client1, client2, _errors) {
   let toInvalidateIdx;
   const repCycle = await getActiveRepCycle(colonyNetwork);
