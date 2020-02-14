@@ -61,4 +61,6 @@ contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth 
 
   int256 constant MAX_INT128 = 2**127 - 1;
   int256 constant MIN_INT128 = (2**127)*(-1);
+
+  uint256 firstIncompleteRound;
 }
