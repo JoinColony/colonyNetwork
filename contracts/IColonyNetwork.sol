@@ -145,13 +145,8 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _orbitdb The path of the orbitDB database associated with the user profile
   /// @param _useExtensionManager If true, give the ExtensionManager the root role in the colony
   /// @return colonyAddress Address of the newly created colony
-  function createColony(
-    address _tokenAddress,
-    uint256 _version,
-    string memory _colonyName,
-    string memory _orbitdb,
-    bool _useExtensionManager
-    ) public returns (address colonyAddress);
+  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _orbitdb, bool _useExtensionManager)
+    public returns (address colonyAddress);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
   /// Allowed to be called by the Meta Colony only.

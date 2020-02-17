@@ -90,19 +90,18 @@ Calculate raw miner weight in WADs.
 
 ### `createColony`
 
-Creates a new colony in the network with the latest version available
+Overload of the simpler `createColony`. Creates a new colony in the network with a variety of options. Note that the token ownership (if there is one) should be transferred to the newly created colony Additionally token can optionally support `mint` as defined in `ERC20Extended` Support for `mint` is mandatory only for the Meta Colony Token
 
-*Note: This is now deprecated and will be removed in a future version Note that the token ownership (if there is one) should be transferred to the newly created colony. Additionally token can optionally support `mint` as defined in `ERC20Extended`. Support for `mint` is mandatory only for the Meta Colony Token.*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
-|_version|uint256|
-|_colonyName|string|
-|_orbitdb|string|
-|_useExtensionManager|bool|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
+|_orbitdb|string|The path of the orbitDB database associated with the user profile
+|_useExtensionManager|bool|If true, give the ExtensionManager the root role in the colony
 
 **Return Parameters**
 

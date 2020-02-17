@@ -79,23 +79,8 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
     // Get the index of the line in which the method is declared
     let methodLineIndex = contractFileArray.findIndex(line => {
-      return line.includes(
-        `function ${method.name}(${method.parameters
-          .map(x => {
-            if (x.typeName.name) {
-              return `${x.typeName.name}${x.storageLocation ? ` ${x.storageLocation}` : ""} ${x.name}`;
-            }
-            if (x.typeName.namePath) {
-              return `${x.typeName.namePath} ${x.name}`;
-            }
-            if (x.typeName.type === "ArrayTypeName") {
-              return `${x.typeName.baseTypeName.name}[${x.typeName.length || ""}]${x.storageLocation ? ` ${x.storageLocation}` : ""} ${x.name}`;
-            }
-            console.log("Unknown parameter type...");
-            return process.exit(1);
-          })
-          .join(", ")})`
-      );
+      const sig = astToSig(method);
+      return line.includes(sig);
     });
 
     if (methodLineIndex === -1) {
@@ -234,7 +219,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
       }
     } else {
       // Log warning for any methods without a valid notice line
-      console.warn(`WARNING: ${method.name} is missing a natspec @notice`);
+      console.warn(`Warning: ${method.name} is missing a natspec @notice`);
     }
 
     // Push the method and append natspec
@@ -292,34 +277,49 @@ ${printParams(method, method.returnParameters, method.natspec.returns)}`
   .join("")}`;
 }
 
+function astToSig(method) {
+  return `function ${method.name}(${method.parameters
+    .map(p => {
+      if (p.typeName.name) {
+        return `${p.typeName.name}${p.storageLocation ? ` ${p.storageLocation}` : ""} ${p.name}`;
+      }
+      if (p.typeName.namePath) {
+        return `${p.typeName.namePath} ${p.name}`;
+      }
+      if (p.typeName.type === "ArrayTypeName") {
+        return `${p.typeName.baseTypeName.name}[${p.typeName.length || ""}]${p.storageLocation ? ` ${p.storageLocation}` : ""} ${p.name}`;
+      }
+      console.log("Unknown parameter type...");
+      return process.exit(1);
+    })
+    .join(", ")})`;
+}
+
 function printParams(method, params, natspecParams) {
   if (params.length) {
-    return `
-|Name|Type|Description|
-|---|---|---|
-${params
-  .map((param, index) => {
-    const name = param.name || param.typeName.name;
-    let arrayType;
-    let userDefinedType;
-    if (param.typeName.type === "ArrayTypeName") {
-      const length = param.typeName.length ? param.typeName.length.number : "";
-      arrayType = `${param.typeName.baseTypeName.name || param.typeName.baseTypeName.namePath}[${length}]`;
-    }
-    if (param.typeName.type === "UserDefinedTypeName") {
-      userDefinedType = param.typeName.namePath;
-    }
-    const type = param.typeName.name || arrayType || userDefinedType;
-    let description = "";
-    const matchingDescription = natspecParams[index] && natspecParams[index].substring(0, name.length) === name;
-    if (matchingDescription) {
-      description = natspecParams[index].slice(name.length + 1);
-    } else {
-      console.warn(`WARNING: ${method.name} ${name} has no matching natspec comment`);
-    }
-    return `|${name}|${type}|${description}`;
-  })
-  .join("\n")}`;
+    return `\n|Name|Type|Description|\n|---|---|---|\n${params.map((param, index) => printParam(method, param, index, natspecParams)).join("\n")}`;
   }
   return "";
+}
+
+function printParam(method, param, index, natspecParams) {
+  const name = param.name || param.typeName.name;
+  let arrayType;
+  let userDefinedType;
+  if (param.typeName.type === "ArrayTypeName") {
+    const length = param.typeName.length ? param.typeName.length.number : "";
+    arrayType = `${param.typeName.baseTypeName.name || param.typeName.baseTypeName.namePath}[${length}]`;
+  }
+  if (param.typeName.type === "UserDefinedTypeName") {
+    userDefinedType = param.typeName.namePath;
+  }
+  const type = param.typeName.name || arrayType || userDefinedType;
+  let description = "";
+  const matchingDescription = natspecParams[index] && natspecParams[index].substring(0, name.length) === name;
+  if (matchingDescription) {
+    description = natspecParams[index].slice(name.length + 1);
+  } else {
+    console.warn(`Warning: ${method.name} ${name} has no matching natspec comment`);
+  }
+  return `|${name}|${type}|${description}`;
 }
