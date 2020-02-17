@@ -475,7 +475,7 @@ export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetw
 
   // Timeout the other client
   await forwardTime(600, test);
-  const toInvalidateIdx = idx1.mod(2) === 1 ? idx1.sub(1) : idx1.add(1);
+  const toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
 
   const accounts = await web3GetAccounts();
   return repCycle.invalidateHash(round1, toInvalidateIdx, { from: accounts[5] });
@@ -524,8 +524,7 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
     // Forward time, so that whichever has failed to respond by now has timed out.
     await forwardTime(600, test);
   } else {
-    // idx1.modn returns a javascript number, which is surprising!
-    toInvalidateIdx = idx1.mod(2) === 1 ? idx1.sub(1) : idx1.add(1);
+    toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
   }
 
   const accounts = await web3GetAccounts();
