@@ -8,7 +8,7 @@ import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
 
-import { MINING_CYCLE_DURATION, DEFAULT_STAKE, REWARD, UINT256_MAX, MIN_STAKE } from "../../helpers/constants";
+import { MINING_CYCLE_DURATION, MINING_CYCLE_TIMEOUT, DEFAULT_STAKE, REWARD, UINT256_MAX, MIN_STAKE } from "../../helpers/constants";
 
 import {
   forwardTime,
@@ -489,6 +489,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([badClient, badClient2, goodClient], this);
+      await forwardTime(MINING_CYCLE_TIMEOUT, this);
       await repCycle.invalidateHash(0, 1);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient);

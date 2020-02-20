@@ -382,6 +382,10 @@ process.env.SOLIDITY_COVERAGE
           });
 
           await badClient.submitRootHash();
+
+          // Forward time again so clients can start responding to challenges
+          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
+
           await goodClientConfirmedJRH;
           await badClient.confirmJustificationRootHash();
 
@@ -444,8 +448,6 @@ process.env.SOLIDITY_COVERAGE
             }, 30000);
           });
 
-          // Forward time again, so the submission window is closed
-          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
           // Good client should realise it can confirm new hash. So we wait for that event.
           await newCycleStart;
 
