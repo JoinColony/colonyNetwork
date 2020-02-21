@@ -468,7 +468,7 @@ export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetw
   // Submit JRH for submission 1 if needed
   // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
   if (submission1before.jrhNNodes === "0") {
-    await checkSuccessEthers(client1.confirmJustificationRootHash(), "Client1 was unable to confirmJustificationRootHash");
+    await checkSuccessEthers(client1.confirmJustificationRootHash(), "Client 1 was unable to confirmJustificationRootHash");
   } else {
     await checkSuccessEthers(client1.respondToBinarySearchForChallenge(), "Client 1 was unable to respondToBinarySearchForChallenge");
   }
