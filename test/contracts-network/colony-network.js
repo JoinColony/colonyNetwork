@@ -265,7 +265,9 @@ contract("Colony Network", accounts => {
       const token = await Token.new(...TOKEN_ARGS);
       // NOTE: for some reason, `checkErrorRevert`, function overloads, and extra arguments do not play well together.
       //   Specifically, when using the 5-argument `createColony`, truffle gets confused by the "sixth" argument.
-      await checkErrorRevert(colonyNetwork.createColony(token.address, { value: 1, gas: createColonyGas }));
+      await checkErrorRevert(
+        colonyNetwork.methods["createColony(address,uint256,string,string,bool)"](token.address, 0, "", "", false, { value: 1, gas: createColonyGas })
+      );
 
       const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
       expect(colonyNetworkBalance).to.be.zero;
@@ -384,7 +386,7 @@ contract("Colony Network", accounts => {
       expect(registrarAddress).to.equal(ensRegistry.address);
     });
 
-    it.skip("should be able to create a colony with label in one tx", async () => {
+    it("should be able to create a colony with label in one tx", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address, 0, "test", orbitDBAddress, false);
       const { colonyAddress } = logs[0].args;
