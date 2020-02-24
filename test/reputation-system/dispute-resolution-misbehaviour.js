@@ -306,6 +306,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
         await clients[i].addLogContentsToReputationTree();
         await clients[i].submitRootHash();
         await clients[i].confirmJustificationRootHash();
+        console.log("Submitted for client ", i);
       }
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
