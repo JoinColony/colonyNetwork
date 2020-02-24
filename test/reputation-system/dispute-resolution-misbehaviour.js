@@ -305,7 +305,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         // churning away at once, I *think* it's slower.
         await clients[i].addLogContentsToReputationTree();
         await clients[i].submitRootHash();
-        await clients[i].confirmJustificationRootHash();
         console.log("Submitted for client ", i);
       }
 
