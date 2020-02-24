@@ -125,22 +125,6 @@ contract("Reputation Mining - happy paths", (accounts) => {
   });
 
   describe("when executing intended behaviours", () => {
-    it.only("before a dispute is required, disputeRewardIncrement returns 0", async () => {
-      let repCycle = await getActiveRepCycle(colonyNetwork);
-      let rewardIncrement = await repCycle.disputeRewardIncrement();
-      expect(rewardIncrement.toString(), "RewardIncrement was nonzero").to.equal("0");
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[3], DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
-      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
-
-      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-      repCycle = await getActiveRepCycle(colonyNetwork);
-      rewardIncrement = await repCycle.disputeRewardIncrement();
-
-      expect(rewardIncrement.toString(), "RewardIncrement was nonzero").to.equal("0");
-    });
-
     it("should cope with many hashes being submitted and eliminated before a winner is assigned", async function manySubmissionTest() {
       this.timeout(100000000);
 
