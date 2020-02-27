@@ -554,6 +554,7 @@ contract("Reputation mining - root hash submissions", accounts => {
     it("should punish all stakers if they misbehave (and report a bad hash)", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
+      const invalidatorLockBefore = await tokenLocking.getUserLock(clnyToken.address, accounts[0]);
       const userLockMiner1Before = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       const userLockMiner2Before = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       const userLockMiner3Before = await tokenLocking.getUserLock(clnyToken.address, MINER3);
@@ -576,8 +577,11 @@ contract("Reputation mining - root hash submissions", accounts => {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
       });
 
+      const invalidatorLock = await tokenLocking.getUserLock(clnyToken.address, accounts[0]);
+      expect(invalidatorLock.balance, "Account was not rewarded properly").to.eq.BN(new BN(invalidatorLockBefore.balance).add(MIN_STAKE.muln(2)));
+
       const userLockMiner1 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-      expect(userLockMiner1.balance, "Account was not rewarded properly").to.eq.BN(new BN(userLockMiner1Before.balance).add(MIN_STAKE.muln(2)));
+      expect(userLockMiner1.balance, "Account was not rewarded properly").to.eq.BN(new BN(userLockMiner1Before.balance));
 
       const userLockMiner2 = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       expect(userLockMiner2.balance, "Account was not punished properly").to.eq.BN(new BN(userLockMiner2Before.balance).sub(MIN_STAKE));

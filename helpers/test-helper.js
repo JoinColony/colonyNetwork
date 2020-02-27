@@ -477,8 +477,7 @@ export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetw
   await forwardTime(600, test);
   const toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
 
-  const accounts = await web3GetAccounts();
-  return repCycle.invalidateHash(round1, toInvalidateIdx, { from: accounts[0] });
+  return repCycle.invalidateHash(round1, toInvalidateIdx);
 }
 
 export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test, client1, client2, _errors) {
@@ -527,8 +526,7 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
     toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
   }
 
-  const accounts = await web3GetAccounts();
-  return repCycle.invalidateHash(round1, toInvalidateIdx, { from: accounts[0] });
+  return repCycle.invalidateHash(round1, toInvalidateIdx);
 }
 
 async function navigateChallenge(colonyNetwork, client1, client2, errors) {
