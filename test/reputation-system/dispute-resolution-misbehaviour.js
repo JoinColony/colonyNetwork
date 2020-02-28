@@ -16,6 +16,7 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
+  accommodateChallengeAndInvalidateHashViaTimeout,
   finishReputationMiningCycle,
   removeSubdomainLimit
 } from "../../helpers/test-helper";
@@ -268,14 +269,12 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await repCycle.confirmNewHash(2);
     });
 
-    it("should prevent a hash from advancing if it might still get an opponent", async function advancingTest() {
-      this.timeout(10000000);
+    async function setUpNMiners(n) {
+      expect(accounts.length, "Not enough accounts for test to run").to.be.at.least(n + 3);
+      const accountsForTest = accounts.slice(3, n + 3);
 
-      expect(accounts.length, "Not enough accounts for test to run").to.be.at.least(11);
-      const accountsForTest = accounts.slice(3, 11);
-
-      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(8));
-      for (let i = 0; i < 8; i += 1) {
+      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(n));
+      for (let i = 0; i < n; i += 1) {
         await giveUserCLNYTokensAndStake(colonyNetwork, accountsForTest[i], DEFAULT_STAKE);
         await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: accountsForTest[i] });
         // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the
@@ -299,37 +298,41 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
         })
       );
 
-      const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
-      for (let i = 0; i < 8; i += 1) {
+      for (let i = 0; i < n; i += 1) {
         // Doing these individually rather than in a big loop because with many instances of the EVM
         // churning away at once, I *think* it's slower.
         await clients[i].addLogContentsToReputationTree();
         await clients[i].submitRootHash();
         await clients[i].confirmJustificationRootHash();
+        console.log("Submitted for client ", i);
       }
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      return clients;
+    }
+
+    it("should prevent a hash from advancing if it might still get an opponent", async function advancingTest() {
+      this.timeout(10000000);
+
+      const clients = await setUpNMiners(8);
+      const repCycle = await getActiveRepCycle(colonyNetwork);
 
       console.log("Starting disputes");
 
-      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[0], clients[1], {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
-      });
-      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[2], clients[3], {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
-      });
-      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[4], clients[5], {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
-      });
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[1]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[2], clients[3]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[5]);
 
       console.log("Starting round 2");
 
       // This is the first pairing in round 2
-      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[0], clients[2], {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
-      });
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[2]);
+      // At this point, we have
+      // (0,1) (2,3) (4,5) (6,7)
+      // (0,2) 4
+      // We check 4 can't claim a bye yet, because one of (6,7) might end up facing them.
       await checkErrorRevert(
         accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[4]),
         "colony-reputation-mining-previous-dispute-round-not-complete"
@@ -338,16 +341,128 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       console.log("Cleaning up");
 
       // Now clean up
-      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[6], clients[7], {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
-      });
-      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[4], clients[6], {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
-      });
-      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[0], clients[4], {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
-      });
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[6], clients[7]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[6]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[4]);
       await repCycle.confirmNewHash(3);
+    });
+
+    it("should allow a hash to be awarded multiple byes if appropriate", async function advancingTest() {
+      this.timeout(10000000);
+      const clients = await setUpNMiners(9);
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
+      console.log("Starting disputes");
+
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[1]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[2], clients[3]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[5]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[6], clients[7]);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[8]);
+
+      console.log("Starting round 2");
+
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[2]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[6]);
+
+      // At this point, we have
+      // (0,1) (2,3) (4,5) (6,7) 8
+      // (0,2) (4,6) 8
+      // (0,4)
+      // We check that 8, even though it has already received a bye in the last round, can receive a bye in this round
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[8]);
+
+      console.log("Cleaning up");
+
+      // Now clean up
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[4]);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[8]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[8]);
+      await repCycle.confirmNewHash(4);
+    });
+
+    it("should not mark a round as complete even if a bye was awarded in it", async function advancingTest() {
+      this.timeout(10000000);
+
+      const clients = await setUpNMiners(9);
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
+      console.log("Starting disputes");
+
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[1]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[2], clients[3]);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[8]);
+      // At this point, we have
+      // (0,1) (2,3) (4,5) (6,7) 8
+      // (0,2) 8
+      // We check that 8 cannot receive a bye, because the last round isn't finished yet
+
+      await checkErrorRevert(
+        accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[8]),
+        "colony-reputation-mining-previous-dispute-round-not-complete"
+      );
+
+      console.log("Cleaning up");
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[5]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[6], clients[7]);
+
+      // Round 1 finished. Move to round 2
+
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[2]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[8], clients[4]);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[6]);
+
+      // Round 2 finished.
+
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[8]);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[6]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[6]);
+      await repCycle.confirmNewHash(4);
+      // We finish having done
+      // (0, 1), (2, 3), (4, 5), (6, 7), 8
+      // (0, 2) (8, 4) 6
+      // (0, 8) 6
+      // (0, 6)
+      // 0
+    });
+
+    it(`should prevent a hash from advancing if it might still get an opponent,
+     even if that opponent is from more than one round ago`, async function advancingTest() {
+      this.timeout(10000000);
+
+      const clients = await setUpNMiners(14);
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
+      console.log("Starting disputes");
+
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[1]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[2], clients[3]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[5]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[6], clients[7]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[8], clients[9]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[10], clients[11]);
+
+      console.log("Starting round 2");
+
+      // This is the first pairing in round 2
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[2]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[6]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[8], clients[10]);
+
+      await checkErrorRevert(
+        accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[8]),
+        "colony-reputation-mining-previous-dispute-round-not-complete"
+      );
+
+      console.log("Cleaning up");
+
+      // Now clean up
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[12], clients[13]);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[12]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[4]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[8], clients[12]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[8]);
+      await repCycle.confirmNewHash(4);
     });
 
     it("should not allow stages to be skipped even if the number of updates is a power of 2", async () => {
