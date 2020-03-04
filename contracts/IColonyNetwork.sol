@@ -128,17 +128,13 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
 
   /// @notice Creates a new colony in the network with the latest version available
   /// @dev This is now deprecated and will be removed in a future version
-  /// Note that the token ownership (if there is one) should be transferred to the newly created colony.
-  /// Additionally token can optionally support `mint` as defined in `ERC20Extended`.
-  /// Support for `mint` is mandatory only for the Meta Colony Token.
+  /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token.
   /// @return colonyAddress Address of the newly created colony
   function createColony(address _tokenAddress) public returns (address colonyAddress);
 
-  /// @notice Overload of the simpler `createColony`. Creates a new colony in the network with a variety of options.
-  /// Note that the token ownership (if there is one) should be transferred to the newly created colony
-  /// Additionally token can optionally support `mint` as defined in `ERC20Extended`
-  /// Support for `mint` is mandatory only for the Meta Colony Token
+  /// @notice Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options
+  /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
   /// @param _version The version of colony to deploy (pass 0 for the current version)
   /// @param _colonyName The label to register (if null, no label is registered)

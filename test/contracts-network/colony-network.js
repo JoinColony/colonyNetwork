@@ -263,11 +263,8 @@ contract("Colony Network", accounts => {
 
     it("should fail if ETH is sent", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      // NOTE: for some reason, `checkErrorRevert`, function overloads, and extra arguments do not play well together.
-      //   Specifically, when using the 5-argument `createColony`, truffle gets confused by the "sixth" argument.
-      await checkErrorRevert(
-        colonyNetwork.methods["createColony(address,uint256,string,string,bool)"](token.address, 0, "", "", false, { value: 1, gas: createColonyGas })
-      );
+      const sig = "createColony(address,uint256,string,string,bool)";
+      await checkErrorRevert(colonyNetwork.methods[sig](token.address, 0, "", "", false, { value: 1, gas: createColonyGas }));
 
       const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
       expect(colonyNetworkBalance).to.be.zero;
