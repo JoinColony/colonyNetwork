@@ -90,8 +90,9 @@ Calculate raw miner weight in WADs.
 
 ### `createColony`
 
-Overload of the simpler `createColony`. Creates a new colony in the network with a variety of options. Note that the token ownership (if there is one) should be transferred to the newly created colony Additionally token can optionally support `mint` as defined in `ERC20Extended` Support for `mint` is mandatory only for the Meta Colony Token
+Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options
 
+*Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
 
 **Parameters**
 
@@ -113,7 +114,7 @@ Overload of the simpler `createColony`. Creates a new colony in the network with
 
 Creates a new colony in the network with the latest version available
 
-*Note: This is now deprecated and will be removed in a future version Note that the token ownership (if there is one) should be transferred to the newly created colony. Additionally token can optionally support `mint` as defined in `ERC20Extended`. Support for `mint` is mandatory only for the Meta Colony Token.*
+*Note: This is now deprecated and will be removed in a future version*
 
 **Parameters**
 
