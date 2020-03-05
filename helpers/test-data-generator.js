@@ -372,11 +372,11 @@ export async function setupRandomColony(colonyNetwork) {
   const token = await Token.new(...tokenArgs);
   await token.unlock();
 
-  const { logs } = await colonyNetwork.createColony(token.address);
-  const { colonyAddress } = logs[1].args;
+  const { logs } = await colonyNetwork.createColony(token.address, 0, "", "", false);
+  const { colonyAddress } = logs[0].args;
   const colony = await IColony.at(colonyAddress);
-  const tokenLockingAddress = await colonyNetwork.getTokenLocking();
 
+  const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [tokenLockingAddress]);
   await token.setAuthority(tokenAuthority.address);
 

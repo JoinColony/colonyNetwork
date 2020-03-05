@@ -90,15 +90,19 @@ Calculate raw miner weight in WADs.
 
 ### `createColony`
 
-Creates a new colony in the network at a specific version. Not recommended unless you are confident in what you're doing. Note that the token ownership (if there is one) has to be transferred to the newly created colony.
+Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options
 
+*Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
-|_version|uint256|The version of colony to deploy. Additionally token can optionally support `mint` as defined in `ERC20Extended`. Support for `mint` is mandatory only for the Meta Colony Token.
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
+|_orbitdb|string|The path of the orbitDB database associated with the user profile
+|_useExtensionManager|bool|If true, give the ExtensionManager the root role in the colony
 
 **Return Parameters**
 
@@ -108,14 +112,15 @@ Creates a new colony in the network at a specific version. Not recommended unles
 
 ### `createColony`
 
-Creates a new colony in the network with the latest version available Note that the token ownership (if there is one) has to be transferred to the newly created colony.
+Creates a new colony in the network with the latest version available
 
+*Note: This is now deprecated and will be removed in a future version*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token. Additionally token can optionally support `mint` as defined in `ERC20Extended`. Support for `mint` is mandatory only for the Meta Colony Token.
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
 
 **Return Parameters**
 

@@ -67,11 +67,14 @@ contract("EtherRouter / Resolver", accounts => {
   });
 
   describe("Resolver", () => {
-    it("should return correct destination for given function", async () => {
+    it("should return correct destination for given function, including overloads", async () => {
       const deployedColonyNetwork = await ColonyNetwork.deployed();
       const signature = await resolver.stringToSig("createColony(address)");
+      const overloadedSignature = await resolver.stringToSig("createColony(address,uint256,string,string,bool)");
       const destination = await resolver.lookup(signature);
+      const overloadedDestination = await resolver.lookup(overloadedSignature);
       expect(destination).to.equal(deployedColonyNetwork.address);
+      expect(destination).to.equal(overloadedDestination);
     });
 
     it("when checking destination for a function that doesn't exist, should return 0", async () => {
