@@ -52,3 +52,8 @@ contract TestExtension1 is TestExtension {
 contract TestExtension2 is TestExtension {
   function version() public pure returns (uint256) { return 2; }
 }
+
+
+contract TestExtension3 is TestExtension {
+  function version() public pure returns (uint256) { return 3; }
+}

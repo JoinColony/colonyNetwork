@@ -55,7 +55,6 @@ contract ExtensionManager {
     uint256 version = getResolverVersion(_resolver);
     require(version == 1 || _roles == 0, "extension-manager-nonempty-roles");
     require(version == 1 || resolvers[_extensionId][version - 1] != address(0x0), "extension-manager-bad-version");
-    require(resolvers[_extensionId][version] == address(0x0), "extension-manager-already-added");
 
     resolvers[_extensionId][version] = _resolver;
     if (version == 1) { roles[_extensionId] = _roles; }
@@ -79,21 +78,21 @@ contract ExtensionManager {
     emit ExtensionInstalled(_extensionId, _version, _colony);
   }
 
-  function upgradeExtension(bytes32 _extensionId, address _colony)
+  function upgradeExtension(bytes32 _extensionId, address _colony, uint256 _newVersion)
     public
   {
     require(root(_colony), "extension-manager-unauthorized");
     require(installations[_extensionId][_colony] != address(0x0), "extension-manager-not-installed");
 
     address payable extension = installations[_extensionId][_colony];
-    uint256 newVersion = ColonyExtension(extension).version() + 1;
-    require(resolvers[_extensionId][newVersion] != address(0x0), "extension-manager-bad-version");
+    require(_newVersion == ColonyExtension(extension).version() + 1, "extension-manager-bad-increment");
+    require(resolvers[_extensionId][_newVersion] != address(0x0), "extension-manager-bad-version");
 
-    EtherRouter(extension).setResolver(resolvers[_extensionId][newVersion]);
+    EtherRouter(extension).setResolver(resolvers[_extensionId][_newVersion]);
     ColonyExtension(extension).finishUpgrade();
-    assert(ColonyExtension(extension).version() == newVersion);
+    assert(ColonyExtension(extension).version() == _newVersion);
 
-    emit ExtensionUpgraded(_extensionId, newVersion, _colony);
+    emit ExtensionUpgraded(_extensionId, _newVersion, _colony);
   }
 
   function uninstallExtension(bytes32 _extensionId, address _colony)

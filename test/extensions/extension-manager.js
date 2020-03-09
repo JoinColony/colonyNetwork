@@ -20,6 +20,7 @@ const ColonyExtension = artifacts.require("ColonyExtension");
 const TestExtension0 = artifacts.require("TestExtension0");
 const TestExtension1 = artifacts.require("TestExtension1");
 const TestExtension2 = artifacts.require("TestExtension2");
+const TestExtension3 = artifacts.require("TestExtension3");
 const Resolver = artifacts.require("Resolver");
 const IMetaColony = artifacts.require("IMetaColony");
 
@@ -32,6 +33,7 @@ contract("ExtensionManager", accounts => {
   let resolver0;
   let resolver1;
   let resolver2;
+  let resolver3;
 
   const ROOT = accounts[0];
   const ARCHITECT = accounts[1];
@@ -50,6 +52,9 @@ contract("ExtensionManager", accounts => {
     } else if (versionId === 2) {
       const testExtension2 = await TestExtension2.new();
       await setupEtherRouter("TestExtension2", { TestExtension2: testExtension2.address }, resolver);
+    } else if (versionId === 3) {
+      const testExtension3 = await TestExtension3.new();
+      await setupEtherRouter("TestExtension3", { TestExtension3: testExtension3.address }, resolver);
     }
     return resolver;
   }
@@ -67,9 +72,11 @@ contract("ExtensionManager", accounts => {
     resolver0 = await setupResolver(0);
     resolver1 = await setupResolver(1);
     resolver2 = await setupResolver(2);
+    resolver3 = await setupResolver(3);
 
     await metaColony.addExtension(TEST_EXTENSION, resolver1.address, rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]));
     await metaColony.addExtension(TEST_EXTENSION, resolver2.address, ethers.constants.HashZero);
+    await metaColony.addExtension(TEST_EXTENSION, resolver3.address, ethers.constants.HashZero);
   });
 
   beforeEach(async () => {
@@ -120,10 +127,8 @@ contract("ExtensionManager", accounts => {
       expect(resolverAddress).to.equal(resolver1.address);
     });
 
-    it("does not allow the meta colony to overwrite existing extensions", async () => {
-      await metaColony.addExtension(extensionId, resolver1.address, ethers.constants.HashZero);
-
-      await checkErrorRevert(metaColony.addExtension(extensionId, resolver1.address, ethers.constants.HashZero), "extension-manager-already-added");
+    it("allows the meta colony to overwrite existing extensions", async () => {
+      await metaColony.addExtension(extensionId, resolver1.address, resolver2.address);
     });
 
     it("does not allow the meta colony to add versions out of order", async () => {
@@ -184,7 +189,7 @@ contract("ExtensionManager", accounts => {
         "extension-manager-only-latest-version"
       );
 
-      await extensionManager.installExtension(TEST_EXTENSION, 2, colony.address, { from: USER });
+      await extensionManager.installExtension(TEST_EXTENSION, 3, colony.address, { from: USER });
     });
 
     it("does not allow an extension to be installed with a nonexistent resolver", async () => {
@@ -287,7 +292,7 @@ contract("ExtensionManager", accounts => {
       let version = await extension.version();
       expect(version).to.eq.BN(1);
 
-      await extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, { from: ROOT });
+      await extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 2, { from: ROOT });
 
       extension = await ColonyExtension.at(extensionAddress);
       version = await extension.version();
@@ -298,22 +303,28 @@ contract("ExtensionManager", accounts => {
       await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, { from: ROOT });
 
       await checkErrorRevert(
-        extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, { from: ARCHITECT }),
+        extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 2, { from: ARCHITECT }),
         "extension-manager-unauthorized"
       );
 
-      await checkErrorRevert(extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, { from: USER }), "extension-manager-unauthorized");
+      await checkErrorRevert(extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 2, { from: USER }), "extension-manager-unauthorized");
     });
 
     it("does not allow upgrading a extension which is not installed", async () => {
-      await checkErrorRevert(extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, { from: ROOT }), "extension-manager-not-installed");
+      await checkErrorRevert(extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 2, { from: ROOT }), "extension-manager-not-installed");
     });
 
     it("does not allow upgrading a extension to a version which does not exist", async () => {
-      await extensionManager.installExtension(TEST_EXTENSION, 2, colony.address, { from: ROOT });
+      await extensionManager.installExtension(TEST_EXTENSION, 3, colony.address, { from: ROOT });
 
-      // Can't upgrade from version 2 to nonexistent 3
-      await checkErrorRevert(extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, { from: ROOT }), "extension-manager-bad-version");
+      // Can't upgrade from version 3 to nonexistent 4
+      await checkErrorRevert(extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 4, { from: ROOT }), "extension-manager-bad-version");
+    });
+
+    it("does not allow upgrading a extension out of order", async () => {
+      await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, { from: ROOT });
+
+      await checkErrorRevert(extensionManager.upgradeExtension(TEST_EXTENSION, colony.address, 3, { from: ROOT }), "extension-manager-bad-increment");
     });
   });
 
