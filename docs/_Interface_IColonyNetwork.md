@@ -112,7 +112,7 @@ Overload of the simpler `createColony` -- creates a new colony in the network wi
 
 ### `createColony`
 
-Creates a new colony in the network with the latest version available
+Creates a new colony in the network, at version 3
 
 *Note: This is now deprecated and will be removed in a future version*
 
