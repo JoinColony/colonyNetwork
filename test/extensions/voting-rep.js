@@ -60,6 +60,7 @@ contract("Voting Reputation", accounts => {
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
 
+    // 1 => { 2, 3 }
     await colony.addDomain(1, 0, 1);
     await colony.addDomain(1, 0, 1);
     domain1 = await colony.getDomain(1);

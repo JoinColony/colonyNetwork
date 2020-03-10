@@ -61,8 +61,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   mapping (uint256 => Poll) polls;
   mapping (uint256 => mapping (address => mapping (bool => uint256))) stakers;
 
-  // The UserVote type here is just the bytes32 voteSecret
-  mapping (address => mapping (uint256 => bytes32)) userVotes;
+  mapping (address => mapping (uint256 => bytes32)) voteSecrets;
 
   mapping (bytes32 => uint256) pastVotes;
 
@@ -147,7 +146,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   function submitVote(uint256 _pollId, bytes32 _voteSecret) public {
     require(getPollState(_pollId) == PollState.Open, "voting-rep-poll-not-open");
-    userVotes[msg.sender][_pollId] = _voteSecret;
+    voteSecrets[msg.sender][_pollId] = _voteSecret;
   }
 
   function revealVote(
@@ -163,14 +162,14 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     require(getPollState(_pollId) != PollState.Open, "voting-rep-poll-still-open");
 
-    bytes32 voteSecret = userVotes[msg.sender][_pollId];
+    bytes32 voteSecret = voteSecrets[msg.sender][_pollId];
     require(voteSecret == getVoteSecret(_salt, _vote), "voting-rep-secret-no-match");
 
     // Validate proof and get reputation value
     uint256 userReputation = checkReputation(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
 
     // Remove the secret
-    delete userVotes[msg.sender][_pollId];
+    delete voteSecrets[msg.sender][_pollId];
 
     // Increment the vote if poll in reveal, otherwise skip
     // NOTE: since there's no locking, we could just `require` PollState.Reveal
