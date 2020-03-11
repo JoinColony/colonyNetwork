@@ -126,7 +126,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _tokenAddress Address of the CLNY token
   function createMetaColony(address _tokenAddress) public;
 
-  /// @notice Creates a new colony in the network with the latest version available
+  /// @notice Creates a new colony in the network, at version 3
   /// @dev This is now deprecated and will be removed in a future version
   /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token.

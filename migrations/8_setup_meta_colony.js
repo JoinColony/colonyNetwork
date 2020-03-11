@@ -48,6 +48,11 @@ module.exports = async function(deployer, network, accounts) {
 
   await metaColony.addGlobalSkill();
 
+  // Also set up the pinned version (3)... TODO: remove along with the deprecated `createColony`
+  const version = await metaColony.version();
+  const resolverAddress = await colonyNetwork.getColonyVersionResolver(version);
+  await metaColony.addNetworkColonyVersion(3, resolverAddress);
+
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 

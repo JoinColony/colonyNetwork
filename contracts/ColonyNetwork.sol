@@ -116,7 +116,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   {
     require(metaColony == address(0x0), "colony-meta-colony-exists-already");
 
-    metaColony = createColony(_tokenAddress);
+    metaColony = createColony(_tokenAddress, currentColonyVersion, "", "", false);
 
     // Add the special mining skill
     reputationMiningSkillId = this.addSkill(skillCount);
@@ -124,11 +124,12 @@ contract ColonyNetwork is ColonyNetworkStorage {
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
 
+  // DEPRECATED, only deploys version 3 colonies.
   function createColony(address _tokenAddress) public
   stoppable
   returns (address)
   {
-    address colonyAddress = deployColony(_tokenAddress, currentColonyVersion);
+    address colonyAddress = deployColony(_tokenAddress, 3);
     setFounderPermissions(colonyAddress);
     return colonyAddress;
   }
