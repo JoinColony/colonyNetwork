@@ -20,6 +20,7 @@ pragma experimental ABIEncoderV2;
 
 import "../IColony.sol";
 import "../IColonyNetwork.sol";
+import "../ITokenLocking.sol";
 import "../PatriciaTree/PatriciaTreeProofs.sol";
 import "../../lib/dappsys/math.sol";
 
@@ -27,33 +28,44 @@ import "../../lib/dappsys/math.sol";
 contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   // Constants
+  uint256 constant NAY = 0;
+  uint256 constant YAY = 1;
   uint256 constant UINT256_MAX = 2**256 - 1;
-  uint256 constant STAKE_INVERSE = 1000;
+  uint256 constant STAKE_PCT = WAD / 1000; // 0.1%
+  uint256 constant VOTER_REWARD_PCT = WAD / 10; // 10%
+  uint256 constant STAKER_REWARD_PCT = WAD - VOTER_REWARD_PCT; // 90%
+  uint256 constant STAKE_PERIOD = 3 days;
   uint256 constant VOTE_PERIOD = 2 days;
   uint256 constant REVEAL_PERIOD = 2 days;
-  bytes4 constant CHANGE_FUNC = bytes4(keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"));
+  bytes4 constant CHANGE_FUNC = bytes4(
+    keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
+  );
 
   // Initialization data
   IColony colony;
   IColonyNetwork colonyNetwork;
+  ITokenLocking tokenLocking;
+  address token;
 
   constructor(address _colony) public {
     colony = IColony(_colony);
     colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
+    tokenLocking = ITokenLocking(colonyNetwork.getTokenLocking());
+    token = colony.getToken();
   }
 
   // Data structures
-  enum PollState { Open, Reveal, Closed, Executed }
+  enum PollState { StakeYay, StakeNay, Open, Reveal, Closed, Executed, Failed }
 
   struct Poll {
-    bool executed;
-    uint256 createdAt;
-    bytes32 rootHash;
+    uint256 lastEvent; // Set at creation and when fully staked yay and nay
     uint256 skillId;
+    bytes32 rootHash;
     uint256 skillRep;
     uint256[2] stakes; // [nay, yay]
     uint256[2] votes; // [nay, yay]
     bytes action;
+    bool executed;
   }
 
   // Storage
@@ -102,30 +114,53 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     createPoll(_action, domainSkillId, _key, _value, _branchMask, _siblings);
   }
 
-  function stakePoll(uint256 _pollId, uint256 _domainId, bool _vote, uint256 _amount) public {
-    Poll storage poll = polls[_pollId];
+  function stakePoll(
+    uint256 _pollId,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    bool _vote,
+    uint256 _amount,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    public
+  {
+    PollState pollState = getPollState(_pollId);
+    uint256 stakerRep = checkReputation(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
 
     // TODO: can we keep the domainId on the poll somewhere? This seems like a wasteful external call.
     //   But if it's 10 external calls per word of storage, then < 10 stakers makes this cheaper.
-    require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-stake-domain");
-    require(stakers[_pollId][msg.sender][!_vote] == 0, "voting-rep-cannot-stake-both-sides");
+    require(colony.getDomain(_domainId).skillId == polls[_pollId].skillId, "voting-rep-bad-stake-domain");
+    require(add(stakers[_pollId][msg.sender][_vote], _amount) <= stakerRep, "voting-rep-insufficient-rep");
 
-    // TODO: come up with something better than `bool2vote`. Maybe an enum?
-    uint256 currentStake = poll.stakes[bool2vote(_vote)];
-    uint256 requiredStake = poll.skillRep / STAKE_INVERSE;
+    require(add(polls[_pollId].stakes[toInt(_vote)], _amount) <= getRequiredStake(_pollId), "voting-rep-stake-too-large");
+    require(pollState == PollState.StakeYay || pollState == PollState.StakeNay, "voting-rep-staking-closed");
+    require(_vote || pollState == PollState.StakeNay, "voting-rep-out-of-order");
 
-    require(add(currentStake, _amount) <= requiredStake, "voting-rep-stake-too-large");
+    colony.obligateStake(msg.sender, _domainId, _amount);
+    colony.slashStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, _domainId, _amount, address(this));
 
-    poll.stakes[bool2vote(_vote)] = add(poll.stakes[bool2vote(_vote)], _amount);
+    polls[_pollId].stakes[toInt(_vote)] = add(polls[_pollId].stakes[toInt(_vote)], _amount);
     stakers[_pollId][msg.sender][_vote] = add(stakers[_pollId][msg.sender][_vote], _amount);
 
-    // TODO: add implementation!
-    // colony.obligateStake(msg.sender, _domainId, _amount);
+    // Update timestamp if fully staked
+    if (polls[_pollId].stakes[YAY] == getRequiredStake(_pollId) || polls[_pollId].stakes[NAY] == getRequiredStake(_pollId)) {
+      polls[_pollId].lastEvent = now;
+    }
+
+    // If all stakes are in, claim the pending tokens
+    if (polls[_pollId].stakes[NAY] == getRequiredStake(_pollId)) {
+      tokenLocking.claim(token, true);
+    }
   }
 
   function executePoll(uint256 _pollId) public returns (bool) {
-    require(getPollState(_pollId) != PollState.Executed, "voting-base-poll-already-executed");
-    require(getPollState(_pollId) == PollState.Closed, "voting-base-poll-not-closed");
+    require(getPollState(_pollId) != PollState.Failed, "voting-rep-poll-failed");
+    require(getPollState(_pollId) != PollState.Executed, "voting-rep-poll-already-executed");
+    require(getPollState(_pollId) == PollState.Closed, "voting-rep-poll-not-closed");
 
     Poll storage poll = polls[_pollId];
     poll.executed = true;
@@ -133,13 +168,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     if (getSig(poll.action) == CHANGE_FUNC) {
       bytes32 slot = encodeSlot(poll.action);
       uint256 votePower = add(poll.votes[0], poll.votes[1]);
-
       require(pastVotes[slot] < votePower, "voting-rep-insufficient-vote-power");
 
       pastVotes[slot] = votePower;
     }
 
-    if (poll.votes[0] < poll.votes[1]) {
+    if (poll.stakes[NAY] < poll.stakes[YAY] || poll.votes[NAY] < poll.votes[YAY]) {
       return executeCall(address(colony), poll.action);
     }
   }
@@ -160,6 +194,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     public
   {
+    Poll storage poll = polls[_pollId];
     require(getPollState(_pollId) != PollState.Open, "voting-rep-poll-still-open");
 
     bytes32 voteSecret = voteSecrets[msg.sender][_pollId];
@@ -174,8 +209,31 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     // Increment the vote if poll in reveal, otherwise skip
     // NOTE: since there's no locking, we could just `require` PollState.Reveal
     if (getPollState(_pollId) == PollState.Reveal) {
-      polls[_pollId].votes[bool2vote(_vote)] += userReputation;
+      poll.votes[toInt(_vote)] += userReputation;
     }
+
+    uint256 pctReputation = wdiv(userReputation, poll.skillRep);
+    uint256 totalStake = add(poll.stakes[YAY], poll.stakes[NAY]);
+    uint256 voterReward = wmul(wmul(pctReputation, totalStake), VOTER_REWARD_PCT);
+    tokenLocking.transfer(token, voterReward, msg.sender, true);
+  }
+
+  function claimReward(uint256 _pollId, bool _vote) public {
+    Poll storage poll = polls[_pollId];
+    require(getPollState(_pollId) == PollState.Executed, "voting-rep-not-executed");
+
+    // stakerReward = (voterStake * .9) * (winPercent * 2)
+    uint256 stakerVotes = poll.votes[toInt(_vote)];
+    uint256 totalVotes = add(poll.votes[NAY], poll.votes[YAY]);
+    uint256 winPercent = wdiv(stakerVotes, totalVotes);
+    uint256 winShare = wmul(winPercent, 2 * WAD);
+
+    uint256 voterStake = stakers[_pollId][msg.sender][_vote];
+    uint256 voterRewardStake = wmul(voterStake, STAKER_REWARD_PCT);
+    uint256 stakerReward = wmul(voterRewardStake, winShare);
+
+    delete stakers[_pollId][msg.sender][_vote];
+    tokenLocking.transfer(token, stakerReward, msg.sender, true);
   }
 
   // Public view functions
@@ -194,14 +252,33 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   function getPollState(uint256 _pollId) public view returns (PollState) {
     Poll storage poll = polls[_pollId];
-    if (now < poll.createdAt + VOTE_PERIOD) {
-      return PollState.Open;
-    } else if (now < poll.createdAt + VOTE_PERIOD + REVEAL_PERIOD) {
-      return PollState.Reveal;
-    } else if (!poll.executed) {
-      return PollState.Closed;
-    } else {
+    uint256 requiredStake = getRequiredStake(_pollId);
+
+    if (poll.executed) {
       return PollState.Executed;
+
+    } else if (poll.stakes[YAY] < requiredStake) {
+      if (now < poll.lastEvent + STAKE_PERIOD) {
+        return PollState.StakeYay;
+      } else {
+        return PollState.Failed;
+      }
+
+    } else if (poll.stakes[NAY] < requiredStake) {
+      if (now < poll.lastEvent + STAKE_PERIOD) {
+        return PollState.StakeNay;
+      } else {
+        return PollState.Closed;
+      }
+
+    } else if (now < poll.lastEvent + VOTE_PERIOD) {
+      return PollState.Open;
+
+    } else if (now < poll.lastEvent + (VOTE_PERIOD + REVEAL_PERIOD)) {
+      return PollState.Reveal;
+
+    } else {
+      return PollState.Closed;
     }
   }
 
@@ -218,13 +295,23 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     internal
   {
     pollCount += 1;
-
-    polls[pollCount].rootHash = colonyNetwork.getReputationRootHash();
+    polls[pollCount].lastEvent = now;
     polls[pollCount].skillId = _skillId;
-
-    polls[pollCount].createdAt = now;
+    polls[pollCount].rootHash = colonyNetwork.getReputationRootHash();
     polls[pollCount].skillRep = checkReputation(pollCount, address(0x0), _key, _value, _branchMask, _siblings);
     polls[pollCount].action = _action;
+  }
+
+  function getVoteSecret(bytes32 _salt, bool _vote) internal pure returns (bytes32) {
+    return keccak256(abi.encodePacked(_salt, _vote));
+  }
+
+  function toInt(bool _vote) internal pure returns (uint256) {
+    return _vote ? YAY : NAY;
+  }
+
+  function getRequiredStake(uint256 _pollId) internal view returns (uint256) {
+    return wmul(polls[_pollId].skillRep, STAKE_PCT);
   }
 
   function checkReputation(
@@ -286,14 +373,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
               // call(g,   a,  v, in,              insize,      out, outsize)
       success := call(gas, to, 0, add(data, 0x20), mload(data), 0, 0)
     }
-  }
-
-  function getVoteSecret(bytes32 _salt, bool _vote) internal pure returns (bytes32) {
-    return keccak256(abi.encodePacked(_salt, _vote));
-  }
-
-  function bool2vote(bool _vote) internal pure returns (uint256) {
-    return _vote ? 1 : 0;
   }
 
   function getSig(bytes memory action) internal returns (bytes4 sig) {
