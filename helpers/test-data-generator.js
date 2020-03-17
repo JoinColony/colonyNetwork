@@ -22,7 +22,7 @@ import {
 import { getTokenArgs, web3GetAccounts, getChildSkillIndex } from "./test-helper";
 import { executeSignedTaskChange, executeSignedRoleAssignment } from "./task-review-signing";
 
-const { setupColonyVersionResolver, setupUpgradableTokenLocking } = require("../helpers/upgradable-contracts");
+const { setupColonyVersionResolver, setupUpgradableTokenLocking } = require("./upgradable-contracts");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
