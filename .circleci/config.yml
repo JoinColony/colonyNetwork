@@ -2,7 +2,7 @@ version: 2
 
 job_common: &job_common
   docker:
-    - image: circleci/node:10.12-stretch
+    - image: circleci/node:10.19-stretch
   working_directory: ~/colonyNetwork
 job_python: &job_python
   docker:
@@ -19,9 +19,9 @@ step_restore_cache: &step_restore_cache
       - node-modules-{{ checksum "yarn.lock" }}
 step_setup_global_packages: &step_setup_global_packages
   run:
-    name: "Set up global packages" # Can remove --ignore-engines once node is bumped to 10.13.0
+    name: "Set up global packages"
     command: |
-      yarn --pure-lockfile --network-concurrency 1 --ignore-engines
+      yarn --pure-lockfile --network-concurrency 1
       git submodule update --remote --init
       yarn run provision:token:contracts
 step_pull_solc_docker: &step_pull_solc_docker
