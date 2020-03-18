@@ -1,0 +1,16 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "@colony/eslint-config-colony",
+    "prettier/@typescript-eslint"
+  ],
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "off",
+    "import/extensions": "off",
+    "import/no-unresolved": "off"
+  }
+}

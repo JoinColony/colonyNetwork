@@ -1,0 +1,20 @@
+{
+  "name": "@colony/colony-js",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint src/**/*.ts"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^2.24.0",
+    "@typescript-eslint/parser": "^2.24.0",
+    "eslint": "^6.8.0",
+    "typechain": "^1.0.5",
+    "typechain-target-ethers": "^1.0.3",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "ethers": "^4.0.45"
+  }
+}
