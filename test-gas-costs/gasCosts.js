@@ -268,7 +268,7 @@ contract("All", function (accounts) {
 
       // withdraw
       const clnyToken = await metaColony.getToken();
-      await tokenLocking.withdraw(clnyToken, DEFAULT_STAKE.divn(4), { from: STAKER1 });
+      await tokenLocking.withdraw(clnyToken, DEFAULT_STAKE.divn(4), false, { from: STAKER1 });
     });
 
     it("when working with reward payouts", async function () {
@@ -307,7 +307,7 @@ contract("All", function (accounts) {
       const userReputationProof = [key, value, branchMask, siblings];
 
       await newToken.approve(tokenLocking.address, workerReputation, { from: WORKER });
-      await tokenLocking.deposit(newToken.address, workerReputation, { from: WORKER });
+      await tokenLocking.deposit(newToken.address, workerReputation, false, { from: WORKER });
       await forwardTime(1, this);
 
       await fundColonyWithTokens(newColony, otherToken, 300);

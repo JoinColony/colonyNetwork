@@ -52,8 +52,8 @@ contract("ColonyPermissions", accounts => {
     await token.approve(tokenLockingAddress, WAD.muln(50), { from: USER1 });
 
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-    await tokenLocking.deposit(token.address, WAD.muln(50), { from: USER0 });
-    await tokenLocking.deposit(token.address, WAD.muln(50), { from: USER1 });
+    await tokenLocking.deposit(token.address, WAD.muln(50), false, { from: USER0 });
+    await tokenLocking.deposit(token.address, WAD.muln(50), false, { from: USER1 });
   });
 
   describe("when managing stakes", () => {
@@ -173,7 +173,7 @@ contract("ColonyPermissions", accounts => {
       expect(deposit.balance).to.eq.BN(WAD.muln(48));
     });
 
-    it("should allow for a slahed stake to be sent to a beneficiary", async () => {
+    it("should allow for a slashed stake to be sent to a beneficiary", async () => {
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
       await tokenLocking.approveStake(colony.address, WAD, { from: USER1 });
 
@@ -181,10 +181,8 @@ contract("ColonyPermissions", accounts => {
 
       await colony.slashStake(1, 0, USER0, USER1, 1, WAD, USER2, { from: USER2 });
 
-      const deposit0 = await tokenLocking.getUserLock(token.address, USER0);
-      const deposit2 = await tokenLocking.getUserLock(token.address, USER2);
-      expect(deposit2.timestamp).to.eq.BN(deposit0.timestamp);
-      expect(deposit2.balance).to.eq.BN(WAD);
+      const deposit = await tokenLocking.getUserLock(token.address, USER2);
+      expect(deposit.pendingBalance).to.eq.BN(WAD);
     });
   });
 });

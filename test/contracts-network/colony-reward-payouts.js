@@ -85,7 +85,7 @@ contract("Colony Reward Payouts", (accounts) => {
     await colony.bootstrapColony([userAddress1], [userReputation]);
 
     await token.approve(tokenLocking.address, userTokens, { from: userAddress1 });
-    await tokenLocking.deposit(token.address, userTokens, { from: userAddress1 });
+    await tokenLocking.deposit(token.address, userTokens, false, { from: userAddress1 });
 
     const userReputationSqrt = bnSqrt(userReputation);
     const userTokensSqrt = bnSqrt(userTokens);
@@ -468,7 +468,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await token.transfer(userAddress3, userTokens3, { from: userAddress1 });
       await token.approve(tokenLocking.address, userTokens3, { from: userAddress3 });
-      await tokenLocking.deposit(token.address, userTokens3, { from: userAddress3 });
+      await tokenLocking.deposit(token.address, userTokens3, false, { from: userAddress3 });
       await forwardTime(1, this);
 
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
@@ -489,7 +489,7 @@ contract("Colony Reward Payouts", (accounts) => {
       const payoutId = logs[0].args.rewardPayoutId;
 
       await colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 });
-      await tokenLocking.withdraw(token.address, userReputation, { from: userAddress1 });
+      await tokenLocking.withdraw(token.address, userReputation, false, { from: userAddress1 });
 
       const balance = await token.balanceOf(userAddress1);
       expect(balance).to.eq.BN(userReputation);
@@ -615,13 +615,13 @@ contract("Colony Reward Payouts", (accounts) => {
     });
 
     it("should not be able to claim a payout for a new deposit made after the payout cycle starts", async () => {
-      await tokenLocking.withdraw(token.address, userTokens, { from: userAddress1 });
+      await tokenLocking.withdraw(token.address, userTokens, false, { from: userAddress1 });
 
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
 
       await token.approve(tokenLocking.address, userTokens, { from: userAddress1 });
-      await tokenLocking.deposit(token.address, userTokens, { from: userAddress1 });
+      await tokenLocking.deposit(token.address, userTokens, false, { from: userAddress1 });
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
@@ -688,7 +688,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       // This will allow token locking contract to sent tokens on users behalf
       await newToken.approve(tokenLocking.address, userReputation, { from: userAddress1 });
-      await tokenLocking.deposit(newToken.address, userReputation, { from: userAddress1 });
+      await tokenLocking.deposit(newToken.address, userReputation, false, { from: userAddress1 });
       await forwardTime(1, this);
 
       ({ logs } = await colony1.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof1));
@@ -788,7 +788,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       // This will allow token locking contract to sent tokens on users behalf
       await newToken.approve(tokenLocking.address, userReputation, { from: userAddress1 });
-      await tokenLocking.deposit(newToken.address, userReputation, { from: userAddress1 });
+      await tokenLocking.deposit(newToken.address, userReputation, false, { from: userAddress1 });
 
       await colony1.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
       await colony2.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
@@ -890,9 +890,9 @@ contract("Colony Reward Payouts", (accounts) => {
         await newToken.approve(tokenLocking.address, tokensPerUser, { from: userAddress3 });
 
         // Send tokens to token locking contract.
-        await tokenLocking.deposit(newToken.address, tokensPerUser, { from: userAddress1 });
-        await tokenLocking.deposit(newToken.address, tokensPerUser, { from: userAddress2 });
-        await tokenLocking.deposit(newToken.address, tokensPerUser, { from: userAddress3 });
+        await tokenLocking.deposit(newToken.address, tokensPerUser, false, { from: userAddress1 });
+        await tokenLocking.deposit(newToken.address, tokensPerUser, false, { from: userAddress2 });
+        await tokenLocking.deposit(newToken.address, tokensPerUser, false, { from: userAddress3 });
         await forwardTime(1, this);
 
         await newColony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, payoutToken.address);

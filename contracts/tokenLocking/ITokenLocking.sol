@@ -53,12 +53,26 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
   /// @param _token Address of the token to deposit
   /// @param _amount Amount to deposit
-  function deposit(address _token, uint256 _amount) public;
+  /// @param _force Pass true to forcibly unlock the token
+  function deposit(address _token, uint256 _amount, bool _force) public;
+
+  /// @notice Claim any pending tokens. Can only be called if user tokens are not locked.
+  /// @param _token Address of the token to withdraw from
+  /// @param _force Pass true to forcibly unlock the token
+  function claim(address _token, bool _force) public;
+
+  /// @notice Transfer tokens to a recipient's pending balance. Can only be called if user tokens are not locked.
+  /// @param _token Address of the token to transfer
+  /// @param _amount Amount to transfer
+  /// @param _recipient User to receive the tokens
+  /// @param _force Pass true to forcibly unlock the token
+  function transfer(address _token, uint256 _amount, address _recipient, bool _force) public;
 
   /// @notice Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
   /// @param _token Address of the token to withdraw from
   /// @param _amount Amount to withdraw
-  function withdraw(address _token, uint256 _amount) public;
+  /// @param _force Pass true to forcibly unlock the token
+  function withdraw(address _token, uint256 _amount, bool _force) public;
 
   /// @notice Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
   /// @dev While public, it can only be called successfully by the current ReputationMiningCycle.

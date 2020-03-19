@@ -20,6 +20,19 @@ Allow the _colony to obligate some amount of tokens as a stake.
 |_amount|uint256|Amount of that colony's internal token up to which we are willing to be obligated.
 
 
+### `claim`
+
+Claim any pending tokens. Can only be called if user tokens are not locked.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to withdraw from
+|_force|bool|Pass true to forcibly unlock the token
+
+
 ### `deobligateStake`
 
 Deobligate the user some amount of tokens, releasing the stake. Can only be called by a colony.
@@ -44,6 +57,7 @@ Deposit `_amount` of colony tokens. Can only be called if user tokens are not lo
 |---|---|---|
 |_token|address|Address of the token to deposit
 |_amount|uint256|Amount to deposit
+|_force|bool|Pass true to forcibly unlock the token
 
 
 ### `getColonyNetwork`
@@ -178,6 +192,21 @@ Slash some amount of tokens. Can only be called by a colony.
 |_beneficiary|address|Recipient of the slashed tokens (pass 0x0 to burn).
 
 
+### `transfer`
+
+Transfer tokens to a recipient's pending balance. Can only be called if user tokens are not locked.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to transfer
+|_amount|uint256|Amount to transfer
+|_recipient|address|User to receive the tokens
+|_force|bool|Pass true to forcibly unlock the token
+
+
 ### `unlockTokenForUser`
 
 Increments the lock counter to `_lockId` for the `_user` if user's lock count is less than `_lockId` by 1. Can only be called by a colony.
@@ -203,3 +232,4 @@ Withdraw `_amount` of deposited tokens. Can only be called if user tokens are no
 |---|---|---|
 |_token|address|Address of the token to withdraw from
 |_amount|uint256|Amount to withdraw
+|_force|bool|Pass true to forcibly unlock the token

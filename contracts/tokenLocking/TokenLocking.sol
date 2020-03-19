@@ -39,8 +39,11 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     _;
   }
 
-  modifier tokenNotLocked(address _token) {
-    if (userLocks[_token][msg.sender].balance > 0) {
+  modifier tokenNotLocked(address _token, bool _force) {
+    if (_force) {
+      userLocks[_token][msg.sender].lockCount = totalLockCount[_token];
+    }
+    if (userLocks[_token][msg.sender].balance > 0 || userLocks[_token][msg.sender].pendingBalance > 0) {
       require(userLocks[_token][msg.sender].lockCount == totalLockCount[_token], "colony-token-locking-token-locked");
     }
     _;
@@ -97,10 +100,8 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     userLocks[_token][msg.sender].lockCount = _lockId;
   }
 
-  uint256 constant UINT192_MAX = 2**192 - 1; // Used for updating the deposit timestamp
-
-  function deposit(address _token, uint256 _amount) public
-  tokenNotLocked(_token)
+  function deposit(address _token, uint256 _amount, bool _force) public
+  tokenNotLocked(_token, _force)
   {
     require(_amount > 0, "colony-token-locking-invalid-amount");
     require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
@@ -108,19 +109,46 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     Lock storage lock = userLocks[_token][msg.sender];
     uint256 newAmount = add(lock.balance, _amount);
     uint256 newTimestamp = getNewTimestamp(lock.balance, _amount, lock.timestamp, now);
-    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], newAmount, newTimestamp);
+    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], newAmount, newTimestamp, lock.pendingBalance);
 
-    emit UserTokenDeposited(_token, msg.sender, newAmount, newTimestamp);
+    emit UserTokenDeposited(_token, msg.sender, lock.balance, lock.timestamp);
   }
 
-  function withdraw(address _token, uint256 _amount) public
-  tokenNotLocked(_token)
+  function claim(address _token, bool _force) public
+  tokenNotLocked(_token, _force)
+  {
+    Lock storage lock = userLocks[_token][msg.sender];
+    require(lock.pendingBalance > 0, "colony-token-locking-no-pending");
+
+    lock.timestamp = getNewTimestamp(lock.balance, lock.pendingBalance, lock.timestamp, now);
+    lock.balance = add(lock.balance, lock.pendingBalance);
+    lock.pendingBalance = 0;
+
+    emit UserTokenClaimed(_token, msg.sender, lock.balance, lock.timestamp);
+  }
+
+  function transfer(address _token, uint256 _amount, address _recipient, bool _force) public
+  tokenNotLocked(_token, _force)
   hashNotSubmitted(_token)
   {
     require(_amount > 0, "colony-token-locking-invalid-amount");
 
-    userLocks[_token][msg.sender].balance = sub(userLocks[_token][msg.sender].balance, _amount);
+    Lock storage userLock = userLocks[_token][msg.sender];
+    Lock storage recipientLock = userLocks[_token][_recipient];
+    userLock.balance = sub(userLock.balance, _amount);
+    recipientLock.pendingBalance = add(recipientLock.pendingBalance, _amount);
 
+    emit UserTokenTransferred(_token, msg.sender, _recipient, _amount);
+  }
+
+  function withdraw(address _token, uint256 _amount, bool _force) public
+  tokenNotLocked(_token, _force)
+  hashNotSubmitted(_token)
+  {
+    require(_amount > 0, "colony-token-locking-invalid-amount");
+
+    Lock storage lock = userLocks[_token][msg.sender];
+    lock.balance = sub(lock.balance, _amount);
     require(ERC20Extended(_token).transfer(msg.sender, _amount), "colony-token-locking-transfer-failed");
 
     emit UserTokenWithdrawn(_token, msg.sender, _amount);
@@ -174,8 +202,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     Lock storage userLock = userLocks[token][_user];
     Lock storage beneficiaryLock = userLocks[token][_beneficiary];
     userLock.balance = sub(userLock.balance, _amount);
-    beneficiaryLock.timestamp = getNewTimestamp(beneficiaryLock.balance, _amount, beneficiaryLock.timestamp, userLock.timestamp);
-    beneficiaryLock.balance = add(beneficiaryLock.balance, _amount);
+    beneficiaryLock.pendingBalance = add(beneficiaryLock.pendingBalance, _amount);
   }
 
   function getTotalLockCount(address _token) public view returns (uint256) {
@@ -187,6 +214,8 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   }
 
   // Internal functions
+
+  uint256 constant UINT192_MAX = 2**192 - 1; // Used for updating the deposit timestamp
 
   function getNewTimestamp(uint256 _prevWeight, uint256 _currWeight, uint256 _prevTime, uint256 _currTime) internal pure returns (uint256) {
     uint256 prevWeight = _prevWeight;
