@@ -43,9 +43,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     if (_force) {
       userLocks[_token][msg.sender].lockCount = totalLockCount[_token];
     }
-    if (userLocks[_token][msg.sender].balance > 0 || userLocks[_token][msg.sender].pendingBalance > 0) {
-      require(userLocks[_token][msg.sender].lockCount == totalLockCount[_token], "colony-token-locking-token-locked");
-    }
+    require(userLocks[_token][msg.sender].lockCount == totalLockCount[_token], "colony-token-locking-token-locked");
     _;
   }
 
@@ -103,13 +101,11 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   function deposit(address _token, uint256 _amount, bool _force) public
   tokenNotLocked(_token, _force)
   {
-    require(_amount > 0, "colony-token-locking-invalid-amount");
+    Lock storage lock = userLocks[_token][msg.sender];
     require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
 
-    Lock storage lock = userLocks[_token][msg.sender];
-    uint256 newAmount = add(lock.balance, _amount);
-    uint256 newTimestamp = getNewTimestamp(lock.balance, _amount, lock.timestamp, now);
-    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], newAmount, newTimestamp, lock.pendingBalance);
+    lock.timestamp = getNewTimestamp(lock.balance, _amount, lock.timestamp, now);
+    lock.balance = add(lock.balance, _amount);
 
     emit UserTokenDeposited(_token, msg.sender, lock.balance, lock.timestamp);
   }
@@ -118,7 +114,6 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   tokenNotLocked(_token, _force)
   {
     Lock storage lock = userLocks[_token][msg.sender];
-    require(lock.pendingBalance > 0, "colony-token-locking-no-pending");
 
     lock.timestamp = getNewTimestamp(lock.balance, lock.pendingBalance, lock.timestamp, now);
     lock.balance = add(lock.balance, lock.pendingBalance);
@@ -128,13 +123,12 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   }
 
   function transfer(address _token, uint256 _amount, address _recipient, bool _force) public
-  tokenNotLocked(_token, _force)
   hashNotSubmitted(_token)
+  tokenNotLocked(_token, _force)
   {
-    require(_amount > 0, "colony-token-locking-invalid-amount");
-
     Lock storage userLock = userLocks[_token][msg.sender];
     Lock storage recipientLock = userLocks[_token][_recipient];
+
     userLock.balance = sub(userLock.balance, _amount);
     recipientLock.pendingBalance = add(recipientLock.pendingBalance, _amount);
 
@@ -142,13 +136,12 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   }
 
   function withdraw(address _token, uint256 _amount, bool _force) public
-  tokenNotLocked(_token, _force)
   hashNotSubmitted(_token)
+  tokenNotLocked(_token, _force)
   {
-    require(_amount > 0, "colony-token-locking-invalid-amount");
-
     Lock storage lock = userLocks[_token][msg.sender];
     lock.balance = sub(lock.balance, _amount);
+
     require(ERC20Extended(_token).transfer(msg.sender, _amount), "colony-token-locking-transfer-failed");
 
     emit UserTokenWithdrawn(_token, msg.sender, _amount);

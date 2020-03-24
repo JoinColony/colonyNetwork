@@ -309,7 +309,10 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MINER1 });
 
       const userLock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-      await checkErrorRevert(tokenLocking.withdraw(clnyToken.address, userLock.balance, { from: MINER1 }), "colony-token-locking-hash-submitted");
+      await checkErrorRevert(
+        tokenLocking.withdraw(clnyToken.address, userLock.balance, false, { from: MINER1 }),
+        "colony-token-locking-hash-submitted"
+      );
     });
 
     it("should allow a new reputation hash to be set if only one was submitted", async () => {

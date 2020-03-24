@@ -621,7 +621,7 @@ contract("Colony Reward Payouts", (accounts) => {
       const payoutId = logs[0].args.rewardPayoutId;
 
       await token.approve(tokenLocking.address, userTokens, { from: userAddress1 });
-      await tokenLocking.deposit(token.address, userTokens, false, { from: userAddress1 });
+      await tokenLocking.deposit(token.address, userTokens, true, { from: userAddress1 });
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
