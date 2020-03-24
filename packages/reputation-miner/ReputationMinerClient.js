@@ -11,6 +11,14 @@ const miningCycleDuration = ethers.BigNumber.from(60).mul(60).mul(24); // 24 hou
 const MINUTE_IN_SECONDS = 60;
 const DAY_IN_SECONDS = 3600 * 24;
 const constant = ethers.BigNumber.from(2).pow(256).sub(1).div(miningCycleDuration);
+const disputeStages = {
+ CONFIRM_JRH: 0,
+ BINARY_SEARCH_RESPONSE: 1,
+ BINARY_SEARCH_CONFIRM: 2,
+ RESPOND_TO_CHALLENGE: 3,
+ INVALIDATE_HASH: 4,
+ CONFIRM_NEW_HASH: 5
+}
 
 class ReputationMinerClient {
   /**
@@ -367,8 +375,10 @@ class ReputationMinerClient {
 
         // If we're here, we do have an opponent.
         // Has our opponent timed out?
-        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600);
-        if (opponentTimeout){
+        // TODO: Remove these magic numbers
+        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600 + 600);
+        const responsePossible = await repCycle.getResponsePossible(disputeStages.INVALIDATE_HASH, oppEntry.lastResponseTimestamp);
+        if (opponentTimeout && responsePossible){
           // If so, invalidate them.
           await this.updateGasEstimate('safeLow');
           await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
@@ -380,8 +390,12 @@ class ReputationMinerClient {
         // Our opponent hasn't timed out yet. We should check if we can respond to something though
         // 1. Do we still need to confirm JRH?
         if (submission.jrhNLeaves.eq(0)) {
-          await this.updateGasEstimate('fast');
-          await this._miner.confirmJustificationRootHash();
+          const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
+
+          if (responsePossible){
+            await this.updateGasEstimate('fast');
+            await this._miner.confirmJustificationRootHash();
+          }
         // 2. Are we in the middle of a binary search?
         // Check our opponent has confirmed their JRH, and the binary search is ongoing.
         } else if (!oppSubmission.jrhNLeaves.eq(0) && !entry.upperBound.eq(entry.lowerBound)){
@@ -389,8 +403,11 @@ class ReputationMinerClient {
           // We can respond if neither of us have responded to this stage yet or
           // if they have responded already
           if (oppEntry.challengeStepCompleted.gte(entry.challengeStepCompleted)) {
-            await this.updateGasEstimate('fast');
-            await this._miner.respondToBinarySearchForChallenge();
+            const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_RESPONSE, entry.lastResponseTimestamp);
+            if (responsePossible){
+              await this.updateGasEstimate('fast');
+              await this._miner.respondToBinarySearchForChallenge();
+            }
           }
         // 3. Are we at the end of a binary search and need to confirm?
         // Check that our opponent has finished the binary search, check that we have, and check we've not confirmed yet
@@ -400,8 +417,11 @@ class ReputationMinerClient {
           ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNLeaves)
         )
         {
-          await this.updateGasEstimate('fast');
-          await this._miner.confirmBinarySearchResult();
+          const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
+          if (responsePossible){
+            await this.updateGasEstimate('fast');
+            await this._miner.confirmBinarySearchResult();
+          }
         // 4. Is the binary search confirmed, and we need to respond to challenge?
         // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
         } else if (
@@ -410,17 +430,27 @@ class ReputationMinerClient {
             ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNLeaves)
           )
         {
-          await this.updateGasEstimate('fast');
-          await this._miner.respondToChallenge();
+          const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
+          if (responsePossible){
+            await this.updateGasEstimate('fast');
+            await this._miner.respondToChallenge();
+          }
         }
       }
 
       if (lastHashStanding && ethers.BigNumber.from(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
         // If the submission window is closed and we are the last hash, confirm it
-        this.best12Submissions = []; // Clear the submissions
-        this.submissionIndex = 0;
-        await this.updateGasEstimate('safeLow');
-        await this.confirmEntry();
+        const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
+        const disputeRound = await repCycle.getDisputeRound(round);
+        const entry = disputeRound[index];
+
+        const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_NEW_HASH, entry.lastResponseTimestamp);
+        if (responsePossible){
+          this.best12Submissions = []; // Clear the submissions
+          this.submissionIndex = 0;
+          await this.updateGasEstimate('safeLow');
+          await this.confirmEntry();
+        }
       }
       this.endDoBlockChecks();
     } catch (err) {

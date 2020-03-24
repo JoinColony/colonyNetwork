@@ -115,4 +115,70 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
         y := add(y, mul(256, gt(arg, 0x8000000000000000000000000000000000000000000000000000000000000000)))
     }
   }
+
+  uint256 constant UINT256_MAX = 2**256 - 1;
+  uint256 constant SUBMITTER_ONLY_WINDOW = 60*10;
+  uint256 constant Y = UINT256_MAX / SUBMITTER_ONLY_WINDOW;
+
+  function responsePossible(disputeStages stage, uint256 since) internal view returns (bool) {
+    if (now < since) return false;
+    if (now - since < SUBMITTER_ONLY_WINDOW) {
+      // require user made a submission
+      if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0x00)){
+        return false;
+      }
+      uint256 target = (now - since) * Y;
+      if (uint256(keccak256(abi.encodePacked(msg.sender, stage))) > target){
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function nextPowerOfTwoInclusive(uint256 v) internal pure returns (uint) { // solium-disable-line security/no-assign-params
+    // Returns the next power of two, or v if v is already a power of two.
+    // Doesn't work for zero.
+    v = sub(v, 1);
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v |= v >> 32;
+    v |= v >> 64;
+    v |= v >> 128;
+    v = add(v, 1);
+    return v;
+  }
+
+  function expectedProofLength(uint256 nNodes, uint256 node) internal pure returns (uint256) { // solium-disable-line security/no-assign-params
+    nNodes -= 1;
+    uint256 nextPowerOfTwo = nextPowerOfTwoInclusive(nNodes + 1);
+    uint256 layers = 0;
+    while (nNodes != 0 && (node+1 > nextPowerOfTwo / 2)) {
+      nNodes -= nextPowerOfTwo/2;
+      node -= nextPowerOfTwo/2;
+      layers += 1;
+      nextPowerOfTwo = nextPowerOfTwoInclusive(nNodes + 1);
+    }
+    while (nextPowerOfTwo > 1) {
+      layers += 1;
+      nextPowerOfTwo >>= 1;
+    }
+    return layers;
+  }
+
+  function opponentIdx(uint256 _idx) internal pure returns (uint256) {
+    return _idx % 2 == 1 ? _idx - 1 : _idx + 1;
+  }
+
+  function expectedBranchMask(uint256 nNodes, uint256 node) public pure returns (uint256) {
+    // Gets the expected branchmask for a patricia tree which has nNodes, with keys from 0 to nNodes -1
+    // i.e. the tree is 'full' - there are no missing nodes
+    uint256 mask = sub(nNodes, 1); // Every branchmask in a full tree has at least these 1s set
+    uint256 xored = mask ^ node; // Where do mask and node differ?
+    // Set every bit in the mask from the first bit where they differ to 1
+    uint256 remainderMask = sub(nextPowerOfTwoInclusive(add(xored, 1)), 1);
+    return mask | remainderMask;
+  }
 }

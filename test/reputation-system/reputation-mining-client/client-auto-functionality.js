@@ -5,10 +5,12 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import TruffleLoader from "../../../packages/reputation-miner/TruffleLoader";
-import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../../../helpers/constants";
+
+import { DEFAULT_STAKE, MINING_CYCLE_DURATION, SUBMITTER_ONLY_WINDOW } from "../../../helpers/constants";
 import {
   getActiveRepCycle,
   forwardTime,
+  forwardTimeTo,
   advanceMiningCycleNoContest,
   checkSuccessEthers,
   checkErrorRevertEthers,
@@ -381,21 +383,28 @@ process.env.SOLIDITY_COVERAGE
           });
 
           await badClient.submitRootHash();
+          let disputeRound = await repCycle.getDisputeRound(0);
+          const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
+          const goodIndex = badIndex.add(1).mod(2);
+
+          let badEntry = disputeRound[badIndex];
+          let goodEntry = disputeRound[goodIndex];
 
           // Forward time again so clients can start responding to challenges
-          await forwardTime(MINING_CYCLE_DURATION / 2, this);
+          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp));
+          await noEventSeen(repCycleEthers, 'JustificationRootHashConfirmed');
+
+          await forwardTime(SUBMITTER_ONLY_WINDOW, this)
 
           await goodClientConfirmedJRH;
           await badClient.confirmJustificationRootHash();
 
-          const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
-          const goodIndex = badIndex.add(1).mod(2);
-          console.log(goodIndex, badIndex);
-          let disputeRound = await repCycle.getDisputeRound(0);
-          let badEntry = disputeRound[badIndex];
-          let goodEntry = disputeRound[goodIndex];
+          disputeRound = await repCycle.getDisputeRound(0);
+          badEntry = disputeRound[badIndex];
+          goodEntry = disputeRound[goodIndex];
 
           while (badEntry.upperBound !== badEntry.lowerBound) {
+            await forwardTime(SUBMITTER_ONLY_WINDOW, this);
             if (parseInt(badEntry.challengeStepCompleted, 10) <= parseInt(goodEntry.challengeStepCompleted, 10)) {
               await badClient.respondToBinarySearchForChallenge();
             }
@@ -403,6 +412,14 @@ process.env.SOLIDITY_COVERAGE
             badEntry = disputeRound[badIndex];
             goodEntry = disputeRound[goodIndex];
           }
+
+          await noEventSeen(repCycleEthers, 'BinarySearchConfirmed');
+
+          disputeRound = await repCycle.getDisputeRound(0);
+          badEntry = disputeRound[badIndex];
+          goodEntry = disputeRound[goodIndex];
+
+          await forwardTime(SUBMITTER_ONLY_WINDOW, this);
 
           await badClient.confirmBinarySearchResult();
 
@@ -427,12 +444,20 @@ process.env.SOLIDITY_COVERAGE
             }, 30000);
           });
 
-          // Forward time
-          await forwardTime(600, this);
+          disputeRound = await repCycle.getDisputeRound(0);
+          badEntry = disputeRound[badIndex];
+          goodEntry = disputeRound[goodIndex];
+
+          const noChallengeCompleted = noEventSeen(repCycleEthers, 'ChallengeCompleted');
+          const noHashInvalidated = noEventSeen(repCycleEthers, 'HashInvalidated');
+
+          await noChallengeCompleted;
+          await noHashInvalidated;
+
+          await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
           // Good client should now realise it can timeout bad submission
-
           await goodClientInvalidateOpponent;
-
           // Add a listener to process log for when a new cycle starts, which won't happen yet because the submission window is still open
 
           const newCycleStart = new Promise(function (resolve, reject) {
@@ -454,5 +479,17 @@ process.env.SOLIDITY_COVERAGE
           const acceptedRootHash = await colonyNetwork.getReputationRootHash();
           assert.equal(acceptedRootHash, rootHash);
         });
+
+        function noEventSeen(contract, event) {
+          return new Promise(function(resolve,reject) {
+            contract.on(event, async() => {
+              reject(new Error(`ERROR: The event ${event} was unexpectedly seen`))
+            });
+            setTimeout(() => {
+              resolve()
+            }, 5000);
+          })
+        }
+
       });
     });

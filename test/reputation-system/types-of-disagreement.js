@@ -25,7 +25,7 @@ import {
   setupMetaColonyWithLockedCLNYToken,
 } from "../../helpers/test-data-generator";
 
-import { INT128_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION } from "../../helpers/constants";
+import { INT128_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
@@ -135,11 +135,12 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       const disputedEntry = disputedRound[index1];
       const submission = await repCycle.getReputationHashSubmission(goodClient.minerAddress);
       expect(submission.jrhNLeaves).to.be.zero;
-      await forwardTime(10, this); // This is just to ensure that the timestamps checked below will be different if JRH was submitted.
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
 
       await goodClient.confirmJustificationRootHash();
 
       // Check that we can't re-submit a JRH
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await checkErrorRevertEthers(goodClient.confirmJustificationRootHash(), "colony-reputation-jrh-hash-already-verified");
 
       const submissionAfterJRHConfirmed = await repCycle.getReputationHashSubmission(goodClient.minerAddress);
@@ -156,6 +157,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -197,6 +199,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
 
       const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
       expect(nUniqueSubmittedHashes).to.eq.BN(2);
@@ -221,6 +224,8 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       expect(badDisputedEntry.lowerBound).to.be.zero;
       expect(badDisputedEntry.upperBound).to.eq.BN(28);
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
       await goodClient.respondToBinarySearchForChallenge();
       round0 = await repCycle.getDisputeRound(0);
       [goodDisputedEntry, badDisputedEntry] = round0;
@@ -239,6 +244,8 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       expect(badDisputedEntry.lowerBound).to.be.zero;
       expect(badDisputedEntry.upperBound).to.eq.BN(15);
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       round0 = await repCycle.getDisputeRound(0);
@@ -248,6 +255,8 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       expect(badDisputedEntry.lowerBound).to.eq.BN(8);
       expect(badDisputedEntry.upperBound).to.eq.BN(15);
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       round0 = await repCycle.getDisputeRound(0);
@@ -257,6 +266,8 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       expect(badDisputedEntry.lowerBound).to.eq.BN(12);
       expect(badDisputedEntry.upperBound).to.eq.BN(15);
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       round0 = await repCycle.getDisputeRound(0);
@@ -265,6 +276,8 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       expect(goodDisputedEntry.upperBound).to.eq.BN(13);
       expect(badDisputedEntry.lowerBound).to.eq.BN(12);
       expect(badDisputedEntry.upperBound).to.eq.BN(13);
+
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
@@ -275,10 +288,14 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       expect(badDisputedEntry.lowerBound).to.eq.BN(13);
       expect(badDisputedEntry.upperBound).to.eq.BN(13);
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
       // TODO: Split off in to  another test here, but can't be bothered to refactor right now.
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
       await goodClient.respondToChallenge();
       await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-increased-reputation-value-incorrect");
 
@@ -312,23 +329,28 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
       await runBinarySearch(goodClient, badClient);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
 
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
 
       await goodClient.respondToChallenge();
       await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-challenge-already-responded");
       await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-increased-reputation-value-incorrect");
 
-      await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-less-challenge-rounds-completed");
+      await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-less-challenge-rounds-completed", { from: MINER1 });
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
       await repCycle.confirmNewHash(1);
 
       const rightHash = await goodClient.getRootHash();
@@ -464,12 +486,15 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
       await goodClient.confirmJustificationRootHash();
       await checkErrorRevertEthers(badClient.confirmJustificationRootHash(), "colony-reputation-mining-invalid-jrh-proof-1-length");
 
       // Cleanup
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -492,12 +517,15 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
       await goodClient.confirmJustificationRootHash();
       await checkErrorRevertEthers(badClient.confirmJustificationRootHash(), "colony-reputation-mining-invalid-jrh-proof-1");
 
       // Cleanup
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -544,14 +572,17 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await badClient.initialise(colonyNetwork.address);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
       await runBinarySearch(goodClient, badClient);
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await goodClient.respondToChallenge();
       await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-uid-changed-for-existing-reputation");
 
@@ -565,6 +596,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.confirmNewHash(1);
     });
 
