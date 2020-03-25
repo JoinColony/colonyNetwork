@@ -18,6 +18,7 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
+import "../ERC20Extended.sol";
 import "../IColony.sol";
 import "../IColonyNetwork.sol";
 import "../ITokenLocking.sol";
@@ -26,6 +27,15 @@ import "../../lib/dappsys/math.sol";
 
 
 contract VotingReputation is DSMath, PatriciaTreeProofs {
+
+  // Events
+  event PollCreated(uint256 indexed pollId, uint256 indexed skillId);
+  event PollStaked(uint256 indexed pollId, address indexed staker, bool indexed side, uint256 amount);
+  event PollVoteSubmitted(uint256 indexed pollId, address indexed voter);
+  event PollVoteRevealed(uint256 indexed pollId, address indexed voter, bool indexed side);
+  event PollExecuted(uint256 indexed pollId);
+  event PollRewardClaimed(uint256 indexed pollId, address indexed staker, bool indexed side, uint256 amount);
+  event PollColonyRewardClaimed(uint256 indexed pollId, uint256 amount);
 
   // Constants
   uint256 constant NAY = 0;
@@ -62,6 +72,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 skillId;
     bytes32 rootHash;
     uint256 skillRep;
+    uint256 voterComp;
     uint256[2] stakes; // [nay, yay]
     uint256[2] votes; // [nay, yay]
     bytes action;
@@ -155,32 +166,15 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     if (polls[_pollId].stakes[NAY] == getRequiredStake(_pollId)) {
       tokenLocking.claim(token, true);
     }
-  }
 
-  function executePoll(uint256 _pollId) public returns (bool) {
-    require(getPollState(_pollId) != PollState.Failed, "voting-rep-poll-failed");
-    require(getPollState(_pollId) != PollState.Executed, "voting-rep-poll-already-executed");
-    require(getPollState(_pollId) == PollState.Closed, "voting-rep-poll-not-closed");
-
-    Poll storage poll = polls[_pollId];
-    poll.executed = true;
-
-    if (getSig(poll.action) == CHANGE_FUNC) {
-      bytes32 slot = encodeSlot(poll.action);
-      uint256 votePower = add(poll.votes[0], poll.votes[1]);
-      require(pastVotes[slot] < votePower, "voting-rep-insufficient-vote-power");
-
-      pastVotes[slot] = votePower;
-    }
-
-    if (poll.stakes[NAY] < poll.stakes[YAY] || poll.votes[NAY] < poll.votes[YAY]) {
-      return executeCall(address(colony), poll.action);
-    }
+    emit PollStaked(_pollId, msg.sender, _vote, _amount);
   }
 
   function submitVote(uint256 _pollId, bytes32 _voteSecret) public {
     require(getPollState(_pollId) == PollState.Open, "voting-rep-poll-not-open");
     voteSecrets[msg.sender][_pollId] = _voteSecret;
+
+    emit PollVoteSubmitted(_pollId, msg.sender);
   }
 
   function revealVote(
@@ -215,7 +209,34 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 pctReputation = wdiv(userReputation, poll.skillRep);
     uint256 totalStake = add(poll.stakes[YAY], poll.stakes[NAY]);
     uint256 voterReward = wmul(wmul(pctReputation, totalStake), VOTER_REWARD_PCT);
+
+    poll.voterComp = sub(poll.voterComp, voterReward);
     tokenLocking.transfer(token, voterReward, msg.sender, true);
+
+    emit PollVoteRevealed(_pollId, msg.sender, _vote);
+  }
+
+  function executePoll(uint256 _pollId) public returns (bool) {
+    require(getPollState(_pollId) != PollState.Failed, "voting-rep-poll-failed");
+    require(getPollState(_pollId) != PollState.Executed, "voting-rep-poll-already-executed");
+    require(getPollState(_pollId) == PollState.Closed, "voting-rep-poll-not-closed");
+
+    Poll storage poll = polls[_pollId];
+    poll.executed = true;
+
+    if (getSig(poll.action) == CHANGE_FUNC) {
+      bytes32 slot = encodeSlot(poll.action);
+      uint256 votePower = add(poll.votes[0], poll.votes[1]);
+      require(pastVotes[slot] < votePower, "voting-rep-insufficient-vote-power");
+
+      pastVotes[slot] = votePower;
+    }
+
+    if (poll.stakes[NAY] < poll.stakes[YAY] || poll.votes[NAY] < poll.votes[YAY]) {
+      return executeCall(address(colony), poll.action);
+    }
+
+    emit PollExecuted(_pollId);
   }
 
   function claimReward(uint256 _pollId, bool _vote) public {
@@ -234,6 +255,20 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     delete stakers[_pollId][msg.sender][_vote];
     tokenLocking.transfer(token, stakerReward, msg.sender, true);
+
+    emit PollRewardClaimed(_pollId, msg.sender,_vote, stakerReward);
+  }
+
+  function claimRewardForColony(uint256 _pollId) public {
+    require(getPollState(_pollId) == PollState.Executed, "voting-rep-not-executed");
+
+    uint256 voterComp = polls[_pollId].voterComp;
+    delete polls[_pollId].voterComp;
+
+    tokenLocking.withdraw(token, voterComp, true);
+    require(ERC20Extended(token).transfer(address(colony), voterComp), "voting-rep-colony-transfer-failed");
+
+    emit PollColonyRewardClaimed(_pollId, voterComp);
   }
 
   // Public view functions
@@ -299,7 +334,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     polls[pollCount].skillId = _skillId;
     polls[pollCount].rootHash = colonyNetwork.getReputationRootHash();
     polls[pollCount].skillRep = checkReputation(pollCount, address(0x0), _key, _value, _branchMask, _siblings);
+    polls[pollCount].voterComp = wmul(getRequiredStake(pollCount) * 2, VOTER_REWARD_PCT);
     polls[pollCount].action = _action;
+
+    emit PollCreated(pollCount, _skillId);
   }
 
   function getVoteSecret(bytes32 _salt, bool _vote) internal pure returns (bytes32) {

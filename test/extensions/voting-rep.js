@@ -655,5 +655,44 @@ contract("Voting Reputation", accounts => {
     it("cannot claim rewards before a poll is executed", async () => {
       await checkErrorRevert(voting.claimReward(pollId, true, { from: USER0 }), "voting-rep-not-executed");
     });
+
+    it("can claim unpaid voter rewards for colony", async () => {
+      await voting.stakePoll(pollId, 1, 0, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakePoll(pollId, 1, 0, 1, false, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.submitVote(pollId, soliditySha3(SALT, true), { from: USER0 });
+      await forwardTime(VOTE_WINDOW, this);
+      await voting.revealVote(pollId, SALT, true, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await forwardTime(REVEAL_WINDOW, this);
+      await voting.executePoll(pollId);
+
+      const colonyBalancePrev = await token.balanceOf(colony.address);
+      await voting.claimRewardForColony(pollId);
+      const colonyBalancePost = await token.balanceOf(colony.address);
+
+      // Since USER1 didn't vote and has 2/3 of the reputation
+      const expectedReward = REQUIRED_STAKE.muln(2).divn(10).divn(3).muln(2); // eslint-disable-line prettier/prettier
+      expect(colonyBalancePost.sub(colonyBalancePrev)).to.eq.BN(expectedReward);
+    });
+
+    it("canot claim unpaid voter rewards for colony twice", async () => {
+      await voting.stakePoll(pollId, 1, 0, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakePoll(pollId, 1, 0, 1, false, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.submitVote(pollId, soliditySha3(SALT, true), { from: USER0 });
+      await forwardTime(VOTE_WINDOW, this);
+      await voting.revealVote(pollId, SALT, true, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await forwardTime(REVEAL_WINDOW, this);
+      await voting.executePoll(pollId);
+
+      await voting.claimRewardForColony(pollId);
+      // Already claimed it
+
+      const colonyBalancePrev = await token.balanceOf(colony.address);
+      await voting.claimRewardForColony(pollId);
+      const colonyBalancePost = await token.balanceOf(colony.address);
+
+      expect(colonyBalancePost.sub(colonyBalancePrev)).to.be.zero;
+    });
   });
 });
