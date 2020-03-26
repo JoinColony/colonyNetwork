@@ -6,7 +6,7 @@ job_common: &job_common
   working_directory: ~/colonyNetwork
 job_python: &job_python
   docker:
-    - image: circleci/python:3.7.3-stretch-node
+    - image: circleci/python:3.8.0b1-stretch-node
   working_directory: ~/colonyNetwork
 step_save_cache: &step_save_cache
   save_cache:
