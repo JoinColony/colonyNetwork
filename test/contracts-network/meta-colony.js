@@ -12,13 +12,13 @@ import {
   makeTask,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
-  setupRandomColony
+  setupRandomColony,
 } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-contract("Meta Colony", accounts => {
+contract("Meta Colony", (accounts) => {
   const MANAGER = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
 
@@ -415,7 +415,7 @@ contract("Meta Colony", accounts => {
         functionName: "setTaskSkill",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, 6]
+        args: [taskId, 6],
       });
 
       const task = await colony.getTask(taskId);

@@ -8,38 +8,38 @@ const INTERFACES = [
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "IColony.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IColony.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IColony.md")
+    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IColony.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "IColonyNetwork.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IColonyNetwork.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IColonyNetwork.md")
+    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IColonyNetwork.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "IEtherRouter.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IEtherRouter.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IEtherRouter.md")
+    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IEtherRouter.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "IMetaColony.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IMetaColony.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IMetaColony.md")
+    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IMetaColony.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "IRecovery.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IRecovery.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IRecovery.md")
+    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IRecovery.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "IReputationMiningCycle.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IReputationMiningCycle.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IReputationMiningCycle.md")
+    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IReputationMiningCycle.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "ITokenLocking.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_ITokenLocking.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_ITokenLocking.md")
-  }
+    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_ITokenLocking.md"),
+  },
 ];
 
 const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
@@ -48,7 +48,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
   const ast = parser.parse(contractFileString);
 
-  const contract = ast.children.find(child => {
+  const contract = ast.children.find((child) => {
     return child.type === "ContractDefinition";
   });
 
@@ -68,17 +68,17 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
   console.log(`Generating ${contract.name} documentation...`);
 
-  contract.subNodes.forEach(method => {
+  contract.subNodes.forEach((method) => {
     // Set the initial natspec values
     const natspec = {
       notice: null,
       dev: null,
       params: [],
-      returns: []
+      returns: [],
     };
 
     // Get the index of the line in which the method is declared
-    let methodLineIndex = contractFileArray.findIndex(line => {
+    let methodLineIndex = contractFileArray.findIndex((line) => {
       const sig = astToSig(method);
       return line.includes(sig);
     });
@@ -86,7 +86,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
     if (methodLineIndex === -1) {
       // If the above failed, fall back to just the function name.
       // This won't work if we overload a function that is defined across multiple lines in the interface
-      methodLineIndex = contractFileArray.findIndex(line => line.includes(`function ${method.name}(`));
+      methodLineIndex = contractFileArray.findIndex((line) => line.includes(`function ${method.name}(`));
     }
 
     // Set the initial value for the natsepc notice
@@ -113,7 +113,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
       // Set natspec notice including additional natspec notice lines
       [, natspec.notice] = contractFileArray[noticeLineIndex].split(" @notice ");
-      additionalNoticeLineIndexes.forEach(index => {
+      additionalNoticeLineIndexes.forEach((index) => {
         natspec.notice += contractFileArray[index].split("///")[1];
       });
 
@@ -141,7 +141,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
         // Set natspec dev including additional natspec dev lines
         [, natspec.dev] = contractFileArray[devLineIndex].split(" @dev ");
-        additionalDevLineIndexes.forEach(index => {
+        additionalDevLineIndexes.forEach((index) => {
           natspec.dev += contractFileArray[index].split("///")[1];
         });
       }
@@ -169,7 +169,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
             // Set natspec param including additional natspec param lines
             let param = contractFileArray[paramLineIndex].split(" @param ")[1];
-            additionalParamLineIndexes.forEach(index => {
+            additionalParamLineIndexes.forEach((index) => {
               param += contractFileArray[index].split("///")[1];
             });
 
@@ -205,7 +205,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
             // Set natspec return including additional natspec return lines
             let param = contractFileArray[returnLineIndex].split(" @return ")[1];
-            additionalReturnLineIndexes.forEach(index => {
+            additionalReturnLineIndexes.forEach((index) => {
               param += contractFileArray[index].split("///")[1];
             });
 
@@ -249,7 +249,7 @@ function printMethods(methods) {
 ## Interface Methods
 ${methods
   .map(
-    method => `
+    (method) => `
 ### \`${method.name}\`\n
 ${method.natspec.notice ? method.natspec.notice : ""}
 ${
@@ -279,7 +279,7 @@ ${printParams(method, method.returnParameters, method.natspec.returns)}`
 
 function astToSig(method) {
   return `function ${method.name}(${method.parameters
-    .map(p => {
+    .map((p) => {
       if (p.typeName.name) {
         return `${p.typeName.name}${p.storageLocation ? ` ${p.storageLocation}` : ""} ${p.name}`;
       }

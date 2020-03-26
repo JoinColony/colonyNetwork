@@ -6,13 +6,13 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const UpdatedColonyNetwork = artifacts.require("UpdatedColonyNetwork");
 
-contract("ColonyNetwork contract upgrade", function() {
+contract("ColonyNetwork contract upgrade", function () {
   let colony1;
   let colony2;
   let colonyNetwork;
   let updatedColonyNetwork;
 
-  before(async function() {
+  before(async function () {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
@@ -28,13 +28,13 @@ contract("ColonyNetwork contract upgrade", function() {
     updatedColonyNetwork = await UpdatedColonyNetwork.at(etherRouter.address);
   });
 
-  describe("when upgrading ColonyNetwork contract", function() {
-    it("should return correct total number of colonies", async function() {
+  describe("when upgrading ColonyNetwork contract", function () {
+    it("should return correct total number of colonies", async function () {
       const updatedColonyCount = await updatedColonyNetwork.getColonyCount();
       assert.equal(3, updatedColonyCount.toNumber());
     });
 
-    it("should return correct colonies by index", async function() {
+    it("should return correct colonies by index", async function () {
       const colonyAddress1 = await updatedColonyNetwork.getColony(2);
       assert.equal(colony1.address, colonyAddress1);
 

@@ -4,7 +4,7 @@ import path from "path";
 
 // Taken from https://gist.github.com/kethinov/6658166#gistcomment-1941504
 const walkSync = (dir, filelist = []) => {
-  fs.readdirSync(dir).forEach(file => {
+  fs.readdirSync(dir).forEach((file) => {
     filelist = fs.statSync(path.join(dir, file)).isDirectory() ? walkSync(path.join(dir, file), filelist) : filelist.concat(path.join(dir, file)); // eslint-disable-line no-param-reassign
   });
   return filelist;
@@ -13,11 +13,11 @@ const walkSync = (dir, filelist = []) => {
 function correctRecoveryModifier(functionDef) {
   const isPrivate = ["private", "internal"].indexOf(functionDef.visibility) > -1;
   const isView = ["view", "pure"].indexOf(functionDef.stateMutability) > -1;
-  const hasModifier = functionDef.modifiers.filter(mod => ["stoppable", "recovery", "always"].indexOf(mod.name) > -1).length > 0;
+  const hasModifier = functionDef.modifiers.filter((mod) => ["stoppable", "recovery", "always"].indexOf(mod.name) > -1).length > 0;
   return isPrivate || isView || hasModifier;
 }
 
-walkSync("./contracts/").forEach(contractName => {
+walkSync("./contracts/").forEach((contractName) => {
   // These contracts don't need to be checked, since they're not used in recovery mode
   // Basically only Colony.sol, ColonyFunding.sol, ColonyTask.sol and ColonyPayment.sol are
   // ColonyNetwork, ColonyNetworkAuction, ColonyNetworkENS, ColonyNetworkMining
@@ -64,7 +64,7 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/TokenLocking.sol",
       "contracts/TokenLockingStorage.sol",
       "contracts/Token.sol", // Imported from colonyToken repo
-      "contracts/TokenAuthority.sol" // Imported from colonyToken repo
+      "contracts/TokenAuthority.sol", // Imported from colonyToken repo
     ].indexOf(contractName) > -1
   ) {
     return;
@@ -79,12 +79,12 @@ walkSync("./contracts/").forEach(contractName => {
 
   const result = parser.parse(src, { tolerant: true });
   // Filters out an unknown number of 'pragmas' that we have.
-  const contract = result.children.filter(child => child.type === "ContractDefinition")[0];
+  const contract = result.children.filter((child) => child.type === "ContractDefinition")[0];
 
   // Check for that all public, non-{view,pure} functions have either stoppable or recovery modifiers.
   contract.subNodes
-    .filter(child => child.type === "FunctionDefinition" && child.name !== "")
-    .forEach(functionDef => {
+    .filter((child) => child.type === "FunctionDefinition" && child.name !== "")
+    .forEach((functionDef) => {
       if (!correctRecoveryModifier(functionDef)) {
         console.log("The contract", contractName, "contains a missing stoppable/recovery modifier in function", functionDef.name, ".");
         process.exit(1);

@@ -19,7 +19,7 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
-contract("Reputation mining - basic functionality", accounts => {
+contract("Reputation mining - basic functionality", (accounts) => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
 

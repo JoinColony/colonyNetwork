@@ -13,7 +13,7 @@ const Resolver = artifacts.require("./Resolver");
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 
 // eslint-disable-next-line no-unused-vars
-module.exports = async function(deployer) {
+module.exports = async function (deployer) {
   // Create a new Colony (version) and setup a new Resolver for it
   const colony = await Colony.new();
   const colonyFunding = await ColonyFunding.new();

@@ -11,7 +11,7 @@ import {
   checkErrorRevert,
   forwardTime,
   getBlockTime,
-  getColonyEditable
+  getColonyEditable,
 } from "../../helpers/test-helper";
 import { WAD, SECONDS_PER_DAY } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken, giveUserCLNYTokens } from "../../helpers/test-data-generator";
@@ -22,7 +22,7 @@ chai.use(bnChai(web3.utils.BN));
 const DutchAuction = artifacts.require("DutchAuction");
 const Token = artifacts.require("Token");
 
-contract("Colony Network Auction", accounts => {
+contract("Colony Network Auction", (accounts) => {
   const BIDDER_1 = accounts[1];
   const BIDDER_2 = accounts[2];
   const BIDDER_3 = accounts[3];
@@ -160,59 +160,59 @@ contract("Colony Network Auction", accounts => {
     const auctionProps = [
       {
         duration: 1000,
-        price: new BN("989583333333333333333333333333333333")
+        price: new BN("989583333333333333333333333333333333"),
       },
       {
         duration: 72000,
-        price: new BN("250000000000000000000000000000000000")
+        price: new BN("250000000000000000000000000000000000"),
       },
       {
         duration: 86400,
-        price: new BN(10).pow(new BN(35))
+        price: new BN(10).pow(new BN(35)),
       },
       {
         duration: 144000,
-        price: new BN("40000000000000000000000000000000000")
+        price: new BN("40000000000000000000000000000000000"),
       },
       {
         duration: 172800,
-        price: new BN(10).pow(new BN(34))
+        price: new BN(10).pow(new BN(34)),
       },
       {
         duration: 259200,
-        price: new BN(10).pow(new BN(33))
+        price: new BN(10).pow(new BN(33)),
       },
       {
         duration: 345600,
-        price: new BN(10).pow(new BN(32))
+        price: new BN(10).pow(new BN(32)),
       },
       {
         duration: 432000,
-        price: new BN(10).pow(new BN(31))
+        price: new BN(10).pow(new BN(31)),
       },
       {
         duration: 518400,
-        price: new BN(10).pow(new BN(30))
+        price: new BN(10).pow(new BN(30)),
       },
       {
         duration: 1382400,
-        price: new BN(10).pow(new BN(20))
+        price: new BN(10).pow(new BN(20)),
       },
       {
         duration: 2937600,
-        price: new BN(100)
+        price: new BN(100),
       },
       {
         duration: 3110400,
-        price: new BN(1)
+        price: new BN(1),
       },
       {
         duration: 3193200, // Crosses the boundary where price of 1 is always returned (for quantity > 1e18)
-        price: new BN(1)
-      }
+        price: new BN(1),
+      },
     ];
 
-    auctionProps.forEach(async auctionProp => {
+    auctionProps.forEach(async (auctionProp) => {
       it(`should correctly calculate price and remaining CLNY amount to end auction at duration ${auctionProp.duration}`, async () => {
         await forwardTime(auctionProp.duration, this);
         const currentPrice = await tokenAuction.price();
@@ -395,151 +395,151 @@ contract("Colony Network Auction", accounts => {
         scenario: 1,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(18)).subn(1),
-        remainingToEndAuction: 99
+        remainingToEndAuction: 99,
       },
       {
         scenario: 2,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(18)).subn(10000),
-        remainingToEndAuction: 98
+        remainingToEndAuction: 98,
       },
       {
         scenario: 3,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(17)).addn(1),
-        remainingToEndAuction: 10
+        remainingToEndAuction: 10,
       },
       {
         scenario: 4,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(17)),
-        remainingToEndAuction: 10
+        remainingToEndAuction: 10,
       },
       {
         scenario: 5,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(15)),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 6,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(9)).addn(58),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 7,
         daysOpen: 34,
         quantity: new BN(1000),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 8,
         daysOpen: 34,
         quantity: new BN(777),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       // Day 35
       {
         scenario: 9,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(18)).subn(1),
-        remainingToEndAuction: 8
+        remainingToEndAuction: 8,
       },
       {
         scenario: 10,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(18)).subn(10000),
-        remainingToEndAuction: 9
+        remainingToEndAuction: 9,
       },
       {
         scenario: 11,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(17)).addn(1),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 12,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(17)),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 13,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(15)),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 14,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(9)).addn(58),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 15,
         daysOpen: 35,
         quantity: new BN(1000),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 16,
         daysOpen: 35,
         quantity: new BN(777),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       // Day 36
       {
         scenario: 17,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(18)).subn(1),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 18,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(18)).subn(10000),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 19,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(17)).addn(1),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 20,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(17)),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 21,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(15)),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 22,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(9)).addn(58),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 23,
         daysOpen: 36,
         quantity: new BN(1000),
-        remainingToEndAuction: 1
+        remainingToEndAuction: 1,
       },
       {
         scenario: 24,
         daysOpen: 36,
         quantity: new BN(777),
-        remainingToEndAuction: 1
-      }
+        remainingToEndAuction: 1,
+      },
     ];
 
-    auctionPropsLowQuantitiesLowPrice.forEach(async auctionProp => {
+    auctionPropsLowQuantitiesLowPrice.forEach(async (auctionProp) => {
       it(`should correctly accept bids at low price and finalise auction for scenario ${auctionProp.scenario}`, async () => {
         const bidAmount = new BN(100000);
         await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount);
@@ -574,32 +574,32 @@ contract("Colony Network Auction", accounts => {
         quantity: new BN(1),
         remainingToEndAuction: WAD,
         finalPrice: WAD.mul(WAD),
-        claimAmount: new BN(1)
+        claimAmount: new BN(1),
       },
       {
         daysOpen: 0,
         quantity: new BN(2),
         remainingToEndAuction: WAD,
         finalPrice: WAD.mul(WAD),
-        claimAmount: new BN(2)
+        claimAmount: new BN(2),
       },
       {
         daysOpen: 0,
         quantity: new BN(200),
         remainingToEndAuction: WAD,
         finalPrice: WAD.mul(WAD),
-        claimAmount: new BN(200)
+        claimAmount: new BN(200),
       },
       {
         daysOpen: 0,
         quantity: new BN(20000000000),
         remainingToEndAuction: WAD.muln(2),
         finalPrice: WAD.mul(WAD),
-        claimAmount: new BN(20000000000)
-      }
+        claimAmount: new BN(20000000000),
+      },
     ];
 
-    auctionPropsLowQuantitiesHighPrice.forEach(async auctionProp => {
+    auctionPropsLowQuantitiesHighPrice.forEach(async (auctionProp) => {
       it(`should correctly accept bids at high price and finalise auction for quantity ${auctionProp.quantity}
       at day open ${auctionProp.daysOpen}`, async () => {
         await otherToken.mint(colonyNetwork.address, auctionProp.quantity);

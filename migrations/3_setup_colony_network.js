@@ -11,7 +11,7 @@ const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
 
 // eslint-disable-next-line no-unused-vars
-module.exports = async function(deployer) {
+module.exports = async function (deployer) {
   const colonyNetwork = await ColonyNetwork.deployed();
   const colonyNetworkMining = await ColonyNetworkMining.deployed();
   const colonyNetworkAuction = await ColonyNetworkAuction.deployed();

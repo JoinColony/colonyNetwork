@@ -16,7 +16,7 @@ import {
   EVALUATOR_ROLE,
   WORKER_ROLE,
   SPECIFICATION_HASH,
-  DELIVERABLE_HASH
+  DELIVERABLE_HASH,
 } from "./constants";
 
 import { getTokenArgs, web3GetAccounts, getChildSkillIndex } from "./test-helper";
@@ -56,7 +56,7 @@ export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HAS
   await colony.setAdministrationRole(1, childSkillIndex, manager, domainId, true);
   const { logs } = await colony.makeTask(1, childSkillIndex, hash, domainId, skillId, dueDate, { from: manager });
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
-  return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
+  return logs.filter((log) => log.event === "TaskAdded")[0].args.taskId;
 }
 
 export async function assignRoles({ colony, taskId, manager, evaluator, worker }) {
@@ -67,7 +67,7 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
       functionName: "removeTaskEvaluatorRole",
       signers: [manager],
       sigTypes: [0],
-      args: [taskId]
+      args: [taskId],
     });
 
     await executeSignedRoleAssignment({
@@ -76,7 +76,7 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
       functionName: "setTaskEvaluatorRole",
       signers: [manager, evaluator],
       sigTypes: [0, 0],
-      args: [taskId, evaluator]
+      args: [taskId, evaluator],
     });
   }
 
@@ -89,7 +89,7 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
     functionName: "setTaskWorkerRole",
     signers,
     sigTypes,
-    args: [taskId, worker]
+    args: [taskId, worker],
   });
 }
 
@@ -130,7 +130,7 @@ export async function setupFundedTask({
   worker,
   managerPayout = MANAGER_PAYOUT,
   evaluatorPayout = EVALUATOR_PAYOUT,
-  workerPayout = WORKER_PAYOUT
+  workerPayout = WORKER_PAYOUT,
 }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
@@ -174,7 +174,7 @@ export async function setupRatedTask({
   evaluatorPayout = EVALUATOR_PAYOUT,
   workerPayout = WORKER_PAYOUT,
   managerRating = MANAGER_RATING,
-  workerRating = WORKER_RATING
+  workerRating = WORKER_RATING,
 }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
@@ -193,7 +193,7 @@ export async function setupRatedTask({
     worker,
     managerPayout,
     evaluatorPayout,
-    workerPayout
+    workerPayout,
   });
 
   await submitDeliverableAndRatings({ colony, taskId, evaluator, worker, managerRating, workerRating });
@@ -214,7 +214,7 @@ export async function setupFinalizedTask({
   evaluatorPayout,
   workerPayout,
   managerRating,
-  workerRating
+  workerRating,
 }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
@@ -235,7 +235,7 @@ export async function setupFinalizedTask({
     evaluatorPayout,
     workerPayout,
     managerRating,
-    workerRating
+    workerRating,
   });
 
   await colony.finalizeTask(taskId);

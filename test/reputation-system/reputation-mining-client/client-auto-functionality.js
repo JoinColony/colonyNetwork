@@ -16,14 +16,14 @@ import {
   mineBlock,
   finishReputationMiningCycle,
   currentBlock,
-  getWaitForNSubmissionsPromise
+  getWaitForNSubmissionsPromise,
 } from "../../../helpers/test-helper";
 import {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
   setupFinalizedTask,
-  fundColonyWithTokens
+  fundColonyWithTokens,
 } from "../../../helpers/test-data-generator";
 import ReputationMinerClient from "../../../packages/reputation-miner/ReputationMinerClient";
 import ReputationMinerTestWrapper from "../../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -33,14 +33,14 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts"),
 });
 
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 process.env.SOLIDITY_COVERAGE
   ? contract.skip
-  : contract("Reputation miner client auto enabled functionality", accounts => {
+  : contract("Reputation miner client auto enabled functionality", (accounts) => {
       const MINER1 = accounts[5];
       const MINER2 = accounts[6];
       const MINER3 = accounts[7];
@@ -73,7 +73,7 @@ process.env.SOLIDITY_COVERAGE
           loader,
           realProviderPort,
           minerAddress: MINER2,
-          useJsTree: true
+          useJsTree: true,
           // dbPath: "./reputationStates_good.sqlite"
         });
         reputationMinerClient = new ReputationMinerClient({
@@ -82,7 +82,7 @@ process.env.SOLIDITY_COVERAGE
           minerAddress: MINER1,
           useJsTree: true,
           auto: true,
-          oracle: false
+          oracle: false,
         });
       };
 
@@ -90,7 +90,7 @@ process.env.SOLIDITY_COVERAGE
         await setupNewNetworkInstance(MINER1, MINER2, MINER3);
       });
 
-      beforeEach(async function() {
+      beforeEach(async function () {
         repCycle = await getActiveRepCycle(colonyNetwork);
         await goodClient.resetDB();
         await goodClient.initialise(colonyNetwork.address);
@@ -99,14 +99,14 @@ process.env.SOLIDITY_COVERAGE
         await reputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber);
       });
 
-      afterEach(async function() {
+      afterEach(async function () {
         await reputationMinerClient.close();
         const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
         if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1, MINER2);
       });
 
-      describe("core functionality", function() {
-        it("should successfully complete a hash submission if it's the only miner", async function() {
+      describe("core functionality", function () {
+        it("should successfully complete a hash submission if it's the only miner", async function () {
           const rootHash = await reputationMinerClient._miner.getRootHash();
           const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
           const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
@@ -121,7 +121,7 @@ process.env.SOLIDITY_COVERAGE
           await receive12Submissions;
 
           const colonyNetworkEthers = await reputationMinerClient._miner.colonyNetwork;
-          const miningCycleComplete = new Promise(function(resolve, reject) {
+          const miningCycleComplete = new Promise(function (resolve, reject) {
             colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
               const newHash = await colonyNetwork.getReputationRootHash();
               expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
@@ -141,14 +141,14 @@ process.env.SOLIDITY_COVERAGE
           await miningCycleComplete;
         });
 
-        it("should follow updates if it is only an oracle", async function() {
+        it("should follow updates if it is only an oracle", async function () {
           const oracleClient = new ReputationMinerClient({
             loader,
             realProviderPort,
             minerAddress: MINER2,
             useJsTree: true,
             oracle: true,
-            auto: false
+            auto: false,
             // dbPath: "./reputationStates_good.sqlite"
           });
 
@@ -168,7 +168,7 @@ process.env.SOLIDITY_COVERAGE
           await receive12Submissions;
 
           const colonyNetworkEthers = await reputationMinerClient._miner.colonyNetwork;
-          const miningCycleComplete = new Promise(function(resolve, reject) {
+          const miningCycleComplete = new Promise(function (resolve, reject) {
             colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
               const newHash = await colonyNetwork.getReputationRootHash();
               expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
@@ -188,9 +188,9 @@ process.env.SOLIDITY_COVERAGE
           const rootHashBeforeUpdate = await oracleClient._miner.reputationTree.getRootHash();
           // Wait for the oracle to update
 
-          const oracleUpdated = new Promise(function(resolve, reject) {
+          const oracleUpdated = new Promise(function (resolve, reject) {
             let oracleLastSeenHash = "0x00";
-            const checkOracle = async function() {
+            const checkOracle = async function () {
               const oracleCurrentHash = await oracleClient._miner.reputationTree.getRootHash();
               if (oracleCurrentHash !== rootHashBeforeUpdate && oracleCurrentHash === oracleLastSeenHash) {
                 // This 'if' statement can be read as "If the oracle has started updating AND the oracle has finished updating"
@@ -222,7 +222,7 @@ process.env.SOLIDITY_COVERAGE
           await oracleClient.close();
         });
 
-        it("should successfully resume submitting hashes if it's restarted", async function() {
+        it("should successfully resume submitting hashes if it's restarted", async function () {
           const rootHash = await reputationMinerClient._miner.getRootHash();
           const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
           const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
@@ -243,7 +243,7 @@ process.env.SOLIDITY_COVERAGE
             realProviderPort,
             minerAddress: MINER1,
             useJsTree: true,
-            auto: true
+            auto: true,
           });
           await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
           const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, 12);
@@ -252,7 +252,7 @@ process.env.SOLIDITY_COVERAGE
           await receive12Submissions;
 
           const colonyNetworkEthers = await reputationMinerClient._miner.colonyNetwork;
-          const miningCycleComplete = new Promise(function(resolve, reject) {
+          const miningCycleComplete = new Promise(function (resolve, reject) {
             colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
               const newHash = await colonyNetwork.getReputationRootHash();
               expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
@@ -273,7 +273,7 @@ process.env.SOLIDITY_COVERAGE
           await reputationMinerClient2.close();
         });
 
-        it("should successfully complete a hash submission if there are 2 good miners", async function() {
+        it("should successfully complete a hash submission if there are 2 good miners", async function () {
           const oldHash = await colonyNetwork.getReputationRootHash();
           const rootHash = await reputationMinerClient._miner.getRootHash();
           const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
@@ -291,7 +291,7 @@ process.env.SOLIDITY_COVERAGE
           await receive12Submissions;
 
           const colonyNetworkEthers = await reputationMinerClient._miner.colonyNetwork;
-          const miningCycleComplete = new Promise(function(resolve, reject) {
+          const miningCycleComplete = new Promise(function (resolve, reject) {
             colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
               const newHash = await colonyNetwork.getReputationRootHash();
               expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
@@ -311,7 +311,7 @@ process.env.SOLIDITY_COVERAGE
           await miningCycleComplete;
         });
 
-        it("should successfully complete a dispute resolution", async function() {
+        it("should successfully complete a dispute resolution", async function () {
           const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree: true, minerAddress: MINER3 }, 1, 0);
           await badClient.initialise(colonyNetwork.address);
           // We need to load the current good state in to the bad client.
@@ -337,7 +337,7 @@ process.env.SOLIDITY_COVERAGE
           await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
           await receive12Submissions;
 
-          const goodClientConfirmedJRH = new Promise(function(resolve, reject) {
+          const goodClientConfirmedJRH = new Promise(function (resolve, reject) {
             repCycleEthers.on("JustificationRootHashConfirmed", async (_hash, _nNodes, _jrh, event) => {
               if (_hash === rootHash && _nNodes.eq(nNodes) && _jrh === jrh) {
                 event.removeListener();
@@ -351,7 +351,7 @@ process.env.SOLIDITY_COVERAGE
             }, 30000);
           });
 
-          const goodClientConfirmedBinarySearch = new Promise(function(resolve, reject) {
+          const goodClientConfirmedBinarySearch = new Promise(function (resolve, reject) {
             repCycleEthers.on("BinarySearchConfirmed", async (_hash, _nNodes, _jrh, _firstDisagree, event) => {
               if (_hash === rootHash && _nNodes.eq(nNodes) && _jrh === jrh) {
                 event.removeListener();
@@ -366,7 +366,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           // Wait for good client to respond to Challenge.
-          const goodClientCompleteChallenge = new Promise(function(resolve, reject) {
+          const goodClientCompleteChallenge = new Promise(function (resolve, reject) {
             repCycleEthers.on("ChallengeCompleted", async (_hash, _nNodes, _jrh, event) => {
               if (_hash === rootHash && _nNodes.eq(nNodes) && _jrh === jrh) {
                 event.removeListener();
@@ -408,7 +408,7 @@ process.env.SOLIDITY_COVERAGE
 
           await goodClientCompleteChallenge;
 
-          const goodClientInvalidateOpponent = new Promise(function(resolve, reject) {
+          const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nNodes, _jrh, event) => {
               console.log("*************", _hash, badRootHash, _nNodes, badNNodes, _jrh, badJrh);
               if (_hash === badRootHash && _nNodes.eq(badNNodes) && _jrh === badJrh) {
@@ -431,7 +431,7 @@ process.env.SOLIDITY_COVERAGE
 
           // Add a listener to process log for when a new cycle starts, which won't happen yet because the submission window is still open
 
-          const newCycleStart = new Promise(function(resolve, reject) {
+          const newCycleStart = new Promise(function (resolve, reject) {
             reputationMinerClient._miner.colonyNetwork.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
               event.removeListener();
               resolve();

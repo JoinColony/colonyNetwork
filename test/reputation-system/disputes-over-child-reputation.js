@@ -12,7 +12,7 @@ import {
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
   finishReputationMiningCycle,
-  removeSubdomainLimit
+  removeSubdomainLimit,
 } from "../../helpers/test-helper";
 
 import {
@@ -20,7 +20,7 @@ import {
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
   setupFinalizedTask,
-  fundColonyWithTokens
+  fundColonyWithTokens,
 } from "../../helpers/test-data-generator";
 
 import { DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION } from "../../helpers/constants";
@@ -38,7 +38,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 const useJsTree = true;
@@ -68,7 +68,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };
 
-contract("Reputation Mining - disputes over child reputation", accounts => {
+contract("Reputation Mining - disputes over child reputation", (accounts) => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
   const MINER3 = accounts[7];
@@ -122,7 +122,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       // Task two payouts are less so that the reputation should be nonzero afterwards
@@ -135,7 +135,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 500000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -163,7 +163,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-adjacent-origin-not-adjacent-or-already-exists" }
+        client2: { respondToChallenge: "colony-reputation-mining-adjacent-origin-not-adjacent-or-already-exists" },
       });
       await repCycle.confirmNewHash(1);
       const acceptedHash = await colonyNetwork.getReputationRootHash();
@@ -188,7 +188,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       // Task two payouts are less so that the reputation should bee nonzero afterwards
@@ -201,7 +201,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 500000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -229,7 +229,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-adjacent-child-not-adjacent-or-already-exists" }
+        client2: { respondToChallenge: "colony-reputation-mining-adjacent-child-not-adjacent-or-already-exists" },
       });
 
       await repCycle.confirmNewHash(1);
@@ -255,7 +255,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       // Task two payouts are less so that the reputation should be nonzero afterwards
@@ -268,7 +268,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 500000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -296,7 +296,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
 
       await repCycle.confirmNewHash(1);
@@ -320,7 +320,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 500000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -388,7 +388,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       // Task two payouts are less so that the reputation should bee nonzero afterwards
@@ -401,7 +401,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 500000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -474,7 +474,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -489,7 +489,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 500000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -567,7 +567,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -581,7 +581,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -608,7 +608,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -626,7 +626,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await setupFinalizedTask({
@@ -638,7 +638,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER1
+        worker: MINER1,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -652,7 +652,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 1000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -679,7 +679,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-origin-user-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-origin-user-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -694,7 +694,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -708,7 +708,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 1000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -736,7 +736,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -751,7 +751,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -765,7 +765,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -792,7 +792,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -809,7 +809,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -836,7 +836,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -853,7 +853,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 2,
         workerRating: 2,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -867,7 +867,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 1000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -894,7 +894,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -909,7 +909,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -923,7 +923,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: accounts[5]
+        worker: accounts[5],
       });
 
       await goodClient.resetDB();
@@ -951,7 +951,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -966,7 +966,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 1000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await setupFinalizedTask({
@@ -978,7 +978,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 1000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER1
+        worker: MINER1,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -992,7 +992,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 1000000000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -1023,7 +1023,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -1050,7 +1050,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -1065,7 +1065,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 500000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -1138,7 +1138,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 1000000000000,
         managerRating: 2,
         workerRating: 2,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -1152,7 +1152,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 1000000000001,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -1179,7 +1179,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -1202,7 +1202,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -1216,7 +1216,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         workerPayout: 1000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await goodClient.resetDB();
@@ -1255,11 +1255,11 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await metaColony.addDomain(1, 3, 4);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.invalidateHash(0, 3);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(2);
     });

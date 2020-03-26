@@ -4,7 +4,7 @@ import path from "path";
 
 // Taken from https://gist.github.com/kethinov/6658166#gistcomment-1941504
 const walkSync = (dir, filelist = []) => {
-  fs.readdirSync(dir).forEach(file => {
+  fs.readdirSync(dir).forEach((file) => {
     filelist = fs.statSync(path.join(dir, file)).isDirectory() ? walkSync(path.join(dir, file), filelist) : filelist.concat(path.join(dir, file)); // eslint-disable-line no-param-reassign
   });
   return filelist;
@@ -19,7 +19,7 @@ function correctAuthModifier(functionDef) {
     return { valid, errors };
   }
 
-  const auths = functionDef.modifiers.filter(mod => ["auth", "authDomain"].indexOf(mod.name) > -1);
+  const auths = functionDef.modifiers.filter((mod) => ["auth", "authDomain"].indexOf(mod.name) > -1);
   if (auths.length === 0) {
     return { valid, errors };
   }
@@ -27,7 +27,7 @@ function correctAuthModifier(functionDef) {
     return { valid: false, errors: ["Auth declared more than once"] };
   }
 
-  const authDec = functionDef.modifiers.filter(mod => ["auth", "authDomain"].indexOf(mod.name) > -1)[0];
+  const authDec = functionDef.modifiers.filter((mod) => ["auth", "authDomain"].indexOf(mod.name) > -1)[0];
   // Check if it's the 'normal' auth
   if (!authDec.arguments) {
     return { valid, errors };
@@ -62,7 +62,7 @@ function correctAuthModifier(functionDef) {
   return { valid, errors };
 }
 
-walkSync("./contracts/").forEach(contractName => {
+walkSync("./contracts/").forEach((contractName) => {
   // Only contracts using domain-level permissions need to be checked, i.e. those that implement
   // functions in IColony.sol
   // Basically only Colony.sol, ColonyFunding.sol, and ColonyTask.sol (?)
@@ -104,7 +104,7 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/TokenLocking.sol",
       "contracts/TokenLockingStorage.sol",
       "contracts/Token.sol", // Imported from colonyToken repo
-      "contracts/TokenAuthority.sol" // Imported from colonyToken repo
+      "contracts/TokenAuthority.sol", // Imported from colonyToken repo
     ].indexOf(contractName) > -1
   ) {
     return;
@@ -119,12 +119,12 @@ walkSync("./contracts/").forEach(contractName => {
 
   const result = parser.parse(src, { tolerant: true });
   // Filters out an unknown number of 'pragmas' that we have.
-  const contract = result.children.filter(child => child.type === "ContractDefinition")[0];
+  const contract = result.children.filter((child) => child.type === "ContractDefinition")[0];
 
   // Check for that all public, non-{view,pure} functions have either stoppable or recovery modifiers.
   contract.subNodes
-    .filter(child => child.type === "FunctionDefinition" && child.name !== "")
-    .forEach(functionDef => {
+    .filter((child) => child.type === "FunctionDefinition" && child.name !== "")
+    .forEach((functionDef) => {
       const res = correctAuthModifier(functionDef);
       if (!res.valid) {
         console.log(

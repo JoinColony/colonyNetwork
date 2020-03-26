@@ -20,12 +20,12 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
-contract("Token Locking", addresses => {
+contract("Token Locking", (addresses) => {
   const usersTokens = 10;
   const otherUserTokens = 100;
   const userAddress = addresses[1];
@@ -58,7 +58,7 @@ contract("Token Locking", addresses => {
       loader: contractLoader,
       minerAddress: addresses[4],
       realProviderPort: REAL_PROVIDER_PORT,
-      useJsTree: true
+      useJsTree: true,
     });
     await client.initialise(colonyNetwork.address);
 

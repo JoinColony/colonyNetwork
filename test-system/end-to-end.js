@@ -13,7 +13,7 @@ import {
   accommodateChallengeAndInvalidateHash,
   makeReputationKey,
   makeReputationValue,
-  removeSubdomainLimit
+  removeSubdomainLimit,
 } from "../helpers/test-helper";
 
 import {
@@ -22,7 +22,7 @@ import {
   fundColonyWithTokens,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
-  setupFinalizedTask
+  setupFinalizedTask,
 } from "../helpers/test-data-generator";
 
 import { DEFAULT_STAKE, INITIAL_FUNDING } from "../helpers/constants";
@@ -36,12 +36,12 @@ chai.use(bnChai(web3.utils.BN));
 const ITokenLocking = artifacts.require("ITokenLocking");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "..", "build", "contracts"),
 });
 
 const useJsTree = true;
 
-contract("End to end Colony network and Reputation mining testing", function(accounts) {
+contract("End to end Colony network and Reputation mining testing", function (accounts) {
   const MANAGER = accounts[1]; // 0x9df24e73f40b2a911eb254a8825103723e13209c
   const EVALUATOR = accounts[2]; // 0x27ff0c145e191c22c75cd123c679c3e1f58a4469
   const WORKER = accounts[3]; // 0x0021cb24d7d4e669120b139030095315dfa6699a
@@ -56,7 +56,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
   const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
   let colonies;
 
-  before(async function() {
+  before(async function () {
     // Setup a new network instance as we'll be modifying the global skills tree
     colonyNetwork = await setupColonyNetwork();
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
@@ -89,10 +89,10 @@ contract("End to end Colony network and Reputation mining testing", function(acc
     expect(reputationCycleNLogEntries).to.eq.BN(1);
   });
 
-  describe("when working with larger volumes", function() {
+  describe("when working with larger volumes", function () {
     this.timeout(0);
 
-    it("can create 100 colonies", async function() {
+    it("can create 100 colonies", async function () {
       // Setup 100 random colonies, reward set to default 0%
       const a = Array.from(Array(100).keys());
       const coloniesSetupPromise = a.map(() => setupRandomColony(colonyNetwork));
@@ -102,7 +102,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       expect(colonyCount).to.eq.BN(101);
     });
 
-    it("can create 5 domains in each of the 100 colonies", async function() {
+    it("can create 5 domains in each of the 100 colonies", async function () {
       const b = Array.from(Array(4).keys());
       const domainsSetupPromise = b.map(() => Promise.all(colonies.map(({ colony }) => colony.addDomain(1, 0, 1))));
       await Promise.all(domainsSetupPromise);
@@ -114,7 +114,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       await Promise.all(domainsCheckPromise);
     });
 
-    it("can create a set of global skills", async function() {
+    it("can create a set of global skills", async function () {
       let skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(503); // Ensure we're starting from the intended skill
       // Build a better balanced skills tree hierarchy we're going to use in reputation
@@ -163,12 +163,12 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       expect(skillCount).to.eq.BN(1027);
     });
 
-    it("can fund all colonies with own tokens", async function() {
+    it("can fund all colonies with own tokens", async function () {
       const fundColoniesPromise = colonies.map(({ colony, token }) => fundColonyWithTokens(colony, token, INITIAL_FUNDING.muln(10)));
       await Promise.all(fundColoniesPromise);
     });
 
-    it("can create a range of tasks accross colonies", async function() {
+    it("can create a range of tasks accross colonies", async function () {
       const colonyTaskPositiveReputation = [
         {
           // Index in the colonies[] array (note that this excludes the meta colony)
@@ -176,50 +176,50 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           domainId: 5,
           managerPayout: 200,
           evaluatorPayout: 100,
-          workerPayout: 700
+          workerPayout: 700,
         },
         {
           colonyIdx: 100,
           domainId: 3,
           managerPayout: 20,
           evaluatorPayout: 10,
-          workerPayout: 70
+          workerPayout: 70,
         },
         {
           colonyIdx: 100,
           domainId: 2,
           managerPayout: 40,
           evaluatorPayout: 5,
-          workerPayout: 800
+          workerPayout: 800,
         },
         {
           colonyIdx: 100,
           domainId: 6,
           managerPayout: 20,
           evaluatorPayout: 10,
-          workerPayout: 70
+          workerPayout: 70,
         },
         {
           colonyIdx: 101,
           domainId: 5,
           managerPayout: 200,
           evaluatorPayout: 100,
-          workerPayout: 700
+          workerPayout: 700,
         },
         {
           colonyIdx: 102,
           domainId: 7,
           managerPayout: 200,
           evaluatorPayout: 100,
-          workerPayout: 700
+          workerPayout: 700,
         },
         {
           colonyIdx: 102,
           domainId: 1,
           managerPayout: 200,
           evaluatorPayout: 100,
-          workerPayout: 300
-        }
+          workerPayout: 300,
+        },
       ];
 
       // Do the negative updates explicitely after the positive so they are guaranteed to appear later in the miner updates
@@ -232,7 +232,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           managerPayout: 2,
           evaluatorPayout: 1,
           workerPayout: 7,
-          workerRating: 1
+          workerRating: 1,
         },
         {
           colonyIdx: 102,
@@ -240,12 +240,12 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           managerPayout: 200,
           evaluatorPayout: 100,
           workerPayout: 100,
-          workerRating: 1
-        }
+          workerRating: 1,
+        },
       ];
 
       await Promise.all(
-        colonyTaskPositiveReputation.map(async taskProp => {
+        colonyTaskPositiveReputation.map(async (taskProp) => {
           const { colony } = colonies[taskProp.colonyIdx];
 
           await colony.setAdministrationRole(1, 0, MANAGER, 1, true);
@@ -262,13 +262,13 @@ contract("End to end Colony network and Reputation mining testing", function(acc
             evaluatorPayout: taskProp.evaluatorPayout,
             workerPayout: taskProp.workerPayout,
             managerRating: taskProp.managerRating,
-            workerRating: taskProp.workerRating
+            workerRating: taskProp.workerRating,
           });
         })
       );
 
       await Promise.all(
-        colonyTaskNegativeReputation.map(async taskProp => {
+        colonyTaskNegativeReputation.map(async (taskProp) => {
           const { colony } = colonies[taskProp.colonyIdx];
 
           await setupFinalizedTask({
@@ -282,13 +282,13 @@ contract("End to end Colony network and Reputation mining testing", function(acc
             evaluatorPayout: taskProp.evaluatorPayout,
             workerPayout: taskProp.workerPayout,
             managerRating: taskProp.managerRating,
-            workerRating: taskProp.workerRating
+            workerRating: taskProp.workerRating,
           });
         })
       );
     });
 
-    it("can mine reputation for all tasks", async function() {
+    it("can mine reputation for all tasks", async function () {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
       await goodClient.addLogContentsToReputationTree();
 
@@ -371,10 +371,10 @@ contract("End to end Colony network and Reputation mining testing", function(acc
         { id: 65, colonyIdx: 102, skillId: 524, account: WORKER, value: 630 },
         { id: 66, colonyIdx: 102, skillId: 525, account: WORKER, value: 0 },
         { id: 67, colonyIdx: 102, skillId: 526, account: WORKER, value: 630 },
-        { id: 68, colonyIdx: 102, skillId: 527, account: WORKER, value: 0 }
+        { id: 68, colonyIdx: 102, skillId: 527, account: WORKER, value: 0 },
       ];
 
-      globalReputations.forEach(globalRep => {
+      globalReputations.forEach((globalRep) => {
         const { colony } = colonies[globalRep.colonyIdx];
         const key = makeReputationKey(colony.address, new BN(globalRep.skillId), globalRep.account);
         const value = makeReputationValue(globalRep.value, globalRep.id);
@@ -386,11 +386,11 @@ contract("End to end Colony network and Reputation mining testing", function(acc
     });
   });
 
-  describe("when there is a dispute over reputation root hash", function() {
+  describe("when there is a dispute over reputation root hash", function () {
     // These tests are useful for checking that every type of parent / child / user / colony-wide-sum skills are accounted for
     // correctly. Unsure if I should force them to be run every time.
     const updates = Array.from(Array(75).keys());
-    updates.forEach(async badIndex => {
+    updates.forEach(async (badIndex) => {
       it(`should cope if wrong reputation transition is transition ${badIndex}`, async function advancingTest() {
         await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -418,7 +418,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           error = "colony-reputation-mining-increased-reputation-value-incorrect";
         }
         await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-          client2: { respondToChallenge: error }
+          client2: { respondToChallenge: error },
         });
         await repCycle.confirmNewHash(1);
       });

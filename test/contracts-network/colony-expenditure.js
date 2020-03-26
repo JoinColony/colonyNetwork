@@ -15,7 +15,7 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 
-contract("Colony Expenditure", accounts => {
+contract("Colony Expenditure", (accounts) => {
   const MAX_PAYOUT_MODIFIER = WAD;
   const MIN_PAYOUT_MODIFIER = WAD.neg();
 

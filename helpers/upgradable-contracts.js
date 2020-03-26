@@ -6,7 +6,7 @@ import fs from "fs";
 export function parseImplementation(contractName, functionsToResolve, deployedImplementations) {
   // Goes through a contract, and sees if anything in it is in the interface. If it is, then wire up the resolver to point at it
   const { abi } = JSON.parse(fs.readFileSync(`./build/contracts/${contractName}.json`));
-  abi.map(value => {
+  abi.map((value) => {
     const fName = value.name;
     if (functionsToResolve[fName]) {
       if (functionsToResolve[fName].definedIn !== "" && functionsToResolve[fName].definedIn !== deployedImplementations[contractName]) {
@@ -34,7 +34,7 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
 
   // Load ABI of the interface of the contract we're trying to stich together
   const iAbi = JSON.parse(fs.readFileSync(`./build/contracts/${interfaceContract}.json`, "utf8")).abi;
-  iAbi.map(value => {
+  iAbi.map((value) => {
     const fName = value.name;
     const fType = value.type;
     // These are from DSAuth, and so are on EtherRouter itself without any more help.
@@ -42,21 +42,21 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
       // We only care about functions.
       if (fType === "function") {
         // Gets the types of the parameters, which is all we care about for function signatures.
-        const fInputs = value.inputs.map(parameter => parameter.type);
+        const fInputs = value.inputs.map((parameter) => parameter.type);
         // Record function name
         functionsToResolve[fName] = { inputs: fInputs, definedIn: "" };
       }
     }
     return functionsToResolve;
   });
-  Object.keys(deployedImplementations).map(name => parseImplementation(name, functionsToResolve, deployedImplementations));
+  Object.keys(deployedImplementations).map((name) => parseImplementation(name, functionsToResolve, deployedImplementations));
   // Iterate over the ABI again to make sure we get overloads - the functionToResolve is only indexed by name, not signature.
   for (let i = 0; i < iAbi.length; i += 1) {
     // We do it like this rather than a nice await Promise.all on a mapped array of promises because of
     // https://github.com/paritytech/parity-ethereum/issues/9155
     const fName = iAbi[i].name;
     if (functionsToResolve[fName]) {
-      const sig = `${fName}(${iAbi[i].inputs.map(parameter => parameter.type).join(",")})`;
+      const sig = `${fName}(${iAbi[i].inputs.map((parameter) => parameter.type).join(",")})`;
       const address = functionsToResolve[fName].definedIn;
       try {
         await resolver.register(sig, address);

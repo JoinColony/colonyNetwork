@@ -15,7 +15,7 @@ import {
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
   setupFinalizedTask,
-  fundColonyWithTokens
+  fundColonyWithTokens,
 } from "../../helpers/test-data-generator";
 
 const useJsTree = true;
@@ -24,7 +24,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 let colonyNetwork;
@@ -56,14 +56,14 @@ async function customSetupFinalizedTask(args) {
   const newArgs = Object.assign(args, {
     skillId: GLOBAL_SKILL_ID,
     evaluatorPayout: 0,
-    managerPayout: 0
+    managerPayout: 0,
   });
   return setupFinalizedTask(newArgs);
 }
 
 process.env.SOLIDITY_COVERAGE
   ? contract.skip
-  : contract("Reputation mining - client reputation calculations", accounts => {
+  : contract("Reputation mining - client reputation calculations", (accounts) => {
       const MINER1 = accounts[5];
       const MINER2 = accounts[6];
       const WORKER = accounts[2];
@@ -103,7 +103,7 @@ process.env.SOLIDITY_COVERAGE
             colony: metaColony,
             workerPayout: 100,
             worker: OTHER,
-            domainId: 3
+            domainId: 3,
           });
           // Skills in 1 / 4 / 5
           // OTHER: (100 / 100 / 100)
@@ -113,7 +113,7 @@ process.env.SOLIDITY_COVERAGE
             colony: metaColony,
             workerPayout: 100,
             worker: WORKER,
-            domainId: 3
+            domainId: 3,
           });
           // WORKER: (100 / 100 / 100)
           // OTHER: (100 / 100 / 100)
@@ -123,7 +123,7 @@ process.env.SOLIDITY_COVERAGE
             colony: metaColony,
             workerPayout: 900,
             worker: OTHER,
-            domainId: 2
+            domainId: 2,
           });
           // WORKER: (100 / 100 / 100)
           // OTHER: (1000 / 1000 / 100)
@@ -133,7 +133,7 @@ process.env.SOLIDITY_COVERAGE
             colony: metaColony,
             workerPayout: 1000,
             worker: OTHER,
-            domainId: 1
+            domainId: 1,
           });
           // WORKER: (100 / 100 / 100)
           // OTHER: (2000 / 1000 / 100)
@@ -144,7 +144,7 @@ process.env.SOLIDITY_COVERAGE
             workerPayout: 200,
             workerRating: 1,
             worker: OTHER,
-            domainId: 3
+            domainId: 3,
           });
           // WORKER: (100 / 100 / 100)
           // OTHER: (1900 / 900 / 0)
@@ -178,7 +178,7 @@ process.env.SOLIDITY_COVERAGE
             colony: metaColony,
             workerPayout: 100,
             worker: OTHER,
-            domainId: 3
+            domainId: 3,
           });
           // Skills in 1 / 4 / 5
           // OTHER: (100 / 100 / 100)
@@ -188,7 +188,7 @@ process.env.SOLIDITY_COVERAGE
             colony: metaColony,
             workerPayout: 100,
             worker: WORKER,
-            domainId: 3
+            domainId: 3,
           });
           // WORKER: (100 / 100 / 100)
           // OTHER: (100 / 100 / 100)
@@ -198,7 +198,7 @@ process.env.SOLIDITY_COVERAGE
             colony: metaColony,
             workerPayout: 900,
             worker: OTHER,
-            domainId: 2
+            domainId: 2,
           });
           // WORKER: (100 / 100 / 100)
           // THER: (1000 / 1000 / 100)
@@ -209,7 +209,7 @@ process.env.SOLIDITY_COVERAGE
             workerPayout: 200,
             workerRating: 1,
             worker: OTHER,
-            domainId: 2
+            domainId: 2,
           });
           // WORKER: (100 / 100 / 100)
           // OTHER: (800 / 800 / 80)
@@ -243,7 +243,7 @@ process.env.SOLIDITY_COVERAGE
             colony: metaColony,
             workerPayout: 100,
             worker: OTHER,
-            domainId: 3
+            domainId: 3,
           });
           // Skills in 1 / 4 / 5
           // OTHER: (100 / 100 / 100)
@@ -253,7 +253,7 @@ process.env.SOLIDITY_COVERAGE
             colony: metaColony,
             workerPayout: 100,
             worker: WORKER,
-            domainId: 3
+            domainId: 3,
           });
           // WORKER: (100 / 100 / 100)
           // OTHER: (100 / 100 / 100)
@@ -263,7 +263,7 @@ process.env.SOLIDITY_COVERAGE
             colony: metaColony,
             workerPayout: 900,
             worker: OTHER,
-            domainId: 2
+            domainId: 2,
           });
           // WORKER: (100 / 100 / 100)
           // OTHER: (1000 / 1000 / 100)
@@ -273,7 +273,7 @@ process.env.SOLIDITY_COVERAGE
             colony: metaColony,
             workerPayout: 500,
             worker: OTHER,
-            domainId: 1
+            domainId: 1,
           });
           // WORKER: (100 / 100 / 100)
           // OTHER: (1500 / 1000 / 100)
@@ -284,7 +284,7 @@ process.env.SOLIDITY_COVERAGE
             workerPayout: 100000000,
             workerRating: 1,
             worker: OTHER,
-            domainId: 2
+            domainId: 2,
           });
           // WORKER: (100 / 100 / 100)
           // OTHER: (500 / 0 / 0)

@@ -14,7 +14,7 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
-  finishReputationMiningCycle
+  finishReputationMiningCycle,
 } from "../../helpers/test-helper";
 
 import {
@@ -22,7 +22,7 @@ import {
   setupFinalizedTask,
   fundColonyWithTokens,
   setupColonyNetwork,
-  setupMetaColonyWithLockedCLNYToken
+  setupMetaColonyWithLockedCLNYToken,
 } from "../../helpers/test-data-generator";
 
 import { INT128_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION } from "../../helpers/constants";
@@ -42,7 +42,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 const useJsTree = true;
@@ -65,7 +65,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };
 
-contract("Reputation Mining - types of disagreement", accounts => {
+contract("Reputation Mining - types of disagreement", (accounts) => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
 
@@ -106,7 +106,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-adjacent-disagree-state-disagreement" }
+        client2: { respondToChallenge: "colony-reputation-mining-adjacent-disagree-state-disagreement" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -154,7 +154,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       // Cleanup
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -175,7 +175,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -354,7 +354,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-adjacent-branchmask-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-adjacent-branchmask-incorrect" },
       });
 
       // Cleanup
@@ -379,7 +379,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { confirmJustificationRootHash: "colony-reputation-mining-invalid-jrh-proof-2" }
+        client2: { confirmJustificationRootHash: "colony-reputation-mining-invalid-jrh-proof-2" },
       });
 
       // Cleanup
@@ -396,7 +396,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-network-mining-more-than-one-node-added" }
+        client2: { respondToChallenge: "colony-network-mining-more-than-one-node-added" },
       });
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.confirmNewHash(1);
@@ -418,7 +418,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-adjacent-agree-state-disagreement" }
+        client2: { respondToChallenge: "colony-reputation-mining-adjacent-agree-state-disagreement" },
       });
 
       await repCycle.confirmNewHash(1);
@@ -442,7 +442,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToBinarySearchForChallenge: [undefined, "colony-reputation-mining-invalid-binary-search-proof-length"] }
+        client2: { respondToBinarySearchForChallenge: [undefined, "colony-reputation-mining-invalid-binary-search-proof-length"] },
       });
 
       // Cleanup
@@ -521,7 +521,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { confirmJustificationRootHash: "colony-reputation-mining-invalid-jrh-proof-2-length" }
+        client2: { confirmJustificationRootHash: "colony-reputation-mining-invalid-jrh-proof-2-length" },
       });
     });
   });
@@ -588,7 +588,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-new-uid-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-new-uid-incorrect" },
       });
     });
   });
@@ -605,7 +605,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
 
@@ -623,7 +623,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
       repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.confirmNewHash(1);
@@ -642,7 +642,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
         workerPayout: 1000000000000,
         managerRating: 2,
         workerRating: 2,
-        worker: accounts[4]
+        worker: accounts[4],
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -657,7 +657,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
         workerPayout,
         managerRating: 2,
         workerRating: 2,
-        worker: accounts[4]
+        worker: accounts[4],
       });
 
       await goodClient.resetDB();
@@ -686,7 +686,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-reputation-not-max-int128" }
+        client2: { respondToChallenge: "colony-reputation-mining-reputation-not-max-int128" },
       });
       await repCycle.confirmNewHash(1);
     });

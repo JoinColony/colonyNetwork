@@ -8,11 +8,11 @@ const Resolver = artifacts.require("Resolver");
 const UpdatedReputationMiningCycle = artifacts.require("./UpdatedReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("./ReputationMiningCycleRespond");
 
-contract("ReputationMiningCycle contract upgrade", function() {
+contract("ReputationMiningCycle contract upgrade", function () {
   let colonyNetwork;
   let reputationMiningResolverBefore;
 
-  before(async function() {
+  before(async function () {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     reputationMiningResolverBefore = await colonyNetwork.getMiningResolver();
@@ -26,13 +26,13 @@ contract("ReputationMiningCycle contract upgrade", function() {
     await setupReputationMiningCycleResolver(reputationMiningCycle, reputationMiningCycleRespond, resolver, colonyNetwork);
   });
 
-  describe("when upgrading ReputationMiningCycle contract", function() {
-    it("should change the ReputationMiningCycle resolver on the Network", async function() {
+  describe("when upgrading ReputationMiningCycle contract", function () {
+    it("should change the ReputationMiningCycle resolver on the Network", async function () {
       const reputationMiningResolverAfter = await colonyNetwork.getMiningResolver();
       assert.notEqual(reputationMiningResolverBefore, reputationMiningResolverAfter);
     });
 
-    it("should pick up the new ReputationMiningCycle contract", async function() {
+    it("should pick up the new ReputationMiningCycle contract", async function () {
       // Cycle through the mining process once to get the newly created inactive cycles on the updated mining contract
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       const reputationMiningCycleInactiveAddress = await colonyNetwork.getReputationMiningCycle(false);

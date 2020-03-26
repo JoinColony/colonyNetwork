@@ -12,7 +12,7 @@ import {
   RATING_2_SALT,
   RATING_1_SECRET,
   RATING_2_SECRET,
-  WAD
+  WAD,
 } from "../../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents } from "../../helpers/test-helper";
 import { makeTask, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
@@ -24,7 +24,7 @@ const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TransferTest = artifacts.require("TransferTest");
 
-contract("Colony", accounts => {
+contract("Colony", (accounts) => {
   let colony;
   let token;
   let colonyNetwork;
@@ -217,7 +217,7 @@ contract("Colony", accounts => {
       await colony.mintTokens(WAD.muln(14));
       await checkErrorRevert(
         colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS, {
-          from: accounts[1]
+          from: accounts[1],
         }),
         "ds-auth-unauthorized"
       );

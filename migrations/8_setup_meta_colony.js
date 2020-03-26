@@ -12,7 +12,7 @@ const TokenAuthority = artifacts.require("./TokenAuthority");
 const DEFAULT_STAKE = "2000000000000000000000000"; // 1000 * MIN_STAKE
 
 // eslint-disable-next-line no-unused-vars
-module.exports = async function(deployer, network, accounts) {
+module.exports = async function (deployer, network, accounts) {
   const MAIN_ACCOUNT = accounts[5];
   const TOKEN_OWNER = accounts[11];
 
@@ -32,7 +32,7 @@ module.exports = async function(deployer, network, accounts) {
   const tokenAuthority = await TokenAuthority.new(clnyToken.address, metaColonyAddress, [
     colonyNetwork.address,
     tokenLockingAddress,
-    ...reputationMinerTestAccounts
+    ...reputationMinerTestAccounts,
   ]);
   await clnyToken.setAuthority(tokenAuthority.address);
   await clnyToken.setOwner(TOKEN_OWNER);
