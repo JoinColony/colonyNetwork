@@ -391,10 +391,10 @@ process.env.SOLIDITY_COVERAGE
           let goodEntry = disputeRound[goodIndex];
 
           // Forward time again so clients can start responding to challenges
-          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp));
-          await noEventSeen(repCycleEthers, 'JustificationRootHashConfirmed');
+          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
+          await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
 
-          await forwardTime(SUBMITTER_ONLY_WINDOW, this)
+          await forwardTime(SUBMITTER_ONLY_WINDOW, this);
 
           await goodClientConfirmedJRH;
           await badClient.confirmJustificationRootHash();
@@ -413,7 +413,7 @@ process.env.SOLIDITY_COVERAGE
             goodEntry = disputeRound[goodIndex];
           }
 
-          await noEventSeen(repCycleEthers, 'BinarySearchConfirmed');
+          await noEventSeen(repCycleEthers, "BinarySearchConfirmed");
 
           disputeRound = await repCycle.getDisputeRound(0);
           badEntry = disputeRound[badIndex];
@@ -448,8 +448,8 @@ process.env.SOLIDITY_COVERAGE
           badEntry = disputeRound[badIndex];
           goodEntry = disputeRound[goodIndex];
 
-          const noChallengeCompleted = noEventSeen(repCycleEthers, 'ChallengeCompleted');
-          const noHashInvalidated = noEventSeen(repCycleEthers, 'HashInvalidated');
+          const noChallengeCompleted = noEventSeen(repCycleEthers, "ChallengeCompleted");
+          const noHashInvalidated = noEventSeen(repCycleEthers, "HashInvalidated");
 
           await noChallengeCompleted;
           await noHashInvalidated;
@@ -481,15 +481,14 @@ process.env.SOLIDITY_COVERAGE
         });
 
         function noEventSeen(contract, event) {
-          return new Promise(function(resolve,reject) {
-            contract.on(event, async() => {
-              reject(new Error(`ERROR: The event ${event} was unexpectedly seen`))
+          return new Promise(function(resolve, reject) {
+            contract.on(event, async () => {
+              reject(new Error(`ERROR: The event ${event} was unexpectedly seen`));
             });
             setTimeout(() => {
-              resolve()
+              resolve();
             }, 5000);
-          })
+          });
         }
-
       });
     });

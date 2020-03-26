@@ -270,6 +270,24 @@ Get the length of the ReputationUpdateLog stored on this instance of the Reputat
 |---|---|---|
 |nUpdates|uint256|
 
+### `getResponsePossible`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|stage|disputeStages|
+|since|uint256|
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|possible|bool|
+
 ### `getSubmissionUser`
 
 Get the address that made a particular submission.
