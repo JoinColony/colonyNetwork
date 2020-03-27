@@ -20,7 +20,7 @@ import {
   getValidEntryNumber,
   finishReputationMiningCycle,
   runBinarySearch,
-  checkErrorRevertEthers
+  checkErrorRevertEthers,
 } from "../../helpers/test-helper";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -33,7 +33,7 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
@@ -66,7 +66,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2, MINER3) => {
   badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, 0xeeeeeeeee);
 };
 
-contract("Reputation mining - root hash submissions", accounts => {
+contract("Reputation mining - root hash submissions", (accounts) => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
   const MINER3 = accounts[7];
@@ -346,7 +346,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
 
       await repCycle.confirmNewHash(1);
@@ -369,11 +369,11 @@ contract("Reputation mining - root hash submissions", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, badClient2); // Invalidate the 'null' that partners the third hash submitted.
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(2);
 
@@ -404,7 +404,7 @@ contract("Reputation mining - root hash submissions", accounts => {
 
       // Eliminate one so that the afterAll works.
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
     });
 
@@ -413,7 +413,7 @@ contract("Reputation mining - root hash submissions", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
 
       // TODO: this should just call invalidateHash, right?
@@ -429,7 +429,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, badClient2);
 
@@ -437,7 +437,7 @@ contract("Reputation mining - root hash submissions", accounts => {
 
       // Cleanup after test
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(2);
     });
@@ -464,7 +464,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
 
       await checkErrorRevert(repCycle.invalidateHash(0, 1), "colony-reputation-mining-proposed-hash-empty");
@@ -476,7 +476,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
 
       await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-hash-already-progressed");
@@ -509,7 +509,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       await checkErrorRevert(repCycle.confirmNewHash(1), "colony-reputation-mining-final-round-not-complete");
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
 
       await repCycle.confirmNewHash(1);
@@ -574,7 +574,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
 
       const invalidatorLock = await tokenLocking.getUserLock(clnyToken.address, accounts[0]);

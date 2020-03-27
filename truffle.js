@@ -9,45 +9,45 @@ module.exports = {
       port: 8545,
       gasPrice: 0,
       network_id: "*",
-      skipDryRun: true
+      skipDryRun: true,
     },
     integration: {
       host: "localhost",
       port: 8545,
       gasPrice: 0,
       network_id: 1998,
-      skipDryRun: true
+      skipDryRun: true,
     },
     coverage: {
       host: "localhost",
       port: 8555,
       network_id: 1999,
-      skipDryRun: true
+      skipDryRun: true,
     },
     goerliFork: {
       host: "localhost",
       port: 8605,
       gasPrice: 0,
-      network_id: "5"
+      network_id: "5",
     },
     mainnetFork: {
       host: "localhost",
       port: 8601,
       gasPrice: 0,
-      network_id: "1"
+      network_id: "1",
     },
     goerli: {
       provider: () => {
         return new HDWalletProvider("replace-with-private-key-when-using", "https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d");
       },
-      network_id: "5"
+      network_id: "5",
     },
     mainnet: {
       provider: () => {
         return new HDWalletProvider("replace-with-private-key-when-using", "https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d");
       },
-      network_id: "1"
-    }
+      network_id: "1",
+    },
   },
   mocha: {
     reporter: "mocha-circleci-reporter",
@@ -55,9 +55,9 @@ module.exports = {
       currency: "USD",
       gasPrice: 5,
       onlyCalledMethods: true,
-      excludeContracts: ["Migrations"]
+      excludeContracts: ["Migrations"],
     },
-    slow: 1000
+    slow: 1000,
   },
   compilers: {
     solc: {
@@ -66,11 +66,11 @@ module.exports = {
       settings: {
         optimizer: {
           enabled: true,
-          runs: 200
+          runs: 200,
         },
-        evmVersion: "petersburg"
-      }
-    }
+        evmVersion: "petersburg",
+      },
+    },
   },
-  plugins: ["truffle-security", "solidity-coverage"]
+  plugins: ["truffle-security", "solidity-coverage"],
 };

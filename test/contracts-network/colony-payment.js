@@ -16,7 +16,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 
-contract("Colony Payment", accounts => {
+contract("Colony Payment", (accounts) => {
   const RECIPIENT = accounts[3];
   const COLONY_ADMIN = accounts[4];
 

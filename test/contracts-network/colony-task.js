@@ -27,7 +27,7 @@ import {
   RATING_1_SECRET,
   RATING_2_SECRET,
   MAX_PAYOUT,
-  GLOBAL_SKILL_ID
+  GLOBAL_SKILL_ID,
 } from "../../helpers/constants";
 
 import { getSigsAndTransactionData, executeSignedTaskChange, executeSignedRoleAssignment } from "../../helpers/task-review-signing";
@@ -40,7 +40,7 @@ import {
   expectAllEvents,
   forwardTime,
   currentBlockTime,
-  addTaskSkillEditingFunctions
+  addTaskSkillEditingFunctions,
 } from "../../helpers/test-helper";
 
 import {
@@ -51,7 +51,7 @@ import {
   setupFundedTask,
   makeTask,
   setupRandomColony,
-  assignRoles
+  assignRoles,
 } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -63,7 +63,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 
-contract("ColonyTask", accounts => {
+contract("ColonyTask", (accounts) => {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
@@ -135,7 +135,7 @@ contract("ColonyTask", accounts => {
         functionName: "removeTaskEvaluatorRole",
         signers: [MANAGER], // NOTE: only one signature because manager === evaluator
         sigTypes: [0],
-        args: [taskId]
+        args: [taskId],
       });
 
       taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
@@ -147,7 +147,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskEvaluatorRole",
         signers: [MANAGER, newEvaluator],
         sigTypes: [0, 0],
-        args: [taskId, newEvaluator]
+        args: [taskId, newEvaluator],
       });
 
       taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
@@ -209,7 +209,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskDueDate",
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
-          args: [taskId, WORKER]
+          args: [taskId, WORKER],
         }),
         "colony-task-change-is-not-role-assignment"
       );
@@ -227,7 +227,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers,
         sigTypes,
-        args
+        args,
       });
       await checkErrorRevert(colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 10, txData), "colony-task-role-assignment-non-zero-value");
     });
@@ -243,7 +243,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers,
         sigTypes,
-        args
+        args,
       });
 
       await checkErrorRevert(
@@ -264,7 +264,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       await executeSignedTaskChange({
@@ -273,7 +273,7 @@ contract("ColonyTask", accounts => {
         functionName: "removeTaskEvaluatorRole",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId]
+        args: [taskId],
       });
 
       await executeSignedRoleAssignment({
@@ -282,7 +282,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskEvaluatorRole",
         signers: [MANAGER, newEvaluator],
         sigTypes: [0, 0],
-        args: [taskId, newEvaluator]
+        args: [taskId, newEvaluator],
       });
 
       const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -302,7 +302,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskWorkerRole",
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
-          args: [taskId, WORKER]
+          args: [taskId, WORKER],
         }),
         "colony-task-role-assignment-execution-failed"
       );
@@ -313,7 +313,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskSkill",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, 3] // skillId 3
+        args: [taskId, 3], // skillId 3
       });
 
       executeSignedRoleAssignment({
@@ -322,7 +322,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
     });
 
@@ -338,7 +338,7 @@ contract("ColonyTask", accounts => {
         functionName: "removeTaskEvaluatorRole",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId]
+        args: [taskId],
       });
 
       await checkErrorRevert(
@@ -348,7 +348,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskEvaluatorRole",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, newEvaluator]
+          args: [taskId, newEvaluator],
         }),
         "colony-task-role-assignment-does-not-meet-required-signatures"
       );
@@ -363,7 +363,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskWorkerRole",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, WORKER]
+          args: [taskId, WORKER],
         }),
         "colony-task-role-assignment-does-not-meet-required-signatures"
       );
@@ -381,7 +381,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       await checkErrorRevert(
@@ -391,7 +391,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskWorkerRole",
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
-          args: [taskId, OTHER]
+          args: [taskId, OTHER],
         }),
         "colony-task-role-assignment-execution-failed"
       );
@@ -403,7 +403,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskEvaluatorRole",
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
-          args: [taskId, OTHER]
+          args: [taskId, OTHER],
         }),
         "colony-task-role-assignment-execution-failed"
       );
@@ -418,7 +418,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       let workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -430,7 +430,7 @@ contract("ColonyTask", accounts => {
         functionName: "removeTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId]
+        args: [taskId],
       });
 
       workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -446,7 +446,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       await checkErrorRevert(
@@ -456,7 +456,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskWorkerRole",
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
-          args: [taskId, ethers.constants.AddressZero]
+          args: [taskId, ethers.constants.AddressZero],
         }),
         "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
@@ -478,7 +478,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskWorkerRole",
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
-          args: [taskId, newEvaluator]
+          args: [taskId, newEvaluator],
         }),
         "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
@@ -496,7 +496,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, MANAGER]
+        args: [taskId, MANAGER],
       });
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -513,7 +513,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskWorkerRole",
           signers: [WORKER],
           sigTypes: [0],
-          args: [taskId, WORKER]
+          args: [taskId, WORKER],
         }),
         "colony-task-role-assignment-does-not-meet-required-signatures"
       );
@@ -531,7 +531,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [WORKER, MANAGER],
         sigTypes: [0, 1],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -548,7 +548,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskWorkerRole",
           signers: [WORKER, OTHER],
           sigTypes: [0, 0],
-          args: [taskId, WORKER]
+          args: [taskId, WORKER],
         }),
         "colony-task-role-assignment-not-signed-by-manager"
       );
@@ -566,7 +566,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskManagerRole",
         signers: [MANAGER, COLONY_ADMIN],
         sigTypes: [0, 0],
-        args: [taskId, COLONY_ADMIN, 1, 0]
+        args: [taskId, COLONY_ADMIN, 1, 0],
       });
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -583,7 +583,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskWorkerRole",
           signers: [COLONY_ADMIN],
           sigTypes: [0],
-          args: [taskId, MANAGER]
+          args: [taskId, MANAGER],
         }),
         "colony-task-role-assignment-not-signed-by-manager"
       );
@@ -602,7 +602,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerRole",
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
-          args: [taskId, COLONY_ADMIN, 1, 0]
+          args: [taskId, COLONY_ADMIN, 1, 0],
         }),
         "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
@@ -621,7 +621,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerRole",
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
-          args: [taskId, OTHER, 1, 0]
+          args: [taskId, OTHER, 1, 0],
         }),
         "colony-task-role-assignment-execution-failed"
       );
@@ -640,7 +640,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerRole",
           signers: [MANAGER, COLONY_ADMIN],
           sigTypes: [0, 0],
-          args: [taskId, ethers.constants.AddressZero, 1, 0]
+          args: [taskId, ethers.constants.AddressZero, 1, 0],
         }),
         "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
@@ -662,7 +662,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, COLONY_ADMIN],
         sigTypes: [0, 0],
-        args: [taskId, COLONY_ADMIN]
+        args: [taskId, COLONY_ADMIN],
       });
 
       // Setting the evaluator
@@ -672,7 +672,7 @@ contract("ColonyTask", accounts => {
         functionName: "removeTaskEvaluatorRole",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId]
+        args: [taskId],
       });
 
       await executeSignedRoleAssignment({
@@ -681,7 +681,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskEvaluatorRole",
         signers: [MANAGER, newEvaluator],
         sigTypes: [0, 0],
-        args: [taskId, newEvaluator]
+        args: [taskId, newEvaluator],
       });
 
       await checkErrorRevert(
@@ -692,7 +692,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerRole",
           signers: [newEvaluator, WORKER],
           sigTypes: [0, 0],
-          args: [taskId, WORKER, 1, 0]
+          args: [taskId, WORKER, 1, 0],
         }),
         "colony-task-role-assignment-not-signed-by-manager"
       );
@@ -711,7 +711,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskBrief",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, SPECIFICATION_HASH_UPDATED]
+        args: [taskId, SPECIFICATION_HASH_UPDATED],
       });
 
       let taskChangeNonce = await colony.getTaskChangeNonce(taskId);
@@ -726,7 +726,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskDueDate",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, dueDate]
+        args: [taskId, dueDate],
       });
 
       taskChangeNonce = await colony.getTaskChangeNonce(taskId);
@@ -744,7 +744,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskBrief",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId1, SPECIFICATION_HASH_UPDATED]
+        args: [taskId1, SPECIFICATION_HASH_UPDATED],
       });
       let taskChangeNonce = await colony.getTaskChangeNonce(taskId1);
       expect(taskChangeNonce).to.eq.BN(1);
@@ -755,7 +755,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskBrief",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId2, SPECIFICATION_HASH_UPDATED]
+        args: [taskId2, SPECIFICATION_HASH_UPDATED],
       });
 
       taskChangeNonce = await colony.getTaskChangeNonce(taskId2);
@@ -770,7 +770,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskDueDate",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId2, dueDate]
+        args: [taskId2, dueDate],
       });
 
       taskChangeNonce = await colony.getTaskChangeNonce(taskId2);
@@ -786,7 +786,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskBrief",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, SPECIFICATION_HASH_UPDATED]
+        args: [taskId, SPECIFICATION_HASH_UPDATED],
       });
 
       const task = await colony.getTask(taskId);
@@ -802,7 +802,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       await executeSignedTaskChange({
@@ -811,7 +811,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskBrief",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, SPECIFICATION_HASH_UPDATED]
+        args: [taskId, SPECIFICATION_HASH_UPDATED],
       });
 
       const task = await colony.getTask(taskId);
@@ -827,7 +827,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       await executeSignedTaskChange({
@@ -836,7 +836,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskBrief",
         signers: [MANAGER, WORKER],
         sigTypes: [1, 1],
-        args: [taskId, SPECIFICATION_HASH_UPDATED]
+        args: [taskId, SPECIFICATION_HASH_UPDATED],
       });
 
       const task = await colony.getTask(taskId);
@@ -852,7 +852,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       await executeSignedTaskChange({
@@ -861,7 +861,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskBrief",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 1],
-        args: [taskId, SPECIFICATION_HASH_UPDATED]
+        args: [taskId, SPECIFICATION_HASH_UPDATED],
       });
 
       const task = await colony.getTask(taskId);
@@ -877,7 +877,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       await checkErrorRevert(
@@ -887,7 +887,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskBrief",
           signers: [MANAGER, MANAGER],
           sigTypes: [0, 1],
-          args: [taskId, SPECIFICATION_HASH_UPDATED]
+          args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
         "colony-task-duplicate-reviewers"
       );
@@ -906,7 +906,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       await executeSignedTaskChange({
@@ -915,7 +915,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskDueDate",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, dueDate]
+        args: [taskId, dueDate],
       });
 
       const task = await colony.getTask(taskId);
@@ -950,7 +950,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskBrief",
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
-          args: [taskId, SPECIFICATION_HASH_UPDATED]
+          args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
         "colony-task-change-does-not-meet-signatures-required"
       );
@@ -965,7 +965,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       await checkErrorRevert(
@@ -975,7 +975,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskBrief",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, SPECIFICATION_HASH_UPDATED]
+          args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
         "colony-task-change-does-not-meet-signatures-required"
       );
@@ -991,7 +991,7 @@ contract("ColonyTask", accounts => {
           functionName: "getTaskRole",
           signers: [MANAGER, EVALUATOR],
           sigTypes: [0, 0],
-          args: [taskId, 0]
+          args: [taskId, 0],
         }),
         "colony-task-change-does-not-meet-signatures-required"
       );
@@ -1009,7 +1009,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskBrief",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [nonExistentTaskId, SPECIFICATION_HASH_UPDATED]
+          args: [nonExistentTaskId, SPECIFICATION_HASH_UPDATED],
         }),
         "colony-task-does-not-exist"
       );
@@ -1025,7 +1025,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskBrief",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, SPECIFICATION_HASH_UPDATED]
+          args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
         "colony-task-does-not-exist"
       );
@@ -1041,7 +1041,7 @@ contract("ColonyTask", accounts => {
           taskId,
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, 0]
+          args: [taskId, 0],
         }),
         "colony-task-change-execution-failed"
       );
@@ -1058,7 +1058,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskBrief",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, SPECIFICATION_HASH_UPDATED]
+          args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
         "colony-task-finalized"
       );
@@ -1079,7 +1079,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerRole",
           signers: [MANAGER, COLONY_ADMIN],
           sigTypes: [0, 0],
-          args: [taskId, COLONY_ADMIN, 1, 0]
+          args: [taskId, COLONY_ADMIN, 1, 0],
         }),
         "colony-task-role-assignment-execution-failed"
       );
@@ -1095,7 +1095,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskBrief",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, SPECIFICATION_HASH_UPDATED]
+          args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
         "TaskBriefSet"
       );
@@ -1112,7 +1112,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskDueDate",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, dueDate]
+          args: [taskId, dueDate],
         }),
         "TaskDueDateSet"
       );
@@ -1131,7 +1131,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskSkill",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, skillCount]
+          args: [taskId, skillCount],
         }),
         "TaskSkillSet"
       );
@@ -1148,7 +1148,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskWorkerRole",
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
-          args: [taskId, WORKER]
+          args: [taskId, WORKER],
         }),
         "TaskRoleUserSet"
       );
@@ -1162,7 +1162,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskDueDate",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, 1]
+        args: [taskId, 1],
       });
 
       await checkErrorRevert(colony.executeTaskChange(sigV, sigR, sigS, [0], 100, txData), "colony-task-change-non-zero-value");
@@ -1177,7 +1177,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskDueDate",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, 1]
+        args: [taskId, 1],
       });
 
       await checkErrorRevert(colony.executeTaskChange([sigV[0]], sigR, sigS, [0], 0, txData), "colony-task-change-signatures-count-do-not-match");
@@ -1191,7 +1191,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskEvaluatorRole",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, "0x29738B9BB168790211D84C99c4AEAd215c34D731"]
+        args: [taskId, "0x29738B9BB168790211D84C99c4AEAd215c34D731"],
       });
 
       await checkErrorRevert(colony.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "colony-task-change-is-role-assignment");
@@ -1332,7 +1332,7 @@ contract("ColonyTask", accounts => {
         functionName: "cancelTask",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId]
+        args: [taskId],
       });
 
       const task = await colony.getTask(taskId);
@@ -1375,7 +1375,7 @@ contract("ColonyTask", accounts => {
         functionName: "cancelTask",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId]
+        args: [taskId],
       });
 
       await colony.moveFundsBetweenPots(1, 0, 0, taskPotId, domain.fundingPotId, originalTaskEtherBalance, ethers.constants.AddressZero);
@@ -1416,7 +1416,7 @@ contract("ColonyTask", accounts => {
           functionName: "cancelTask",
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
-          args: [taskId]
+          args: [taskId],
         }),
         "colony-task-change-execution-failed"
       );
@@ -1434,7 +1434,7 @@ contract("ColonyTask", accounts => {
           functionName: "cancelTask",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [invalidTaskId]
+          args: [invalidTaskId],
         }),
         "colony-task-does-not-exist"
       );
@@ -1450,7 +1450,7 @@ contract("ColonyTask", accounts => {
           functionName: "cancelTask",
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
-          args: [taskId]
+          args: [taskId],
         }),
         "TaskCanceled"
       );
@@ -1470,7 +1470,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
       await colony.mintTokens(100);
 
@@ -1481,7 +1481,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, ethers.constants.AddressZero, 5000]
+        args: [taskId, ethers.constants.AddressZero, 5000],
       });
 
       await executeSignedTaskChange({
@@ -1490,7 +1490,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, token.address, 100]
+        args: [taskId, token.address, 100],
       });
 
       // Set the evaluator payout as 1000 ethers
@@ -1500,7 +1500,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskEvaluatorPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, ethers.constants.AddressZero, 1000]
+        args: [taskId, ethers.constants.AddressZero, 1000],
       });
 
       // Set the evaluator payout as 40 colony tokens
@@ -1510,7 +1510,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskEvaluatorPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, token.address, 40]
+        args: [taskId, token.address, 40],
       });
 
       // Set the worker payout as 98000 wei and 200 colony tokens
@@ -1520,7 +1520,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerPayout",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, ethers.constants.AddressZero, 98000]
+        args: [taskId, ethers.constants.AddressZero, 98000],
       });
 
       await executeSignedTaskChange({
@@ -1529,7 +1529,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerPayout",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, token.address, 200]
+        args: [taskId, token.address, 200],
       });
 
       const taskPayoutManager1 = await colony.getTaskPayout(taskId, MANAGER_ROLE, ethers.constants.AddressZero);
@@ -1581,7 +1581,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       await checkErrorRevert(colony.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000), "colony-funding-worker-already-set");
@@ -1598,7 +1598,7 @@ contract("ColonyTask", accounts => {
         functionName: "removeTaskEvaluatorRole",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId]
+        args: [taskId],
       });
 
       await executeSignedRoleAssignment({
@@ -1607,7 +1607,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskEvaluatorRole",
         signers: [MANAGER, accounts[4]],
         sigTypes: [0, 0],
-        args: [taskId, accounts[4]]
+        args: [taskId, accounts[4]],
       });
 
       await checkErrorRevert(
@@ -1625,7 +1625,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
       await colony.mintTokens(100);
 
@@ -1637,7 +1637,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskWorkerPayout",
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
-          args: [taskId, ethers.constants.AddressZero, 98000]
+          args: [taskId, ethers.constants.AddressZero, 98000],
         }),
         "TaskPayoutSet"
       );
@@ -1662,7 +1662,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, ethers.constants.AddressZero, MAX_PAYOUT]
+        args: [taskId, ethers.constants.AddressZero, MAX_PAYOUT],
       });
 
       await checkErrorRevert(
@@ -1672,7 +1672,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerPayout",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, ethers.constants.AddressZero, MAX_PAYOUT.addn(1)]
+          args: [taskId, ethers.constants.AddressZero, MAX_PAYOUT.addn(1)],
         }),
         "colony-task-change-execution-failed" // Should be "colony-payout-too-large"
       );
@@ -1715,7 +1715,7 @@ contract("ColonyTask", accounts => {
         dueDate,
         managerPayout: 100,
         evaluatorPayout: 50,
-        workerPayout: 200
+        workerPayout: 200,
       });
 
       const task = await colony.getTask(taskId);
@@ -1750,7 +1750,7 @@ contract("ColonyTask", accounts => {
         token,
         evaluator,
         managerRating: 1,
-        workerRating: 1
+        workerRating: 1,
       });
 
       await colony.claimTaskPayout(taskId, MANAGER_ROLE, token.address);
@@ -1764,9 +1764,7 @@ contract("ColonyTask", accounts => {
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
 
       const evaluatorBalanceAfter = await token.balanceOf(evaluator);
-      const evaluatorPayout = EVALUATOR_PAYOUT.divn(100)
-        .muln(99)
-        .subn(1); // "Subtract" 1% fee
+      const evaluatorPayout = EVALUATOR_PAYOUT.divn(100).muln(99).subn(1); // "Subtract" 1% fee
       expect(evaluatorBalanceAfter.sub(evaluatorBalanceBefore)).to.eq.BN(evaluatorPayout);
     });
 
@@ -1790,15 +1788,11 @@ contract("ColonyTask", accounts => {
       await colony.claimTaskPayout(taskId, EVALUATOR_ROLE, token.address);
 
       const managerBalanceAfter = await token.balanceOf(MANAGER);
-      const managerPayout = MANAGER_PAYOUT.divn(100)
-        .muln(99)
-        .subn(1); // "Subtract" 1% fee
+      const managerPayout = MANAGER_PAYOUT.divn(100).muln(99).subn(1); // "Subtract" 1% fee
       expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(managerPayout);
 
       const workerBalanceAfter = await token.balanceOf(WORKER);
-      const workerPayout = WORKER_PAYOUT.divn(100)
-        .muln(99)
-        .subn(1); // "Subtract" 1% fee
+      const workerPayout = WORKER_PAYOUT.divn(100).muln(99).subn(1); // "Subtract" 1% fee
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.eq.BN(workerPayout);
 
       const evaluatorBalanceAfter = await token.balanceOf(evaluator);
@@ -1819,7 +1813,7 @@ contract("ColonyTask", accounts => {
         token,
         managerPayout: 99,
         workerPayout: 1,
-        evaluatorPayout: 2
+        evaluatorPayout: 2,
       });
 
       const networkBalance1 = await token.balanceOf(colonyNetwork.address);
@@ -1850,7 +1844,7 @@ contract("ColonyTask", accounts => {
         token,
         managerPayout: 99,
         workerPayout: 1,
-        evaluatorPayout: 2
+        evaluatorPayout: 2,
       });
 
       const networkBalance1 = await token.balanceOf(colonyNetwork.address);
@@ -1879,7 +1873,7 @@ contract("ColonyTask", accounts => {
         token,
         managerPayout: 100,
         workerPayout: 0,
-        evaluatorPayout: 0
+        evaluatorPayout: 0,
       });
 
       const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);

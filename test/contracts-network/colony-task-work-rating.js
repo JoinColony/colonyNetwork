@@ -15,7 +15,7 @@ import {
   WORKER_ROLE,
   DELIVERABLE_HASH,
   INITIAL_FUNDING,
-  SECONDS_PER_DAY
+  SECONDS_PER_DAY,
 } from "../../helpers/constants";
 import { currentBlockTime, checkErrorRevert, forwardTime, expectEvent } from "../../helpers/test-helper";
 import { fundColonyWithTokens, setupAssignedTask, setupRatedTask, setupRandomColony } from "../../helpers/test-data-generator";
@@ -26,7 +26,7 @@ chai.use(bnChai(web3.utils.BN));
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 
-contract("Colony Task Work Rating", accounts => {
+contract("Colony Task Work Rating", (accounts) => {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];

@@ -1,9 +1,9 @@
 const babelConfig = {
   presets: ["@babel/preset-env"],
-  plugins: ["istanbul"]
+  plugins: ["istanbul"],
 };
 
-module.exports = babel => {
+module.exports = (babel) => {
   babel.cache.never();
   return babelConfig;
 };

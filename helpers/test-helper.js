@@ -104,7 +104,7 @@ export function web3GetRawCall(params) {
     jsonrpc: "2.0",
     method: "eth_call",
     params: [params],
-    id: new Date().getTime()
+    id: new Date().getTime(),
   };
 
   return new Promise((resolve, reject) => {
@@ -201,10 +201,7 @@ export function getRandomString(_length) {
   const length = _length || 7;
   let randString = "";
   while (randString.length < length) {
-    randString += shortid
-      .generate()
-      .replace(/_/g, "")
-      .toLowerCase();
+    randString += shortid.generate().replace(/_/g, "").toLowerCase();
   }
   return randString.slice(0, length);
 }
@@ -253,13 +250,13 @@ export async function getBlockTime(blockNumber) {
 
 export async function expectEvent(tx, eventName) {
   const { logs } = await tx;
-  const event = logs.find(e => e.event === eventName);
+  const event = logs.find((e) => e.event === eventName);
   return expect(event).to.exist;
 }
 
 export async function expectAllEvents(tx, eventNames) {
   const { logs } = await tx;
-  const events = eventNames.every(eventName => logs.find(e => e.event === eventName));
+  const events = eventNames.every((eventName) => logs.find((e) => e.event === eventName));
   return expect(events).to.be.true;
 }
 
@@ -275,9 +272,9 @@ export async function forwardTime(seconds, test) {
           jsonrpc: "2.0",
           method: "evm_increaseTime",
           params: [seconds],
-          id: 0
+          id: 0,
         },
-        err => {
+        (err) => {
           if (err) {
             return reject(err);
           }
@@ -286,7 +283,7 @@ export async function forwardTime(seconds, test) {
               jsonrpc: "2.0",
               method: "evm_mine",
               params: [],
-              id: 0
+              id: 0,
             },
             (err2, res) => {
               if (err2) {
@@ -309,9 +306,9 @@ export async function mineBlock() {
         jsonrpc: "2.0",
         method: "evm_mine",
         params: [],
-        id: new Date().getTime()
+        id: new Date().getTime(),
       },
-      err => {
+      (err) => {
         if (err) {
           return reject(err);
         }
@@ -326,10 +323,7 @@ export function bnSqrt(bn, isGreater) {
   let b = bn;
   while (a.lt(b)) {
     b = a;
-    a = bn
-      .div(a)
-      .add(a)
-      .divn(2);
+    a = bn.div(a).add(a).divn(2);
   }
 
   if (isGreater && b.mul(b).lt(bn)) {
@@ -402,7 +396,7 @@ export async function submitAndForwardTimeToDispute(clients, test) {
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
 
   // If there are multiple submissions, ensure they are all different
-  const submissionsPromise = clients.map(async client => {
+  const submissionsPromise = clients.map(async (client) => {
     const rootHash = await client.getRootHash();
     const nNodes = await client.getRootHashNNodes();
     const jrh = await client.justificationTree.getRootHash();
@@ -664,7 +658,7 @@ export async function withdrawAllMinerStakes(colonyNetwork) {
 
   const accounts = await web3GetAccounts();
   await Promise.all(
-    accounts.map(async user => {
+    accounts.map(async (user) => {
       const info = await tokenLocking.getUserLock(clny.address, user);
       const stakedBalance = new BN(info.balance);
 
@@ -736,7 +730,7 @@ export async function getColonyEditable(colony, colonyNetwork) {
 }
 
 export async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, n) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nNodes, _jrh, _entryIndex, event) => {
       const nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nNodes, jrh);
       if (nSubmissions.toNumber() >= n) {

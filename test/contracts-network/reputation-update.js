@@ -11,7 +11,7 @@ import {
   setupFinalizedTask,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
-  giveUserCLNYTokensAndStake
+  giveUserCLNYTokensAndStake,
 } from "../../helpers/test-data-generator";
 
 import {
@@ -32,7 +32,7 @@ import {
   RATING_1_SALT,
   RATING_2_SALT,
   RATING_1_SECRET,
-  RATING_2_SECRET
+  RATING_2_SECRET,
 } from "../../helpers/constants";
 
 import {
@@ -41,7 +41,7 @@ import {
   advanceMiningCycleNoContest,
   getTokenArgs,
   removeSubdomainLimit,
-  addTaskSkillEditingFunctions
+  addTaskSkillEditingFunctions,
 } from "../../helpers/test-helper";
 
 const { expect } = chai;
@@ -51,7 +51,7 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const Token = artifacts.require("Token");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 
-contract("Reputation Updates", accounts => {
+contract("Reputation Updates", (accounts) => {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
@@ -73,7 +73,7 @@ contract("Reputation Updates", accounts => {
     await colonyNetwork.startNextCycle();
   });
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     const amount = WAD.mul(new BN(1000));
     await fundColonyWithTokens(metaColony, clnyToken, amount);
 
@@ -123,29 +123,29 @@ contract("Reputation Updates", accounts => {
         manager: 1,
         reputationChangeManager: MANAGER_PAYOUT.neg(),
         worker: 1,
-        reputationChangeWorker: WORKER_PAYOUT.neg()
+        reputationChangeWorker: WORKER_PAYOUT.neg(),
       },
       {
         manager: 2,
         reputationChangeManager: MANAGER_PAYOUT,
         worker: 2,
-        reputationChangeWorker: WORKER_PAYOUT
+        reputationChangeWorker: WORKER_PAYOUT,
       },
       {
         manager: 3,
         reputationChangeManager: MANAGER_PAYOUT.muln(3).divn(2),
         worker: 3,
-        reputationChangeWorker: WORKER_PAYOUT.muln(3).divn(2)
-      }
+        reputationChangeWorker: WORKER_PAYOUT.muln(3).divn(2),
+      },
     ];
 
-    ratings.forEach(async rating => {
+    ratings.forEach(async (rating) => {
       it(`should set the correct reputation change amount in log for rating ${rating.worker}`, async () => {
         await setupFinalizedTask({
           colonyNetwork,
           colony: metaColony,
           managerRating: rating.manager,
-          workerRating: rating.worker
+          workerRating: rating.worker,
         });
 
         const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
@@ -185,7 +185,7 @@ contract("Reputation Updates", accounts => {
       });
     });
 
-    it("should set the correct reputation change amount in log when all users have failed to rate", async function() {
+    it("should set the correct reputation change amount in log when all users have failed to rate", async function () {
       const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, evaluator: accounts[1] });
       await metaColony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
       await forwardTime(SECONDS_PER_DAY * 11, this);
@@ -211,7 +211,7 @@ contract("Reputation Updates", accounts => {
       expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT);
     });
 
-    it("should set the correct reputation change amount in log when evaluator has failed to rate", async function() {
+    it("should set the correct reputation change amount in log when evaluator has failed to rate", async function () {
       const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, evaluator: accounts[1] });
       await metaColony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, RATING_2_SECRET, { from: WORKER });
       await forwardTime(SECONDS_PER_DAY * 6, this);
@@ -236,7 +236,7 @@ contract("Reputation Updates", accounts => {
       expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT);
     });
 
-    it("should set the correct reputation change amount in log when worker has failed to rate", async function() {
+    it("should set the correct reputation change amount in log when worker has failed to rate", async function () {
       const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, evaluator: accounts[1] });
       await metaColony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
       await metaColony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_1_SECRET, { from: accounts[1] });
@@ -312,7 +312,7 @@ contract("Reputation Updates", accounts => {
       expect(repLogEntryWorker.amount).to.eq.BN(INT128_MAX);
     });
 
-    it("should correctly make large negative reputation updates", async function() {
+    it("should correctly make large negative reputation updates", async function () {
       const workerRating = 1;
       const workerRatingSecret = soliditySha3(RATING_2_SALT, workerRating);
 

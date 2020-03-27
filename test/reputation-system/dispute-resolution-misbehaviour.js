@@ -18,7 +18,7 @@ import {
   accommodateChallengeAndInvalidateHash,
   accommodateChallengeAndInvalidateHashViaTimeout,
   finishReputationMiningCycle,
-  removeSubdomainLimit
+  removeSubdomainLimit,
 } from "../../helpers/test-helper";
 
 import {
@@ -26,7 +26,7 @@ import {
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
   setupFinalizedTask,
-  fundColonyWithTokens
+  fundColonyWithTokens,
 } from "../../helpers/test-data-generator";
 
 import { DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION } from "../../helpers/constants";
@@ -42,7 +42,7 @@ chai.use(bnChai(web3.utils.BN));
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 const useJsTree = true;
@@ -72,7 +72,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };
 
-contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
+contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
   const MINER3 = accounts[7];
@@ -259,12 +259,12 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await checkErrorRevert(repCycle.invalidateHash(0, 3), "colony-reputation-mining-submission-window-still-open");
       // Cleanup
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await repCycle.invalidateHash(0, 3);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(2);
     });
@@ -483,7 +483,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
         workerRating: 1,
         managerPayout: 1,
         evaluatorPayout: 1,
-        workerPayout: 1
+        workerPayout: 1,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
@@ -503,7 +503,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
             workerRating: 1,
             managerPayout: 1,
             evaluatorPayout: 1,
-            workerPayout: 1
+            workerPayout: 1,
           }
         );
 
@@ -613,7 +613,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
       // Cleanup
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await checkErrorRevert(repCycle.confirmNewHash(0), "colony-reputation-mining-not-final-round");
       await repCycle.confirmNewHash(1);
@@ -640,7 +640,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
       // Cleanup
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -684,14 +684,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
   describe("when miner misbehaving during respondToChallenge stage", async () => {
     it("should correctly check the proof of the origin skill reputation, if necessary", async () => {
-      await fundColonyWithTokens(
-        metaColony,
-        clnyToken,
-        new BN("1000000000000")
-          .muln(4)
-          .add(new BN(5000000000000))
-          .add(new BN(1000000000))
-      );
+      await fundColonyWithTokens(metaColony, clnyToken, new BN("1000000000000").muln(4).add(new BN(5000000000000)).add(new BN(1000000000)));
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -704,7 +697,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
         workerPayout: 1000000000000,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -743,14 +736,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
     });
 
     it("should correctly check the proof of the child skill reputation, if necessary", async () => {
-      await fundColonyWithTokens(
-        metaColony,
-        clnyToken,
-        new BN("1000000000000")
-          .muln(4)
-          .add(new BN(5000000000000))
-          .add(new BN(1000000000))
-      );
+      await fundColonyWithTokens(metaColony, clnyToken, new BN("1000000000000").muln(4).add(new BN(5000000000000)).add(new BN(1000000000)));
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       await setupFinalizedTask({
@@ -762,7 +748,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
         workerPayout: 5000000000000,
         managerRating: 3,
         workerRating: 3,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await setupFinalizedTask({
@@ -774,7 +760,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
         workerPayout: 1,
         managerRating: 1,
         workerRating: 1,
-        worker: MINER2
+        worker: MINER2,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -983,8 +969,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
     [
       { word: "high", badClient1Argument: 1, badClient2Argument: 1 },
-      { word: "low", badClient1Argument: 9, badClient2Argument: -1 }
-    ].forEach(async args => {
+      { word: "low", badClient1Argument: 9, badClient2Argument: -1 },
+    ].forEach(async (args) => {
       it(`should fail to respondToChallenge if supplied log entry does not correspond to the entry under disagreement and supplied log entry
         is too ${args.word}`, async () => {
         await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
@@ -1050,7 +1036,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await badClient.confirmJustificationRootHash();
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await checkErrorRevert(repCycle.confirmNewHash(0), "colony-reputation-mining-not-final-round");
       await repCycle.confirmNewHash(1);

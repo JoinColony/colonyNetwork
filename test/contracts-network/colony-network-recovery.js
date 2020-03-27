@@ -15,7 +15,7 @@ import {
   checkErrorRevert,
   web3GetStorageAt,
   getActiveRepCycle,
-  advanceMiningCycleNoContest
+  advanceMiningCycleNoContest,
 } from "../../helpers/test-helper";
 import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -36,12 +36,12 @@ const Resolver = artifacts.require("Resolver");
 const ContractEditing = artifacts.require("ContractEditing");
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
-contract("Colony Network Recovery", accounts => {
+contract("Colony Network Recovery", (accounts) => {
   let colonyNetwork;
   let client;
   let startingBlockNumber;
@@ -60,7 +60,7 @@ contract("Colony Network Recovery", accounts => {
       loader: contractLoader,
       minerAddress: accounts[5],
       realProviderPort: REAL_PROVIDER_PORT,
-      useJsTree: true
+      useJsTree: true,
     });
   });
 
@@ -271,7 +271,7 @@ contract("Colony Network Recovery", accounts => {
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,
-            useJsTree: true
+            useJsTree: true,
           });
           await newClient.initialise(colonyNetwork.address);
 
@@ -343,7 +343,7 @@ contract("Colony Network Recovery", accounts => {
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,
-            useJsTree: true
+            useJsTree: true,
           });
           await ignorantclient.initialise(colonyNetwork.address);
 
@@ -490,7 +490,7 @@ contract("Colony Network Recovery", accounts => {
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,
-            useJsTree: true
+            useJsTree: true,
           });
           await newClient.initialise(colonyNetwork.address);
           await newClient.sync(startingBlockNumber);

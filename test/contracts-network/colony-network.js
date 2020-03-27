@@ -21,7 +21,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
-contract("Colony Network", accounts => {
+contract("Colony Network", (accounts) => {
   let newResolverAddress;
   const TOKEN_ARGS = getTokenArgs();
   const OTHER_ACCOUNT = accounts[1];
@@ -144,7 +144,7 @@ contract("Colony Network", accounts => {
   describe("when creating new colonies at a specific version", () => {
     beforeEach(async () => {
       // The new resolver also needs to know a load of functions to let createColony work...
-      const copyWiring = async function(resolverFrom, resolverTo, functionSig) {
+      const copyWiring = async function (resolverFrom, resolverTo, functionSig) {
         const sig = await resolverFrom.stringToSig(functionSig);
         const functionLocation = await resolverFrom.lookup(sig);
         await resolverTo.register(functionSig, functionLocation);

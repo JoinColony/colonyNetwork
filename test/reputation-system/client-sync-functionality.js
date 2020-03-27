@@ -20,7 +20,7 @@ const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
@@ -28,7 +28,7 @@ const useJsTree = true;
 
 process.env.SOLIDITY_COVERAGE
   ? contract.skip
-  : contract("Reputation mining - client sync functionality", accounts => {
+  : contract("Reputation mining - client sync functionality", (accounts) => {
       const MINER1 = accounts[5];
       const MINER2 = accounts[6];
 

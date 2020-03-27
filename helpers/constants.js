@@ -58,7 +58,7 @@ const SECONDS_PER_DAY = 86400;
 const MINING_CYCLE_DURATION = 60 * 60 * 24; // 24 hours
 const DECAY_RATE = {
   NUMERATOR:    new BN("992327946262944"), // eslint-disable-line prettier/prettier
-  DENOMINATOR: new BN("1000000000000000")
+  DENOMINATOR: new BN("1000000000000000"),
 };
 
 const GLOBAL_SKILL_ID = new BN("3"); // Not a root global skill ID or anything, just the first global skill's ID
@@ -103,5 +103,5 @@ module.exports = {
   SECONDS_PER_DAY,
   MINING_CYCLE_DURATION,
   DECAY_RATE,
-  GLOBAL_SKILL_ID
+  GLOBAL_SKILL_ID,
 };

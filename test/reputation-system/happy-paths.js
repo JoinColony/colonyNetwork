@@ -18,7 +18,7 @@ import {
   makeReputationKey,
   makeReputationValue,
   removeSubdomainLimit,
-  checkSuccessEthers
+  checkSuccessEthers,
 } from "../../helpers/test-helper";
 
 import {
@@ -26,7 +26,7 @@ import {
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
   setupFinalizedTask,
-  fundColonyWithTokens
+  fundColonyWithTokens,
 } from "../../helpers/test-data-generator";
 
 import {
@@ -39,7 +39,7 @@ import {
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
-  GLOBAL_SKILL_ID
+  GLOBAL_SKILL_ID,
 } from "../../helpers/constants";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -51,7 +51,7 @@ chai.use(bnChai(web3.utils.BN));
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 const useJsTree = true;
@@ -86,7 +86,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };
 
-contract("Reputation Mining - happy paths", accounts => {
+contract("Reputation Mining - happy paths", (accounts) => {
   const MANAGER = accounts[0];
   const EVALUATOR = accounts[1];
   const WORKER = accounts[2];
@@ -160,34 +160,34 @@ contract("Reputation Mining - happy paths", accounts => {
 
       await clients[0].saveCurrentState();
       const savedHash = await clients[0].reputationTree.getRootHash();
-      await Promise.all(clients.map(async client => client.loadState(savedHash)));
+      await Promise.all(clients.map(async (client) => client.loadState(savedHash)));
       await submitAndForwardTimeToDispute(clients, this);
 
       // Round 1
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[0], clients[1], {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[2], clients[3], {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[4], clients[5], {
-        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[6], clients[7], {
-        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
 
       // Round 2
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[0], clients[2], {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[4], clients[6], {
-        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
 
       // Round 3
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[0], clients[4], {
-        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
@@ -207,7 +207,7 @@ contract("Reputation Mining - happy paths", accounts => {
             workerRating: 2,
             managerPayout: 1,
             evaluatorPayout: 1,
-            workerPayout: 1
+            workerPayout: 1,
           }
         );
       }
@@ -231,7 +231,7 @@ contract("Reputation Mining - happy paths", accounts => {
             workerRating: 2,
             managerPayout: 1,
             evaluatorPayout: 1,
-            workerPayout: 1
+            workerPayout: 1,
           }
         );
       }
@@ -332,7 +332,7 @@ contract("Reputation Mining - happy paths", accounts => {
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
         managerRating: 1,
-        workerRating: 1
+        workerRating: 1,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -341,7 +341,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -364,7 +364,7 @@ contract("Reputation Mining - happy paths", accounts => {
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
         managerRating: 1,
-        workerRating: 1
+        workerRating: 1,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -373,7 +373,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -415,7 +415,7 @@ contract("Reputation Mining - happy paths", accounts => {
         evaluatorPayout: bigPayout,
         workerPayout: bigPayout,
         managerRating: 3,
-        workerRating: 3
+        workerRating: 3,
       });
 
       await forwardTime(MINING_CYCLE_DURATION, this);
@@ -425,7 +425,7 @@ contract("Reputation Mining - happy paths", accounts => {
       repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-reputation-not-max-int128" }
+        client2: { respondToChallenge: "colony-reputation-mining-reputation-not-max-int128" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -455,13 +455,11 @@ contract("Reputation Mining - happy paths", accounts => {
       repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
       await repCycle.confirmNewHash(1);
 
-      const largeCalculationResult = INT128_MAX.subn(1)
-        .mul(DECAY_RATE.NUMERATOR)
-        .div(DECAY_RATE.DENOMINATOR);
+      const largeCalculationResult = INT128_MAX.subn(1).mul(DECAY_RATE.NUMERATOR).div(DECAY_RATE.DENOMINATOR);
       const decayKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, MINER1);
       const decimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
 
@@ -513,7 +511,7 @@ contract("Reputation Mining - happy paths", accounts => {
         managerRating: 1,
         workerRating: 1,
         evaluator: EVALUATOR,
-        worker: accounts[3]
+        worker: accounts[3],
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -575,10 +573,10 @@ contract("Reputation Mining - happy paths", accounts => {
         { id: 30, skill: new BN(10), account: accounts[3], value: new BN(0) },
         { id: 31, skill: new BN(1), account: accounts[3], value: new BN(0) },
         { id: 32, skill: new BN(4), account: accounts[3], value: new BN(0) },
-        { id: 33, skill: new BN(3), account: accounts[3], value: new BN(0) }
+        { id: 33, skill: new BN(3), account: accounts[3], value: new BN(0) },
       ];
 
-      reputationProps.forEach(reputationProp => {
+      reputationProps.forEach((reputationProp) => {
         const key = makeReputationKey(metaColony.address, reputationProp.skill, reputationProp.account);
         const value = makeReputationValue(reputationProp.value, reputationProp.id);
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
@@ -605,7 +603,7 @@ contract("Reputation Mining - happy paths", accounts => {
         evaluatorPayout: 1000000000,
         workerPayout: 5000000000000,
         managerRating: 3,
-        workerRating: 3
+        workerRating: 3,
       });
 
       await setupFinalizedTask({
@@ -617,7 +615,7 @@ contract("Reputation Mining - happy paths", accounts => {
         evaluatorPayout: 1000000000,
         workerPayout: 4200000000000,
         managerRating: 2,
-        workerRating: 1
+        workerRating: 1,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -656,10 +654,7 @@ contract("Reputation Mining - happy paths", accounts => {
           id: 9,
           skill: new BN(9),
           account: undefined,
-          value: new BN(1500000000000)
-            .add(new BN(7500000000000))
-            .add(new BN(1000000000))
-            .sub(new BN(4200000000000))
+          value: new BN(1500000000000).add(new BN(7500000000000)).add(new BN(1000000000)).sub(new BN(4200000000000)),
         },
         {
           id: 10,
@@ -670,7 +665,7 @@ contract("Reputation Mining - happy paths", accounts => {
             .add(new BN(1000000000))
             .sub(new BN(4200000000000))
             .add(new BN(1000000000000))
-            .add(new BN(1000000000))
+            .add(new BN(1000000000)),
         },
         {
           id: 11,
@@ -681,7 +676,7 @@ contract("Reputation Mining - happy paths", accounts => {
             .add(new BN(1000000000))
             .sub(new BN(4200000000000))
             .add(new BN(1000000000000))
-            .add(new BN(1000000000))
+            .add(new BN(1000000000)),
         },
         {
           id: 12,
@@ -692,7 +687,7 @@ contract("Reputation Mining - happy paths", accounts => {
             .add(new BN(1000000000))
             .sub(new BN(4200000000000))
             .add(new BN(1000000000000))
-            .add(new BN(1000000000))
+            .add(new BN(1000000000)),
         },
         {
           id: 13,
@@ -703,7 +698,7 @@ contract("Reputation Mining - happy paths", accounts => {
             .add(new BN(1000000000))
             .sub(new BN(4200000000000))
             .add(new BN(1000000000000))
-            .add(new BN(1000000000))
+            .add(new BN(1000000000)),
         },
         {
           id: 14,
@@ -714,16 +709,13 @@ contract("Reputation Mining - happy paths", accounts => {
             .add(new BN(1000000000))
             .sub(new BN(4200000000000))
             .add(new BN(1000000000000))
-            .add(new BN(1000000000))
+            .add(new BN(1000000000)),
         },
         {
           id: 15,
           skill: new BN(10),
           account: undefined,
-          value: new BN(1500000000000)
-            .add(new BN(7500000000000))
-            .add(new BN(1000000000))
-            .sub(new BN(4200000000000))
+          value: new BN(1500000000000).add(new BN(7500000000000)).add(new BN(1000000000)).sub(new BN(4200000000000)),
         },
         { id: 16, skill: new BN(9), account: MANAGER, value: new BN(1500000000000) },
         { id: 17, skill: new BN(8), account: MANAGER, value: new BN(2500000000000) },
@@ -746,10 +738,10 @@ contract("Reputation Mining - happy paths", accounts => {
         { id: 34, skill: new BN(6), account: WORKER, value: new BN(3300000000000) },
         { id: 35, skill: new BN(5), account: WORKER, value: new BN(3300000000000) },
         { id: 36, skill: new BN(4), account: WORKER, value: new BN(3300000000000) },
-        { id: 37, skill: new BN(10), account: WORKER, value: new BN(3300000000000) }
+        { id: 37, skill: new BN(10), account: WORKER, value: new BN(3300000000000) },
       ];
 
-      reputationProps.forEach(reputationProp => {
+      reputationProps.forEach((reputationProp) => {
         const key = makeReputationKey(metaColony.address, reputationProp.skill, reputationProp.account);
         const value = makeReputationValue(reputationProp.value, reputationProp.id);
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
@@ -768,7 +760,7 @@ contract("Reputation Mining - happy paths", accounts => {
         domainId: 8,
         manager: MANAGER,
         evaluator: EVALUATOR,
-        worker: WORKER
+        worker: WORKER,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -823,12 +815,12 @@ contract("Reputation Mining - happy paths", accounts => {
         { id: 34, skillId: META_ROOT_SKILL, account: WORKER, value: WORKER_PAYOUT },
         { id: 35, skillId: 10, account: WORKER, value: WORKER_PAYOUT },
         { id: 36, skillId: GLOBAL_SKILL_ID, account: undefined, value: WORKER_PAYOUT },
-        { id: 37, skillId: GLOBAL_SKILL_ID, account: WORKER, value: WORKER_PAYOUT }
+        { id: 37, skillId: GLOBAL_SKILL_ID, account: WORKER, value: WORKER_PAYOUT },
       ];
 
       expect(Object.keys(goodClient.reputations).length).to.equal(reputationProps.length);
 
-      reputationProps.forEach(reputationProp => {
+      reputationProps.forEach((reputationProp) => {
         const key = makeReputationKey(metaColony.address, new BN(reputationProp.skillId), reputationProp.account);
         const value = makeReputationValue(reputationProp.value, reputationProp.id);
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
@@ -857,7 +849,7 @@ contract("Reputation Mining - happy paths", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await repCycle.confirmNewHash(1);
     });
@@ -945,7 +937,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await badClient.confirmJustificationRootHash();
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
       await repCycle.confirmNewHash(1);
 
@@ -970,7 +962,7 @@ contract("Reputation Mining - happy paths", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
 
       repCycle = await getActiveRepCycle(colonyNetwork);

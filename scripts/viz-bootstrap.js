@@ -14,9 +14,9 @@ async function forwardTime(seconds) {
         jsonrpc: "2.0",
         method: "evm_increaseTime",
         params: [seconds],
-        id: 0
+        id: 0,
       },
-      err => {
+      (err) => {
         if (err) {
           return reject(err);
         }
@@ -25,7 +25,7 @@ async function forwardTime(seconds) {
             jsonrpc: "2.0",
             method: "evm_mine",
             params: [],
-            id: 0
+            id: 0,
           },
           (err2, res) => {
             if (err2) {
@@ -40,7 +40,7 @@ async function forwardTime(seconds) {
   return p;
 }
 
-module.exports = async function(callback) {
+module.exports = async function (callback) {
   try {
     const accounts = await web3.eth.getAccounts();
     const MINER = accounts[5];

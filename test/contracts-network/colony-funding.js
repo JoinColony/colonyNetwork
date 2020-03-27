@@ -11,7 +11,7 @@ import {
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
-  INITIAL_FUNDING
+  INITIAL_FUNDING,
 } from "../../helpers/constants";
 
 import { getTokenArgs, checkErrorRevert, web3GetBalance } from "../../helpers/test-helper";
@@ -25,7 +25,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 
-contract("Colony Funding", accounts => {
+contract("Colony Funding", (accounts) => {
   const MANAGER = accounts[0];
   const WORKER = accounts[2];
 
@@ -172,7 +172,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       // FundingPot 0, Payout 0
@@ -183,7 +183,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 0]
+        args: [taskId, otherToken.address, 0],
       });
       const task = await colony.getTask(taskId);
       let fundingPot = await colony.getFundingPot(task.fundingPotId);
@@ -203,7 +203,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 40]
+        args: [taskId, otherToken.address, 40],
       });
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
@@ -228,7 +228,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 80]
+        args: [taskId, otherToken.address, 80],
       });
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
@@ -241,7 +241,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 40]
+        args: [taskId, otherToken.address, 40],
       });
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
@@ -263,7 +263,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 20]
+        args: [taskId, otherToken.address, 20],
       });
       await colony.moveFundsBetweenPots(1, 0, 0, 2, 1, 20, otherToken.address);
       await executeSignedTaskChange({
@@ -272,7 +272,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 40]
+        args: [taskId, otherToken.address, 40],
       });
 
       // FundingPot 20, Payout 40
@@ -292,7 +292,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 20]
+        args: [taskId, otherToken.address, 20],
       });
       await colony.moveFundsBetweenPots(1, 0, 0, 2, 1, 60, otherToken.address);
       await executeSignedTaskChange({
@@ -301,7 +301,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 40]
+        args: [taskId, otherToken.address, 40],
       });
 
       // FundingPot 20, Payout 40
@@ -312,7 +312,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 10]
+        args: [taskId, otherToken.address, 10],
       });
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
@@ -325,7 +325,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 5]
+        args: [taskId, otherToken.address, 5],
       });
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
@@ -344,7 +344,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 40]
+        args: [taskId, otherToken.address, 40],
       });
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
@@ -357,7 +357,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 30]
+        args: [taskId, otherToken.address, 30],
       });
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
@@ -373,7 +373,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 5]
+        args: [taskId, otherToken.address, 5],
       });
       await colony.moveFundsBetweenPots(1, 0, 0, 2, 1, 5, otherToken.address);
       await executeSignedTaskChange({
@@ -382,7 +382,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 30]
+        args: [taskId, otherToken.address, 30],
       });
 
       // FundingPot 5, Payout 30
@@ -393,7 +393,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, otherToken.address, 5]
+        args: [taskId, otherToken.address, 5],
       });
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
@@ -476,7 +476,7 @@ contract("Colony Funding", accounts => {
         colonyNetwork,
         colony,
         token,
-        workerRating: 1
+        workerRating: 1,
       });
 
       await colony.claimTaskPayout(taskId, MANAGER_ROLE, token.address);
@@ -554,7 +554,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
-        args: [taskId, WORKER]
+        args: [taskId, WORKER],
       });
 
       // Set manager payout above pot value 40 > 0
@@ -564,7 +564,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, ethers.constants.AddressZero, 40]
+        args: [taskId, ethers.constants.AddressZero, 40],
       });
 
       const task = await colony.getTask(taskId);
@@ -586,7 +586,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, ethers.constants.AddressZero, 50]
+        args: [taskId, ethers.constants.AddressZero, 50],
       });
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);

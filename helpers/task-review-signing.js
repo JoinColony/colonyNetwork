@@ -19,7 +19,7 @@ export async function getSigsAndTransactionData({ colony, taskId, functionName, 
   // and https://github.com/ethereum/web3.js/issues/2077
   const ethersBNTaskId = ethers.utils.bigNumberify(taskId.toString());
   const convertedArgs = [];
-  args.forEach(arg => {
+  args.forEach((arg) => {
     if (Number.isInteger(arg)) {
       const convertedArg = ethers.utils.bigNumberify(arg);
       convertedArgs.push(convertedArg);
@@ -44,9 +44,9 @@ export async function getSigsAndTransactionData({ colony, taskId, functionName, 
     return createSignaturesTrezor(colony, ethersBNTaskId, [signers[i]], privKey, 0, txData);
   });
   const sigs = await Promise.all(sigsPromises);
-  const sigV = sigs.map(sig => sig.sigV[0]);
-  const sigR = sigs.map(sig => sig.sigR[0]);
-  const sigS = sigs.map(sig => sig.sigS[0]);
+  const sigV = sigs.map((sig) => sig.sigV[0]);
+  const sigR = sigs.map((sig) => sig.sigR[0]);
+  const sigS = sigs.map((sig) => sig.sigS[0]);
   return { sigV, sigR, sigS, txData };
 }
 

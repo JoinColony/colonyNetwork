@@ -9,7 +9,7 @@ const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
 
 // eslint-disable-next-line no-unused-vars
-module.exports = async function(deployer) {
+module.exports = async function (deployer) {
   // Create a new Colony (version) and setup a new Resolver for it
   const reputationMiningCycle = await ReputationMiningCycle.deployed();
   const reputationMiningCycleRespond = await ReputationMiningCycleRespond.deployed();

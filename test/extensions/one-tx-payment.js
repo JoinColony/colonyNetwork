@@ -14,7 +14,7 @@ chai.use(bnChai(web3.utils.BN));
 const OneTxPaymentFactory = artifacts.require("OneTxPaymentFactory");
 const OneTxPayment = artifacts.require("OneTxPayment");
 
-contract("One transaction payments", accounts => {
+contract("One transaction payments", (accounts) => {
   let colony;
   let token;
   let colonyNetwork;
@@ -98,7 +98,7 @@ contract("One transaction payments", accounts => {
       await colony.claimColonyFunds(ethers.constants.AddressZero);
       // This is the one transactions. Those ones above don't count...
       await oneTxExtension.makePaymentFundedFromDomain(1, 0, 1, 0, RECIPIENT, ethers.constants.AddressZero, 10, 1, GLOBAL_SKILL_ID, {
-        from: COLONY_ADMIN
+        from: COLONY_ADMIN,
       });
       // Check it completed
       const balanceAfter = await web3.eth.getBalance(RECIPIENT);

@@ -9,7 +9,7 @@ import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColo
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-contract("Colony Recovery", accounts => {
+contract("Colony Recovery", (accounts) => {
   let colony;
   let colonyNetwork;
   let metaColony;

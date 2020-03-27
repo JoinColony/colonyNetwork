@@ -18,7 +18,7 @@ import {
   bnSqrt,
   makeReputationKey,
   advanceMiningCycleNoContest,
-  getRewardClaimSquareRootsAndProofs
+  getRewardClaimSquareRootsAndProofs,
 } from "../../helpers/test-helper";
 
 import { fundColonyWithTokens, setupFinalizedTask, giveUserCLNYTokensAndStake, setupRandomColony } from "../../helpers/test-data-generator";
@@ -37,12 +37,12 @@ const Token = artifacts.require("Token");
 const DSRoles = artifacts.require("DSRoles");
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
-contract("Colony Reward Payouts", accounts => {
+contract("Colony Reward Payouts", (accounts) => {
   let colony;
   let token;
   let otherToken;
@@ -107,7 +107,7 @@ contract("Colony Reward Payouts", accounts => {
       loader: contractLoader,
       minerAddress: accounts[4],
       realProviderPort: REAL_PROVIDER_PORT,
-      useJsTree: true
+      useJsTree: true,
     });
     await client.initialise(colonyNetwork.address);
 
@@ -176,7 +176,7 @@ contract("Colony Reward Payouts", accounts => {
       await setupFinalizedTask({
         colonyNetwork,
         colony,
-        skillId: id
+        skillId: id,
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -212,7 +212,7 @@ contract("Colony Reward Payouts", accounts => {
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...newUserReputationProof, {
-          from: userAddress1
+          from: userAddress1,
         }),
         "colony-reputation-invalid-user-address"
       );
@@ -233,7 +233,7 @@ contract("Colony Reward Payouts", accounts => {
         colonyNetwork,
         colony: newColony,
         token: newToken,
-        domainId: domainCount
+        domainId: domainCount,
       });
 
       await newColony.claimTaskPayout(taskId, MANAGER_ROLE, newToken.address);
@@ -328,14 +328,7 @@ contract("Colony Reward Payouts", accounts => {
       const payoutId2 = tx2.logs[0].args.rewardPayoutId;
 
       const payout2 = await colony.getRewardPayoutInfo(payoutId2);
-      assert.equal(
-        payout2.amount,
-        initialFunding
-          .divn(100)
-          .addn(100)
-          .toString(),
-        "Payout has unexpected amount"
-      );
+      assert.equal(payout2.amount, initialFunding.divn(100).addn(100).toString(), "Payout has unexpected amount");
     });
 
     it("should use only the unclaimed payouts from partially-claimed previous rewards to fund new ones", async () => {
@@ -356,7 +349,7 @@ contract("Colony Reward Payouts", accounts => {
       const { squareRoots, userProof } = await getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId1, userAddress1);
 
       await colony.claimRewardPayout(payoutId1, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
-        from: userAddress1
+        from: userAddress1,
       });
       const payout = await colony.getRewardPayoutInfo(payoutId1);
 
@@ -435,7 +428,7 @@ contract("Colony Reward Payouts", accounts => {
       const { squareRoots, userProof } = await getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId, userAddress3);
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
-          from: userAddress3
+          from: userAddress3,
         }),
         "colony-reward-payout-invalid-user-tokens"
       );
@@ -471,7 +464,7 @@ contract("Colony Reward Payouts", accounts => {
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
-          from: userAddress3
+          from: userAddress3,
         }),
         "colony-reward-payout-invalid-user-reputation"
       );
@@ -539,7 +532,7 @@ contract("Colony Reward Payouts", accounts => {
         "colony-reward-payout-invalid-parameter-total-tokens",
         "colony-reward-payout-invalid-parameter-numerator",
         "colony-reward-payout-invalid-parameter-denominator",
-        "colony-reward-payout-invalid-parameter-amount"
+        "colony-reward-payout-invalid-parameter-amount",
       ];
 
       const promises = initialSquareRoots.map((param, i) => {
@@ -692,7 +685,7 @@ contract("Colony Reward Payouts", accounts => {
       const { squareRoots, userProof } = await getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony1, payoutId1, userAddress1);
 
       await colony1.claimRewardPayout(payoutId1, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
-        from: userAddress1
+        from: userAddress1,
       });
 
       const userReputationKey = makeReputationKey(colony2.address, rootDomainSkill2, userAddress1);
@@ -794,7 +787,7 @@ contract("Colony Reward Payouts", accounts => {
 
       await checkErrorRevert(
         colony2.claimRewardPayout(payoutId1, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
-          from: userAddress1
+          from: userAddress1,
         }),
         "colony-reputation-invalid-root-hash"
       );
@@ -820,28 +813,28 @@ contract("Colony Reward Payouts", accounts => {
     const reputations = [
       {
         totalReputation: new BN(3),
-        totalAmountOfPayoutTokens: new BN(90000000)
+        totalAmountOfPayoutTokens: new BN(90000000),
       },
       {
         totalReputation: new BN(30),
-        totalAmountOfPayoutTokens: new BN(90000000)
+        totalAmountOfPayoutTokens: new BN(90000000),
       },
       {
         totalReputation: new BN(30000000000),
-        totalAmountOfPayoutTokens: new BN(90000000000)
+        totalAmountOfPayoutTokens: new BN(90000000000),
       },
       {
         totalReputation: new BN(3).mul(new BN(10).pow(new BN(35))),
-        totalAmountOfPayoutTokens: new BN(9).mul(new BN(10).pow(new BN(35)))
+        totalAmountOfPayoutTokens: new BN(9).mul(new BN(10).pow(new BN(35))),
       },
       {
         // This is highest possible value for colony-wide reputation that can be used for reward payouts
         totalReputation: bnSqrt(INT128_MAX).pow(new BN(2)),
-        totalAmountOfPayoutTokens: INT128_MAX
-      }
+        totalAmountOfPayoutTokens: INT128_MAX,
+      },
     ];
 
-    reputations.forEach(data =>
+    reputations.forEach((data) =>
       it(`should calculate fairly precise reward payout for:
         user reputation/tokens: ${data.totalReputation.divn(3).toString()}
         total reputation/tokens: ${data.totalReputation.toString()}`, async () => {
@@ -921,7 +914,7 @@ contract("Colony Reward Payouts", accounts => {
         const colonyNetworkBalanceBeforeClaim1 = await payoutToken.balanceOf(colonyNetwork.address);
 
         await newColony.claimRewardPayout(payoutId, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
-          from: userAddress1
+          from: userAddress1,
         });
 
         const remainingAfterClaim1 = await newColony.getFundingPotBalance(0, payoutToken.address);
@@ -949,7 +942,7 @@ contract("Colony Reward Payouts", accounts => {
         const userReputationProofForColony2 = [key, value, branchMask, siblings];
 
         await newColony.claimRewardPayout(payoutId, squareRoots, ...userReputationProofForColony2, {
-          from: userAddress2
+          from: userAddress2,
         });
 
         const colonyNetworkBalanceAfterClaim2 = await payoutToken.balanceOf(colonyNetwork.address);
@@ -958,11 +951,7 @@ contract("Colony Reward Payouts", accounts => {
         const remainingAfterClaim2 = await newColony.getFundingPotBalance(0, payoutToken.address);
         const user2BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
         expect(user2BalanceAfterClaim).to.eq.BN(
-          amountAvailableForPayout
-            .sub(user1BalanceAfterClaim)
-            .sub(colonyNetworkFeeClaim1)
-            .sub(remainingAfterClaim2)
-            .sub(colonyNetworkFeeClaim2)
+          amountAvailableForPayout.sub(user1BalanceAfterClaim).sub(colonyNetworkFeeClaim1).sub(remainingAfterClaim2).sub(colonyNetworkFeeClaim2)
         );
 
         console.log("Remaining after claim 2: ", remainingAfterClaim2.toString());
@@ -972,7 +961,7 @@ contract("Colony Reward Payouts", accounts => {
         const userReputationProofForColony3 = [key, value, branchMask, siblings];
 
         await newColony.claimRewardPayout(payoutId, squareRoots, ...userReputationProofForColony3, {
-          from: userAddress3
+          from: userAddress3,
         });
 
         const colonyNetworkBalanceAfterClaim3 = await payoutToken.balanceOf(colonyNetwork.address);
