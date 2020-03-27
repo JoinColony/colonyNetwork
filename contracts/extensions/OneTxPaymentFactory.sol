@@ -18,9 +18,9 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
-import "./../ColonyDataTypes.sol";
-import "./../IColony.sol";
-import "./../ColonyAuthority.sol";
+import "./../colony/ColonyAuthority.sol";
+import "./../colony/ColonyDataTypes.sol";
+import "./../colony/IColony.sol";
 import "./ExtensionFactory.sol";
 import "./OneTxPayment.sol";
 

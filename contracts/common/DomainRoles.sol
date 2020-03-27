@@ -17,7 +17,7 @@
 
 pragma solidity 0.5.8; // ignore-swc-103
 
-import "../lib/dappsys/roles.sol";
+import "./../../lib/dappsys/roles.sol";
 
 
 contract DomainRoles is DSRoles {

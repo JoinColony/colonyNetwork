@@ -6,37 +6,37 @@ const parser = require("solidity-parser-antlr");
 
 const INTERFACES = [
   {
-    contractFile: path.resolve(__dirname, "..", "contracts", "IColony.sol"),
+    contractFile: path.resolve(__dirname, "..", "contracts", "colony", "IColony.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IColony.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IColony.md"),
   },
   {
-    contractFile: path.resolve(__dirname, "..", "contracts", "IColonyNetwork.sol"),
+    contractFile: path.resolve(__dirname, "..", "contracts", "colonyNetwork", "IColonyNetwork.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IColonyNetwork.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IColonyNetwork.md"),
   },
   {
-    contractFile: path.resolve(__dirname, "..", "contracts", "IEtherRouter.sol"),
+    contractFile: path.resolve(__dirname, "..", "contracts", "common", "IEtherRouter.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IEtherRouter.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IEtherRouter.md"),
   },
   {
-    contractFile: path.resolve(__dirname, "..", "contracts", "IMetaColony.sol"),
+    contractFile: path.resolve(__dirname, "..", "contracts", "colony", "IMetaColony.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IMetaColony.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IMetaColony.md"),
   },
   {
-    contractFile: path.resolve(__dirname, "..", "contracts", "IRecovery.sol"),
+    contractFile: path.resolve(__dirname, "..", "contracts", "common", "IRecovery.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IRecovery.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IRecovery.md"),
   },
   {
-    contractFile: path.resolve(__dirname, "..", "contracts", "IReputationMiningCycle.sol"),
+    contractFile: path.resolve(__dirname, "..", "contracts", "reputationMiningCycle", "IReputationMiningCycle.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_IReputationMiningCycle.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "_Interface_IReputationMiningCycle.md"),
   },
   {
-    contractFile: path.resolve(__dirname, "..", "contracts", "ITokenLocking.sol"),
+    contractFile: path.resolve(__dirname, "..", "contracts", "tokenLocking", "ITokenLocking.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_ITokenLocking.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "_Interface_ITokenLocking.md"),
   },

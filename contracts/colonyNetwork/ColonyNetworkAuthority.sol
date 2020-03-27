@@ -17,7 +17,7 @@
 
 pragma solidity 0.5.8;
 
-import "./CommonAuthority.sol";
+import "./../common/CommonAuthority.sol";
 
 
 contract ColonyNetworkAuthority is CommonAuthority {

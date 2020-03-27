@@ -17,7 +17,7 @@
 
 pragma solidity 0.5.8;
 
-import "./ColonyDataTypes.sol";
+import "./../colony/ColonyDataTypes.sol";
 import "./DomainRoles.sol";
 
 

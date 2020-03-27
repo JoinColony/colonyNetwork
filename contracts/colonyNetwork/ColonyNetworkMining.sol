@@ -18,11 +18,11 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
+import "./../common/ERC20Extended.sol";
+import "./../common/EtherRouter.sol";
+import "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyNetworkStorage.sol";
-import "./ERC20Extended.sol";
-import "./IReputationMiningCycle.sol";
-import "./ITokenLocking.sol";
-import "./EtherRouter.sol";
 
 
 contract ColonyNetworkMining is ColonyNetworkStorage {

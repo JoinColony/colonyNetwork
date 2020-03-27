@@ -1,20 +1,20 @@
 #!/bin/bash
 
-version="$(grep 'function version() public pure returns (uint256 colonyVersion) { return ' ./contracts/Colony.sol | sed 's/function version() public pure returns (uint256 colonyVersion) { return //' | sed 's/; }//' | sed 's/ //g')"
+version="$(grep 'function version() public pure returns (uint256 colonyVersion) { return ' ./contracts/colony/Colony.sol | sed 's/function version() public pure returns (uint256 colonyVersion) { return //' | sed 's/; }//' | sed 's/ //g')"
 echo "Current Colony contract version is $version"
 updated_version=$(($version + 1))
 echo "Updating version to $updated_version"
 
-cp ./contracts/Resolver.sol ./contracts/UpdatedResolver.sol
+cp ./contracts/common/Resolver.sol ./contracts/UpdatedResolver.sol
 sed -i.bak "s/Resolver/UpdatedResolver/g" ./contracts/UpdatedResolver.sol
 sed -i.bak "s/function stringToSig/function isUpdated() public pure returns(bool) {return true;} function stringToSig/g" ./contracts/UpdatedResolver.sol
-cp ./contracts/Colony.sol ./contracts/UpdatedColony.sol
-cp ./contracts/ColonyDataTypes.sol ./contracts/UpdatedColonyDataTypes.sol
-cp ./contracts/ColonyStorage.sol ./contracts/UpdatedColonyStorage.sol
-cp ./contracts/IColony.sol ./contracts/IUpdatedColony.sol
-cp ./contracts/ColonyNetwork.sol ./contracts/UpdatedColonyNetwork.sol
-cp ./contracts/ReputationMiningCycle.sol ./contracts/UpdatedReputationMiningCycle.sol
-cp ./contracts/IReputationMiningCycle.sol ./contracts/IUpdatedReputationMiningCycle.sol
+cp ./contracts/colony/Colony.sol ./contracts/UpdatedColony.sol
+cp ./contracts/colony/ColonyDataTypes.sol ./contracts/UpdatedColonyDataTypes.sol
+cp ./contracts/colony/ColonyStorage.sol ./contracts/UpdatedColonyStorage.sol
+cp ./contracts/colony/IColony.sol ./contracts/IUpdatedColony.sol
+cp ./contracts/colonyNetwork/ColonyNetwork.sol ./contracts/UpdatedColonyNetwork.sol
+cp ./contracts/reputationMiningCycle/ReputationMiningCycle.sol ./contracts/UpdatedReputationMiningCycle.sol
+cp ./contracts/reputationMiningCycle/IReputationMiningCycle.sol ./contracts/IUpdatedReputationMiningCycle.sol
 # Modify UpdatedColonyNetwork contract
 sed -i.bak "s/contract ColonyNetwork/contract UpdatedColonyNetwork/g" ./contracts/UpdatedColonyNetwork.sol
 sed -i.bak "s/address resolver;/address resolver;function isUpdated() public pure returns(bool) {return true;}/g" ./contracts/UpdatedColonyNetwork.sol

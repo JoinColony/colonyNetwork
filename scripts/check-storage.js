@@ -14,23 +14,23 @@ walkSync("./contracts/").forEach((contractName) => {
   // Contracts listed here are allowed to have storage variables
   if (
     [
+      "contracts/colony/ColonyAuthority.sol",
+      "contracts/colony/ColonyStorage.sol",
+      "contracts/colonyNetwork/ColonyNetworkAuthority.sol",
+      "contracts/colonyNetwork/ColonyNetworkStorage.sol",
+      "contracts/common/CommonAuthority.sol",
+      "contracts/common/CommonStorage.sol",
+      "contracts/common/DomainRoles.sol",
+      "contracts/common/EtherRouter.sol",
+      "contracts/common/Resolver.sol",
+      "contracts/ens/ENSRegistry.sol", // Not directly used by any colony contracts
       "contracts/extensions/OneTxPayment.sol",
       "contracts/extensions/OneTxPaymentFactory.sol",
-      "contracts/CommonAuthority.sol",
-      "contracts/ColonyAuthority.sol",
-      "contracts/ColonyNetworkAuthority.sol",
-      "contracts/ColonyNetworkStorage.sol",
-      "contracts/ColonyStorage.sol",
-      "contracts/CommonStorage.sol",
-      "contracts/DomainRoles.sol",
-      "contracts/EtherRouter.sol",
-      "contracts/Migrations.sol",
-      "contracts/Resolver.sol",
-      "contracts/TokenLockingStorage.sol",
-      "contracts/PatriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
       "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
-      "contracts/ens/ENSRegistry.sol", // Not directly used by any colony contracts
-      "contracts/ReputationMiningCycleStorage.sol",
+      "contracts/patriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
+      "contracts/reputationMiningCycle/ReputationMiningCycleStorage.sol",
+      "contracts/tokenLocking/TokenLockingStorage.sol",
+      "contracts/Migrations.sol",
       "contracts/Token.sol", // Imported from colonyToken repo
       "contracts/TokenAuthority.sol", // Imported from colonyToken repo
     ].indexOf(contractName) > -1

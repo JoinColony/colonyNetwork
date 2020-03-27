@@ -17,11 +17,11 @@
 
 pragma solidity 0.5.8;
 
-import "./ColonyDataTypes.sol";
-import "./CommonStorage.sol";
-import "./CommonAuthority.sol";
-import "./IRecovery.sol";
+import "./../colony/ColonyDataTypes.sol";
 import "./ContractRecoveryDataTypes.sol";
+import "./CommonAuthority.sol";
+import "./CommonStorage.sol";
+import "./IRecovery.sol";
 
 
 /// @title Used for recovery in both ColonyNetwork and Colony instances

@@ -18,8 +18,8 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
-import "./../Colony.sol";
-import "./../IColonyNetwork.sol";
+import "./../colony/Colony.sol";
+import "./../colonyNetwork/IColonyNetwork.sol";
 
 
 contract FunctionsNotAvailableOnColony is Colony {

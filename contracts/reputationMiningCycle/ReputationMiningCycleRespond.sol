@@ -18,12 +18,12 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "../lib/dappsys/math.sol";
-import "./IColonyNetwork.sol";
-import "./PatriciaTree/PatriciaTreeProofs.sol";
-import "./ITokenLocking.sol";
-import "./ReputationMiningCycleStorage.sol";
-import {Bits} from "./PatriciaTree/Bits.sol";
+import "./../../lib/dappsys/math.sol";
+import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../patriciaTree/PatriciaTreeProofs.sol";
+import "./../reputationMiningCycle/ReputationMiningCycleStorage.sol";
+import "./../tokenLocking/ITokenLocking.sol";
+import {Bits} from "./../patriciaTree/Bits.sol";
 
 
 // TODO (post CCv1, possibly never): Can we handle all possible disputes regarding the very first hash that should be set?

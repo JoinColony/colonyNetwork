@@ -18,11 +18,12 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "../lib/dappsys/auth.sol";
-import "./TokenLockingDataTypes.sol";
+import "./../../lib/dappsys/auth.sol";
+import "./../tokenLocking/TokenLockingDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
+
 
 contract TokenLockingStorage is TokenLockingDataTypes, DSAuth {
   address resolver;

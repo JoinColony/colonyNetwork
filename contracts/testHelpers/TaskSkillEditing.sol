@@ -18,7 +18,7 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
-import "./../ColonyStorage.sol";
+import "./../colony/ColonyStorage.sol";
 
 
 contract TaskSkillEditing is ColonyStorage {

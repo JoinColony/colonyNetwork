@@ -17,16 +17,17 @@
 
 pragma solidity 0.5.8;
 
-import "../lib/dappsys/math.sol";
-import "./ERC20Extended.sol";
-import "./IColonyNetwork.sol";
+import "./../../lib/dappsys/math.sol";
+import "./../common/CommonStorage.sol";
+import "./../common/ERC20Extended.sol";
+import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./ColonyAuthority.sol";
-import "./PatriciaTree/PatriciaTreeProofs.sol";
-import "./CommonStorage.sol";
 import "./ColonyDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
+
 
 contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes, DSMath {
   uint256 constant COLONY_NETWORK_SLOT = 6;

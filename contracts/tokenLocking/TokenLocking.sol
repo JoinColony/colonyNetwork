@@ -18,12 +18,12 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "./ERC20Extended.sol";
-import "./IColonyNetwork.sol";
-import "./IMetaColony.sol";
-import "./IReputationMiningCycle.sol";
-import "./TokenLockingStorage.sol";
-import "../lib/dappsys/math.sol";
+import "./../../lib/dappsys/math.sol";
+import "./../colony/IMetaColony.sol";
+import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../common/ERC20Extended.sol";
+import "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import "./../tokenLocking/TokenLockingStorage.sol";
 
 
 contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123

@@ -18,7 +18,7 @@
 pragma solidity >=0.5.8; // ignore-swc-103
 pragma experimental ABIEncoderV2;
 
-import "./IRecovery.sol";
+import "./../common/IRecovery.sol";
 import "./ColonyDataTypes.sol";
 
 

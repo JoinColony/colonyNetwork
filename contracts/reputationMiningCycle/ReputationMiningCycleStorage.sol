@@ -17,11 +17,12 @@
 
 pragma solidity 0.5.8;
 
-import "../lib/dappsys/auth.sol";
-import "./ReputationMiningCycleDataTypes.sol";
+import "./../../lib/dappsys/auth.sol";
+import "./../reputationMiningCycle/ReputationMiningCycleDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
+
 
 contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth {
   // From DSAuth there is authority and owner at storage slots 0 and 1 respectively
