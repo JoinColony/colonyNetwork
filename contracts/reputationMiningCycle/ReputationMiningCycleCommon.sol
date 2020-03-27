@@ -30,6 +30,16 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   /// @notice Size of mining window in seconds
   uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
 
+  function expectedBranchMask(uint256 nNodes, uint256 node) public pure returns (uint256) {
+    // Gets the expected branchmask for a patricia tree which has nNodes, with keys from 0 to nNodes -1
+    // i.e. the tree is 'full' - there are no missing nodes
+    uint256 mask = sub(nNodes, 1); // Every branchmask in a full tree has at least these 1s set
+    uint256 xored = mask ^ node; // Where do mask and node differ?
+    // Set every bit in the mask from the first bit where they differ to 1
+    uint256 remainderMask = sub(nextPowerOfTwoInclusive(add(xored, 1)), 1);
+    return mask | remainderMask;
+  }
+
   function rewardResponder(address _responder) internal returns (bytes32) {
     respondedToChallenge[_responder] = true;
     uint256 reward = disputeRewardSize();
@@ -121,14 +131,14 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   uint256 constant Y = UINT256_MAX / SUBMITTER_ONLY_WINDOW;
 
   function responsePossible(disputeStages stage, uint256 since) internal view returns (bool) {
-    if (now < since) return false;
-    if (now - since < SUBMITTER_ONLY_WINDOW) {
+    uint256 delta = sub(now, since); // I don't believe this should ever be possible to underflow...
+    if (delta < SUBMITTER_ONLY_WINDOW) {
       // require user made a submission
-      if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0x00)){
+      if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0x00)) {
         return false;
       }
-      uint256 target = (now - since) * Y;
-      if (uint256(keccak256(abi.encodePacked(msg.sender, stage))) > target){
+      uint256 target = delta * Y;
+      if (uint256(keccak256(abi.encodePacked(msg.sender, stage))) > target) {
         return false;
       }
     }

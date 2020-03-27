@@ -9,6 +9,7 @@ import { ethers } from "ethers";
 import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import {
   forwardTime,
+  forwardTimeTo,
   checkErrorRevert,
   checkErrorRevertEthers,
   submitAndForwardTimeToDispute,
@@ -615,6 +616,71 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it(`should not allow miners to respond immediately during a dispute,
+      but they should be able to some time before the end of the window`, async function gateTest() {
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      await badClient.initialise(colonyNetwork.address);
+
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      await badClient.addLogContentsToReputationTree();
+      await badClient.submitRootHash();
+      const disputeRound = await repCycle.getDisputeRound(0);
+      const goodEntry = disputeRound[0];
+
+      // Forward time again so clients can start responding to challenges
+      await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
+      await checkErrorRevertEthers(goodClient.confirmJustificationRootHash(), "colony-reputation-mining-user-ineligible-to-respond");
+
+      // Check it cannot respond at the start of the window
+      await forwardTime(1, this);
+      await checkErrorRevertEthers(goodClient.confirmJustificationRootHash(), "colony-reputation-mining-user-ineligible-to-respond");
+
+      // Check a non-miner cannot respond, even  the end of the window
+      // There is a sort of race condition now - we need to prepare everything we need for the checkErrorRevert call now, then
+      // forward time, then quickly check the transation will revert. Otherwise, the miner querying takes too long and the
+      // transaction succeeds (because time has advanced past the SUBMITTER_ONLY_WINDOW)
+      // I'm not super-happy about this, but until there's a way to 'freeze' time on ganache-cli I
+      // think this is the best we can do.
+
+      const nLogEntries = await repCycle.getReputationUpdateLogLength();
+      const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.subn(1));
+      const totalnUpdates = new BN(lastLogEntry.nUpdates).add(new BN(lastLogEntry.nPreviousUpdates));
+
+      const [, siblings1] = await goodClient.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
+      const [, siblings2] = await goodClient.justificationTree.getProof(`0x${totalnUpdates.toString(16, 64)}`);
+
+      await forwardTime(SUBMITTER_ONLY_WINDOW - 5, this);
+
+      await checkErrorRevert(
+        repCycle.confirmJustificationRootHash(0, 0, siblings1, siblings2, { from: MINER3 }),
+        "colony-reputation-mining-user-ineligible-to-respond"
+      );
+
+      await goodClient.confirmJustificationRootHash();
+      await badClient.confirmJustificationRootHash();
+
+      await forwardTime(SUBMITTER_ONLY_WINDOW - 1, this);
+
+      await runBinarySearch(goodClient, badClient);
+
+      await forwardTime(SUBMITTER_ONLY_WINDOW - 1, this);
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      await forwardTime(SUBMITTER_ONLY_WINDOW - 1, this);
+      await goodClient.respondToChallenge();
+      await forwardTime(SUBMITTER_ONLY_WINDOW - 1, this);
+      await repCycle.invalidateHash(0, 1);
+      await forwardTime(SUBMITTER_ONLY_WINDOW - 1, this);
       await repCycle.confirmNewHash(1);
     });
   });

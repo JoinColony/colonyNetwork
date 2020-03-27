@@ -68,7 +68,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     // Reward the user
     rewardResponder(msg.sender);
 
-    emit BinarySearchStep(submission.proposedNewRootHash, submission.NLeaves, submission.jrh);
+    emit BinarySearchStep(submission.proposedNewRootHash, submission.nLeaves, submission.jrh);
   }
 
   function confirmBinarySearchResult(
@@ -105,7 +105,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     }
     rewardResponder(msg.sender);
 
-    emit BinarySearchConfirmed(submission.proposedNewRootHash, submission.NLeaves, submission.jrh, disputeRounds[round][idx].lowerBound);
+    emit BinarySearchConfirmed(submission.proposedNewRootHash, submission.nLeaves, submission.jrh, disputeRounds[round][idx].lowerBound);
   }
 
   function processBinaryChallengeSearchResponse(
