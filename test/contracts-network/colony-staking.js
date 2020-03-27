@@ -14,7 +14,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
 
-contract("ColonyPermissions", accounts => {
+contract("ColonyPermissions", (accounts) => {
   const USER0 = accounts[0];
   const USER1 = accounts[1];
   const USER2 = accounts[2];
