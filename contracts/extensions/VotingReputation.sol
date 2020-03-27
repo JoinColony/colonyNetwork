@@ -226,7 +226,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     if (getSig(poll.action) == CHANGE_FUNC) {
       bytes32 slot = encodeSlot(poll.action);
-      uint256 votePower = add(poll.votes[0], poll.votes[1]);
+      uint256 votePower = add(poll.votes[NAY], poll.votes[YAY]);
       require(pastVotes[slot] < votePower, "voting-rep-insufficient-vote-power");
 
       pastVotes[slot] = votePower;

@@ -831,7 +831,7 @@ export async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nL
 
 export async function encodeTxData(colony, functionName, args) {
   const convertedArgs = [];
-  args.forEach(arg => {
+  args.forEach((arg) => {
     if (Number.isInteger(arg)) {
       const convertedArg = ethers.BigNumber.from(arg);
       convertedArgs.push(convertedArg);

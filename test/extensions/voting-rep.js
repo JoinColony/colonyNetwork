@@ -13,7 +13,7 @@ import {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   setupRandomColony,
-  giveUserCLNYTokensAndStake
+  giveUserCLNYTokensAndStake,
 } from "../../helpers/test-data-generator";
 
 import PatriciaTree from "../../packages/reputation-miner/patricia";
@@ -25,7 +25,7 @@ const TokenLocking = artifacts.require("TokenLocking");
 const VotingReputation = artifacts.require("VotingReputation");
 const VotingReputationFactory = artifacts.require("VotingReputationFactory");
 
-contract("Voting Reputation", accounts => {
+contract("Voting Reputation", (accounts) => {
   let colony;
   let token;
   let domain1;
