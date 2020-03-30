@@ -129,9 +129,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   stoppable
   returns (address)
   {
-    address colonyAddress = deployColony(_tokenAddress, 3);
-    setFounderPermissions(colonyAddress);
-    return colonyAddress;
+    return createColony(_tokenAddress, 3, "", "", false);
   }
 
   function createColony(
