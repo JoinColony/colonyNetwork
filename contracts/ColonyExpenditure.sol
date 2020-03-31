@@ -68,7 +68,12 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureTransferred(_id, _newOwner);
   }
 
-  function transferExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _newOwner)
+  function transferExpenditureViaArbitration(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    address _newOwner
+  )
     public
     stoppable
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)

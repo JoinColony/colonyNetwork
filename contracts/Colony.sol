@@ -304,7 +304,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // Introducing the expenditure
   bytes4 constant SIG_B0 = bytes4(keccak256("makeExpenditure(uint256,uint256,uint256)"));
-  bytes4 constant SIG_B1 = bytes4(keccak256("transferExpenditure(uint256,uint256,uint256,address)"));
+  bytes4 constant SIG_B1 = bytes4(keccak256("transferExpenditureViaArbitration(uint256,uint256,uint256,address)"));
   bytes4 constant SIG_B2 = bytes4(keccak256("setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)"));
   bytes4 constant SIG_B3 = bytes4(keccak256("setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)"));
 

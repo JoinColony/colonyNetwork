@@ -102,9 +102,8 @@ contract("Colony Expenditure", (accounts) => {
       let expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.owner).to.equal(ADMIN);
 
-      const transferSig = "transferExpenditure(uint256,address)"; // Overloaded function
-      await checkErrorRevert(colony.methods[transferSig](expenditureId, USER), "colony-expenditure-not-owner");
-      await colony.methods[transferSig](expenditureId, USER, { from: ADMIN });
+      await checkErrorRevert(colony.transferExpenditure(expenditureId, USER), "colony-expenditure-not-owner");
+      await colony.transferExpenditure(expenditureId, USER, { from: ADMIN });
 
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.owner).to.equal(USER);
@@ -117,9 +116,8 @@ contract("Colony Expenditure", (accounts) => {
       let expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.owner).to.equal(ADMIN);
 
-      const transferSig = "transferExpenditure(uint256,uint256,uint256,address)"; // Overloaded function
-      await checkErrorRevert(colony.methods[transferSig](1, 0, expenditureId, USER, { from: ADMIN }), "ds-auth-unauthorized");
-      await colony.methods[transferSig](1, 0, expenditureId, USER, { from: ARBITRATOR });
+      await checkErrorRevert(colony.transferExpenditureViaArbitration(1, 0, expenditureId, USER, { from: ADMIN }), "ds-auth-unauthorized");
+      await colony.transferExpenditureViaArbitration(1, 0, expenditureId, USER, { from: ARBITRATOR });
 
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.owner).to.equal(USER);

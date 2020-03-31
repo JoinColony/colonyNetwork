@@ -203,7 +203,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// (only used if `_permissionDomainId` is different to `_domainId`)
   /// @param _id Expenditure identifier
   /// @param _newOwner New owner of expenditure
-  function transferExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _newOwner) public;
+  function transferExpenditureViaArbitration(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _newOwner) public;
 
   /// @notice Cancels the expenditure and prevents further editing. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier

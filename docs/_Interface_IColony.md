@@ -1309,7 +1309,7 @@ Updates the expenditure owner. Can only be called by expenditure owner.
 |_newOwner|address|New owner of expenditure
 
 
-### `transferExpenditure`
+### `transferExpenditureViaArbitration`
 
 Updates the expenditure owner. Can only be called by Arbitration role.
 
