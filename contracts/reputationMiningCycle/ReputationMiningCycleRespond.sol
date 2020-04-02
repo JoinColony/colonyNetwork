@@ -748,8 +748,4 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     }
     return reputationKey;
   }
-
-  function getDisputeRewardIncrement() public view returns (uint256) {
-    return disputeRewardIncrement();
-  }
 }
