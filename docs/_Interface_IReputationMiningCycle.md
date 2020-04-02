@@ -97,7 +97,7 @@ Get the reputation decay constant.
 |numerator|uint256|The numerator of the decay constant
 |denominator|uint256|The denominator of the decay constant
 
-### `getDisputeRewardIncrement`
+### `getDisputeRewardSize`
 
 Returns the amount of CLNY given for defending a hash during the current dispute cycle
 
@@ -107,7 +107,7 @@ Returns the amount of CLNY given for defending a hash during the current dispute
 
 |Name|Type|Description|
 |---|---|---|
-|_reward|uint256|
+|reward|uint256|
 
 ### `getDisputeRound`
 

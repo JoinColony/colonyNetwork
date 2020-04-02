@@ -17,7 +17,7 @@ import {
   finishReputationMiningCycle,
   makeReputationKey,
   makeReputationValue,
-  removeSubdomainLimit
+  removeSubdomainLimit,
 } from "../../helpers/test-helper";
 
 import {

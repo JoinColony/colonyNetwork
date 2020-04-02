@@ -210,8 +210,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   function unstakeForMining(uint256 _amount) public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
     // Prevent those involved in a mining cycle withdrawing stake during the mining process.
-    bool involved = IReputationMiningCycle(activeReputationMiningCycle).userInvolvedInMiningCycle(msg.sender);
-    require(!involved, "colony-token-locking-hash-submitted");
+    require(!IReputationMiningCycle(activeReputationMiningCycle).userInvolvedInMiningCycle(msg.sender), "colony-token-locking-hash-submitted");
     ITokenLocking(tokenLocking).deobligateStake(msg.sender, _amount, clnyToken);
     miningStakes[msg.sender].amount = sub(miningStakes[msg.sender].amount, _amount);
   }

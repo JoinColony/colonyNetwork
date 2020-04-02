@@ -18,11 +18,11 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "../lib/dappsys/math.sol";
-import "./PatriciaTree/PatriciaTreeProofs.sol";
+import "./../../lib/dappsys/math.sol";
+import "./../patriciaTree/PatriciaTreeProofs.sol";
+import "./../tokenLocking/ITokenLocking.sol";
+import "./../colonyNetwork/IColonyNetwork.sol";
 import "./ReputationMiningCycleStorage.sol";
-import "./ITokenLocking.sol";
-import "./IColonyNetwork.sol";
 
 
 contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
@@ -31,15 +31,12 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
 
   function rewardResponder(address _responder) internal returns (bytes32) {
     respondedToChallenge[_responder] = true;
-    uint256 reward = disputeRewardIncrement();
-    ITokenLocking(tokenLockingAddress).reward(
-      _responder,
-      reward
-    );
+    uint256 reward = disputeRewardSize();
+    ITokenLocking(tokenLockingAddress).reward(_responder, reward);
     rewardsPaidOut += reward;
   }
 
-  function disputeRewardIncrement() internal view returns (uint256) {
+  function disputeRewardSize() internal view returns (uint256) {
     // TODO: Is this worth calculating once, and then saving? Seems quite likely.
     uint256 nLogEntries = reputationUpdateLog.length;
 
@@ -60,7 +57,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
     uint256 nByes = log2Ceiling(nUniqueSubmittedHashes); // We can have at most one bye per round, and this is the maximum number of rounds
 
     // The maximum number of responses that need rewards
-    uint256 rewardDenominator = nByes + (nUniqueSubmittedHashes-1)*(2*(3 + log2Ceiling(jrhNnodes)) + 1);
+    uint256 rewardDenominator = nByes + (nUniqueSubmittedHashes - 1) * (2 * (3 + log2Ceiling(jrhNnodes)) + 1);
 
     // The minimum amount of stake to be lost
     uint256 rewardNumerator = MIN_STAKE * (nUniqueSubmittedHashes - 1);
@@ -100,6 +97,4 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
         y := add(y, mul(256, gt(arg, 0x8000000000000000000000000000000000000000000000000000000000000000)))
     }
   }
-
-
 }

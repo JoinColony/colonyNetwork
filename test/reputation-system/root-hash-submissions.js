@@ -21,7 +21,7 @@ import {
   finishReputationMiningCycle,
   runBinarySearch,
   checkErrorRevertEthers,
-  currentBlock
+  currentBlock,
 } from "../../helpers/test-helper";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -576,7 +576,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
-      const rewardIncrement = await repCycle.getDisputeRewardIncrement();
+      const rewardIncrement = await repCycle.getDisputeRewardSize();
 
       const blockBeforeChallenge = await currentBlock();
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {

@@ -228,17 +228,17 @@ contract("Reputation mining - basic functionality", (accounts) => {
       expect(decay.denominator).to.eq.BN(DECAY_RATE.DENOMINATOR);
     });
 
-    it("when there are no logs, getDisputeRewardIncrement returns 0", async () => {
+    it("when there are no logs, getDisputeRewardSize returns 0", async () => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
-      const rewardIncrement = await repCycle.getDisputeRewardIncrement();
+      const rewardIncrement = await repCycle.getDisputeRewardSize();
       expect(rewardIncrement.toString(), "RewardIncrement was nonzero").to.equal("0");
     });
 
-    it("when no dispute is yet required, getDisputeRewardIncrement returns 0", async () => {
+    it("when no dispute is yet required, getDisputeRewardSize returns 0", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       const repCycle = await getActiveRepCycle(colonyNetwork);
-      const rewardIncrement = await repCycle.getDisputeRewardIncrement();
+      const rewardIncrement = await repCycle.getDisputeRewardSize();
       expect(rewardIncrement.toString(), "RewardIncrement was nonzero").to.equal("0");
     });
   });
