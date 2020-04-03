@@ -779,4 +779,9 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _obligator Address of the account who obligated us.
   /// @param _domainId Domain in which we are obligated.
   function getObligation(address _user, address _obligator, uint256 _domainId) public view returns (uint256 obligation);
+
+  /// @notice Get the domain corresponding to a funding pot
+  /// @param _fundingPotId Id of the funding pot
+  /// @return domainId Id of the corresponding domain
+  function getDomainFromFundingPot(uint256 _fundingPotId) public view returns (uint256 domainId);
 }

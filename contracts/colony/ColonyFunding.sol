@@ -482,6 +482,25 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     }
   }
 
+  function getDomainFromFundingPot(uint256 _fundingPotId) public view returns (uint256 domainId) {
+    require(_fundingPotId <= fundingPotCount, "colony-funding-nonexistent-pot");
+    FundingPot storage fundingPot = fundingPots[_fundingPotId];
+
+    if (fundingPot.associatedType == FundingPotAssociatedType.Domain) {
+      domainId = fundingPot.associatedTypeId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.Task) {
+      domainId = tasks[fundingPot.associatedTypeId].domainId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.Payment) {
+      domainId = payments[fundingPot.associatedTypeId].domainId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.Expenditure) {
+      domainId = expenditures[fundingPot.associatedTypeId].domainId;
+    } else {
+      // If rewards pot, return root domain.
+      assert(_fundingPotId == 0);
+      domainId = 1;
+    }
+  }
+
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)
   public
   stoppable
@@ -557,25 +576,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       fee = _payout;
     } else {
       fee = _payout/feeInverse + 1;
-    }
-  }
-
-  function getDomainFromFundingPot(uint256 _fundingPotId) private view returns (uint256 domainId) {
-    require(_fundingPotId <= fundingPotCount, "colony-funding-nonexistent-pot");
-    FundingPot storage fundingPot = fundingPots[_fundingPotId];
-
-    if (fundingPot.associatedType == FundingPotAssociatedType.Domain) {
-      domainId = fundingPot.associatedTypeId;
-    } else if (fundingPot.associatedType == FundingPotAssociatedType.Task) {
-      domainId = tasks[fundingPot.associatedTypeId].domainId;
-    } else if (fundingPot.associatedType == FundingPotAssociatedType.Payment) {
-      domainId = payments[fundingPot.associatedTypeId].domainId;
-    } else if (fundingPot.associatedType == FundingPotAssociatedType.Expenditure) {
-      domainId = expenditures[fundingPot.associatedTypeId].domainId;
-    } else {
-      // If rewards pot, return root domain.
-      assert(_fundingPotId == 0);
-      domainId = 1;
     }
   }
 }
