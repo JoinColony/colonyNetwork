@@ -1,9 +1,10 @@
 /* globals artifacts */
 
+import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE } from "../../helpers/constants";
+import { WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE, SECONDS_PER_DAY } from "../../helpers/constants";
 import { checkErrorRevert, makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime } from "../../helpers/test-helper";
 
 import {
@@ -55,6 +56,8 @@ contract("Funding Queues", (accounts) => {
   const MINER = accounts[5];
 
   const HEAD = 0;
+
+  const STATE_COMPLETED = 2;
 
   before(async () => {
     colonyNetwork = await setupColonyNetwork();
@@ -141,7 +144,7 @@ contract("Funding Queues", (accounts) => {
     });
   });
 
-  describe.only("creating funding proposals", async () => {
+  describe("creating funding proposals", async () => {
     it("can create a basic proposal", async () => {
       await fundingQueue.createBasicProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
 
@@ -172,7 +175,7 @@ contract("Funding Queues", (accounts) => {
     });
   });
 
-  describe.only("backing funding proposals", async () => {
+  describe("backing funding proposals", async () => {
     let proposalId;
 
     beforeEach(async () => {
@@ -314,6 +317,159 @@ contract("Funding Queues", (accounts) => {
 
       const nextProposalId = await fundingQueue.getNextProposalId(proposal2Id);
       expect(nextProposalId).to.eq.BN(proposalId);
+    });
+  });
+
+  describe("pinging funding proposals", async () => {
+    let proposalId;
+
+    beforeEach(async () => {
+      await token.mint(colony.address, WAD);
+      await colony.claimColonyFunds(token.address);
+
+      await fundingQueue.createBasicProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      proposalId = await fundingQueue.getProposalCount();
+
+      await fundingQueue.updateProposalTotalRep(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings);
+    });
+
+    it("can transfer 1/2 of funds after one week, with full backing", async () => {
+      // Back proposal with 100% of reputation
+      await fundingQueue.backBasicProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backBasicProposal(proposalId, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      // Advance one week
+      await forwardTime(SECONDS_PER_DAY * 7, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So half the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("499999999999999922"); // close enough
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can transfer 3/4 of funds after two weeks, with full backing", async () => {
+      // Back proposal with 100% of reputation
+      await fundingQueue.backBasicProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backBasicProposal(proposalId, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      // Advance two weeks
+      await forwardTime(SECONDS_PER_DAY * 14, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So 3/4 of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("749999999999999922"); // close enough
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can transfer 3/4 of funds after two weeks, one week at a time, with full backing", async () => {
+      // Back proposal with 100% of reputation
+      await fundingQueue.backBasicProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backBasicProposal(proposalId, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      // Advance one week
+      await forwardTime(SECONDS_PER_DAY * 7, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // Advance another week
+      await forwardTime(SECONDS_PER_DAY * 7, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So 3/4 of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("749999999999999922"); // close enough
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can transfer ~1/6 of funds after one week, with 1/3 reputation backing", async () => {
+      // Back proposal with 33% of reputation
+      await fundingQueue.backBasicProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      // Advance two weeks
+      await forwardTime(SECONDS_PER_DAY * 7, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So 1/3 * 1/2 = ~1/6 (16.6%) of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("206047343492625919"); // Actually 20%, +4%
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can transfer ~2/6 of funds after one week, with 2/3 reputation backing", async () => {
+      // Back proposal with 66% of reputation
+      await fundingQueue.backBasicProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      // Advance one week
+      await forwardTime(SECONDS_PER_DAY * 7, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So 2/3 * 1/2 = ~1/3 (33.3%) of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("369839175331723310"); // Actually 37%, +4%
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can transfer ~1/3 of funds after two weeks, with 1/3 reputation backing", async () => {
+      // Back proposal with 33% of reputation
+      await fundingQueue.backBasicProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      // Advance two weeks
+      await forwardTime(SECONDS_PER_DAY * 14, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So 1/3 * 1/2 * 2 = ~1/3 (33.3%) of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("369639179224883664"); // Actually 37%, +4%
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can transfer ~2/3 of funds after two weeks, with 2/3 reputation backing", async () => {
+      // Back proposal with 66% of reputation
+      await fundingQueue.backBasicProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      // Advance two weeks
+      await forwardTime(SECONDS_PER_DAY * 14, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So (2/3 * 1/2) **  2 = ~2/3 (66.6%) of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("602897335053397444"); // Actually 60%, -6%
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can close a proposal once fulfilled", async () => {
+      // Set balance to 2 WAD
+      await token.mint(colony.address, WAD);
+      await colony.claimColonyFunds(token.address);
+
+      // Back proposal with 100% of reputation
+      await fundingQueue.backBasicProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backBasicProposal(proposalId, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      // Advance a little more than one week
+      await forwardTime(SECONDS_PER_DAY * 8, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      const proposal = await fundingQueue.getProposal(proposalId);
+      expect(proposal.state).to.eq.BN(STATE_COMPLETED);
+
+      const headId = await fundingQueue.getHeadId();
+      expect(headId).to.be.zero;
     });
   });
 });

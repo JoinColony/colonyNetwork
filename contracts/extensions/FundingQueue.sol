@@ -30,8 +30,26 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
   // Constants
   uint256 constant HEAD = 0;
-  uint256 constant UINT256_MAX = 2**256 - 1;
-  uint256 constant FUNDING_MULTIPLE = WAD / 2;
+  uint256 constant UINT256_MAX = (2 ** 256) - 1;
+  uint256 constant COMPOUNDING_FREQUENCY = 168;
+  uint256 constant BASE_DECAY_RATE = 691719225406032925; // TODO: use RAYs?
+  // From Wolfram Alpha:           0.691719225406032924664669179186644...
+
+  //  BASE_DECAY_RATE is determined via the following equation:
+  //   r = (z ** (1/n) - 1) * n
+  //
+  //  With the following variables:
+  //   z = target decay rate (currently: -0.5 per week, see whitepaper)
+  //   n = COMPOUNDING_FREQUENCY (currently: 168, i.e. hours per week)
+  //   r = -BASE_DECAY_RATE
+  //
+  //  Basically, we take a target decay rate (-0.5 per week), and a compounding
+  //   frequency (1 hour), and figure out what "interest rate" is needed to
+  //   achieve that (about -0.69). This is necessary because more frequent
+  //   compounding requires a higher decay rate to keep weekly decay constant.
+  //  This equation was derived by taking the regular compound interest
+  //   formula, z = (1 + r/n) ** nt, setting t = 1, and solving for r = f(z,n).
+  //  To keep everything uint, we store the negative and use `sub()` later.
 
   // Initialization data
   IColony colony;
@@ -134,7 +152,7 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
   {
     Proposal storage proposal = proposals[_id];
     require(proposal.state == ProposalState.Active, "funding-queue-proposal-not-active");
-    require(_id != _newPrevId, "funding-queue-cannot-insert-after-self");
+    require(_id != _newPrevId, "funding-queue-cannot-insert-after-self"); // NOTE: this may be redundant
 
     require(supporters[_id][msg.sender] == 0, "funding-queue-already-supported");
     uint256 userReputation = checkReputation(_id, msg.sender, _key, _value, _branchMask, _siblings);
@@ -171,16 +189,24 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     public
   {
     Proposal storage proposal = proposals[_id];
+
+    require(queue[HEAD] == _id, "funding-queue-proposal-not-head");
     require(proposal.domainTotalRep > 0, "funding-queue-zero-domain-total-rep");
 
-    uint256 backingPercent = min(WAD, wdiv(proposal.totalSupport, proposal.domainTotalRep));
-    uint256 elapsedPeriods = wdiv(now - proposal.lastUpdated, 7 days);
+    uint256 fundingToTransfer = calculateFundingToTransfer(_id);
+    uint256 remainingRequested = sub(proposal.totalRequested, proposal.totalPaid);
+    uint256 actualFundingToTransfer = min(fundingToTransfer, remainingRequested);
 
-    uint256 fromPotBalance = colony.getFundingPotBalance(proposal.fromPot, token);
-    uint256 fundingPerPeriod = wmul(fromPotBalance, wmul(backingPercent, FUNDING_MULTIPLE));
-    uint256 fundingToTransfer = wmul(fundingPerPeriod, elapsedPeriods);
-
+    proposal.totalPaid = add(proposal.totalPaid, actualFundingToTransfer);
     proposal.lastUpdated = now;
+
+    assert(proposal.totalPaid <= proposal.totalRequested);
+
+    if (proposal.totalPaid == proposal.totalRequested) {
+      proposal.state = ProposalState.Completed;
+      queue[HEAD] = queue[_id];
+      delete queue[_id];
+    }
 
     colony.moveFundsBetweenPots(
       _permissionDomainId,
@@ -188,7 +214,7 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
       _fromChildSkillIndex,
       proposal.fromPot,
       proposal.toPot,
-      fundingToTransfer,
+      actualFundingToTransfer,
       proposal.token
     );
   }
@@ -216,6 +242,22 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
   }
 
   // Internal functions
+
+  function calculateFundingToTransfer(uint256 _id) internal view returns (uint256) {
+    Proposal storage proposal = proposals[_id];
+
+    uint256 balance = colony.getFundingPotBalance(proposal.fromPot, token);
+    uint256 backingPercent = min(WAD, wdiv(proposal.totalSupport, proposal.domainTotalRep));
+    uint256 weightedDecayRate = wmul(BASE_DECAY_RATE, backingPercent);
+
+    // balance * ((1 - (weightedDecayRate / )) ** hoursElapsed)
+    uint256 hoursElapsed = (now - proposal.lastUpdated) / 1 hours;
+    uint256 base = sub(WAD, weightedDecayRate / COMPOUNDING_FREQUENCY);
+    uint256 newBalance = wmul(balance, wpow(base, hoursElapsed));
+    uint256 fundingToTransfer = sub(balance, newBalance);
+
+    return fundingToTransfer;
+  }
 
   function checkReputation(
     uint256 _id,
@@ -247,5 +289,10 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     require(keyUserAddress == _who, "funding-queue-invalid-user-address");
 
     return reputationValue;
+  }
+
+  function wpow(uint256 x, uint256 n) internal pure returns (uint256) {
+    // Must convert WAD (10 ** 18) to RAY (10 ** 27) and back
+    return rpow(x * (10 ** 9), n) / (10 ** 9);
   }
 }
