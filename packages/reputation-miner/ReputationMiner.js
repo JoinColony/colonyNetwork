@@ -2,6 +2,7 @@
 import { BN } from "bn.js";
 import { soliditySha3, isAddress } from "web3-utils";
 import { ethers } from "ethers";
+import sqlite3 from 'sqlite3';
 
 import PatriciaTreeNoHash from "./patriciaNoHashKey";
 import PatriciaTree from "./patricia";
@@ -762,7 +763,7 @@ class ReputationMiner {
     const tree = new PatriciaTree();
     // Load all reputations from that state.
 
-    const db = await sqlite.open(this.dbPath, { Promise });
+    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
 
     let res = await db.all(
       `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
@@ -1200,7 +1201,7 @@ class ReputationMiner {
   }
 
   async saveCurrentState() {
-    const db = await sqlite.open(this.dbPath, { Promise });
+    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
 
     const currentRootHash = await this.getRootHash();
     let res = await db.run(`INSERT OR IGNORE INTO reputation_states (root_hash, n_nodes) VALUES ('${currentRootHash}', ${this.nReputations})`);
@@ -1243,7 +1244,7 @@ class ReputationMiner {
   }
 
   async loadState(reputationRootHash) {
-    const db = await sqlite.open(this.dbPath, { Promise });
+    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
 
@@ -1285,7 +1286,7 @@ class ReputationMiner {
   }
 
   async getAddressesWithReputation(reputationRootHash, colonyAddress, skillId) {
-    const db = await sqlite.open(this.dbPath, { Promise });
+    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
     const res = await db.all(
       `SELECT DISTINCT users.address as user_address
        FROM reputations
@@ -1303,7 +1304,7 @@ class ReputationMiner {
   }
 
   async createDB() {
-    const db = await sqlite.open(this.dbPath, { Promise });
+    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
     await db.run("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE )");
     await db.run("CREATE TABLE IF NOT EXISTS reputation_states ( root_hash text NOT NULL UNIQUE, n_nodes INTEGER NOT NULL)");
     await db.run("CREATE TABLE IF NOT EXISTS colonies ( address text NOT NULL UNIQUE )");
@@ -1321,7 +1322,7 @@ class ReputationMiner {
   }
 
   async resetDB() {
-    const db = await sqlite.open(this.dbPath, { Promise });
+    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
     await db.run(`DROP TABLE IF EXISTS users`);
     await db.run(`DROP TABLE IF EXISTS colonies`);
     await db.run(`DROP TABLE IF EXISTS skills`);

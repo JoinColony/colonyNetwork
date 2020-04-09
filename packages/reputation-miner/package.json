@@ -22,7 +22,8 @@
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
     "slack": "^11.0.2",
-    "sqlite": "^3.0.2",
+    "sqlite": "^4.0.0",
+    "sqlite3": "^4.1.1",
     "web3-utils": "^1.0.0",
     "yargs": "^15.0.1"
   },
