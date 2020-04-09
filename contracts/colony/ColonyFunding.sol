@@ -18,8 +18,8 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
+import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
-import "./ITokenLocking.sol";
 
 
 contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123

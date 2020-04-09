@@ -14,11 +14,11 @@ function provisionTokenContracts(config){
 module.exports = {
     skipFiles: [
       'Migrations.sol',
-      'EtherRouter.sol',
-      'PatriciaTree',
-      'testHelpers/ContractEditing', // only used in setting up colony-network-recovery.js tests, never in production
-      'testHelpers/NoLimitSubdomains',
-      'testHelpers/TaskSkillEditing'
+      'common/EtherRouter.sol',
+      'patriciaTree',
+      'testHelpers/ContractEditing.sol', // only used in setting up colony-network-recovery.js tests, never in production
+      'testHelpers/NoLimitSubdomains.sol',
+      'testHelpers/TaskSkillEditing.sol'
     ],
     providerOptions: {
       port: 8555,

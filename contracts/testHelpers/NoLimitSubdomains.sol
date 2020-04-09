@@ -18,7 +18,7 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
-import "./../Colony.sol";
+import "./../colony/Colony.sol";
 
 
 contract NoLimitSubdomains is Colony {

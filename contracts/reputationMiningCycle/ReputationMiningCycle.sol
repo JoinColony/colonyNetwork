@@ -18,11 +18,11 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "../lib/dappsys/math.sol";
-import "./IColonyNetwork.sol";
-import "./PatriciaTree/PatriciaTreeProofs.sol";
-import "./ITokenLocking.sol";
-import "./ReputationMiningCycleStorage.sol";
+import "./../../lib/dappsys/math.sol";
+import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../patriciaTree/PatriciaTreeProofs.sol";
+import "./../reputationMiningCycle/ReputationMiningCycleStorage.sol";
+import "./../tokenLocking/ITokenLocking.sol";
 
 
 contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {

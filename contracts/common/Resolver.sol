@@ -17,10 +17,11 @@
 
 pragma solidity 0.5.8;
 
-import "../lib/dappsys/auth.sol";
+import "./../../lib/dappsys/auth.sol";
 
 // ignore-file-swc-101 This is due to ConsenSys/truffle-security#245 and the bad-line reporting associated with it
 // (It's really the abi.encodepacked later)
+
 
 contract Resolver is DSAuth {
   mapping (bytes4 => address) public pointers;

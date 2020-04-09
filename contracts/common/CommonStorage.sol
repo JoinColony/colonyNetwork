@@ -17,10 +17,11 @@
 
 pragma solidity 0.5.8;
 
-import "../lib/dappsys/auth.sol";
+import "./../../lib/dappsys/auth.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
+
 
 contract CommonStorage is DSAuth {
   uint256 constant UINT256_MAX = 2**256 - 1;

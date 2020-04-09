@@ -18,11 +18,11 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "./ColonyAuthority.sol";
-import "./EtherRouter.sol";
+import "./../common/EtherRouter.sol";
+import "./../colony/ColonyAuthority.sol";
+import "./../colony/IColony.sol";
+import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
-import "./IReputationMiningCycle.sol";
-import "./IColony.sol";
 
 
 contract ColonyNetwork is ColonyNetworkStorage {

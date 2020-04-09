@@ -18,8 +18,8 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
+import "./../common/IEtherRouter.sol";
 import "./ColonyStorage.sol";
-import "./IEtherRouter.sol";
 
 
 contract Colony is ColonyStorage, PatriciaTreeProofs {

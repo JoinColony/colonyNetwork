@@ -17,7 +17,7 @@
 
 pragma solidity 0.5.8; // ignore-swc-103
 
-import "../lib/dappsys/erc20.sol";
+import "./../../lib/dappsys/erc20.sol";
 
 
 contract ERC20Extended is ERC20 {

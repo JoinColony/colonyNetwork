@@ -17,14 +17,15 @@
 
 pragma solidity 0.5.8;
 
-import "../lib/dappsys/math.sol";
-import "./ERC20Extended.sol";
-import "./CommonStorage.sol";
+import "./../../lib/dappsys/math.sol";
+import "./../colony/IMetaColony.sol";
+import "./../common/CommonStorage.sol";
+import "./../common/ERC20Extended.sol";
 import "./ColonyNetworkDataTypes.sol";
-import "./IMetaColony.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
+
 
 contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   // Number of colonies in the network

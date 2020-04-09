@@ -17,7 +17,7 @@
 
 pragma solidity 0.5.8;
 
-import "./ens/ENS.sol";
+import "./../ens/ENS.sol";
 import "./ColonyNetworkStorage.sol";
 
 
