@@ -31,6 +31,7 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
   // Constants
   uint256 constant HEAD = 0;
   uint256 constant UINT256_MAX = (2 ** 256) - 1;
+  uint256 constant STAKE_PCT = WAD / 1000; // 0.1%
   uint256 constant COMPOUNDING_FREQUENCY = 168;
   uint256 constant BASE_DECAY_RATE = 691719225406032925; // TODO: use RAYs?
   // From Wolfram Alpha:           0.691719225406032924664669179186644...
@@ -105,9 +106,9 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     uint256 fromDomain = colony.getDomainFromFundingPot(_fromPot);
     uint256 toDomain = colony.getDomainFromFundingPot(_toPot);
 
-    uint256 domainSkillId = colony.getDomain(_domainId).skillId;
-    uint256 fromSkillId = colony.getDomain(fromDomain).skillId;
-    uint256 toSkillId = colony.getDomain(toDomain).skillId;
+    uint256 domainSkillId = getSkillId(_domainId);
+    uint256 fromSkillId = getSkillId(fromDomain);
+    uint256 toSkillId = getSkillId(toDomain);
 
     require(
       domainSkillId == fromSkillId ||
@@ -122,13 +123,32 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
     proposalCount++;
     proposals[proposalCount] = Proposal(
-      ProposalState.Active, msg.sender, _token, domainSkillId, 0, _fromPot, _toPot, _totalRequested, 0, now, 0
+      ProposalState.Inactive, msg.sender, _token, domainSkillId, 0, _fromPot, _toPot, _totalRequested, 0, now, 0
     );
     queue[proposalCount] = proposalCount; // Initialize as a disconnected self-edge
   }
 
-  function updateProposalTotalRep(
+  function cancelProposal(uint256 _id, uint256 _prevId, uint256 _domainId) public {
+    Proposal storage proposal = proposals[_id];
+
+    require(proposal.state != ProposalState.Cancelled, "funding-queue-already-cancelled");
+    require(proposal.state != ProposalState.Completed, "funding-queue-already-completed");
+    require(proposal.domainSkillId == getSkillId(_domainId), "funding-queue-bad-domain-id");
+    require(proposal.creator == msg.sender, "funding-queue-not-creator");
+    require(queue[_prevId] == _id, "funding-queue-bad-prev-id");
+
+    proposal.state = ProposalState.Cancelled;
+
+    queue[_prevId] = queue[_id];
+    delete queue[_id];
+
+    // uint256 stake = wmul(proposal.domainTotalRep, STAKE_PCT);
+    // colony.deobligateStake(msg.sender, _domainId, stake);
+  }
+
+  function stakeProposal(
     uint256 _id,
+    uint256 _domainId,
     bytes memory _key,
     bytes memory _value,
     uint256 _branchMask,
@@ -136,7 +156,17 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
   )
     public
   {
-    proposals[_id].domainTotalRep = checkReputation(_id, address(0x0), _key, _value, _branchMask, _siblings);
+    Proposal storage proposal = proposals[_id];
+
+    require(proposal.state == ProposalState.Inactive, "funding-queue-not-inactive");
+    require(proposal.domainSkillId == getSkillId(_domainId), "funding-queue-bad-domain-id");
+    require(proposal.creator == msg.sender, "funding-queue-not-creator");
+
+    proposal.state = ProposalState.Active;
+    proposal.domainTotalRep = checkReputation(_id, address(0x0), _key, _value, _branchMask, _siblings);
+
+    // uint256 stake = wmul(proposal.domainTotalRep, STAKE_PCT);
+    // colony.obligateStake(msg.sender, _domainId, stake);
   }
 
   function backBasicProposal(
@@ -151,12 +181,12 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     public
   {
     Proposal storage proposal = proposals[_id];
+
     require(proposal.state == ProposalState.Active, "funding-queue-proposal-not-active");
     require(_id != _newPrevId, "funding-queue-cannot-insert-after-self"); // NOTE: this may be redundant
-
     require(supporters[_id][msg.sender] == 0, "funding-queue-already-supported");
-    uint256 userReputation = checkReputation(_id, msg.sender, _key, _value, _branchMask, _siblings);
 
+    uint256 userReputation = checkReputation(_id, msg.sender, _key, _value, _branchMask, _siblings);
     proposal.totalSupport = add(proposal.totalSupport, userReputation);
     supporters[_id][msg.sender] = userReputation;
 
@@ -182,7 +212,7 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
   function pingProposal(
     uint256 _id,
-    uint256 _permissionDomainId,
+    uint256 _domainId,
     uint256 _toChildSkillIndex,
     uint256 _fromChildSkillIndex
   )
@@ -191,7 +221,7 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     Proposal storage proposal = proposals[_id];
 
     require(queue[HEAD] == _id, "funding-queue-proposal-not-head");
-    require(proposal.domainTotalRep > 0, "funding-queue-zero-domain-total-rep");
+    require(proposal.domainSkillId == getSkillId(_domainId), "funding-queue-bad-domain-id");
 
     uint256 fundingToTransfer = calculateFundingToTransfer(_id);
     uint256 remainingRequested = sub(proposal.totalRequested, proposal.totalPaid);
@@ -204,12 +234,19 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
     if (proposal.totalPaid == proposal.totalRequested) {
       proposal.state = ProposalState.Completed;
+
       queue[HEAD] = queue[_id];
       delete queue[_id];
+
+      // May be the null proposal, but that's ok
+      proposals[queue[HEAD]].lastUpdated = now;
+
+      // uint256 stake = wmul(proposal.domainTotalRep, STAKE_PCT);
+      // colony.deobligateStake(proposal.creator, _domainId, stake);
     }
 
     colony.moveFundsBetweenPots(
-      _permissionDomainId,
+      _domainId,
       _toChildSkillIndex,
       _fromChildSkillIndex,
       proposal.fromPot,
@@ -289,6 +326,10 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     require(keyUserAddress == _who, "funding-queue-invalid-user-address");
 
     return reputationValue;
+  }
+
+  function getSkillId(uint256 _domainId) internal view returns (uint256) {
+    return colony.getDomain(_domainId).skillId;
   }
 
   function wpow(uint256 x, uint256 n) internal pure returns (uint256) {
