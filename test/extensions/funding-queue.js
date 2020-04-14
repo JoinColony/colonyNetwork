@@ -153,7 +153,7 @@ contract("Funding Queues", (accounts) => {
       const proposalId = await fundingQueue.getProposalCount();
 
       const proposal = await fundingQueue.getProposal(proposalId);
-      expect(proposal.domainSkillId).to.eq.BN(domain1.skillId);
+      expect(proposal.domainId).to.eq.BN(1);
       expect(proposal.state).to.eq.BN(STATE_INACTIVE);
     });
 
@@ -173,16 +173,11 @@ contract("Funding Queues", (accounts) => {
       const proposalId = await fundingQueue.getProposalCount();
 
       await checkErrorRevert(
-        fundingQueue.stakeProposal(proposalId, 1, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER1 }),
+        fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER1 }),
         "funding-queue-not-creator"
       );
 
-      await checkErrorRevert(
-        fundingQueue.stakeProposal(proposalId, 2, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 }),
-        "funding-queue-bad-domain-id"
-      );
-
-      await fundingQueue.stakeProposal(proposalId, 1, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+      await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
       const proposal = await fundingQueue.getProposal(proposalId);
       expect(proposal.domainTotalRep).to.eq.BN(WAD.muln(3));
@@ -190,7 +185,7 @@ contract("Funding Queues", (accounts) => {
 
       // But can't stake twice
       await checkErrorRevert(
-        fundingQueue.stakeProposal(proposalId, 1, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 }),
+        fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 }),
         "funding-queue-not-inactive"
       );
     });
@@ -199,11 +194,10 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.createBasicProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposalId = await fundingQueue.getProposalCount();
 
-      await checkErrorRevert(fundingQueue.cancelProposal(proposalId, proposalId, 1, { from: USER1 }), "funding-queue-not-creator");
-      await checkErrorRevert(fundingQueue.cancelProposal(proposalId, HEAD, 1, { from: USER0 }), "funding-queue-bad-prev-id");
-      await checkErrorRevert(fundingQueue.cancelProposal(proposalId, proposalId, 2, { from: USER0 }), "funding-queue-bad-domain-id");
+      await checkErrorRevert(fundingQueue.cancelProposal(proposalId, proposalId, { from: USER1 }), "funding-queue-not-creator");
+      await checkErrorRevert(fundingQueue.cancelProposal(proposalId, HEAD, { from: USER0 }), "funding-queue-bad-prev-id");
 
-      await fundingQueue.cancelProposal(proposalId, proposalId, 1, { from: USER0 });
+      await fundingQueue.cancelProposal(proposalId, proposalId, { from: USER0 });
 
       const proposal = await fundingQueue.getProposal(proposalId);
       expect(proposal.state).to.eq.BN(STATE_CANCELLED);
@@ -212,7 +206,7 @@ contract("Funding Queues", (accounts) => {
       expect(nextId).to.be.zero;
 
       // But can't cancel twice
-      await checkErrorRevert(fundingQueue.cancelProposal(proposalId, proposalId, 1, { from: USER0 }), "funding-queue-already-cancelled");
+      await checkErrorRevert(fundingQueue.cancelProposal(proposalId, proposalId, { from: USER0 }), "funding-queue-already-cancelled");
     });
   });
 
@@ -223,7 +217,7 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.createBasicProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
       proposalId = await fundingQueue.getProposalCount();
 
-      await fundingQueue.stakeProposal(proposalId, 1, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+      await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
     });
 
     it("can back a basic proposal", async () => {
@@ -312,11 +306,11 @@ contract("Funding Queues", (accounts) => {
     it("cannot put a basic proposal before a more popular proposal", async () => {
       await fundingQueue.createBasicProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposal2Id = await fundingQueue.getProposalCount();
-      await fundingQueue.stakeProposal(proposal2Id, 1, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+      await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
       await fundingQueue.createBasicProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposal3Id = await fundingQueue.getProposalCount();
-      await fundingQueue.stakeProposal(proposal3Id, 1, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+      await fundingQueue.stakeProposal(proposal3Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
       // Put proposal2 in position 1 (3 wad support) and proposal3 in position 2 (2 wad support)
       await fundingQueue.backBasicProposal(proposal2Id, proposal2Id, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -345,11 +339,11 @@ contract("Funding Queues", (accounts) => {
     it("cannot put a basic proposal after a less popular proposal", async () => {
       await fundingQueue.createBasicProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposal2Id = await fundingQueue.getProposalCount();
-      await fundingQueue.stakeProposal(proposal2Id, 1, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+      await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
       await fundingQueue.createBasicProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposal3Id = await fundingQueue.getProposalCount();
-      await fundingQueue.stakeProposal(proposal3Id, 1, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+      await fundingQueue.stakeProposal(proposal3Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
       // Put proposal2 in position 1 (3 wad support) and proposal3 in position 2 (1 wad support)
       await fundingQueue.backBasicProposal(proposal2Id, proposal2Id, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -386,7 +380,7 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.createBasicProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
       proposalId = await fundingQueue.getProposalCount();
 
-      await fundingQueue.stakeProposal(proposalId, 1, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+      await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
     });
 
     it("can transfer 1/2 of funds after one week, with full backing", async () => {
@@ -535,19 +529,13 @@ contract("Funding Queues", (accounts) => {
       expect(proposal.lastUpdated).to.eq.BN(nextProposal.lastUpdated);
 
       // Can't cancel once completed
-      await checkErrorRevert(fundingQueue.cancelProposal(proposalId, proposalId, 1, { from: USER0 }), "funding-queue-already-completed");
+      await checkErrorRevert(fundingQueue.cancelProposal(proposalId, proposalId, { from: USER0 }), "funding-queue-already-completed");
 
       // TODO: Check that stake is automatically returned
     });
 
     it("cannot ping a proposal if it not at the head of the queue", async () => {
       await checkErrorRevert(fundingQueue.pingProposal(proposalId, 1, 0, 0), "funding-queue-proposal-not-head");
-    });
-
-    it("cannot ping a proposal with a bad domainId", async () => {
-      await fundingQueue.backBasicProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      await checkErrorRevert(fundingQueue.pingProposal(proposalId, 2, 0, 0), "funding-queue-bad-domain-id");
     });
   });
 });
