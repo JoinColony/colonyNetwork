@@ -24,6 +24,8 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/EtherRouter.sol",
       "contracts/common/Resolver.sol",
       "contracts/ens/ENSRegistry.sol", // Not directly used by any colony contracts
+      "contracts/extensions/FundingQueue.sol",
+      "contracts/extensions/FundingQueueFactory.sol",
       "contracts/extensions/OneTxPayment.sol",
       "contracts/extensions/OneTxPaymentFactory.sol",
       "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
