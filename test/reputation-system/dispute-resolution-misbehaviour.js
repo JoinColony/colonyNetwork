@@ -125,7 +125,17 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await repCycle.confirmNewHash(0);
 
       repCycle = await getActiveRepCycle(colonyNetwork);
-      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      await badClient.addLogContentsToReputationTree();
+      await badClient.submitRootHash();
+
+      // Check we can't confirm the JRH before the submission window is closed
+      await checkErrorRevertEthers(goodClient.confirmJustificationRootHash(), "colony-reputation-mining-cycle-submissions-not-closed");
+
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
       // Check we can't start binary search before we've confirmed JRH
       await checkErrorRevertEthers(goodClient.respondToBinarySearchForChallenge(), "colony-reputation-mining-challenge-not-active");
