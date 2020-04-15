@@ -28,6 +28,14 @@ import "./../tokenLocking/ITokenLocking.sol";
 
 contract FundingQueue is DSMath, PatriciaTreeProofs {
 
+  // Events
+  event ProposalCreated(uint256 id, uint256 indexed fromPot, uint256 indexed toPot, address indexed token, uint256 amount);
+  event ProposalStaked(uint256 indexed id, uint256 domainTotalRep);
+  event ProposalBacked(uint256 indexed id, uint256 indexed newPrevId, uint256 userRep);
+  event ProposalPinged(uint256 indexed id, uint256 amount);
+  event ProposalCompleted(uint256 indexed id);
+  event ProposalCancelled(uint256 indexed id);
+
   // Constants
   uint256 constant HEAD = 0;
   uint256 constant UINT256_MAX = (2 ** 256) - 1;
@@ -92,7 +100,7 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
   // Public functions
 
-  function createBasicProposal(
+  function createProposal(
     uint256 _domainId,
     uint256 _fromChildSkillIndex,
     uint256 _toChildSkillIndex,
@@ -126,6 +134,8 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
       ProposalState.Inactive, msg.sender, _token, _domainId, 0, _fromPot, _toPot, _totalRequested, 0, now, 0
     );
     queue[proposalCount] = proposalCount; // Initialize as a disconnected self-edge
+
+    emit ProposalCreated(proposalCount, _fromPot, _toPot, _token, _totalRequested);
   }
 
   function cancelProposal(uint256 _id, uint256 _prevId) public {
@@ -143,6 +153,8 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
     // uint256 stake = wmul(proposal.domainTotalRep, STAKE_PCT);
     // colony.deobligateStake(msg.sender, proposal.domainId, stake);
+
+    emit ProposalCancelled(_id);
   }
 
   function stakeProposal(
@@ -164,9 +176,11 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
     // uint256 stake = wmul(proposal.domainTotalRep, STAKE_PCT);
     // colony.obligateStake(msg.sender, proposal.domainId, stake);
+
+    emit ProposalStaked(_id, proposal.domainTotalRep);
   }
 
-  function backBasicProposal(
+  function backProposal(
     uint256 _id,
     uint256 _currPrevId,
     uint256 _newPrevId,
@@ -183,9 +197,9 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     require(_id != _newPrevId, "funding-queue-cannot-insert-after-self"); // NOTE: this may be redundant
     require(supporters[_id][msg.sender] == 0, "funding-queue-already-supported");
 
-    uint256 userReputation = checkReputation(_id, msg.sender, _key, _value, _branchMask, _siblings);
-    proposal.totalSupport = add(proposal.totalSupport, userReputation);
-    supporters[_id][msg.sender] = userReputation;
+    uint256 userRep = checkReputation(_id, msg.sender, _key, _value, _branchMask, _siblings);
+    proposal.totalSupport = add(proposal.totalSupport, userRep);
+    supporters[_id][msg.sender] = userRep;
 
     // Remove the proposal from its current position, if exists
     require(queue[_currPrevId] == _id, "funding-queue-bad-prev-id");
@@ -205,6 +219,8 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     );
     queue[_newPrevId] = _id; // prev proposal => this proposal
     queue[_id] = nextId; // this proposal => next proposal
+
+    emit ProposalBacked(_id, _newPrevId, userRep);
   }
 
   function pingProposal(
@@ -250,6 +266,8 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
       actualFundingToTransfer,
       proposal.token
     );
+
+    emit ProposalPinged(_id, actualFundingToTransfer);
   }
 
   // Public view functions
