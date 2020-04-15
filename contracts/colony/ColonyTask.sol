@@ -545,7 +545,7 @@ contract ColonyTask is ColonyStorage {
   // https://github.com/ethereum/solidity/issues/2884
   function executeCall(address to, uint256 value, bytes memory data) internal returns (bool success) {
     assembly {
-      success := call(gas, to, value, add(data, 0x20), mload(data), 0, 0)
+      success := call(gas(), to, value, add(data, 0x20), mload(data), 0, 0)
       }
   }
 

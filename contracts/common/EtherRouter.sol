@@ -24,7 +24,7 @@ import "./Resolver.sol";
 contract EtherRouter is DSAuth {
   Resolver public resolver;
 
-  function() external payable {
+  fallback() external payable {
     if (msg.sig == 0) {
       return;
     }
@@ -52,7 +52,7 @@ contract EtherRouter is DSAuth {
       if eq(size, 0) { revert(0,0) }
 
       calldatacopy(mload(0x40), 0, calldatasize)
-      let result := delegatecall(gas, destination, mload(0x40), calldatasize, mload(0x40), 0) // ignore-swc-113
+      let result := delegatecall(gas(), destination, mload(0x40), calldatasize, mload(0x40), 0) // ignore-swc-113
       // as their addresses are controlled by the Resolver which we trust
       returndatacopy(mload(0x40), 0, returndatasize)
       switch result
