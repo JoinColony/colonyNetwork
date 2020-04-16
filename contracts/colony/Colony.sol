@@ -298,48 +298,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit ColonyUpgraded(currentVersion, _newVersion);
   }
 
-  // Removing payment/task domain mutability
-  bytes4 constant SIG_A0 = bytes4(keccak256("setTaskDomain(uint256,uint256)"));
-  bytes4 constant SIG_A1 = bytes4(keccak256("setPaymentDomain(uint256,uint256,uint256,uint256)"));
-
-  // Introducing the expenditure
-  bytes4 constant SIG_B0 = bytes4(keccak256("makeExpenditure(uint256,uint256,uint256)"));
-  bytes4 constant SIG_B1 = bytes4(keccak256("transferExpenditureViaArbitration(uint256,uint256,uint256,address)"));
-  bytes4 constant SIG_B2 = bytes4(keccak256("setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)"));
-  bytes4 constant SIG_B3 = bytes4(keccak256("setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)"));
-
-  // Remove ArchitectureSubdomain
-  bytes4 constant SIG_C0 = bytes4(keccak256("setArchitectureRole(uint256,uint256,address,uint256,bool)"));
-  bytes4 constant SIG_C1 = bytes4(keccak256("setFundingRole(uint256,uint256,address,uint256,bool)"));
-  bytes4 constant SIG_C2 = bytes4(keccak256("setAdministrationRole(uint256,uint256,address,uint256,bool)"));
-  bytes4 constant SIG_C3 = bytes4(keccak256("setArbitrationRole(uint256,uint256,address,uint256,bool)"));
-
-  // v3 to v4
-  function finishUpgrade() public always {
-    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
-
-    // Remove payment/task domain mutability from multisig
-    delete reviewers[SIG_A0];
-
-    // Remove payment/task domain mutability from authority
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), SIG_A1, false);
-
-    // Add expenditure capabilities
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), SIG_B0, true);
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG_B1, true);
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG_B2, true);
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), SIG_B3, true);
-
-    // Remove ArchitectureSubdomain
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), SIG_C0, true);
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), SIG_C1, true);
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), SIG_C2, true);
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), SIG_C3, true);
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.ArchitectureSubdomain_DEPRECATED), address(this), SIG_C0, false);
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.ArchitectureSubdomain_DEPRECATED), address(this), SIG_C1, false);
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.ArchitectureSubdomain_DEPRECATED), address(this), SIG_C2, false);
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.ArchitectureSubdomain_DEPRECATED), address(this), SIG_C3, false);
-  }
+  // v4 to v5
+  function finishUpgrade() public always { }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
     require(_slot != COLONY_NETWORK_SLOT, "colony-protected-variable");
