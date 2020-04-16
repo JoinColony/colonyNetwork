@@ -912,6 +912,19 @@ Mint `_wad` amount of colony tokens. Secured function to authorised members.
 |_wad|uint256|Amount to mint
 
 
+### `mintTokensFor`
+
+Mint `_wad` amount of colony tokens and send to `_guy`. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_guy|address|Recipient of new tokens
+|_wad|uint256|Amount to mint
+
+
 ### `moveFundsBetweenPots`
 
 Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
