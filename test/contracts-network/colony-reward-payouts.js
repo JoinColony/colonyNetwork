@@ -189,6 +189,20 @@ contract("Colony Reward Payouts", (accounts) => {
       checkErrorRevert(colony.startNextRewardPayout(otherToken.address, ...newColonyWideReputationProof), "colony-reputation-invalid-skill-id");
     });
 
+    it("should still be able to claim funds after some have been moved to reward pot and claimed", async () => {
+      await colony.claimColonyFunds(token.address);
+      // Move all of them in to the reward pot
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, 0, amount, token.address);
+
+      const tx1 = await colony.startNextRewardPayout(token.address, ...colonyWideReputationProof);
+      const payoutId1 = tx1.logs[0].args.rewardPayoutId;
+
+      await colony.claimRewardPayout(payoutId1, initialSquareRoots, ...userReputationProof1, { from: userAddress1 });
+      await colony.mintTokens(amount.divn(10));
+      await colony.claimColonyFunds(token.address);
+    });
+
     it("should not be able to claim the reward if passed reputation is not sender's", async () => {
       await colony.claimColonyFunds(token.address);
       await colony.bootstrapColony([userAddress2], [userReputation]);

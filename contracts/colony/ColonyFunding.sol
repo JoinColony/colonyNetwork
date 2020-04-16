@@ -239,6 +239,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
     }
 
+    if (_toPot == 0 ) {
+      nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _amount);
+    }
+
     emit ColonyFundsMovedBetweenFundingPots(_fromPot, _toPot, _amount, _token);
   }
 
