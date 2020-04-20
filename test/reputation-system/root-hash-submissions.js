@@ -310,7 +310,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       const userLock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       await checkErrorRevert(
-        tokenLocking.withdraw(clnyToken.address, userLock.balance, false, { from: MINER1 }),
+        tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken.address, userLock.balance, false, { from: MINER1 }),
         "colony-token-locking-hash-submitted"
       );
     });

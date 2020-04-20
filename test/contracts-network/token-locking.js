@@ -173,7 +173,10 @@ contract("Token Locking", (addresses) => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, false, { from: userAddress });
 
-      await checkErrorRevert(tokenLocking.withdraw(token.address, otherUserTokens, false, { from: userAddress }), "ds-math-sub-underflow");
+      await checkErrorRevert(
+        tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, otherUserTokens, false, { from: userAddress }),
+        "ds-math-sub-underflow"
+      );
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       expect(info.balance).to.eq.BN(usersTokens);
       const userBalance = await token.balanceOf(userAddress);
@@ -183,7 +186,7 @@ contract("Token Locking", (addresses) => {
     it("should correctly withdraw tokens", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, false, { from: userAddress });
-      await tokenLocking.withdraw(token.address, usersTokens, false, { from: userAddress });
+      await tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, usersTokens, false, { from: userAddress });
 
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       expect(info.balance).to.be.zero;
@@ -197,7 +200,10 @@ contract("Token Locking", (addresses) => {
       await fundColonyWithTokens(colony, otherToken);
       await colony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
-      await checkErrorRevert(tokenLocking.withdraw(token.address, usersTokens, false, { from: userAddress }), "colony-token-locking-token-locked");
+      await checkErrorRevert(
+        tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, usersTokens, false, { from: userAddress }),
+        "colony-token-locking-token-locked"
+      );
     });
 
     it("should be able to withdraw tokens while they are locked, with _force", async () => {
@@ -206,7 +212,7 @@ contract("Token Locking", (addresses) => {
       await fundColonyWithTokens(colony, otherToken);
       await colony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
-      await tokenLocking.withdraw(token.address, usersTokens, true, { from: userAddress });
+      await tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress });
     });
 
     it("should be able to withdraw tokens after they are unlocked", async () => {
@@ -217,18 +223,31 @@ contract("Token Locking", (addresses) => {
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
       await tokenLocking.incrementLockCounterTo(token.address, payoutId, { from: userAddress });
-      await tokenLocking.withdraw(token.address, usersTokens, false, { from: userAddress });
+      await tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, usersTokens, false, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       expect(info.balance).to.be.zero;
     });
   });
 
   describe("when transferring or claiming tokens", async () => {
-    it("should be able to transfer tokens", async () => {
+    it("should be able to transfer tokens to balance, when recipient is unlocked", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, false, { from: userAddress });
 
       await tokenLocking.transfer(token.address, usersTokens, otherUserAddress, false, { from: userAddress });
+
+      const lock = await tokenLocking.getUserLock(token.address, otherUserAddress);
+      expect(lock.balance).to.eq.BN(usersTokens);
+    });
+
+    it("should be able to transfer tokens to pending balance, when recipient is locked", async () => {
+      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
+      await tokenLocking.deposit(token.address, usersTokens, false, { from: userAddress });
+
+      await fundColonyWithTokens(colony, token);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, token.address);
+      await colony.startNextRewardPayout(token.address, ...colonyWideReputationProof);
+      await tokenLocking.transfer(token.address, usersTokens, otherUserAddress, true, { from: userAddress });
 
       const lock = await tokenLocking.getUserLock(token.address, otherUserAddress);
       expect(lock.pendingBalance).to.eq.BN(usersTokens);

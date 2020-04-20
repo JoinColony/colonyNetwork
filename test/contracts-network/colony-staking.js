@@ -19,6 +19,8 @@ contract("ColonyPermissions", (accounts) => {
   const USER1 = accounts[1];
   const USER2 = accounts[2];
 
+  const DEPOSIT = WAD.muln(50);
+
   let colonyNetwork;
   let tokenLocking;
   let colony;
@@ -48,29 +50,57 @@ contract("ColonyPermissions", (accounts) => {
     await colony.claimExpenditurePayout(1, 1, token.address);
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-    await token.approve(tokenLockingAddress, WAD.muln(50), { from: USER0 });
-    await token.approve(tokenLockingAddress, WAD.muln(50), { from: USER1 });
+    await token.approve(tokenLockingAddress, DEPOSIT, { from: USER0 });
+    await token.approve(tokenLockingAddress, DEPOSIT, { from: USER1 });
 
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-    await tokenLocking.deposit(token.address, WAD.muln(50), false, { from: USER0 });
-    await tokenLocking.deposit(token.address, WAD.muln(50), false, { from: USER1 });
+    await tokenLocking.deposit(token.address, DEPOSIT, false, { from: USER0 });
+    await tokenLocking.deposit(token.address, DEPOSIT, false, { from: USER1 });
   });
 
   describe("when managing stakes", () => {
     it("should let users approve, obligate, and deobligate each other", async () => {
+      let approval;
+      let obligation;
+
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD, { from: USER1 });
+
+      approval = await colony.getApproval(USER1, USER0, 1);
+      expect(approval).to.eq.BN(WAD);
 
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
+
+      approval = await colony.getApproval(USER1, USER0, 1);
+      obligation = await colony.getObligation(USER1, USER0, 1);
+      expect(approval).to.be.zero;
+      expect(obligation).to.eq.BN(WAD);
+
       await colony.deobligateStake(USER1, 1, WAD, { from: USER0 });
+
+      obligation = await colony.getObligation(USER1, USER0, 1);
+      expect(obligation).to.be.zero;
     });
 
     it("should let users approve, obligate, and slash each other", async () => {
+      let approval;
+      let obligation;
+
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD, { from: USER1 });
+
+      approval = await colony.getApproval(USER1, USER0, 1);
+      expect(approval).to.eq.BN(WAD);
 
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
+
+      approval = await colony.getApproval(USER1, USER0, 1);
+      obligation = await colony.getObligation(USER1, USER0, 1);
+      expect(approval).to.be.zero;
+      expect(obligation).to.eq.BN(WAD);
+
       await colony.slashStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
+
+      obligation = await colony.getObligation(USER1, USER0, 1);
+      expect(obligation).to.be.zero;
 
       const deposit = await tokenLocking.getUserLock(token.address, USER1);
       expect(deposit.balance).to.eq.BN(WAD.muln(49));
@@ -78,42 +108,29 @@ contract("ColonyPermissions", (accounts) => {
 
     it("should not let users obligate more than is approved for obligator", async () => {
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD.muln(2), { from: USER1 });
-
-      await checkErrorRevert(colony.obligateStake(USER1, 1, WAD.addn(1), { from: USER0 }), "ds-math-sub-underflow");
-    });
-
-    it("should not let users obligate more than is approved for colony", async () => {
-      await colony.approveStake(USER0, 1, WAD.muln(2), { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD, { from: USER1 });
 
       await checkErrorRevert(colony.obligateStake(USER1, 1, WAD.addn(1), { from: USER0 }), "ds-math-sub-underflow");
     });
 
     it("should not let cumulative obligations be larger than token deposit, with one colony", async () => {
       await colony.approveStake(USER0, 1, WAD.muln(100), { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD.muln(100), { from: USER1 });
 
       await checkErrorRevert(colony.obligateStake(USER1, 1, WAD.muln(100), { from: USER0 }), "colony-token-locking-insufficient-deposit");
     });
 
     it("should not let cumulative obligations be larger than token deposit, with two colonies", async () => {
-      await colony.approveStake(USER0, 1, WAD.muln(50), { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD.muln(50), { from: USER1 });
+      await colony.approveStake(USER0, 1, DEPOSIT, { from: USER1 });
 
       const newColony = await setupColony(colonyNetwork, token.address);
-      await newColony.approveStake(USER0, 1, WAD.muln(50), { from: USER1 });
-      await tokenLocking.approveStake(newColony.address, WAD.muln(50), { from: USER1 });
+      await newColony.approveStake(USER0, 1, DEPOSIT, { from: USER1 });
 
-      await colony.obligateStake(USER1, 1, WAD.muln(50), { from: USER0 });
+      await colony.obligateStake(USER1, 1, DEPOSIT, { from: USER0 });
 
-      await checkErrorRevert(newColony.obligateStake(USER1, 1, WAD.muln(50), { from: USER0 }), "colony-token-locking-insufficient-deposit");
+      await checkErrorRevert(newColony.obligateStake(USER1, 1, DEPOSIT, { from: USER0 }), "colony-token-locking-insufficient-deposit");
     });
 
     it("should not let users deobligate more than is obligated", async () => {
       await colony.approveStake(USER0, 1, WAD.muln(2), { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD.muln(2), { from: USER1 });
-
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
 
       await checkErrorRevert(colony.deobligateStake(USER1, 1, WAD.addn(1), { from: USER0 }), "ds-math-sub-underflow");
@@ -121,8 +138,6 @@ contract("ColonyPermissions", (accounts) => {
 
     it("should not let users slash more than is obligated", async () => {
       await colony.approveStake(USER0, 1, WAD.muln(2), { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD.muln(2), { from: USER1 });
-
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
 
       await checkErrorRevert(
@@ -131,41 +146,49 @@ contract("ColonyPermissions", (accounts) => {
       );
     });
 
+    it("should not let users withdraw more than the unobligated balance", async () => {
+      await colony.approveStake(USER0, 1, DEPOSIT, { from: USER1 });
+      await colony.obligateStake(USER1, 1, DEPOSIT, { from: USER0 });
+
+      await checkErrorRevert(
+        tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, 1, false, { from: USER1 }),
+        "colony-token-locking-excess-obligation"
+      );
+    });
+
+    it("should not let users transfer more than the unobligated balance", async () => {
+      await colony.approveStake(USER0, 1, DEPOSIT, { from: USER1 });
+      await colony.obligateStake(USER1, 1, DEPOSIT, { from: USER0 });
+
+      await checkErrorRevert(
+        tokenLocking.transfer(token.address, 1, ethers.constants.AddressZero, false, { from: USER1 }),
+        "colony-token-locking-excess-obligation"
+      );
+    });
+
     it("should correctly accumulate multiple approvals", async () => {
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD, { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD, { from: USER1 });
-
       await colony.obligateStake(USER1, 1, WAD.muln(2), { from: USER0 });
     });
 
     it("should correctly accumulate multiple obligations", async () => {
       await colony.approveStake(USER0, 1, WAD.muln(2), { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD.muln(2), { from: USER1 });
-
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
-
       await colony.deobligateStake(USER1, 1, WAD.muln(2), { from: USER0 });
     });
 
     it("should correctly accumulate multiple deobligations", async () => {
       await colony.approveStake(USER0, 1, WAD.muln(2), { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD.muln(2), { from: USER1 });
-
       await colony.obligateStake(USER1, 1, WAD.muln(2), { from: USER0 });
-
       await colony.deobligateStake(USER1, 1, WAD, { from: USER0 });
       await colony.deobligateStake(USER1, 1, WAD, { from: USER0 });
     });
 
     it("should correctly accumulate multiple slashes", async () => {
       await colony.approveStake(USER0, 1, WAD.muln(2), { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD.muln(2), { from: USER1 });
-
       await colony.obligateStake(USER1, 1, WAD.muln(2), { from: USER0 });
-
       await colony.slashStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
       await colony.slashStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
 
@@ -173,16 +196,26 @@ contract("ColonyPermissions", (accounts) => {
       expect(deposit.balance).to.eq.BN(WAD.muln(48));
     });
 
-    it("should allow for a slashed stake to be sent to a beneficiary", async () => {
+    it("should correctly accumulate multiple obligations across colonies", async () => {
+      const otherColony = await setupColony(colonyNetwork, token.address);
+
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
-      await tokenLocking.approveStake(colony.address, WAD, { from: USER1 });
+      await otherColony.approveStake(USER0, 1, WAD, { from: USER1 });
 
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
+      await otherColony.obligateStake(USER1, 1, WAD, { from: USER0 });
 
+      const obligation = await tokenLocking.getTotalObligation(USER1, token.address);
+      expect(obligation).to.eq.BN(WAD.muln(2));
+    });
+
+    it("should allow for a slashed stake to be sent to a beneficiary", async () => {
+      await colony.approveStake(USER0, 1, WAD, { from: USER1 });
+      await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
       await colony.slashStake(1, 0, USER0, USER1, 1, WAD, USER2, { from: USER2 });
 
       const deposit = await tokenLocking.getUserLock(token.address, USER2);
-      expect(deposit.pendingBalance).to.eq.BN(WAD);
+      expect(deposit.balance).to.eq.BN(WAD);
     });
   });
 });

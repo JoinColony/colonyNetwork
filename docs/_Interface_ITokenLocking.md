@@ -9,7 +9,7 @@ order: 5
 
 ### `approveStake`
 
-Allow the _colony to obligate some amount of tokens as a stake.
+Allow the colony to obligate some amount of tokens as a stake. Can only be called by a colony.
 
 
 **Parameters**
@@ -18,6 +18,7 @@ Allow the _colony to obligate some amount of tokens as a stake.
 |---|---|---|
 |_colony|address|Address of the colony we are willing to let obligate us.
 |_amount|uint256|Amount of that colony's internal token up to which we are willing to be obligated.
+|_token|address|The colony's internal token address
 
 
 ### `claim`
@@ -44,6 +45,20 @@ Deobligate the user some amount of tokens, releasing the stake. Can only be call
 |---|---|---|
 |_user|address|Address of the account we are deobligating.
 |_amount|uint256|Amount of colony's internal token we are deobligating.
+|_token|address|The colony's internal token address
+
+
+### `deposit`
+
+DEPRECATED: Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to deposit
+|_amount|uint256|Amount to deposit
 
 
 ### `deposit`
@@ -88,6 +103,24 @@ Get global lock count for a specific token.
 |Name|Type|Description|
 |---|---|---|
 |lockCount|uint256|Global token lock count
+
+### `getTotalObligation`
+
+See the total amount of a user's obligation.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the obligated account.
+|_token|address|The token for which the user is obligated.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
 
 ### `getUserLock`
 
@@ -148,6 +181,7 @@ Obligate the user some amount of tokens as a stake. Can only be called by a colo
 |---|---|---|
 |_user|address|Address of the account we are obligating.
 |_amount|uint256|Amount of the colony's internal token we are obligating.
+|_token|address|The colony's internal token address
 
 
 ### `punishStakers`
@@ -189,7 +223,8 @@ Slash some amount of tokens. Can only be called by a colony.
 |---|---|---|
 |_user|address|Address of the account we are slashing.
 |_amount|uint256|Amount of colony's internal token we are slashing.
-|_beneficiary|address|Recipient of the slashed tokens (pass 0x0 to burn).
+|_token|address|The colony's internal token address
+|_beneficiary|address|Recipient of the slashed tokens (pass 0x0 to send to the abyss).
 
 
 ### `transfer`
@@ -233,3 +268,16 @@ Withdraw `_amount` of deposited tokens. Can only be called if user tokens are no
 |_token|address|Address of the token to withdraw from
 |_amount|uint256|Amount to withdraw
 |_force|bool|Pass true to forcibly unlock the token
+
+
+### `withdraw`
+
+DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to withdraw from
+|_amount|uint256|Amount to withdraw

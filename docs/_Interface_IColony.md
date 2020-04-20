@@ -318,6 +318,25 @@ Helper function used to generage consistently the rating secret using salt value
 |---|---|---|
 |secret|bytes32|`keccak256` hash of joint _salt and _value
 
+### `getApproval`
+
+View an approval to obligate tokens.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|User allowing their tokens to be obligated.
+|_obligator|address|Address of the account we are willing to let obligate us.
+|_domainId|uint256|Domain in which we are willing to be obligated.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|approval|uint256|
+
 ### `getColonyNetwork`
 
 Returns the colony network address set on the Colony.
@@ -510,6 +529,25 @@ Get the total amount of tokens `_token` minus amount reserved to be paid to the 
 |Name|Type|Description|
 |---|---|---|
 |amount|uint256|Total amount of tokens in funding pots other than the rewards pot (id 0)
+
+### `getObligation`
+
+View an obligation of tokens.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|User whose tokens are obligated.
+|_obligator|address|Address of the account who obligated us.
+|_domainId|uint256|Domain in which we are obligated.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|obligation|uint256|
 
 ### `getPayment`
 
@@ -1294,7 +1332,7 @@ Slash some amount of tokens. Can be called by the arbitration role.
 |_user|address|Address of the account we are slashing.
 |_domainId|uint256|Domain in which we are slashing the user.
 |_amount|uint256|Amount of internal token we are slashing.
-|_beneficiary|address|Recipient of the slashed tokens (pass 0x0 to burn).
+|_beneficiary|address|Recipient of the slashed tokens (pass 0x0 to send to the abyss).
 
 
 ### `startNextRewardPayout`

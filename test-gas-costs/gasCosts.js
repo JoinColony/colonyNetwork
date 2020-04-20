@@ -268,7 +268,7 @@ contract("All", function (accounts) {
 
       // withdraw
       const clnyToken = await metaColony.getToken();
-      await tokenLocking.withdraw(clnyToken, DEFAULT_STAKE.divn(4), false, { from: STAKER1 });
+      await tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken, DEFAULT_STAKE.divn(4), false, { from: STAKER1 });
     });
 
     it("when working with reward payouts", async function () {

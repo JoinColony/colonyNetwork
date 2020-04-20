@@ -26,7 +26,7 @@ Starting from the layer closes to the user:
   * `IRecovery.sol`
   * `IEtherRouter.sol`
 
-All public and external functions from the logic contracts for an entity are composed into a single interface. For example the Colony interface - `IColony.sol` is a superset of the public and external functions from the logic contracts for a Colony entity, i.e. `Colony.sol`, `ColonyFunding.sol`, `ColonyPayment.sol` and `ColonyTask.sol`.
+All public and external functions from the logic contracts for an entity are composed into a single interface. For example the Colony interface - `IColony.sol` is a superset of the public and external functions from the logic contracts for a Colony entity, i.e. `Colony.sol`, `ColonyFunding.sol`, etc.
 
 This layer represents the Colony Network API, documented in the [Interface section](https://docs.colony.io/colonynetwork/interface-ietherrouter) of the documentation.
 
@@ -34,7 +34,7 @@ This layer represents the Colony Network API, documented in the [Interface secti
 
 All function declarations live in this layer, which constitutes the majority of the colonyNetwork code. Functions that implement a feature or set of related actions are grouped together into a single contract. There are often several logic contracts representing a single logical entity.
 
-For example, the logic for a colony is distributed across `Colony.sol`, `ColonyFunding.sol`, `ColonyPayment.sol` and `ColonyTask.sol`. Likewise for the ColonyNetwork and ReputationMiningCycle entities.
+For example, the logic for a colony is distributed across `Colony.sol`, `ColonyFunding.sol`, and so on. Likewise for the ColonyNetwork and ReputationMiningCycle entities.
 
 Note that this logic distribution is possible due to the [contract upgrade mechanism](/colonynetwork/docs-upgrade-design/), in which all functions are called from the same underlying `EtherRouter` delegate proxy instance, regardless of where they are implemented.
 
@@ -78,6 +78,8 @@ Broadly speaking, the Colony Network can be divided into four logical entities:
 Defines the state of an individual colony, such as funding pots, tasks, domains, and skills.
   * `Colony.sol`
   * `ColonyFunding.sol`
+  * `ColonyStaking.sol`
+  * `ColonyExpenditure.sol`
   * `ColonyPayment.sol`
   * `ColonyTask.sol`
 
