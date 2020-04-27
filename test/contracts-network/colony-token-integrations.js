@@ -8,9 +8,9 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const ERC20Mintable = artifacts.require("ERC20Mintable");
+const ERC20PresetMinterPauser = artifacts.require("ERC20PresetMinterPauser");
 
-contract("Colony Token Integration", () => {
+contract("Colony Token Integration", (addresses) => {
   let colony;
   let erc20Mintable;
   let colonyNetwork;
@@ -22,7 +22,7 @@ contract("Colony Token Integration", () => {
 
   beforeEach(async () => {
     // Instantiate an openzeppelin ERC20Mintable token instance
-    erc20Mintable = await ERC20Mintable.new();
+    erc20Mintable = await ERC20PresetMinterPauser.new("Test", "TEST");
     const { logs } = await colonyNetwork.createColony(erc20Mintable.address, 0, "", "", false);
     const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
@@ -53,8 +53,8 @@ contract("Colony Token Integration", () => {
 
   describe("when working with openzeppelin-solidity/ERC20Mintable token owned by the colony", () => {
     beforeEach(async () => {
-      await erc20Mintable.addMinter(colony.address);
-      await erc20Mintable.renounceMinter();
+      await erc20Mintable.grantRole(web3.utils.soliditySha3("MINTER_ROLE"), colony.address);
+      await erc20Mintable.renounceRole(web3.utils.soliditySha3("MINTER_ROLE"), addresses[0]);
       // At the point the only permitted address to mint tokens is the colony
     });
 
