@@ -58,9 +58,13 @@ contract("Coin Machine", (accounts) => {
       await checkErrorRevert(coinMachineFactory.deployExtension(colony.address, { from: USER0 }), "colony-extension-already-deployed");
       await coinMachineFactory.removeExtension(colony.address, { from: USER0 });
     });
+
+    it("cannot initialize twice", async () => {
+      await checkErrorRevert(coinMachine.initialize(purchaseToken.address, 0, 0, 0, 0, 0), "coin-machine-already-initialized");
+    });
   });
 
-  describe.only("buying tokens", async () => {
+  describe("buying tokens", async () => {
     it("can buy tokens", async () => {
       await purchaseToken.mint(USER0, WAD, { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
@@ -85,11 +89,12 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can buy tokens over multiple periods", async () => {
-      const numPurchases = 3;
-
+      const numPeriods = await coinMachine.getNumPeriods();
       const periodLength = await coinMachine.getPeriodLength();
       const tokensPerPeriod = await coinMachine.getTokensPerPeriod();
       const currPrice = await coinMachine.getCurrPrice();
+
+      const numPurchases = numPeriods.addn(1).toNumber();
       const totalCost = tokensPerPeriod.mul(currPrice).muln(numPurchases);
 
       await purchaseToken.mint(USER0, totalCost, { from: USER0 });
@@ -123,12 +128,13 @@ contract("Coin Machine", (accounts) => {
       await coinMachine.updatePeriod();
 
       // Expect price to increase by 10% since we sold 200% in 1/10 of the periods
+      // No deficit though since we include the unsold tokens in this period
       currPrice = await coinMachine.getCurrPrice();
       tokenSurplus = await coinMachine.getTokenSurplus();
       tokenDeficit = await coinMachine.getTokenDeficit();
       expect(currPrice).to.eq.BN(WAD.divn(10).muln(11));
       expect(tokenSurplus).to.be.zero;
-      expect(tokenDeficit).to.eq.BN(WAD.muln(100));
+      expect(tokenDeficit).to.be.zero;
 
       await forwardTime(periodLength.toNumber(), this);
       await coinMachine.updatePeriod();
@@ -138,7 +144,7 @@ contract("Coin Machine", (accounts) => {
       tokenSurplus = await coinMachine.getTokenSurplus();
       tokenDeficit = await coinMachine.getTokenDeficit();
       expect(currPrice).to.eq.BN(WAD);
-      expect(tokenSurplus).to.be.zero;
+      expect(tokenSurplus).to.eq.BN(WAD.muln(100));
       expect(tokenDeficit).to.be.zero;
 
       await forwardTime(periodLength.toNumber(), this);
@@ -149,8 +155,105 @@ contract("Coin Machine", (accounts) => {
       tokenSurplus = await coinMachine.getTokenSurplus();
       tokenDeficit = await coinMachine.getTokenDeficit();
       expect(currPrice).to.eq.BN(WAD.divn(10).muln(9));
-      expect(tokenSurplus).to.eq.BN(WAD.muln(100));
+      expect(tokenSurplus).to.eq.BN(WAD.muln(200));
       expect(tokenDeficit).to.be.zero;
+    });
+
+    it("can virtually update counters", async () => {
+      const periodLength = await coinMachine.getPeriodLength();
+      const tokensPerPeriod = await coinMachine.getTokensPerPeriod();
+      const maxPerPeriod = await coinMachine.getMaxPerPeriod();
+
+      let currPrice = await coinMachine.getCurrPrice();
+      let numAvailable = await coinMachine.getNumAvailable();
+      let tokenSurplus = await coinMachine.getTokenSurplus();
+      let tokenDeficit = await coinMachine.getTokenDeficit();
+
+      expect(currPrice).to.eq.BN(WAD);
+      expect(numAvailable).to.eq.BN(maxPerPeriod);
+      expect(tokenSurplus).to.eq.BN(tokensPerPeriod);
+      expect(tokenDeficit).to.be.zero;
+
+      await purchaseToken.mint(USER0, maxPerPeriod.muln(2), { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, maxPerPeriod.muln(2), { from: USER0 });
+
+      // Buy tokens during a period, watch counters adapt
+      await coinMachine.buyTokens(tokensPerPeriod.divn(2), { from: USER0 });
+
+      currPrice = await coinMachine.getCurrPrice();
+      numAvailable = await coinMachine.getNumAvailable();
+      tokenSurplus = await coinMachine.getTokenSurplus();
+      tokenDeficit = await coinMachine.getTokenDeficit();
+
+      expect(currPrice).to.eq.BN(WAD);
+      expect(numAvailable).to.eq.BN(maxPerPeriod.sub(tokensPerPeriod.divn(2)));
+      expect(tokenSurplus).to.eq.BN(tokensPerPeriod.divn(2));
+      expect(tokenDeficit).to.be.zero;
+
+      await coinMachine.buyTokens(tokensPerPeriod.divn(2), { from: USER0 });
+
+      currPrice = await coinMachine.getCurrPrice();
+      numAvailable = await coinMachine.getNumAvailable();
+      tokenSurplus = await coinMachine.getTokenSurplus();
+      tokenDeficit = await coinMachine.getTokenDeficit();
+
+      expect(currPrice).to.eq.BN(WAD);
+      expect(numAvailable).to.eq.BN(maxPerPeriod.sub(tokensPerPeriod));
+      expect(tokenSurplus).to.be.zero;
+      expect(tokenDeficit).to.be.zero;
+
+      await coinMachine.buyTokens(tokensPerPeriod, { from: USER0 });
+
+      currPrice = await coinMachine.getCurrPrice();
+      numAvailable = await coinMachine.getNumAvailable();
+      tokenSurplus = await coinMachine.getTokenSurplus();
+      tokenDeficit = await coinMachine.getTokenDeficit();
+
+      expect(currPrice).to.eq.BN(WAD);
+      expect(numAvailable).to.be.zero;
+      expect(tokenSurplus).to.be.zero;
+      expect(tokenDeficit).to.eq.BN(tokensPerPeriod);
+
+      // Advance to next period without calling `updatePeriod`
+      await forwardTime(periodLength.toNumber(), this);
+
+      currPrice = await coinMachine.getCurrPrice();
+      numAvailable = await coinMachine.getNumAvailable();
+      tokenSurplus = await coinMachine.getTokenSurplus();
+      tokenDeficit = await coinMachine.getTokenDeficit();
+
+      // Bought maxPerPeriod tokens so price should be up 10%
+      expect(currPrice).to.eq.BN(WAD.divn(10).muln(11));
+      expect(numAvailable).to.eq.BN(maxPerPeriod);
+      expect(tokenSurplus).to.be.zero;
+      expect(tokenDeficit).to.be.zero;
+
+      // Advance to next period without calling `updatePeriod`
+      // Now we are two periods advanced from `currPeriod`
+      await forwardTime(periodLength.toNumber(), this);
+
+      currPrice = await coinMachine.getCurrPrice();
+      numAvailable = await coinMachine.getNumAvailable();
+      tokenSurplus = await coinMachine.getTokenSurplus();
+      tokenDeficit = await coinMachine.getTokenDeficit();
+
+      expect(currPrice).to.eq.BN(WAD);
+      expect(numAvailable).to.eq.BN(maxPerPeriod);
+      expect(tokenSurplus).to.eq.BN(tokensPerPeriod);
+      expect(tokenDeficit).to.be.zero;
+
+      // Now buy some tokens
+      await coinMachine.buyTokens(maxPerPeriod, { from: USER0 });
+
+      currPrice = await coinMachine.getCurrPrice();
+      numAvailable = await coinMachine.getNumAvailable();
+      tokenSurplus = await coinMachine.getTokenSurplus();
+      tokenDeficit = await coinMachine.getTokenDeficit();
+
+      expect(currPrice).to.eq.BN(WAD);
+      expect(numAvailable).to.be.zero;
+      expect(tokenSurplus).to.be.zero;
+      expect(tokenDeficit).to.eq.BN(tokensPerPeriod);
     });
   });
 });

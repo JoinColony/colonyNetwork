@@ -86,7 +86,7 @@ contract CoinMachine is DSMath {
   function buyTokens(uint256 _numTokens) public {
     updatePeriod();
 
-    uint256 numTokens = min(_numTokens, getAvailable());
+    uint256 numTokens = min(_numTokens, getNumAvailable());
     uint256 totalPrice = wmul(numTokens, currPrice);
 
     currIntake += totalPrice;
@@ -101,6 +101,7 @@ contract CoinMachine is DSMath {
     colony.mintTokensFor(msg.sender, numTokens);
   }
 
+  // Make sure this is called at least once during the averaging period
   function updatePeriod() public {
     bool newPeriod;
 
@@ -136,14 +137,14 @@ contract CoinMachine is DSMath {
       }
 
       tokensSold = 0;
-      currPeriod++;
+      currPeriod = nextPeriod(currPeriod);
     }
 
-    // In case we missed a whole period
-    while (getCurrPeriod() > currPeriod) {
+    // In case we missed multiple periods
+    while (getCurrPeriod() != currPeriod) {
       pastIntakes[currPeriod] = 0;
       tokenSurplus = add(tokenSurplus, tokensPerPeriod);
-      currPeriod++;
+      currPeriod = nextPeriod(currPeriod);
     }
 
     // Update the price
@@ -156,6 +157,10 @@ contract CoinMachine is DSMath {
     return periodLength;
   }
 
+  function getNumPeriods() public view returns (uint256) {
+    return numPeriods;
+  }
+
   function getTokensPerPeriod() public view returns (uint256) {
     return tokensPerPeriod;
   }
@@ -165,22 +170,75 @@ contract CoinMachine is DSMath {
   }
 
   function getCurrPrice() public view returns (uint256) {
-    return currPrice;
+    if (currPeriod == getCurrPeriod()) {
+      return currPrice;
+    } else {
+      uint256 virtualSum = pastIntakes[getCurrPeriod()];
+      uint256 virtualPeriod = nextPeriod(getCurrPeriod());
+      uint256 virtualCurrPeriod = nextPeriod(currPeriod);
+
+      while (virtualPeriod != getCurrPeriod()) {
+        if (virtualPeriod == currPeriod) {
+          virtualSum += currIntake;
+        } else if (virtualPeriod == virtualCurrPeriod) {
+          virtualCurrPeriod = nextPeriod(virtualCurrPeriod);
+        } else {
+          virtualSum += pastIntakes[virtualPeriod];
+        }
+        virtualPeriod = nextPeriod(virtualPeriod);
+      }
+
+      uint256 virtualAverageIntake = virtualSum / numPeriods;
+      return wdiv(virtualAverageIntake, tokensPerPeriod);
+    }
+  }
+
+  function getNumAvailable() public view returns (uint256) {
+    if (currPeriod == getCurrPeriod()) {
+      return sub(maxPerPeriod, tokensSold);
+    } else {
+      return maxPerPeriod;
+    }
   }
 
   function getTokenSurplus() public view returns (uint256) {
-    return tokenSurplus;
+    uint256 virtualTokenSurplus;
+    uint256 x;
+    (virtualTokenSurplus, x) = getTokenSurplusAndDeficit();
+    return virtualTokenSurplus;
   }
 
   function getTokenDeficit() public view returns (uint256) {
-    return tokenDeficit;
-  }
-
-  function getAvailable() public view returns (uint256) {
-    return sub(maxPerPeriod, tokensSold);
+    uint256 x;
+    uint256 virtualTokenDeficit;
+    (x, virtualTokenDeficit) = getTokenSurplusAndDeficit();
+    return virtualTokenDeficit;
   }
 
   // Internal
+
+  function getTokenSurplusAndDeficit() internal view returns (uint256, uint256) {
+    uint256 virtualPeriod = currPeriod;
+    uint256 virtualTokenSurplus = tokenSurplus;
+    uint256 virtualTokenDeficit = tokenDeficit;
+
+    while (virtualPeriod != getCurrPeriod()) {
+      virtualTokenSurplus = add(virtualTokenSurplus, tokensPerPeriod);
+      virtualPeriod = nextPeriod(virtualPeriod);
+    }
+
+    if (tokensSold <= tokensPerPeriod) {
+      virtualTokenSurplus = add(virtualTokenSurplus, sub(tokensPerPeriod, tokensSold));
+    } else {
+      virtualTokenDeficit = add(virtualTokenDeficit, sub(tokensSold, tokensPerPeriod));
+    }
+
+    if (virtualTokenSurplus >= virtualTokenDeficit) {
+      return (sub(virtualTokenSurplus, virtualTokenDeficit), 0);
+    } else {
+      return (0, sub(virtualTokenDeficit, virtualTokenSurplus));
+    }
+  }
 
   function getAverageIntake() internal view returns (uint256) {
     uint256 sum;
@@ -194,5 +252,9 @@ contract CoinMachine is DSMath {
 
   function getCurrPeriod() internal view returns (uint256) {
     return (now / periodLength) % numPeriods;
+  }
+
+  function nextPeriod(uint256 _period) internal view returns (uint256) {
+    return (_period + 1) % numPeriods;
   }
 }
