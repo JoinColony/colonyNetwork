@@ -210,7 +210,10 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     // calculation can be done from a purely pairwise dispute perspective.
     require(submissionWindowClosed(), "colony-reputation-mining-submission-window-still-open");
 
-    require(responsePossible(disputeStages.CONFIRM_NEW_HASH, disputeRounds[roundNumber][0].lastResponseTimestamp), "colony-reputation-mining-user-ineligible-to-respond");
+    require(
+      responsePossible(disputeStages.CONFIRM_NEW_HASH, disputeRounds[roundNumber][0].lastResponseTimestamp),
+      "colony-reputation-mining-user-ineligible-to-respond"
+    );
 
     // Burn tokens that have been slashed, but will not be awarded to others as rewards.
     IColonyNetwork(colonyNetworkAddress).burnUnneededRewards(sub(stakeLost, rewardsPaidOut));
@@ -225,8 +228,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     selfdestruct(colonyNetworkAddress);
   }
 
-  function invalidateHash(uint256 round, uint256 idx) public
-  {
+  function invalidateHash(uint256 round, uint256 idx) public {
     // What we do depends on our opponent, so work out which index it was at in disputeRounds[round]
     uint256 opponentIdx = getOpponentIdx(idx);
     uint256 nInNextRound;
@@ -338,7 +340,10 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   {
     require(submissionWindowClosed(), "colony-reputation-mining-cycle-submissions-not-closed");
     require(index < disputeRounds[round].length, "colony-reputation-mining-index-beyond-round-length");
-    require(responsePossible(disputeStages.CONFIRM_JRH, disputeRounds[round][index].lastResponseTimestamp), "colony-reputation-mining-user-ineligible-to-respond");
+    require(
+      responsePossible(disputeStages.CONFIRM_JRH, disputeRounds[round][index].lastResponseTimestamp),
+      "colony-reputation-mining-user-ineligible-to-respond"
+    );
 
     Submission storage submission = reputationHashSubmissions[disputeRounds[round][index].firstSubmitter];
     // Require we've not confirmed the JRH already.
@@ -558,19 +563,5 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     uint256 nInRound = disputeRounds[roundNumber].length;
     startMemberOfPair(roundNumber, nInRound-1);
     startMemberOfPair(roundNumber, nInRound-2);
-  }
-
-  function userInvolvedInMiningCycle(address _user) public view returns (bool) {
-    if (
-      reputationHashSubmissions[_user].proposedNewRootHash != 0x00 ||
-      respondedToChallenge[_user] == true
-    ) {
-      return true;
-    }
-    return false;
-  }
-
-  function getOpponentIdx(uint256 _idx) private pure returns (uint256) {
-    return _idx % 2 == 1 ? _idx - 1 : _idx + 1;
   }
 }

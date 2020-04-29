@@ -107,7 +107,7 @@ Returns the amount of CLNY given for defending a hash during the current dispute
 
 |Name|Type|Description|
 |---|---|---|
-|reward|uint256|
+|_reward|uint256|
 
 ### `getDisputeRound`
 

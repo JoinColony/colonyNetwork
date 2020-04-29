@@ -178,17 +178,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
     return layers;
   }
 
-  function opponentIdx(uint256 _idx) internal pure returns (uint256) {
+  function getOpponentIdx(uint256 _idx) internal pure returns (uint256) {
     return _idx % 2 == 1 ? _idx - 1 : _idx + 1;
-  }
-
-  function expectedBranchMask(uint256 nNodes, uint256 node) public pure returns (uint256) {
-    // Gets the expected branchmask for a patricia tree which has nNodes, with keys from 0 to nNodes -1
-    // i.e. the tree is 'full' - there are no missing nodes
-    uint256 mask = sub(nNodes, 1); // Every branchmask in a full tree has at least these 1s set
-    uint256 xored = mask ^ node; // Where do mask and node differ?
-    // Set every bit in the mask from the first bit where they differ to 1
-    uint256 remainderMask = sub(nextPowerOfTwoInclusive(add(xored, 1)), 1);
-    return mask | remainderMask;
   }
 }

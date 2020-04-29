@@ -18,18 +18,15 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "../lib/dappsys/math.sol";
-import "./IColonyNetwork.sol";
-import "./PatriciaTree/PatriciaTreeProofs.sol";
-import "./ITokenLocking.sol";
+import "../../lib/dappsys/math.sol";
+import "../colonyNetwork/IColonyNetwork.sol";
+import "../patriciaTree/PatriciaTreeProofs.sol";
+import "../tokenLocking/ITokenLocking.sol";
 import "./ReputationMiningCycleStorage.sol";
 import "./ReputationMiningCycleCommon.sol";
 
 
 contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
-
-
-
   function respondToBinarySearchForChallenge(
     uint256 round,
     uint256 idx,
@@ -39,7 +36,10 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
   {
     require(idx < disputeRounds[round].length, "colony-reputation-mining-index-beyond-round-length");
     require(disputeRounds[round][idx].lowerBound != disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-not-active");
-    require(responsePossible(disputeStages.BINARY_SEARCH_RESPONSE, disputeRounds[round][idx].lastResponseTimestamp), "colony-reputation-mining-user-ineligible-to-respond");
+    require(
+      responsePossible(disputeStages.BINARY_SEARCH_RESPONSE, disputeRounds[round][idx].lastResponseTimestamp),
+      "colony-reputation-mining-user-ineligible-to-respond"
+    );
 
     uint256 targetNode = disputeRounds[round][idx].lowerBound;
     bytes32 targetHashDuringSearch = disputeRounds[round][idx].targetHashDuringSearch;
@@ -86,7 +86,10 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
       2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= submission.jrhNLeaves,
       "colony-reputation-binary-search-result-already-confirmed"
     );
-    require(responsePossible(disputeStages.BINARY_SEARCH_CONFIRM, disputeRounds[round][idx].lastResponseTimestamp), "colony-reputation-mining-user-ineligible-to-respond");
+    require(
+      responsePossible(disputeStages.BINARY_SEARCH_CONFIRM, disputeRounds[round][idx].lastResponseTimestamp),
+      "colony-reputation-mining-user-ineligible-to-respond"
+    );
 
     // uint256 targetNode = disputeRounds[round][idx].lowerBound;
     uint256 branchMask = expectedBranchMask(submission.jrhNLeaves, disputeRounds[round][idx].lowerBound);

@@ -385,12 +385,5 @@ contract("Token Locking", (addresses) => {
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);
       expect(totalLockCount).to.eq.BN(2);
     });
-
-    it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
-      await checkErrorRevert(
-        tokenLocking.punishStakers([addresses[0], addresses[1]], MIN_STAKE),
-        "colony-token-locking-sender-not-reputation-mining-cycle"
-      );
-    });
   });
 });

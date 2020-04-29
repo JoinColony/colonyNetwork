@@ -4,7 +4,7 @@ import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE, SECONDS_PER_DAY } from "../../helpers/constants";
+import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE, SECONDS_PER_DAY, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
 import { checkErrorRevert, makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime, getBlockTime } from "../../helpers/test-helper";
 
 import {
@@ -132,7 +132,7 @@ contract("Funding Queues", (accounts) => {
 
     const rootHash = await reputationTree.getRootHash();
     const repCycle = await getActiveRepCycle(colonyNetwork);
-    await forwardTime(MINING_CYCLE_DURATION, this);
+    await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW, this);
     await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
     await repCycle.confirmNewHash(0);
   });

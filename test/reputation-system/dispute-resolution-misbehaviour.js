@@ -338,7 +338,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
     it("should prevent a hash from advancing if it might still get an opponent", async function advancingTest() {
       this.timeout(10000000);
-
       const clients = await setUpNMiners(8);
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
@@ -347,9 +346,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[1]);
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[2], clients[3]);
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[5]);
-      for (let i = 0; i < 8; i += 1) {
-        await clients[i].confirmJustificationRootHash();
-      }
 
       console.log("Starting round 2");
 
