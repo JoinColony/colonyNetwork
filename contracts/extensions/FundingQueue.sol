@@ -40,25 +40,6 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
   uint256 constant HEAD = 0;
   uint256 constant UINT256_MAX = (2 ** 256) - 1;
   uint256 constant STAKE_PCT = WAD / 1000; // 0.1%
-  uint256 constant COMPOUNDING_FREQUENCY = 168;
-  uint256 constant BASE_DECAY_RATE = 691719225406032925; // TODO: use RAYs?
-  // From Wolfram Alpha:           0.691719225406032924664669179186644...
-
-  //  BASE_DECAY_RATE is determined via the following equation:
-  //   r = (z ** (1/n) - 1) * n
-  //
-  //  With the following variables:
-  //   z = target decay rate (currently: -0.5 per week, see whitepaper)
-  //   n = COMPOUNDING_FREQUENCY (currently: 168, i.e. hours per week)
-  //   r = -BASE_DECAY_RATE
-  //
-  //  Basically, we take a target decay rate (-0.5 per week), and a compounding
-  //   frequency (1 hour), and figure out what "interest rate" is needed to
-  //   achieve that (about -0.69). This is necessary because more frequent
-  //   compounding requires a higher decay rate to keep weekly decay constant.
-  //  This equation was derived by taking the regular compound interest
-  //   formula, z = (1 + r/n) ** nt, setting t = 1, and solving for r = f(z,n).
-  //  To keep everything uint, we store the negative and use `sub()` later.
 
   // Initialization data
   IColony colony;
@@ -239,6 +220,10 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     uint256 remainingRequested = sub(proposal.totalRequested, proposal.totalPaid);
     uint256 actualFundingToTransfer = min(fundingToTransfer, remainingRequested);
 
+    if (actualFundingToTransfer == 0) {
+      return;
+    }
+
     proposal.totalPaid = add(proposal.totalPaid, actualFundingToTransfer);
     proposal.lastUpdated = now;
 
@@ -299,15 +284,46 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
     uint256 balance = colony.getFundingPotBalance(proposal.fromPot, token);
     uint256 backingPercent = min(WAD, wdiv(proposal.totalSupport, proposal.domainTotalRep));
-    uint256 weightedDecayRate = wmul(BASE_DECAY_RATE, backingPercent);
 
-    // balance * ((1 - (weightedDecayRate / )) ** hoursElapsed)
+    uint256 decayRate = getDecayRate(backingPercent);
     uint256 hoursElapsed = (now - proposal.lastUpdated) / 1 hours;
-    uint256 base = sub(WAD, weightedDecayRate / COMPOUNDING_FREQUENCY);
-    uint256 newBalance = wmul(balance, wpow(base, hoursElapsed));
+
+    uint256 newBalance = wmul(balance, wpow(decayRate, hoursElapsed));
     uint256 fundingToTransfer = sub(balance, newBalance);
 
     return fundingToTransfer;
+  }
+
+  // Used for mapping backing percent to the appropriate decay rate
+  //   Result of evaluating ((1 - backingPercent / 2) ** (1/168))
+  uint256[11] decayRates = [
+    1000000000000000000,
+    999694729376064517,
+    999373050688367681,
+    999033093175601516,
+    998672646289764154,
+    998289072020469237,
+    997879186966234011,
+    997439100687360636,
+    996963989316835053,
+    996447770572019609,
+    995882623658297383
+  ];
+
+  function getDecayRate(uint256 backingPercent) internal view returns (uint256) {
+    assert(backingPercent <= WAD);
+
+    if (backingPercent == WAD) {
+      return decayRates[10];
+    }
+
+    uint256 lowerBin = backingPercent / (10 ** 17);
+    uint256 lowerPct = (backingPercent - (lowerBin * 10 ** 17)) * 10;
+
+    return add(
+      wmul(decayRates[lowerBin], sub(WAD, lowerPct)),
+      wmul(decayRates[lowerBin + 1], lowerPct)
+    );
   }
 
   function checkReputation(

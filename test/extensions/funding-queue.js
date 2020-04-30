@@ -79,8 +79,6 @@ contract("Funding Queues", (accounts) => {
     await colony.addDomain(1, 0, 1);
     await colony.addDomain(1, 0, 1);
     domain1 = await colony.getDomain(1);
-    // domain2 = await colony.getDomain(2);
-    // domain3 = await colony.getDomain(3);
 
     await fundingQueueFactory.deployExtension(colony.address);
     const fundingQueueAddress = await fundingQueueFactory.deployedExtensions(colony.address);
@@ -109,14 +107,6 @@ contract("Funding Queues", (accounts) => {
       makeReputationKey(colony.address, domain1.skillId, USER1), // User1 (and 2x value)
       makeReputationValue(WAD.muln(2), 5)
     );
-    // await reputationTree.insert(
-    //   makeReputationKey(colony.address, domain2.skillId), // Colony total, domain 2
-    //   makeReputationValue(WAD, 6)
-    // );
-    // await reputationTree.insert(
-    //   makeReputationKey(colony.address, domain3.skillId), // Colony total, domain 3
-    //   makeReputationValue(WAD, 7)
-    // );
 
     colonyKey = makeReputationKey(colony.address, domain1.skillId);
     colonyValue = makeReputationValue(WAD.muln(3), 1);
@@ -387,10 +377,42 @@ contract("Funding Queues", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 7, this);
       await fundingQueue.pingProposal(proposalId, 1, 0, 0);
 
-      // So half the balance should be transferred
+      // So 1 - (1 - 1/2 * 1) = 1/2 (50.0%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("499999999999999922"); // close enough
+      const expectedTransferred = new BN("500000000000003380");
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can transfer 1/3 of funds after one week, with 2/3 reputation backing", async () => {
+      // Back proposal with 66% of reputation
+      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      // Advance one week
+      await forwardTime(SECONDS_PER_DAY * 7, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So 1 - (1 - 1/2 * 2/3) = 1/3 (33.3%) of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("333740887475370030");
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can transfer 1/6 of funds after one week, with 1/3 reputation backing", async () => {
+      // Back proposal with 33% of reputation
+      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      // Advance two weeks
+      await forwardTime(SECONDS_PER_DAY * 7, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So 1 - (1 - 1/2 * 1/3) = 1/6 (16.6%) of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("167002556696758284");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
@@ -404,10 +426,42 @@ contract("Funding Queues", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 14, this);
       await fundingQueue.pingProposal(proposalId, 1, 0, 0);
 
-      // So 3/4 of the balance should be transferred
+      // So 1 - (1 - 1/2 * 1) ** 2) = 3/4 (75.0%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("749999999999999922"); // close enough
+      const expectedTransferred = new BN("750000000000003380"); // close enough
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can transfer 5/9 of funds after two weeks, with 2/3 reputation backing", async () => {
+      // Back proposal with 66% of reputation
+      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      // Advance two weeks
+      await forwardTime(SECONDS_PER_DAY * 14, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So 1 - (1 - 1/2 * 2/3) ** 2) = 5/9 (55.5%) of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("556098794977892460");
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can transfer 11/36 of funds after two weeks, with 1/3 reputation backing", async () => {
+      // Back proposal with 33% of reputation
+      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      // Advance two weeks
+      await forwardTime(SECONDS_PER_DAY * 14, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So 1 - (1 - 1/2 * 1/3) ** 2) = 11/36 (30.5%) of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("306115259450262602");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
@@ -425,30 +479,14 @@ contract("Funding Queues", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 7, this);
       await fundingQueue.pingProposal(proposalId, 1, 0, 0);
 
-      // So 3/4 of the balance should be transferred
+      // So 1 - (1 - 1/2 * 1) ** 2) = 3/4 (75.0%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("749999999999999922"); // close enough
+      const expectedTransferred = new BN("750000000000003380"); // close enough
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
-    it("can transfer ~1/6 of funds after one week, with 1/3 reputation backing", async () => {
-      // Back proposal with 33% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
-
-      // Advance two weeks
-      await forwardTime(SECONDS_PER_DAY * 7, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
-
-      // So 1/3 * 1/2 = ~1/6 (16.6%) of the balance should be transferred
-      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
-      const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("206047343492625919"); // Actually 20%, +4%
-      expect(amountTransferred).to.eq.BN(expectedTransferred);
-    });
-
-    it("can transfer ~2/6 of funds after one week, with 2/3 reputation backing", async () => {
+    it("can transfer 5/9 of funds after two weeks, one week at a time, with 2/3 reputation backing", async () => {
       // Back proposal with 66% of reputation
       await fundingQueue.backProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
@@ -457,42 +495,34 @@ contract("Funding Queues", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 7, this);
       await fundingQueue.pingProposal(proposalId, 1, 0, 0);
 
-      // So 2/3 * 1/2 = ~1/3 (33.3%) of the balance should be transferred
+      // Advance another week
+      await forwardTime(SECONDS_PER_DAY * 7, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // So 1 - (1 - 1/2 * 2/3) ** 2) = 5/9 (55.5%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("369839175331723310"); // Actually 37%, +4%
+      const expectedTransferred = new BN("556098794977892460");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
-    it("can transfer ~1/3 of funds after two weeks, with 1/3 reputation backing", async () => {
+    it("can transfer 11/36 of funds after two weeks, one week at a time, with 1/3 reputation backing", async () => {
       // Back proposal with 33% of reputation
       await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
-      // Advance two weeks
-      await forwardTime(SECONDS_PER_DAY * 14, this);
+      // Advance one week
+      await forwardTime(SECONDS_PER_DAY * 7, this);
       await fundingQueue.pingProposal(proposalId, 1, 0, 0);
 
-      // So 1/3 * 1/2 * 2 = ~1/3 (33.3%) of the balance should be transferred
-      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
-      const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("369639179224883664"); // Actually 37%, +4%
-      expect(amountTransferred).to.eq.BN(expectedTransferred);
-    });
-
-    it("can transfer ~2/3 of funds after two weeks, with 2/3 reputation backing", async () => {
-      // Back proposal with 66% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
-
-      // Advance two weeks
-      await forwardTime(SECONDS_PER_DAY * 14, this);
+      // Advance another week
+      await forwardTime(SECONDS_PER_DAY * 7, this);
       await fundingQueue.pingProposal(proposalId, 1, 0, 0);
 
-      // So (2/3 * 1/2) **  2 = ~2/3 (66.6%) of the balance should be transferred
+      // So 1 - (1 - 1/2 * 1/3) ** 2) = 11/36 (30.5%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("602897335053397444"); // Actually 60%, -6%
+      const expectedTransferred = new BN("306115259450262603");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
@@ -530,6 +560,37 @@ contract("Funding Queues", (accounts) => {
 
     it("cannot ping a proposal if it not at the head of the queue", async () => {
       await checkErrorRevert(fundingQueue.pingProposal(proposalId, 1, 0, 0), "funding-queue-proposal-not-head");
+    });
+
+    it("can transfer funds once per hour, regardless of pinging frequency", async () => {
+      // Back proposal with 100% of reputation
+      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+
+      let balanceAfter;
+
+      // Advance ten minutes
+      await forwardTime(10 * 60, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      expect(balanceBefore.sub(balanceAfter)).to.be.zero;
+
+      // Advance twenty minutes (30 min total)
+      await forwardTime(20 * 60, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      expect(balanceBefore.sub(balanceAfter)).to.be.zero;
+
+      // Advance thirty minutes (60 min total)
+      await forwardTime(30 * 60, this);
+      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+
+      // Now a transfer occurs
+      balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      expect(balanceBefore.sub(balanceAfter)).to.not.be.zero;
     });
   });
 });
