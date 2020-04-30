@@ -33,6 +33,7 @@ const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("ReputationMiningCycleRespond");
+const ReputationMiningCycleBinarySearch = artifacts.require("ReputationMiningCycleBinarySearch");
 const Resolver = artifacts.require("Resolver");
 const ContractEditing = artifacts.require("ContractEditing");
 
@@ -373,6 +374,7 @@ contract("Colony Network Recovery", (accounts) => {
           const deployedImplementations = {};
           deployedImplementations.ReputationMiningCycle = ReputationMiningCycle.address;
           deployedImplementations.ReputationMiningCycleRespond = ReputationMiningCycleRespond.address;
+          deployedImplementations.ReputationMiningCycleBinarySearch = ReputationMiningCycleBinarySearch.address;
           await setupEtherRouter("IReputationMiningCycle", deployedImplementations, newResolver);
 
           // Now add our extra functions.

@@ -70,7 +70,7 @@ contract ReputationMiningCycleDataTypes {
   event BinarySearchConfirmed(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _firstDisagreeIdx);
   event ChallengeCompleted(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
   event HashInvalidated(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
-
+  event BinarySearchStep(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
 
   /// @notice Event logged when a reputation UID is proven to be correct in a challenge
   event ProveUIDSuccess(uint256 previousNewReputationUID, uint256 _disagreeStateReputationUID, bool existingUID);

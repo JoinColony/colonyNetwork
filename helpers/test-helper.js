@@ -497,7 +497,7 @@ export async function getActiveRepCycle(colonyNetwork) {
 }
 
 export async function advanceMiningCycleNoContest({ colonyNetwork, client, minerAddress, test }) {
-  await forwardTime(MINING_CYCLE_DURATION, test);
+  await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
 
   if (client !== undefined) {
@@ -512,7 +512,6 @@ export async function advanceMiningCycleNoContest({ colonyNetwork, client, miner
       console.log("advanceMiningCycleNoContest error thrown by .submitRootHash", err);
     }
   }
-
   await repCycle.confirmNewHash(0);
 }
 
@@ -701,12 +700,8 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
   const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
 
   if (nUniqueSubmittedHashes.gtn(0)) {
-    const blockTime = await currentBlockTime();
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    const cycleTimeElapsed = new BN(blockTime).sub(reputationMiningWindowOpenTimestamp);
-    const cycleTimeRemaining = new BN(MINING_CYCLE_DURATION).sub(cycleTimeElapsed).toNumber();
-
-    await forwardTime(cycleTimeRemaining, test);
+    await forwardTimeTo(reputationMiningWindowOpenTimestamp.addn(MINING_CYCLE_DURATION).addn(SUBMITTER_ONLY_WINDOW).toNumber(), test);
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
       await repCycle.confirmNewHash(nUniqueSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.

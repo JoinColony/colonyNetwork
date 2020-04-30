@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
-import { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE } from "../../helpers/constants";
+import { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
 import { forwardTime, checkErrorRevert, getActiveRepCycle, advanceMiningCycleNoContest, getBlockTime } from "../../helpers/test-helper";
 
 const { expect } = chai;
@@ -129,7 +129,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
       expect(nUniqueSubmittedHashes).to.be.zero;
     });
 
-    it("should correctly set deposit timestamp", async () => {
+    it("should correctly set staking timestamp", async () => {
       const usersTokens = 10000;
       await giveUserCLNYTokens(colonyNetwork, MINER2, usersTokens);
       await clnyToken.approve(tokenLocking.address, usersTokens, { from: MINER2 });
@@ -155,6 +155,24 @@ contract("Reputation mining - basic functionality", (accounts) => {
       const weightedAvgTime = Math.floor((time1 * 3 + time2) / 4);
       expect(stakedAmount2).to.eq.BN(quarter * 4);
       expect(stakedTimestamp2).to.eq.BN(weightedAvgTime);
+    });
+
+    it("should update nSubmissionsForHash as submissions are made", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, MIN_STAKE);
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+
+      let nSubmissionsForHash = await repCycle.getNSubmissionsForHash("0x12345678", 10, "0x00");
+      expect(nSubmissionsForHash).to.eq.BN(0);
+      await repCycle.submitRootHash("0x12345678", 10, "0x00", 1, { from: MINER1 });
+      nSubmissionsForHash = await repCycle.getNSubmissionsForHash("0x12345678", 10, "0x00");
+      expect(nSubmissionsForHash).to.eq.BN(1);
+
+      // Cleanup
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+      await repCycle.confirmNewHash(0);
     });
   });
 

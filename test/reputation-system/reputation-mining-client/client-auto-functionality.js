@@ -138,7 +138,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION * 0.1, this);
+          await forwardTime(MINING_CYCLE_DURATION * 0.1 + SUBMITTER_ONLY_WINDOW, this);
           await miningCycleComplete;
         });
 
@@ -208,7 +208,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION * 0.1, this);
+          await forwardTime(MINING_CYCLE_DURATION * 0.1 + MINING_CYCLE_DURATION, this);
           await miningCycleComplete;
 
           await oracleUpdated;
@@ -269,7 +269,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION * 0.6, this);
+          await forwardTime(MINING_CYCLE_DURATION * 0.6 + MINING_CYCLE_DURATION, this);
           await miningCycleComplete;
           await reputationMinerClient2.close();
         });
@@ -309,7 +309,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION / 2, this);
+          await forwardTime(MINING_CYCLE_DURATION / 2 + SUBMITTER_ONLY_WINDOW, this);
           await miningCycleComplete;
         });
 
@@ -347,10 +347,10 @@ process.env.SOLIDITY_COVERAGE
               }
             });
 
-            // After 30s, we throw a timeout error
+            // After 60s, we throw a timeout error
             setTimeout(() => {
               reject(new Error("ERROR: timeout while waiting for good client to confirm JRH"));
-            }, 30000);
+            }, 60000);
           });
 
           const goodClientConfirmedBinarySearch = new Promise(function (resolve, reject) {
@@ -361,10 +361,10 @@ process.env.SOLIDITY_COVERAGE
               }
             });
 
-            // After 30s, we throw a timeout error
+            // After 60s, we throw a timeout error
             setTimeout(() => {
               reject(new Error("ERROR: timeout while waiting for good client to confirm binary search result"));
-            }, 30000);
+            }, 60000);
           });
 
           // Wait for good client to respond to Challenge.
@@ -376,10 +376,10 @@ process.env.SOLIDITY_COVERAGE
               }
             });
 
-            // After 30s, we throw a timeout error
+            // After 60s, we throw a timeout error
             setTimeout(() => {
               reject(new Error("ERROR: timeout while waiting for goodClientToCompleteChallenge"));
-            }, 30000);
+            }, 60000);
           });
 
           await badClient.submitRootHash();
@@ -403,8 +403,26 @@ process.env.SOLIDITY_COVERAGE
           badEntry = disputeRound[badIndex];
           goodEntry = disputeRound[goodIndex];
 
+          function getGoodClientBinarySearchStepPromise() {
+            return new Promise(function (resolve, reject) {
+              repCycleEthers.on("BinarySearchStep", async (_hash, _nLeaves, _jrh, event) => {
+                if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
+                  event.removeListener();
+                  resolve();
+                }
+              });
+
+              // After 30s, we throw a timeout error
+              setTimeout(() => {
+                reject(new Error("ERROR: timeout while waiting for goodClientBinarySearchStep"));
+              }, 30000);
+            });
+          }
+
           while (badEntry.upperBound !== badEntry.lowerBound) {
-            await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+            const goodClientSearchStepPromise = getGoodClientBinarySearchStepPromise();
+            await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + SUBMITTER_ONLY_WINDOW);
+            await goodClientSearchStepPromise;
             if (parseInt(badEntry.challengeStepCompleted, 10) <= parseInt(goodEntry.challengeStepCompleted, 10)) {
               await badClient.respondToBinarySearchForChallenge();
             }
@@ -419,19 +437,20 @@ process.env.SOLIDITY_COVERAGE
           badEntry = disputeRound[badIndex];
           goodEntry = disputeRound[goodIndex];
 
-          await forwardTime(SUBMITTER_ONLY_WINDOW, this);
-
-          await badClient.confirmBinarySearchResult();
+          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + SUBMITTER_ONLY_WINDOW);
 
           await goodClientConfirmedBinarySearch;
-          // Bad client can't respond
-          await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-decay-incorrect");
+          await badClient.confirmBinarySearchResult();
+
+          disputeRound = await repCycle.getDisputeRound(0);
+          badEntry = disputeRound[badIndex];
+
+          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + SUBMITTER_ONLY_WINDOW);
 
           await goodClientCompleteChallenge;
 
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
-              console.log("*************", _hash, badRootHash, _nLeaves, badNLeaves, _jrh, badJrh);
               if (_hash === badRootHash && _nLeaves.eq(badNLeaves) && _jrh === badJrh) {
                 event.removeListener();
                 resolve();
@@ -454,6 +473,8 @@ process.env.SOLIDITY_COVERAGE
           await noChallengeCompleted;
           await noHashInvalidated;
 
+          await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-decay-incorrect");
+
           await forwardTime(SUBMITTER_ONLY_WINDOW, this);
 
           // Good client should now realise it can timeout bad submission
@@ -472,6 +493,8 @@ process.env.SOLIDITY_COVERAGE
             }, 30000);
           });
 
+          await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
           // Good client should realise it can confirm new hash. So we wait for that event.
           await newCycleStart;
 
@@ -481,7 +504,7 @@ process.env.SOLIDITY_COVERAGE
         });
 
         function noEventSeen(contract, event) {
-          return new Promise(function(resolve, reject) {
+          return new Promise(function (resolve, reject) {
             contract.on(event, async () => {
               reject(new Error(`ERROR: The event ${event} was unexpectedly seen`));
             });

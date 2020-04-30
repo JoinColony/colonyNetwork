@@ -352,6 +352,8 @@ class ReputationMinerClient {
         const oppSubmission = await repCycle.getReputationHashSubmission(oppEntry.firstSubmitter);
 
         if (oppSubmission.proposedNewRootHash === ethers.constants.AddressZero){
+          const responsePossible = await repCycle.getResponsePossible(disputeStages.INVALIDATE_HASH, entry.lastResponseTimestamp);
+          if (!responsePossible) { return; }
           // Then we don't have an opponent
           if (round.eq(0)) {
             // We can only advance if the window is closed
@@ -376,22 +378,27 @@ class ReputationMinerClient {
         // If we're here, we do have an opponent.
         // Has our opponent timed out?
         // TODO: Remove these magic numbers
-        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600 + 600);
-        let responsePossible = await repCycle.getResponsePossible(disputeStages.INVALIDATE_HASH, oppEntry.lastResponseTimestamp);
-        if (opponentTimeout && responsePossible){
-          // If so, invalidate them.
-          await this.updateGasEstimate('safeLow');
-          await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
-          this.endDoBlockChecks();
-          return;
+
+        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600);
+        if (opponentTimeout){
+          const responsePossible = await repCycle.getResponsePossible(
+            disputeStages.INVALIDATE_HASH,
+            ethers.BigNumber.from(oppEntry.lastResponseTimestamp).add(600)
+          );
+          if (responsePossible) {
+            // If so, invalidate them.
+            await this.updateGasEstimate('safeLow');
+            await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
+            this.endDoBlockChecks();
+            return;
+          }
         }
         // this._adapter.log(oppSubmission);
 
         // Our opponent hasn't timed out yet. We should check if we can respond to something though
         // 1. Do we still need to confirm JRH?
         if (submission.jrhNLeaves.eq(0)) {
-          responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
-
+          const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
           if (responsePossible){
             await this.updateGasEstimate('fast');
             await this._miner.confirmJustificationRootHash();
@@ -403,7 +410,7 @@ class ReputationMinerClient {
           // We can respond if neither of us have responded to this stage yet or
           // if they have responded already
           if (oppEntry.challengeStepCompleted.gte(entry.challengeStepCompleted)) {
-            responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_RESPONSE, entry.lastResponseTimestamp);
+            const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_RESPONSE, entry.lastResponseTimestamp);
             if (responsePossible){
               await this.updateGasEstimate('fast');
               await this._miner.respondToBinarySearchForChallenge();
@@ -417,7 +424,7 @@ class ReputationMinerClient {
           ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNLeaves)
         )
         {
-          responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
+          const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
           if (responsePossible){
             await this.updateGasEstimate('fast');
             await this._miner.confirmBinarySearchResult();
@@ -430,7 +437,7 @@ class ReputationMinerClient {
             ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNLeaves)
           )
         {
-          responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
+          const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
           if (responsePossible){
             await this.updateGasEstimate('fast');
             await this._miner.respondToChallenge();

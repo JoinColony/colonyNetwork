@@ -121,7 +121,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW, this);
       await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MINER1 });
       await repCycle.confirmNewHash(0);
 
@@ -180,6 +180,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await goodClient.respondToChallenge();
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -191,7 +192,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW, this);
       await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MINER1 });
       await repCycle.confirmNewHash(0);
 
@@ -244,14 +245,15 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("should prevent a hash from claiming a bye if it might still get an opponent in round 1", async function advancingTest() {
+    it(`should prevent a hash from claiming a bye if it might still get an opponent in round 1,
+      or if claimant not yet eligible`, async function advancingTest() {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW, this);
       await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MINER1 });
       await repCycle.confirmNewHash(0);
 
@@ -276,8 +278,14 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await badClient2.submitRootHash();
 
       await checkErrorRevert(repCycle.invalidateHash(0, 3), "colony-reputation-mining-submission-window-still-open");
+
+      const cycleWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+      await forwardTimeTo(cycleWindowOpenTimestamp.addn(MINING_CYCLE_DURATION), this);
+
+      await checkErrorRevert(repCycle.invalidateHash(0, 3), "colony-reputation-mining-user-ineligible-to-respond");
+
       // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
@@ -664,20 +672,58 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
+      // Why the try-catches? Because about 1% of the time, one of these calls will fail, because the caller only is allowed in the
+      // last second of the submitter only window, and we still want our test suite to pass...
+
+      // NB runBinarySearch forward time itself.
+      try {
+        await runBinarySearch(goodClient, badClient);
+      } catch (e) {
+        await forwardTime(1, this);
+        await runBinarySearch(goodClient, badClient);
+      }
+
       await forwardTime(SUBMITTER_ONLY_WINDOW - 1, this);
 
-      await runBinarySearch(goodClient, badClient);
+      try {
+        await goodClient.confirmBinarySearchResult();
+      } catch (e) {
+        await forwardTime(1, this);
+        await goodClient.confirmBinarySearchResult();
+      }
+
+      try {
+        await badClient.confirmBinarySearchResult();
+      } catch (e) {
+        await forwardTime(1, this);
+        await badClient.confirmBinarySearchResult();
+      }
 
       await forwardTime(SUBMITTER_ONLY_WINDOW - 1, this);
-      await goodClient.confirmBinarySearchResult();
-      await badClient.confirmBinarySearchResult();
+      try {
+        await goodClient.respondToChallenge();
+      } catch (e) {
+        await forwardTime(1, this);
+        await goodClient.respondToChallenge();
+      }
+
+      await checkErrorRevert(repCycle.invalidateHash(0, 1, { from: MINER3 }), "colony-reputation-mining-user-ineligible-to-respond");
+      await forwardTime(SUBMITTER_ONLY_WINDOW - 1, this);
+
+      try {
+        await repCycle.invalidateHash(0, 1);
+      } catch (e) {
+        await forwardTime(1, this);
+        await repCycle.invalidateHash(0, 1);
+      }
 
       await forwardTime(SUBMITTER_ONLY_WINDOW - 1, this);
-      await goodClient.respondToChallenge();
-      await forwardTime(SUBMITTER_ONLY_WINDOW - 1, this);
-      await repCycle.invalidateHash(0, 1);
-      await forwardTime(SUBMITTER_ONLY_WINDOW - 1, this);
-      await repCycle.confirmNewHash(1);
+      try {
+        await repCycle.confirmNewHash(1);
+      } catch (e) {
+        await forwardTime(1, this);
+        await repCycle.confirmNewHash(1);
+      }
     });
   });
 
@@ -777,14 +823,16 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const targetKeyAsHex = ReputationMinerTestWrapper.getHexString(targetKey, 64);
       const [, siblings] = await goodClient.justificationTree.getProof(targetKeyAsHex);
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
       await checkErrorRevert(
         repCycle.confirmBinarySearchResult(round, index, "0x00", siblings),
         "colony-reputation-mining-invalid-binary-search-confirmation"
       );
 
       // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await goodClient.confirmBinarySearchResult();
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
     });
@@ -836,10 +884,11 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
       await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-origin-reputation-nonzero");
 
       // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION, this);
       await goodClient.respondToChallenge();
       await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.invalidateHash(0, 1);
@@ -902,11 +951,12 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-child-reputation-nonzero");
 
       // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION, this);
       await goodClient.respondToChallenge();
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.invalidateHash(0, 1);
       await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.confirmNewHash(1);
@@ -942,14 +992,15 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-invalid-before-reputation-proof");
       await checkErrorRevertEthers(badClient3.respondToChallenge(), "colony-reputation-mining-invalid-after-reputation-proof");
 
       // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION, this);
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
       await goodClient.respondToChallenge();
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.invalidateHash(0, 1);
       await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.confirmNewHash(1);
@@ -978,6 +1029,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const colonyAddress = ethers.utils.hexZeroPad(logEntry.colony, 32);
       const userAddress = ethers.utils.hexZeroPad(logEntry.user, 32);
       const skillId = ethers.utils.hexZeroPad(ethers.BigNumber.from(logEntry.skillId).toHexString(), 32);
+
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
 
       await checkErrorRevert(
         repCycle.respondToChallenge(
@@ -1035,8 +1088,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         "colony-reputation-mining-reputation-key-and-hash-mismatch"
       );
 
-      await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await goodClient.respondToChallenge();
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.invalidateHash(0, 1);
       await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.confirmNewHash(1);
@@ -1088,6 +1141,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await goodClient.respondToChallenge();
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.invalidateHash(0, 1);
       await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.confirmNewHash(1);
@@ -1135,6 +1189,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         await goodClient.confirmBinarySearchResult();
         await badClient.confirmBinarySearchResult();
 
+        await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
         if (args.word === "high") {
           await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-update-number-part-of-previous-log-entry-updates");
         } else {
@@ -1142,8 +1198,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         }
 
         // Cleanup
-        await forwardTime(MINING_CYCLE_DURATION / 6, this);
         await goodClient.respondToChallenge();
+        await forwardTime(MINING_CYCLE_DURATION, this);
         await repCycle.invalidateHash(0, 0);
         await forwardTime(SUBMITTER_ONLY_WINDOW, this);
         await repCycle.confirmNewHash(1);
@@ -1172,7 +1228,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("should refuse to confirmNewHash while the minimum submission window has not elapsed", async () => {
+    it("should refuse to confirmNewHash while the minimum submission window has not elapsed, or when a user is not yet eligible", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
@@ -1187,8 +1243,12 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await checkErrorRevert(repCycle.confirmNewHash(0), "colony-reputation-mining-submission-window-still-open");
 
+      const cycleWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+      await forwardTimeTo(cycleWindowOpenTimestamp.addn(MINING_CYCLE_DURATION), this);
+      await checkErrorRevert(repCycle.confirmNewHash(0), "colony-reputation-mining-user-ineligible-to-respond");
+
       // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.confirmNewHash(0);
     });
   });

@@ -106,6 +106,8 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     while (2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= submission.jrhNLeaves) {
       disputeRounds[round][idx].challengeStepCompleted += 1;
     }
+    disputeRounds[round][idx].lastResponseTimestamp = now;
+
     rewardResponder(msg.sender);
 
     emit BinarySearchConfirmed(submission.proposedNewRootHash, submission.nLeaves, submission.jrh, disputeRounds[round][idx].lowerBound);
@@ -133,7 +135,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     disputeRounds[round][idx].hash1 = lastSiblings[0];
     disputeRounds[round][idx].hash2 = lastSiblings[1];
 
-    uint256 opponentIdx = opponentIdx(idx);
+    uint256 opponentIdx = getOpponentIdx(idx);
     if (disputeRounds[round][opponentIdx].challengeStepCompleted == disputeRounds[round][idx].challengeStepCompleted ) {
       // Our opponent answered this challenge already.
       // Compare our intermediateReputationHash to theirs to establish how to move the bounds.
@@ -142,7 +144,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
   }
 
   function processBinaryChallengeSearchStep(uint256 round, uint256 idx) internal {
-    uint256 opponentIdx = opponentIdx(idx);
+    uint256 opponentIdx = getOpponentIdx(idx);
     uint256 searchWidth = (disputeRounds[round][idx].upperBound - disputeRounds[round][idx].lowerBound) + 1;
     uint256 searchWidthNextPowerOfTwo = nextPowerOfTwoInclusive(searchWidth);
     if (

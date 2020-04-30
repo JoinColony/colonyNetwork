@@ -381,7 +381,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
         workerRating: 3,
       });
 
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW, this);
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
       await repCycle.confirmNewHash(0);
 
@@ -411,7 +411,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       const rootHash = await goodClient.getRootHash();
       let repCycle = await getActiveRepCycle(colonyNetwork);
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW, this);
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
       await repCycle.confirmNewHash(0);
 
@@ -823,7 +823,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await goodClient.addLogContentsToReputationTree();
       const newRootHash = await goodClient.getRootHash();
 
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW, this);
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
       await repCycle.submitRootHash(newRootHash, 10, "0x00", 10, { from: MINER1 });
@@ -883,7 +883,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       const rootHash = await goodClient.getRootHash();
 
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW, this);
       let repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
       await repCycle.confirmNewHash(0);

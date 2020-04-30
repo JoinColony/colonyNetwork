@@ -362,6 +362,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-origin-adjacent-proof-invalid");
 
       // Cleanup
@@ -447,10 +448,10 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-child-adjacent-proof-invalid");
 
       // Cleanup
-      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await goodClient.respondToChallenge();
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);

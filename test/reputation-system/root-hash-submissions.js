@@ -16,7 +16,7 @@ import {
   UINT256_MAX,
   MIN_STAKE,
   WAD,
-  SUBMITTER_ONLY_WINDOW
+  SUBMITTER_ONLY_WINDOW,
 } from "../../helpers/constants";
 
 import {
@@ -221,7 +221,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
       expect(nUniqueSubmittedHashes).to.eq.BN(1);
 
-      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2 + SUBMITTER_ONLY_WINDOW, this);
       const lockedFor1 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       await repCycle.confirmNewHash(0);
       const lockedFor1Updated = await tokenLocking.getUserLock(clnyToken.address, MINER1);
@@ -589,7 +589,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       await forwardTime(MINING_CYCLE_DURATION / 6 + SUBMITTER_ONLY_WINDOW, this);
       await goodClient2.respondToChallenge();
       const repCycle = await getActiveRepCycle(colonyNetwork);
-
+      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
       await repCycle.invalidateHash(0, 1);
       await forwardTime(SUBMITTER_ONLY_WINDOW, this);
 
@@ -684,7 +684,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const lockedFor1 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       const lockedFor2 = await tokenLocking.getUserLock(clnyToken.address, MINER2);
 
-      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2 + SUBMITTER_ONLY_WINDOW, this);
       await repCycle.confirmNewHash(0);
 
       const blockTime = await currentBlockTime();
