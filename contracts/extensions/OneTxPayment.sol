@@ -46,9 +46,9 @@ contract OneTxPayment {
   /// @param _childSkillIndex Index of the _permissionDomainId skill.children array to get
   /// @param _callerPermissionDomainId The domainId in which the _caller_ has permissions to add a payment and fund it
   /// @param _callerChildSkillIndex Index of the _callerPermissionDomainId skill.children array to get
-  /// @param _worker The address of the recipient of the payment
-  /// @param _token The address of the token the payment is being made in. 0x00 for Ether.
-  /// @param _amount The amount of the token being paid out
+  /// @param _workers The addresses of the recipients of the payment
+  /// @param _tokens Addresses of the tokens the payments are being made in. 0x00 for Ether.
+  /// @param _amounts amounts of the tokens being paid out
   /// @param _domainId The Id of the domain the payment should be coming from
   /// @param _skillId The Id of the skill that the payment should be marked with, possibly awarding reputation in this skill.
   function makePayment(
@@ -56,38 +56,86 @@ contract OneTxPayment {
     uint256 _childSkillIndex,
     uint256 _callerPermissionDomainId,
     uint256 _callerChildSkillIndex,
-    address payable _worker,
-    address _token,
-    uint256 _amount,
+    address payable[] memory _workers,
+    address[] memory _tokens,
+    uint256[] memory _amounts,
     uint256 _domainId,
     uint256 _skillId) public
   {
-    // Check caller is able to call {add,finalize}Payment and moveFundsBetweenPots on the colony in the domain in question
+    // Arrays must be of equal size
+    require(
+      _workers.length == _tokens.length && _workers.length == _amounts.length,
+      "colony-one-tx-payment-arrays-must-be-equal-length"
+    );
+    // Check caller is able to call {add,finalize}Payment and moveFundsBetweenPots on the colony
     validateCallerPermissions(_callerPermissionDomainId, _callerChildSkillIndex, _domainId);
     // In addition, check the caller is able to call moveFundsBetweenPots from the root domain
     require(
       ColonyAuthority(colony.authority()).canCall(msg.sender, 1, address(colony), MOVE_FUNDS_SIG),
       "colony-one-tx-payment-root-funding-not-authorized"
     );
+    // Get around stack too deep with array
+    // paymentData[0] = expenditure slot
+    // paymentData[1] = expenditureId/paymentId
+    // paymentData[3] = fundingPotId
+    uint256[3] memory paymentData;
+    paymentData[0] = 0;
+    if (_tokens.length > 1) {
+      // Make a new expenditure
+      paymentData[1] = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
+      ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(paymentData[1]);
+      paymentData[2] = expenditure.fundingPotId;
+      colony.setExpenditureRecipient(paymentData[1], paymentData[0], _workers[0]);
+      colony.setExpenditureSkill(paymentData[1], paymentData[0], _skillId);
+    } else {
+      // Add a new payment
+      paymentData[1] = colony.addPayment(
+        _permissionDomainId,
+        _childSkillIndex,
+        _workers[0],
+        _tokens[0],
+        _amounts[0],
+        _domainId,
+        _skillId);
+      ColonyDataTypes.Payment memory payment = colony.getPayment(paymentData[1]);
+      paymentData[2] = payment.fundingPotId;
+    }
 
-    // Add a new payment
-    uint256 paymentId = colony.addPayment(_permissionDomainId, _childSkillIndex, _worker, _token, _amount, _domainId, _skillId);
-    ColonyDataTypes.Payment memory payment = colony.getPayment(paymentId);
-
-    // Fund the payment
-    colony.moveFundsBetweenPots(
-      1, // Root domain always 1
-      0, // Not used, this extension contract must have funding permission in the root for this function to work
-      _childSkillIndex,
-      1, // Root domain funding pot is always 1
-      payment.fundingPotId,
-      _amount,
-      _token
-    );
-    colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
-
-    // Claim payout on behalf of the recipient
-    colony.claimPayment(paymentId, _token);
+    for (uint256 index = 0; index < _workers.length; index++) {
+      if (_tokens.length > 1) {
+        if (index != 0 && _workers[index] != _workers[index-1]) {
+          paymentData[0]++;
+          colony.setExpenditureRecipient(paymentData[1], paymentData[0], _workers[index]);
+          colony.setExpenditureSkill(paymentData[1], paymentData[0], _skillId);
+          }
+        colony.setExpenditurePayout(paymentData[1], paymentData[0], _tokens[index], _amounts[index]);
+      }
+      // Fund the payment
+      colony.moveFundsBetweenPots(
+        1, // Root domain always 1
+        0, // Not used, this extension must have funding permission in the root for this function to work
+        _childSkillIndex,
+        1, // Root domain funding pot is always 1
+        paymentData[2],
+        _amounts[index],
+        _tokens[index]
+      );
+    }
+    if (_tokens.length > 1) {
+      colony.finalizeExpenditure(paymentData[1]);
+      paymentData[0] = 0;
+      // Claim payout on behalf of the recipients
+      for (uint256 index = 0; index < _workers.length; index++) {
+        if (index != 0 && _workers[index] != _workers[index-1]) {
+          paymentData[0]++;
+        }
+        colony.claimExpenditurePayout(paymentData[1], paymentData[0], _tokens[index]);
+      }
+    } else {
+      colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentData[1]);
+      // Claim payout on behalf of the recipient
+      colony.claimPayment(paymentData[1], _tokens[0]);
+    }
   }
 
   /// @notice Completes a colony payment in a single transaction
@@ -98,9 +146,9 @@ contract OneTxPayment {
   /// @param _childSkillIndex Index of the _permissionDomainId skill.children array to get
   /// @param _callerPermissionDomainId The domainId in which the _caller_ has permissions to add a payment and fund it
   /// @param _callerChildSkillIndex Index of the _callerPermissionDomainId skill.children array to get
-  /// @param _worker The address of the recipient of the payment
-  /// @param _token The address of the token the payment is being made in. 0x00 for Ether.
-  /// @param _amount The amount of the token being paid out
+  /// @param _workers The addresses of the recipients of the payment
+  /// @param _tokens The addresses of the token the payments are being made in. 0x00 for Ether.
+  /// @param _amounts The amounts of the tokens being paid out
   /// @param _domainId The Id of the domain the payment should be coming from
   /// @param _skillId The Id of the skill that the payment should be marked with, possibly awarding reputation in this skill.
   function makePaymentFundedFromDomain(
@@ -108,34 +156,81 @@ contract OneTxPayment {
     uint256 _childSkillIndex,
     uint256 _callerPermissionDomainId,
     uint256 _callerChildSkillIndex,
-    address payable _worker,
-    address _token,
-    uint256 _amount,
+    address payable[] memory  _workers,
+    address[] memory _tokens,
+    uint256[] memory _amounts,
     uint256 _domainId,
     uint256 _skillId) public
   {
     // Check caller is able to call {add,finalize}Payment and moveFundsBetweenPots on the colony
     validateCallerPermissions(_callerPermissionDomainId, _callerChildSkillIndex, _domainId);
-
-    // Add a new payment
-    uint256 paymentId = colony.addPayment(_permissionDomainId, _childSkillIndex, _worker, _token, _amount, _domainId, _skillId);
-    ColonyDataTypes.Payment memory payment = colony.getPayment(paymentId);
-    ColonyDataTypes.Domain memory domain = colony.getDomain(_domainId);
-
-    // Fund the payment
-    colony.moveFundsBetweenPots(
-      _permissionDomainId,
-      _childSkillIndex,
-      _childSkillIndex,
-      domain.fundingPotId,
-      payment.fundingPotId,
-      _amount,
-      _token
+    //Arrays must be of equal size
+    require(
+      _workers.length == _tokens.length && _workers.length == _amounts.length,
+      "colony-one-tx-payment-arrays-must-be-equal-length"
     );
-    colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
-
-    // Claim payout on behalf of the recipient
-    colony.claimPayment(paymentId, _token);
+    // Get around stack too deep with array
+    // paymentData[0] = expenditure slot
+    // paymentData[1] = expenditureId/paymentId
+    // paymentData[3] = fundingPotId
+    uint256[3] memory paymentData;
+    paymentData[0] = 0;
+    ColonyDataTypes.Domain memory domain = colony.getDomain(_domainId);
+    if (_tokens.length > 1) {
+      // Make a new expenditure
+      paymentData[1] = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
+      ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(paymentData[1]);
+      paymentData[2] = expenditure.fundingPotId;
+      colony.setExpenditureRecipient(paymentData[1], paymentData[0], _workers[0]);
+      colony.setExpenditureSkill(paymentData[1], paymentData[0], _skillId);
+    } else {
+      // Add a new payment
+      paymentData[1] = colony.addPayment(
+        _permissionDomainId,
+        _childSkillIndex,
+        _workers[0],
+        _tokens[0],
+        _amounts[0],
+        _domainId,
+        _skillId);
+      ColonyDataTypes.Payment memory payment = colony.getPayment(paymentData[1]);
+      paymentData[2] = payment.fundingPotId;
+    }
+    for (uint256 index = 0; index < _workers.length; index++) {
+      if (_tokens.length > 1) {
+        if (index != 0 && _workers[index] != _workers[index-1]) {
+          paymentData[0]++;
+          colony.setExpenditureRecipient(paymentData[1], paymentData[0], _workers[index]);
+          colony.setExpenditureSkill(paymentData[1], paymentData[0], _skillId);
+          }
+        colony.setExpenditurePayout(paymentData[1], paymentData[0], _tokens[index], _amounts[index]);
+      }
+      // Fund the payment
+      colony.moveFundsBetweenPots(
+        _permissionDomainId,
+        _childSkillIndex,
+        _childSkillIndex,
+        domain.fundingPotId,
+        paymentData[2],
+        _amounts[index],
+        _tokens[index]
+      );
+    }
+    if (_tokens.length > 1) {
+      colony.finalizeExpenditure(paymentData[1]);
+      paymentData[0] = 0;
+      // Claim payout on behalf of the recipients
+      for (uint256 index = 0; index < _workers.length; index++) {
+        if (index != 0 && _workers[index] != _workers[index-1]) {
+          paymentData[0]++;
+        }
+        colony.claimExpenditurePayout(paymentData[1], paymentData[0], _tokens[index]);
+      }
+    } else {
+      colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentData[1]);
+      // Claim payout on behalf of the recipient
+      colony.claimPayment(paymentData[1], _tokens[0]);
+    }
   }
 
   function validateCallerPermissions(
