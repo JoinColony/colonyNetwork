@@ -749,23 +749,23 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _amount Amount of internal token we are deobligating.
   function deobligateStake(address _user, uint256 _domainId, uint256 _amount) public;
 
-  /// @notice Slash some amount of tokens.
+  /// @notice Transfer some amount of obligated tokens.
   /// Can be called by the arbitration role.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action.
   /// @param _childSkillIndex The child index in `_permissionDomainId` where we can find `_domainId`.
   /// @param _obligator Address of the account who set the obligation.
-  /// @param _user Address of the account we are slashing.
-  /// @param _domainId Domain in which we are slashing the user.
-  /// @param _amount Amount of internal token we are slashing.
-  /// @param _beneficiary Recipient of the slashed tokens (pass 0x0 to send to the abyss).
-  function slashStake(
+  /// @param _user Address of the account we are transferring.
+  /// @param _domainId Domain in which we are transferring the tokens.
+  /// @param _amount Amount of internal token we are transferring.
+  /// @param _recipient Recipient of the transferred tokens.
+  function transferStake(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     address _obligator,
     address _user,
     uint256 _domainId,
     uint256 _amount,
-    address _beneficiary
+    address _recipient
     ) public;
 
   /// @notice View an approval to obligate tokens.

@@ -212,21 +212,6 @@ Set the ColonyNetwork contract address.
 |_colonyNetwork|address|Address of the ColonyNetwork
 
 
-### `slashStake`
-
-Slash some amount of tokens. Can only be called by a colony.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_user|address|Address of the account we are slashing.
-|_amount|uint256|Amount of colony's internal token we are slashing.
-|_token|address|The colony's internal token address
-|_beneficiary|address|Recipient of the slashed tokens (pass 0x0 to send to the abyss).
-
-
 ### `transfer`
 
 Transfer tokens to a recipient's pending balance. Can only be called if user tokens are not locked.
@@ -240,6 +225,21 @@ Transfer tokens to a recipient's pending balance. Can only be called if user tok
 |_amount|uint256|Amount to transfer
 |_recipient|address|User to receive the tokens
 |_force|bool|Pass true to forcibly unlock the token
+
+
+### `transferStake`
+
+Transfer some amount of staked tokens. Can only be called by a colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are taking.
+|_amount|uint256|Amount of colony's internal token we are taking.
+|_token|address|The colony's internal token address
+|_recipient|address|Recipient of the slashed tokens
 
 
 ### `unlockTokenForUser`

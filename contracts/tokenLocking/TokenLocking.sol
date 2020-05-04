@@ -141,16 +141,8 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   tokenNotLocked(_token, _force)
   {
     Lock storage userLock = userLocks[_token][msg.sender];
-    Lock storage recipientLock = userLocks[_token][_recipient];
-
     userLock.balance = sub(userLock.balance, _amount);
-
-    if (isTokenUnlocked(_token, _recipient)) {
-      recipientLock.timestamp = getNewTimestamp(recipientLock.balance, _amount, recipientLock.timestamp, now);
-      recipientLock.balance = add(recipientLock.balance, _amount);
-    } else {
-      recipientLock.pendingBalance = add(recipientLock.pendingBalance, _amount);
-    }
+    makeConditionalDeposit(_token, _amount, _recipient);
 
     emit UserTokenTransferred(_token, msg.sender, _recipient, _amount);
   }
@@ -205,20 +197,14 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     totalObligations[_user][_token] = sub(totalObligations[_user][_token], _amount);
   }
 
-  function slashStake(address _user, uint256 _amount, address _token, address _beneficiary) public calledByColony() {
+  function transferStake(address _user, uint256 _amount, address _token, address _recipient) public calledByColony() {
     obligations[_user][_token][msg.sender] = sub(obligations[_user][_token][msg.sender], _amount);
     totalObligations[_user][_token] = sub(totalObligations[_user][_token], _amount);
 
     // Transfer the the tokens
     Lock storage userLock = userLocks[_token][_user];
-    Lock storage beneficiaryLock = userLocks[_token][_beneficiary];
     userLock.balance = sub(userLock.balance, _amount);
-    if (isTokenUnlocked(_token, _beneficiary)) {
-      beneficiaryLock.timestamp = getNewTimestamp(beneficiaryLock.balance, _amount, beneficiaryLock.timestamp, now);
-      beneficiaryLock.balance = add(beneficiaryLock.balance, _amount);
-    } else {
-      beneficiaryLock.pendingBalance = add(beneficiaryLock.pendingBalance, _amount);
-    }
+    makeConditionalDeposit(_token, _amount, _recipient);
   }
 
   function getTotalLockCount(address _token) public view returns (uint256) {
@@ -234,6 +220,16 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   }
 
   // Internal functions
+
+  function makeConditionalDeposit(address _token, uint256 _amount, address _user) internal {
+    Lock storage userLock = userLocks[_token][_user];
+    if (isTokenUnlocked(_token, _user)) {
+      userLock.timestamp = getNewTimestamp(userLock.balance, _amount, userLock.timestamp, now);
+      userLock.balance = add(userLock.balance, _amount);
+    } else {
+      userLock.pendingBalance = add(userLock.pendingBalance, _amount);
+    }
+  }
 
   function isTokenUnlocked(address _token, address _user) internal view returns (bool) {
     return userLocks[_token][_user].lockCount == totalLockCount[_token];

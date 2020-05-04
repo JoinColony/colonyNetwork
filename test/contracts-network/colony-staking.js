@@ -97,7 +97,7 @@ contract("ColonyPermissions", (accounts) => {
       expect(approval).to.be.zero;
       expect(obligation).to.eq.BN(WAD);
 
-      await colony.slashStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
+      await colony.transferStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
 
       obligation = await colony.getObligation(USER1, USER0, 1);
       expect(obligation).to.be.zero;
@@ -141,7 +141,7 @@ contract("ColonyPermissions", (accounts) => {
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
 
       await checkErrorRevert(
-        colony.slashStake(1, 0, USER0, USER1, 1, WAD.addn(1), ethers.constants.AddressZero, { from: USER2 }),
+        colony.transferStake(1, 0, USER0, USER1, 1, WAD.addn(1), ethers.constants.AddressZero, { from: USER2 }),
         "ds-math-sub-underflow"
       );
     });
@@ -189,8 +189,8 @@ contract("ColonyPermissions", (accounts) => {
     it("should correctly accumulate multiple slashes", async () => {
       await colony.approveStake(USER0, 1, WAD.muln(2), { from: USER1 });
       await colony.obligateStake(USER1, 1, WAD.muln(2), { from: USER0 });
-      await colony.slashStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
-      await colony.slashStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
+      await colony.transferStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
+      await colony.transferStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
 
       const deposit = await tokenLocking.getUserLock(token.address, USER1);
       expect(deposit.balance).to.eq.BN(WAD.muln(48));
@@ -212,7 +212,7 @@ contract("ColonyPermissions", (accounts) => {
     it("should allow for a slashed stake to be sent to a beneficiary", async () => {
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
-      await colony.slashStake(1, 0, USER0, USER1, 1, WAD, USER2, { from: USER2 });
+      await colony.transferStake(1, 0, USER0, USER1, 1, WAD, USER2, { from: USER2 });
 
       const deposit = await tokenLocking.getUserLock(token.address, USER2);
       expect(deposit.balance).to.eq.BN(WAD);

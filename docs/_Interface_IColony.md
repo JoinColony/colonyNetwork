@@ -1317,24 +1317,6 @@ Assigning worker role. Can only be set if there is no one currently assigned to 
 |_user|address|Address of the user we want to give a worker role to
 
 
-### `slashStake`
-
-Slash some amount of tokens. Can be called by the arbitration role.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action.
-|_childSkillIndex|uint256|The child index in `_permissionDomainId` where we can find `_domainId`.
-|_obligator|address|Address of the account who set the obligation.
-|_user|address|Address of the account we are slashing.
-|_domainId|uint256|Domain in which we are slashing the user.
-|_amount|uint256|Amount of internal token we are slashing.
-|_beneficiary|address|Recipient of the slashed tokens (pass 0x0 to send to the abyss).
-
-
 ### `startNextRewardPayout`
 
 Add a new payment in the colony. Can only be called by users with root permission. All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
@@ -1420,6 +1402,24 @@ Updates the expenditure owner. Can only be called by Arbitration role.
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
 |_id|uint256|Expenditure identifier
 |_newOwner|address|New owner of expenditure
+
+
+### `transferStake`
+
+Transfer some amount of obligated tokens. Can be called by the arbitration role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action.
+|_childSkillIndex|uint256|The child index in `_permissionDomainId` where we can find `_domainId`.
+|_obligator|address|Address of the account who set the obligation.
+|_user|address|Address of the account we are transferring.
+|_domainId|uint256|Domain in which we are transferring the tokens.
+|_amount|uint256|Amount of internal token we are transferring.
+|_recipient|address|Recipient of the transferred tokens.
 
 
 ### `updateColonyOrbitDB`

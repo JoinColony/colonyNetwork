@@ -112,13 +112,13 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @param _token The colony's internal token address
   function deobligateStake(address _user, uint256 _amount, address _token) public;
 
-  /// @notice Slash some amount of tokens.
+  /// @notice Transfer some amount of staked tokens.
   /// Can only be called by a colony.
-  /// @param _user Address of the account we are slashing.
-  /// @param _amount Amount of colony's internal token we are slashing.
+  /// @param _user Address of the account we are taking.
+  /// @param _amount Amount of colony's internal token we are taking.
   /// @param _token The colony's internal token address
-  /// @param _beneficiary Recipient of the slashed tokens (pass 0x0 to send to the abyss).
-  function slashStake(address _user, uint256 _amount, address _token, address _beneficiary) public;
+  /// @param _recipient Recipient of the slashed tokens
+  function transferStake(address _user, uint256 _amount, address _token, address _recipient) public;
 
   /// @notice Get global lock count for a specific token.
   /// @param _token Address of the token

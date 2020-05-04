@@ -307,7 +307,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAuthority.setRoleCapability(
       uint8(ColonyRole.Arbitration),
       address(this),
-      bytes4(keccak256("slashStake(uint256,uint256,address,address,uint256,uint256,address)")),
+      bytes4(keccak256("transferStake(uint256,uint256,address,address,uint256,uint256,address)")),
       true
     );
   }
@@ -335,7 +335,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).deobligateStake(_user, _amount, token);
   }
 
-  function slashStake(
+  function transferStake(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     address _obligator,
@@ -347,7 +347,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   {
     obligations[_user][_obligator][_domainId] = sub(obligations[_user][_obligator][_domainId], _amount);
 
-    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).slashStake(_user, _amount, token, _beneficiary);
+    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).transferStake(_user, _amount, token, _beneficiary);
   }
 
   function getApproval(address _user, address _obligator, uint256 _domainId) public view returns (uint256) {
