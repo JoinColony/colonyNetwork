@@ -941,10 +941,10 @@
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
   integrity sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==
 
-"@solidity-parser/parser@^0.5.2":
-  version "0.5.2"
-  resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.5.2.tgz#4d74670ead39e4f4fdab605a393ba8ea2390a2c4"
-  integrity sha512-uRyvnvVYmgNmTBpWDbBsH/0kPESQhQpEc4KsvMRLVzFJ1o1s0uIv0Y6Y9IB5vI1Dwz2CbS4X/y4Wyw/75cTFnQ==
+"@solidity-parser/parser@^0.6.0":
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.6.0.tgz#deb964a4dbb8c21a342ee35b4acefb505fd04ea1"
+  integrity sha512-RiJXfS22frulogcfQCFhbKrd5ATu6P4tYUv/daChiIh6VHyKQ1kkVZVfX6aP7c2YGU/Bf9RwGNKdwLjfpaoqYQ==
 
 "@szmarczak/http-timer@^1.1.2":
   version "1.1.2"
@@ -2357,7 +2357,7 @@ bn.js@4.11.8, bn.js@^4.0.0, bn.js@^4.1.0, bn.js@^4.1.1, bn.js@^4.10.0, bn.js@^4.
   resolved "https://registry.yarnpkg.com/bn.js/-/bn.js-4.11.8.tgz#2cde09eb5ee341f484746bb0309b3253b1b1442f"
   integrity sha512-ItfYfPLkWHUjckQCk8xC+LwxgK8NYcXywGigJgSwOP8Y2iyWT4f2vsZnoOXTTbo+o5yXmIUJ4gn5538SO5S3gA==
 
-bn.js@^5.0.0:
+bn.js@^5.0.0, bn.js@^5.1.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/bn.js/-/bn.js-5.1.1.tgz#48efc4031a9c4041b9c99c6941d903463ab62eb5"
   integrity sha512-IUTD/REb78Z2eodka1QZyyEk66pciRcP6Sroka0aI3tG/iwIdYLrBD62RsubR7vqdt3WyX8p4jxeatzmRSphtA==
@@ -4405,7 +4405,7 @@ ethereumjs-util@6.1.0, ethereumjs-util@~6.1.0:
     safe-buffer "^5.1.1"
     secp256k1 "^3.0.1"
 
-ethereumjs-util@6.2.0, ethereumjs-util@^6.0.0, ethereumjs-util@^6.1.0, ethereumjs-util@^6.2.0:
+ethereumjs-util@6.2.0, ethereumjs-util@^6.0.0, ethereumjs-util@^6.2.0:
   version "6.2.0"
   resolved "https://registry.yarnpkg.com/ethereumjs-util/-/ethereumjs-util-6.2.0.tgz#23ec79b2488a7d041242f01e25f24e5ad0357960"
   integrity sha512-vb0XN9J2QGdZGIEKG2vXM+kUdEivUfU6Wmi5y0cg+LRhDYKnXIZ/Lz7XjFbHRR9VIKq2lVGLzGBkA++y2nOdOQ==
@@ -4441,6 +4441,19 @@ ethereumjs-util@^5.0.0, ethereumjs-util@^5.0.1, ethereumjs-util@^5.1.1, ethereum
     rlp "^2.0.0"
     safe-buffer "^5.1.1"
     secp256k1 "^3.0.1"
+
+ethereumjs-util@^7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/ethereumjs-util/-/ethereumjs-util-7.0.0.tgz#14fa703914a59d25be9a32ed42c2f6be27cb9dad"
+  integrity sha512-y4FqiypxmUVdmCqNPRdB2rvyP1pr8ZBO+RVlxGLF12OoTXVPvgJ3omT2AoYLGCXjgbYDwskbbbROklerm2FNcA==
+  dependencies:
+    "@types/bn.js" "^4.11.3"
+    bn.js "^5.1.1"
+    create-hash "^1.1.2"
+    ethjs-util "0.1.6"
+    keccak "^3.0.0"
+    rlp "^2.2.4"
+    secp256k1 "^4.0.1"
 
 ethereumjs-vm@4.1.3:
   version "4.1.3"
@@ -6664,6 +6677,14 @@ keccak@^2.0.0:
     nan "^2.14.0"
     safe-buffer "^5.2.0"
 
+keccak@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/keccak/-/keccak-3.0.0.tgz#420d1de4a38a04f33ff8401f0535fb93756861d4"
+  integrity sha512-/4h4FIfFEpTEuySXi/nVFM5rqSKPnnhI7cL4K3MFSwoI3VyM7AhPSq3SsysARtnEBEeIKMBUWD8cTh9nHE8AkA==
+  dependencies:
+    node-addon-api "^2.0.0"
+    node-gyp-build "^4.2.0"
+
 keccakjs@^0.2.0:
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/keccakjs/-/keccakjs-0.2.3.tgz#5e4e969ce39689a3861f445d7752ee3477f9fe72"
@@ -7680,6 +7701,11 @@ nice-try@^1.0.4:
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
+node-addon-api@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-2.0.0.tgz#f9afb8d777a91525244b01775ea0ddbe1125483b"
+  integrity sha512-ASCL5U13as7HhOExbT6OlWJJUV/lLzL2voOSP1UVehpRD8FbSrSDjfScK/KwAvVTI5AS6r4VwbOMlIqtvRidnA==
+
 node-emoji@^1.10.0, node-emoji@^1.4.1:
   version "1.10.0"
   resolved "https://registry.yarnpkg.com/node-emoji/-/node-emoji-1.10.0.tgz#8886abd25d9c7bb61802a658523d1f8d2a89b2da"
@@ -7707,6 +7733,11 @@ node-fetch@^1.0.1, node-fetch@~1.7.1:
   dependencies:
     encoding "^0.1.11"
     is-stream "^1.0.1"
+
+node-gyp-build@^4.2.0:
+  version "4.2.2"
+  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.2.2.tgz#3f44b65adaafd42fb6c3d81afd630e45c847eb66"
+  integrity sha512-Lqh7mrByWCM8Cf9UPqpeoVBBo5Ugx+RKu885GAzmLBVYjeywScxHXPGLa4JfYNZmcNGwzR0Glu5/9GaQZMFqyA==
 
 node-modules-regexp@^1.0.0:
   version "1.0.0"
@@ -9287,7 +9318,7 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
     hash-base "^3.0.0"
     inherits "^2.0.1"
 
-rlp@^2.0.0, rlp@^2.2.1, rlp@^2.2.2, rlp@^2.2.3:
+rlp@^2.0.0, rlp@^2.2.1, rlp@^2.2.2, rlp@^2.2.3, rlp@^2.2.4:
   version "2.2.4"
   resolved "https://registry.yarnpkg.com/rlp/-/rlp-2.2.4.tgz#d6b0e1659e9285fc509a5d169a9bd06f704951c1"
   integrity sha512-fdq2yYCWpAQBhwkZv+Z8o/Z4sPmYm1CUq6P7n6lVTOdb949CnqA0sndXal5C1NleSVSZm6q5F3iEbauyVln/iw==
@@ -9437,6 +9468,15 @@ secp256k1@^3.0.1:
     elliptic "^6.5.2"
     nan "^2.14.0"
     safe-buffer "^5.1.2"
+
+secp256k1@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/secp256k1/-/secp256k1-4.0.1.tgz#b9570ca26ace9e74c3171512bba253da9c0b6d60"
+  integrity sha512-iGRjbGAKfXMqhtdkkuNxsgJQfJO8Oo78Rm7DAvsG3XKngq+nJIOGqrCSXcQqIVsmCj0wFanE5uTKFxV3T9j2wg==
+  dependencies:
+    elliptic "^6.5.2"
+    node-addon-api "^2.0.0"
+    node-gyp-build "^4.2.0"
 
 seedrandom@3.0.1:
   version "3.0.1"
@@ -9748,12 +9788,12 @@ solc@^0.6.0:
     semver "^5.5.0"
     tmp "0.0.33"
 
-solidity-coverage@0.7.4:
-  version "0.7.4"
-  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.7.4.tgz#5bff265016edfc609e981601d953b125cbd55aab"
-  integrity sha512-eaYjKLJK7n+uAN9Xrm2kDujXOkxxBbHfNrjK+ZabU1DR4QWSVQiwDDF2JLciN943kkZdd2JOzJGp32NxCbdCWA==
+solidity-coverage@0.7.5:
+  version "0.7.5"
+  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.7.5.tgz#29a738b5644b23687e540688520457ce6792ce94"
+  integrity sha512-UaNwVhK7I1ULYK3qDTATs7Hz0YKhJnE+rm5aU9ufUBowOImB2dWYXox2l/tMbSkHfTMWwHE/6TNqn0/ec0rwOw==
   dependencies:
-    "@solidity-parser/parser" "^0.5.2"
+    "@solidity-parser/parser" "^0.6.0"
     "@truffle/provider" "^0.1.17"
     chalk "^2.4.2"
     death "^1.1.0"
