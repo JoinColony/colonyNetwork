@@ -44,7 +44,7 @@ module.exports = async function (deployer, network, accounts) {
   const mainAccountBalance = await clnyToken.balanceOf(MAIN_ACCOUNT);
   assert.equal(mainAccountBalance.toString(), DEFAULT_STAKE.toString());
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-  await tokenLocking.deposit(clnyToken.address, DEFAULT_STAKE, false, { from: MAIN_ACCOUNT });
+  await tokenLocking.deposit(clnyToken.address, DEFAULT_STAKE, { from: MAIN_ACCOUNT });
 
   await metaColony.addGlobalSkill();
 

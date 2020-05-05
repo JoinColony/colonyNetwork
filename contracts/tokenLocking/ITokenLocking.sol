@@ -49,17 +49,17 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @param _lockId Id of the lock user wants to increment to
   function incrementLockCounterTo(address _token, uint256 _lockId) public;
 
-  /// @notice DEPRECATED: Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked.
+  /// @notice Deposit `_amount` of colony tokens. Goes into pendingBalance if token is locked.
+  /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
   /// @param _token Address of the token to deposit
   /// @param _amount Amount to deposit
   function deposit(address _token, uint256 _amount) public;
 
-  /// @notice Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked.
-  /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
+  /// @notice Deposit `_amount` of colony tokens in the recipient's account. Goes into pendingBalance if token is locked.
   /// @param _token Address of the token to deposit
   /// @param _amount Amount to deposit
-  /// @param _force Pass true to forcibly unlock the token
-  function deposit(address _token, uint256 _amount, bool _force) public;
+  /// @param _recipient User to receive the tokens
+  function depositFor(address _token, uint256 _amount, address _recipient) public;
 
   /// @notice Claim any pending tokens. Can only be called if user tokens are not locked.
   /// @param _token Address of the token to withdraw from

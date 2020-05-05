@@ -14,7 +14,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
 
-contract("ColonyPermissions", (accounts) => {
+contract("Colony Staking", (accounts) => {
   const USER0 = accounts[0];
   const USER1 = accounts[1];
   const USER2 = accounts[2];
@@ -54,8 +54,8 @@ contract("ColonyPermissions", (accounts) => {
     await token.approve(tokenLockingAddress, DEPOSIT, { from: USER1 });
 
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-    await tokenLocking.deposit(token.address, DEPOSIT, false, { from: USER0 });
-    await tokenLocking.deposit(token.address, DEPOSIT, false, { from: USER1 });
+    await tokenLocking.deposit(token.address, DEPOSIT, { from: USER0 });
+    await tokenLocking.deposit(token.address, DEPOSIT, { from: USER1 });
   });
 
   describe("when managing stakes", () => {

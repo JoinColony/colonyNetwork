@@ -62,7 +62,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
     it("should allow miners to stake CLNY", async () => {
       await giveUserCLNYTokens(colonyNetwork, MINER2, 9000);
       await clnyToken.approve(tokenLocking.address, 5000, { from: MINER2 });
-      await tokenLocking.deposit(clnyToken.address, 5000, false, { from: MINER2 });
+      await tokenLocking.deposit(clnyToken.address, 5000, { from: MINER2 });
 
       const userBalance = await clnyToken.balanceOf(MINER2);
       expect(userBalance).to.eq.BN(4000);
@@ -86,7 +86,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
       await giveUserCLNYTokens(colonyNetwork, MINER2, 9000);
       await clnyToken.approve(tokenLocking.address, 10000, { from: MINER2 });
 
-      await checkErrorRevert(tokenLocking.deposit(clnyToken.address, 10000, false, { from: MINER2 }), "ds-token-insufficient-balance");
+      await checkErrorRevert(tokenLocking.deposit(clnyToken.address, 10000, { from: MINER2 }), "ds-token-insufficient-balance");
 
       const userBalance = await clnyToken.balanceOf(MINER2);
       expect(userBalance).to.eq.BN(9000);

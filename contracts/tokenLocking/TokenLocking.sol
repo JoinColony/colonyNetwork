@@ -106,21 +106,22 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     userLocks[_token][msg.sender].lockCount = _lockId;
   }
 
-  // Deprecated interface
   function deposit(address _token, uint256 _amount) public {
-    deposit(_token, _amount, false);
-  }
-
-  function deposit(address _token, uint256 _amount, bool _force) public
-  tokenNotLocked(_token, _force)
-  {
-    Lock storage lock = userLocks[_token][msg.sender];
     require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
 
-    lock.timestamp = getNewTimestamp(lock.balance, _amount, lock.timestamp, now);
-    lock.balance = add(lock.balance, _amount);
+    makeConditionalDeposit(_token, _amount, msg.sender);
 
+    Lock storage lock = userLocks[_token][msg.sender];
     emit UserTokenDeposited(_token, msg.sender, lock.balance, lock.timestamp);
+  }
+
+  function depositFor(address _token, uint256 _amount, address _recipient) public {
+    require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
+
+    makeConditionalDeposit(_token, _amount, _recipient);
+
+    Lock storage lock = userLocks[_token][_recipient];
+    emit UserTokenDeposited(_token, _recipient, lock.balance, lock.timestamp);
   }
 
   function claim(address _token, bool _force) public

@@ -50,7 +50,7 @@ Deobligate the user some amount of tokens, releasing the stake. Can only be call
 
 ### `deposit`
 
-DEPRECATED: Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked.
+Deposit `_amount` of colony tokens. Goes into pendingBalance if token is locked. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
 
 
 **Parameters**
@@ -61,9 +61,9 @@ DEPRECATED: Deposit `_amount` of colony tokens. Can only be called if user token
 |_amount|uint256|Amount to deposit
 
 
-### `deposit`
+### `depositFor`
 
-Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
+Deposit `_amount` of colony tokens in the recipient's account. Goes into pendingBalance if token is locked.
 
 
 **Parameters**
@@ -72,7 +72,7 @@ Deposit `_amount` of colony tokens. Can only be called if user tokens are not lo
 |---|---|---|
 |_token|address|Address of the token to deposit
 |_amount|uint256|Amount to deposit
-|_force|bool|Pass true to forcibly unlock the token
+|_recipient|address|User to receive the tokens
 
 
 ### `getColonyNetwork`
