@@ -18,8 +18,8 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
-import "./../ColonyDataTypes.sol";
-import "./../IColony.sol";
+import "./../colony/ColonyDataTypes.sol";
+import "./../colony/IColony.sol";
 import "./ExtensionFactory.sol";
 import "./VotingReputation.sol";
 
