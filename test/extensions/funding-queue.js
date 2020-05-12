@@ -19,6 +19,7 @@ import PatriciaTree from "../../packages/reputation-miner/patricia";
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const TokenLocking = artifacts.require("TokenLocking");
 const FundingQueue = artifacts.require("FundingQueue");
 const FundingQueueFactory = artifacts.require("FundingQueueFactory");
 
@@ -26,10 +27,9 @@ contract("Funding Queues", (accounts) => {
   let colony;
   let token;
   let domain1;
-  // let domain2;
-  // let domain3;
   let metaColony;
   let colonyNetwork;
+  let tokenLocking;
 
   let fundingQueue;
   let fundingQueueFactory;
@@ -70,6 +70,9 @@ contract("Funding Queues", (accounts) => {
     await colonyNetwork.startNextCycle();
 
     fundingQueueFactory = await FundingQueueFactory.new();
+
+    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+    tokenLocking = await TokenLocking.at(tokenLockingAddress);
   });
 
   beforeEach(async () => {
@@ -83,8 +86,15 @@ contract("Funding Queues", (accounts) => {
     await fundingQueueFactory.deployExtension(colony.address);
     const fundingQueueAddress = await fundingQueueFactory.deployedExtensions(colony.address);
     fundingQueue = await FundingQueue.at(fundingQueueAddress);
-
     await colony.setFundingRole(1, 0, fundingQueue.address, 1, true);
+
+    await token.mint(colony.address, WAD);
+    await colony.claimColonyFunds(token.address);
+
+    await token.mint(USER0, WAD);
+    await token.approve(tokenLocking.address, WAD, { from: USER0 });
+    await tokenLocking.deposit(token.address, WAD, { from: USER0 });
+    await colony.approveStake(fundingQueue.address, 1, WAD, { from: USER0 });
 
     reputationTree = new PatriciaTree();
     await reputationTree.insert(
@@ -192,6 +202,39 @@ contract("Funding Queues", (accounts) => {
       // But can't cancel twice
       await checkErrorRevert(fundingQueue.cancelProposal(proposalId, proposalId, { from: USER0 }), "funding-queue-already-cancelled");
     });
+
+    it("can cancel a proposal and reclaim stake after ten days", async () => {
+      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      const proposalId = await fundingQueue.getProposalCount();
+
+      await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+
+      const proposal = await fundingQueue.getProposal(proposalId);
+      expect(proposal.state).to.eq.BN(STATE_ACTIVE);
+
+      const obligationPre = await tokenLocking.getTotalObligation(USER0, token.address);
+      expect(obligationPre).to.eq.BN(WAD.muln(3).divn(1000));
+
+      await fundingQueue.cancelProposal(proposalId, proposalId, { from: USER0 });
+
+      // Can cancel & reclaim stake after 10 days
+      await checkErrorRevert(fundingQueue.reclaimStake(proposalId), "funding-queue-cooldown-not-elapsed");
+
+      await forwardTime(SECONDS_PER_DAY * 14, this);
+      await fundingQueue.reclaimStake(proposalId);
+
+      const obligationPost = await tokenLocking.getTotalObligation(USER0, token.address);
+      expect(obligationPost).to.be.zero;
+    });
+
+    it("cannot reclaim a stake for an active proposal", async () => {
+      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      const proposalId = await fundingQueue.getProposalCount();
+
+      await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+
+      await checkErrorRevert(fundingQueue.reclaimStake(proposalId), "funding-queue-proposal-still-active");
+    });
   });
 
   describe("backing funding proposals", async () => {
@@ -207,7 +250,7 @@ contract("Funding Queues", (accounts) => {
     it("can back a basic proposal", async () => {
       await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      const headId = await fundingQueue.getHeadId();
+      const headId = await fundingQueue.getNextProposalId(HEAD);
       expect(headId).to.eq.BN(proposalId);
 
       const support = await fundingQueue.getSupport(proposalId, USER0);
@@ -352,15 +395,27 @@ contract("Funding Queues", (accounts) => {
       const nextProposalId = await fundingQueue.getNextProposalId(proposal2Id);
       expect(nextProposalId).to.eq.BN(proposalId);
     });
+
+    it("can correctly update the queue after a proposal is cancelled", async () => {
+      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      const proposal2Id = await fundingQueue.getProposalCount();
+      await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+
+      // Put proposal in position 1 (2 wad support) and proposal2 in position 2 (1 wad support)
+      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposal2Id, proposal2Id, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await fundingQueue.cancelProposal(proposalId, HEAD, { from: USER0 });
+
+      const nextProposalId = await fundingQueue.getNextProposalId(HEAD);
+      expect(nextProposalId).to.eq.BN(proposal2Id);
+    });
   });
 
   describe("pinging funding proposals", async () => {
     let proposalId;
 
     beforeEach(async () => {
-      await token.mint(colony.address, WAD);
-      await colony.claimColonyFunds(token.address);
-
       await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
       proposalId = await fundingQueue.getProposalCount();
 
@@ -545,7 +600,7 @@ contract("Funding Queues", (accounts) => {
       const proposal = await fundingQueue.getProposal(proposalId);
       expect(proposal.state).to.eq.BN(STATE_COMPLETED);
 
-      const headId = await fundingQueue.getHeadId();
+      const headId = await fundingQueue.getNextProposalId(HEAD);
       expect(headId).to.eq.BN(nextId);
 
       // Make sure the next proposal's timestamp is also updated
@@ -555,7 +610,15 @@ contract("Funding Queues", (accounts) => {
       // Can't cancel once completed
       await checkErrorRevert(fundingQueue.cancelProposal(proposalId, proposalId, { from: USER0 }), "funding-queue-already-completed");
 
-      // TODO: Check that stake is automatically returned
+      // Can reclaim stake after 10 days
+      const obligationPre = await tokenLocking.getTotalObligation(USER0, token.address);
+      expect(obligationPre).to.eq.BN(WAD.muln(3).divn(1000));
+
+      await forwardTime(SECONDS_PER_DAY * 14, this);
+      await fundingQueue.reclaimStake(proposalId);
+
+      const obligationPost = await tokenLocking.getTotalObligation(USER0, token.address);
+      expect(obligationPost).to.be.zero;
     });
 
     it("cannot ping a proposal if it not at the head of the queue", async () => {

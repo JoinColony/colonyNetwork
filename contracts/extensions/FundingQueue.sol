@@ -39,7 +39,8 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
   // Constants
   uint256 constant HEAD = 0;
   uint256 constant UINT256_MAX = (2 ** 256) - 1;
-  uint256 constant STAKE_PCT = WAD / 1000; // 0.1%
+  uint256 constant STAKE_FRACTION = WAD / 1000; // 0.1%
+  uint256 constant COOLDOWN_PERIOD = 14 days;
 
   // Initialization data
   IColony colony;
@@ -128,12 +129,12 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     require(queue[_prevId] == _id, "funding-queue-bad-prev-id");
 
     proposal.state = ProposalState.Cancelled;
+    proposal.lastUpdated = now;
 
     queue[_prevId] = queue[_id];
     delete queue[_id];
 
-    // uint256 stake = wmul(proposal.domainTotalRep, STAKE_PCT);
-    // colony.deobligateStake(msg.sender, proposal.domainId, stake);
+    proposals[queue[_prevId]].lastUpdated = now;
 
     emit ProposalCancelled(_id);
   }
@@ -155,8 +156,8 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     proposal.state = ProposalState.Active;
     proposal.domainTotalRep = checkReputation(_id, address(0x0), _key, _value, _branchMask, _siblings);
 
-    // uint256 stake = wmul(proposal.domainTotalRep, STAKE_PCT);
-    // colony.obligateStake(msg.sender, proposal.domainId, stake);
+    uint256 stake = wmul(proposal.domainTotalRep, STAKE_FRACTION);
+    colony.obligateStake(msg.sender, proposal.domainId, stake);
 
     emit ProposalStaked(_id, proposal.domainTotalRep);
   }
@@ -237,9 +238,6 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
       // May be the null proposal, but that's ok
       proposals[queue[HEAD]].lastUpdated = now;
-
-      // uint256 stake = wmul(proposal.domainTotalRep, STAKE_PCT);
-      // colony.deobligateStake(proposal.creator, proposal.domainId, stake);
     }
 
     colony.moveFundsBetweenPots(
@@ -255,6 +253,16 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     emit ProposalPinged(_id, actualFundingToTransfer);
   }
 
+  function reclaimStake(uint256 _id) public {
+    Proposal storage proposal = proposals[_id];
+
+    require(proposal.state != ProposalState.Active, "funding-queue-proposal-still-active");
+    require(proposal.lastUpdated + COOLDOWN_PERIOD <= now, "funding-queue-cooldown-not-elapsed");
+
+    uint256 stake = wmul(proposal.domainTotalRep, STAKE_FRACTION);
+    colony.deobligateStake(proposal.creator, proposal.domainId, stake);
+  }
+
   // Public view functions
 
   function getProposalCount() public view returns (uint256) {
@@ -267,10 +275,6 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
   function getSupport(uint256 _id, address _supporter) public view returns (uint256) {
     return supporters[_id][_supporter];
-  }
-
-  function getHeadId() public view returns (uint256) {
-    return queue[HEAD];
   }
 
   function getNextProposalId(uint256 _id) public view returns (uint256) {
