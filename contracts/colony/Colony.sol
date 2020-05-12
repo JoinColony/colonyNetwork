@@ -19,6 +19,7 @@ pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
 import "./../common/IEtherRouter.sol";
+import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
 
@@ -299,10 +300,62 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   // v4 to v5
-  function finishUpgrade() public always { }
+  function finishUpgrade() public always {
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+
+    // Add stake management functionality
+    colonyAuthority.setRoleCapability(
+      uint8(ColonyRole.Arbitration),
+      address(this),
+      bytes4(keccak256("transferStake(uint256,uint256,address,address,uint256,uint256,address)")),
+      true
+    );
+  }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
     require(_slot != COLONY_NETWORK_SLOT, "colony-protected-variable");
+  }
+
+  function approveStake(address _approvee, uint256 _domainId, uint256 _amount) public stoppable {
+    approvals[msg.sender][_approvee][_domainId] = add(approvals[msg.sender][_approvee][_domainId], _amount);
+
+    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).approveStake(msg.sender, _amount, token);
+  }
+
+  function obligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
+    approvals[_user][msg.sender][_domainId] = sub(approvals[_user][msg.sender][_domainId], _amount);
+    obligations[_user][msg.sender][_domainId] = add(obligations[_user][msg.sender][_domainId], _amount);
+
+    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).obligateStake(_user, _amount, token);
+  }
+
+  function deobligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
+    obligations[_user][msg.sender][_domainId] = sub(obligations[_user][msg.sender][_domainId], _amount);
+
+    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).deobligateStake(_user, _amount, token);
+  }
+
+  function transferStake(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _obligator,
+    address _user,
+    uint256 _domainId,
+    uint256 _amount,
+    address _beneficiary
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    obligations[_user][_obligator][_domainId] = sub(obligations[_user][_obligator][_domainId], _amount);
+
+    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).transferStake(_user, _amount, token, _beneficiary);
+  }
+
+  function getApproval(address _user, address _obligator, uint256 _domainId) public view returns (uint256) {
+    return approvals[_user][_obligator][_domainId];
+  }
+
+  function getObligation(address _user, address _obligator, uint256 _domainId) public view returns (uint256) {
+    return obligations[_user][_obligator][_domainId];
   }
 
   function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {

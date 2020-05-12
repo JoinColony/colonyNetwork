@@ -489,7 +489,7 @@ contract("Colony Reward Payouts", (accounts) => {
       const payoutId = logs[0].args.rewardPayoutId;
 
       await colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 });
-      await tokenLocking.withdraw(token.address, userReputation, { from: userAddress1 });
+      await tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, userReputation, false, { from: userAddress1 });
 
       const balance = await token.balanceOf(userAddress1);
       expect(balance).to.eq.BN(userReputation);
@@ -615,13 +615,14 @@ contract("Colony Reward Payouts", (accounts) => {
     });
 
     it("should not be able to claim a payout for a new deposit made after the payout cycle starts", async () => {
-      await tokenLocking.withdraw(token.address, userTokens, { from: userAddress1 });
+      await tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, userTokens, false, { from: userAddress1 });
 
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
 
       await token.approve(tokenLocking.address, userTokens, { from: userAddress1 });
       await tokenLocking.deposit(token.address, userTokens, { from: userAddress1 });
+      await tokenLocking.claim(token.address, true, { from: userAddress1 });
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),

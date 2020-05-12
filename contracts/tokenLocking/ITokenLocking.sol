@@ -49,16 +49,40 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @param _lockId Id of the lock user wants to increment to
   function incrementLockCounterTo(address _token, uint256 _lockId) public;
 
-  /// @notice Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked.
+  /// @notice Deposit `_amount` of colony tokens. Goes into pendingBalance if token is locked.
   /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
   /// @param _token Address of the token to deposit
   /// @param _amount Amount to deposit
   function deposit(address _token, uint256 _amount) public;
 
-  /// @notice Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+  /// @notice Deposit `_amount` of colony tokens in the recipient's account. Goes into pendingBalance if token is locked.
+  /// @param _token Address of the token to deposit
+  /// @param _amount Amount to deposit
+  /// @param _recipient User to receive the tokens
+  function depositFor(address _token, uint256 _amount, address _recipient) public;
+
+  /// @notice Claim any pending tokens. Can only be called if user tokens are not locked.
+  /// @param _token Address of the token to withdraw from
+  /// @param _force Pass true to forcibly unlock the token
+  function claim(address _token, bool _force) public;
+
+  /// @notice Transfer tokens to a recipient's pending balance. Can only be called if user tokens are not locked.
+  /// @param _token Address of the token to transfer
+  /// @param _amount Amount to transfer
+  /// @param _recipient User to receive the tokens
+  /// @param _force Pass true to forcibly unlock the token
+  function transfer(address _token, uint256 _amount, address _recipient, bool _force) public;
+
+  /// @notice DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
   /// @param _token Address of the token to withdraw from
   /// @param _amount Amount to withdraw
   function withdraw(address _token, uint256 _amount) public;
+
+  /// @notice Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+  /// @param _token Address of the token to withdraw from
+  /// @param _amount Amount to withdraw
+  /// @param _force Pass true to forcibly unlock the token
+  function withdraw(address _token, uint256 _amount, bool _force) public;
 
   /// @notice Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
   /// @dev While public, it can only be called successfully by the current ReputationMiningCycle.
@@ -66,6 +90,35 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @param _beneficiary Address of beneficiary to receive forfeited stake
   /// @param _amount Amount of stake to slash
   function punishStakers(address[] memory _stakers, address _beneficiary, uint256 _amount) public;
+
+  /// @notice Allow the colony to obligate some amount of tokens as a stake.
+  /// Can only be called by a colony.
+  /// @param _colony Address of the colony we are willing to let obligate us.
+  /// @param _amount Amount of that colony's internal token up to which we are willing to be obligated.
+  /// @param _token The colony's internal token address
+  function approveStake(address _colony, uint256 _amount, address _token) public;
+
+  /// @notice Obligate the user some amount of tokens as a stake.
+  /// Can only be called by a colony.
+  /// @param _user Address of the account we are obligating.
+  /// @param _amount Amount of the colony's internal token we are obligating.
+  /// @param _token The colony's internal token address
+  function obligateStake(address _user, uint256 _amount, address _token) public;
+
+  /// @notice Deobligate the user some amount of tokens, releasing the stake.
+  /// Can only be called by a colony.
+  /// @param _user Address of the account we are deobligating.
+  /// @param _amount Amount of colony's internal token we are deobligating.
+  /// @param _token The colony's internal token address
+  function deobligateStake(address _user, uint256 _amount, address _token) public;
+
+  /// @notice Transfer some amount of staked tokens.
+  /// Can only be called by a colony.
+  /// @param _user Address of the account we are taking.
+  /// @param _amount Amount of colony's internal token we are taking.
+  /// @param _token The colony's internal token address
+  /// @param _recipient Recipient of the slashed tokens
+  function transferStake(address _user, uint256 _amount, address _token, address _recipient) public;
 
   /// @notice Get global lock count for a specific token.
   /// @param _token Address of the token
@@ -80,4 +133,9 @@ contract ITokenLocking is TokenLockingDataTypes {
   ///   `amount` User's deposited amount,
   ///   `timestamp` Timestamp of deposit.
   function getUserLock(address _token, address _user) public view returns (Lock memory lock);
+
+  /// @notice See the total amount of a user's obligation.
+  /// @param _user Address of the obligated account.
+  /// @param _token The token for which the user is obligated.
+  function getTotalObligation(address _user, address _token) public view returns (uint256);
 }

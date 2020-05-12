@@ -84,6 +84,9 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ARBITRATION_ROLE, "transferExpenditureViaArbitration(uint256,uint256,uint256,address)");
     addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)");
     addRoleCapability(ARBITRATION_ROLE, "setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)");
+
+    // Added in colony v5
+    addRoleCapability(ARBITRATION_ROLE, "transferStake(uint256,uint256,address,address,uint256,uint256,address)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

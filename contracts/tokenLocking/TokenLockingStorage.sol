@@ -38,4 +38,9 @@ contract TokenLockingStorage is TokenLockingDataTypes, DSAuth {
   // If user token lock count is less than global, that means that their tokens are locked.
   // User's lock count should never be greater than total lock count.
   mapping (address => uint256) totalLockCount;
+
+  // Used for stake management ([user][token]{[colony]} => amount)
+  mapping (address => mapping (address => mapping (address => uint256))) approvals;
+  mapping (address => mapping (address => mapping (address => uint256))) obligations;
+  mapping (address => mapping (address => uint256)) totalObligations;
 }

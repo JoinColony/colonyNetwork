@@ -32,6 +32,8 @@ import "./ColonyDataTypes.sol";
 contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes, DSMath {
   uint256 constant COLONY_NETWORK_SLOT = 6;
 
+  // Storage
+
   // When adding variables, do not make them public, otherwise all contracts that inherit from
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
@@ -83,6 +85,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   mapping (uint256 => Expenditure) expenditures; // Storage slot 25
   mapping (uint256 => mapping (uint256 => ExpenditureSlot)) expenditureSlots; // Storage slot 26
   mapping (uint256 => mapping (uint256 => mapping (address => uint256))) expenditureSlotPayouts; // Storage slot 27
+
+  // Used for stake management ([user][approvee][domainId] => amount)
+  mapping (address => mapping (address => mapping (uint256 => uint256))) approvals; // Storage slot 28
+  mapping (address => mapping (address => mapping (uint256 => uint256))) obligations; // Storage slot 29
+
+  // Modifiers
 
   modifier validPayoutAmount(uint256 _amount) {
     require(_amount <= MAX_PAYOUT, "colony-payout-too-large");

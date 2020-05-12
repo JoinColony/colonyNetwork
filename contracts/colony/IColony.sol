@@ -730,4 +730,53 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Total amount of tokens in funding pots other than the rewards pot (id 0)
   function getNonRewardPotsTotal(address _token) public view returns (uint256 amount);
+
+  /// @notice Allow the _approvee to obligate some amount of tokens as a stake.
+  /// @param _approvee Address of the account we are willing to let obligate us.
+  /// @param _domainId Domain in which we are willing to be obligated.
+  /// @param _amount Amount of internal token up to which we are willing to be obligated.
+  function approveStake(address _approvee, uint256 _domainId, uint256 _amount) public;
+
+  /// @notice Obligate the user some amount of tokens as a stake.
+  /// @param _user Address of the account we are obligating.
+  /// @param _domainId Domain in which we are obligating the user.
+  /// @param _amount Amount of internal token we are obligating.
+  function obligateStake(address _user, uint256 _domainId, uint256 _amount) public;
+
+  /// @notice Deobligate the user some amount of tokens, releasing the stake.
+  /// @param _user Address of the account we are deobligating.
+  /// @param _domainId Domain in which we are deobligating the user.
+  /// @param _amount Amount of internal token we are deobligating.
+  function deobligateStake(address _user, uint256 _domainId, uint256 _amount) public;
+
+  /// @notice Transfer some amount of obligated tokens.
+  /// Can be called by the arbitration role.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action.
+  /// @param _childSkillIndex The child index in `_permissionDomainId` where we can find `_domainId`.
+  /// @param _obligator Address of the account who set the obligation.
+  /// @param _user Address of the account we are transferring.
+  /// @param _domainId Domain in which we are transferring the tokens.
+  /// @param _amount Amount of internal token we are transferring.
+  /// @param _recipient Recipient of the transferred tokens.
+  function transferStake(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _obligator,
+    address _user,
+    uint256 _domainId,
+    uint256 _amount,
+    address _recipient
+    ) public;
+
+  /// @notice View an approval to obligate tokens.
+  /// @param _user User allowing their tokens to be obligated.
+  /// @param _obligator Address of the account we are willing to let obligate us.
+  /// @param _domainId Domain in which we are willing to be obligated.
+  function getApproval(address _user, address _obligator, uint256 _domainId) public view returns (uint256 approval);
+
+  /// @notice View an obligation of tokens.
+  /// @param _user User whose tokens are obligated.
+  /// @param _obligator Address of the account who obligated us.
+  /// @param _domainId Domain in which we are obligated.
+  function getObligation(address _user, address _obligator, uint256 _domainId) public view returns (uint256 obligation);
 }

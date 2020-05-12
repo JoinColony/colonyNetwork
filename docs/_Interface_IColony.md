@@ -45,6 +45,20 @@ Add a new payment in the colony. Secured function to authorised members.
 |---|---|---|
 |paymentId|uint256|Identifier of the newly created payment
 
+### `approveStake`
+
+Allow the _approvee to obligate some amount of tokens as a stake.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_approvee|address|Address of the account we are willing to let obligate us.
+|_domainId|uint256|Domain in which we are willing to be obligated.
+|_amount|uint256|Amount of internal token up to which we are willing to be obligated.
+
+
 ### `authority`
 
 Get the `ColonyAuthority` for the colony.
@@ -178,6 +192,20 @@ Mark a task as complete after the due date has passed. This allows the task to b
 |_id|uint256|Id of the task
 
 
+### `deobligateStake`
+
+Deobligate the user some amount of tokens, releasing the stake.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are deobligating.
+|_domainId|uint256|Domain in which we are deobligating the user.
+|_amount|uint256|Amount of internal token we are deobligating.
+
+
 ### `executeTaskChange`
 
 Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker) using the detached signatures for these users.
@@ -289,6 +317,25 @@ Helper function used to generage consistently the rating secret using salt value
 |Name|Type|Description|
 |---|---|---|
 |secret|bytes32|`keccak256` hash of joint _salt and _value
+
+### `getApproval`
+
+View an approval to obligate tokens.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|User allowing their tokens to be obligated.
+|_obligator|address|Address of the account we are willing to let obligate us.
+|_domainId|uint256|Domain in which we are willing to be obligated.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|approval|uint256|
 
 ### `getColonyNetwork`
 
@@ -482,6 +529,25 @@ Get the total amount of tokens `_token` minus amount reserved to be paid to the 
 |Name|Type|Description|
 |---|---|---|
 |amount|uint256|Total amount of tokens in funding pots other than the rewards pot (id 0)
+
+### `getObligation`
+
+View an obligation of tokens.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|User whose tokens are obligated.
+|_obligator|address|Address of the account who obligated us.
+|_domainId|uint256|Domain in which we are obligated.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|obligation|uint256|
 
 ### `getPayment`
 
@@ -815,6 +881,20 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |_toPot|uint256|Funding pot id receiving the funds
 |_amount|uint256|Amount of funds
 |_token|address|Address of the token, `0x0` value indicates Ether
+
+
+### `obligateStake`
+
+Obligate the user some amount of tokens as a stake.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are obligating.
+|_domainId|uint256|Domain in which we are obligating the user.
+|_amount|uint256|Amount of internal token we are obligating.
 
 
 ### `owner`
@@ -1322,6 +1402,24 @@ Updates the expenditure owner. Can only be called by Arbitration role.
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
 |_id|uint256|Expenditure identifier
 |_newOwner|address|New owner of expenditure
+
+
+### `transferStake`
+
+Transfer some amount of obligated tokens. Can be called by the arbitration role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action.
+|_childSkillIndex|uint256|The child index in `_permissionDomainId` where we can find `_domainId`.
+|_obligator|address|Address of the account who set the obligation.
+|_user|address|Address of the account we are transferring.
+|_domainId|uint256|Domain in which we are transferring the tokens.
+|_amount|uint256|Amount of internal token we are transferring.
+|_recipient|address|Recipient of the transferred tokens.
 
 
 ### `updateColonyOrbitDB`

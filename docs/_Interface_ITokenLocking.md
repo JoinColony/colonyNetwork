@@ -7,9 +7,50 @@ order: 5
   
 ## Interface Methods
 
+### `approveStake`
+
+Allow the colony to obligate some amount of tokens as a stake. Can only be called by a colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colony|address|Address of the colony we are willing to let obligate us.
+|_amount|uint256|Amount of that colony's internal token up to which we are willing to be obligated.
+|_token|address|The colony's internal token address
+
+
+### `claim`
+
+Claim any pending tokens. Can only be called if user tokens are not locked.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to withdraw from
+|_force|bool|Pass true to forcibly unlock the token
+
+
+### `deobligateStake`
+
+Deobligate the user some amount of tokens, releasing the stake. Can only be called by a colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are deobligating.
+|_amount|uint256|Amount of colony's internal token we are deobligating.
+|_token|address|The colony's internal token address
+
+
 ### `deposit`
 
-Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
+Deposit `_amount` of colony tokens. Goes into pendingBalance if token is locked. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
 
 
 **Parameters**
@@ -18,6 +59,20 @@ Deposit `_amount` of colony tokens. Can only be called if user tokens are not lo
 |---|---|---|
 |_token|address|Address of the token to deposit
 |_amount|uint256|Amount to deposit
+
+
+### `depositFor`
+
+Deposit `_amount` of colony tokens in the recipient's account. Goes into pendingBalance if token is locked.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to deposit
+|_amount|uint256|Amount to deposit
+|_recipient|address|User to receive the tokens
 
 
 ### `getColonyNetwork`
@@ -48,6 +103,24 @@ Get global lock count for a specific token.
 |Name|Type|Description|
 |---|---|---|
 |lockCount|uint256|Global token lock count
+
+### `getTotalObligation`
+
+See the total amount of a user's obligation.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the obligated account.
+|_token|address|The token for which the user is obligated.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
 
 ### `getUserLock`
 
@@ -97,6 +170,20 @@ Locks everyones' tokens on `_token` address.
 |---|---|---|
 |lockCount|uint256|Updated total token lock count
 
+### `obligateStake`
+
+Obligate the user some amount of tokens as a stake. Can only be called by a colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are obligating.
+|_amount|uint256|Amount of the colony's internal token we are obligating.
+|_token|address|The colony's internal token address
+
+
 ### `punishStakers`
 
 Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
@@ -125,6 +212,36 @@ Set the ColonyNetwork contract address.
 |_colonyNetwork|address|Address of the ColonyNetwork
 
 
+### `transfer`
+
+Transfer tokens to a recipient's pending balance. Can only be called if user tokens are not locked.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to transfer
+|_amount|uint256|Amount to transfer
+|_recipient|address|User to receive the tokens
+|_force|bool|Pass true to forcibly unlock the token
+
+
+### `transferStake`
+
+Transfer some amount of staked tokens. Can only be called by a colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are taking.
+|_amount|uint256|Amount of colony's internal token we are taking.
+|_token|address|The colony's internal token address
+|_recipient|address|Recipient of the slashed tokens
+
+
 ### `unlockTokenForUser`
 
 Increments the lock counter to `_lockId` for the `_user` if user's lock count is less than `_lockId` by 1. Can only be called by a colony.
@@ -142,6 +259,20 @@ Increments the lock counter to `_lockId` for the `_user` if user's lock count is
 ### `withdraw`
 
 Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to withdraw from
+|_amount|uint256|Amount to withdraw
+|_force|bool|Pass true to forcibly unlock the token
+
+
+### `withdraw`
+
+DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
 
 
 **Parameters**
