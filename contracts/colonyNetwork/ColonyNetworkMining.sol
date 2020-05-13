@@ -236,6 +236,4 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
     return add(mul(prevWeight, _prevTime), mul(currWeight, _currTime)) / add(prevWeight, currWeight);
   }
-
-
 }

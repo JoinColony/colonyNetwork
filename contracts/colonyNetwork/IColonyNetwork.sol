@@ -296,5 +296,4 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   function unstakeForMining(uint256 _amount) public;
 
   function getMiningStake(address _user) public view returns (MiningStake memory _info);
-
 }
