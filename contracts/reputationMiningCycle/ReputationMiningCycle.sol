@@ -54,7 +54,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// @param jrh The justification root hash for the application of the log being processed.
   /// @param entryIndex The number of the entry the submitter hash asked us to consider.
   modifier entryQualifies(bytes32 newHash, uint256 nNodes, bytes32 jrh, uint256 entryIndex) {
-    uint256 lockBalance = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender).balance;
+    uint256 lockBalance = ITokenLocking(tokenLockingAddress).getObligation(msg.sender, clnyTokenAddress, colonyNetworkAddress);
     require(entryIndex <= lockBalance / MIN_STAKE, "colony-reputation-mining-stake-minimum-not-met-for-index");
     require(entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
 
@@ -298,7 +298,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         // Our opponent completed the same number of challenge rounds, and both have now timed out.
         nInvalidatedHashes += 2;
         // Punish the people who proposed our opponent
-        ITokenLocking(tokenLockingAddress).punishStakers(
+        IColonyNetwork(colonyNetworkAddress).punishStakers(
           submittedHashes[opponentSubmission.proposedNewRootHash][opponentSubmission.nNodes][opponentSubmission.jrh],
           msg.sender,
           MIN_STAKE
@@ -311,7 +311,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       nHashesCompletedChallengeRound[round] += 2;
 
       // Punish the people who proposed the hash that was rejected
-      ITokenLocking(tokenLockingAddress).punishStakers(
+      IColonyNetwork(colonyNetworkAddress).punishStakers(
         submittedHashes[submission.proposedNewRootHash][submission.nNodes][submission.jrh],
         msg.sender,
         MIN_STAKE

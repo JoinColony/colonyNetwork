@@ -27,7 +27,6 @@ contract TokenLockingDataTypes {
   event UserTokenClaimed(address token, address user, uint256 amount, uint256 timestamp);
   event UserTokenTransferred(address token, address user, address recipient, uint256 amount);
   event UserTokenWithdrawn(address token, address user, uint256 amount);
-  event ReputationMinerPenalised(address miner, address beneficiary, uint256 tokensLost);
 
   struct Lock {
     // User's lock count

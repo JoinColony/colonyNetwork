@@ -84,36 +84,29 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @param _force Pass true to forcibly unlock the token
   function withdraw(address _token, uint256 _amount, bool _force) public;
 
-  /// @notice Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
-  /// @dev While public, it can only be called successfully by the current ReputationMiningCycle.
-  /// @param _stakers Array of the addresses of stakers to punish
-  /// @param _beneficiary Address of beneficiary to receive forfeited stake
-  /// @param _amount Amount of stake to slash
-  function punishStakers(address[] memory _stakers, address _beneficiary, uint256 _amount) public;
-
   /// @notice Allow the colony to obligate some amount of tokens as a stake.
-  /// Can only be called by a colony.
-  /// @param _colony Address of the colony we are willing to let obligate us.
+  /// @dev Can only be called by a colony or colonyNetwork
+  /// @param _user Address of the user that is allowing their holdings to be staked by the caller
   /// @param _amount Amount of that colony's internal token up to which we are willing to be obligated.
   /// @param _token The colony's internal token address
-  function approveStake(address _colony, uint256 _amount, address _token) public;
+  function approveStake(address _user, uint256 _amount, address _token) public;
 
   /// @notice Obligate the user some amount of tokens as a stake.
-  /// Can only be called by a colony.
+  /// Can only be called by a colony or colonyNetwork.
   /// @param _user Address of the account we are obligating.
   /// @param _amount Amount of the colony's internal token we are obligating.
   /// @param _token The colony's internal token address
   function obligateStake(address _user, uint256 _amount, address _token) public;
 
   /// @notice Deobligate the user some amount of tokens, releasing the stake.
-  /// Can only be called by a colony.
+  /// Can only be called by a colony or colonyNetwork.
   /// @param _user Address of the account we are deobligating.
   /// @param _amount Amount of colony's internal token we are deobligating.
   /// @param _token The colony's internal token address
   function deobligateStake(address _user, uint256 _amount, address _token) public;
 
   /// @notice Transfer some amount of staked tokens.
-  /// Can only be called by a colony.
+  /// Can only be called by a colony or colonyNetwork.
   /// @param _user Address of the account we are taking.
   /// @param _amount Amount of colony's internal token we are taking.
   /// @param _token The colony's internal token address
@@ -138,4 +131,16 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @param _user Address of the obligated account.
   /// @param _token The token for which the user is obligated.
   function getTotalObligation(address _user, address _token) public view returns (uint256);
+
+  /// @notice See the total amount of a user's obligation.
+  /// @param _user Address of the account that has approved _approvee to obligate their funds.
+  /// @param _token The token for which the user has provided the approval.
+  /// @param _obligator The address that has been approved to obligate the funds.
+  function getApproval(address _user, address _token, address _obligator) public view returns (uint256);
+
+  /// @notice See the total amount of a user's obligation.
+  /// @param _user Address of the account that has had their funds obligated.
+  /// @param _token The token for which the user has provided the approval.
+  /// @param _obligator The address that obligated the funds (and therefore can slash or return them).
+  function getObligation(address _user, address _token, address _obligator) public view returns (uint256);
 }

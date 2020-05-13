@@ -27,15 +27,11 @@ import "./../tokenLocking/TokenLockingStorage.sol";
 
 
 contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
-  modifier calledByColony() {
-    require(IColonyNetwork(colonyNetwork).isColony(msg.sender), "colony-token-locking-sender-not-colony");
-    _;
-  }
-
-  modifier onlyReputationMiningCycle() {
+  modifier calledByColonyOrNetwork() {
     require(
-      msg.sender == IColonyNetwork(colonyNetwork).getReputationMiningCycle(true),
-      "colony-token-locking-sender-not-reputation-mining-cycle");
+      colonyNetwork == msg.sender || IColonyNetwork(colonyNetwork).isColony(msg.sender),
+      "colony-token-locking-sender-not-colony-or-network"
+    );
     _;
   }
 
@@ -44,16 +40,6 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
       userLocks[_token][msg.sender].lockCount = totalLockCount[_token];
     }
     require(isTokenUnlocked(_token, msg.sender), "colony-token-locking-token-locked");
-    _;
-  }
-
-  // Prevent reputation miners from withdrawing stake during the mining process.
-  modifier hashNotSubmitted(address _token) {
-    address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
-    if (_token == clnyToken) {
-      bytes32 submissionHash = IReputationMiningCycle(IColonyNetwork(colonyNetwork).getReputationMiningCycle(true)).getReputationHashSubmission(msg.sender).proposedNewRootHash;
-      require(submissionHash == 0x0, "colony-token-locking-hash-submitted");
-    }
     _;
   }
 
@@ -77,7 +63,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     return colonyNetwork;
   }
 
-  function lockToken(address _token) public calledByColony returns (uint256) {
+  function lockToken(address _token) public calledByColonyOrNetwork returns (uint256) {
     totalLockCount[_token] += 1;
 
     emit TokenLocked(_token, totalLockCount[_token]);
@@ -86,7 +72,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   }
 
   function unlockTokenForUser(address _token, address _user, uint256 _lockId) public
-  calledByColony
+  calledByColonyOrNetwork
   {
     // If we want to unlock tokens at id greater than total lock count, we are doing something wrong
     require(_lockId <= totalLockCount[_token], "colony-token-invalid-lockid");
@@ -137,7 +123,6 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   }
 
   function transfer(address _token, uint256 _amount, address _recipient, bool _force) public
-  hashNotSubmitted(_token)
   notObligated(_token, _amount)
   tokenNotLocked(_token, _force)
   {
@@ -154,7 +139,6 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   }
 
   function withdraw(address _token, uint256 _amount, bool _force) public
-  hashNotSubmitted(_token)
   notObligated(_token, _amount)
   tokenNotLocked(_token, _force)
   {
@@ -166,26 +150,11 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     emit UserTokenWithdrawn(_token, msg.sender, _amount);
   }
 
-  function punishStakers(address[] memory _stakers, address _beneficiary, uint256 _amount) public onlyReputationMiningCycle {
-    address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
-    uint256 lostStake;
-    // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
-    // it in ReputationMiningCycle.invalidateHash;
-    for (uint256 i = 0; i < _stakers.length; i++) {
-      lostStake = min(userLocks[clnyToken][_stakers[i]].balance, _amount);
-      userLocks[clnyToken][_stakers[i]].balance = sub(userLocks[clnyToken][_stakers[i]].balance, lostStake);
-      userLocks[clnyToken][_beneficiary].balance = add(userLocks[clnyToken][_beneficiary].balance, lostStake);
-      // TODO: Lose rep?
-
-      emit ReputationMinerPenalised(_stakers[i], _beneficiary, lostStake);
-    }
-  }
-
-  function approveStake(address _user, uint256 _amount, address _token) public calledByColony() {
+  function approveStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
     approvals[_user][_token][msg.sender] = add(approvals[_user][_token][msg.sender], _amount);
   }
 
-  function obligateStake(address _user, uint256 _amount, address _token) public calledByColony() {
+  function obligateStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
     approvals[_user][_token][msg.sender] = sub(approvals[_user][_token][msg.sender], _amount);
     obligations[_user][_token][msg.sender] = add(obligations[_user][_token][msg.sender], _amount);
     totalObligations[_user][_token] = add(totalObligations[_user][_token], _amount);
@@ -193,12 +162,12 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     require(userLocks[_token][_user].balance >= totalObligations[_user][_token], "colony-token-locking-insufficient-deposit");
   }
 
-  function deobligateStake(address _user, uint256 _amount, address _token) public calledByColony() {
+  function deobligateStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
     obligations[_user][_token][msg.sender] = sub(obligations[_user][_token][msg.sender], _amount);
     totalObligations[_user][_token] = sub(totalObligations[_user][_token], _amount);
   }
 
-  function transferStake(address _user, uint256 _amount, address _token, address _recipient) public calledByColony() {
+  function transferStake(address _user, uint256 _amount, address _token, address _recipient) public calledByColonyOrNetwork() {
     obligations[_user][_token][msg.sender] = sub(obligations[_user][_token][msg.sender], _amount);
     totalObligations[_user][_token] = sub(totalObligations[_user][_token], _amount);
 
@@ -218,6 +187,14 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
 
   function getTotalObligation(address _user, address _token) public view returns (uint256) {
     return totalObligations[_user][_token];
+  }
+
+  function getApproval(address _user, address _token, address _obligator) public view returns (uint256) {
+    return approvals[_user][_token][_obligator];
+  }
+
+  function getObligation(address _user, address _token, address _obligator) public view returns (uint256) {
+    return obligations[_user][_token][_obligator];
   }
 
   // Internal functions

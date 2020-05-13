@@ -7,7 +7,7 @@ import { ethers } from "ethers";
 
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
-import { UINT256_MAX, MIN_STAKE, DEFAULT_STAKE } from "../../helpers/constants";
+import { UINT256_MAX, DEFAULT_STAKE } from "../../helpers/constants";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
@@ -368,7 +368,7 @@ contract("Token Locking", (addresses) => {
     it("should not be able to lock tokens if sender is not colony", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
-      await checkErrorRevert(tokenLocking.lockToken(token.address), "colony-token-locking-sender-not-colony");
+      await checkErrorRevert(tokenLocking.lockToken(token.address), "colony-token-locking-sender-not-colony-or-network");
     });
 
     it("should not be able to unlock users tokens if sender is not colony", async () => {
@@ -378,7 +378,10 @@ contract("Token Locking", (addresses) => {
       await colony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
-      await checkErrorRevert(tokenLocking.unlockTokenForUser(token.address, userAddress, payoutId), "colony-token-locking-sender-not-colony");
+      await checkErrorRevert(
+        tokenLocking.unlockTokenForUser(token.address, userAddress, payoutId),
+        "colony-token-locking-sender-not-colony-or-network"
+      );
     });
 
     it("should be able to lock tokens twice", async () => {
@@ -392,13 +395,6 @@ contract("Token Locking", (addresses) => {
 
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);
       expect(totalLockCount).to.eq.BN(2);
-    });
-
-    it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
-      await checkErrorRevert(
-        tokenLocking.punishStakers([addresses[0], addresses[1]], ethers.constants.AddressZero, MIN_STAKE),
-        "colony-token-locking-sender-not-reputation-mining-cycle"
-      );
     });
   });
 });

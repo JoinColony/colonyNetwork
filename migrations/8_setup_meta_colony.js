@@ -45,7 +45,7 @@ module.exports = async function (deployer, network, accounts) {
   assert.equal(mainAccountBalance.toString(), DEFAULT_STAKE.toString());
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   await tokenLocking.deposit(clnyToken.address, DEFAULT_STAKE, { from: MAIN_ACCOUNT });
-
+  await colonyNetwork.stakeForMining(DEFAULT_STAKE, { from: MAIN_ACCOUNT });
   await metaColony.addGlobalSkill();
 
   // Also set up the pinned version (3)... TODO: remove along with the deprecated `createColony`

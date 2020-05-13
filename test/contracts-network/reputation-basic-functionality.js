@@ -43,11 +43,15 @@ contract("Reputation mining - basic functionality", (accounts) => {
     // Ensure consistent state of token locking and clnyToken balance for two test accounts
     const miner1Lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
     if (miner1Lock.balance > 0) {
+      const obligation = await tokenLocking.getObligation(MINER1, clnyToken.address, colonyNetwork.address);
+      await colonyNetwork.unstakeForMining(obligation, { from: MINER1 });
       await tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken.address, miner1Lock.balance, false, { from: MINER1 });
     }
 
     const miner2Lock = await tokenLocking.getUserLock(clnyToken.address, MINER2);
     if (miner2Lock.balance > 0) {
+      const obligation = await tokenLocking.getObligation(MINER2, clnyToken.address, colonyNetwork.address);
+      await colonyNetwork.unstakeForMining(obligation, { from: MINER2 });
       await tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken.address, miner2Lock.balance, false, { from: MINER2 });
     }
 
@@ -75,6 +79,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
     it("should allow miners to withdraw staked CLNY", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, 5000);
 
+      await colonyNetwork.unstakeForMining(5000, { from: MINER2 });
       await tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken.address, 5000, false, { from: MINER2 });
 
       const info = await tokenLocking.getUserLock(clnyToken.address, MINER2);

@@ -167,8 +167,10 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     // II. Disburse reputation and tokens
     IMetaColony(metaColony).mintTokensForColonyNetwork(realReward);
 
+    ERC20Extended(clnyToken).approve(tokenLocking, realReward);
+
     for (i = 0; i < stakers.length; i++) {
-      assert(ERC20Extended(clnyToken).transfer(stakers[i], wmul(reward, minerWeights[i])));
+      ITokenLocking(tokenLocking).depositFor(clnyToken, wmul(reward, minerWeights[i]), stakers[i]);
     }
 
     // This gives them reputation in the next update cycle.
@@ -180,4 +182,34 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
       reputationMiningSkillId
     );
   }
+
+  function punishStakers(address[] memory _stakers, address _beneficiary, uint256 _amount) public stoppable onlyReputationMiningCycle {
+    address clnyToken = IMetaColony(metaColony).getToken();
+    uint256 lostStake;
+    // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
+    // it in ReputationMiningCycle.invalidateHash;
+    for (uint256 i = 0; i < _stakers.length; i++) {
+      lostStake = min(ITokenLocking(tokenLocking).getTotalObligation(_stakers[i], clnyToken), _amount);
+      ITokenLocking(tokenLocking).transferStake(_stakers[i], lostStake, clnyToken, _beneficiary);
+
+      // TODO: Lose rep?
+
+      emit ReputationMinerPenalised(_stakers[i], _beneficiary, lostStake);
+    }
+  }
+
+  function stakeForMining(uint256 _amount) public stoppable {
+    address clnyToken = IMetaColony(metaColony).getToken();
+    ITokenLocking(tokenLocking).approveStake(msg.sender, _amount, clnyToken);
+    ITokenLocking(tokenLocking).obligateStake(msg.sender, _amount, clnyToken);
+  }
+
+  function unstakeForMining(uint256 _amount) public stoppable {
+    address clnyToken = IMetaColony(metaColony).getToken();
+    // Prevent reputation miners from withdrawing stake during the mining process.
+    bytes32 submissionHash = IReputationMiningCycle(activeReputationMiningCycle).getReputationHashSubmission(msg.sender).proposedNewRootHash;
+    require(submissionHash == 0x0, "colony-network-hash-submitted");
+    ITokenLocking(tokenLocking).deobligateStake(msg.sender, _amount, clnyToken);
+  }
+
 }

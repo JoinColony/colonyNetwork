@@ -4,7 +4,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent, getColonyEditable } from "../../helpers/test-helper";
-import { CURR_VERSION, GLOBAL_SKILL_ID, ROOT_ROLE } from "../../helpers/constants";
+import { CURR_VERSION, GLOBAL_SKILL_ID, ROOT_ROLE, MIN_STAKE } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
@@ -138,6 +138,13 @@ contract("Colony Network", (accounts) => {
       await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
 
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-clny-token-invalid-address");
+    });
+
+    it('should not allow "punishStakers" to be called from an account that is not the mining cycle', async () => {
+      await checkErrorRevert(
+        colonyNetwork.punishStakers([accounts[0], accounts[1]], ethers.constants.AddressZero, MIN_STAKE),
+        "colony-reputation-mining-sender-not-active-reputation-cycle"
+      );
     });
   });
 
