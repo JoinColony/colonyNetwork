@@ -5,7 +5,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE, SECONDS_PER_DAY } from "../../helpers/constants";
-import { checkErrorRevert, makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime } from "../../helpers/test-helper";
+import { checkErrorRevert, makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime, getBlockTime } from "../../helpers/test-helper";
 
 import {
   setupColonyNetwork,
@@ -248,7 +248,7 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("can back a basic proposal", async () => {
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       const headId = await fundingQueue.getNextProposalId(HEAD);
       expect(headId).to.eq.BN(proposalId);
@@ -257,16 +257,34 @@ contract("Funding Queues", (accounts) => {
       expect(support).to.eq.BN(WAD);
     });
 
+    it("can back a basic proposal twice, with no effect", async () => {
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD, HEAD, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      const headId = await fundingQueue.getNextProposalId(HEAD);
+      expect(headId).to.eq.BN(proposalId);
+
+      const support = await fundingQueue.getSupport(proposalId, USER0);
+      expect(support).to.eq.BN(WAD);
+    });
+
+    it("cannot back a basic proposal with more than your reputation", async () => {
+      await checkErrorRevert(
+        fundingQueue.backProposal(proposalId, WAD.addn(1), proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "funding-queue-insufficient-reputation"
+      );
+    });
+
     it("cannot back a basic proposal with a bad reputation proof", async () => {
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, proposalId, HEAD, "0x0", "0x0", "0x0", [], { from: USER0 }),
+        fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, "0x0", "0x0", "0x0", [], { from: USER0 }),
         "funding-queue-invalid-root-hash"
       );
     });
 
     it("cannot back a basic proposal with the wrong user address", async () => {
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER1 }),
+        fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER1 }),
         "funding-queue-invalid-user-address"
       );
     });
@@ -277,7 +295,7 @@ contract("Funding Queues", (accounts) => {
       const [mask, siblings] = await reputationTree.getProof(key);
 
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, proposalId, HEAD, key, value, mask, siblings, { from: USER0 }),
+        fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, key, value, mask, siblings, { from: USER0 }),
         "funding-queue-invalid-skill-id"
       );
     });
@@ -288,44 +306,35 @@ contract("Funding Queues", (accounts) => {
       const [mask, siblings] = await reputationTree.getProof(key);
 
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, proposalId, HEAD, key, value, mask, siblings, { from: USER0 }),
+        fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, key, value, mask, siblings, { from: USER0 }),
         "funding-queue-invalid-colony-address"
       );
     });
 
     it("cannot back a nonexistent basic proposal", async () => {
       await checkErrorRevert(
-        fundingQueue.backProposal(0, 0, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        fundingQueue.backProposal(0, WAD, 0, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "funding-queue-proposal-not-active"
-      );
-    });
-
-    it("cannot back a basic proposal twice", async () => {
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "funding-queue-already-supported"
       );
     });
 
     it("cannot put a basic proposal after itself", async () => {
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, proposalId, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        fundingQueue.backProposal(proposalId, WAD, proposalId, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "funding-queue-cannot-insert-after-self"
       );
     });
 
     it("cannot put a basic proposal after a nonexistent proposal", async () => {
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, proposalId, 10, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        fundingQueue.backProposal(proposalId, WAD, proposalId, 10, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "funding-queue-excess-support"
       );
     });
 
     it("cannot pass a false current location", async () => {
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, 10, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        fundingQueue.backProposal(proposalId, WAD, 10, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "funding-queue-bad-prev-id"
       );
     });
@@ -340,24 +349,26 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.stakeProposal(proposal3Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
       // Put proposal2 in position 1 (3 wad support) and proposal3 in position 2 (2 wad support)
-      await fundingQueue.backProposal(proposal2Id, proposal2Id, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposal2Id, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-      await fundingQueue.backProposal(proposal3Id, proposal3Id, proposal2Id, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposal2Id, WAD, proposal2Id, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposal2Id, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposal3Id, WAD.muln(2), proposal3Id, proposal2Id, user1Key, user1Value, user1Mask, user1Siblings, {
+        from: USER1,
+      });
 
       // Can't put proposal in position 1
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "funding-queue-insufficient-support"
       );
 
       // Can't put proposal in position 2
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, proposalId, proposal2Id, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        fundingQueue.backProposal(proposalId, WAD, proposalId, proposal2Id, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "funding-queue-insufficient-support"
       );
 
       // But can in position 3 (1 wad support)
-      await fundingQueue.backProposal(proposalId, proposalId, proposal3Id, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, proposal3Id, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       const nextProposalId = await fundingQueue.getNextProposalId(proposal3Id);
       expect(nextProposalId).to.eq.BN(proposalId);
@@ -373,24 +384,26 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.stakeProposal(proposal3Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
       // Put proposal2 in position 1 (3 wad support) and proposal3 in position 2 (1 wad support)
-      await fundingQueue.backProposal(proposal2Id, proposal2Id, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposal2Id, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-      await fundingQueue.backProposal(proposal3Id, proposal3Id, proposal2Id, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposal2Id, WAD, proposal2Id, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposal2Id, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposal3Id, WAD, proposal3Id, proposal2Id, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       // Can't put proposal in position 1
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
+        fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
         "funding-queue-insufficient-support"
       );
 
       // Can't put proposal in position 3
       await checkErrorRevert(
-        fundingQueue.backProposal(proposalId, proposalId, proposal3Id, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
+        fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, proposal3Id, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
         "funding-queue-excess-support"
       );
 
       // But can in position 2 (2 wad support) and bump proposal3 to position 3
-      await fundingQueue.backProposal(proposalId, proposalId, proposal2Id, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, proposal2Id, user1Key, user1Value, user1Mask, user1Siblings, {
+        from: USER1,
+      });
 
       const nextProposalId = await fundingQueue.getNextProposalId(proposal2Id);
       expect(nextProposalId).to.eq.BN(proposalId);
@@ -402,13 +415,36 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
       // Put proposal in position 1 (2 wad support) and proposal2 in position 2 (1 wad support)
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-      await fundingQueue.backProposal(proposal2Id, proposal2Id, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposal2Id, WAD, proposal2Id, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await fundingQueue.cancelProposal(proposalId, HEAD, { from: USER0 });
 
       const nextProposalId = await fundingQueue.getNextProposalId(HEAD);
       expect(nextProposalId).to.eq.BN(proposal2Id);
+    });
+
+    it("can correctly update the queue after removing support for a proposal", async () => {
+      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      const proposal2Id = await fundingQueue.getProposalCount();
+      await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+
+      // Put proposal in position 1 (2 wad support) and proposal2 in position 2 (1 wad support)
+      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposal2Id, WAD, proposal2Id, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      // Remove support for leading proposal, move to back of queue
+      await fundingQueue.backProposal(proposalId, 0, HEAD, proposal2Id, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      let nextProposalId;
+      nextProposalId = await fundingQueue.getNextProposalId(HEAD);
+      expect(nextProposalId).to.eq.BN(proposal2Id);
+
+      // Remove support for (other) leading proposal, move to back of queue
+      await fundingQueue.backProposal(proposal2Id, 0, HEAD, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      nextProposalId = await fundingQueue.getNextProposalId(HEAD);
+      expect(nextProposalId).to.eq.BN(proposalId);
     });
   });
 
@@ -424,160 +460,160 @@ contract("Funding Queues", (accounts) => {
 
     it("can transfer 1/2 of funds after one week, with full backing", async () => {
       // Back proposal with 100% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposalId, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance one week
       await forwardTime(SECONDS_PER_DAY * 7, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // So 1 - (1 - 1/2 * 1) = 1/2 (50.0%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("500000000000003380");
+      const expectedTransferred = new BN("499999999998489825");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
     it("can transfer 1/3 of funds after one week, with 2/3 reputation backing", async () => {
       // Back proposal with 66% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance one week
       await forwardTime(SECONDS_PER_DAY * 7, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // So 1 - (1 - 1/2 * 2/3) = 1/3 (33.3%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("333740887475370030");
+      const expectedTransferred = new BN("333743300899454444");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
     it("can transfer 1/6 of funds after one week, with 1/3 reputation backing", async () => {
       // Back proposal with 33% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance two weeks
       await forwardTime(SECONDS_PER_DAY * 7, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // So 1 - (1 - 1/2 * 1/3) = 1/6 (16.6%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("167002556696758284");
+      const expectedTransferred = new BN("167004575824999562");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
     it("can transfer 3/4 of funds after two weeks, with full backing", async () => {
       // Back proposal with 100% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposalId, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance two weeks
       await forwardTime(SECONDS_PER_DAY * 14, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // So 1 - (1 - 1/2 * 1) ** 2) = 3/4 (75.0%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("750000000000003380"); // close enough
+      const expectedTransferred = new BN("749999999998489825"); // close enough
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
     it("can transfer 5/9 of funds after two weeks, with 2/3 reputation backing", async () => {
       // Back proposal with 66% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance two weeks
       await forwardTime(SECONDS_PER_DAY * 14, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // So 1 - (1 - 1/2 * 2/3) ** 2) = 5/9 (55.5%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("556098794977892460");
+      const expectedTransferred = new BN("556102010903645098");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
     it("can transfer 11/36 of funds after two weeks, with 1/3 reputation backing", async () => {
       // Back proposal with 33% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance two weeks
       await forwardTime(SECONDS_PER_DAY * 14, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // So 1 - (1 - 1/2 * 1/3) ** 2) = 11/36 (30.5%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("306115259450262602");
+      const expectedTransferred = new BN("306118623303511095");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
     it("can transfer 3/4 of funds after two weeks, one week at a time, with full backing", async () => {
       // Back proposal with 100% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposalId, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance one week
       await forwardTime(SECONDS_PER_DAY * 7, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // Advance another week
       await forwardTime(SECONDS_PER_DAY * 7, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // So 1 - (1 - 1/2 * 1) ** 2) = 3/4 (75.0%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("750000000000003380"); // close enough
+      const expectedTransferred = new BN("749999999998489825"); // close enough
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
     it("can transfer 5/9 of funds after two weeks, one week at a time, with 2/3 reputation backing", async () => {
       // Back proposal with 66% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance one week
       await forwardTime(SECONDS_PER_DAY * 7, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // Advance another week
       await forwardTime(SECONDS_PER_DAY * 7, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // So 1 - (1 - 1/2 * 2/3) ** 2) = 5/9 (55.5%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("556098794977892460");
+      const expectedTransferred = new BN("556102010903645099");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
     it("can transfer 11/36 of funds after two weeks, one week at a time, with 1/3 reputation backing", async () => {
       // Back proposal with 33% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       const balanceBefore = await colony.getFundingPotBalance(1, token.address);
 
       // Advance one week
       await forwardTime(SECONDS_PER_DAY * 7, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // Advance another week
       await forwardTime(SECONDS_PER_DAY * 7, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      await fundingQueue.pingProposal(proposalId);
 
       // So 1 - (1 - 1/2 * 1/3) ** 2) = 11/36 (30.5%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("306115259450262603");
+      const expectedTransferred = new BN("306118623303511096");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
@@ -587,15 +623,16 @@ contract("Funding Queues", (accounts) => {
       await colony.claimColonyFunds(token.address);
 
       // Back proposal with 100% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposalId, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD.muln(2), HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       // Actually just the null proposal but let's ignore that for now
       const nextId = await fundingQueue.getNextProposalId(proposalId);
 
       // Advance a little more than one week
       await forwardTime(SECONDS_PER_DAY * 8, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      const tx = await fundingQueue.pingProposal(proposalId);
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
 
       const proposal = await fundingQueue.getProposal(proposalId);
       expect(proposal.state).to.eq.BN(STATE_COMPLETED);
@@ -604,8 +641,10 @@ contract("Funding Queues", (accounts) => {
       expect(headId).to.eq.BN(nextId);
 
       // Make sure the next proposal's timestamp is also updated
+      //   to the approximate completion time, at least 12 hours ago
       const nextProposal = await fundingQueue.getProposal(headId);
       expect(proposal.lastUpdated).to.eq.BN(nextProposal.lastUpdated);
+      expect(proposal.lastUpdated).to.be.lte.BN(blockTime - SECONDS_PER_DAY / 2);
 
       // Can't cancel once completed
       await checkErrorRevert(fundingQueue.cancelProposal(proposalId, proposalId, { from: USER0 }), "funding-queue-already-completed");
@@ -622,34 +661,48 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("cannot ping a proposal if it not at the head of the queue", async () => {
-      await checkErrorRevert(fundingQueue.pingProposal(proposalId, 1, 0, 0), "funding-queue-proposal-not-head");
+      await checkErrorRevert(fundingQueue.pingProposal(proposalId), "funding-queue-proposal-not-head");
     });
 
-    it("can transfer funds once per hour, regardless of pinging frequency", async () => {
-      // Back proposal with 100% of reputation
-      await fundingQueue.backProposal(proposalId, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await fundingQueue.backProposal(proposalId, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+    it("can ping a proposal before removing it from the head of the queue", async () => {
+      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      const proposal2Id = await fundingQueue.getProposalCount();
+      await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
+      // Put proposal in position 1 (2 wad support) and proposal2 in position 2 (1 wad support)
+      await fundingQueue.backProposal(proposalId, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await fundingQueue.backProposal(proposal2Id, WAD, proposal2Id, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      // Advance a week
+      await forwardTime(SECONDS_PER_DAY * 7, this);
+
+      // Put proposal2 in position 1 (3 wad support), which should also ping the first proposal
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
+      await fundingQueue.backProposal(proposal2Id, WAD.muln(2), proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      // So 1 - (1 - 1/2 * 2/3) = 1/3 (33.3%) of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(1, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("333743300899454444");
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("can transfer funds once per 10 seconds, regardless of pinging frequency", async () => {
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      const balanceBefore = await colony.getFundingPotBalance(1, token.address);
       let balanceAfter;
 
-      // Advance ten minutes
-      await forwardTime(10 * 60, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      // Advance five seconds
+      await forwardTime(5, this);
+      await fundingQueue.pingProposal(proposalId);
 
       balanceAfter = await colony.getFundingPotBalance(1, token.address);
       expect(balanceBefore.sub(balanceAfter)).to.be.zero;
 
-      // Advance twenty minutes (30 min total)
-      await forwardTime(20 * 60, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
-
-      balanceAfter = await colony.getFundingPotBalance(1, token.address);
-      expect(balanceBefore.sub(balanceAfter)).to.be.zero;
-
-      // Advance thirty minutes (60 min total)
-      await forwardTime(30 * 60, this);
-      await fundingQueue.pingProposal(proposalId, 1, 0, 0);
+      // Advance five seconds
+      await forwardTime(5, this);
+      await fundingQueue.pingProposal(proposalId);
 
       // Now a transfer occurs
       balanceAfter = await colony.getFundingPotBalance(1, token.address);

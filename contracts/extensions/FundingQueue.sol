@@ -31,10 +31,11 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
   // Events
   event ProposalCreated(uint256 id, uint256 indexed fromPot, uint256 indexed toPot, address indexed token, uint256 amount);
   event ProposalStaked(uint256 indexed id, uint256 domainTotalRep);
-  event ProposalBacked(uint256 indexed id, uint256 indexed newPrevId, uint256 userRep);
+  event ProposalBacked(uint256 indexed id, uint256 indexed newPrevId, address indexed user, uint256 backing, uint256 prevBacking);
   event ProposalPinged(uint256 indexed id, uint256 amount);
   event ProposalCompleted(uint256 indexed id);
   event ProposalCancelled(uint256 indexed id);
+  event ProposalStakeReclaimed(uint256 indexed id);
 
   // Constants
   uint256 constant HEAD = 0;
@@ -68,6 +69,8 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     uint256 domainTotalRep;
     uint256 fromPot;
     uint256 toPot;
+    uint256 fromChildSkillIndex;
+    uint256 toChildSkillIndex;
     uint256 totalRequested;
     uint256 totalPaid;
     uint256 lastUpdated;
@@ -78,6 +81,7 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
   uint256 proposalCount;
   mapping (uint256 => Proposal) proposals;
   mapping (uint256 => mapping (address => uint256)) supporters;
+  // Technically a circular singly-linked list
   mapping (uint256 => uint256) queue; // proposalId => nextProposalId
 
   // Public functions
@@ -113,7 +117,19 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
     proposalCount++;
     proposals[proposalCount] = Proposal(
-      ProposalState.Inactive, msg.sender, _token, _domainId, 0, _fromPot, _toPot, _totalRequested, 0, now, 0
+      ProposalState.Inactive,
+      msg.sender,
+      _token,
+      _domainId,
+      0,
+      _fromPot,
+      _toPot,
+      _fromChildSkillIndex,
+      _toChildSkillIndex,
+      _totalRequested,
+      0,
+      now,
+      0
     );
     queue[proposalCount] = proposalCount; // Initialize as a disconnected self-edge
 
@@ -164,6 +180,7 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
   function backProposal(
     uint256 _id,
+    uint256 _backing,
     uint256 _currPrevId,
     uint256 _newPrevId,
     bytes memory _key,
@@ -177,11 +194,18 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
     require(proposal.state == ProposalState.Active, "funding-queue-proposal-not-active");
     require(_id != _newPrevId, "funding-queue-cannot-insert-after-self"); // NOTE: this may be redundant
-    require(supporters[_id][msg.sender] == 0, "funding-queue-already-supported");
 
     uint256 userRep = checkReputation(_id, msg.sender, _key, _value, _branchMask, _siblings);
-    proposal.totalSupport = add(proposal.totalSupport, userRep);
-    supporters[_id][msg.sender] = userRep;
+    require(_backing <= userRep, "funding-queue-insufficient-reputation");
+
+    // Update the user's reputation backing
+    uint256 prevBacking = supporters[_id][msg.sender];
+    if (_backing >= prevBacking) {
+      proposal.totalSupport = add(proposal.totalSupport, sub(_backing, prevBacking));
+    } else {
+      proposal.totalSupport = sub(proposal.totalSupport, sub(prevBacking, _backing));
+    }
+    supporters[_id][msg.sender] = _backing;
 
     // Remove the proposal from its current position, if exists
     require(queue[_currPrevId] == _id, "funding-queue-bad-prev-id");
@@ -189,12 +213,16 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
     // Insert into the right location
     uint256 nextId = queue[_newPrevId];
-    // Does this proposal have less or equal support than the previous proposal?
+    if (queue[HEAD] == nextId && nextId != 0) {
+      pingProposal(nextId);
+    }
+    // Does this proposal have less than or equal support to the previous proposal?
     require(
       proposals[_newPrevId].totalSupport >= proposal.totalSupport,
       "funding-queue-excess-support"
     );
     // Does this proposal have more support than the next proposal?
+    //  (Special case for the tail of the list since "next" is HEAD)
     require(
       nextId == HEAD || proposals[nextId].totalSupport < proposal.totalSupport,
       "funding-queue-insufficient-support"
@@ -202,17 +230,10 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     queue[_newPrevId] = _id; // prev proposal => this proposal
     queue[_id] = nextId; // this proposal => next proposal
 
-    emit ProposalBacked(_id, _newPrevId, userRep);
+    emit ProposalBacked(_id, _newPrevId, msg.sender, _backing, prevBacking);
   }
 
-  function pingProposal(
-    uint256 _id,
-    uint256 _domainId,
-    uint256 _toChildSkillIndex,
-    uint256 _fromChildSkillIndex
-  )
-    public
-  {
+  function pingProposal(uint256 _id) public {
     Proposal storage proposal = proposals[_id];
 
     require(queue[HEAD] == _id, "funding-queue-proposal-not-head");
@@ -221,12 +242,18 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     uint256 remainingRequested = sub(proposal.totalRequested, proposal.totalPaid);
     uint256 actualFundingToTransfer = min(fundingToTransfer, remainingRequested);
 
-    if (actualFundingToTransfer == 0) {
-      return;
-    }
+    // Infer update time based on actualFundingToTransfer / fundingToTransfer
+    //  This is done so, if completed, the timestamp reflects the approximate completion
+    uint256 updateTime = add(
+      proposal.lastUpdated,
+      wmul(
+        sub(now, proposal.lastUpdated),
+        wdiv(actualFundingToTransfer, max(fundingToTransfer, 1)) // Avoid divide-by-zero
+      )
+    );
 
     proposal.totalPaid = add(proposal.totalPaid, actualFundingToTransfer);
-    proposal.lastUpdated = now;
+    proposal.lastUpdated = updateTime;
 
     assert(proposal.totalPaid <= proposal.totalRequested);
 
@@ -236,14 +263,14 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
       queue[HEAD] = queue[_id];
       delete queue[_id];
 
-      // May be the null proposal, but that's ok
-      proposals[queue[HEAD]].lastUpdated = now;
+      //  May be the null proposal, but that's ok
+      proposals[queue[HEAD]].lastUpdated = updateTime;
     }
 
     colony.moveFundsBetweenPots(
       proposal.domainId,
-      _toChildSkillIndex,
-      _fromChildSkillIndex,
+      proposal.toChildSkillIndex,
+      proposal.fromChildSkillIndex,
       proposal.fromPot,
       proposal.toPot,
       actualFundingToTransfer,
@@ -261,6 +288,8 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
     uint256 stake = wmul(proposal.domainTotalRep, STAKE_FRACTION);
     colony.deobligateStake(proposal.creator, proposal.domainId, stake);
+
+    emit ProposalStakeReclaimed(_id);
   }
 
   // Public view functions
@@ -290,28 +319,29 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     uint256 backingPercent = min(WAD, wdiv(proposal.totalSupport, proposal.domainTotalRep));
 
     uint256 decayRate = getDecayRate(backingPercent);
-    uint256 hoursElapsed = (now - proposal.lastUpdated) / 1 hours;
+    uint256 unitsElapsed = (now - proposal.lastUpdated) / 10; // 10 second intervals
 
-    uint256 newBalance = wmul(balance, wpow(decayRate, hoursElapsed));
+    uint256 newBalance = wmul(balance, wpow(decayRate, unitsElapsed));
     uint256 fundingToTransfer = sub(balance, newBalance);
 
     return fundingToTransfer;
   }
 
-  // Used for mapping backing percent to the appropriate decay rate
-  //   Result of evaluating ((1 - backingPercent / 2) ** (1/168))
+  // Used for mapping backing percent to the appropriate decay rate (10 second intervals)
+  // Result of evaluating ((1 - backingPercent / 2) ** (1 / (7 * 24 * 60 * 6)))
+  //  at the following points: [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]
   uint256[11] decayRates = [
     1000000000000000000,
-    999694729376064517,
-    999373050688367681,
-    999033093175601516,
-    998672646289764154,
-    998289072020469237,
-    997879186966234011,
-    997439100687360636,
-    996963989316835053,
-    996447770572019609,
-    995882623658297383
+    999999151896947103,
+    999998257929499257,
+    999997312851998332,
+    999996310463960536,
+    999995243363289488,
+    999994102614216063,
+    999992877291965621,
+    999991553844799874,
+    999990115177810890,
+    999988539298800050
   ];
 
   function getDecayRate(uint256 backingPercent) internal view returns (uint256) {
