@@ -5,7 +5,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
-import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../../helpers/test-helper";
+import { getTokenArgs, checkErrorRevert, makeReputationKey, advanceMiningCycleNoContest } from "../../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import { UINT256_MAX, DEFAULT_STAKE } from "../../helpers/constants";
 
@@ -106,28 +106,6 @@ contract("Token Locking", (addresses) => {
 
       const tokenLockingContractBalance = await otherToken.balanceOf(tokenLocking.address);
       expect(tokenLockingContractBalance).to.eq.BN(UINT256_MAX);
-    });
-
-    it("should correctly set deposit timestamp", async () => {
-      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
-      const quarter = Math.floor(usersTokens / 4);
-
-      let tx;
-      tx = await tokenLocking.deposit(token.address, quarter * 3, { from: userAddress });
-      const time1 = await getBlockTime(tx.receipt.blockNumber);
-      const info1 = await tokenLocking.getUserLock(token.address, userAddress);
-      expect(info1.balance).to.eq.BN(quarter * 3);
-      expect(info1.timestamp).to.eq.BN(time1);
-
-      await forwardTime(3600);
-
-      tx = await tokenLocking.deposit(token.address, quarter, { from: userAddress });
-      const time2 = await getBlockTime(tx.receipt.blockNumber);
-      const info2 = await tokenLocking.getUserLock(token.address, userAddress);
-
-      const weightedAvgTime = Math.floor((time1 * 3 + time2) / 4);
-      expect(info2.balance).to.eq.BN(quarter * 4);
-      expect(info2.timestamp).to.eq.BN(weightedAvgTime);
     });
 
     it("should not be able to deposit tokens if they are not approved", async () => {

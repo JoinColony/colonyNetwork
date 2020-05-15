@@ -98,7 +98,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     makeConditionalDeposit(_token, _amount, msg.sender);
 
     Lock storage lock = userLocks[_token][msg.sender];
-    emit UserTokenDeposited(_token, msg.sender, lock.balance, lock.timestamp);
+    emit UserTokenDeposited(_token, msg.sender, lock.balance);
   }
 
   function depositFor(address _token, uint256 _amount, address _recipient) public {
@@ -107,19 +107,17 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     makeConditionalDeposit(_token, _amount, _recipient);
 
     Lock storage lock = userLocks[_token][_recipient];
-    emit UserTokenDeposited(_token, _recipient, lock.balance, lock.timestamp);
+    emit UserTokenDeposited(_token, _recipient, lock.balance);
   }
 
   function claim(address _token, bool _force) public
   tokenNotLocked(_token, _force)
   {
     Lock storage lock = userLocks[_token][msg.sender];
-
-    lock.timestamp = getNewTimestamp(lock.balance, lock.pendingBalance, lock.timestamp, now);
     lock.balance = add(lock.balance, lock.pendingBalance);
     lock.pendingBalance = 0;
 
-    emit UserTokenClaimed(_token, msg.sender, lock.balance, lock.timestamp);
+    emit UserTokenClaimed(_token, msg.sender, lock.balance);
   }
 
   function transfer(address _token, uint256 _amount, address _recipient, bool _force) public
@@ -202,7 +200,6 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   function makeConditionalDeposit(address _token, uint256 _amount, address _user) internal {
     Lock storage userLock = userLocks[_token][_user];
     if (isTokenUnlocked(_token, _user)) {
-      userLock.timestamp = getNewTimestamp(userLock.balance, _amount, userLock.timestamp, now);
       userLock.balance = add(userLock.balance, _amount);
     } else {
       userLock.pendingBalance = add(userLock.pendingBalance, _amount);
@@ -211,20 +208,5 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
 
   function isTokenUnlocked(address _token, address _user) internal view returns (bool) {
     return userLocks[_token][_user].lockCount == totalLockCount[_token];
-  }
-
-  uint256 constant UINT192_MAX = 2**192 - 1; // Used for updating the deposit timestamp
-
-  function getNewTimestamp(uint256 _prevWeight, uint256 _currWeight, uint256 _prevTime, uint256 _currTime) internal pure returns (uint256) {
-    uint256 prevWeight = _prevWeight;
-    uint256 currWeight = _currWeight;
-
-    // Needed to prevent overflows in the timestamp calculation
-    while ((prevWeight >= UINT192_MAX) || (currWeight >= UINT192_MAX)) {
-      prevWeight /= 2;
-      currWeight /= 2;
-    }
-
-    return add(mul(prevWeight, _prevTime), mul(currWeight, _currTime)) / add(prevWeight, currWeight);
   }
 }

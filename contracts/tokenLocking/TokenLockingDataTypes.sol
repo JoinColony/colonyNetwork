@@ -23,8 +23,8 @@ contract TokenLockingDataTypes {
   event ColonyNetworkSet(address colonyNetwork);
   event TokenLocked(address token, uint256 lockCount);
   event UserTokenUnlocked(address token, address user, uint256 lockId);
-  event UserTokenDeposited(address token, address user, uint256 amount, uint256 timestamp);
-  event UserTokenClaimed(address token, address user, uint256 amount, uint256 timestamp);
+  event UserTokenDeposited(address token, address user, uint256 amount);
+  event UserTokenClaimed(address token, address user, uint256 amount);
   event UserTokenTransferred(address token, address user, address recipient, uint256 amount);
   event UserTokenWithdrawn(address token, address user, uint256 amount);
 
@@ -33,8 +33,8 @@ contract TokenLockingDataTypes {
     uint256 lockCount;
     // Deposited balance
     uint256 balance;
-    // Weighted average of deposit timestamps
-    uint256 timestamp;
+    // Weighted average of deposit timestamps (no longer used)
+    uint256 DEPRECATED_timestamp;
     // Pending balance, can claim once unlocked
     uint256 pendingBalance;
   }
