@@ -379,6 +379,23 @@ Get the number of domains in the colony.
 |---|---|---|
 |count|uint256|The domain count. Min 1 as the root domain is created at the same time as the colony
 
+### `getDomainFromFundingPot`
+
+Get the domain corresponding to a funding pot
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_fundingPotId|uint256|Id of the funding pot
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainId|uint256|Id of the corresponding domain
+
 ### `getExpenditure`
 
 Returns an existing expenditure.
