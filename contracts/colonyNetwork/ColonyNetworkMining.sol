@@ -153,7 +153,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     uint256[] memory minerWeights = new uint256[](stakers.length);
 
     for (i = 0; i < stakers.length; i++) {
-      timeStaked = miningStakeInfo[stakers[i]].timestamp;
+      timeStaked = miningStakes[stakers[i]].timestamp;
       minerWeights[i] = calculateMinerWeight(now - timeStaked, i);
       minerWeightsTotal = add(minerWeightsTotal, minerWeights[i]);
     }
@@ -205,8 +205,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     ITokenLocking(tokenLocking).approveStake(msg.sender, _amount, clnyToken);
     ITokenLocking(tokenLocking).obligateStake(msg.sender, _amount, clnyToken);
 
-    miningStakeInfo[msg.sender].timestamp = getNewTimestamp(existingObligation, _amount, miningStakeInfo[msg.sender].timestamp, now);
-    miningStakeInfo[msg.sender].amount = add(miningStakeInfo[msg.sender].amount, _amount);
+    miningStakes[msg.sender].timestamp = getNewTimestamp(existingObligation, _amount, miningStakes[msg.sender].timestamp, now);
+    miningStakes[msg.sender].amount = add(miningStakes[msg.sender].amount, _amount);
   }
 
   function unstakeForMining(uint256 _amount) public stoppable {
@@ -215,11 +215,11 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     bytes32 submissionHash = IReputationMiningCycle(activeReputationMiningCycle).getReputationHashSubmission(msg.sender).proposedNewRootHash;
     require(submissionHash == 0x0, "colony-network-hash-submitted");
     ITokenLocking(tokenLocking).deobligateStake(msg.sender, _amount, clnyToken);
-    miningStakeInfo[msg.sender].amount = sub(miningStakeInfo[msg.sender].amount, _amount);
+    miningStakes[msg.sender].amount = sub(miningStakes[msg.sender].amount, _amount);
   }
 
-  function getMiningStakeInfo(address _user) public stoppable returns (MiningStakeInfo memory) {
-    return miningStakeInfo[_user];
+  function getMiningStake(address _user) public stoppable returns (MiningStake memory) {
+    return miningStakes[_user];
   }
 
   uint256 constant UINT192_MAX = 2**192 - 1; // Used for updating the stake timestamp

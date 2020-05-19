@@ -421,10 +421,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
 
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
-    uint256 userDepositLockCount = tokenLocking.getUserLock(token, msg.sender).lockCount;
     uint256 userTokens = tokenLocking.getUserLock(token, msg.sender).balance;
 
-    require(userDepositLockCount < payoutId, "colony-reward-payout-lock-count-too-high");
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
     require(userReputation > 0, "colony-reward-payout-invalid-user-reputation");
 

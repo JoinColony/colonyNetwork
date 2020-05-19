@@ -137,7 +137,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
       await tokenLocking.deposit(clnyToken.address, quarter * 3, { from: MINER2 });
       tx = await colonyNetwork.stakeForMining(quarter * 3, { from: MINER2 });
       const time1 = await getBlockTime(tx.receipt.blockNumber);
-      const [stakedAmount, stakedTimestamp] = await colonyNetwork.getMiningStakeInfo(MINER2);
+      const [stakedAmount, stakedTimestamp] = await colonyNetwork.getMiningStake(MINER2);
       console.log(stakedAmount, stakedTimestamp);
       expect(stakedAmount).to.eq.BN(quarter * 3);
       expect(stakedTimestamp).to.eq.BN(time1);
@@ -148,7 +148,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
       tx = await colonyNetwork.stakeForMining(quarter, { from: MINER2 });
       const time2 = await getBlockTime(tx.receipt.blockNumber);
 
-      const [stakedAmount2, stakedTimestamp2] = await colonyNetwork.getMiningStakeInfo(MINER2);
+      const [stakedAmount2, stakedTimestamp2] = await colonyNetwork.getMiningStake(MINER2);
 
       const weightedAvgTime = Math.floor((time1 * 3 + time2) / 4);
       expect(stakedAmount2).to.eq.BN(quarter * 4);

@@ -295,6 +295,6 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _amount Amount of CLNY staked for mining to unstake
   function unstakeForMining(uint256 _amount) public;
 
-  function getMiningStakeInfo(address _user) public view returns (MiningStakeInfo memory _info);
+  function getMiningStake(address _user) public view returns (MiningStake memory _info);
 
 }

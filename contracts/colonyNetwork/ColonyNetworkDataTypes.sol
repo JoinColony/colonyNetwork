@@ -125,7 +125,7 @@ contract ColonyNetworkDataTypes {
     uint128 nPreviousUpdates;
   }
 
-  struct MiningStakeInfo {
+  struct MiningStake {
     uint256 amount;
     uint256 timestamp;
   }

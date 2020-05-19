@@ -58,7 +58,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     require(entryIndex <= lockBalance / MIN_STAKE, "colony-reputation-mining-stake-minimum-not-met-for-index");
     require(entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
 
-    uint256 stakeTimestamp = IColonyNetwork(colonyNetworkAddress).getMiningStakeInfo(msg.sender).timestamp;
+    uint256 stakeTimestamp = IColonyNetwork(colonyNetworkAddress).getMiningStake(msg.sender).timestamp;
     require(reputationMiningWindowOpenTimestamp >= stakeTimestamp, "colony-reputation-mining-stake-too-recent");
 
     // If this user has submitted before during this round...

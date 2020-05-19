@@ -514,7 +514,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
-        "colony-reward-payout-lock-count-too-high"
+        "colony-token-already-unlocked"
       );
     });
 
@@ -610,7 +610,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
-        "colony-reward-payout-lock-count-too-high"
+        "colony-token-already-unlocked"
       );
     });
 
@@ -626,7 +626,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
-        "colony-reward-payout-lock-count-too-high"
+        "colony-token-already-unlocked"
       );
     });
 

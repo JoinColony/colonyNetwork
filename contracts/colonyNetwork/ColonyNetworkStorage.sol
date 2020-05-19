@@ -85,7 +85,7 @@ contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   mapping (bytes32 => ENSRecord) records; // Storage slot 30
   mapping (address => mapping(uint256 => ReputationLogEntry)) replacementReputationUpdateLog; // Storage slot 31
   mapping (address => bool) replacementReputationUpdateLogsExist; // Storage slot 32
-  mapping (address => MiningStakeInfo) miningStakeInfo; // Storage slot 33
+  mapping (address => MiningStake) miningStakes; // Storage slot 33
 
   modifier calledByColony() {
     require(_isColony[msg.sender], "colony-caller-must-be-colony");
