@@ -268,6 +268,7 @@ contract("All", function (accounts) {
 
       // withdraw
       const clnyToken = await metaColony.getToken();
+      await colonyNetwork.unstakeForMining(DEFAULT_STAKE.divn(4), { from: STAKER1 });
       await tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken, DEFAULT_STAKE.divn(4), false, { from: STAKER1 });
     });
 

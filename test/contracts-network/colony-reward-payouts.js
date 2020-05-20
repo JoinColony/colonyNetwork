@@ -626,7 +626,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
-        "colony-reward-payout-deposit-too-recent"
+        "colony-token-already-unlocked"
       );
     });
 

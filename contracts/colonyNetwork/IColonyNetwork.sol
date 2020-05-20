@@ -279,4 +279,22 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as `_feeInverse`.
   /// @param _feeInverse The inverse of the network fee to set
   function setFeeInverse(uint256 _feeInverse) public;
+
+  /// @notice Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
+  /// @dev While public, it can only be called successfully by the current ReputationMiningCycle.
+  /// @param _stakers Array of the addresses of stakers to punish
+  /// @param _beneficiary Address of beneficiary to receive forfeited stake
+  /// @param _amount Amount of stake to slash
+  function punishStakers(address[] memory _stakers, address _beneficiary, uint256 _amount) public;
+
+  /// @notice Stake CLNY to allow the staker to participate in reputation mining.
+  /// @param _amount Amount of CLNY to stake for the purposes of mining
+  function stakeForMining(uint256 _amount) public;
+
+  /// @notice Unstake CLNY currently staked for reputation mining.
+  /// @param _amount Amount of CLNY staked for mining to unstake
+  function unstakeForMining(uint256 _amount) public;
+
+  function getMiningStake(address _user) public view returns (MiningStake memory _info);
+
 }

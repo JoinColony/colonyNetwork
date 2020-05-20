@@ -654,9 +654,9 @@ class ReputationMiner {
 
   async getEntryIndex(startIndex = 1) {
     // Get how much we've staked, and thefore how many entries we have
-    const [, balance] = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
+    const [stakeAmount] = await this.colonyNetwork.getMiningStake(this.minerAddress);
 
-    for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
+    for (let i = ethers.utils.bigNumberify(startIndex); i.lte(stakeAmount.div(minStake)); i = i.add(1)) {
       const submissionPossible = await this.submissionPossible(i);
       if (submissionPossible) {
         return i;
@@ -689,12 +689,13 @@ class ReputationMiner {
     }
 
     // Check the proposed entry is eligible (emulates entryQualifies modifier behaviour)
-    const lock = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
-    if (ethers.utils.bigNumberify(entryIndex).gt(lock.balance.div(minStake))) {
+    const [stakeAmount, stakeTimestamp] = await this.colonyNetwork.getMiningStake(this.minerAddress);
+
+    if (ethers.utils.bigNumberify(entryIndex).gt(stakeAmount.div(minStake))) {
       return false;
     }
 
-    if(reputationMiningWindowOpenTimestamp.lt(lock.timestamp)) {
+    if(reputationMiningWindowOpenTimestamp.lt(stakeTimestamp)) {
       return false;
     }
 
