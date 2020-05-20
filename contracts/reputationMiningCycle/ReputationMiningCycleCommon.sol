@@ -20,7 +20,6 @@ pragma experimental "ABIEncoderV2";
 
 import "./../../lib/dappsys/math.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
-import "./../tokenLocking/ITokenLocking.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 import "./ReputationMiningCycleStorage.sol";
 
@@ -32,7 +31,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   function rewardResponder(address _responder) internal returns (bytes32) {
     respondedToChallenge[_responder] = true;
     uint256 reward = disputeRewardSize();
-    ITokenLocking(tokenLockingAddress).reward(_responder, reward);
+    IColonyNetwork(colonyNetworkAddress).reward(_responder, reward);
     rewardsPaidOut += reward;
   }
 

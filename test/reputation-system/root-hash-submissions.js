@@ -554,8 +554,13 @@ contract("Reputation mining - root hash submissions", (accounts) => {
   });
 
   describe("when rewarding and punishing good and bad submissions", () => {
-    it("should punish stakes who submit a bad hash and reward those who defend a hash", async () => {
+    it("should punish stakers who submit a bad hash and reward those who defend a hash", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      // Clean out any pending rewards from previous tests. We are interested in exact balances.
+      await colonyNetwork.claimMiningReward(MINER1);
+      await colonyNetwork.claimMiningReward(MINER2);
+      await colonyNetwork.claimMiningReward(MINER3);
 
       const userLockMiner1Before = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       const userLockMiner2Before = await tokenLocking.getUserLock(clnyToken.address, MINER2);
@@ -598,6 +603,14 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       // Bad submitters will lose MIN_STAKE but gain rewardIncrement * number of times they defended their submission
       const miner2Loss = MIN_STAKE.sub(rewardIncrement.muln(miner2SuccessfulDefences));
       const miner3Loss = MIN_STAKE;
+
+      // Claim the rewards for everyone. For them to be available to claim, we have to finish the mining cycle.
+      await repCycle.confirmNewHash(1);
+
+      // Now actually claim them
+      await colonyNetwork.claimMiningReward(MINER1);
+      await colonyNetwork.claimMiningReward(MINER2);
+      await colonyNetwork.claimMiningReward(MINER3);
 
       const userLockMiner1 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       expect(userLockMiner1.balance, "Account was not rewarded properly").to.eq.BN(new BN(userLockMiner1Before.balance).add(miner1Gain));

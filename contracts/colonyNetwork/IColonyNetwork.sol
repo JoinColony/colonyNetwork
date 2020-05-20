@@ -283,9 +283,8 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
   /// @dev While public, it can only be called successfully by the current ReputationMiningCycle.
   /// @param _stakers Array of the addresses of stakers to punish
-  /// @param _beneficiary Address of beneficiary to receive forfeited stake
   /// @param _amount Amount of stake to slash
-  function punishStakers(address[] memory _stakers, address _beneficiary, uint256 _amount) public;
+  function punishStakers(address[] memory _stakers, uint256 _amount) public;
 
   /// @notice Stake CLNY to allow the staker to participate in reputation mining.
   /// @param _amount Amount of CLNY to stake for the purposes of mining
@@ -295,5 +294,24 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _amount Amount of CLNY staked for mining to unstake
   function unstakeForMining(uint256 _amount) public;
 
+  /// @notice returns how much CLNY _user has staked for the purposes of reputation mining
+  /// @param _user The user to query
+  /// @return _info The amount staked and the timestamp the stake was made at.
   function getMiningStake(address _user) public view returns (MiningStake memory _info);
+
+  /// @notice Used to track that a user is eligible to claim a reward
+  /// @dev Only callable by the active reputation mining cycle
+  /// @param _recipient The address receiving the award
+  /// @param _amount The amount of CLNY to be awarded
+  function reward(address _recipient, uint256 _amount) public;
+
+  /// @notice Used to burn tokens that are not needed to pay out rewards (because not every possible defence was made for all submissions)
+  /// @dev Only callable by the active reputation mining cycle
+  /// @param _amount The amount of CLNY to burn
+  function burnUnneededRewards(uint256 _amount) public;
+
+  /// @notice Used by a user to claim any mining rewards due to them. This will place them in their balance or pending balance, as appropriate.
+  /// @dev Can be called by anyone, not just _recipient
+  /// @param _recipient The user whose rewards to claim
+  function claimMiningReward(address _recipient) public;
 }

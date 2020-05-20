@@ -186,6 +186,17 @@ contract("Token Locking", (addresses) => {
       expect(userBalance).to.eq.BN(usersTokens);
     });
 
+    it("should correctly withdraw tokens via the deprecated interface", async () => {
+      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
+      await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
+      await tokenLocking.methods["withdraw(address,uint256)"](token.address, usersTokens, { from: userAddress });
+
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      expect(info.balance).to.be.zero;
+      const userBalance = await token.balanceOf(userAddress);
+      expect(userBalance).to.eq.BN(usersTokens);
+    });
+
     it("should not be able to withdraw tokens while they are locked", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });

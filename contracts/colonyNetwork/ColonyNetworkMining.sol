@@ -196,6 +196,18 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     }
   }
 
+  function reward(address _recipient, uint256 _amount) public stoppable onlyReputationMiningCycle {
+    // TODO: Gain rep?
+    pendingMiningRewards[_recipient] = add(pendingMiningRewards[_recipient], _amount);
+  }
+
+  function claimMiningReward(address _recipient) public stoppable {
+    address clnyToken = IMetaColony(metaColony).getToken();
+    uint256 amount = pendingMiningRewards[_recipient];
+    pendingMiningRewards[_recipient] = 0;
+    ITokenLocking(tokenLocking).transfer(clnyToken, amount, _recipient, true);
+  }
+
   function stakeForMining(uint256 _amount) public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
     uint256 existingObligation = ITokenLocking(tokenLocking).getObligation(msg.sender, clnyToken, address(this));
@@ -210,13 +222,18 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   function unstakeForMining(uint256 _amount) public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
     // Prevent those involved in a mining cycle withdrawing stake during the mining process.
-    require(!IReputationMiningCycle(activeReputationMiningCycle).userInvolvedInMiningCycle(msg.sender), "colony-token-locking-hash-submitted");
+    require(!IReputationMiningCycle(activeReputationMiningCycle).userInvolvedInMiningCycle(msg.sender), "colony-network-hash-submitted");
     ITokenLocking(tokenLocking).deobligateStake(msg.sender, _amount, clnyToken);
     miningStakes[msg.sender].amount = sub(miningStakes[msg.sender].amount, _amount);
   }
 
   function getMiningStake(address _user) public stoppable returns (MiningStake memory) {
     return miningStakes[_user];
+  }
+
+  function burnUnneededRewards(uint256 _amount) public stoppable {
+    ITokenLocking(tokenLocking).claim(address(this), true);
+    ITokenLocking(tokenLocking).burn(_amount);
   }
 
   uint256 constant UINT192_MAX = 2**192 - 1; // Used for updating the stake timestamp

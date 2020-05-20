@@ -214,8 +214,8 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     // take it in to account when calculating the reward for responders, which in turn means that the
     // calculation can be done from a purely pairwise dispute perspective.
     require(submissionWindowClosed(), "colony-reputation-mining-submission-window-still-open");
-    // Burn tokens that have been slashed, but not awarded to others as rewards.
-    ITokenLocking(tokenLockingAddress).burn(sub(stakeLost, rewardsPaidOut));
+    // Burn tokens that have been slashed, but will not be awarded to others as rewards.
+    IColonyNetwork(colonyNetworkAddress).burnUnneededRewards(sub(stakeLost, rewardsPaidOut));
 
     DisputedEntry storage winningDisputeEntry = disputeRounds[roundNumber][0];
     Submission storage submission = reputationHashSubmissions[winningDisputeEntry.firstSubmitter];

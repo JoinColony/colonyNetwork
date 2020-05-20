@@ -66,14 +66,19 @@ contract("Colony Staking", (accounts) => {
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
 
       approval = await colony.getApproval(USER1, USER0, 1);
+      const tokenLockingApproval = await tokenLocking.getApproval(USER1, token.address, colony.address);
       expect(approval).to.eq.BN(WAD);
+      expect(tokenLockingApproval).to.eq.BN(WAD);
 
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
 
       approval = await colony.getApproval(USER1, USER0, 1);
       obligation = await colony.getObligation(USER1, USER0, 1);
+      const tokenLockingObligation = await tokenLocking.getObligation(USER1, token.address, colony.address);
+
       expect(approval).to.be.zero;
       expect(obligation).to.eq.BN(WAD);
+      expect(tokenLockingObligation).to.eq.BN(WAD);
 
       await colony.deobligateStake(USER1, 1, WAD, { from: USER0 });
 

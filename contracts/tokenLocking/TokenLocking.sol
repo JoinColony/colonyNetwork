@@ -175,13 +175,12 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     makeConditionalDeposit(_token, _amount, _recipient);
   }
 
-  function reward(address _recipient, uint256 _amount) public onlyReputationMiningCycle {
-    address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
-    // TODO: Gain rep?
-    userLocks[clnyToken][_recipient].balance = add(userLocks[clnyToken][_recipient].balance, _amount);
+  function reward(address _recipient, uint256 _amount) public pure {
+
   }
 
-  function burn(uint256 _amount) public onlyReputationMiningCycle {
+  function burn(uint256 _amount) public {
+    require(msg.sender==colonyNetwork, "colony-token-locking-not-colony-network");
     address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     ERC20Extended(clnyToken).burn(_amount);
   }
