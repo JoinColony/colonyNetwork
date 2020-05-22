@@ -75,7 +75,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 skillId;
     uint256 skillRep;
     uint256 unpaidRewards;
-    address[2] leads; // [nay, yay]
     uint256[2] stakes; // [nay, yay]
     uint256[2] votes; // [nay, yay]
     bytes action;
@@ -157,11 +156,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     colony.obligateStake(msg.sender, _domainId, _amount);
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, _domainId, _amount, address(this));
 
-    // Set lead if first staker
-    if (poll.stakes[toInt(_vote)] == 0) {
-      poll.leads[toInt(_vote)] = msg.sender;
-    }
-
     // Update the stake
     poll.unpaidRewards = add(poll.unpaidRewards, _amount);
     poll.stakes[toInt(_vote)] = add(poll.stakes[toInt(_vote)], _amount);
@@ -238,7 +232,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     Poll storage poll = polls[_pollId];
     require(getPollState(_pollId) == PollState.Closed, "voting-rep-poll-not-closed");
-    require(msg.sender == poll.leads[NAY] || msg.sender == poll.leads[YAY], "voting-rep-user-not-lead");
 
     uint256 newDomainSkillId = colony.getDomain(_newDomainId).skillId;
     uint256 childSkillId = colonyNetwork.getChildSkillId(newDomainSkillId, _childSkillIndex);
@@ -290,25 +283,43 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     emit PollExecuted(_pollId, poll.action, canExecute);
   }
 
-  function claimReward(uint256 _pollId, bool _vote) public {
+  function claimReward(
+    uint256 _pollId,
+    uint256 _permissionDomainId, // For extension's arbitration permission
+    uint256 _childSkillIndex, // For extension's arbitration permission
+    uint256 _domainId,
+    address _user,
+    bool _vote
+  )
+    public
+  {
     Poll storage poll = polls[_pollId];
     require(getPollState(_pollId) == PollState.Executed, "voting-rep-not-executed");
 
+    // TODO: can we keep the domainId on the poll somewhere? This seems like a wasteful external call.
+    //   But if it's 10 external calls per word of storage, then < 10 stakers makes this cheaper.
+    require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-stake-domain");
+
     // Calculate how much of the stake is left after voter compensation (>= 90%)
-    uint256 stake = stakers[_pollId][msg.sender][_vote];
+    uint256 stake = stakers[_pollId][_user][_vote];
     uint256 totalStake = add(poll.stakes[NAY], poll.stakes[YAY]);
     uint256 rewardFraction = wdiv(poll.unpaidRewards, totalStake);
     uint256 rewardStake = wmul(stake, rewardFraction);
 
     uint256 stakerReward;
+    uint256 repPenalty;
 
     // Went to a vote, use vote to determine reward or penalty
-    if (poll.stakes[NAY] == getRequiredStake(_pollId) && poll.stakes[YAY] == getRequiredStake(_pollId)) {
+    if (
+      poll.stakes[NAY] == getRequiredStake(_pollId) &&
+      poll.stakes[YAY] == getRequiredStake(_pollId)
+    ) {
       uint256 stakerVotes = poll.votes[toInt(_vote)];
       uint256 totalVotes = add(poll.votes[NAY], poll.votes[YAY]);
       uint256 winPercent = wdiv(stakerVotes, totalVotes);
       uint256 winShare = wmul(winPercent, 2 * WAD);
       stakerReward = wmul(rewardStake, winShare);
+      repPenalty = (winShare < WAD) ? sub(stake, wmul(winShare, stake)) : 0;
 
     // Your side fully staked, receive 10% (proportional) of loser's stake
     } else if (poll.stakes[toInt(_vote)] == getRequiredStake(_pollId)) {
@@ -319,16 +330,27 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     // Opponent's side fully staked, pay 10% penalty
     } else if (poll.stakes[toInt(!_vote)] == getRequiredStake(_pollId)) {
       stakerReward = wmul(rewardStake, (WAD / 10) * 9);
+      repPenalty = stake / 10;
 
     // Neither side fully staked, no reward or penalty
     } else {
       stakerReward = rewardStake;
     }
 
-    delete stakers[_pollId][msg.sender][_vote];
-    tokenLocking.transfer(token, stakerReward, msg.sender, true);
+    delete stakers[_pollId][_user][_vote];
+    tokenLocking.transfer(token, stakerReward, _user, true);
 
-    emit PollRewardClaimed(_pollId, msg.sender, _vote, stakerReward);
+    if (repPenalty > 0) {
+      colony.emitDomainReputationPenalty(
+        _permissionDomainId,
+        _childSkillIndex,
+        _domainId,
+        _user,
+        -int256(repPenalty)
+      );
+    }
+
+    emit PollRewardClaimed(_pollId, _user, _vote, stakerReward);
   }
 
   // Public view functions
