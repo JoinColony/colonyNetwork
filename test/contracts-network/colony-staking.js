@@ -3,7 +3,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
-import { WAD, INITIAL_FUNDING } from "../../helpers/constants";
+import { UINT256_MAX, WAD, INITIAL_FUNDING } from "../../helpers/constants";
 import { fundColonyWithTokens, setupRandomColony, setupColony } from "../../helpers/test-data-generator";
 import { checkErrorRevert } from "../../helpers/test-helper";
 
@@ -33,15 +33,15 @@ contract("Colony Staking", (accounts) => {
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
-    await colony.addDomain(1, 0, 1);
-    await colony.setArbitrationRole(1, 0, USER2, 1, true);
+    await colony.addDomain(1, UINT256_MAX, 1);
+    await colony.setArbitrationRole(1, UINT256_MAX, USER2, 1, true);
 
-    await colony.makeExpenditure(1, 0, 1);
+    await colony.makeExpenditure(1, UINT256_MAX, 1);
     await colony.setExpenditureRecipient(1, 0, USER0);
     await colony.setExpenditureRecipient(1, 1, USER1);
 
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-    await colony.moveFundsBetweenPots(1, 0, 0, 1, 3, WAD.muln(200), token.address);
+    await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 3, WAD.muln(200), token.address);
     await colony.setExpenditurePayout(1, 0, token.address, WAD.muln(100));
     await colony.setExpenditurePayout(1, 1, token.address, WAD.muln(100));
 
@@ -102,7 +102,7 @@ contract("Colony Staking", (accounts) => {
       expect(approval).to.be.zero;
       expect(obligation).to.eq.BN(WAD);
 
-      await colony.transferStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
+      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
 
       obligation = await colony.getObligation(USER1, USER0, 1);
       expect(obligation).to.be.zero;
@@ -146,7 +146,7 @@ contract("Colony Staking", (accounts) => {
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
 
       await checkErrorRevert(
-        colony.transferStake(1, 0, USER0, USER1, 1, WAD.addn(1), ethers.constants.AddressZero, { from: USER2 }),
+        colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD.addn(1), ethers.constants.AddressZero, { from: USER2 }),
         "ds-math-sub-underflow"
       );
     });
@@ -194,8 +194,8 @@ contract("Colony Staking", (accounts) => {
     it("should correctly accumulate multiple slashes", async () => {
       await colony.approveStake(USER0, 1, WAD.muln(2), { from: USER1 });
       await colony.obligateStake(USER1, 1, WAD.muln(2), { from: USER0 });
-      await colony.transferStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
-      await colony.transferStake(1, 0, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
+      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
+      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
 
       const deposit = await tokenLocking.getUserLock(token.address, USER1);
       expect(deposit.balance).to.eq.BN(WAD.muln(48));
@@ -217,7 +217,7 @@ contract("Colony Staking", (accounts) => {
     it("should allow for a slashed stake to be sent to a beneficiary", async () => {
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
-      await colony.transferStake(1, 0, USER0, USER1, 1, WAD, USER2, { from: USER2 });
+      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, USER2, { from: USER2 });
 
       const deposit = await tokenLocking.getUserLock(token.address, USER2);
       expect(deposit.balance).to.eq.BN(WAD);

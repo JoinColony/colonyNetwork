@@ -27,6 +27,8 @@ import "./../colonyNetwork/IColonyNetwork.sol";
 
 
 contract OneTxPayment {
+
+  uint256 constant UINT256_MAX = 2**256 - 1;
   bytes4 constant ADD_PAYMENT_SIG = bytes4(keccak256("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"));
   bytes4 constant MOVE_FUNDS_SIG = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"));
 
@@ -113,7 +115,7 @@ contract OneTxPayment {
       // Fund the payment
       colony.moveFundsBetweenPots(
         1, // Root domain always 1
-        0, // Not used, this extension must have funding permission in the root for this function to work
+        UINT256_MAX, // Not used, this extension must have funding permission in the root for this function to work
         _childSkillIndex,
         1, // Root domain funding pot is always 1
         paymentData[2],

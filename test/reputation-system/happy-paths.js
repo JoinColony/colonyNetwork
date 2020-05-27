@@ -29,7 +29,7 @@ import {
 } from "../../helpers/test-data-generator";
 
 import {
-  X,
+  UINT256_MAX,
   DEFAULT_STAKE,
   INITIAL_FUNDING,
   MINING_CYCLE_DURATION,
@@ -70,7 +70,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
   // Initialise global skills tree: 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
   // We're not resetting the global skills tree as the Network is not reset
-  await metaColony.addDomain(1, X, 1);
+  await metaColony.addDomain(1, UINT256_MAX, 1);
   await metaColony.addDomain(1, 1, 2);
   await metaColony.addDomain(1, 2, 3);
   await metaColony.addDomain(1, 3, 4);

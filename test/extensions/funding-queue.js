@@ -4,7 +4,7 @@ import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE, SECONDS_PER_DAY } from "../../helpers/constants";
+import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE, SECONDS_PER_DAY } from "../../helpers/constants";
 import { checkErrorRevert, makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime, getBlockTime } from "../../helpers/test-helper";
 
 import {
@@ -79,14 +79,14 @@ contract("Funding Queues", (accounts) => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
 
     // 1 => { 2, 3 }
-    await colony.addDomain(1, 0, 1);
-    await colony.addDomain(1, 0, 1);
+    await colony.addDomain(1, UINT256_MAX, 1);
+    await colony.addDomain(1, UINT256_MAX, 1);
     domain1 = await colony.getDomain(1);
 
     await fundingQueueFactory.deployExtension(colony.address);
     const fundingQueueAddress = await fundingQueueFactory.deployedExtensions(colony.address);
     fundingQueue = await FundingQueue.at(fundingQueueAddress);
-    await colony.setFundingRole(1, 0, fundingQueue.address, 1, true);
+    await colony.setFundingRole(1, UINT256_MAX, fundingQueue.address, 1, true);
 
     await token.mint(colony.address, WAD);
     await colony.claimColonyFunds(token.address);
@@ -149,7 +149,7 @@ contract("Funding Queues", (accounts) => {
 
   describe("creating funding proposals", async () => {
     it("can create a basic proposal", async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposalId = await fundingQueue.getProposalCount();
 
       const proposal = await fundingQueue.getProposal(proposalId);
@@ -158,12 +158,12 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("cannot create a basic proposal with bad inheritence", async () => {
-      await checkErrorRevert(fundingQueue.createProposal(1, 0, 0, 3, 1, WAD, token.address, { from: USER0 }), "funding-queue-bad-inheritence-from");
-      await checkErrorRevert(fundingQueue.createProposal(1, 0, 0, 1, 3, WAD, token.address, { from: USER0 }), "funding-queue-bad-inheritence-to");
+      await checkErrorRevert(fundingQueue.createProposal(1, 0, 1, 1, 3, WAD, token.address, { from: USER0 }), "funding-queue-bad-inheritence-from");
+      await checkErrorRevert(fundingQueue.createProposal(1, 1, 0, 3, 1, WAD, token.address, { from: USER0 }), "funding-queue-bad-inheritence-to");
     });
 
     it("can stake a proposal", async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposalId = await fundingQueue.getProposalCount();
 
       await checkErrorRevert(
@@ -185,7 +185,7 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("can cancel a proposal, if creator", async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposalId = await fundingQueue.getProposalCount();
 
       await checkErrorRevert(fundingQueue.cancelProposal(proposalId, proposalId, { from: USER1 }), "funding-queue-not-creator");
@@ -204,7 +204,7 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("can cancel a proposal and reclaim stake after ten days", async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposalId = await fundingQueue.getProposalCount();
 
       await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
@@ -228,7 +228,7 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("cannot reclaim a stake for an active proposal", async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposalId = await fundingQueue.getProposalCount();
 
       await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
@@ -241,7 +241,7 @@ contract("Funding Queues", (accounts) => {
     let proposalId;
 
     beforeEach(async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       proposalId = await fundingQueue.getProposalCount();
 
       await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
@@ -340,11 +340,11 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("cannot put a basic proposal before a more popular proposal", async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposal2Id = await fundingQueue.getProposalCount();
       await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposal3Id = await fundingQueue.getProposalCount();
       await fundingQueue.stakeProposal(proposal3Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
@@ -375,11 +375,11 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("cannot put a basic proposal after a less popular proposal", async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposal2Id = await fundingQueue.getProposalCount();
       await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposal3Id = await fundingQueue.getProposalCount();
       await fundingQueue.stakeProposal(proposal3Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
@@ -410,7 +410,7 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("can correctly update the queue after a proposal is cancelled", async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposal2Id = await fundingQueue.getProposalCount();
       await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
@@ -425,7 +425,7 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("can correctly update the queue after removing support for a proposal", async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposal2Id = await fundingQueue.getProposalCount();
       await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
@@ -452,7 +452,7 @@ contract("Funding Queues", (accounts) => {
     let proposalId;
 
     beforeEach(async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       proposalId = await fundingQueue.getProposalCount();
 
       await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
@@ -665,7 +665,7 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("can ping a proposal before removing it from the head of the queue", async () => {
-      await fundingQueue.createProposal(1, 0, 0, 1, 2, WAD, token.address, { from: USER0 });
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       const proposal2Id = await fundingQueue.getProposalCount();
       await fundingQueue.stakeProposal(proposal2Id, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 

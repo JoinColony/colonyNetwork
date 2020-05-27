@@ -105,12 +105,12 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
     uint256 toSkillId = colony.getDomain(toDomain).skillId;
 
     require(
-      domainSkillId == fromSkillId ||
+      (domainSkillId == fromSkillId && _fromChildSkillIndex == UINT256_MAX) ||
       fromSkillId == colonyNetwork.getChildSkillId(domainSkillId, _fromChildSkillIndex),
       "funding-queue-bad-inheritence-from"
     );
     require(
-      domainSkillId == toSkillId ||
+      (domainSkillId == toSkillId && _toChildSkillIndex == UINT256_MAX) ||
       toSkillId == colonyNetwork.getChildSkillId(domainSkillId, _toChildSkillIndex),
       "funding-queue-bad-inheritence-to"
     );
@@ -269,8 +269,8 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
 
     colony.moveFundsBetweenPots(
       proposal.domainId,
-      proposal.toChildSkillIndex,
       proposal.fromChildSkillIndex,
+      proposal.toChildSkillIndex,
       proposal.fromPot,
       proposal.toPot,
       actualFundingToTransfer,

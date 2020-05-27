@@ -2,7 +2,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
-import { X, SPECIFICATION_HASH } from "../../helpers/constants";
+import { UINT256_MAX, SPECIFICATION_HASH } from "../../helpers/constants";
 import { web3GetStorageAt, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 
@@ -99,8 +99,8 @@ contract("Colony Recovery", (accounts) => {
 
     it("should not be able to add and remove roles when in recovery", async () => {
       await colony.enterRecoveryMode();
-      await checkErrorRevert(colony.setAdministrationRole(1, X, accounts[1], 1, true), "colony-in-recovery-mode");
-      await checkErrorRevert(colony.setAdministrationRole(1, X, accounts[1], 1, false), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setAdministrationRole(1, UINT256_MAX, accounts[1], 1, true), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setAdministrationRole(1, UINT256_MAX, accounts[1], 1, false), "colony-in-recovery-mode");
       await checkErrorRevert(colony.setRecoveryRole(accounts[1]), "colony-in-recovery-mode");
       await checkErrorRevert(colony.removeRecoveryRole(accounts[1]), "colony-in-recovery-mode");
       await checkErrorRevert(colony.setRootRole(accounts[1], true), "colony-in-recovery-mode");

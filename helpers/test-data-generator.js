@@ -4,7 +4,7 @@ import BN from "bn.js";
 import { ethers } from "ethers";
 
 import {
-  X,
+  UINT256_MAX,
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
@@ -153,8 +153,8 @@ export async function setupFundedTask({
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
 
   const childSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, task.domainId);
-  await colony.setFundingRole(1, X, manager, 1, true);
-  await colony.moveFundsBetweenPots(1, X, childSkillIndex, 1, task.fundingPotId, totalPayouts, tokenAddress, { from: manager });
+  await colony.setFundingRole(1, UINT256_MAX, manager, 1, true);
+  await colony.moveFundsBetweenPots(1, UINT256_MAX, childSkillIndex, 1, task.fundingPotId, totalPayouts, tokenAddress, { from: manager });
   await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout, { from: manager });
   await assignRoles({ colony, taskId, manager, evaluator, worker });
 

@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { X, DEFAULT_STAKE, INITIAL_FUNDING, GLOBAL_SKILL_ID } from "../../helpers/constants";
+import { UINT256_MAX, DEFAULT_STAKE, INITIAL_FUNDING, GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycle, removeSubdomainLimit } from "../../helpers/test-helper";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
@@ -41,7 +41,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
   // Initialise global skill: 3. Set up local skills tree 1 -> 4 -> 5
   //                                                       \-> 2
-  await metaColony.addDomain(1, X, 1);
+  await metaColony.addDomain(1, UINT256_MAX, 1);
   await metaColony.addDomain(1, 1, 2);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);

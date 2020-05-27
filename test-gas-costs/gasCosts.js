@@ -4,7 +4,7 @@ import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import {
-  X,
+  UINT256_MAX,
   WAD,
   MANAGER_ROLE,
   WORKER_ROLE,
@@ -108,7 +108,7 @@ contract("All", function (accounts) {
     it("when working with a Colony", async function () {
       await colony.mintTokens(200);
       await colony.claimColonyFunds(token.address);
-      await colony.setAdministrationRole(1, X, EVALUATOR, 1, true);
+      await colony.setAdministrationRole(1, UINT256_MAX, EVALUATOR, 1, true);
     });
 
     it("when working with a Task", async function () {
@@ -148,7 +148,7 @@ contract("All", function (accounts) {
       });
 
       // moveFundsBetweenPots
-      await colony.moveFundsBetweenPots(1, X, X, 1, 2, 190, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 2, 190, token.address);
 
       // setTaskManagerPayout
       await executeSignedTaskChange({
@@ -206,20 +206,20 @@ contract("All", function (accounts) {
 
     it("when working with a Payment", async function () {
       // 4 transactions payment
-      await colony.addPayment(1, X, WORKER, token.address, WAD, 1, 0);
+      await colony.addPayment(1, UINT256_MAX, WORKER, token.address, WAD, 1, 0);
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
-      await colony.moveFundsBetweenPots(1, X, X, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
-      await colony.finalizePayment(1, X, paymentId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.finalizePayment(1, UINT256_MAX, paymentId);
       await colony.claimPayment(paymentId, token.address);
 
       // 1 transaction payment
       const oneTxExtension = await OneTxPayment.new(colony.address);
-      await colony.setAdministrationRole(1, X, oneTxExtension.address, 1, true);
-      await colony.setFundingRole(1, X, oneTxExtension.address, 1, true);
+      await colony.setAdministrationRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
+      await colony.setFundingRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
 
-      await oneTxExtension.makePayment(1, X, 1, X, [WORKER], [token.address], [10], 1, GLOBAL_SKILL_ID);
+      await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER], [token.address], [10], 1, GLOBAL_SKILL_ID);
     });
 
     it("when working with staking", async function () {
@@ -314,7 +314,7 @@ contract("All", function (accounts) {
 
       await fundColonyWithTokens(newColony, otherToken, 300);
 
-      await newColony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
+      await newColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
 
       const tx = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = tx.logs[0].args.rewardPayoutId;
@@ -348,7 +348,7 @@ contract("All", function (accounts) {
       await forwardTime(5184001);
       await newColony.finalizeRewardPayout(payoutId);
 
-      await newColony.moveFundsBetweenPots(1, 0, 0, 1, 0, 100, otherToken.address);
+      await newColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
 
       const tx2 = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId2 = tx2.logs[0].args.rewardPayoutId;

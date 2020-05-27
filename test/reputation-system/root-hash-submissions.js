@@ -689,7 +689,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       await metaColony.claimColonyFunds(clnyToken.address);
       // Move all of them in to the reward pot
       const amount = await metaColony.getFundingPotBalance(1, clnyToken.address);
-      await metaColony.moveFundsBetweenPots(1, 0, 0, 1, 0, amount, clnyToken.address);
+      await metaColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, amount, clnyToken.address);
 
       const result = await metaColony.getDomain(1);
       const rootDomainSkill = result.skillId;
