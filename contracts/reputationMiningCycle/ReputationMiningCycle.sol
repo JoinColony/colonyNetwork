@@ -22,14 +22,10 @@ import "./../../lib/dappsys/math.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
-import "./ReputationMiningCycleStorage.sol";
 import "./ReputationMiningCycleCommon.sol";
 
 
 contract ReputationMiningCycle is ReputationMiningCycleCommon {
-  /// @notice Size of mining window in seconds
-  uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
-
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
   modifier finalDisputeRoundCompleted(uint256 roundNumber) {
@@ -230,7 +226,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
   function invalidateHash(uint256 round, uint256 idx) public {
     // What we do depends on our opponent, so work out which index it was at in disputeRounds[round]
-    uint256 opponentIdx = opponentIdx(idx);
+    uint256 opponentIdx = getOpponentIdx(idx);
     uint256 nInNextRound;
 
     // We require either
@@ -308,12 +304,12 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
           MIN_STAKE
         );
         stakeLost += submittedHashes[opponentSubmission.proposedNewRootHash][opponentSubmission.nNodes][opponentSubmission.jrh].length * MIN_STAKE;
+
         emit HashInvalidated(opponentSubmission.proposedNewRootHash, opponentSubmission.nNodes, opponentSubmission.jrh);
       }
 
       // Note that two hashes have completed this challenge round (either one accepted for now and one rejected, or two rejected)
       nHashesCompletedChallengeRound[round] += 2;
-
 
       // Punish the people who proposed the hash that was rejected
       IColonyNetwork(colonyNetworkAddress).punishStakers(
@@ -548,7 +544,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     return reputationMiningWindowOpenTimestamp;
   }
 
-  function getDisputeRewardSize() public view returns (uint256) {
+  function getDisputeRewardSize() public returns (uint256) {
     return disputeRewardSize();
   }
 
@@ -569,10 +565,6 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   /////////////////////////
   // Internal functions
   /////////////////////////
-
-  function submissionWindowClosed() internal view returns (bool) {
-    return now - reputationMiningWindowOpenTimestamp >= MINING_WINDOW_SIZE;
-  }
 
   function processBinaryChallengeSearchResponse(
     uint256 round,
@@ -596,7 +588,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     disputeRounds[round][idx].hash1 = lastSiblings[0];
     disputeRounds[round][idx].hash2 = lastSiblings[1];
 
-    uint256 opponentIdx = opponentIdx(idx);
+    uint256 opponentIdx = getOpponentIdx(idx);
     if (disputeRounds[round][opponentIdx].challengeStepCompleted == disputeRounds[round][idx].challengeStepCompleted ) {
       // Our opponent answered this challenge already.
       // Compare our intermediateReputationHash to theirs to establish how to move the bounds.
@@ -605,7 +597,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   }
 
   function processBinaryChallengeSearchStep(uint256 round, uint256 idx) internal {
-    uint256 opponentIdx = opponentIdx(idx);
+    uint256 opponentIdx = getOpponentIdx(idx);
     uint256 searchWidth = (disputeRounds[round][idx].upperBound - disputeRounds[round][idx].lowerBound) + 1;
     uint256 searchWidthNextPowerOfTwo = nextPowerOfTwoInclusive(searchWidth);
     if (
@@ -737,7 +729,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     return layers;
   }
 
-  function opponentIdx(uint256 _idx) private pure returns (uint256) {
+  function getOpponentIdx(uint256 _idx) private pure returns (uint256) {
     return _idx % 2 == 1 ? _idx - 1 : _idx + 1;
   }
 

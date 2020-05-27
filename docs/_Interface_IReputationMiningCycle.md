@@ -419,7 +419,7 @@ Returns whether a particular address has been involved in the current mining cyc
 
 |Name|Type|Description|
 |---|---|---|
-|_user|address|The address whose involvement being queried
+|_user|address|The address whose involvement is being queried
 
 **Return Parameters**
 

@@ -231,8 +231,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     return miningStakes[_user];
   }
 
-  function burnUnneededRewards(uint256 _amount) public stoppable {
-    ITokenLocking(tokenLocking).claim(address(this), true);
+  function burnUnneededRewards(uint256 _amount) public stoppable onlyReputationMiningCycle() {
+    ITokenLocking(tokenLocking).claim(IMetaColony(metaColony).getToken(), true);
     ITokenLocking(tokenLocking).burn(_amount);
   }
 

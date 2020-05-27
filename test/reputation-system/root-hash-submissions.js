@@ -8,7 +8,7 @@ import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
 
-import { MINING_CYCLE_DURATION, MINING_CYCLE_TIMEOUT, DEFAULT_STAKE, REWARD, UINT256_MAX, MIN_STAKE } from "../../helpers/constants";
+import { MINING_CYCLE_DURATION, MINING_CYCLE_TIMEOUT, DEFAULT_STAKE, REWARD, UINT256_MAX, MIN_STAKE, WAD } from "../../helpers/constants";
 
 import {
   forwardTime,
@@ -22,6 +22,7 @@ import {
   runBinarySearch,
   checkErrorRevertEthers,
   currentBlock,
+  makeReputationKey,
 } from "../../helpers/test-helper";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -670,6 +671,49 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       const reputationUpdateLogLength = await inactiveRepCycle.getReputationUpdateLogLength();
       expect(reputationUpdateLogLength).to.eq.BN(2);
+    });
+
+    it("should be able to complete a cycle and claim rewards even if CLNY has been locked", async () => {
+      await metaColony.mintTokens(WAD);
+      await metaColony.claimColonyFunds(clnyToken.address);
+      await metaColony.bootstrapColony([MINER1], [WAD]);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      await clnyToken.burn(REWARD, { from: MINER1 });
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
+      // Lock CLNY via a reward payout in the metacolony
+      await metaColony.mintTokens(WAD);
+      await metaColony.claimColonyFunds(clnyToken.address);
+      // Move all of them in to the reward pot
+      const amount = await metaColony.getFundingPotBalance(1, clnyToken.address);
+      await metaColony.moveFundsBetweenPots(1, 0, 0, 1, 0, amount, clnyToken.address);
+
+      const result = await metaColony.getDomain(1);
+      const rootDomainSkill = result.skillId;
+
+      // Get the proof for the colony-wide reputation in the root domain. Used to start reward payouts.
+      const colonyWideReputationKey = makeReputationKey(metaColony.address, rootDomainSkill);
+      const { key, value, branchMask, siblings } = await goodClient.getReputationProofObject(colonyWideReputationKey);
+      const colonyWideReputationProof = [key, value, branchMask, siblings];
+
+      await metaColony.startNextRewardPayout(clnyToken.address, ...colonyWideReputationProof);
+
+      await goodClient.saveCurrentState();
+
+      const goodClientHash = await goodClient.reputationTree.getRootHash();
+      await badClient.loadState(goodClientHash);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
+      });
+
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await repCycle.confirmNewHash(1);
+      await colonyNetwork.claimMiningReward(MINER1);
     });
 
     it("should correctly calculate the miner weight", async () => {

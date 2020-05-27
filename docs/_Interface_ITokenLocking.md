@@ -4,19 +4,20 @@ section: Interface
 order: 5
 ---
 
-
+  
 ## Interface Methods
 
 ### `approveStake`
 
-Allow the colony to obligate some amount of tokens as a stake. Can only be called by a colony.
+Allow the colony to obligate some amount of tokens as a stake.
 
+*Note: Can only be called by a colony or colonyNetwork*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_colony|address|Address of the colony we are willing to let obligate us.
+|_user|address|Address of the user that is allowing their holdings to be staked by the caller
 |_amount|uint256|Amount of that colony's internal token up to which we are willing to be obligated.
 |_token|address|The colony's internal token address
 
@@ -25,7 +26,7 @@ Allow the colony to obligate some amount of tokens as a stake. Can only be calle
 
 Function called to burn CLNY tokens held by TokenLocking.
 
-*Note: While public, it can only be called successfully by the current ReputationMiningCycle.*
+*Note: While public, it can only be called successfully by colonyNetwork and is only used for reputation mining.*
 
 **Parameters**
 
@@ -49,7 +50,7 @@ Claim any pending tokens. Can only be called if user tokens are not locked.
 
 ### `deobligateStake`
 
-Deobligate the user some amount of tokens, releasing the stake. Can only be called by a colony.
+Deobligate the user some amount of tokens, releasing the stake. Can only be called by a colony or colonyNetwork.
 
 
 **Parameters**
@@ -88,6 +89,25 @@ Deposit `_amount` of colony tokens in the recipient's account. Goes into pending
 |_recipient|address|User to receive the tokens
 
 
+### `getApproval`
+
+See the total amount of a user's obligation.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account that has approved _approvee to obligate their funds.
+|_token|address|The token for which the user has provided the approval.
+|_obligator|address|The address that has been approved to obligate the funds.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
+
 ### `getColonyNetwork`
 
 Get ColonyNetwork address.
@@ -99,6 +119,25 @@ Get ColonyNetwork address.
 |Name|Type|Description|
 |---|---|---|
 |networkAddress|address|ColonyNetwork address
+
+### `getObligation`
+
+See the total amount of a user's obligation.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account that has had their funds obligated.
+|_token|address|The token for which the user has provided the approval.
+|_obligator|address|The address that obligated the funds (and therefore can slash or return them).
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
 
 ### `getTotalLockCount`
 
@@ -185,7 +224,7 @@ Locks everyones' tokens on `_token` address.
 
 ### `obligateStake`
 
-Obligate the user some amount of tokens as a stake. Can only be called by a colony.
+Obligate the user some amount of tokens as a stake. Can only be called by a colony or colonyNetwork.
 
 
 **Parameters**
@@ -197,32 +236,17 @@ Obligate the user some amount of tokens as a stake. Can only be called by a colo
 |_token|address|The colony's internal token address
 
 
-### `punishStakers`
-
-Function called to punish people who staked CLNY against a new reputation root hash that turned out to be incorrect.
-
-*Note: While public, it can only be called successfully by the current ReputationMiningCycle.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_stakers|address[]|Array of the addresses of stakers to punish
-|_amount|uint256|Amount of stake to slash (each)
-
-
 ### `reward`
 
-Function called to reward people during reputation mining disputes in CLNY.
+This function is deprecated and only exists to aid upgrades.
 
-*Note: While public, it can only be called successfully by the current ReputationMiningCycle.*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_recipient|address|The address to reward
-|_amount|uint256|Amount of CLNY to award
+|_recipient|address|
+|_amount|uint256|
 
 
 ### `setColonyNetwork`
@@ -255,7 +279,7 @@ Transfer tokens to a recipient's pending balance. Can only be called if user tok
 
 ### `transferStake`
 
-Transfer some amount of staked tokens. Can only be called by a colony.
+Transfer some amount of staked tokens. Can only be called by a colony or colonyNetwork.
 
 
 **Parameters**
@@ -284,19 +308,6 @@ Increments the lock counter to `_lockId` for the `_user` if user's lock count is
 
 ### `withdraw`
 
-DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_token|address|Address of the token to withdraw from
-|_amount|uint256|Amount to withdraw
-
-
-### `withdraw`
-
 Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
 
 
@@ -307,3 +318,16 @@ Withdraw `_amount` of deposited tokens. Can only be called if user tokens are no
 |_token|address|Address of the token to withdraw from
 |_amount|uint256|Amount to withdraw
 |_force|bool|Pass true to forcibly unlock the token
+
+
+### `withdraw`
+
+DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to withdraw from
+|_amount|uint256|Amount to withdraw

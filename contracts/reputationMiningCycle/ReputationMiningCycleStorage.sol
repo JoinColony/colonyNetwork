@@ -68,6 +68,7 @@ contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth 
   // Tracks whether the address in question has helped during a challenge / response process
   mapping (address => bool) respondedToChallenge;  // Storage slot 16
 
-  uint256 stakeLost;// Storage slot 17
-  uint256 rewardsPaidOut;// Storage slot 18
+  uint256 stakeLost; // Storage slot 17
+  uint256 rewardsPaidOut; // Storage slot 18
+  uint256 cachedDisputeRewardSize; // Storage slot 19
 }

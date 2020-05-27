@@ -70,6 +70,19 @@ Adds a reputation update entry to log.
 |_skillId|uint256|The skill for the reputation update
 
 
+### `burnUnneededRewards`
+
+Used to burn tokens that are not needed to pay out rewards (because not every possible defence was made for all submissions)
+
+*Note: Only callable by the active reputation mining cycle*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|The amount of CLNY to burn
+
+
 ### `calculateMinerWeight`
 
 Calculate raw miner weight in WADs.
@@ -87,6 +100,19 @@ Calculate raw miner weight in WADs.
 |Name|Type|Description|
 |---|---|---|
 |minerWeight|uint256|The weight of miner reward
+
+### `claimMiningReward`
+
+Used by a user to claim any mining rewards due to them. This will place them in their balance or pending balance, as appropriate.
+
+*Note: Can be called by anyone, not just _recipient*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_recipient|address|The user whose rewards to claim
+
 
 ### `createColony`
 
@@ -275,6 +301,23 @@ Get the resolver to be used by new instances of ReputationMiningCycle.
 |Name|Type|Description|
 |---|---|---|
 |miningResolverAddress|address|The address of the mining cycle resolver currently used by new instances
+
+### `getMiningStake`
+
+returns how much CLNY _user has staked for the purposes of reputation mining
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|The user to query
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_info|MiningStake|The amount staked and the timestamp the stake was made at.
 
 ### `getParentSkillId`
 
@@ -496,6 +539,20 @@ Reverse lookup a username from an address.
 |---|---|---|
 |domain|string|A string containing the colony-based ENS name corresponding to addr
 
+### `punishStakers`
+
+Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
+
+*Note: While public, it can only be called successfully by the current ReputationMiningCycle.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_stakers|address[]|Array of the addresses of stakers to punish
+|_amount|uint256|Amount of stake to slash
+
+
 ### `registerColonyLabel`
 
 Register a "colony.joincolony.eth" label. Can only be called by a Colony.
@@ -520,6 +577,20 @@ Register a "user.joincolony.eth" label.
 |---|---|---|
 |username|string|The label to register
 |orbitdb|string|The path of the orbitDB database associated with the user profile
+
+
+### `reward`
+
+Used to track that a user is eligible to claim a reward
+
+*Note: Only callable by the active reputation mining cycle*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_recipient|address|The address receiving the award
+|_amount|uint256|The amount of CLNY to be awarded
 
 
 ### `setFeeInverse`
@@ -606,6 +677,18 @@ Setup registrar with ENS and root node.
 |_rootNode|bytes32|Namehash of the root node for the domain
 
 
+### `stakeForMining`
+
+Stake CLNY to allow the staker to participate in reputation mining.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|Amount of CLNY to stake for the purposes of mining
+
+
 ### `startNextCycle`
 
 Starts a new Reputation Mining cycle. Explicitly called only the first time, subsequently called from within `setReputationRootHash`.
@@ -642,6 +725,18 @@ Query if a contract implements an interface
 |Name|Type|Description|
 |---|---|---|
 |status|bool|`true` if the contract implements `interfaceID`
+
+### `unstakeForMining`
+
+Unstake CLNY currently staked for reputation mining.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|Amount of CLNY staked for mining to unstake
+
 
 ### `updateColonyOrbitDB`
 

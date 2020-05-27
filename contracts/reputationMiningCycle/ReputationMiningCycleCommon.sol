@@ -27,6 +27,8 @@ import "./ReputationMiningCycleStorage.sol";
 contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
   /// @notice Minimum reputation mining stake in CLNY
   uint256 constant MIN_STAKE = 2000 * WAD;
+  /// @notice Size of mining window in seconds
+  uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
 
   function rewardResponder(address _responder) internal returns (bytes32) {
     respondedToChallenge[_responder] = true;
@@ -35,7 +37,11 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
     rewardsPaidOut += reward;
   }
 
-  function disputeRewardSize() internal view returns (uint256) {
+  function submissionWindowClosed() internal view returns (bool) {
+    return now - reputationMiningWindowOpenTimestamp >= MINING_WINDOW_SIZE;
+  }
+
+  function disputeRewardSize() internal returns (uint256) {
     // TODO: Is this worth calculating once, and then saving? Seems quite likely.
     uint256 nLogEntries = reputationUpdateLog.length;
 
@@ -49,6 +55,13 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
       return 0;
     }
 
+    if (cachedDisputeRewardSize != 0 ) {
+      // Then we've already calculated it! Just return it
+      return cachedDisputeRewardSize;
+    }
+
+    // Otherwise, calculate it
+
     uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
     uint jrhNnodes = reputationUpdateLog[nLogEntries-1].nUpdates +
       reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes + 1; // This is the number of nodes we expect in the justification tree
@@ -61,6 +74,12 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
     // The minimum amount of stake to be lost
     uint256 rewardNumerator = MIN_STAKE * (nUniqueSubmittedHashes - 1);
     uint256 reward = rewardNumerator / rewardDenominator;
+
+    if (submissionWindowClosed()) {
+      // Store it for next time if it's not going to change further.
+      cachedDisputeRewardSize = reward;
+    }
+
     return reward;
   }
 

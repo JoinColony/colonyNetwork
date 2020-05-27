@@ -258,7 +258,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
 
   /// @notice Returns whether a particular address has been involved in the current mining cycle. This might be
   /// from submitting a hash, or from defending one during a dispute.
-  /// @param _user The address whose involvement being queried
+  /// @param _user The address whose involvement is being queried
   /// @return bool Whether the address has been involved in the current mining cycle
   function userInvolvedInMiningCycle(address _user) public view returns (bool involved);
 
