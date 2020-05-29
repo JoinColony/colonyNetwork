@@ -497,7 +497,7 @@ export async function getActiveRepCycle(colonyNetwork) {
 }
 
 export async function advanceMiningCycleNoContest({ colonyNetwork, client, minerAddress, test }) {
-  await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW, test);
+  await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
 
   if (client !== undefined) {
@@ -701,7 +701,13 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
 
   if (nUniqueSubmittedHashes.gtn(0)) {
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    await forwardTimeTo(reputationMiningWindowOpenTimestamp.addn(MINING_CYCLE_DURATION).addn(SUBMITTER_ONLY_WINDOW).toNumber(), test);
+    await forwardTimeTo(
+      reputationMiningWindowOpenTimestamp
+        .addn(MINING_CYCLE_DURATION)
+        .addn(SUBMITTER_ONLY_WINDOW + 1)
+        .toNumber(),
+      test
+    );
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
       await repCycle.confirmNewHash(nUniqueSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.

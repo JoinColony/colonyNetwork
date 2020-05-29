@@ -138,7 +138,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION * 0.1 + SUBMITTER_ONLY_WINDOW, this);
+          await forwardTime(MINING_CYCLE_DURATION * 0.1 + SUBMITTER_ONLY_WINDOW + 1, this);
           await miningCycleComplete;
         });
 
@@ -309,7 +309,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION / 2 + SUBMITTER_ONLY_WINDOW, this);
+          await forwardTime(MINING_CYCLE_DURATION / 2 + SUBMITTER_ONLY_WINDOW + 1, this);
           await miningCycleComplete;
         });
 
@@ -394,7 +394,7 @@ process.env.SOLIDITY_COVERAGE
           await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
           await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
 
-          await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+          await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
           await goodClientConfirmedJRH;
           await badClient.confirmJustificationRootHash();
@@ -475,7 +475,7 @@ process.env.SOLIDITY_COVERAGE
 
           await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-decay-incorrect");
 
-          await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+          await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
           // Good client should now realise it can timeout bad submission
           await goodClientInvalidateOpponent;
@@ -487,13 +487,13 @@ process.env.SOLIDITY_COVERAGE
               resolve();
             });
 
-            // After 30s, we throw a timeout error
+            // After 60s, we throw a timeout error
             setTimeout(() => {
               reject(new Error("ERROR: timeout while waiting for new cycle to happen"));
-            }, 30000);
+            }, 60000);
           });
 
-          await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+          await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
           // Good client should realise it can confirm new hash. So we wait for that event.
           await newCycleStart;

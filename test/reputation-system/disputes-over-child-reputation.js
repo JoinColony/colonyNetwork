@@ -353,23 +353,23 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await badClient2.addLogContentsToReputationTree();
 
       // Run through the dispute until we can call respondToChallenge
-      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
       await runBinarySearch(goodClient, badClient);
-      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
-      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-origin-adjacent-proof-invalid");
 
       // Cleanup
       await goodClient.respondToChallenge();
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
-      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
       const acceptedHash = await colonyNetwork.getReputationRootHash();
       const righthash = await goodClient.getRootHash();
@@ -439,23 +439,23 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await badClient2.addLogContentsToReputationTree();
 
       // Run through the dispute until we can call respondToChallenge
-      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
       await runBinarySearch(goodClient, badClient);
-      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
-      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-child-adjacent-proof-invalid");
 
       // Cleanup
       await goodClient.respondToChallenge();
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
-      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
       const acceptedHash = await colonyNetwork.getReputationRootHash();
       const righthash = await goodClient.getRootHash();

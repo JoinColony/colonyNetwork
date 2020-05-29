@@ -171,7 +171,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
       expect(nSubmissionsForHash).to.eq.BN(1);
 
       // Cleanup
-      await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(0);
     });
   });

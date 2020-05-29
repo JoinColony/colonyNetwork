@@ -52,7 +52,6 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   }
 
   function disputeRewardSize() internal returns (uint256) {
-    // TODO: Is this worth calculating once, and then saving? Seems quite likely.
     uint256 nLogEntries = reputationUpdateLog.length;
 
     // If there's no log, it must be one of the first two reputation cycles - no reward.
@@ -132,7 +131,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
 
   function responsePossible(disputeStages stage, uint256 since) internal view returns (bool) {
     uint256 delta = sub(now, since); // I don't believe this should ever be possible to underflow...
-    if (delta < SUBMITTER_ONLY_WINDOW) {
+    if (delta <= SUBMITTER_ONLY_WINDOW) {
       // require user made a submission
       if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0x00)) {
         return false;
