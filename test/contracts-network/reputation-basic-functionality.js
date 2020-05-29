@@ -7,7 +7,7 @@ import { ethers } from "ethers";
 
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
 import { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE } from "../../helpers/constants";
-import { forwardTime, checkErrorRevert, getActiveRepCycle, getBlockTime } from "../../helpers/test-helper";
+import { forwardTime, checkErrorRevert, getActiveRepCycle, advanceMiningCycleNoContest, getBlockTime } from "../../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -20,8 +20,10 @@ const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 contract("Reputation mining - basic functionality", (accounts) => {
-  const MINER1 = accounts[5];
-  const MINER2 = accounts[6];
+  // Not using accounts[5] here otherwise the afterEach breaks reputation mining, which we need
+  // for one of the tests.
+  const MINER1 = accounts[6];
+  const MINER2 = accounts[7];
 
   let colonyNetwork;
   let tokenLocking;
@@ -224,6 +226,20 @@ contract("Reputation mining - basic functionality", (accounts) => {
       const decay = await repCycle.getDecayConstant();
       expect(decay.numerator).to.eq.BN(DECAY_RATE.NUMERATOR);
       expect(decay.denominator).to.eq.BN(DECAY_RATE.DENOMINATOR);
+    });
+
+    it("when there are no logs, getDisputeRewardSize returns 0", async () => {
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const rewardIncrement = await repCycle.getDisputeRewardSize();
+      expect(rewardIncrement.toString(), "RewardIncrement was nonzero").to.equal("0");
+    });
+
+    it("when no dispute is yet required, getDisputeRewardSize returns 0", async () => {
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const rewardIncrement = await repCycle.getDisputeRewardSize();
+      expect(rewardIncrement.toString(), "RewardIncrement was nonzero").to.equal("0");
     });
   });
 });

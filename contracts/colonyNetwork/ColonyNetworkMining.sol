@@ -183,19 +183,29 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     );
   }
 
-  function punishStakers(address[] memory _stakers, address _beneficiary, uint256 _amount) public stoppable onlyReputationMiningCycle {
+  function punishStakers(address[] memory _stakers, uint256 _amount) public stoppable onlyReputationMiningCycle {
     address clnyToken = IMetaColony(metaColony).getToken();
     uint256 lostStake;
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
     // it in ReputationMiningCycle.invalidateHash;
     for (uint256 i = 0; i < _stakers.length; i++) {
       lostStake = min(ITokenLocking(tokenLocking).getObligation(_stakers[i], clnyToken, address(this)), _amount);
-      ITokenLocking(tokenLocking).transferStake(_stakers[i], lostStake, clnyToken, _beneficiary);
-
+      ITokenLocking(tokenLocking).transferStake(_stakers[i], lostStake, clnyToken, address(this));
       // TODO: Lose rep?
-
-      emit ReputationMinerPenalised(_stakers[i], _beneficiary, lostStake);
+      emit ReputationMinerPenalised(_stakers[i], lostStake);
     }
+  }
+
+  function reward(address _recipient, uint256 _amount) public stoppable onlyReputationMiningCycle {
+    // TODO: Gain rep?
+    pendingMiningRewards[_recipient] = add(pendingMiningRewards[_recipient], _amount);
+  }
+
+  function claimMiningReward(address _recipient) public stoppable {
+    address clnyToken = IMetaColony(metaColony).getToken();
+    uint256 amount = pendingMiningRewards[_recipient];
+    pendingMiningRewards[_recipient] = 0;
+    ITokenLocking(tokenLocking).transfer(clnyToken, amount, _recipient, true);
   }
 
   function stakeForMining(uint256 _amount) public stoppable {
@@ -211,15 +221,19 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   function unstakeForMining(uint256 _amount) public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
-    // Prevent reputation miners from withdrawing stake during the mining process.
-    bytes32 submissionHash = IReputationMiningCycle(activeReputationMiningCycle).getReputationHashSubmission(msg.sender).proposedNewRootHash;
-    require(submissionHash == 0x0, "colony-network-hash-submitted");
+    // Prevent those involved in a mining cycle withdrawing stake during the mining process.
+    require(!IReputationMiningCycle(activeReputationMiningCycle).userInvolvedInMiningCycle(msg.sender), "colony-network-hash-submitted");
     ITokenLocking(tokenLocking).deobligateStake(msg.sender, _amount, clnyToken);
     miningStakes[msg.sender].amount = sub(miningStakes[msg.sender].amount, _amount);
   }
 
   function getMiningStake(address _user) public stoppable returns (MiningStake memory) {
     return miningStakes[_user];
+  }
+
+  function burnUnneededRewards(uint256 _amount) public stoppable onlyReputationMiningCycle() {
+    ITokenLocking(tokenLocking).claim(IMetaColony(metaColony).getToken(), true);
+    ITokenLocking(tokenLocking).burn(_amount);
   }
 
   uint256 constant UINT192_MAX = 2**192 - 1; // Used for updating the stake timestamp
@@ -236,6 +250,4 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
     return add(mul(prevWeight, _prevTime), mul(currWeight, _currTime)) / add(prevWeight, currWeight);
   }
-
-
 }

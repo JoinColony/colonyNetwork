@@ -34,10 +34,8 @@ sed -i.bak "s/contract IColony/contract IUpdatedColony/g" ./contracts/colony/IUp
 sed -i.bak "s/ColonyDataTypes/UpdatedColonyDataTypes/g" ./contracts/colony/IUpdatedColony.sol
 sed -i.bak "s/contract IUpdatedColony is UpdatedColonyDataTypes, IRecovery {/contract IUpdatedColony is UpdatedColonyDataTypes, IRecovery {function isUpdated() public pure returns(bool);/g" ./contracts/colony/IUpdatedColony.sol
 # Modify UpdatedReputationMiningCycle contract
-echo 'UpdatedReputationMiningCycle'
 sed -i.bak "s/contract ReputationMiningCycle/contract UpdatedReputationMiningCycle/g" ./contracts/reputationMiningCycle/UpdatedReputationMiningCycle.sol
-sed -i.bak "s/WAD;/WAD;function isUpdated() public pure returns(bool) {return true;}/g" ./contracts/reputationMiningCycle/UpdatedReputationMiningCycle.sol
-echo 'IReputationMiningCycle'
+sed -i.bak "s| is ReputationMiningCycleCommon {| is ReputationMiningCycleCommon {\nfunction isUpdated() public pure returns(bool) {return true;}|g" ./contracts/reputationMiningCycle/UpdatedReputationMiningCycle.sol
 # Modify IReputationMiningCycle contract
 sed -i.bak "s/contract IReputationMiningCycle/contract IUpdatedReputationMiningCycle/g" ./contracts/reputationMiningCycle/IUpdatedReputationMiningCycle.sol
 sed -i.bak "s/function resetWindow() public;/function resetWindow() public; function isUpdated() public pure returns(bool);/g" ./contracts/reputationMiningCycle/IUpdatedReputationMiningCycle.sol

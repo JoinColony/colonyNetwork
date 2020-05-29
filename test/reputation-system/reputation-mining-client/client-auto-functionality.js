@@ -233,7 +233,7 @@ process.env.SOLIDITY_COVERAGE
           const receive2Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, 2);
 
           // Forward through half of the cycle duration and wait for the client to submit some entries
-          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
+          await forwardTime(MINING_CYCLE_DURATION / 2, this);
           await receive2Submissions; // It might submit a couple more, but that's fine for the purposes of this test.
           await reputationMinerClient.close();
 
@@ -283,10 +283,11 @@ process.env.SOLIDITY_COVERAGE
           const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, 12);
 
           // Make a submission from the second client and then await the remaining 11 submissions from the first client
-          await goodClient.loadState(rootHash);
+          await goodClient.loadState(oldHash);
+          await goodClient.addLogContentsToReputationTree();
 
           // Forward time and wait for the client to submit all 12 allowed entries
-          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
+          await forwardTime(MINING_CYCLE_DURATION / 2, this);
           await checkSuccessEthers(goodClient.submitRootHash());
           await receive12Submissions;
 
@@ -307,7 +308,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
+          await forwardTime(MINING_CYCLE_DURATION / 2, this);
           await miningCycleComplete;
         });
 
@@ -334,7 +335,7 @@ process.env.SOLIDITY_COVERAGE
           const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, 12);
 
           // Forward through most of the cycle duration
-          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
+          await forwardTime(MINING_CYCLE_DURATION / 2, this);
           await receive12Submissions;
 
           const goodClientConfirmedJRH = new Promise(function (resolve, reject) {
@@ -381,6 +382,10 @@ process.env.SOLIDITY_COVERAGE
           });
 
           await badClient.submitRootHash();
+
+          // Forward time again so clients can start responding to challenges
+          await forwardTime(MINING_CYCLE_DURATION / 2, this);
+
           await goodClientConfirmedJRH;
           await badClient.confirmJustificationRootHash();
 
@@ -443,8 +448,6 @@ process.env.SOLIDITY_COVERAGE
             }, 30000);
           });
 
-          // Forward time again, so the submission window is closed
-          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
           // Good client should realise it can confirm new hash. So we wait for that event.
           await newCycleStart;
 

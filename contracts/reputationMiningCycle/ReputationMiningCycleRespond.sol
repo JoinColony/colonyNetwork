@@ -18,19 +18,18 @@
 pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
-import "./../../lib/dappsys/math.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
-import "./../reputationMiningCycle/ReputationMiningCycleStorage.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import {Bits} from "./../patriciaTree/Bits.sol";
+import "./ReputationMiningCycleCommon.sol";
 
 
 // TODO (post CCv1, possibly never): Can we handle all possible disputes regarding the very first hash that should be set?
 // Currently, at the very least, we can't handle a dispute if the very first entry is disputed.
 // A possible workaround would be to 'kick off' reputation mining with a known dummy state...
 // Given the approach we a taking for launch, we are able to guarantee that we are the only reputation miner for 100+ of the first cycles, even if we decided to lengthen a cycle length. As a result, maybe we just don't care about this special case?
-contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
+contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
   /// @notice A modifier that checks if the challenge corresponding to the hash in the passed `round` and `id` is open
   /// @param round The round number of the hash under consideration
@@ -328,6 +327,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     disputeRounds[u[U_ROUND]][u[U_IDX]].challengeStepCompleted += 1;
     disputeRounds[u[U_ROUND]][u[U_IDX]].lastResponseTimestamp = now;
     Submission storage submission = reputationHashSubmissions[disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter];
+
+    // And reward the user
+    rewardResponder(msg.sender);
 
     emit ChallengeCompleted(submission.proposedNewRootHash, submission.nNodes, submission.jrh);
   }

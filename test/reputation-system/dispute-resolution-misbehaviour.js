@@ -125,7 +125,17 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await repCycle.confirmNewHash(0);
 
       repCycle = await getActiveRepCycle(colonyNetwork);
-      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      await badClient.addLogContentsToReputationTree();
+      await badClient.submitRootHash();
+
+      // Check we can't confirm the JRH before the submission window is closed
+      await checkErrorRevertEthers(goodClient.confirmJustificationRootHash(), "colony-reputation-mining-cycle-submissions-not-closed");
+
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
       // Check we can't start binary search before we've confirmed JRH
       await checkErrorRevertEthers(goodClient.respondToBinarySearchForChallenge(), "colony-reputation-mining-challenge-not-active");
@@ -258,10 +268,10 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await checkErrorRevert(repCycle.invalidateHash(0, 3), "colony-reputation-mining-submission-window-still-open");
       // Cleanup
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
-      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await repCycle.invalidateHash(0, 3);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
@@ -305,7 +315,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         // churning away at once, I *think* it's slower.
         await clients[i].addLogContentsToReputationTree();
         await clients[i].submitRootHash();
-        await clients[i].confirmJustificationRootHash();
         console.log("Submitted for client ", i);
       }
 
@@ -409,12 +418,12 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       // Round 1 finished. Move to round 2
 
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[2]);
-      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[8], clients[4]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[4], clients[8]);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[6]);
 
       // Round 2 finished.
 
-      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[8]);
+      await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[4]);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[6]);
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[6]);
       await repCycle.confirmNewHash(4);

@@ -8,7 +8,7 @@ import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
 
-import { MINING_CYCLE_DURATION, DEFAULT_STAKE, REWARD, UINT256_MAX, MIN_STAKE } from "../../helpers/constants";
+import { MINING_CYCLE_DURATION, MINING_CYCLE_TIMEOUT, DEFAULT_STAKE, REWARD, UINT256_MAX, MIN_STAKE, WAD } from "../../helpers/constants";
 
 import {
   forwardTime,
@@ -21,6 +21,8 @@ import {
   finishReputationMiningCycle,
   runBinarySearch,
   checkErrorRevertEthers,
+  currentBlock,
+  makeReputationKey,
 } from "../../helpers/test-helper";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -488,6 +490,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([badClient, badClient2, goodClient], this);
+      await forwardTime(MINING_CYCLE_TIMEOUT, this);
       await repCycle.invalidateHash(0, 1);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient);
@@ -552,10 +555,14 @@ contract("Reputation mining - root hash submissions", (accounts) => {
   });
 
   describe("when rewarding and punishing good and bad submissions", () => {
-    it("should punish all stakers if they misbehave (and report a bad hash)", async () => {
+    it("should punish stakers who submit a bad hash and reward those who defend a hash", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      const invalidatorLockBefore = await tokenLocking.getUserLock(clnyToken.address, accounts[0]);
+      // Clean out any pending rewards from previous tests. We are interested in exact balances.
+      await colonyNetwork.claimMiningReward(MINER1);
+      await colonyNetwork.claimMiningReward(MINER2);
+      await colonyNetwork.claimMiningReward(MINER3);
+
       const userLockMiner1Before = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       const userLockMiner2Before = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       const userLockMiner3Before = await tokenLocking.getUserLock(clnyToken.address, MINER3);
@@ -574,21 +581,46 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       await badClient2.submitRootHash();
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const rewardIncrement = await repCycle.getDisputeRewardSize();
+
+      const blockBeforeChallenge = await currentBlock();
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
 
-      const invalidatorLock = await tokenLocking.getUserLock(clnyToken.address, accounts[0]);
-      expect(invalidatorLock.balance, "Account was not rewarded properly").to.eq.BN(new BN(invalidatorLockBefore.balance).add(MIN_STAKE.muln(2)));
+      const miner1NonceBefore = await web3.eth.getTransactionCount(MINER1, blockBeforeChallenge.number);
+      const miner1NonceAfter = await web3.eth.getTransactionCount(MINER1);
+
+      const miner2NonceBefore = await web3.eth.getTransactionCount(MINER2, blockBeforeChallenge.number);
+      const miner2NonceAfter = await web3.eth.getTransactionCount(MINER2);
+      const miner1SuccessfulDefences = miner1NonceAfter - miner1NonceBefore;
+      // The bad miner has one of these transactions that fails
+      const miner2SuccessfulDefences = miner2NonceAfter - miner2NonceBefore - 1;
+
+      // Good responder will get rewardIncrement * number of times they defended a submission
+      const miner1Gain = rewardIncrement.muln(miner1SuccessfulDefences);
+
+      // Bad submitters will lose MIN_STAKE but gain rewardIncrement * number of times they defended their submission
+      const miner2Loss = MIN_STAKE.sub(rewardIncrement.muln(miner2SuccessfulDefences));
+      const miner3Loss = MIN_STAKE;
+
+      // Claim the rewards for everyone. For them to be available to claim, we have to finish the mining cycle.
+      await repCycle.confirmNewHash(1);
+
+      // Now actually claim them
+      await colonyNetwork.claimMiningReward(MINER1);
+      await colonyNetwork.claimMiningReward(MINER2);
+      await colonyNetwork.claimMiningReward(MINER3);
 
       const userLockMiner1 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-      expect(userLockMiner1.balance, "Account was not rewarded properly").to.eq.BN(new BN(userLockMiner1Before.balance));
+      expect(userLockMiner1.balance, "Account was not rewarded properly").to.eq.BN(new BN(userLockMiner1Before.balance).add(miner1Gain));
 
       const userLockMiner2 = await tokenLocking.getUserLock(clnyToken.address, MINER2);
-      expect(userLockMiner2.balance, "Account was not punished properly").to.eq.BN(new BN(userLockMiner2Before.balance).sub(MIN_STAKE));
+      expect(userLockMiner2.balance, "Account was not punished properly").to.eq.BN(new BN(userLockMiner2Before.balance).sub(miner2Loss));
 
       const userLockMiner3 = await tokenLocking.getUserLock(clnyToken.address, MINER3);
-      expect(userLockMiner3.balance, "Account was not punished properly").to.eq.BN(new BN(userLockMiner3Before.balance).sub(MIN_STAKE));
+      expect(userLockMiner3.balance, "Account was not punished properly").to.eq.BN(new BN(userLockMiner3Before.balance).sub(miner3Loss));
     });
 
     it("should reward all stakers if they submitted the agreed new hash", async () => {
@@ -639,6 +671,49 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       const reputationUpdateLogLength = await inactiveRepCycle.getReputationUpdateLogLength();
       expect(reputationUpdateLogLength).to.eq.BN(2);
+    });
+
+    it("should be able to complete a cycle and claim rewards even if CLNY has been locked", async () => {
+      await metaColony.mintTokens(WAD);
+      await metaColony.claimColonyFunds(clnyToken.address);
+      await metaColony.bootstrapColony([MINER1], [WAD]);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      await clnyToken.burn(REWARD, { from: MINER1 });
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
+      // Lock CLNY via a reward payout in the metacolony
+      await metaColony.mintTokens(WAD);
+      await metaColony.claimColonyFunds(clnyToken.address);
+      // Move all of them in to the reward pot
+      const amount = await metaColony.getFundingPotBalance(1, clnyToken.address);
+      await metaColony.moveFundsBetweenPots(1, 0, 0, 1, 0, amount, clnyToken.address);
+
+      const result = await metaColony.getDomain(1);
+      const rootDomainSkill = result.skillId;
+
+      // Get the proof for the colony-wide reputation in the root domain. Used to start reward payouts.
+      const colonyWideReputationKey = makeReputationKey(metaColony.address, rootDomainSkill);
+      const { key, value, branchMask, siblings } = await goodClient.getReputationProofObject(colonyWideReputationKey);
+      const colonyWideReputationProof = [key, value, branchMask, siblings];
+
+      await metaColony.startNextRewardPayout(clnyToken.address, ...colonyWideReputationProof);
+
+      await goodClient.saveCurrentState();
+
+      const goodClientHash = await goodClient.reputationTree.getRootHash();
+      await badClient.loadState(goodClientHash);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
+      });
+
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await repCycle.confirmNewHash(1);
+      await colonyNetwork.claimMiningReward(MINER1);
     });
 
     it("should correctly calculate the miner weight", async () => {

@@ -97,6 +97,18 @@ Get the reputation decay constant.
 |numerator|uint256|The numerator of the decay constant
 |denominator|uint256|The denominator of the decay constant
 
+### `getDisputeRewardSize`
+
+Returns the amount of CLNY given for defending a hash during the current dispute cycle
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|reward|uint256|
+
 ### `getDisputeRound`
 
 The getter for the disputeRounds mapping.
@@ -396,3 +408,21 @@ Submit a new reputation root hash.
 |nNodes|uint256|Number of nodes in tree with root `newHash`
 |jrh|bytes32|The justifcation root hash for this submission
 |entryIndex|uint256|The entry number for the given `newHash` and `nNodes`
+
+
+### `userInvolvedInMiningCycle`
+
+Returns whether a particular address has been involved in the current mining cycle. This might be from submitting a hash, or from defending one during a dispute.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|The address whose involvement is being queried
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|involved|bool|

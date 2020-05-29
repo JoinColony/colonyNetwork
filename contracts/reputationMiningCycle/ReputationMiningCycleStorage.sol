@@ -63,5 +63,12 @@ contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth 
   int256 constant MAX_INT128 = 2**127 - 1;
   int256 constant MIN_INT128 = (2**127)*(-1);
 
-  uint256 firstIncompleteRound;
+  uint256 firstIncompleteRound; // Storage slot 15
+
+  // Tracks whether the address in question has helped during a challenge / response process
+  mapping (address => bool) respondedToChallenge;  // Storage slot 16
+
+  uint256 stakeLost; // Storage slot 17
+  uint256 rewardsPaidOut; // Storage slot 18
+  uint256 cachedDisputeRewardSize; // Storage slot 19
 }

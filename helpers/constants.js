@@ -56,6 +56,7 @@ const FINALIZED_TASK_STATE = 2;
 const SECONDS_PER_DAY = 86400;
 
 const MINING_CYCLE_DURATION = 60 * 60 * 24; // 24 hours
+const MINING_CYCLE_TIMEOUT = 60 * 10; // Ten minutes
 const DECAY_RATE = {
   NUMERATOR:    new BN("992327946262944"), // eslint-disable-line prettier/prettier
   DENOMINATOR: new BN("1000000000000000"),
@@ -102,6 +103,7 @@ module.exports = {
   FINALIZED_TASK_STATE,
   SECONDS_PER_DAY,
   MINING_CYCLE_DURATION,
+  MINING_CYCLE_TIMEOUT,
   DECAY_RATE,
   GLOBAL_SKILL_ID,
 };

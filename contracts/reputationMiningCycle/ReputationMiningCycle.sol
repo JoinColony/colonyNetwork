@@ -21,17 +21,11 @@ pragma experimental "ABIEncoderV2";
 import "./../../lib/dappsys/math.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
-import "./../reputationMiningCycle/ReputationMiningCycleStorage.sol";
 import "./../tokenLocking/ITokenLocking.sol";
+import "./ReputationMiningCycleCommon.sol";
 
 
-contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
-  /// @notice Minimum reputation mining stake in CLNY
-  uint256 constant MIN_STAKE = 2000 * WAD;
-
-  /// @notice Size of mining window in seconds
-  uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
-
+contract ReputationMiningCycle is ReputationMiningCycleCommon {
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
   modifier finalDisputeRoundCompleted(uint256 roundNumber) {
@@ -182,10 +176,10 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         hash1: 0x00,
         hash2: 0x00
       }));
-      // If we've got a pair of submissions to face off, may as well start now.
+      // If we've got a pair of submissions to face off, set them ready to start when the window closes.
       if (nUniqueSubmittedHashes % 2 == 0) {
-        disputeRounds[0][nUniqueSubmittedHashes-1].lastResponseTimestamp = now;
-        disputeRounds[0][nUniqueSubmittedHashes-2].lastResponseTimestamp = now;
+        disputeRounds[0][nUniqueSubmittedHashes-1].lastResponseTimestamp = reputationMiningWindowOpenTimestamp + MINING_WINDOW_SIZE;
+        disputeRounds[0][nUniqueSubmittedHashes-2].lastResponseTimestamp = reputationMiningWindowOpenTimestamp + MINING_WINDOW_SIZE;
         /* disputeRounds[0][nUniqueSubmittedHashes-1].upperBound = disputeRounds[0][nUniqueSubmittedHashes-1].jrhNNodes; */
         /* disputeRounds[0][nUniqueSubmittedHashes-2].upperBound = disputeRounds[0][nUniqueSubmittedHashes-2].jrhNNodes; */
       }
@@ -211,7 +205,13 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   function confirmNewHash(uint256 roundNumber) public
   finalDisputeRoundCompleted(roundNumber)
   {
+    // No rewardResponders here - the submitters of the hash are incentivised to make this call, as it
+    // is the one that gives them the reward for staking in the first place. This means we don't have to
+    // take it in to account when calculating the reward for responders, which in turn means that the
+    // calculation can be done from a purely pairwise dispute perspective.
     require(submissionWindowClosed(), "colony-reputation-mining-submission-window-still-open");
+    // Burn tokens that have been slashed, but will not be awarded to others as rewards.
+    IColonyNetwork(colonyNetworkAddress).burnUnneededRewards(sub(stakeLost, rewardsPaidOut));
 
     DisputedEntry storage winningDisputeEntry = disputeRounds[roundNumber][0];
     Submission storage submission = reputationHashSubmissions[winningDisputeEntry.firstSubmitter];
@@ -226,7 +226,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
   function invalidateHash(uint256 round, uint256 idx) public {
     // What we do depends on our opponent, so work out which index it was at in disputeRounds[round]
-    uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
+    uint256 opponentIdx = getOpponentIdx(idx);
     uint256 nInNextRound;
 
     // We require either
@@ -274,7 +274,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       require(disputeRounds[round][opponentIdx].challengeStepCompleted >= disputeRounds[round][idx].challengeStepCompleted, "colony-reputation-mining-less-challenge-rounds-completed");
 
       // Require that it has failed a challenge (i.e. failed to respond in time)
-      require(now - disputeRounds[round][idx].lastResponseTimestamp >= 600, "colony-reputation-mining-not-timed-out"); // Timeout is ten minutes here.
+      require(add(disputeRounds[round][idx].lastResponseTimestamp, 600) <= now, "colony-reputation-mining-not-timed-out"); // Timeout is ten minutes here.
 
       // Work out whether we are invalidating just the supplied idx or its opponent too.
       bool eliminateOpponent = false;
@@ -297,14 +297,15 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       } else {
         // Our opponent completed the same number of challenge rounds, and both have now timed out.
         nInvalidatedHashes += 2;
+
         // Punish the people who proposed our opponent
         IColonyNetwork(colonyNetworkAddress).punishStakers(
           submittedHashes[opponentSubmission.proposedNewRootHash][opponentSubmission.nNodes][opponentSubmission.jrh],
-          msg.sender,
           MIN_STAKE
         );
-        emit HashInvalidated(opponentSubmission.proposedNewRootHash, opponentSubmission.nNodes, opponentSubmission.jrh);
+        stakeLost += submittedHashes[opponentSubmission.proposedNewRootHash][opponentSubmission.nNodes][opponentSubmission.jrh].length * MIN_STAKE;
 
+        emit HashInvalidated(opponentSubmission.proposedNewRootHash, opponentSubmission.nNodes, opponentSubmission.jrh);
       }
 
       // Note that two hashes have completed this challenge round (either one accepted for now and one rejected, or two rejected)
@@ -313,11 +314,13 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       // Punish the people who proposed the hash that was rejected
       IColonyNetwork(colonyNetworkAddress).punishStakers(
         submittedHashes[submission.proposedNewRootHash][submission.nNodes][submission.jrh],
-        msg.sender,
         MIN_STAKE
       );
+      stakeLost += submittedHashes[submission.proposedNewRootHash][submission.nNodes][submission.jrh].length * MIN_STAKE;
+
       emit HashInvalidated(submission.proposedNewRootHash, submission.nNodes, submission.jrh);
     }
+    rewardResponder(msg.sender);
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
 
@@ -355,6 +358,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // If require hasn't thrown, proof is correct.
     // Process the consequences
     processBinaryChallengeSearchResponse(round, idx, jhIntermediateValue, lastSiblings);
+    // Reward the user
+    rewardResponder(msg.sender);
   }
 
   function confirmBinarySearchResult(
@@ -388,6 +393,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     while (2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= submission.jrhNNodes) {
       disputeRounds[round][idx].challengeStepCompleted += 1;
     }
+    rewardResponder(msg.sender);
 
     emit BinarySearchConfirmed(submission.proposedNewRootHash, submission.nNodes, submission.jrh, disputeRounds[round][idx].lowerBound);
   }
@@ -399,9 +405,11 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32[] memory siblings2
   ) public
   {
+    require(submissionWindowClosed(), "colony-reputation-mining-cycle-submissions-not-closed");
     require(index < disputeRounds[round].length, "colony-reputation-mining-index-beyond-round-length");
+
     Submission storage submission = reputationHashSubmissions[disputeRounds[round][index].firstSubmitter];
-    // Require we've not submitted already.
+    // Require we've not confirmed the JRH already.
     require(submission.jrhNNodes == 0, "colony-reputation-jrh-hash-already-verified");
 
     // Calculate how many updates we're expecting in the justification tree
@@ -435,6 +443,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
     // Set bounds for first binary search if it's going to be needed
     disputeRounds[round][index].upperBound = submission.jrhNNodes - 1;
+
+    rewardResponder(msg.sender);
 
     emit JustificationRootHashConfirmed(submission.proposedNewRootHash, submission.nNodes, submission.jrh);
   }
@@ -534,13 +544,27 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     return reputationMiningWindowOpenTimestamp;
   }
 
+  function getDisputeRewardSize() public returns (uint256) {
+    return disputeRewardSize();
+  }
+
+  function expectedBranchMask(uint256 nNodes, uint256 node) public pure returns (uint256) {
+    // Gets the expected branchmask for a patricia tree which has nNodes, with keys from 0 to nNodes -1
+    // i.e. the tree is 'full' - there are no missing nodes
+    uint256 mask = sub(nNodes, 1); // Every branchmask in a full tree has at least these 1s set
+    uint256 xored = mask ^ node; // Where do mask and node differ?
+    // Set every bit in the mask from the first bit where they differ to 1
+    uint256 remainderMask = sub(nextPowerOfTwoInclusive(add(xored, 1)), 1);
+    return mask | remainderMask;
+  }
+
+  function userInvolvedInMiningCycle(address _user) public view returns (bool) {
+    return reputationHashSubmissions[_user].proposedNewRootHash != 0x00 || respondedToChallenge[_user];
+  }
+
   /////////////////////////
   // Internal functions
   /////////////////////////
-
-  function submissionWindowClosed() internal view returns (bool) {
-    return now - reputationMiningWindowOpenTimestamp >= MINING_WINDOW_SIZE;
-  }
 
   function processBinaryChallengeSearchResponse(
     uint256 round,
@@ -564,7 +588,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     disputeRounds[round][idx].hash1 = lastSiblings[0];
     disputeRounds[round][idx].hash2 = lastSiblings[1];
 
-    uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
+    uint256 opponentIdx = getOpponentIdx(idx);
     if (disputeRounds[round][opponentIdx].challengeStepCompleted == disputeRounds[round][idx].challengeStepCompleted ) {
       // Our opponent answered this challenge already.
       // Compare our intermediateReputationHash to theirs to establish how to move the bounds.
@@ -573,7 +597,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   }
 
   function processBinaryChallengeSearchStep(uint256 round, uint256 idx) internal {
-    uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
+    uint256 opponentIdx = getOpponentIdx(idx);
     uint256 searchWidth = (disputeRounds[round][idx].upperBound - disputeRounds[round][idx].lowerBound) + 1;
     uint256 searchWidthNextPowerOfTwo = nextPowerOfTwoInclusive(searchWidth);
     if (
@@ -705,13 +729,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     return layers;
   }
 
-  function expectedBranchMask(uint256 nNodes, uint256 node) public pure returns (uint256) {
-    // Gets the expected branchmask for a patricia tree which has nNodes, with keys from 0 to nNodes -1
-    // i.e. the tree is 'full' - there are no missing nodes
-    uint256 mask = sub(nNodes, 1); // Every branchmask in a full tree has at least these 1s set
-    uint256 xored = mask ^ node; // Where do mask and node differ?
-    // Set every bit in the mask from the first bit where they differ to 1
-    uint256 remainderMask = sub(nextPowerOfTwoInclusive(add(xored, 1)), 1);
-    return mask | remainderMask;
+  function getOpponentIdx(uint256 _idx) private pure returns (uint256) {
+    return _idx % 2 == 1 ? _idx - 1 : _idx + 1;
   }
+
 }

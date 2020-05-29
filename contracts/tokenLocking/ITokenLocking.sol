@@ -84,6 +84,14 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @param _force Pass true to forcibly unlock the token
   function withdraw(address _token, uint256 _amount, bool _force) public;
 
+  /// @notice This function is deprecated and only exists to aid upgrades.
+  function reward(address _recipient, uint256 _amount) public;
+
+  /// @notice Function called to burn CLNY tokens held by TokenLocking.
+  /// @dev While public, it can only be called successfully by colonyNetwork and is only used for reputation mining.
+  /// @param _amount Amount of CLNY to burn
+  function burn(uint256 _amount) public;
+
   /// @notice Allow the colony to obligate some amount of tokens as a stake.
   /// @dev Can only be called by a colony or colonyNetwork
   /// @param _user Address of the user that is allowing their holdings to be staked by the caller
