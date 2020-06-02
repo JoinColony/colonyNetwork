@@ -704,7 +704,7 @@ export async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId,
   const childDomainId = new BN(_childDomainId);
 
   if (parentDomainId.eq(childDomainId)) {
-    return 0;
+    return UINT256_MAX;
   }
 
   const parentDomain = await colony.getDomain(parentDomainId);

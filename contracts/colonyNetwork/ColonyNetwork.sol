@@ -334,10 +334,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     IColony colony = IColony(_colonyAddress);
     colony.setRecoveryRole(msg.sender);
     colony.setRootRole(msg.sender, true);
-    colony.setArbitrationRole(1, 0, msg.sender, 1, true);
-    colony.setArchitectureRole(1, 0, msg.sender, 1, true);
-    colony.setFundingRole(1, 0, msg.sender, 1, true);
-    colony.setAdministrationRole(1, 0, msg.sender, 1, true);
+    colony.setArbitrationRole(1, UINT256_MAX, msg.sender, 1, true);
+    colony.setArchitectureRole(1, UINT256_MAX, msg.sender, 1, true);
+    colony.setFundingRole(1, UINT256_MAX, msg.sender, 1, true);
+    colony.setAdministrationRole(1, UINT256_MAX, msg.sender, 1, true);
 
     // Colony will not have owner
     DSAuth dsauth = DSAuth(_colonyAddress);
