@@ -206,6 +206,36 @@ Deobligate the user some amount of tokens, releasing the stake.
 |_amount|uint256|Amount of internal token we are deobligating.
 
 
+### `emitDomainReputationPenalty`
+
+Emit a negative domain reputation update. Available only to Arbitration role holders
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I hold the Arbitration role
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_domainId|uint256|The domain where the user will lose reputation
+|_user|address|The user who will lose reputation
+|_amount|int256|The (negative) amount of reputation to lose
+
+
+### `emitSkillReputationPenalty`
+
+Emit a negative skill reputation update. Available only to Arbitration role holders in the root domain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill where the user will lose reputation
+|_user|address|The user who will lose reputation
+|_amount|int256|The (negative) amount of reputation to lose
+
+
 ### `executeTaskChange`
 
 Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker) using the detached signatures for these users.
