@@ -9,6 +9,8 @@ parityPassword
 **/build/*
 coverageEnv
 coverage
+coverage-merged
+coverage-reputation
 coverage.json
 .nyc_output
 coverage-miner
