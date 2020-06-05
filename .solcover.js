@@ -27,6 +27,7 @@ module.exports = {
       vmErrorsOnRPCResponse: false,
       total_accounts: 18
     },
-    onCompileComplete: provisionTokenContracts
+    onCompileComplete: provisionTokenContracts,
+    istanbulFolder: "./coverage-contracts"
 }
 

@@ -133,7 +133,7 @@ jobs:
       - persist_to_workspace:
           root: ./
           paths:
-            - coverage
+            - coverage-contracts
   test-reputation-coverage:
     <<: *job_common
     steps:
