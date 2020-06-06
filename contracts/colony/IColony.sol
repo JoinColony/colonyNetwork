@@ -816,12 +816,14 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _user User allowing their tokens to be obligated.
   /// @param _obligator Address of the account we are willing to let obligate us.
   /// @param _domainId Domain in which we are willing to be obligated.
+  /// @return approval The amount the user has approved
   function getApproval(address _user, address _obligator, uint256 _domainId) public view returns (uint256 approval);
 
   /// @notice View an obligation of tokens.
   /// @param _user User whose tokens are obligated.
   /// @param _obligator Address of the account who obligated us.
   /// @param _domainId Domain in which we are obligated.
+  /// @return obligation The amount that is currently obligated
   function getObligation(address _user, address _obligator, uint256 _domainId) public view returns (uint256 obligation);
 
   /// @notice Get the domain corresponding to a funding pot

@@ -259,12 +259,17 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice Returns whether a particular address has been involved in the current mining cycle. This might be
   /// from submitting a hash, or from defending one during a dispute.
   /// @param _user The address whose involvement is being queried
-  /// @return bool Whether the address has been involved in the current mining cycle
+  /// @return involved Whether the address has been involved in the current mining cycle
   function userInvolvedInMiningCycle(address _user) public view returns (bool involved);
 
   /// @notice Returns the amount of CLNY given for defending a hash during the current dispute cycle
-  /// @return uint256 The amount of CLNY given.
+  /// @return _reward uint256 The amount of CLNY given.
   function getDisputeRewardSize() public view returns (uint256 _reward);
 
+  /// @notice Returns whether the caller is able to currently respond to a dispute stage.
+  /// @param stage The dispute stage in question. Practically, this is a number that indexes in to the corresponding
+  /// enum in ReputationMiningCycleDataTypes
+  /// @param since The timestamp the last response for the submission in the dispute in question was made at.
+  /// @return possible bool Whether the user can respond at the current time.
   function getResponsePossible(disputeStages stage, uint256 since) public view returns (bool possible);
 }
