@@ -117,7 +117,7 @@ jobs:
           path: test-results.xml
       - store_artifacts:
           path: coverage-miner
-  test-coverage:
+  test-contracts-coverage:
     <<: *job_common
     steps:
       - checkout
@@ -126,13 +126,47 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
-          name: "Running unit tests with coverage"
+          name: "Running contract unit tests with coverage"
           command: yarn run test:contracts:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-contracts
+  test-reputation-coverage:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running reputation tests with coverage"
+          command: yarn run test:reputation:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-reputation
+  check-coverage:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - run:
+          name: "Install packages"
+          command: yarn --pure-lockfile --network-concurrency 1
+      - attach_workspace:
+          at: ./
+      - run:
+          name: "Merge coverage runs and check coverage thresholds"
+          command: yarn run check:coverage
       # Save coverage artifacts
       - store_artifacts:
-          path: coverage
+          path: coverage-merged
   security-analysis:
     <<: *job_python
     steps:
@@ -166,7 +200,12 @@ workflows:
   commit:
     jobs:
       - lint-and-unit-test
-      - test-coverage
+      - test-contracts-coverage
+      - test-reputation-coverage
+      - check-coverage:
+          requires:
+            - test-contracts-coverage
+            - test-reputation-coverage
   nightly:
     triggers:
       - schedule:

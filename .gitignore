@@ -8,7 +8,9 @@ test-results.xml
 parityPassword
 **/build/*
 coverageEnv
-coverage
+coverage-contracts
+coverage-merged
+coverage-reputation
 coverage.json
 .nyc_output
 coverage-miner
