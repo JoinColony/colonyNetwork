@@ -282,11 +282,16 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
     async function setUpNMiners(n) {
       expect(accounts.length, "Not enough accounts for test to run").to.be.at.least(n + 3);
       const accountsForTest = accounts.slice(3, n + 3);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(n));
       for (let i = 0; i < n; i += 1) {
         await giveUserCLNYTokensAndStake(colonyNetwork, accountsForTest[i], DEFAULT_STAKE);
-        await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: accountsForTest[i] });
+        // await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: accountsForTest[i] });
+        await metaColony.addPayment(1, UINT256_MAX, accountsForTest[i], clnyToken.address, 40, 1, 0);
+        const paymentId = await metaColony.getPaymentCount();
+        const payment = await metaColony.getPayment(paymentId);
+        await metaColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, INITIAL_FUNDING, clnyToken.address);
+        await metaColony.finalizePayment(1, UINT256_MAX, paymentId);
+
         // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the
         // right taskId, so if they're all created at once it messes up.
       }
