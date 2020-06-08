@@ -38,6 +38,22 @@ step_setup_slither: &step_setup_slither
         sudo pip install slither-analyzer
 
 jobs:
+  reputation-test:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Install lsof"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+      - run:
+          name: "Running reputation system unit tests"
+          command: yarn run test:reputation
   lint-and-unit-test:
     <<: *job_common
     steps:
@@ -97,9 +113,6 @@ jobs:
       - run:
           name: "Running network contracts unit tests"
           command: yarn run test:contracts
-      - run:
-          name: "Running reputation system unit tests"
-          command: yarn run test:reputation
       - run:
           name: "Running upgrade tests"
           command: yarn run test:contracts:upgrade:parity && yarn run test:contracts:upgrade:ganache
@@ -200,6 +213,7 @@ workflows:
   commit:
     jobs:
       - lint-and-unit-test
+      - reputation-test
       - test-contracts-coverage
       - test-reputation-coverage
       - check-coverage:
