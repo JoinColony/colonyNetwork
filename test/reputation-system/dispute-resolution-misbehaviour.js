@@ -479,7 +479,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await repCycle.confirmNewHash(4);
     });
 
-    it("should not allow stages to be skipped even if the number of updates is a power of 2", async () => {
+    it("should not allow stages to be skipped even if the number of updates is a power of 2", async function powerOfTwoTest() {
+      this.timeout(600000);
       // Note that our jrhNNodes can never be a power of two, because we always have an even number of updates (because every reputation change
       // has a user-specific an a colony-specific effect, and we always have one extra state in the Justification Tree because we include the last
       // accepted hash as the first node. jrhNNodes is always odd, therefore, and can never be a power of two.
