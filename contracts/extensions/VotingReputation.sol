@@ -49,7 +49,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   uint256 constant VOTE_PERIOD = 2 days;
   uint256 constant REVEAL_PERIOD = 2 days;
 
-  bytes4 constant CHANGE_FUNC = bytes4(
+  bytes4 constant CHANGE_FUNCTION = bytes4(
     keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
   );
 
@@ -84,11 +84,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   // Storage
   uint256 pollCount;
   mapping (uint256 => Poll) polls;
-  mapping (uint256 => mapping (address => mapping (bool => uint256))) stakers;
+  mapping (uint256 => mapping (address => mapping (bool => uint256))) stakes;
 
   mapping (address => mapping (uint256 => bytes32)) voteSecrets;
 
-  mapping (bytes32 => uint256) pastVotes;
+  mapping (bytes32 => uint256) pastPolls;
+  mapping (bytes32 => uint256) activePolls;
 
   // Public functions (interface)
 
@@ -148,7 +149,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     // TODO: can we keep the domainId on the poll somewhere? This seems like a wasteful external call.
     //   But if it's 10 external calls per word of storage, then < 10 stakers makes this cheaper.
     require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-stake-domain");
-    require(add(stakers[_pollId][msg.sender][_vote], _amount) <= stakerRep, "voting-rep-insufficient-rep");
+    require(add(stakes[_pollId][msg.sender][_vote], _amount) <= stakerRep, "voting-rep-insufficient-rep");
 
     require(add(poll.stakes[toInt(_vote)], _amount) <= getRequiredStake(_pollId), "voting-rep-stake-too-large");
     require(getPollState(_pollId) == PollState.Staking, "voting-rep-staking-closed");
@@ -159,7 +160,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     // Update the stake
     poll.unpaidRewards = add(poll.unpaidRewards, _amount);
     poll.stakes[toInt(_vote)] = add(poll.stakes[toInt(_vote)], _amount);
-    stakers[_pollId][msg.sender][_vote] = add(stakers[_pollId][msg.sender][_vote], _amount);
+    stakes[_pollId][msg.sender][_vote] = add(stakes[_pollId][msg.sender][_vote], _amount);
 
     // Update timestamp if fully staked
     if (
@@ -245,6 +246,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   function executePoll(uint256 _pollId) public {
     Poll storage poll = polls[_pollId];
     PollState pollState = getPollState(_pollId);
+    bytes32 slot = encodeSlot(poll.action);
 
     require(pollState != PollState.Failed, "voting-rep-poll-failed");
     require(pollState != PollState.Closed, "voting-rep-poll-escalation-window-open");
@@ -252,9 +254,14 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(pollState == PollState.Executable, "voting-rep-poll-not-executable");
 
     poll.executed = true;
-    bool canExecute = poll.stakes[NAY] <= poll.stakes[YAY] && poll.votes[NAY] <= poll.votes[YAY];
+    delete activePolls[slot];
 
-    if (getSig(poll.action) == CHANGE_FUNC) {
+    bool canExecute = (
+      poll.stakes[NAY] <= poll.stakes[YAY] &&
+      poll.votes[NAY] <= poll.votes[YAY]
+    );
+
+    if (getSig(poll.action) == CHANGE_FUNCTION) {
 
       // Conditions:
       //  - Yay side staked and nay side did not, and doman has sufficient vote power
@@ -267,9 +274,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
         votePower = poll.votes[YAY];
       }
 
-      bytes32 slot = encodeSlot(poll.action);
-      if (pastVotes[slot] < votePower) {
-        pastVotes[slot] = votePower;
+      if (pastPolls[slot] < votePower) {
+        pastPolls[slot] = votePower;
         canExecute = canExecute && true;
       } else {
         canExecute = canExecute && false;
@@ -301,7 +307,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-stake-domain");
 
     // Calculate how much of the stake is left after voter compensation (>= 90%)
-    uint256 stake = stakers[_pollId][_user][_vote];
+    uint256 stake = stakes[_pollId][_user][_vote];
     uint256 totalStake = add(poll.stakes[NAY], poll.stakes[YAY]);
     uint256 rewardFraction = wdiv(poll.unpaidRewards, totalStake);
     uint256 rewardStake = wmul(stake, rewardFraction);
@@ -337,7 +343,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       stakerReward = rewardStake;
     }
 
-    delete stakers[_pollId][_user][_vote];
+    delete stakes[_pollId][_user][_vote];
     tokenLocking.transfer(token, stakerReward, _user, true);
 
     if (repPenalty > 0) {
@@ -364,11 +370,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   function getStake(uint256 _pollId, address _staker, bool _vote) public view returns (uint256) {
-    return stakers[_pollId][_staker][_vote];
+    return stakes[_pollId][_staker][_vote];
   }
 
-  function getPastVotes(bytes32 _slot) public view returns (uint256) {
-    return pastVotes[_slot];
+  function getPastPoll(bytes32 _slot) public view returns (uint256) {
+    return pastPolls[_slot];
   }
 
   function getPollState(uint256 _pollId) public view returns (PollState) {
@@ -419,12 +425,16 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     internal
   {
+    require(activePolls[encodeSlot(_action)] == 0, "voting-rep-already-active");
+
     pollCount += 1;
     polls[pollCount].lastEvent = now;
     polls[pollCount].rootHash = colonyNetwork.getReputationRootHash();
     polls[pollCount].skillId = _skillId;
     polls[pollCount].skillRep = checkReputation(pollCount, address(0x0), _key, _value, _branchMask, _siblings);
     polls[pollCount].action = _action;
+
+    activePolls[encodeSlot(_action)] = pollCount;
 
     emit PollCreated(pollCount, _skillId);
   }
@@ -509,11 +519,20 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   function encodeSlot(bytes memory action) internal returns (bytes32 slot) {
-    assembly {
-      // Hash all but last (value) bytes32
-      //  Recall: mload(action) gives length of bytes array
-      //  So skip past the first bytes32 (length), and the last bytes32 (value)
-      slot := keccak256(add(action, 0x20), sub(mload(action), 0x20))
+    if (getSig(action) == CHANGE_FUNCTION) {
+      assembly {
+        // Hash all but last (value) bytes32
+        //  Recall: mload(action) gives length of bytes array
+        //  So skip past the first bytes32 (length), and the last bytes32 (value)
+        slot := keccak256(add(action, 0x20), sub(mload(action), 0x20))
+      }
+    } else {
+      assembly {
+        // Hash entire action
+        //  Recall: mload(action) gives length of bytes array
+        //  So skip past the first bytes32 (length)
+        slot := keccak256(add(action, 0x20), mload(action))
+      }
     }
   }
 }

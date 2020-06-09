@@ -225,6 +225,13 @@ contract("Voting Reputation", (accounts) => {
       expect(poll.skillId).to.eq.BN(domain2.skillId);
     });
 
+    it("cannot create a poll for an action if there is an active poll for the same action", async () => {
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+
+      await checkErrorRevert(voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings), "voting-rep-already-active");
+    });
+
     it("can externally escalate a domain poll", async () => {
       // Create poll in parent domain (1) of action (2)
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
@@ -573,33 +580,41 @@ contract("Voting Reputation", (accounts) => {
     it("cannot take an action if there is insufficient voting power (state change actions)", async () => {
       // Set first slot of first expenditure struct to 0x0
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, 1, 0, [], [], ethers.constants.HashZero]);
+      let logs;
 
-      // Create two polls for same variable
       await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const pollId1 = await voting.getPollCount();
-      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      const pollId2 = await voting.getPollCount();
 
       await voting.stakePoll(pollId1, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakePoll(pollId1, 1, UINT256_MAX, 1, false, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.stakePoll(pollId2, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakePoll(pollId2, 1, UINT256_MAX, 1, false, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-
       await voting.submitVote(pollId1, soliditySha3(SALT, true), { from: USER0 });
-      await voting.submitVote(pollId2, soliditySha3(SALT, true), { from: USER0 });
 
       await forwardTime(VOTE_WINDOW, this);
 
       await voting.revealVote(pollId1, SALT, true, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(pollId2, SALT, true, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(REVEAL_WINDOW, this);
       await forwardTime(STAKE_WINDOW, this);
 
-      let logs;
       ({ logs } = await voting.executePoll(pollId1));
       expect(logs[0].args.success).to.be.true;
+
+      // Create another poll for the same variable
+      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const pollId2 = await voting.getPollCount();
+
+      await voting.stakePoll(pollId2, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakePoll(pollId2, 1, UINT256_MAX, 1, false, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.submitVote(pollId2, soliditySha3(SALT, true), { from: USER0 });
+
+      await forwardTime(VOTE_WINDOW, this);
+
+      await voting.revealVote(pollId2, SALT, true, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(REVEAL_WINDOW, this);
+      await forwardTime(STAKE_WINDOW, this);
 
       ({ logs } = await voting.executePoll(pollId2));
       expect(logs[0].args.success).to.be.false;
@@ -617,8 +632,8 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.executePoll(pollId);
       const slot = soliditySha3(action.slice(0, action.length - 64));
-      const pastVotes = await voting.getPastVotes(slot);
-      expect(pastVotes).to.eq.BN(WAD.muln(2).subn(2)); // ~66.6% of 3 WAD
+      const pastPoll = await voting.getPastPoll(slot);
+      expect(pastPoll).to.eq.BN(WAD.muln(2).subn(2)); // ~66.6% of 3 WAD
     });
 
     it("can set vote power correctly after a vote", async () => {
@@ -640,8 +655,8 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.executePoll(pollId);
       const slot = soliditySha3(action.slice(0, action.length - 64));
-      const pastVotes = await voting.getPastVotes(slot);
-      expect(pastVotes).to.eq.BN(WAD); // USER0 had 1 WAD of reputation
+      const pastPoll = await voting.getPastPoll(slot);
+      expect(pastPoll).to.eq.BN(WAD); // USER0 had 1 WAD of reputation
     });
   });
 
