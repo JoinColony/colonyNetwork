@@ -117,6 +117,25 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return token;
   }
 
+  function emitDomainReputationPenalty(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    address _user,
+    int256 _amount
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    require(_amount <= 0, "colony-penalty-cannot-be-positive");
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
+  }
+
+  function emitSkillReputationPenalty(uint256 _skillId, address _user, int256 _amount)
+  public stoppable auth validGlobalSkill(_skillId)
+  {
+    require(_amount <= 0, "colony-penalty-cannot-be-positive");
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
+  }
+
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
     require(colonyNetworkAddress == address(0x0), "colony-already-initialised-network");
     require(token == address(0x0), "colony-already-initialised-token");
@@ -302,14 +321,17 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   // v4 to v5
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+    bytes4 sig;
 
-    // Add stake management functionality
-    colonyAuthority.setRoleCapability(
-      uint8(ColonyRole.Arbitration),
-      address(this),
-      bytes4(keccak256("transferStake(uint256,uint256,address,address,uint256,uint256,address)")),
-      true
-    );
+    // Add stake management functionality (colonyNetwork#757)
+    sig = bytes4(keccak256("transferStake(uint256,uint256,address,address,uint256,uint256,address)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+
+    // Add reputation penalty functionality (colonyNetwork#845)
+    sig = bytes4(keccak256("emitDomainReputationPenalty(uint256,uint256,uint256,address,int256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+    sig = bytes4(keccak256("emitSkillReputationPenalty(uint256,address,int256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
