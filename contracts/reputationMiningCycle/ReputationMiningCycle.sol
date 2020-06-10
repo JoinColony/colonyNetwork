@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity ^0.5.8;
 pragma experimental "ABIEncoderV2";
 
 import "./../../lib/dappsys/math.sol";
@@ -221,7 +221,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       submittedHashes[submission.proposedNewRootHash][submission.nLeaves][submission.jrh],
       0 * WAD // TODO: Make this a function of reputation state
     );
-    selfdestruct(colonyNetworkAddress);
+    // selfdestruct(colonyNetworkAddress);
   }
 
   function invalidateHash(uint256 round, uint256 idx) public {

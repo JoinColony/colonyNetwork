@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity ^0.5.8;
 
 import "./ColonyNetworkStorage.sol";
 
@@ -264,6 +264,6 @@ contract DutchAuction is DSMath {
     // Check this contract balances in the working tokens is 0 before we kill it
     assert(clnyToken.balanceOf(address(this)) == 0);
     assert(token.balanceOf(address(this)) == 0);
-    selfdestruct(colonyNetwork);
+    // selfdestruct(colonyNetwork);
   }
 }

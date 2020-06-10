@@ -72,6 +72,8 @@
     "@babel/register": "^7.8.3",
     "@codechecks/client": "^0.1.5",
     "@colony/eslint-config-colony": "8.0.1",
+    "@eth-optimism/ovm-truffle-provider-wrapper": "^0.0.1-alpha.25",
+    "@eth-optimism/solc-transpiler": "^0.0.1-alpha.25",
     "async-request": "^1.2.0",
     "babel-plugin-istanbul": "^6.0.0",
     "bignumber.js": "^9.0.0",

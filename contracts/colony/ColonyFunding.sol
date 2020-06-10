@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity ^0.5.8;
 pragma experimental "ABIEncoderV2";
 
 import "./../tokenLocking/ITokenLocking.sol";
@@ -252,7 +252,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     uint remainder;
     if (_token == address(0x0)) {
       // It's ether
-      toClaim = sub(sub(address(this).balance, nonRewardPotsTotal[_token]), fundingPots[0].balance[_token]);
+      // toClaim = sub(sub(address(this).balance, nonRewardPotsTotal[_token]), fundingPots[0].balance[_token]);
     } else {
       // Assume it's an ERC 20 token.
       ERC20Extended targetToken = ERC20Extended(_token);
