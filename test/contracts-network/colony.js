@@ -15,7 +15,7 @@ import {
   WAD,
 } from "../../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents } from "../../helpers/test-helper";
-import { makeTask, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
+import { makeTask, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -23,6 +23,8 @@ chai.use(bnChai(web3.utils.BN));
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TransferTest = artifacts.require("TransferTest");
+const EtherRouter = artifacts.require("EtherRouter");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
 
 contract("Colony", (accounts) => {
   let colony;
@@ -30,10 +32,8 @@ contract("Colony", (accounts) => {
   let colonyNetwork;
 
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
   beforeEach(async () => {

@@ -1,10 +1,16 @@
+/* global artifacts */
+
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { UINT256_MAX, SPECIFICATION_HASH } from "../../helpers/constants";
 import { web3GetStorageAt, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
+import { setupRandomColony } from "../../helpers/test-data-generator";
+
+const EtherRouter = artifacts.require("EtherRouter");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -12,14 +18,10 @@ chai.use(bnChai(web3.utils.BN));
 contract("Colony Recovery", (accounts) => {
   let colony;
   let colonyNetwork;
-  let metaColony;
 
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
   beforeEach(async () => {
@@ -109,6 +111,9 @@ contract("Colony Recovery", (accounts) => {
 
     it("should not be able to call normal functions while in recovery", async () => {
       await colony.enterRecoveryMode();
+
+      const metaColonyAddress = await colonyNetwork.getMetaColony();
+      const metaColony = await IMetaColony.at(metaColonyAddress);
       await metaColony.enterRecoveryMode();
 
       await checkErrorRevert(colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero), "colony-in-recovery-mode");

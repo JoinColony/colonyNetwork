@@ -23,23 +23,14 @@ import {
 import { getTokenArgs, web3GetAccounts, getChildSkillIndex } from "./test-helper";
 import { executeSignedTaskChange, executeSignedRoleAssignment } from "./task-review-signing";
 
-const { setupColonyVersionResolver, setupUpgradableTokenLocking } = require("./upgradable-contracts");
-
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
-const TokenLocking = artifacts.require("TokenLocking");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const TokenAuthority = artifacts.require("./TokenAuthority");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
-const Colony = artifacts.require("Colony");
-const ColonyFunding = artifacts.require("ColonyFunding");
-const ColonyExpenditure = artifacts.require("ColonyExpenditure");
-const ColonyTask = artifacts.require("ColonyTask");
-const ColonyPayment = artifacts.require("ColonyPayment");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const ContractRecovery = artifacts.require("ContractRecovery");
 
 export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 3, dueDate = 0, manager }) {
   const accounts = await web3GetAccounts();
@@ -338,29 +329,33 @@ export async function unlockCLNYToken(metaColony) {
 
 export async function setupColonyNetwork() {
   const resolverColonyNetworkDeployed = await Resolver.deployed();
-  const colonyTemplate = await Colony.new();
-  const colonyFunding = await ColonyFunding.new();
-  const colonyExpenditure = await ColonyExpenditure.new();
-  const colonyTask = await ColonyTask.new();
-  const colonyPayment = await ColonyPayment.new();
-  const resolver = await Resolver.new();
-  const contractRecovery = await ContractRecovery.new();
+  const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
+
+  // Get the version resolver and version number from the metacolony deployed during migration
+  const deployedMetaColonyAddress = await deployedColonyNetwork.getMetaColony();
+  const deployedMetaColony = await IMetaColony.at(deployedMetaColonyAddress);
+  const deployedMetaColonyAsEtherRouter = await EtherRouter.at(deployedMetaColonyAddress);
+  const colonyVersionResolverAddress = await deployedMetaColonyAsEtherRouter.resolver();
+  const version = await deployedMetaColony.version();
+
+  // Make a new ColonyNetwork
   const etherRouter = await EtherRouter.new();
   await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
-
   const colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-  await setupColonyVersionResolver(colonyTemplate, colonyExpenditure, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
-  const version = await colonyTemplate.version();
-  await colonyNetwork.initialise(resolver.address, version);
+
+  // Initialise with originally deployed version
+  await colonyNetwork.initialise(colonyVersionResolverAddress, version);
+
   // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
-  const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
   const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
   await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
 
-  const tokenLockingResolver = await Resolver.new();
+  // Get token-locking router from when it was deployed during migrations
+  const deployedTokenLockingAddress = await deployedColonyNetwork.getTokenLocking();
+  const deployedTokenLockingAsEtherRouter = await EtherRouter.at(deployedTokenLockingAddress);
+  const tokenLockingResolverAddress = await deployedTokenLockingAsEtherRouter.resolver();
   const tokenLockingEtherRouter = await EtherRouter.new();
-  const tokenLockingContract = await TokenLocking.new();
-  await setupUpgradableTokenLocking(tokenLockingEtherRouter, tokenLockingResolver, tokenLockingContract);
+  await tokenLockingEtherRouter.setResolver(tokenLockingResolverAddress);
 
   await colonyNetwork.setTokenLocking(tokenLockingEtherRouter.address);
   const tokenLocking = await ITokenLocking.at(tokenLockingEtherRouter.address);

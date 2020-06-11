@@ -3,7 +3,7 @@ import bnChai from "bn-chai";
 
 import { soliditySha3 } from "web3-utils";
 import { UINT256_MAX, INITIAL_FUNDING, SPECIFICATION_HASH, GLOBAL_SKILL_ID } from "../../helpers/constants";
-import { checkErrorRevert, removeSubdomainLimit } from "../../helpers/test-helper";
+import { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit } from "../../helpers/test-helper";
 import { executeSignedTaskChange } from "../../helpers/task-review-signing";
 
 import {
@@ -50,8 +50,12 @@ contract("Meta Colony", (accounts) => {
   });
 
   describe("when adding skills to the tree by adding domains", () => {
-    beforeEach(async () => {
+    before(async () => {
       await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
+    });
+
+    after(async () => {
+      await restoreSubdomainLimit(colonyNetwork);
     });
 
     it("should be able to add a new skill as a child of a domain", async () => {
