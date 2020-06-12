@@ -8,7 +8,15 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, DEFAULT_STAKE } from "../../helpers/constants";
-import { checkErrorRevert, makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime, encodeTxData } from "../../helpers/test-helper";
+import {
+  checkErrorRevert,
+  makeReputationKey,
+  makeReputationValue,
+  getActiveRepCycle,
+  forwardTime,
+  encodeTxData,
+  bn2bytes32,
+} from "../../helpers/test-helper";
 
 import {
   setupColonyNetwork,
@@ -181,7 +189,7 @@ contract("Voting Reputation", (accounts) => {
     await repCycle.confirmNewHash(0);
   });
 
-  describe.only("using the extension factory", async () => {
+  describe("using the extension factory", async () => {
     it("can install the extension factory once if root and uninstall", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await checkErrorRevert(votingFactory.deployExtension(colony.address, { from: USER1 }), "colony-extension-user-not-root");
@@ -191,7 +199,7 @@ contract("Voting Reputation", (accounts) => {
     });
   });
 
-  describe.only("creating polls", async () => {
+  describe("creating polls", async () => {
     it("can create a root poll", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
@@ -225,13 +233,6 @@ contract("Voting Reputation", (accounts) => {
       expect(poll.skillId).to.eq.BN(domain2.skillId);
     });
 
-    it("cannot create a poll for an action if there is an active poll for the same action", async () => {
-      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-
-      await checkErrorRevert(voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings), "voting-rep-already-active");
-    });
-
     it("can externally escalate a domain poll", async () => {
       // Create poll in parent domain (1) of action (2)
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
@@ -253,7 +254,7 @@ contract("Voting Reputation", (accounts) => {
     });
   });
 
-  describe.only("staking on polls", async () => {
+  describe("staking on polls", async () => {
     let pollId;
 
     beforeEach(async () => {
@@ -276,7 +277,7 @@ contract("Voting Reputation", (accounts) => {
       expect(stake1).to.eq.BN(100);
     });
 
-    it("updates the poll states correctly", async () => {
+    it("can update the poll states correctly", async () => {
       let pollState = await voting.getPollState(pollId);
       expect(pollState).to.eq.BN(STAKING);
 
@@ -287,6 +288,213 @@ contract("Voting Reputation", (accounts) => {
       await voting.stakePoll(pollId, 1, UINT256_MAX, 1, false, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       pollState = await voting.getPollState(pollId);
       expect(pollState).to.eq.BN(OPEN);
+    });
+
+    it("cannot stake for an action while there is an active poll for the same action", async () => {
+      let activePoll;
+
+      const { action } = await voting.getPoll(pollId);
+      activePoll = await voting.getActivePoll(soliditySha3(action));
+      expect(activePoll).to.be.zero;
+
+      await forwardTime(STAKE_WINDOW / 2, this);
+      await voting.stakePoll(pollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      activePoll = await voting.getActivePoll(soliditySha3(action));
+      expect(activePoll).to.eq.BN(pollId);
+
+      await voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const otherPollId = await voting.getPollCount();
+
+      await checkErrorRevert(
+        voting.stakePoll(otherPollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-competing-poll-exists"
+      );
+
+      // But, can stake once the first poll is executed.
+      await forwardTime(STAKE_WINDOW / 2, this);
+      await voting.executePoll(pollId);
+
+      activePoll = await voting.getActivePoll(soliditySha3(action));
+      expect(activePoll).to.be.zero;
+
+      await voting.stakePoll(otherPollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      activePoll = await voting.getActivePoll(soliditySha3(action));
+      expect(activePoll).to.eq.BN(otherPollId);
+    });
+
+    it("can update the expenditure globalClaimDelay if voting on expenditure state", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      // Set payoutModifier to 1 for expenditure slot 0
+      const action = await encodeTxData(colony, "setExpenditureState", [
+        1,
+        UINT256_MAX,
+        expenditureId,
+        25,
+        [true],
+        [bn2bytes32(new BN(3))],
+        bn2bytes32(WAD),
+      ]);
+
+      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      pollId = await voting.getPollCount();
+
+      let expenditurePollCount;
+      expenditurePollCount = await voting.getExpenditurePollCount(soliditySha3(expenditureId));
+      expect(expenditurePollCount).to.be.zero;
+
+      let expenditureSlot;
+      expenditureSlot = await colony.getExpenditure(expenditureId);
+      expect(expenditureSlot.globalClaimDelay).to.be.zero;
+
+      await voting.stakePoll(pollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      expenditurePollCount = await voting.getExpenditurePollCount(soliditySha3(expenditureId));
+      expect(expenditurePollCount).to.eq.BN(1);
+
+      expenditureSlot = await colony.getExpenditure(expenditureId);
+      expect(expenditureSlot.globalClaimDelay).to.eq.BN(UINT256_MAX);
+    });
+
+    it("can update the expenditure slot claimDelay if voting on expenditure slot state", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      // Set payoutModifier to 1 for expenditure slot 0
+      const action = await encodeTxData(colony, "setExpenditureState", [
+        1,
+        UINT256_MAX,
+        expenditureId,
+        26,
+        [false, true],
+        ["0x0", bn2bytes32(new BN(2))],
+        bn2bytes32(WAD),
+      ]);
+
+      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      pollId = await voting.getPollCount();
+
+      let expenditurePollCount;
+      expenditurePollCount = await voting.getExpenditurePollCount(soliditySha3(expenditureId, 0));
+      expect(expenditurePollCount).to.be.zero;
+
+      let expenditureSlot;
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.claimDelay).to.be.zero;
+
+      await voting.stakePoll(pollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      expenditurePollCount = await voting.getExpenditurePollCount(soliditySha3(expenditureId, 0));
+      expect(expenditurePollCount).to.eq.BN(1);
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
+    });
+
+    it("can update the expenditure slot claimDelay if voting on expenditure payout state", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      // Set payout to WAD for expenditure slot 0, internal token
+      const action = await encodeTxData(colony, "setExpenditureState", [
+        1,
+        UINT256_MAX,
+        expenditureId,
+        27,
+        [false, false],
+        ["0x0", bn2bytes32(new BN(token.address.slice(2), 16))],
+        bn2bytes32(WAD),
+      ]);
+
+      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      pollId = await voting.getPollCount();
+
+      let expenditurePollCount;
+      expenditurePollCount = await voting.getExpenditurePollCount(soliditySha3(expenditureId, 0));
+      expect(expenditurePollCount).to.be.zero;
+
+      let expenditureSlot;
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.claimDelay).to.be.zero;
+
+      await voting.stakePoll(pollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      expenditurePollCount = await voting.getExpenditurePollCount(soliditySha3(expenditureId, 0));
+      expect(expenditurePollCount).to.eq.BN(1);
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
+    });
+
+    it("can accurately track the number of polls for a single expenditure", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+      const expenditureHash = soliditySha3(expenditureId, 0);
+
+      // Set payoutModifier to 1 for expenditure slot 0
+      const action1 = await encodeTxData(colony, "setExpenditureState", [
+        1,
+        UINT256_MAX,
+        expenditureId,
+        26,
+        [false, true],
+        ["0x0", bn2bytes32(new BN(2))],
+        bn2bytes32(WAD),
+      ]);
+
+      // Set payout to WAD for expenditure slot 0, internal token
+      const action2 = await encodeTxData(colony, "setExpenditureState", [
+        1,
+        UINT256_MAX,
+        expenditureId,
+        27,
+        [false, false],
+        ["0x0", bn2bytes32(new BN(token.address.slice(2), 16))],
+        bn2bytes32(WAD),
+      ]);
+
+      await voting.createDomainPoll(1, UINT256_MAX, action1, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const pollId1 = await voting.getPollCount();
+
+      await voting.createDomainPoll(1, UINT256_MAX, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const pollId2 = await voting.getPollCount();
+
+      let expenditurePollCount;
+      expenditurePollCount = await voting.getExpenditurePollCount(expenditureHash);
+      expect(expenditurePollCount).to.be.zero;
+
+      let expenditureSlot;
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.claimDelay).to.be.zero;
+
+      await voting.stakePoll(pollId1, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakePoll(pollId2, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      expenditurePollCount = await voting.getExpenditurePollCount(expenditureHash);
+      expect(expenditurePollCount).to.eq.BN(2);
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
+
+      await forwardTime(STAKE_WINDOW, this);
+      await voting.executePoll(pollId1);
+
+      expenditurePollCount = await voting.getExpenditurePollCount(expenditureHash);
+      expect(expenditurePollCount).to.eq.BN(1);
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
+
+      await voting.executePoll(pollId2);
+
+      expenditurePollCount = await voting.getExpenditurePollCount(expenditureHash);
+      expect(expenditurePollCount).to.be.zero;
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.claimDelay).to.be.zero;
     });
 
     it("cannot stake with someone else's reputation", async () => {
@@ -336,7 +544,7 @@ contract("Voting Reputation", (accounts) => {
     });
   });
 
-  describe.only("voting on polls", async () => {
+  describe("voting on polls", async () => {
     let pollId;
 
     beforeEach(async () => {
@@ -371,7 +579,7 @@ contract("Voting Reputation", (accounts) => {
       expect(votes[1]).to.eq.BN(WAD.muln(2));
     });
 
-    it("can update votes, but only last one counts", async () => {
+    it("can update votes, but just the last one counts", async () => {
       await voting.submitVote(pollId, soliditySha3(SALT, false), { from: USER0 });
       await voting.submitVote(pollId, soliditySha3(SALT, true), { from: USER0 });
 
@@ -498,7 +706,7 @@ contract("Voting Reputation", (accounts) => {
     });
   });
 
-  describe.only("executing polls", async () => {
+  describe("executing polls", async () => {
     let pollId;
 
     beforeEach(async () => {
@@ -660,7 +868,7 @@ contract("Voting Reputation", (accounts) => {
     });
   });
 
-  describe.only("claiming rewards", async () => {
+  describe("claiming rewards", async () => {
     let pollId;
 
     beforeEach(async () => {
@@ -781,7 +989,7 @@ contract("Voting Reputation", (accounts) => {
     });
   });
 
-  describe.only("escalating polls", async () => {
+  describe("escalating polls", async () => {
     let pollId;
 
     beforeEach(async () => {

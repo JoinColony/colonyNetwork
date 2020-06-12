@@ -210,6 +210,7 @@ contract ColonyDataTypes {
     uint256 fundingPotId;
     uint256 domainId;
     uint256 finalizedTimestamp;
+    uint256 globalClaimDelay;
   }
 
   struct ExpenditureSlot {

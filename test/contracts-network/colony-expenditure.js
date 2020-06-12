@@ -4,7 +4,7 @@ import bnChai from "bn-chai";
 import { BN } from "bn.js";
 
 import { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID } from "../../helpers/constants";
-import { checkErrorRevert, getTokenArgs, forwardTime, getBlockTime } from "../../helpers/test-helper";
+import { checkErrorRevert, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } from "../../helpers/test-helper";
 import { fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -554,10 +554,6 @@ contract("Colony Expenditure", (accounts) => {
 
     const MAPPING = false;
     const OFFSET = true;
-
-    function bn2bytes32(x, size = 64) {
-      return `0x${x.toString(16, size)}`;
-    }
 
     beforeEach(async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1, { from: ADMIN });

@@ -88,8 +88,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   mapping (address => mapping (uint256 => bytes32)) voteSecrets;
 
-  mapping (bytes32 => uint256) pastPolls;
-  mapping (bytes32 => uint256) activePolls;
+  mapping (bytes32 => uint256) pastPolls; // action signature => voting power
+  mapping (bytes32 => uint256) activePolls; // action signature => pollId
+  mapping (bytes32 => uint256) expenditurePollCounts; // expenditure signature => count
 
   // Public functions (interface)
 
@@ -144,6 +145,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     Poll storage poll = polls[_pollId];
 
+    require(
+      activePolls[hashAction(poll.action)] == 0 ||
+      activePolls[hashAction(poll.action)] == _pollId,
+      "voting-rep-competing-poll-exists"
+    );
+
     uint256 stakerRep = checkReputation(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
 
     // TODO: can we keep the domainId on the poll somewhere? This seems like a wasteful external call.
@@ -161,6 +168,20 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll.unpaidRewards = add(poll.unpaidRewards, _amount);
     poll.stakes[toInt(_vote)] = add(poll.stakes[toInt(_vote)], _amount);
     stakes[_pollId][msg.sender][_vote] = add(stakes[_pollId][msg.sender][_vote], _amount);
+
+    // Activate poll to prevent competing polls from being activated
+    if (poll.stakes[YAY] == getRequiredStake(_pollId) && toInt(_vote) == YAY) {
+      activePolls[hashAction(poll.action)] = _pollId;
+
+      // Increment counter & extend claim delay if staking for an expenditure state change
+      if (getSig(poll.action) == CHANGE_FUNCTION) {
+        bytes32 expenditureHash = hashExpenditureAction(poll.action);
+        expenditurePollCounts[expenditureHash] = add(expenditurePollCounts[expenditureHash], 1);
+
+        bytes memory claimDelayAction = createClaimDelayAction(poll.action, UINT256_MAX);
+        executeCall(address(colony), claimDelayAction);
+      }
+    }
 
     // Update timestamp if fully staked
     if (
@@ -246,7 +267,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   function executePoll(uint256 _pollId) public {
     Poll storage poll = polls[_pollId];
     PollState pollState = getPollState(_pollId);
-    bytes32 slot = encodeSlot(poll.action);
+    bytes32 actionHash = hashAction(poll.action);
 
     require(pollState != PollState.Failed, "voting-rep-poll-failed");
     require(pollState != PollState.Closed, "voting-rep-poll-escalation-window-open");
@@ -254,7 +275,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(pollState == PollState.Executable, "voting-rep-poll-not-executable");
 
     poll.executed = true;
-    delete activePolls[slot];
+    delete activePolls[actionHash];
 
     bool canExecute = (
       poll.stakes[NAY] <= poll.stakes[YAY] &&
@@ -262,6 +283,14 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     );
 
     if (getSig(poll.action) == CHANGE_FUNCTION) {
+      bytes32 expenditureHash = hashExpenditureAction(poll.action);
+      expenditurePollCounts[expenditureHash] = sub(expenditurePollCounts[expenditureHash], 1);
+
+      // Release the claimDelay if this is the last active poll
+      if (expenditurePollCounts[expenditureHash] == 0) {
+        bytes memory claimDelayAction = createClaimDelayAction(poll.action, 0);
+        executeCall(address(colony), claimDelayAction);
+      }
 
       // Conditions:
       //  - Yay side staked and nay side did not, and doman has sufficient vote power
@@ -274,8 +303,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
         votePower = poll.votes[YAY];
       }
 
-      if (pastPolls[slot] < votePower) {
-        pastPolls[slot] = votePower;
+      if (pastPolls[actionHash] < votePower) {
+        pastPolls[actionHash] = votePower;
         canExecute = canExecute && true;
       } else {
         canExecute = canExecute && false;
@@ -369,6 +398,14 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll = polls[_pollId];
   }
 
+  function getActivePoll(bytes32 _actionHash) public view returns (uint256) {
+    return activePolls[_actionHash];
+  }
+
+  function getExpenditurePollCount(bytes32 _expenditureHash) public view returns (uint256) {
+    return expenditurePollCounts[_expenditureHash];
+  }
+
   function getStake(uint256 _pollId, address _staker, bool _vote) public view returns (uint256) {
     return stakes[_pollId][_staker][_vote];
   }
@@ -425,16 +462,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     internal
   {
-    require(activePolls[encodeSlot(_action)] == 0, "voting-rep-already-active");
-
     pollCount += 1;
     polls[pollCount].lastEvent = now;
     polls[pollCount].rootHash = colonyNetwork.getReputationRootHash();
     polls[pollCount].skillId = _skillId;
     polls[pollCount].skillRep = checkReputation(pollCount, address(0x0), _key, _value, _branchMask, _siblings);
     polls[pollCount].action = _action;
-
-    activePolls[encodeSlot(_action)] = pollCount;
 
     emit PollCreated(pollCount, _skillId);
   }
@@ -501,7 +534,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
   }
 
-  function executeCall(address to, bytes memory action) internal returns (bool success) {
+  function executeCall(address to, bytes memory action) internal {
+    bool success;
+
     assembly {
               // call contract at address a with input mem[in…(in+insize))
               //   providing g gas and v wei and output area mem[out…(out+outsize))
@@ -510,6 +545,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
               // call(g,   a,  v, in,                insize,        out, outsize)
       success := call(gas, to, 0, add(action, 0x20), mload(action), 0, 0)
     }
+
+    // require(success, "voting-rep-call-failed");
   }
 
   function getSig(bytes memory action) internal returns (bytes4 sig) {
@@ -518,21 +555,108 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
   }
 
-  function encodeSlot(bytes memory action) internal returns (bytes32 slot) {
+  function hashAction(bytes memory action) internal returns (bytes32 hash) {
     if (getSig(action) == CHANGE_FUNCTION) {
       assembly {
         // Hash all but last (value) bytes32
         //  Recall: mload(action) gives length of bytes array
         //  So skip past the first bytes32 (length), and the last bytes32 (value)
-        slot := keccak256(add(action, 0x20), sub(mload(action), 0x20))
+        hash := keccak256(add(action, 0x20), sub(mload(action), 0x20))
       }
     } else {
       assembly {
         // Hash entire action
         //  Recall: mload(action) gives length of bytes array
         //  So skip past the first bytes32 (length)
-        slot := keccak256(add(action, 0x20), mload(action))
+        hash := keccak256(add(action, 0x20), mload(action))
       }
+    }
+  }
+
+  function hashExpenditureAction(bytes memory action) internal returns (bytes32 hash) {
+    require(getSig(action) == CHANGE_FUNCTION, "voting-rep-bad-sig");
+
+    uint256 expenditureId;
+    uint256 storageSlot;
+    uint256 expenditureSlot;
+
+    assembly {
+      expenditureId := mload(add(action, 0x64))
+      storageSlot := mload(add(action, 0x84))
+      expenditureSlot := mload(add(action, 0x184))
+    }
+
+    if (storageSlot == 25) {
+      hash = keccak256(abi.encodePacked(expenditureId));
+    } else {
+      hash = keccak256(abi.encodePacked(expenditureId, expenditureSlot));
+    }
+  }
+
+  function createClaimDelayAction(bytes memory action, uint256 value)
+    public
+    returns (bytes memory)
+  {
+    bytes32 functionSignature;
+    uint256 permissionDomainId;
+    uint256 childSkillIndex;
+    uint256 expenditureId;
+    uint256 storageSlot;
+
+    assembly {
+      functionSignature := mload(add(action, 0x20))
+      permissionDomainId := mload(add(action, 0x24))
+      childSkillIndex := mload(add(action, 0x44))
+      expenditureId := mload(add(action, 0x64))
+      storageSlot := mload(add(action, 0x84))
+    }
+
+    // If we are editing the main expenditure struct
+    if (storageSlot == 25) {
+
+      bytes memory claimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
+      assembly {
+          mstore(add(claimDelayAction, 0x20), functionSignature)
+          mstore(add(claimDelayAction, 0x24), permissionDomainId)
+          mstore(add(claimDelayAction, 0x44), childSkillIndex)
+          mstore(add(claimDelayAction, 0x64), expenditureId)
+          mstore(add(claimDelayAction, 0x84), 25)     // expenditure storage slot
+          mstore(add(claimDelayAction, 0xa4), 0xe0)   // mask location
+          mstore(add(claimDelayAction, 0xc4), 0x120)  // keys location
+          mstore(add(claimDelayAction, 0xe4), value)
+          mstore(add(claimDelayAction, 0x104), 1)     // mask length
+          mstore(add(claimDelayAction, 0x124), 1)     // offset
+          mstore(add(claimDelayAction, 0x144), 1)     // keys length
+          mstore(add(claimDelayAction, 0x164), 4)     // globalClaimDelay offset
+      }
+      return claimDelayAction;
+
+    // If we are editing an expenditure slot
+    } else {
+
+      bytes memory claimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
+      uint256 expenditureSlot;
+
+      assembly {
+          expenditureSlot := mload(add(action, 0x184))
+
+          mstore(add(claimDelayAction, 0x20), functionSignature)
+          mstore(add(claimDelayAction, 0x24), permissionDomainId)
+          mstore(add(claimDelayAction, 0x44), childSkillIndex)
+          mstore(add(claimDelayAction, 0x64), expenditureId)
+          mstore(add(claimDelayAction, 0x84), 26)     // expenditureSlot storage slot
+          mstore(add(claimDelayAction, 0xa4), 0xe0)   // mask location
+          mstore(add(claimDelayAction, 0xc4), 0x140)  // keys location
+          mstore(add(claimDelayAction, 0xe4), value)
+          mstore(add(claimDelayAction, 0x104), 2)     // mask length
+          mstore(add(claimDelayAction, 0x124), 0)     // mapping
+          mstore(add(claimDelayAction, 0x144), 1)     // offset
+          mstore(add(claimDelayAction, 0x164), 2)     // keys length
+          mstore(add(claimDelayAction, 0x184), expenditureSlot)
+          mstore(add(claimDelayAction, 0x1a4), 1)     // claimDelay offset
+      }
+      return claimDelayAction;
+
     }
   }
 }

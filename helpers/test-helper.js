@@ -879,3 +879,7 @@ export async function getRewardClaimSquareRootsAndProofs(client, tokenLocking, c
 
   return { squareRoots, userProof };
 }
+
+export function bn2bytes32(x, size = 64) {
+  return `0x${x.toString(16, size)}`;
+}

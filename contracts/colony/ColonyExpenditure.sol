@@ -47,7 +47,8 @@ contract ColonyExpenditure is ColonyStorage {
       owner: msg.sender,
       fundingPotId: fundingPotCount,
       domainId: _domainId,
-      finalizedTimestamp: 0
+      finalizedTimestamp: 0,
+      globalClaimDelay: 0
     });
 
     emit FundingPotAdded(fundingPotCount);
@@ -183,7 +184,7 @@ contract ColonyExpenditure is ColonyStorage {
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _id,
-    uint256 _slot,
+    uint256 _storageSlot,
     bool[] memory _mask,
     bytes32[] memory _keys,
     bytes32 _value
@@ -196,20 +197,21 @@ contract ColonyExpenditure is ColonyStorage {
     require(_keys.length > 0, "colony-expenditure-no-keys");
 
     require(
-      _slot == EXPENDITURES_SLOT ||
-      _slot == EXPENDITURESLOTS_SLOT ||
-      _slot == EXPENDITURESLOTPAYOUTS_SLOT,
+      _storageSlot == EXPENDITURES_SLOT ||
+      _storageSlot == EXPENDITURESLOTS_SLOT ||
+      _storageSlot == EXPENDITURESLOTPAYOUTS_SLOT,
       "colony-expenditure-bad-slot"
     );
 
     // Only allow editing expenditure status, owner, and finalizedTimestamp
     //  Note that status + owner occupy one slot
-    if (_slot == EXPENDITURES_SLOT) {
-      uint256 offset = uint256(_keys[_keys.length - 1]);
+    if (_storageSlot == EXPENDITURES_SLOT) {
+      uint256 offset = uint256(_keys[0]);
+      require(_keys.length == 1, "colony-expenditure-bad-keys");
       require(offset == 0 || offset == 3, "colony-expenditure-bad-offset");
     }
 
-    executeStateChange(keccak256(abi.encode(_id, _slot)), _mask, _keys, _value);
+    executeStateChange(keccak256(abi.encode(_id, _storageSlot)), _mask, _keys, _value);
   }
 
   // Public view functions
