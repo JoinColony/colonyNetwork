@@ -15,6 +15,7 @@ const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 const Resolver = artifacts.require("Resolver");
 const ContractEditing = artifacts.require("ContractEditing");
+const Colony = artifacts.require("Colony");
 
 const { expect } = chai;
 
@@ -688,6 +689,14 @@ export async function removeSubdomainLimit(colonyNetwork) {
   const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
   const resolver = await Resolver.at(resolverAddress);
   await resolver.register("addDomain(uint256,uint256,uint256)", noLimitSubdomains.address);
+}
+
+export async function restoreSubdomainLimit(colonyNetwork) {
+  const originalSubdomains = await Colony.new();
+  const latestVersion = await colonyNetwork.getCurrentColonyVersion();
+  const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
+  const resolver = await Resolver.at(resolverAddress);
+  await resolver.register("addDomain(uint256,uint256,uint256)", originalSubdomains.address);
 }
 
 export async function addTaskSkillEditingFunctions(colonyNetwork) {
