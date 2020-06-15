@@ -873,7 +873,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const logEntry = await repCycle.getReputationUpdateLogEntry(0);
       const colonyAddress = ethers.utils.hexZeroPad(logEntry.colony, 32);
       const userAddress = ethers.utils.hexZeroPad(logEntry.user, 32);
-      const skillId = ethers.utils.hexZeroPad(ethers.utils.bigNumberify(logEntry.skillId).toHexString(), 32);
+      const skillId = ethers.utils.hexZeroPad(ethers.BigNumber.from(logEntry.skillId).toHexString(), 32);
 
       await checkErrorRevert(
         repCycle.respondToChallenge(

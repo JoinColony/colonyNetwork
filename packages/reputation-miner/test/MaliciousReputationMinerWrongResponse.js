@@ -18,7 +18,7 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
     const disputedEntry = disputeRound[index];
 
     // console.log(disputedEntry);
-    let firstDisagreeIdx = ethers.utils.bigNumberify(disputedEntry.lowerBound);
+    let firstDisagreeIdx = ethers.BigNumber.from(disputedEntry.lowerBound);
     let lastAgreeIdx = firstDisagreeIdx.sub(1);
     // If this is called before the binary search has finished, these would be -1 and 0, respectively, which will throw errors
     // when we try and pass -ve hex values. Instead, set them to values that will allow us to send a tx that will fail.

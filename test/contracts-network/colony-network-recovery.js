@@ -1,6 +1,6 @@
 /* globals artifacts */
 
-import { padLeft, soliditySha3, numberToHex } from "web3-utils";
+import { padLeft, soliditySha3 } from "web3-utils";
 import BN from "bn.js";
 import { ethers } from "ethers";
 import chai from "chai";
@@ -317,7 +317,7 @@ contract("Colony Network Recovery", (accounts) => {
 
           // slots 13 and 14 are hash and nodes respectively
           await colonyNetwork.setStorageSlotRecovery(13, rootHash);
-          const nNodesHex = numberToHex(nNodes);
+          const nNodesHex = nNodes.toHexString();
           await colonyNetwork.setStorageSlotRecovery(14, `${padLeft(nNodesHex, 64)}`);
 
           await colonyNetwork.approveExitRecovery();
