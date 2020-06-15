@@ -946,7 +946,7 @@ class ReputationMiner {
     const disputeRound = await repCycle.getDisputeRound(round);
     const disputedEntry = disputeRound[index];
     const targetLeafKey = ethers.BigNumber.from(disputedEntry.lowerBound);
-    const targetLeafKeyAsHex = ReputationMiner.getHexString(targetNode, 64);
+    const targetLeafKeyAsHex = ReputationMiner.getHexString(targetLeafKey, 64);
 
     const intermediateReputationHash = this.justificationHashes[targetLeafKeyAsHex].jhLeafValue;
     const [, siblings] = await this.justificationTree.getProof(targetLeafKeyAsHex);

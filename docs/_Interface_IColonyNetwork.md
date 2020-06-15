@@ -432,7 +432,7 @@ Get the root hash of the current reputation state tree.
 
 ### `getReputationRootHashNLeaves`
 
-Get the number of newNLeaves in the current reputation state tree.
+Get the number of leaves in the current reputation state tree.
 
 *Note: I cannot see a reason why a user's client would need to call this - only stored to help with some edge cases in reputation mining dispute resolution.*
 
@@ -442,6 +442,19 @@ Get the number of newNLeaves in the current reputation state tree.
 |Name|Type|Description|
 |---|---|---|
 |nLeaves|uint256|uint256 The number of leaves in the state tree
+
+### `getReputationRootHashNNodes`
+
+Get the number of leaves in the current reputation state tree.
+
+*Note: Deprecated, replaced by getReputationRootHashNLeaves which does the same thing but is more accurately named.*
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nNodes|uint256|uint256 The number of leaves in the state tree
 
 ### `getSkill`
 

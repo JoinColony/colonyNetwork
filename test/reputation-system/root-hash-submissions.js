@@ -364,6 +364,10 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       const rootHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
       expect(rootHashNLeaves).to.eq.BN(goodClient.nReputations.toString()); // It's a BigNumber :sob:
+
+      // Check that the deprecated getReputationRootHashNNodes still works
+      const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
+      expect(rootHashNNodes).to.eq.BN(goodClient.nReputations.toString()); // It's a BigNumber :sob:
     });
 
     it("should allow a new reputation hash to be moved to the next stage of competition even if it does not have a partner", async () => {

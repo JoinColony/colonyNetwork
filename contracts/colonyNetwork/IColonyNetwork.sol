@@ -213,10 +213,16 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return rootHash The current Reputation Root Hash
   function getReputationRootHash() public view returns (bytes32 rootHash);
 
-  /// @notice Get the number of newNLeaves in the current reputation state tree.
+  /// @notice Get the number of leaves in the current reputation state tree.
   /// @dev I cannot see a reason why a user's client would need to call this - only stored to help with some edge cases in reputation mining dispute resolution.
   /// @return nLeaves uint256 The number of leaves in the state tree
   function getReputationRootHashNLeaves() public view returns (uint256 nLeaves);
+
+  /// @notice Get the number of leaves in the current reputation state tree.
+  /// @dev Deprecated, replaced by getReputationRootHashNLeaves which does the same thing but is more accurately named.
+  /// @dev will be removed in a later version.
+  /// @return nNodes uint256 The number of leaves in the state tree
+  function getReputationRootHashNNodes() public view returns (uint256 nNodes);
 
   /// @notice Create and start a new `DutchAuction` for the entire amount of `_token` owned by the Colony Network.
   /// @param _token Address of the token held by the network to be auctioned

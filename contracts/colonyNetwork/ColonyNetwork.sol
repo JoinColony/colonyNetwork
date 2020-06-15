@@ -82,6 +82,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return reputationRootHashNLeaves;
   }
 
+  function getReputationRootHashNNodes() public view returns (uint256) {
+    return reputationRootHashNLeaves;
+  }
+
   function setTokenLocking(address _tokenLocking) public
   stoppable
   auth
