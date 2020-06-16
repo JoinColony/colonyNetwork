@@ -303,7 +303,8 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("should cope if someone's new reputation would be negative, setting it to zero instead", async () => {
+    it("should cope if someone's new reputation would be negative, setting it to zero instead", async function newRepToZeroTest() {
+      this.timeout(600000);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
