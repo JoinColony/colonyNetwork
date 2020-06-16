@@ -78,7 +78,7 @@ export default class PatriciaTreeBase {
       edge = node.children[head];
       label = tail;
     }
-    branchMask = ethers.utils.bigNumberify(branchMask.toString());
+    branchMask = ethers.BigNumber.from(branchMask.toString());
     return [branchMask, siblings.map(s => PatriciaTreeBase.bn2hex64(s))];
   }
 

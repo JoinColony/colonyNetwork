@@ -329,16 +329,16 @@ contract("ColonyPermissions", (accounts) => {
     });
 
     it("should be able to get all user roles", async () => {
-      const roleRecovery = ethers.utils.bigNumberify(2 ** 0).toHexString();
-      const roleRoot = ethers.utils.bigNumberify(2 ** 1).toHexString();
-      const roleArbitration = ethers.utils.bigNumberify(2 ** 2).toHexString();
-      const roleArchitecture = ethers.utils.bigNumberify(2 ** 3).toHexString();
-      const roleFunding = ethers.utils.bigNumberify(2 ** 5).toHexString();
-      const roleAdministration = ethers.utils.bigNumberify(2 ** 6).toHexString();
+      const roleRecovery = ethers.BigNumber.from(2 ** 0).toHexString();
+      const roleRoot = ethers.BigNumber.from(2 ** 1).toHexString();
+      const roleArbitration = ethers.BigNumber.from(2 ** 2).toHexString();
+      const roleArchitecture = ethers.BigNumber.from(2 ** 3).toHexString();
+      const roleFunding = ethers.BigNumber.from(2 ** 5).toHexString();
+      const roleAdministration = ethers.BigNumber.from(2 ** 6).toHexString();
 
       const roles1 = await colony.getUserRoles(FOUNDER, 1);
       const allRoles = roleRecovery | roleRoot | roleArbitration | roleArchitecture | roleFunding | roleAdministration; // eslint-disable-line no-bitwise
-      expect(roles1).to.equal(ethers.utils.hexZeroPad(ethers.utils.bigNumberify(allRoles).toHexString(), 32));
+      expect(roles1).to.equal(ethers.utils.hexZeroPad(ethers.BigNumber.from(allRoles).toHexString(), 32));
 
       await colony.setAdministrationRole(1, 0, USER2, 2, true, { from: FOUNDER });
       const roles2 = await colony.getUserRoles(USER2, 2);

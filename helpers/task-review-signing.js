@@ -17,15 +17,15 @@ export async function executeSignedRoleAssignment({ colony, taskId, functionName
 export async function getSigsAndTransactionData({ colony, taskId, functionName, signers, privKeys, sigTypes, args }) {
   // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
   // and https://github.com/ethereum/web3.js/issues/2077
-  const ethersBNTaskId = ethers.utils.bigNumberify(taskId.toString());
+  const ethersBNTaskId = ethers.BigNumber.from(taskId.toString());
   const convertedArgs = [];
   args.forEach((arg) => {
     if (Number.isInteger(arg)) {
-      const convertedArg = ethers.utils.bigNumberify(arg);
+      const convertedArg = ethers.BigNumber.from(arg);
       convertedArgs.push(convertedArg);
     } else if (isBN(arg) || BigNumber.isBigNumber(arg)) {
       // Can use isBigNumber from utils once https://github.com/ethereum/web3.js/issues/2835 sorted
-      const convertedArg = ethers.utils.bigNumberify(arg.toString());
+      const convertedArg = ethers.BigNumber.from(arg.toString());
       convertedArgs.push(convertedArg);
     } else {
       convertedArgs.push(arg);

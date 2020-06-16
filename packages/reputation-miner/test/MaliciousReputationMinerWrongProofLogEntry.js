@@ -16,7 +16,7 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
     const disputeRound = await repCycle.getDisputeRound(round);
     const disputedEntry = disputeRound[index];
-    const firstDisagreeIdx = ethers.utils.bigNumberify(disputedEntry.lowerBound);
+    const firstDisagreeIdx = ethers.BigNumber.from(disputedEntry.lowerBound);
     const lastAgreeIdx = firstDisagreeIdx.sub(1);
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
     const lastAgreeKey = MaliciousReputationMinerWrongProofLogEntry.getHexString(lastAgreeIdx, 64);
@@ -24,7 +24,7 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
 
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(lastAgreeKey);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(firstDisagreeKey);
-    let logEntryNumber = ethers.utils.bigNumberify(0);
+    let logEntryNumber = ethers.BigNumber.from(0);
     if (lastAgreeIdx.gte(this.nReputationsBeforeLatestLog)) {
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
