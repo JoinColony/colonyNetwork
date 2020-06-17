@@ -68,15 +68,18 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   // Data structures
   enum PollState { Staking, Voting, Reveal, Closed, Executable, Executed, Failed }
+  enum Response { None, Fold, Call }
 
   struct Poll {
-    uint256 lastEvent; // Set at creation / escalation & when fully staked
+    uint256 lastEvent; // Set at creation / escalation & when staked + responded
     bytes32 rootHash;
     uint256 skillId;
     uint256 skillRep;
     uint256 unpaidRewards;
     uint256[2] stakes; // [nay, yay]
     uint256[2] votes; // [nay, yay]
+    address[2] leads; // [nay, yay]
+    Response[2] responses; // [nay, yay]
     bytes action;
     bool executed;
   }
@@ -155,7 +158,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     // TODO: can we keep the domainId on the poll somewhere? This seems like a wasteful external call.
     //   But if it's 10 external calls per word of storage, then < 10 stakers makes this cheaper.
-    require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-stake-domain");
+    require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-domain-id");
     require(add(stakes[_pollId][msg.sender][_vote], _amount) <= stakerRep, "voting-rep-insufficient-rep");
 
     require(add(poll.stakes[toInt(_vote)], _amount) <= getRequiredStake(_pollId), "voting-rep-stake-too-large");
@@ -168,6 +171,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll.unpaidRewards = add(poll.unpaidRewards, _amount);
     poll.stakes[toInt(_vote)] = add(poll.stakes[toInt(_vote)], _amount);
     stakes[_pollId][msg.sender][_vote] = add(stakes[_pollId][msg.sender][_vote], _amount);
+
+    // Update the lead if the stake is larger
+    if (stakes[_pollId][poll.leads[toInt(_vote)]][_vote] < _amount) {
+      poll.leads[toInt(_vote)] = msg.sender;
+    }
 
     // Activate poll to prevent competing polls from being activated
     if (poll.stakes[YAY] == getRequiredStake(_pollId) && toInt(_vote) == YAY) {
@@ -183,16 +191,28 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       }
     }
 
-    // Update timestamp if fully staked
-    if (
-      poll.stakes[YAY] == getRequiredStake(_pollId) &&
-      poll.stakes[NAY] == getRequiredStake(_pollId)
-    ) {
-      poll.lastEvent = now;
+    // Claim tokens if fully staked
+    if (poll.stakes[YAY] == getRequiredStake(_pollId) && poll.stakes[NAY] == getRequiredStake(_pollId)) {
       tokenLocking.claim(token, true);
     }
 
     emit PollStaked(_pollId, msg.sender, _vote, _amount);
+  }
+
+  function respondToStake(uint256 _pollId, bool _vote, Response _response) public {
+    Poll storage poll = polls[_pollId];
+    uint256 requiredStake = getRequiredStake(_pollId);
+
+    require(poll.stakes[YAY] == requiredStake && poll.stakes[NAY] == requiredStake, "voting-rep-not-fully-staked");
+    require(getPollState(_pollId) == PollState.Staking, "voting-rep-not-staking");
+    require(poll.leads[toInt(_vote)] == msg.sender, "voting-rep-not-lead");
+    require(poll.responses[toInt(_vote)] == Response.None, "voting-rep-already-responded");
+
+    poll.responses[toInt(_vote)] = _response;
+
+    if (poll.responses[YAY] != Response.None && poll.responses[NAY] != Response.None) {
+      poll.lastEvent = now;
+    }
   }
 
   function submitVote(uint256 _pollId, bytes32 _voteSecret) public {
@@ -262,6 +282,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll.lastEvent = now;
     poll.skillId = newDomainSkillId;
     poll.skillRep = checkReputation(_pollId, address(0x0), _key, _value, _branchMask, _siblings);
+
+    delete poll.responses;
   }
 
   function executePoll(uint256 _pollId) public {
@@ -329,11 +351,15 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     public
   {
     Poll storage poll = polls[_pollId];
-    require(getPollState(_pollId) == PollState.Executed, "voting-rep-not-executed");
+    require(
+      getPollState(_pollId) == PollState.Executed ||
+      getPollState(_pollId) == PollState.Failed,
+      "voting-rep-not-failed-or-executed"
+    );
 
     // TODO: can we keep the domainId on the poll somewhere? This seems like a wasteful external call.
     //   But if it's 10 external calls per word of storage, then < 10 stakers makes this cheaper.
-    require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-stake-domain");
+    require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-domain-id");
 
     // Calculate how much of the stake is left after voter compensation (>= 90%)
     uint256 stake = stakes[_pollId][_user][_vote];
@@ -422,12 +448,15 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     if (poll.executed) {
       return PollState.Executed;
 
-    // Not fully staked, not (yet) going to a vote
-    } else if (poll.stakes[YAY] < requiredStake || poll.stakes[NAY] < requiredStake) {
+    // Not fully staked
+    } else if (
+      poll.stakes[YAY] < requiredStake ||
+      poll.stakes[NAY] < requiredStake
+    ) {
       // Are we still staking?
       if (now < poll.lastEvent + STAKE_PERIOD) {
         return PollState.Staking;
-      // If not, did the YAY side reach a full stake?
+      // If not, did the YAY side stake?
       } else if (poll.stakes[YAY] == requiredStake) {
         return PollState.Executable;
       // If not, was there a prior vote we can fall back on?
@@ -438,15 +467,38 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
         return PollState.Failed;
       }
 
-    // Fully staked, going to a vote
-    } else if (now < poll.lastEvent + VOTE_PERIOD) {
-      return PollState.Voting;
-    } else if (now < poll.lastEvent + (VOTE_PERIOD + REVEAL_PERIOD)) {
-      return PollState.Reveal;
-    } else if (now < poll.lastEvent + (VOTE_PERIOD + REVEAL_PERIOD + STAKE_PERIOD)) {
-      return PollState.Closed;
-    } else {
+    // Fully staked, check for any folds
+    } else if (poll.responses[YAY] == Response.Fold) {
+      return PollState.Failed;
+    } else if (poll.responses[NAY] == Response.Fold) {
       return PollState.Executable;
+
+    // Do we need to keep waiting?
+    } else if (
+      now < poll.lastEvent + STAKE_PERIOD &&
+      (poll.responses[YAY] == Response.None ||
+      poll.responses[NAY] == Response.None)
+    ) {
+      return PollState.Staking;
+
+    // Fully staked, no folds, go to a vote
+    } else {
+
+      // Infer the right timestamp (since only updated if both parties respond)
+      uint256 lastEvent = poll.lastEvent + ((
+        poll.responses[YAY] == Response.None ||
+        poll.responses[YAY] == Response.None
+      ) ? STAKE_PERIOD : 0);
+
+      if (now < lastEvent + VOTE_PERIOD) {
+        return PollState.Voting;
+      } else if (now < lastEvent + (VOTE_PERIOD + REVEAL_PERIOD)) {
+        return PollState.Reveal;
+      } else if (now < lastEvent + (VOTE_PERIOD + REVEAL_PERIOD + STAKE_PERIOD)) {
+        return PollState.Closed;
+      } else {
+        return PollState.Executable;
+      }
     }
   }
 
@@ -574,7 +626,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   function hashExpenditureAction(bytes memory action) internal returns (bytes32 hash) {
-    require(getSig(action) == CHANGE_FUNCTION, "voting-rep-bad-sig");
+    assert(getSig(action) == CHANGE_FUNCTION);
 
     uint256 expenditureId;
     uint256 storageSlot;
