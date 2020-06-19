@@ -131,7 +131,7 @@ class ReputationMinerClient {
         if (currentHash === req.params.rootHash) {
           if (this._miner.reputations[key]) {
             const proof = await this._miner.getReputationProofObject(key);
-            delete proof.nNodes;
+            delete proof.NLeaves;
             proof.reputationAmount = ethers.BigNumber.from(`0x${proof.value.slice(2, 66)}`).toString();
             return res.status(200).send(proof);
           }
@@ -245,7 +245,7 @@ class ReputationMinerClient {
 
   /**
    * Navigate through the mining process logic used when the client is in auto mode.
-   * Up to 12 submissions of our current proposed Hash/nNodes/JRH are made at the earliest block possible
+   * Up to 12 submissions of our current proposed Hash/nLeaves/JRH are made at the earliest block possible
    * Once any disputes are resolved and mining window has closed, we confirm the last remaining hash
    * @param  {Number}  blockNumber The block number we are currently acting on
    * @return {Promise}
@@ -304,9 +304,9 @@ class ReputationMinerClient {
       const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
       const hash = await this._miner.getRootHash();
-      const nNodes = await this._miner.getRootHashNNodes();
+      const NLeaves = await this._miner.getRootHashNLeaves();
       const jrh = await this._miner.justificationTree.getRootHash();
-      const nHashSubmissions = await repCycle.getNSubmissionsForHash(hash, nNodes, jrh);
+      const nHashSubmissions = await repCycle.getNSubmissionsForHash(hash, NLeaves, jrh);
 
       // If less than 12 submissions have been made, submit at our next best possible time
       if (nHashSubmissions.lt(12) && this.best12Submissions[this.submissionIndex]) {
@@ -379,12 +379,12 @@ class ReputationMinerClient {
 
         // Our opponent hasn't timed out yet. We should check if we can respond to something though
         // 1. Do we still need to confirm JRH?
-        if (submission.jrhNNodes.eq(0)) {
+        if (submission.jrhNLeaves.eq(0)) {
           await this.updateGasEstimate('fast');
           await this._miner.confirmJustificationRootHash();
         // 2. Are we in the middle of a binary search?
         // Check our opponent has confirmed their JRH, and the binary search is ongoing.
-        } else if (!oppSubmission.jrhNNodes.eq(0) && !entry.upperBound.eq(entry.lowerBound)){
+        } else if (!oppSubmission.jrhNLeaves.eq(0) && !entry.upperBound.eq(entry.lowerBound)){
           // Yes. Are we able to respond?
           // We can respond if neither of us have responded to this stage yet or
           // if they have responded already
@@ -397,7 +397,7 @@ class ReputationMinerClient {
         } else if (
           oppEntry.upperBound.eq(oppEntry.lowerBound) &&
           entry.upperBound.eq(entry.lowerBound) &&
-          ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNNodes)
+          ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNLeaves)
         )
         {
           await this.updateGasEstimate('fast');
@@ -405,9 +405,9 @@ class ReputationMinerClient {
         // 4. Is the binary search confirmed, and we need to respond to challenge?
         // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
         } else if (
-            ethers.BigNumber.from(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNNodes) &&
-            ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNNodes) &&
-            ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNNodes)
+            ethers.BigNumber.from(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNLeaves) &&
+            ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNLeaves) &&
+            ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNLeaves)
           )
         {
           await this.updateGasEstimate('fast');

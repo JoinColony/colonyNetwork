@@ -74,15 +74,15 @@ contract ColonyNetworkDataTypes {
 
   /// @notice Event logged when a reputation mining cycle completes
   /// @param hash The root hash of the newly accepted reputation state
-  /// @param nNodes The number of nodes in the reputation state
-  event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
+  /// @param nLeaves The number of leaves in the reputation state
+  event ReputationMiningCycleComplete(bytes32 hash, uint256 nLeaves);
 
   /// @notice Event logged when a new reputation root hash is set by the reputation mining process
   /// @param newHash The reputation root hash
-  /// @param newNNodes The updated nodes count value
+  /// @param newNLeaves The updated leaves count value
   /// @param stakers Array of users who submitted or backed the hash accepted
   /// @param reward Amount of CLNY distributed as reward to miners
-  event ReputationRootHashSet(bytes32 newHash, uint256 newNNodes, address[] stakers, uint256 reward);
+  event ReputationRootHashSet(bytes32 newHash, uint256 newNLeaves, address[] stakers, uint256 reward);
 
   /// @notice Event logged when a "user.joincolony.eth" label is registered
   /// @param user The user address registered

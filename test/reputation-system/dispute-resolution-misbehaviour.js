@@ -481,9 +481,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
     it("should not allow stages to be skipped even if the number of updates is a power of 2", async function powerOfTwoTest() {
       this.timeout(600000);
-      // Note that our jrhNNodes can never be a power of two, because we always have an even number of updates (because every reputation change
+      // Note that our jrhNLeaves can never be a power of two, because we always have an even number of updates (because every reputation change
       // has a user-specific an a colony-specific effect, and we always have one extra state in the Justification Tree because we include the last
-      // accepted hash as the first node. jrhNNodes is always odd, therefore, and can never be a power of two.
+      // accepted hash as the first leaf. jrhNLeaves is always odd, therefore, and can never be a power of two.
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
@@ -525,10 +525,10 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength();
         const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1);
 
-        const currentHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
-        const nUpdates = new BN(lastLogEntry.nUpdates).add(new BN(lastLogEntry.nPreviousUpdates)).add(currentHashNNodes);
+        const currentHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
+        const nUpdates = new BN(lastLogEntry.nUpdates).add(new BN(lastLogEntry.nPreviousUpdates)).add(currentHashNLeaves);
         // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
-        // of updates that log entry implies by itself, plus the number of decays (the number of nodes in current state)
+        // of updates that log entry implies by itself, plus the number of decays (the number of leaves in current state)
         if (parseInt(nUpdates.toString(2).slice(1), 10) === 0) {
           powerTwoEntries = true;
         }
@@ -680,9 +680,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
       const disputeRound = await repCycle.getDisputeRound(round);
       const disputedEntry = disputeRound[index];
-      const targetNode = disputedEntry.lowerBound;
-      const targetNodeKey = ReputationMinerTestWrapper.getHexString(targetNode, 64);
-      const [, siblings] = await goodClient.justificationTree.getProof(targetNodeKey);
+      const targetKey = disputedEntry.lowerBound;
+      const targetKeyAsHex = ReputationMinerTestWrapper.getHexString(targetKey, 64);
+      const [, siblings] = await goodClient.justificationTree.getProof(targetKeyAsHex);
 
       await checkErrorRevert(
         repCycle.confirmBinarySearchResult(round, index, "0x00", siblings),

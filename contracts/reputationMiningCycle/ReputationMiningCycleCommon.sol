@@ -62,14 +62,14 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
 
     // Otherwise, calculate it
 
-    uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
-    uint jrhNnodes = reputationUpdateLog[nLogEntries-1].nUpdates +
-      reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes + 1; // This is the number of nodes we expect in the justification tree
+    uint256 reputationRootHashNLeaves = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNLeaves();
+    uint jrhNLeaves = reputationUpdateLog[nLogEntries-1].nUpdates +
+      reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNLeaves + 1; // This is the number of leaves we expect in the justification tree
 
     uint256 nByes = log2Ceiling(nUniqueSubmittedHashes); // We can have at most one bye per round, and this is the maximum number of rounds
 
     // The maximum number of responses that need rewards
-    uint256 rewardDenominator = nByes + (nUniqueSubmittedHashes - 1) * (2 * (3 + log2Ceiling(jrhNnodes)) + 1);
+    uint256 rewardDenominator = nByes + (nUniqueSubmittedHashes - 1) * (2 * (3 + log2Ceiling(jrhNLeaves)) + 1);
 
     // The minimum amount of stake to be lost
     uint256 rewardNumerator = MIN_STAKE * (nUniqueSubmittedHashes - 1);

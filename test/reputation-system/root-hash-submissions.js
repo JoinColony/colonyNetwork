@@ -154,7 +154,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       );
     });
 
-    it("should not allow a user to back the same hash with different number of nodes in a single cycle", async () => {
+    it("should not allow a user to back the same hash with different number of leaves in a single cycle", async () => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
@@ -163,11 +163,11 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       await checkErrorRevert(
         repCycle.submitRootHash("0x12345678", 11, "0x00", entryNumber, { from: MINER1 }),
-        "colony-reputation-mining-submitting-different-nnodes"
+        "colony-reputation-mining-submitting-different-nleaves"
       );
     });
 
-    it("should not allow a user to back the same hash with same number of nodes but different JRH in a single cycle", async () => {
+    it("should not allow a user to back the same hash with same number of leaves but different JRH in a single cycle", async () => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -327,8 +327,8 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const rootHash = await colonyNetwork.getReputationRootHash();
       expect(rootHash).to.equal(ethers.constants.HashZero);
 
-      const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
-      expect(rootHashNNodes).to.be.zero;
+      const rootHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
+      expect(rootHashNLeaves).to.be.zero;
     });
 
     it("should error if a non existent root hash submission is gotten", async () => {
@@ -362,6 +362,10 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const clientRootHash = await goodClient.getRootHash();
       expect(rootHash).to.eq.BN(clientRootHash);
 
+      const rootHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
+      expect(rootHashNLeaves).to.eq.BN(goodClient.nReputations.toString()); // It's a BigNumber :sob:
+
+      // Check that the deprecated getReputationRootHashNNodes still works
       const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
       expect(rootHashNNodes).to.eq.BN(goodClient.nReputations.toString()); // It's a BigNumber :sob:
     });
@@ -389,8 +393,8 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const clientRootHash = await goodClient.getRootHash();
       expect(rootHash).to.eq.BN(clientRootHash);
 
-      const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
-      expect(rootHashNNodes).to.eq.BN(goodClient.nReputations.toString()); // It's a BigNumber :sob:
+      const rootHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
+      expect(rootHashNLeaves).to.eq.BN(goodClient.nReputations.toString()); // It's a BigNumber :sob:
     });
 
     it("should not allow a new reputation hash to be set if more than one was submitted and they have not been elimintated", async () => {

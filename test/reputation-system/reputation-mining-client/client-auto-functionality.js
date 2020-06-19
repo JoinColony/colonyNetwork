@@ -108,13 +108,13 @@ process.env.SOLIDITY_COVERAGE
       describe("core functionality", function () {
         it("should successfully complete a hash submission if it's the only miner", async function () {
           const rootHash = await reputationMinerClient._miner.getRootHash();
-          const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
+          const nLeaves = await reputationMinerClient._miner.getRootHashNLeaves();
           const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
 
           const oldHash = await colonyNetwork.getReputationRootHash();
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
 
           // Forward through most of the cycle duration and wait for the client to submit all 12 allowed entries
           await forwardTime(MINING_CYCLE_DURATION * 0.9, this);
@@ -122,7 +122,7 @@ process.env.SOLIDITY_COVERAGE
 
           const colonyNetworkEthers = await reputationMinerClient._miner.colonyNetwork;
           const miningCycleComplete = new Promise(function (resolve, reject) {
-            colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
+            colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
               const newHash = await colonyNetwork.getReputationRootHash();
               expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
               expect(newHash).to.equal(rootHash, "The network root hash doens't match the one submitted");
@@ -155,13 +155,13 @@ process.env.SOLIDITY_COVERAGE
           await oracleClient.initialise(colonyNetwork.address, startingBlockNumber);
 
           const rootHash = await reputationMinerClient._miner.getRootHash();
-          const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
+          const nLeaves = await reputationMinerClient._miner.getRootHashNLeaves();
           const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
 
           const oldHash = await colonyNetwork.getReputationRootHash();
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
 
           // Forward through most of the cycle duration and wait for the client to submit all 12 allowed entries
           await forwardTime(MINING_CYCLE_DURATION * 0.9, this);
@@ -169,7 +169,7 @@ process.env.SOLIDITY_COVERAGE
 
           const colonyNetworkEthers = await reputationMinerClient._miner.colonyNetwork;
           const miningCycleComplete = new Promise(function (resolve, reject) {
-            colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
+            colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
               const newHash = await colonyNetwork.getReputationRootHash();
               expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
               expect(newHash).to.equal(rootHash, "The network root hash doens't match the one submitted");
@@ -224,13 +224,13 @@ process.env.SOLIDITY_COVERAGE
 
         it("should successfully resume submitting hashes if it's restarted", async function () {
           const rootHash = await reputationMinerClient._miner.getRootHash();
-          const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
+          const nLeaves = await reputationMinerClient._miner.getRootHashNLeaves();
           const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
 
           const oldHash = await colonyNetwork.getReputationRootHash();
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-          const receive2Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, 2);
+          const receive2Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 2);
 
           // Forward through half of the cycle duration and wait for the client to submit some entries
           await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -246,14 +246,14 @@ process.env.SOLIDITY_COVERAGE
             auto: true,
           });
           await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
 
           await mineBlock();
           await receive12Submissions;
 
           const colonyNetworkEthers = await reputationMinerClient._miner.colonyNetwork;
           const miningCycleComplete = new Promise(function (resolve, reject) {
-            colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
+            colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
               const newHash = await colonyNetwork.getReputationRootHash();
               expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
               expect(newHash).to.equal(rootHash, "The network root hash doens't match the one submitted");
@@ -276,11 +276,11 @@ process.env.SOLIDITY_COVERAGE
         it("should successfully complete a hash submission if there are 2 good miners", async function () {
           const oldHash = await colonyNetwork.getReputationRootHash();
           const rootHash = await reputationMinerClient._miner.getRootHash();
-          const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
+          const nLeaves = await reputationMinerClient._miner.getRootHashNLeaves();
           const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
 
           // Make a submission from the second client and then await the remaining 11 submissions from the first client
           await goodClient.loadState(oldHash);
@@ -293,7 +293,7 @@ process.env.SOLIDITY_COVERAGE
 
           const colonyNetworkEthers = await reputationMinerClient._miner.colonyNetwork;
           const miningCycleComplete = new Promise(function (resolve, reject) {
-            colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
+            colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
               const newHash = await colonyNetwork.getReputationRootHash();
               expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
               expect(newHash).to.equal(rootHash, "The network root hash doens't match the one submitted");
@@ -323,24 +323,24 @@ process.env.SOLIDITY_COVERAGE
           await badClient.addLogContentsToReputationTree();
 
           const rootHash = await reputationMinerClient._miner.getRootHash();
-          const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
+          const nLeaves = await reputationMinerClient._miner.getRootHashNLeaves();
           const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
 
           const badRootHash = await badClient.getRootHash();
-          const badNNodes = await badClient.getRootHashNNodes();
+          const badNLeaves = await badClient.getRootHashNLeaves();
           const badJrh = await badClient.justificationTree.getRootHash();
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
 
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nNodes, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
 
           // Forward through most of the cycle duration
           await forwardTime(MINING_CYCLE_DURATION / 2, this);
           await receive12Submissions;
 
           const goodClientConfirmedJRH = new Promise(function (resolve, reject) {
-            repCycleEthers.on("JustificationRootHashConfirmed", async (_hash, _nNodes, _jrh, event) => {
-              if (_hash === rootHash && _nNodes.eq(nNodes) && _jrh === jrh) {
+            repCycleEthers.on("JustificationRootHashConfirmed", async (_hash, _nLeaves, _jrh, event) => {
+              if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
                 event.removeListener();
                 resolve();
               }
@@ -353,8 +353,8 @@ process.env.SOLIDITY_COVERAGE
           });
 
           const goodClientConfirmedBinarySearch = new Promise(function (resolve, reject) {
-            repCycleEthers.on("BinarySearchConfirmed", async (_hash, _nNodes, _jrh, _firstDisagree, event) => {
-              if (_hash === rootHash && _nNodes.eq(nNodes) && _jrh === jrh) {
+            repCycleEthers.on("BinarySearchConfirmed", async (_hash, _nLeaves, _jrh, _firstDisagree, event) => {
+              if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
                 event.removeListener();
                 resolve();
               }
@@ -368,8 +368,8 @@ process.env.SOLIDITY_COVERAGE
 
           // Wait for good client to respond to Challenge.
           const goodClientCompleteChallenge = new Promise(function (resolve, reject) {
-            repCycleEthers.on("ChallengeCompleted", async (_hash, _nNodes, _jrh, event) => {
-              if (_hash === rootHash && _nNodes.eq(nNodes) && _jrh === jrh) {
+            repCycleEthers.on("ChallengeCompleted", async (_hash, _nLeaves, _jrh, event) => {
+              if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
                 event.removeListener();
                 resolve();
               }
@@ -414,9 +414,9 @@ process.env.SOLIDITY_COVERAGE
           await goodClientCompleteChallenge;
 
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
-            repCycleEthers.on("HashInvalidated", async (_hash, _nNodes, _jrh, event) => {
-              console.log("*************", _hash, badRootHash, _nNodes, badNNodes, _jrh, badJrh);
-              if (_hash === badRootHash && _nNodes.eq(badNNodes) && _jrh === badJrh) {
+            repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
+              console.log("*************", _hash, badRootHash, _nLeaves, badNLeaves, _jrh, badJrh);
+              if (_hash === badRootHash && _nLeaves.eq(badNLeaves) && _jrh === badJrh) {
                 event.removeListener();
                 resolve();
               }
@@ -437,7 +437,7 @@ process.env.SOLIDITY_COVERAGE
           // Add a listener to process log for when a new cycle starts, which won't happen yet because the submission window is still open
 
           const newCycleStart = new Promise(function (resolve, reject) {
-            reputationMinerClient._miner.colonyNetwork.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
+            reputationMinerClient._miner.colonyNetwork.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
               event.removeListener();
               resolve();
             });

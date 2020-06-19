@@ -3,7 +3,7 @@ import PatriciaTreeNoHash from "../patriciaNoHashKey";
 
 const ethers = require("ethers");
 
-class MaliciousReputationMinerWrongJRHRightNNodes extends ReputationMinerTestWrapper {
+class MaliciousReputationMinerWrongJRHRightNLeaves extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it submits a bad JRH
 
   constructor(opts, entriesToFalsify, entriesToSkip) {
@@ -34,7 +34,7 @@ class MaliciousReputationMinerWrongJRHRightNNodes extends ReputationMinerTestWra
           ethers.utils.hexZeroPad(ethers.utils.hexlify(parseInt(i, 10)), 32),
           this.getJRHEntryValueAsBytes(
             this.justificationHashes[ReputationMinerTestWrapper.getHexString(i,64)].interimHash,
-            this.justificationHashes[ReputationMinerTestWrapper.getHexString(i,64)].nNodes
+            this.justificationHashes[ReputationMinerTestWrapper.getHexString(i,64)].nLeaves
           )
         )
       }
@@ -57,4 +57,4 @@ class MaliciousReputationMinerWrongJRHRightNNodes extends ReputationMinerTestWra
   }
 }
 
-export default MaliciousReputationMinerWrongJRHRightNNodes;
+export default MaliciousReputationMinerWrongJRHRightNLeaves;

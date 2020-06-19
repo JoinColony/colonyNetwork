@@ -430,9 +430,9 @@ Get the root hash of the current reputation state tree.
 |---|---|---|
 |rootHash|bytes32|The current Reputation Root Hash
 
-### `getReputationRootHashNNodes`
+### `getReputationRootHashNLeaves`
 
-Get the number of nodes in the current reputation state tree.
+Get the number of leaves in the current reputation state tree.
 
 *Note: I cannot see a reason why a user's client would need to call this - only stored to help with some edge cases in reputation mining dispute resolution.*
 
@@ -441,7 +441,20 @@ Get the number of nodes in the current reputation state tree.
 
 |Name|Type|Description|
 |---|---|---|
-|nNodes|uint256|uint256 The number of nodes in the state tree
+|nLeaves|uint256|uint256 The number of leaves in the state tree
+
+### `getReputationRootHashNNodes`
+
+Get the number of leaves in the current reputation state tree.
+
+*Note: Deprecated, replaced by getReputationRootHashNLeaves which does the same thing but is more accurately named.*
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nNodes|uint256|uint256 The number of leaves in the state tree
 
 ### `getSkill`
 
@@ -647,7 +660,7 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |Name|Type|Description|
 |---|---|---|
 |newHash|bytes32|The reputation root hash
-|newNNodes|uint256|The updated nodes count value
+|newNLeaves|uint256|The updated leaves count value
 |stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 |reward|uint256|Amount of CLNY to be distributed as reward to miners
 

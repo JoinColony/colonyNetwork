@@ -203,9 +203,9 @@ contract("Colony Network Recovery", (accounts) => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this }); // Default (0x00, 0)
 
       let rootHash = await colonyNetwork.getReputationRootHash();
-      let nNodes = await colonyNetwork.getReputationRootHashNNodes();
+      let nLeaves = await colonyNetwork.getReputationRootHashNLeaves();
       expect(rootHash).to.equal(ethers.constants.HashZero);
-      expect(nNodes).to.be.zero;
+      expect(nLeaves).to.be.zero;
 
       await colonyNetwork.enterRecoveryMode();
 
@@ -215,9 +215,9 @@ contract("Colony Network Recovery", (accounts) => {
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
       rootHash = await colonyNetwork.getReputationRootHash();
-      nNodes = await colonyNetwork.getReputationRootHashNNodes();
+      nLeaves = await colonyNetwork.getReputationRootHashNLeaves();
       expect(rootHash).to.equal("0x0200000000000000000000000000000000000000000000000000000000000000");
-      expect(nNodes).to.eq.BN(7);
+      expect(nLeaves).to.eq.BN(7);
     });
 
     it("should be able to set replacement reputation log entry", async () => {
@@ -313,20 +313,20 @@ contract("Colony Network Recovery", (accounts) => {
           console.log("The WARNING and ERROR immediately preceeding can be ignored (they are expected as part of the test)");
 
           const rootHash = await client.getRootHash();
-          const nNodes = await client.nReputations;
+          const nLeaves = await client.nReputations;
 
-          // slots 13 and 14 are hash and nodes respectively
+          // slots 13 and 14 are hash and number of leaves respectively
           await colonyNetwork.setStorageSlotRecovery(13, rootHash);
-          const nNodesHex = nNodes.toHexString();
-          await colonyNetwork.setStorageSlotRecovery(14, `${padLeft(nNodesHex, 64)}`);
+          const nLeavesHex = nLeaves.toHexString();
+          await colonyNetwork.setStorageSlotRecovery(14, `${padLeft(nLeavesHex, 64)}`);
 
           await colonyNetwork.approveExitRecovery();
           await colonyNetwork.exitRecoveryMode();
 
           const newHash = await colonyNetwork.getReputationRootHash();
-          const newHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
+          const newHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
           expect(newHash).to.equal(rootHash);
-          expect(newHashNNodes).to.eq.BN(nNodes.toString()); // nNodes is a BigNumber :sob:
+          expect(newHashNLeaves).to.eq.BN(nLeaves.toString()); // nLeaves is a BigNumber :sob:
 
           await newClient.sync(startingBlockNumber);
           const newValue = newClient.reputations[reputationKey].slice(2, 66);

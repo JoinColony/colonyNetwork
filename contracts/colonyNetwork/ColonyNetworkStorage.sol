@@ -45,8 +45,8 @@ contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
 
   // The reputation root hash of the reputation state tree accepted at the end of the last completed update cycle
   bytes32 reputationRootHash; // Storage slot 13
-  // The number of nodes in the reputation state tree that was accepted at the end of the last mining cycle
-  uint256 reputationRootHashNNodes; // Storage slot 14
+  // The number of leaves in the reputation state tree that was accepted at the end of the last mining cycle
+  uint256 reputationRootHashNLeaves; // Storage slot 14
 
   // Contains the address of the resolver for ReputationMiningCycle
   address miningCycleResolver; // Storage slot 15
