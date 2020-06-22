@@ -130,7 +130,11 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   uint256 constant Y = UINT256_MAX / SUBMITTER_ONLY_WINDOW;
 
   function responsePossible(disputeStages stage, uint256 since) internal view returns (bool) {
-    uint256 delta = sub(now, since); // I don't believe this should ever be possible to underflow...
+    if (since > now) {
+      return false;
+    }
+
+    uint256 delta = now - since;
     if (delta <= SUBMITTER_ONLY_WINDOW) {
       // require user made a submission
       if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0x00)) {
