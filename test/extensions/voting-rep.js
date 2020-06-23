@@ -118,7 +118,7 @@ contract("Voting Reputation", (accounts) => {
     await votingFactory.deployExtension(colony.address);
     const votingAddress = await votingFactory.deployedExtensions(colony.address);
     voting = await VotingReputation.at(votingAddress);
-    await voting.initialise(WAD.divn(1000), WAD.divn(10), WAD.muln(2).divn(3));
+    await voting.initialise(WAD.divn(1000), WAD.divn(10), WAD.muln(2).divn(3), true);
     await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
     await colony.setAdministrationRole(1, UINT256_MAX, voting.address, 1, true);
 
@@ -205,16 +205,25 @@ contract("Voting Reputation", (accounts) => {
       await votingFactory.removeExtension(colony.address, { from: USER0 });
     });
 
-    it("can deprecate the extension", async () => {
+    it("can deprecate the extension if root", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
 
+      // Must be root
+      await checkErrorRevert(voting.deprecate({ from: USER2 }), "voting-rep-user-not-root");
+
       await voting.deprecate();
 
+      // Cant make new polls!
       await checkErrorRevert(
         voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
         "voting-rep-not-active"
       );
+    });
+
+    it("cannot initialise twice or if not root", async () => {
+      await checkErrorRevert(voting.initialise(WAD, WAD, WAD, true), "voting-rep-already-initialised");
+      await checkErrorRevert(voting.initialise(WAD, WAD, WAD, true, { from: USER2 }), "voting-rep-user-not-root");
     });
   });
 
@@ -626,6 +635,23 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(
         voting.stakePoll(pollId, 1, UINT256_MAX, 1, false, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
         "voting-rep-staking-closed"
+      );
+    });
+
+    it("cannot crowdfund if prohibited in initialisation", async () => {
+      await votingFactory.removeExtension(colony.address);
+      await votingFactory.deployExtension(colony.address);
+      const votingAddress = await votingFactory.deployedExtensions(colony.address);
+      voting = await VotingReputation.at(votingAddress);
+      await voting.initialise(WAD.divn(1000), WAD.divn(10), WAD.muln(2).divn(3), false);
+
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      pollId = await voting.getPollCount();
+
+      await checkErrorRevert(
+        voting.stakePoll(pollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE.subn(1), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-stake-must-be-exact"
       );
     });
   });

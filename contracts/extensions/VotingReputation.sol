@@ -65,6 +65,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   uint256 stakeFraction; // WAD / 1000 (0.1%)
   uint256 voterRewardFraction; // WAD / 10 (10%)
   uint256 votePowerFraction; // (WAD * 2) / 3 (66.6%)
+  bool crowdFunding;
 
   constructor(address _colony) public {
     colony = IColony(_colony);
@@ -73,21 +74,29 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     token = colony.getToken();
   }
 
-  function initialise(uint256 _stakeFraction, uint256 _voterRewardFraction, uint256 _votePowerFraction) public {
+  function initialise(
+    uint256 _stakeFraction,
+    uint256 _voterRewardFraction,
+    uint256 _votePowerFraction,
+    bool _crowdFunding
+  )
+    public
+  {
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-user-not-root");
     require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-caller-not-root");
 
     state = ExtensionState.Active;
 
     stakeFraction = _stakeFraction;
     voterRewardFraction = _voterRewardFraction;
     votePowerFraction = _votePowerFraction;
+    crowdFunding = _crowdFunding;
 
     emit ExtensionInitialised();
   }
 
   function deprecate() public {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-caller-not-root");
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-user-not-root");
 
     state = ExtensionState.Deprecated;
 
@@ -194,6 +203,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     require(getPollState(_pollId) == PollState.Staking, "voting-rep-staking-closed");
     require(add(poll.stakes[toInt(_vote)], _amount) <= getRequiredStake(_pollId), "voting-rep-stake-too-large");
+
+    require(
+      crowdFunding || add(poll.stakes[toInt(_vote)], _amount) == getRequiredStake(_pollId),
+      "voting-rep-stake-must-be-exact"
+    );
 
     colony.obligateStake(msg.sender, _domainId, _amount);
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, _domainId, _amount, address(this));
