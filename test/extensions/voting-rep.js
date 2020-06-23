@@ -118,6 +118,7 @@ contract("Voting Reputation", (accounts) => {
     await votingFactory.deployExtension(colony.address);
     const votingAddress = await votingFactory.deployedExtensions(colony.address);
     voting = await VotingReputation.at(votingAddress);
+    await voting.initialise(WAD.divn(1000), WAD.divn(10), WAD.muln(2).divn(3));
     await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
     await colony.setAdministrationRole(1, UINT256_MAX, voting.address, 1, true);
 
@@ -195,13 +196,25 @@ contract("Voting Reputation", (accounts) => {
     await repCycle.confirmNewHash(0);
   });
 
-  describe("using the extension factory", async () => {
+  describe("deploying the extension", async () => {
     it("can install the extension factory once if root and uninstall", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await checkErrorRevert(votingFactory.deployExtension(colony.address, { from: USER1 }), "colony-extension-user-not-root");
       await votingFactory.deployExtension(colony.address, { from: USER0 });
       await checkErrorRevert(votingFactory.deployExtension(colony.address, { from: USER0 }), "colony-extension-already-deployed");
       await votingFactory.removeExtension(colony.address, { from: USER0 });
+    });
+
+    it("can deprecate the extension", async () => {
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+
+      await voting.deprecate();
+
+      await checkErrorRevert(
+        voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        "voting-rep-not-active"
+      );
     });
   });
 

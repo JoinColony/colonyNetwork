@@ -19,6 +19,7 @@ pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
+import "./../colony/ColonyDataTypes.sol";
 import "./../colony/IColony.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../common/ERC20Extended.sol";
@@ -29,6 +30,8 @@ import "./../tokenLocking/ITokenLocking.sol";
 contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   // Events
+  event ExtensionInitialised();
+  event ExtensionDeprecated();
   event PollCreated(uint256 indexed pollId, uint256 indexed skillId);
   event PollStaked(uint256 indexed pollId, address indexed staker, bool indexed side, uint256 amount);
   event PollVoteSubmitted(uint256 indexed pollId, address indexed voter);
@@ -41,10 +44,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   uint256 constant NAY = 0;
   uint256 constant YAY = 1;
 
-  uint256 constant STAKE_FRACTION = WAD / 1000; // 0.1%
-  uint256 constant VOTER_REWARD_FRACTION = WAD / 10; // 10%
-  uint256 constant VOTE_POWER_FRACTION = (WAD * 2) / 3; // 66.6%
-
   uint256 constant STAKE_PERIOD = 3 days;
   uint256 constant VOTE_PERIOD = 2 days;
   uint256 constant REVEAL_PERIOD = 2 days;
@@ -53,17 +52,46 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
   );
 
+  enum ExtensionState { Deployed, Active, Deprecated }
+
   // Initialization data
+  ExtensionState state;
+
   IColony colony;
   IColonyNetwork colonyNetwork;
   ITokenLocking tokenLocking;
   address token;
+
+  uint256 stakeFraction; // WAD / 1000 (0.1%)
+  uint256 voterRewardFraction; // WAD / 10 (10%)
+  uint256 votePowerFraction; // (WAD * 2) / 3 (66.6%)
 
   constructor(address _colony) public {
     colony = IColony(_colony);
     colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
     tokenLocking = ITokenLocking(colonyNetwork.getTokenLocking());
     token = colony.getToken();
+  }
+
+  function initialise(uint256 _stakeFraction, uint256 _voterRewardFraction, uint256 _votePowerFraction) public {
+    require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-caller-not-root");
+
+    state = ExtensionState.Active;
+
+    stakeFraction = _stakeFraction;
+    voterRewardFraction = _voterRewardFraction;
+    votePowerFraction = _votePowerFraction;
+
+    emit ExtensionInitialised();
+  }
+
+  function deprecate() public {
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-caller-not-root");
+
+    state = ExtensionState.Deprecated;
+
+    emit ExtensionDeprecated();
   }
 
   // Data structures
@@ -164,8 +192,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-domain-id");
     require(add(stakes[_pollId][msg.sender][_vote], _amount) <= stakerRep, "voting-rep-insufficient-rep");
 
-    require(add(poll.stakes[toInt(_vote)], _amount) <= getRequiredStake(_pollId), "voting-rep-stake-too-large");
     require(getPollState(_pollId) == PollState.Staking, "voting-rep-staking-closed");
+    require(add(poll.stakes[toInt(_vote)], _amount) <= getRequiredStake(_pollId), "voting-rep-stake-too-large");
 
     colony.obligateStake(msg.sender, _domainId, _amount);
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, _domainId, _amount, address(this));
@@ -256,7 +284,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     uint256 pctReputation = wdiv(userRep, poll.skillRep);
     uint256 totalStake = add(poll.stakes[YAY], poll.stakes[NAY]);
-    uint256 voterReward = wmul(wmul(pctReputation, totalStake), VOTER_REWARD_FRACTION);
+    uint256 voterReward = wmul(wmul(pctReputation, totalStake), voterRewardFraction);
 
     poll.unpaidRewards = sub(poll.unpaidRewards, voterReward);
     tokenLocking.transfer(token, voterReward, msg.sender, true);
@@ -323,7 +351,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
       uint256 votePower;
       if (poll.stakes[NAY] < getRequiredStake(_pollId)) {
-        votePower = wmul(poll.skillRep, VOTE_POWER_FRACTION);
+        votePower = wmul(poll.skillRep, votePowerFraction);
       } else {
         votePower = poll.votes[YAY];
       }
@@ -518,6 +546,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     internal
   {
+    require(state == ExtensionState.Active, "voting-rep-not-active");
+
     pollCount += 1;
     polls[pollCount].lastEvent = now;
     polls[pollCount].rootHash = colonyNetwork.getReputationRootHash();
@@ -538,7 +568,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   function getRequiredStake(uint256 _pollId) internal view returns (uint256) {
-    return wmul(polls[_pollId].skillRep, STAKE_FRACTION);
+    return wmul(polls[_pollId].skillRep, stakeFraction);
   }
 
   function checkReputation(
