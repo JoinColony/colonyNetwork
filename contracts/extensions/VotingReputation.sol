@@ -80,6 +80,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256[2] votes; // [nay, yay]
     address[2] leads; // [nay, yay]
     Response[2] responses; // [nay, yay]
+    address target;
     bytes action;
     bool executed;
   }
@@ -98,6 +99,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   // Public functions (interface)
 
   function createRootPoll(
+    address _target,
     bytes memory _action,
     bytes memory _key,
     bytes memory _value,
@@ -107,12 +109,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     public
   {
     uint256 rootSkillId = colony.getDomain(1).skillId;
-    createPoll(_action, rootSkillId, _key, _value, _branchMask, _siblings);
+    createPoll(_target, _action, rootSkillId, _key, _value, _branchMask, _siblings);
   }
 
   function createDomainPoll(
     uint256 _domainId,
     uint256 _childSkillIndex,
+    address _target,
     bytes memory _action,
     bytes memory _key,
     bytes memory _value,
@@ -129,7 +132,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
     }
 
-    createPoll(_action, domainSkillId, _key, _value, _branchMask, _siblings);
+    createPoll(_target, _action, domainSkillId, _key, _value, _branchMask, _siblings);
   }
 
   function stakePoll(
@@ -187,7 +190,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
         expenditurePollCounts[expenditureHash] = add(expenditurePollCounts[expenditureHash], 1);
 
         bytes memory claimDelayAction = createClaimDelayAction(poll.action, UINT256_MAX);
-        executeCall(address(colony), claimDelayAction);
+        executeCall(_pollId, claimDelayAction);
       }
     }
 
@@ -311,7 +314,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       // Release the claimDelay if this is the last active poll
       if (expenditurePollCounts[expenditureHash] == 0) {
         bytes memory claimDelayAction = createClaimDelayAction(poll.action, 0);
-        executeCall(address(colony), claimDelayAction);
+        executeCall(_pollId, claimDelayAction);
       }
 
       // Conditions:
@@ -334,7 +337,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
 
     if (canExecute) {
-      executeCall(address(colony), poll.action);
+      executeCall(_pollId, poll.action);
     }
 
     emit PollExecuted(_pollId, poll.action, canExecute);
@@ -505,6 +508,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   // Internal functions
 
   function createPoll(
+    address _target,
     bytes memory _action,
     uint256 _skillId,
     bytes memory _key,
@@ -519,6 +523,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     polls[pollCount].rootHash = colonyNetwork.getReputationRootHash();
     polls[pollCount].skillId = _skillId;
     polls[pollCount].skillRep = checkReputation(pollCount, address(0x0), _key, _value, _branchMask, _siblings);
+    polls[pollCount].target = _target;
     polls[pollCount].action = _action;
 
     emit PollCreated(pollCount, _skillId);
@@ -586,7 +591,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
   }
 
-  function executeCall(address to, bytes memory action) internal {
+  function executeCall(uint256 pollId, bytes memory action) internal {
+    address target = polls[pollId].target;
+    address to = (target == address(0x0)) ? address(colony) : target;
+
     bool success;
 
     assembly {

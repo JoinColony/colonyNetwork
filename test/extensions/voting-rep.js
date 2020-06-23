@@ -88,6 +88,7 @@ contract("Voting Reputation", (accounts) => {
   const FOLD = 1;
   const CALL = 2;
 
+  const ADDRESS_ZERO = ethers.constants.AddressZero;
   const REQUIRED_STAKE = WAD.muln(3).divn(1000);
 
   before(async () => {
@@ -207,7 +208,7 @@ contract("Voting Reputation", (accounts) => {
   describe("creating polls", async () => {
     it("can create a root poll", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
 
       const pollId = await voting.getPollCount();
       const poll = await voting.getPoll(pollId);
@@ -217,7 +218,7 @@ contract("Voting Reputation", (accounts) => {
     it("can create a domain poll in the root domain", async () => {
       // Create poll in domain of action (1)
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainPoll(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
 
       const pollId = await voting.getPollCount();
       const poll = await voting.getPoll(pollId);
@@ -231,7 +232,7 @@ contract("Voting Reputation", (accounts) => {
 
       // Create poll in domain of action (2)
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
-      await voting.createDomainPoll(2, UINT256_MAX, action, key, value, mask, siblings);
+      await voting.createDomainPoll(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings);
 
       const pollId = await voting.getPollCount();
       const poll = await voting.getPoll(pollId);
@@ -241,7 +242,7 @@ contract("Voting Reputation", (accounts) => {
     it("can externally escalate a domain poll", async () => {
       // Create poll in parent domain (1) of action (2)
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
-      await voting.createDomainPoll(1, 0, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainPoll(1, 0, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
 
       const pollId = await voting.getPollCount();
       const poll = await voting.getPoll(pollId);
@@ -255,7 +256,7 @@ contract("Voting Reputation", (accounts) => {
 
       // Provide proof for (3) instead of (2)
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
-      await checkErrorRevert(voting.createDomainPoll(1, 1, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
+      await checkErrorRevert(voting.createDomainPoll(1, 1, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
     });
   });
 
@@ -264,7 +265,7 @@ contract("Voting Reputation", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       pollId = await voting.getPollCount();
     });
 
@@ -327,7 +328,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.stakePoll(pollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakePoll(pollId, 1, UINT256_MAX, 1, false, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.respondToStake(pollId, true, FOLD, { from: USER1 });
+      await voting.respondToStake(pollId, false, FOLD, { from: USER1 });
 
       const pollState = await voting.getPollState(pollId);
       expect(pollState).to.eq.BN(EXECUTABLE);
@@ -375,7 +376,7 @@ contract("Voting Reputation", (accounts) => {
       activePoll = await voting.getActivePoll(soliditySha3(action));
       expect(activePoll).to.eq.BN(pollId);
 
-      await voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const otherPollId = await voting.getPollCount();
 
       await checkErrorRevert(
@@ -411,7 +412,7 @@ contract("Voting Reputation", (accounts) => {
         bn2bytes32(WAD),
       ]);
 
-      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainPoll(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       pollId = await voting.getPollCount();
 
       let expenditurePollCount;
@@ -446,7 +447,7 @@ contract("Voting Reputation", (accounts) => {
         bn2bytes32(WAD),
       ]);
 
-      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainPoll(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       pollId = await voting.getPollCount();
 
       let expenditurePollCount;
@@ -481,7 +482,7 @@ contract("Voting Reputation", (accounts) => {
         bn2bytes32(WAD),
       ]);
 
-      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainPoll(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       pollId = await voting.getPollCount();
 
       let expenditurePollCount;
@@ -528,10 +529,10 @@ contract("Voting Reputation", (accounts) => {
         bn2bytes32(WAD),
       ]);
 
-      await voting.createDomainPoll(1, UINT256_MAX, action1, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainPoll(1, UINT256_MAX, ADDRESS_ZERO, action1, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const pollId1 = await voting.getPollCount();
 
-      await voting.createDomainPoll(1, UINT256_MAX, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainPoll(1, UINT256_MAX, ADDRESS_ZERO, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const pollId2 = await voting.getPollCount();
 
       let expenditurePollCount;
@@ -621,7 +622,7 @@ contract("Voting Reputation", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       pollId = await voting.getPollCount();
 
       await voting.stakePoll(pollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -718,7 +719,7 @@ contract("Voting Reputation", (accounts) => {
       await repCycle.confirmNewHash(0);
 
       // Create new poll with new reputation state
-      await voting.createRootPoll(FAKE, domain1Key, domain1Value, domain1Mask2, domain1Siblings2);
+      await voting.createRootPoll(ADDRESS_ZERO, FAKE, domain1Key, domain1Value, domain1Mask2, domain1Siblings2);
       const pollId2 = await voting.getPollCount();
       await voting.stakePoll(pollId2, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
       await voting.stakePoll(pollId2, 1, UINT256_MAX, 1, false, REQUIRED_STAKE, user1Key, user1Value, user1Mask2, user1Siblings2, { from: USER1 });
@@ -789,7 +790,7 @@ contract("Voting Reputation", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       pollId = await voting.getPollCount();
     });
 
@@ -813,6 +814,27 @@ contract("Voting Reputation", (accounts) => {
 
       const { logs } = await voting.executePoll(pollId);
       expect(logs[0].args.success).to.be.true;
+    });
+
+    it("can take an action with an arbitrary target", async () => {
+      const { colony: otherColony } = await setupRandomColony(colonyNetwork);
+      await token.mint(otherColony.address, WAD, { from: USER0 });
+
+      const action = await encodeTxData(colony, "claimColonyFunds", [token.address]);
+      await voting.createRootPoll(otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      pollId = await voting.getPollCount();
+
+      await voting.stakePoll(pollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_WINDOW, this);
+
+      const balanceBefore = await otherColony.getFundingPotBalance(1, token.address);
+      expect(balanceBefore).to.be.zero;
+
+      await voting.executePoll(pollId);
+
+      const balanceAfter = await otherColony.getFundingPotBalance(1, token.address);
+      expect(balanceAfter).to.eq.BN(WAD);
     });
 
     it("cannot take an action during staking or voting", async () => {
@@ -889,7 +911,7 @@ contract("Voting Reputation", (accounts) => {
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, 1, 0, [], [], ethers.constants.HashZero]);
       let logs;
 
-      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainPoll(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const pollId1 = await voting.getPollCount();
 
       await voting.stakePoll(pollId1, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -910,7 +932,7 @@ contract("Voting Reputation", (accounts) => {
       expect(logs[0].args.success).to.be.true;
 
       // Create another poll for the same variable
-      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainPoll(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const pollId2 = await voting.getPollCount();
 
       await voting.stakePoll(pollId2, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -934,7 +956,7 @@ contract("Voting Reputation", (accounts) => {
     it("can set vote power correctly if there is insufficient opposition", async () => {
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, 1, 0, [], [], ethers.constants.HashZero]);
 
-      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainPoll(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       pollId = await voting.getPollCount();
 
       await voting.stakePoll(pollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -950,7 +972,7 @@ contract("Voting Reputation", (accounts) => {
     it("can set vote power correctly after a vote", async () => {
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, 1, 0, [], [], ethers.constants.HashZero]);
 
-      await voting.createDomainPoll(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainPoll(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       pollId = await voting.getPollCount();
 
       await voting.stakePoll(pollId, 1, UINT256_MAX, 1, true, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -979,7 +1001,7 @@ contract("Voting Reputation", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootPoll(action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       pollId = await voting.getPollCount();
     });
 
@@ -1123,7 +1145,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot claim rewards before a poll is executed", async () => {
-      await checkErrorRevert(voting.claimReward(pollId, 1, UINT256_MAX, 1, USER0, true), "voting-rep-not-executed");
+      await checkErrorRevert(voting.claimReward(pollId, 1, UINT256_MAX, 1, USER0, true), "voting-rep-not-failed-or-executed");
     });
 
     it("cannot claim rewards with a bad domainId", async () => {
@@ -1154,7 +1176,7 @@ contract("Voting Reputation", (accounts) => {
       [user1Mask, user1Siblings] = await reputationTree.getProof(user1Key);
 
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
-      await voting.createDomainPoll(2, UINT256_MAX, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
+      await voting.createDomainPoll(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
       pollId = await voting.getPollCount();
 
       await colony.approveStake(voting.address, 2, WAD, { from: USER0 });
