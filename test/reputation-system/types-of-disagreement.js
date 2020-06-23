@@ -108,6 +108,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-adjacent-disagree-state-disagreement" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -180,6 +181,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -308,7 +310,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       expect(delta).to.eq.BN(1);
       // checks that challengeStepCompleted is one more for the good submission than the bad one.
 
-      await forwardTime(MINING_CYCLE_DURATION / 6, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.invalidateHash(0, 1);
     });
 
@@ -381,6 +383,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       });
 
       // Cleanup
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
   });
@@ -406,6 +409,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       });
 
       // Cleanup
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -422,6 +426,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
         client2: { respondToChallenge: "colony-network-mining-more-than-one-leaf-added" },
       });
       const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -444,6 +449,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
         client2: { respondToChallenge: "colony-reputation-mining-adjacent-agree-state-disagreement" },
       });
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
   });
@@ -469,6 +475,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       });
 
       // Cleanup
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -640,6 +647,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
 
       await badClient.resetDB();
@@ -659,6 +667,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
         client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
       repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -721,6 +730,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-reputation-not-max-int128" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
   });

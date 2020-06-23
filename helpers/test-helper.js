@@ -583,6 +583,7 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
   } else {
     toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
   }
+  await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
   return repCycle.invalidateHash(round1, toInvalidateIdx);
 }
@@ -700,17 +701,21 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
   const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
 
   if (nUniqueSubmittedHashes.gtn(0)) {
-    const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    await forwardTimeTo(
-      reputationMiningWindowOpenTimestamp
-        .addn(MINING_CYCLE_DURATION)
-        .addn(SUBMITTER_ONLY_WINDOW + 1)
-        .toNumber(),
-      test
-    );
+    // const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+    // await forwardTimeTo(
+    //   reputationMiningWindowOpenTimestamp
+    //     .addn(MINING_CYCLE_DURATION)
+    //     .addn(SUBMITTER_ONLY_WINDOW + 1)
+    //     .toNumber(),
+    //   test
+    // );
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
-      await repCycle.confirmNewHash(nUniqueSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.
+      const roundNumber = nUniqueSubmittedHashes.eqn(1) ? 0 : 1; // Not a general solution - only works for one or two submissions.
+      const disputeRound = await repCycle.getDisputeRound(roundNumber);
+      const timestamp = disputeRound[0].lastResponseTimestamp;
+      await forwardTimeTo(parseInt(timestamp, 10) + MINING_CYCLE_DURATION, test);
+      await repCycle.confirmNewHash(roundNumber);
       // But for now, that's okay.
     } else {
       // We shouldn't get here. If this fires during a test, you haven't finished writing the test.

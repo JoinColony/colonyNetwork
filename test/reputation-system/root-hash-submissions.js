@@ -385,6 +385,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
       expect(newRepCycle.address).to.not.equal(ethers.constants.AddressZero);
@@ -415,6 +416,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(2);
 
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
@@ -481,6 +483,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(2);
     });
 
@@ -656,6 +659,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const miner3Loss = MIN_STAKE;
 
       // Claim the rewards for everyone. For them to be available to claim, we have to finish the mining cycle.
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
 
       // Now actually claim them

@@ -224,7 +224,6 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   function invalidateHash(uint256 round, uint256 idx) public {
     // What we do depends on our opponent, so work out which index it was at in disputeRounds[round]
     uint256 opponentIdx = getOpponentIdx(idx);
-    uint256 nInNextRound;
 
     // We require either
     // 1. That we actually had an opponent - can't invalidate the last hash.
@@ -256,12 +255,9 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
       // Note the fact that this round has had another challenge complete
       nHashesCompletedChallengeRound[round] += 1;
-      // Check if the hash we just moved to the next round is the second of a pairing that should now face off.
-      nInNextRound = disputeRounds[round+1].length;
 
-      if (nInNextRound % 2 == 0) {
-        startPairingInRound(round+1);
-      }
+      // Update 'last response timestamp' of the entry we just progressed
+      updateTimestamps(round + 1);
     } else {
       require(disputeRounds[round].length > opponentIdx, "colony-reputation-mining-dispute-id-not-in-range");
       // If we are invalidating hash for idx then opponentIdx hash has to exist, so it is passed onto the next round
@@ -293,11 +289,8 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
         delete disputeRounds[round][opponentIdx];
         // TODO Delete the hash(es) being invalidated?
         nInvalidatedHashes += 1;
-        // Check if the hash we just moved to the next round is the second of a pairing that should now face off.
-        nInNextRound = disputeRounds[round+1].length;
-        if (nInNextRound % 2 == 0) {
-          startPairingInRound(round+1);
-        }
+        // Update 'last response timestamp' of the entry we just progressed
+        updateTimestamps(round + 1);
       } else {
         // Our opponent completed the same number of challenge rounds, and both have now timed out.
         nInvalidatedHashes += 2;
@@ -560,5 +553,17 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     uint256 nInRound = disputeRounds[roundNumber].length;
     startMemberOfPair(roundNumber, nInRound-1);
     startMemberOfPair(roundNumber, nInRound-2);
+  }
+
+  function updateTimestamps(uint256 roundNumber) internal {
+    // Update 'last response timestamp' of the entry we just progressed
+    uint256 nInRound = disputeRounds[roundNumber].length;
+    if (nInRound % 2 == 0) {
+      // Check if the hash we just moved to the next round is the second of a pairing that should now face off.
+      startPairingInRound(roundNumber);
+    } else {
+      // Update the 'last responded time'
+      disputeRounds[roundNumber][nInRound-1].lastResponseTimestamp = now;
+    }
   }
 }

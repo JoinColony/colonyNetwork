@@ -165,6 +165,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-adjacent-origin-not-adjacent-or-already-exists" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
       const acceptedHash = await colonyNetwork.getReputationRootHash();
 
@@ -232,6 +233,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
         client2: { respondToChallenge: "colony-reputation-mining-adjacent-child-not-adjacent-or-already-exists" },
       });
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
       const acceptedHash = await colonyNetwork.getReputationRootHash();
       const righthash = await goodClient.getRootHash();
@@ -299,6 +301,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
       const acceptedHash = await colonyNetwork.getReputationRootHash();
       const righthash = await goodClient.getRootHash();
@@ -561,6 +564,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await goodClient.respondToChallenge();
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -620,6 +624,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
   });
@@ -691,6 +696,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-origin-user-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -748,6 +754,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -804,6 +811,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -848,6 +856,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
   });
@@ -906,6 +915,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -963,6 +973,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -1035,6 +1046,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -1135,6 +1147,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await goodClient.respondToChallenge();
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -1191,6 +1204,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
   });
@@ -1271,6 +1285,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(2);
     });
   });
