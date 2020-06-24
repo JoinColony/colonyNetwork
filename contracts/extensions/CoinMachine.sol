@@ -34,51 +34,50 @@ contract CoinMachine is DSMath {
   }
 
   // Storage
-  ERC20Extended purchaseToken;
+  ERC20Extended purchaseToken; // The token in which we receive payments
 
-  uint256 periodLength;
-  uint256 numPeriods;
+  uint256 periodLength; // Duration of a sale period (i.e. one hour)
+  uint256 windowSize; // Number of periods in the price averaging window (i.e. 10)
 
-  uint256 tokensPerPeriod;
-  uint256 maxPerPeriod;
-  uint256 tokenSurplus;
-  uint256 tokenDeficit;
+  uint256 targetPerPeriod; // Target number of tokens to sell in a period
+  uint256 maxPerPeriod; // Maximum number of tokens sellable in a period
+  int256 tokenSurplus; // Total tokens undersold (i.e. below target), negative means deficit
 
-  uint256 currPeriod;
-  uint256 currPrice;
+  uint256 activePeriod; // The active sale period
+  uint256 activePrice; // The active sale price
 
-  uint256 tokensSold;
-  uint256 currIntake;
+  uint256 tokensSold; // Tokens sold in the active period
+  uint256 activeIntake; // Payment received in the active period
 
-  mapping (uint256 => uint256) pastIntakes;
+  mapping (uint256 => uint256) pastIntakes; // Payment received in past periods
 
   // Public
 
-  function initialize(
+  function initialise(
     address _purchaseToken,
     uint256 _periodLength,
-    uint256 _numPeriods,
-    uint256 _tokensPerPeriod,
+    uint256 _windowSize,
+    uint256 _targetPerPeriod,
     uint256 _maxPerPeriod,
     uint256 _startingPrice
   )
     public
   {
-    require(address(purchaseToken) == address(0x0), "coin-machine-already-initialized");
+    require(address(purchaseToken) == address(0x0), "coin-machine-already-initialised");
 
     purchaseToken = ERC20Extended(_purchaseToken);
 
     periodLength = _periodLength;
-    numPeriods = _numPeriods;
+    windowSize = _windowSize;
 
-    tokensPerPeriod = _tokensPerPeriod;
+    targetPerPeriod = _targetPerPeriod;
     maxPerPeriod = _maxPerPeriod;
 
-    currPrice = _startingPrice;
-    currPeriod = getCurrPeriod();
+    activePrice = _startingPrice;
+    activePeriod = getCurrentPeriod();
 
-    uint256 startingIntake = wmul(tokensPerPeriod, _startingPrice);
-    for (uint256 i; i < _numPeriods; i++) {
+    uint256 startingIntake = wmul(targetPerPeriod, _startingPrice);
+    for (uint256 i; i < _windowSize; i++) {
       pastIntakes[i] = startingIntake;
     }
   }
@@ -86,11 +85,12 @@ contract CoinMachine is DSMath {
   function buyTokens(uint256 _numTokens) public {
     updatePeriod();
 
-    uint256 numTokens = min(_numTokens, getNumAvailable());
-    uint256 totalPrice = wmul(numTokens, currPrice);
+    uint256 numTokens = min(_numTokens, maxPerPeriod - tokensSold);
+    uint256 totalPrice = wmul(numTokens, activePrice);
 
-    currIntake += totalPrice;
+    activeIntake += totalPrice;
     tokensSold += numTokens;
+
     assert(tokensSold <= maxPerPeriod);
 
     require(
@@ -103,158 +103,93 @@ contract CoinMachine is DSMath {
 
   // Make sure this is called at least once during the averaging period
   function updatePeriod() public {
-    bool newPeriod;
+    uint256 currentPeriod = getCurrentPeriod();
 
-    if (getCurrPeriod() != currPeriod) {
-      newPeriod = true;
-      pastIntakes[currPeriod] = currIntake;
-      currIntake = 0;
+    // Handle the recently elapsed period
+    if (activePeriod < currentPeriod) {
+      pastIntakes[toBin(activePeriod)] = activeIntake;
+      activeIntake = 0;
 
-      // Handle surplus (prices falling)
-      if (tokensSold < tokensPerPeriod) {
-        // See how much we undersold
-        uint256 difference = sub(tokensPerPeriod, tokensSold);
-        // See how much we can take from the deficit
-        uint256 fromDeficit = min(difference, tokenDeficit);
-        // See how much we can add to the surplus
-        uint256 toSurplus = sub(difference, fromDeficit);
-
-        tokenDeficit = sub(tokenDeficit, fromDeficit);
-        tokenSurplus = add(tokenSurplus, toSurplus);
-      }
-
-      // Handle deficit (prices rising)
-      if (tokensSold > tokensPerPeriod) {
-        // See how much we oversold
-        uint256 difference = sub(tokensSold, tokensPerPeriod);
-        // See how much we can pay out of past surpluses
-        uint256 fromSurplus = min(difference, tokenSurplus);
-        // See how much we can pay out of new deficit
-        uint256 toDeficit = sub(difference, fromSurplus);
-
-        tokenSurplus = sub(tokenSurplus, fromSurplus);
-        tokenDeficit = add(tokenDeficit, toDeficit);
-      }
+      tokenSurplus += (int256(targetPerPeriod) - int256(tokensSold));
 
       tokensSold = 0;
-      currPeriod = nextPeriod(currPeriod);
+      activePeriod += 1;
     }
 
-    // In case we missed multiple periods
-    while (getCurrPeriod() != currPeriod) {
-      pastIntakes[currPeriod] = 0;
-      tokenSurplus = add(tokenSurplus, tokensPerPeriod);
-      currPeriod = nextPeriod(currPeriod);
+    // Handle any additional missed periods
+    while (activePeriod < currentPeriod) {
+      pastIntakes[toBin(activePeriod)] = 0;
+      tokenSurplus += int256(targetPerPeriod);
+      activePeriod += 1;
     }
 
     // Update the price
-    if (newPeriod) {
-      currPrice = wdiv(getAverageIntake(), tokensPerPeriod);
+    uint256 sum;
+
+    for (uint256 i; i < windowSize; i++) {
+      sum += pastIntakes[i];
     }
+
+    activePrice = wdiv(sum / windowSize, targetPerPeriod);
   }
 
   function getPeriodLength() public view returns (uint256) {
     return periodLength;
   }
 
-  function getNumPeriods() public view returns (uint256) {
-    return numPeriods;
+  function getWindowSize() public view returns (uint256) {
+    return windowSize;
   }
 
-  function getTokensPerPeriod() public view returns (uint256) {
-    return tokensPerPeriod;
+  function getTargetPerPeriod() public view returns (uint256) {
+    return targetPerPeriod;
   }
 
   function getMaxPerPeriod() public view returns (uint256) {
     return maxPerPeriod;
   }
 
-  function getCurrPrice() public view returns (uint256) {
-    if (currPeriod == getCurrPeriod()) {
-      return currPrice;
-    } else {
-      uint256 virtualSum = pastIntakes[getCurrPeriod()];
-      uint256 virtualPeriod = nextPeriod(getCurrPeriod());
-      uint256 virtualCurrPeriod = nextPeriod(currPeriod);
+  function getCurrentPrice() public view returns (uint256) {
+    uint256 currentPeriod = getCurrentPeriod();
 
-      while (virtualPeriod != getCurrPeriod()) {
-        if (virtualPeriod == currPeriod) {
-          virtualSum += currIntake;
-        } else if (virtualPeriod == virtualCurrPeriod) {
-          virtualCurrPeriod = nextPeriod(virtualCurrPeriod);
-        } else {
-          virtualSum += pastIntakes[virtualPeriod];
+    if (activePeriod == currentPeriod) {
+      return activePrice;
+
+    // Otherwise, infer the new price
+    } else {
+      uint256 sum;
+      uint256 period = currentPeriod - windowSize;
+
+      for (; period <= currentPeriod; period++) {
+        if (period < activePeriod) {
+          sum += pastIntakes[toBin(period)];
+        } else if (period == activePeriod) {
+          sum += activeIntake;
         }
-        virtualPeriod = nextPeriod(virtualPeriod);
+        // No `else`, any intakes between activePeriod and currentPeriod are 0
       }
 
-      uint256 virtualAverageIntake = virtualSum / numPeriods;
-      return wdiv(virtualAverageIntake, tokensPerPeriod);
+      return wdiv(sum / windowSize, targetPerPeriod);
     }
   }
 
   function getNumAvailable() public view returns (uint256) {
-    if (currPeriod == getCurrPeriod()) {
-      return sub(maxPerPeriod, tokensSold);
-    } else {
-      return maxPerPeriod;
-    }
+    return maxPerPeriod -
+      ((activePeriod == getCurrentPeriod()) ? tokensSold : 0);
   }
 
-  function getTokenSurplus() public view returns (uint256) {
-    uint256 virtualTokenSurplus;
-    uint256 x;
-    (virtualTokenSurplus, x) = getTokenSurplusAndDeficit();
-    return virtualTokenSurplus;
-  }
-
-  function getTokenDeficit() public view returns (uint256) {
-    uint256 x;
-    uint256 virtualTokenDeficit;
-    (x, virtualTokenDeficit) = getTokenSurplusAndDeficit();
-    return virtualTokenDeficit;
+  function getTokenSurplus() public view returns (int256) {
+    return tokenSurplus - int256(tokensSold) +
+      int256((1 + getCurrentPeriod() - activePeriod) * targetPerPeriod);
   }
 
   // Internal
 
-  function getTokenSurplusAndDeficit() internal view returns (uint256, uint256) {
-    uint256 virtualPeriod = currPeriod;
-    uint256 virtualTokenSurplus = tokenSurplus;
-    uint256 virtualTokenDeficit = tokenDeficit;
-
-    while (virtualPeriod != getCurrPeriod()) {
-      virtualTokenSurplus = add(virtualTokenSurplus, tokensPerPeriod);
-      virtualPeriod = nextPeriod(virtualPeriod);
-    }
-
-    if (tokensSold <= tokensPerPeriod) {
-      virtualTokenSurplus = add(virtualTokenSurplus, sub(tokensPerPeriod, tokensSold));
-    } else {
-      virtualTokenDeficit = add(virtualTokenDeficit, sub(tokensSold, tokensPerPeriod));
-    }
-
-    if (virtualTokenSurplus >= virtualTokenDeficit) {
-      return (sub(virtualTokenSurplus, virtualTokenDeficit), 0);
-    } else {
-      return (0, sub(virtualTokenDeficit, virtualTokenSurplus));
-    }
+  function getCurrentPeriod() internal view returns (uint256) {
+    return now / periodLength;
   }
 
-  function getAverageIntake() internal view returns (uint256) {
-    uint256 sum;
-
-    for (uint256 i; i < numPeriods; i++) {
-      sum += pastIntakes[i];
-    }
-
-    return sum / numPeriods;
-  }
-
-  function getCurrPeriod() internal view returns (uint256) {
-    return (now / periodLength) % numPeriods;
-  }
-
-  function nextPeriod(uint256 _period) internal view returns (uint256) {
-    return (_period + 1) % numPeriods;
+  function toBin(uint256 period) internal view returns(uint256) {
+    return period % windowSize;
   }
 }
