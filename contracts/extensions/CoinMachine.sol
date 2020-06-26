@@ -34,7 +34,7 @@ contract CoinMachine is DSMath {
   }
 
   // Storage
-  ERC20Extended purchaseToken; // The token in which we receive payments
+  address purchaseToken; // The token in which we receive payments, 0x0 for eth
 
   uint256 periodLength; // Duration of a sale period (i.e. one hour)
   uint256 windowSize; // Number of periods in the price averaging window (i.e. 10)
@@ -63,9 +63,9 @@ contract CoinMachine is DSMath {
   )
     public
   {
-    require(address(purchaseToken) == address(0x0), "coin-machine-already-initialised");
+    require(activePeriod == 0, "coin-machine-already-initialised");
 
-    purchaseToken = ERC20Extended(_purchaseToken);
+    purchaseToken = _purchaseToken;
 
     periodLength = _periodLength;
     windowSize = _windowSize;
@@ -82,7 +82,7 @@ contract CoinMachine is DSMath {
     }
   }
 
-  function buyTokens(uint256 _numTokens) public {
+  function buyTokens(uint256 _numTokens) public payable {
     updatePeriod();
 
     uint256 numTokens = min(_numTokens, maxPerPeriod - tokensSold);
@@ -93,10 +93,12 @@ contract CoinMachine is DSMath {
 
     assert(tokensSold <= maxPerPeriod);
 
-    require(
-      purchaseToken.transferFrom(msg.sender, address(this), totalPrice),
-      "coin-machine-transfer-failed"
-    );
+    if (purchaseToken == address(0x0)) {
+      require(msg.value >= totalPrice, "coin-machine-insufficient-funds");
+      msg.sender.transfer(msg.value - totalPrice);
+    } else {
+      ERC20Extended(purchaseToken).transferFrom(msg.sender, address(this), totalPrice);
+    }
 
     colony.mintTokensFor(msg.sender, numTokens);
   }

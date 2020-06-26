@@ -1,10 +1,12 @@
 /* globals artifacts */
 
+import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import { WAD } from "../../helpers/constants";
-import { checkErrorRevert, forwardTime } from "../../helpers/test-helper";
+import { checkErrorRevert, forwardTime, web3GetBalance } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupRandomToken, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -73,6 +75,36 @@ contract("Coin Machine", (accounts) => {
 
       const balance = await token.balanceOf(USER0);
       expect(balance).to.eq.BN(WAD);
+
+      // But not with insufficient funds
+      await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
+      await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "ds-token-insufficient-balance");
+    });
+
+    it("can buy tokens with eth", async () => {
+      await coinMachineFactory.removeExtension(colony.address, { from: USER0 });
+      await coinMachineFactory.deployExtension(colony.address, { from: USER0 });
+      const coinMachineAddress = await coinMachineFactory.deployedExtensions(colony.address);
+      coinMachine = await CoinMachine.at(coinMachineAddress);
+      await colony.setRootRole(coinMachineAddress, true);
+
+      await coinMachine.initialise(ethers.constants.AddressZero, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
+      const currentPrice = await coinMachine.getCurrentPrice();
+
+      // Check purchase functionality
+      await coinMachine.buyTokens(WAD, { from: USER0, value: currentPrice });
+
+      const balance = await token.balanceOf(USER0);
+      expect(balance).to.eq.BN(WAD);
+
+      // But not with insufficient funds
+      await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0, value: currentPrice.subn(1) }), "coin-machine-insufficient-funds");
+
+      // Check refund functionality
+      const balanceBefore = await web3GetBalance(coinMachine.address);
+      await coinMachine.buyTokens(WAD, { from: USER0, value: currentPrice.muln(2) });
+      const balanceAfter = await web3GetBalance(coinMachine.address);
+      expect(new BN((balanceAfter - balanceBefore).toString())).to.eq.BN(currentPrice);
     });
 
     it("can buy up to the maximum amount of tokens per period", async () => {
