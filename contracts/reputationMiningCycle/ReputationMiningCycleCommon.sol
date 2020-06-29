@@ -126,10 +126,10 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   }
 
   uint256 constant UINT256_MAX = 2**256 - 1;
-  uint256 constant SUBMITTER_ONLY_WINDOW = 60*10;
+  uint256 constant SUBMITTER_ONLY_WINDOW = 60 * 10;
   uint256 constant Y = UINT256_MAX / SUBMITTER_ONLY_WINDOW;
 
-  function responsePossible(disputeStages stage, uint256 since) internal view returns (bool) {
+  function responsePossible(DisputeStages stage, uint256 since) internal view returns (bool) {
     if (since > now) {
       return false;
     }

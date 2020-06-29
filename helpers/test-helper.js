@@ -303,10 +303,9 @@ export async function forwardTime(seconds, test) {
   return p;
 }
 
-export async function forwardTimeTo(_timestamp, test) {
-  const timestamp = new BN(_timestamp);
+export async function forwardTimeTo(timestamp, test) {
   const lastBlockTime = await getBlockTime("latest");
-  const amountToForward = timestamp.sub(new BN(lastBlockTime));
+  const amountToForward = new BN(timestamp).sub(new BN(lastBlockTime));
   // Forward that much
   await forwardTime(amountToForward.toNumber(), test);
 }
@@ -701,14 +700,6 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
   const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
 
   if (nUniqueSubmittedHashes.gtn(0)) {
-    // const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    // await forwardTimeTo(
-    //   reputationMiningWindowOpenTimestamp
-    //     .addn(MINING_CYCLE_DURATION)
-    //     .addn(SUBMITTER_ONLY_WINDOW + 1)
-    //     .toNumber(),
-    //   test
-    // );
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
       const roundNumber = nUniqueSubmittedHashes.eqn(1) ? 0 : 1; // Not a general solution - only works for one or two submissions.

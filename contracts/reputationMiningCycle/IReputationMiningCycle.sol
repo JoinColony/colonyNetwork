@@ -242,19 +242,19 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   function getDecayConstant() public pure returns (uint256 numerator, uint256 denominator);
 
   /// @notice Get the address that made a particular submission.
-  /// @param hash The hash that was submitted
-  /// @param nLeaves The number of leaves that was submitted
-  /// @param jrh The JRH of that was submitted
-  /// @param index The index of the submission - should be 0-11, as up to twelve submissions can be made.
+  /// @param _hash The hash that was submitted
+  /// @param _nLeaves The number of leaves that was submitted
+  /// @param _jrh The JRH of that was submitted
+  /// @param _index The index of the submission - should be 0-11, as up to twelve submissions can be made.
   /// @return user Address of the user that submitted the hash / nLeaves/ jrh at index
-  function getSubmissionUser(bytes32 hash, uint256 nLeaves, bytes32 jrh, uint256 index) public view returns (address user);
+  function getSubmissionUser(bytes32 _hash, uint256 _nLeaves, bytes32 _jrh, uint256 _index) public view returns (address user);
 
   /// @notice Get the number of submissions miners made of a particular hash / nLeaves / jrh combination.
-  /// @param hash The hash that was submitted
-  /// @param nLeaves The number of leaves that was submitted
-  /// @param jrh The JRH of that was submitted
+  /// @param _hash The hash that was submitted
+  /// @param _nLeaves The number of leaves that was submitted
+  /// @param _jrh The JRH of that was submitted
   /// @return count The number of submissions - should be 0-12, as up to twelve submissions can be made
-  function getNSubmissionsForHash(bytes32 hash, uint256 nLeaves, bytes32 jrh) public view returns (uint256 count);
+  function getNSubmissionsForHash(bytes32 _hash, uint256 _nLeaves, bytes32 _jrh) public view returns (uint256 count);
 
   /// @notice Returns whether a particular address has been involved in the current mining cycle. This might be
   /// from submitting a hash, or from defending one during a dispute.
@@ -263,13 +263,13 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   function userInvolvedInMiningCycle(address _user) public view returns (bool involved);
 
   /// @notice Returns the amount of CLNY given for defending a hash during the current dispute cycle
-  /// @return _reward uint256 The amount of CLNY given.
-  function getDisputeRewardSize() public view returns (uint256 _reward);
+  /// @return reward uint256 The amount of CLNY given.
+  function getDisputeRewardSize() public view returns (uint256 reward);
 
   /// @notice Returns whether the caller is able to currently respond to a dispute stage.
-  /// @param stage The dispute stage in question. Practically, this is a number that indexes in to the corresponding
+  /// @param _stage The dispute stage in question. Practically, this is a number that indexes in to the corresponding
   /// enum in ReputationMiningCycleDataTypes
-  /// @param since The timestamp the last response for the submission in the dispute in question was made at.
+  /// @param _since The timestamp the last response for the submission in the dispute in question was made at.
   /// @return possible bool Whether the user can respond at the current time.
-  function getResponsePossible(disputeStages stage, uint256 since) public view returns (bool possible);
+  function getResponsePossible(DisputeStages _stage, uint256 _since) public view returns (bool possible);
 }

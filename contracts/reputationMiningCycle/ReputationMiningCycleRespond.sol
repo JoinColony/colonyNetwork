@@ -108,7 +108,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     challengeOpen(u[U_ROUND], u[U_IDX])
   {
     require(
-      responsePossible(disputeStages.RESPOND_TO_CHALLENGE, disputeRounds[u[U_ROUND]][u[U_IDX]].lastResponseTimestamp),
+      responsePossible(DisputeStages.RespondToChallenge, disputeRounds[u[U_ROUND]][u[U_IDX]].lastResponseTimestamp),
       "colony-reputation-mining-user-ineligible-to-respond"
     );
 

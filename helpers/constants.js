@@ -57,7 +57,7 @@ const SECONDS_PER_DAY = 86400;
 
 const MINING_CYCLE_DURATION = 60 * 60 * 24; // 24 hours
 const MINING_CYCLE_TIMEOUT = 60 * 10; // Ten minutes
-const SUBMITTER_ONLY_WINDOW = 600; // Ten minutes
+const SUBMITTER_ONLY_WINDOW = 60 * 10; // Ten minutes
 const DECAY_RATE = {
   NUMERATOR:    new BN("992327946262944"), // eslint-disable-line prettier/prettier
   DENOMINATOR: new BN("1000000000000000"),

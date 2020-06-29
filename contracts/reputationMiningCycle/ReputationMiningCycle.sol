@@ -204,7 +204,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     require(submissionWindowClosed(), "colony-reputation-mining-submission-window-still-open");
 
     require(
-      responsePossible(disputeStages.CONFIRM_NEW_HASH, disputeRounds[roundNumber][0].lastResponseTimestamp),
+      responsePossible(DisputeStages.ConfirmNewHash, disputeRounds[roundNumber][0].lastResponseTimestamp),
       "colony-reputation-mining-user-ineligible-to-respond"
     );
 
@@ -241,7 +241,10 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       }
 
       // Is the person making this call eligible to?
-      require(responsePossible(disputeStages.INVALIDATE_HASH, disputeRounds[round][opponentIdx].lastResponseTimestamp), "colony-reputation-mining-user-ineligible-to-respond");
+      require(
+        responsePossible(DisputeStages.InvalidateHash, disputeRounds[round][opponentIdx].lastResponseTimestamp),
+        "colony-reputation-mining-user-ineligible-to-respond"
+      );
 
       // All previous rounds are complete, so update variable to allow loop to short-circuit in future
       // Note that this round is not necessarily complete - there could still be ongoing disputes in this round
@@ -274,7 +277,10 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       require(add(disputeRounds[round][idx].lastResponseTimestamp, 600) <= now, "colony-reputation-mining-not-timed-out"); // Timeout is ten minutes here.
 
       // The submission can be invalidated - now check the person invalidating is allowed to
-      require(responsePossible(disputeStages.INVALIDATE_HASH, disputeRounds[round][idx].lastResponseTimestamp + 600), "colony-reputation-mining-user-ineligible-to-respond");
+      require(
+        responsePossible(DisputeStages.InvalidateHash, disputeRounds[round][idx].lastResponseTimestamp + 600),
+        "colony-reputation-mining-user-ineligible-to-respond"
+      );
 
       // Work out whether we are invalidating just the supplied idx or its opponent too.
       bool eliminateOpponent = false;
@@ -331,7 +337,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     require(submissionWindowClosed(), "colony-reputation-mining-cycle-submissions-not-closed");
     require(index < disputeRounds[round].length, "colony-reputation-mining-index-beyond-round-length");
     require(
-      responsePossible(disputeStages.CONFIRM_JRH, disputeRounds[round][index].lastResponseTimestamp),
+      responsePossible(DisputeStages.ConfirmNewHash, disputeRounds[round][index].lastResponseTimestamp),
       "colony-reputation-mining-user-ineligible-to-respond"
     );
 
@@ -489,7 +495,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     return reputationHashSubmissions[_user].proposedNewRootHash != 0x00 || respondedToChallenge[_user];
   }
 
-  function getResponsePossible(disputeStages stage, uint256 since) external view returns (bool) {
+  function getResponsePossible(DisputeStages stage, uint256 since) external view returns (bool) {
     return responsePossible(stage, since);
   }
 

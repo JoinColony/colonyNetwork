@@ -63,7 +63,7 @@ contract ReputationMiningCycleDataTypes {
   }
 
 
-  enum disputeStages { CONFIRM_JRH, BINARY_SEARCH_RESPONSE, BINARY_SEARCH_CONFIRM, RESPOND_TO_CHALLENGE, INVALIDATE_HASH, CONFIRM_NEW_HASH }
+  enum DisputeStages { ConfirmJRH, BinarySearchResponse, BinarySearchConfirm, RespondToChallenge, InvalidateHash, ConfirmNewHash }
 
   event ReputationRootHashSubmitted(address _miner, bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex);
   event JustificationRootHashConfirmed(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
