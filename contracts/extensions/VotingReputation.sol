@@ -62,10 +62,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   ITokenLocking tokenLocking;
   address token;
 
-  uint256 stakeFraction; // WAD / 1000 (0.1%)
-  uint256 voterRewardFraction; // WAD / 10 (10%)
-  uint256 votePowerFraction; // (WAD * 2) / 3 (66.6%)
-  bool crowdFunding;
+  uint256 stakeFraction; // Percent of domain reputation needed for staking
+  uint256 voterRewardFraction; // Percent of stake paid out to voters as rewards
+  uint256 votePowerFraction; // Percent of domain rep used as vote power if no-contest
+  bool crowdFunding; // Flag allowing or disallowing crowdfunding polls
 
   constructor(address _colony) public {
     colony = IColony(_colony);
@@ -84,6 +84,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-user-not-root");
     require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
+
+    require(_stakeFraction <= WAD, "voting-rep-must-be-wad");
+    require(_voterRewardFraction <= WAD, "voting-rep-must-be-wad");
+    require(_votePowerFraction <= WAD, "voting-rep-must-be-wad");
 
     state = ExtensionState.Active;
 
@@ -110,6 +114,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   struct Poll {
     uint256 lastEvent; // Set at creation / escalation & when staked + responded
     bytes32 rootHash;
+    uint256 domainId;
     uint256 skillId;
     uint256 skillRep;
     uint256 unpaidRewards;
@@ -117,9 +122,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256[2] votes; // [nay, yay]
     address[2] leads; // [nay, yay]
     Response[2] responses; // [nay, yay]
+    bool executed;
     address target;
     bytes action;
-    bool executed;
   }
 
   // Storage
@@ -146,7 +151,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     public
   {
     uint256 rootSkillId = colony.getDomain(1).skillId;
-    createPoll(_target, _action, rootSkillId, _key, _value, _branchMask, _siblings);
+    createPoll(_target, _action, 1, rootSkillId, _key, _value, _branchMask, _siblings);
   }
 
   function createDomainPoll(
@@ -169,14 +174,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
     }
 
-    createPoll(_target, _action, domainSkillId, _key, _value, _branchMask, _siblings);
+    createPoll(_target, _action, _domainId, domainSkillId, _key, _value, _branchMask, _siblings);
   }
 
   function stakePoll(
     uint256 _pollId,
     uint256 _permissionDomainId, // For extension's arbitration permission
     uint256 _childSkillIndex, // For extension's arbitration permission
-    uint256 _domainId,
     bool _vote,
     uint256 _amount,
     bytes memory _key,
@@ -187,6 +191,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     public
   {
     Poll storage poll = polls[_pollId];
+    require(getPollState(_pollId) == PollState.Staking, "voting-rep-staking-closed");
 
     require(
       activePolls[hashAction(poll.action)] == 0 ||
@@ -194,31 +199,27 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       "voting-rep-competing-poll-exists"
     );
 
+    uint256 amount = min(_amount, sub(getRequiredStake(_pollId), poll.stakes[toInt(_vote)]));
     uint256 stakerRep = checkReputation(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
 
-    // TODO: can we keep the domainId on the poll somewhere? This seems like a wasteful external call.
-    //   But if it's 10 external calls per word of storage, then < 10 stakers makes this cheaper.
-    require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-domain-id");
-    require(add(stakes[_pollId][msg.sender][_vote], _amount) <= stakerRep, "voting-rep-insufficient-rep");
-
-    require(getPollState(_pollId) == PollState.Staking, "voting-rep-staking-closed");
-    require(add(poll.stakes[toInt(_vote)], _amount) <= getRequiredStake(_pollId), "voting-rep-stake-too-large");
+    require(add(stakes[_pollId][msg.sender][_vote], amount) <= stakerRep, "voting-rep-insufficient-rep");
 
     require(
-      crowdFunding || add(poll.stakes[toInt(_vote)], _amount) == getRequiredStake(_pollId),
+      crowdFunding || add(poll.stakes[toInt(_vote)], amount) == getRequiredStake(_pollId),
       "voting-rep-stake-must-be-exact"
     );
 
-    colony.obligateStake(msg.sender, _domainId, _amount);
-    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, _domainId, _amount, address(this));
+
+    colony.obligateStake(msg.sender, poll.domainId, amount);
+    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, poll.domainId, amount, address(this));
 
     // Update the stake
-    poll.unpaidRewards = add(poll.unpaidRewards, _amount);
-    poll.stakes[toInt(_vote)] = add(poll.stakes[toInt(_vote)], _amount);
-    stakes[_pollId][msg.sender][_vote] = add(stakes[_pollId][msg.sender][_vote], _amount);
+    poll.unpaidRewards = add(poll.unpaidRewards, amount);
+    poll.stakes[toInt(_vote)] = add(poll.stakes[toInt(_vote)], amount);
+    stakes[_pollId][msg.sender][_vote] = add(stakes[_pollId][msg.sender][_vote], amount);
 
     // Update the lead if the stake is larger
-    if (stakes[_pollId][poll.leads[toInt(_vote)]][_vote] < _amount) {
+    if (stakes[_pollId][poll.leads[toInt(_vote)]][_vote] < amount) {
       poll.leads[toInt(_vote)] = msg.sender;
     }
 
@@ -241,7 +242,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       tokenLocking.claim(token, true);
     }
 
-    emit PollStaked(_pollId, msg.sender, _vote, _amount);
+    emit PollStaked(_pollId, msg.sender, _vote, amount);
   }
 
   function respondToStake(uint256 _pollId, bool _vote, Response _response) public {
@@ -325,6 +326,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(childSkillId == poll.skillId, "voting-rep-invalid-domain-proof");
 
     poll.lastEvent = now;
+    poll.domainId = _newDomainId;
     poll.skillId = newDomainSkillId;
     poll.skillRep = checkReputation(_pollId, address(0x0), _key, _value, _branchMask, _siblings);
 
@@ -389,7 +391,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 _pollId,
     uint256 _permissionDomainId, // For extension's arbitration permission
     uint256 _childSkillIndex, // For extension's arbitration permission
-    uint256 _domainId,
     address _user,
     bool _vote
   )
@@ -401,10 +402,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       getPollState(_pollId) == PollState.Failed,
       "voting-rep-not-failed-or-executed"
     );
-
-    // TODO: can we keep the domainId on the poll somewhere? This seems like a wasteful external call.
-    //   But if it's 10 external calls per word of storage, then < 10 stakers makes this cheaper.
-    require(colony.getDomain(_domainId).skillId == poll.skillId, "voting-rep-bad-domain-id");
 
     // Calculate how much of the stake is left after voter compensation (>= 90%)
     uint256 stake = stakes[_pollId][_user][_vote];
@@ -450,7 +447,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       colony.emitDomainReputationPenalty(
         _permissionDomainId,
         _childSkillIndex,
-        _domainId,
+        poll.domainId,
         _user,
         -int256(repPenalty)
       );
@@ -532,7 +529,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       // Infer the right timestamp (since only updated if both parties respond)
       uint256 lastEvent = poll.lastEvent + ((
         poll.responses[YAY] == Response.None ||
-        poll.responses[YAY] == Response.None
+        poll.responses[NAY] == Response.None
       ) ? STAKE_PERIOD : 0);
 
       if (now < lastEvent + VOTE_PERIOD) {
@@ -552,6 +549,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   function createPoll(
     address _target,
     bytes memory _action,
+    uint256 _domainId,
     uint256 _skillId,
     bytes memory _key,
     bytes memory _value,
@@ -565,6 +563,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     pollCount += 1;
     polls[pollCount].lastEvent = now;
     polls[pollCount].rootHash = colonyNetwork.getReputationRootHash();
+    polls[pollCount].domainId = _domainId;
     polls[pollCount].skillId = _skillId;
     polls[pollCount].skillRep = checkReputation(pollCount, address(0x0), _key, _value, _branchMask, _siblings);
     polls[pollCount].target = _target;
