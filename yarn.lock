@@ -10428,10 +10428,10 @@ solc@^0.6.0:
     semver "^5.5.0"
     tmp "0.0.33"
 
-solidity-coverage@0.7.7:
-  version "0.7.7"
-  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.7.7.tgz#e6d98436d529707c64c1d6d3355590031a724777"
-  integrity sha512-hD043l+Hy8cNMqrI6k5wZNEc7ceVJIWaWztE8D7u8QqbaObZldpknDJPRXHnRGniI5t6HeOQ+8F4ifiNCn2BeA==
+solidity-coverage@0.7.9:
+  version "0.7.9"
+  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.7.9.tgz#6d1c40639066b93c67b21da48f4bc27ae01f0e58"
+  integrity sha512-UWkl0iNmpjuVanPWvZzF6eCAKwbEmmolmzwbN8nU+MexOKO3eW6kVbxBkfEjVa8TuQcLb0F2wdgXJZBRbjpjnA==
   dependencies:
     "@solidity-parser/parser" "^0.6.0"
     "@truffle/provider" "^0.1.17"
