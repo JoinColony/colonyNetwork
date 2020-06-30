@@ -214,6 +214,8 @@ contract("Reputation Mining - happy paths", (accounts) => {
         );
       }
 
+      console.log("Finished setting up tasks for test");
+
       // Complete two reputation cycles to process the log
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
@@ -237,6 +239,8 @@ contract("Reputation Mining - happy paths", (accounts) => {
           }
         );
       }
+
+      console.log("Finished setting up tasks for test");
 
       // Complete two reputation cycles to process the log
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
