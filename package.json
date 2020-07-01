@@ -71,7 +71,6 @@
     "@babel/preset-env": "^7.8.2",
     "@babel/register": "^7.8.3",
     "@codechecks/client": "^0.1.5",
-    "@colony/colony-js-contract-loader-fs": "1.12.0",
     "@colony/eslint-config-colony": "8.0.1",
     "async-request": "^1.2.0",
     "babel-plugin-istanbul": "^6.0.0",
@@ -95,7 +94,6 @@
     "husky": "^4.2.5",
     "istanbul": "^0.4.5",
     "istanbul-combine": "^0.3.0",
-    "jsonfile": "^6.0.0",
     "mocha": "^8.0.0",
     "mocha-circleci-reporter": "^0.0.3",
     "nthline": "^1.0.1",
@@ -111,7 +109,7 @@
     "truffle": "^5.1.8",
     "truffle-hdwallet-provider": "^1.0.9",
     "truffle-security": "^1.6.2",
-    "web3-utils": "^1.0.0"
+    "web3-utils": "^1.2.9"
   },
   "private": true,
   "workspaces": [

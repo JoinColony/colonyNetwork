@@ -6,8 +6,7 @@ import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
-
+import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import { DEFAULT_STAKE } from "../../helpers/constants";
 import { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";

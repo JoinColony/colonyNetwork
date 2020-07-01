@@ -3,7 +3,7 @@
 import path from "path";
 import { fromAscii } from "web3-utils";
 
-import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
+import TruffleLoader from "./TruffleLoader";
 import ReputationMiner from "./ReputationMiner";
 
 const EtherRouter = artifacts.require("EtherRouter");
