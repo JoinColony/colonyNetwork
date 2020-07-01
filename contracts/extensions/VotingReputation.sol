@@ -33,11 +33,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   event ExtensionInitialised();
   event ExtensionDeprecated();
   event PollCreated(uint256 indexed pollId, uint256 indexed skillId);
-  event PollStaked(uint256 indexed pollId, address indexed staker, bool indexed side, uint256 amount);
+  event PollStaked(uint256 indexed pollId, address indexed staker, uint256 indexed vote, uint256 amount);
   event PollVoteSubmitted(uint256 indexed pollId, address indexed voter);
-  event PollVoteRevealed(uint256 indexed pollId, address indexed voter, bool indexed side);
+  event PollVoteRevealed(uint256 indexed pollId, address indexed voter, uint256 indexed vote);
   event PollExecuted(uint256 indexed pollId, bytes action, bool success);
-  event PollRewardClaimed(uint256 indexed pollId, address indexed staker, bool indexed side, uint256 amount);
+  event PollRewardClaimed(uint256 indexed pollId, address indexed staker, uint256 indexed vote, uint256 amount);
 
   // Constants
   uint256 constant UINT256_MAX = 2**256 - 1;
@@ -130,7 +130,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   // Storage
   uint256 pollCount;
   mapping (uint256 => Poll) polls;
-  mapping (uint256 => mapping (address => mapping (bool => uint256))) stakes;
+  mapping (uint256 => mapping (address => mapping (uint256 => uint256))) stakes;
 
   mapping (address => mapping (uint256 => bytes32)) voteSecrets;
 
@@ -181,7 +181,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 _pollId,
     uint256 _permissionDomainId, // For extension's arbitration permission
     uint256 _childSkillIndex, // For extension's arbitration permission
-    bool _vote,
+    uint256 _vote,
     uint256 _amount,
     bytes memory _key,
     bytes memory _value,
@@ -191,6 +191,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     public
   {
     Poll storage poll = polls[_pollId];
+    require(_vote <= 1, "voting-rep-bad-vote");
     require(getPollState(_pollId) == PollState.Staking, "voting-rep-staking-closed");
 
     require(
@@ -199,13 +200,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       "voting-rep-competing-poll-exists"
     );
 
-    uint256 amount = min(_amount, sub(getRequiredStake(_pollId), poll.stakes[toInt(_vote)]));
+    uint256 amount = min(_amount, sub(getRequiredStake(_pollId), poll.stakes[_vote]));
     uint256 stakerRep = checkReputation(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
 
     require(add(stakes[_pollId][msg.sender][_vote], amount) <= stakerRep, "voting-rep-insufficient-rep");
 
     require(
-      crowdFunding || add(poll.stakes[toInt(_vote)], amount) == getRequiredStake(_pollId),
+      crowdFunding || add(poll.stakes[_vote], amount) == getRequiredStake(_pollId),
       "voting-rep-stake-must-be-exact"
     );
 
@@ -215,16 +216,16 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     // Update the stake
     poll.unpaidRewards = add(poll.unpaidRewards, amount);
-    poll.stakes[toInt(_vote)] = add(poll.stakes[toInt(_vote)], amount);
+    poll.stakes[_vote] = add(poll.stakes[_vote], amount);
     stakes[_pollId][msg.sender][_vote] = add(stakes[_pollId][msg.sender][_vote], amount);
 
     // Update the lead if the stake is larger
-    if (stakes[_pollId][poll.leads[toInt(_vote)]][_vote] < amount) {
-      poll.leads[toInt(_vote)] = msg.sender;
+    if (stakes[_pollId][poll.leads[_vote]][_vote] < amount) {
+      poll.leads[_vote] = msg.sender;
     }
 
     // Activate poll to prevent competing polls from being activated
-    if (poll.stakes[YAY] == getRequiredStake(_pollId) && toInt(_vote) == YAY) {
+    if (poll.stakes[YAY] == getRequiredStake(_pollId) && _vote == YAY) {
       activePolls[hashAction(poll.action)] = _pollId;
 
       // Increment counter & extend claim delay if staking for an expenditure state change
@@ -245,16 +246,16 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     emit PollStaked(_pollId, msg.sender, _vote, amount);
   }
 
-  function respondToStake(uint256 _pollId, bool _vote, Response _response) public {
+  function respondToStake(uint256 _pollId, uint256 _vote, Response _response) public {
     Poll storage poll = polls[_pollId];
     uint256 requiredStake = getRequiredStake(_pollId);
 
     require(poll.stakes[YAY] == requiredStake && poll.stakes[NAY] == requiredStake, "voting-rep-not-fully-staked");
     require(getPollState(_pollId) == PollState.Staking, "voting-rep-not-staking");
-    require(poll.leads[toInt(_vote)] == msg.sender, "voting-rep-not-lead");
-    require(poll.responses[toInt(_vote)] == Response.None, "voting-rep-already-responded");
+    require(poll.leads[_vote] == msg.sender, "voting-rep-not-lead");
+    require(poll.responses[_vote] == Response.None, "voting-rep-already-responded");
 
-    poll.responses[toInt(_vote)] = _response;
+    poll.responses[_vote] = _response;
 
     if (poll.responses[YAY] != Response.None && poll.responses[NAY] != Response.None) {
       poll.lastEvent = now;
@@ -271,7 +272,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   function revealVote(
     uint256 _pollId,
     bytes32 _salt,
-    bool _vote,
+    uint256 _vote,
     bytes memory _key,
     bytes memory _value,
     uint256 _branchMask,
@@ -294,7 +295,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     // Increment the vote if poll in reveal, otherwise skip
     // NOTE: since there's no locking, we could just `require` PollState.Reveal
     if (getPollState(_pollId) == PollState.Reveal) {
-      poll.votes[toInt(_vote)] = add(poll.votes[toInt(_vote)], userRep);
+      poll.votes[_vote] = add(poll.votes[_vote], userRep);
     }
 
     uint256 pctReputation = wdiv(userRep, poll.skillRep);
@@ -380,11 +381,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       }
     }
 
+    bool success;
     if (canExecute) {
-      executeCall(_pollId, poll.action);
+      success = executeCall(_pollId, poll.action);
     }
 
-    emit PollExecuted(_pollId, poll.action, canExecute);
+    emit PollExecuted(_pollId, poll.action, success);
   }
 
   function claimReward(
@@ -392,7 +394,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 _permissionDomainId, // For extension's arbitration permission
     uint256 _childSkillIndex, // For extension's arbitration permission
     address _user,
-    bool _vote
+    uint256 _vote
   )
     public
   {
@@ -417,7 +419,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       poll.stakes[NAY] == getRequiredStake(_pollId) &&
       poll.stakes[YAY] == getRequiredStake(_pollId)
     ) {
-      uint256 stakerVotes = poll.votes[toInt(_vote)];
+      uint256 stakerVotes = poll.votes[_vote];
       uint256 totalVotes = add(poll.votes[NAY], poll.votes[YAY]);
       uint256 winPercent = wdiv(stakerVotes, totalVotes);
       uint256 winShare = wmul(winPercent, 2 * WAD);
@@ -425,13 +427,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       repPenalty = (winShare < WAD) ? sub(stake, wmul(winShare, stake)) : 0;
 
     // Your side fully staked, receive 10% (proportional) of loser's stake
-    } else if (poll.stakes[toInt(_vote)] == getRequiredStake(_pollId)) {
-      uint256 stakePercent = wdiv(stake, poll.stakes[toInt(_vote)]);
-      uint256 totalPenalty = wmul(poll.stakes[toInt(!_vote)], WAD / 10);
+    } else if (poll.stakes[_vote] == getRequiredStake(_pollId)) {
+      uint256 stakePercent = wdiv(stake, poll.stakes[_vote]);
+      uint256 totalPenalty = wmul(poll.stakes[flip(_vote)], WAD / 10);
       stakerReward = add(rewardStake, wmul(stakePercent, totalPenalty));
 
     // Opponent's side fully staked, pay 10% penalty
-    } else if (poll.stakes[toInt(!_vote)] == getRequiredStake(_pollId)) {
+    } else if (poll.stakes[flip(_vote)] == getRequiredStake(_pollId)) {
       stakerReward = wmul(rewardStake, (WAD / 10) * 9);
       repPenalty = stake / 10;
 
@@ -474,7 +476,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     return expenditurePollCounts[_expenditureHash];
   }
 
-  function getStake(uint256 _pollId, address _staker, bool _vote) public view returns (uint256) {
+  function getStake(uint256 _pollId, address _staker, uint256 _vote) public view returns (uint256) {
     return stakes[_pollId][_staker][_vote];
   }
 
@@ -572,16 +574,16 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     emit PollCreated(pollCount, _skillId);
   }
 
-  function getVoteSecret(bytes32 _salt, bool _vote) internal pure returns (bytes32) {
+  function getVoteSecret(bytes32 _salt, uint256 _vote) internal pure returns (bytes32) {
     return keccak256(abi.encodePacked(_salt, _vote));
-  }
-
-  function toInt(bool _vote) internal pure returns (uint256) {
-    return _vote ? YAY : NAY;
   }
 
   function getRequiredStake(uint256 _pollId) internal view returns (uint256) {
     return wmul(polls[_pollId].skillRep, stakeFraction);
+  }
+
+  function flip(uint256 _vote) internal pure returns (uint256) {
+    return 1 - _vote;
   }
 
   function checkReputation(
@@ -634,11 +636,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
   }
 
-  function executeCall(uint256 pollId, bytes memory action) internal {
+  function executeCall(uint256 pollId, bytes memory action) internal returns (bool success) {
     address target = polls[pollId].target;
     address to = (target == address(0x0)) ? address(colony) : target;
-
-    bool success;
 
     assembly {
               // call contract at address a with input mem[in…(in+insize))
@@ -649,7 +649,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       success := call(gas, to, 0, add(action, 0x20), mload(action), 0, 0)
     }
 
-    // require(success, "voting-rep-call-failed");
+    return success;
   }
 
   function getSig(bytes memory action) internal returns (bytes4 sig) {
