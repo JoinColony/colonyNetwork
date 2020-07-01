@@ -4,9 +4,8 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
-import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
-
 import { DEFAULT_STAKE, INITIAL_FUNDING, GLOBAL_SKILL_ID } from "../../helpers/constants";
+import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycle, removeSubdomainLimit } from "../../helpers/test-helper";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 

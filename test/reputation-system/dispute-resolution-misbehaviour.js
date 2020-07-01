@@ -2,11 +2,11 @@
 
 import path from "path";
 import BN from "bn.js";
-import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
+import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import {
   forwardTime,
   checkErrorRevert,

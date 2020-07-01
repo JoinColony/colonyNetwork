@@ -5,8 +5,8 @@ import BN from "bn.js";
 import { ethers } from "ethers";
 import chai from "chai";
 import bnChai from "bn-chai";
-import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
+import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import {
   forwardTime,
   submitAndForwardTimeToDispute,

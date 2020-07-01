@@ -5,10 +5,10 @@ require("@babel/polyfill");
 
 const path = require("path");
 const { argv } = require("yargs");
-const { TruffleLoader } = require("@colony/colony-js-contract-loader-fs");
 const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
+const TruffleLoader = require("../TruffleLoader");
 
 const supportedInfuraNetworks = ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"];
 const {

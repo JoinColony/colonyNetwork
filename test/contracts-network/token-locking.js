@@ -1,11 +1,11 @@
 /* globals artifacts */
 import path from "path";
-import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../../helpers/test-helper";
+import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import { giveUserCLNYTokensAndStake, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import { UINT256_MAX, MIN_STAKE, DEFAULT_STAKE } from "../../helpers/constants";
 
