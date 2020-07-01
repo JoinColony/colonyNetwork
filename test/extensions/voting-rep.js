@@ -898,6 +898,20 @@ contract("Voting Reputation", (accounts) => {
       expect(logs[0].args.success).to.be.true;
     });
 
+    it("can take an action with a return value", async () => {
+      // Returns a uint256
+      const action = await encodeTxData(colony, "version", []);
+      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      pollId = await voting.getPollCount();
+
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_WINDOW, this);
+
+      const { logs } = await voting.executePoll(pollId);
+      expect(logs[0].args.success).to.be.true;
+    });
+
     it("can take an action with an arbitrary target", async () => {
       const { colony: otherColony } = await setupRandomColony(colonyNetwork);
       await token.mint(otherColony.address, WAD, { from: USER0 });
@@ -917,6 +931,19 @@ contract("Voting Reputation", (accounts) => {
 
       const balanceAfter = await otherColony.getFundingPotBalance(1, token.address);
       expect(balanceAfter).to.eq.BN(WAD);
+    });
+
+    it("can take a nonexistent action", async () => {
+      const action = soliditySha3("foo");
+      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      pollId = await voting.getPollCount();
+
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_WINDOW, this);
+
+      const { logs } = await voting.executePoll(pollId);
+      expect(logs[0].args.success).to.be.false;
     });
 
     it("cannot take an action during staking or voting", async () => {
