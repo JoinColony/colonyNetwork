@@ -3,8 +3,8 @@ import BN from "bn.js";
 import { toBN } from "web3-utils";
 import chai from "chai";
 import bnChai from "bn-chai";
-import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
+import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import {
   forwardTime,
   checkErrorRevert,

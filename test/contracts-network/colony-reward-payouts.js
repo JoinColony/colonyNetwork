@@ -6,8 +6,8 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import path from "path";
-import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
+import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import { UINT256_MAX, INT128_MAX, WAD, MANAGER_ROLE, INITIAL_FUNDING, DEFAULT_STAKE, SECONDS_PER_DAY } from "../../helpers/constants";
 
 import {
