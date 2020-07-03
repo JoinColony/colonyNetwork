@@ -36,15 +36,14 @@ contract CoinMachine is DSMath {
   // Storage
   address purchaseToken; // The token in which we receive payments, 0x0 for eth
 
-  uint256 periodLength; // Duration of a sale period (i.e. one hour)
-  uint256 windowSize; // Number of periods in the price averaging window (i.e. 10)
+  uint256 periodLength; // Duration of a sale period in seconds (e.g. one hour)
+  uint256 windowSize; // Number of periods in the price averaging window in integers (e.g. 10)
 
   uint256 targetPerPeriod; // Target number of tokens to sell in a period
   uint256 maxPerPeriod; // Maximum number of tokens sellable in a period
-  int256 tokenSurplus; // Total tokens undersold (i.e. below target), negative means deficit
 
   uint256 activePeriod; // The active sale period
-  uint256 activePrice; // The active sale price
+  uint256 activePrice; // The active sale price (a WAD-denominated ratio)
 
   uint256 tokensSold; // Tokens sold in the active period
   uint256 activeIntake; // Payment received in the active period
@@ -64,6 +63,12 @@ contract CoinMachine is DSMath {
     public
   {
     require(activePeriod == 0, "coin-machine-already-initialised");
+
+    require(_periodLength > 0, "coin-machine-period-too-small");
+    require(_windowSize > 0, "coin-machine-window-too-small");
+    require(_windowSize <= 256, "coin-machine-window-too-large");
+    require(_targetPerPeriod > 0, "coin-machine-target-too-small");
+    require(_maxPerPeriod >= _targetPerPeriod, "coin-machine-max-too-small");
 
     purchaseToken = _purchaseToken;
 
@@ -95,7 +100,9 @@ contract CoinMachine is DSMath {
 
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalPrice, "coin-machine-insufficient-funds");
-      msg.sender.transfer(msg.value - totalPrice);
+      if (msg.value > totalPrice) {
+        msg.sender.transfer(msg.value - totalPrice);
+      }
     } else {
       ERC20Extended(purchaseToken).transferFrom(msg.sender, address(this), totalPrice);
     }
@@ -107,12 +114,16 @@ contract CoinMachine is DSMath {
   function updatePeriod() public {
     uint256 currentPeriod = getCurrentPeriod();
 
+    // If we've missed an entire window, skip ahead
+    uint256 periodGap = currentPeriod - activePeriod;
+    if (periodGap % windowSize < periodGap) {
+      activePeriod = currentPeriod - (periodGap % windowSize + windowSize);
+    }
+
     // Handle the recently elapsed period
     if (activePeriod < currentPeriod) {
       pastIntakes[toBin(activePeriod)] = activeIntake;
       activeIntake = 0;
-
-      tokenSurplus += (int256(targetPerPeriod) - int256(tokensSold));
 
       tokensSold = 0;
       activePeriod += 1;
@@ -121,7 +132,6 @@ contract CoinMachine is DSMath {
     // Handle any additional missed periods
     while (activePeriod < currentPeriod) {
       pastIntakes[toBin(activePeriod)] = 0;
-      tokenSurplus += int256(targetPerPeriod);
       activePeriod += 1;
     }
 
@@ -178,11 +188,6 @@ contract CoinMachine is DSMath {
   function getNumAvailable() public view returns (uint256) {
     return maxPerPeriod -
       ((activePeriod == getCurrentPeriod()) ? tokensSold : 0);
-  }
-
-  function getTokenSurplus() public view returns (int256) {
-    return tokenSurplus - int256(tokensSold) +
-      int256((1 + getCurrentPeriod() - activePeriod) * targetPerPeriod);
   }
 
   // Internal
