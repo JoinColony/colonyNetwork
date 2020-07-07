@@ -41,12 +41,15 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   // Constants
   uint256 constant UINT256_MAX = 2**256 - 1;
+  uint256 constant UINT128_MAX = 2**128 - 1;
+
   uint256 constant NAY = 0;
   uint256 constant YAY = 1;
 
-  uint256 constant STAKE_PERIOD = 3 days;
-  uint256 constant VOTE_PERIOD = 2 days;
-  uint256 constant REVEAL_PERIOD = 2 days;
+  uint256 constant CREATE = 0;
+  uint256 constant STAKE_END = 1;
+  uint256 constant SUBMIT_END = 2;
+  uint256 constant REVEAL_END = 3;
 
   bytes4 constant CHANGE_FUNCTION = bytes4(
     keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
@@ -63,9 +66,15 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   address token;
 
   uint256 stakeFraction; // Percent of domain reputation needed for staking
-  uint256 voterRewardFraction; // Percent of stake paid out to voters as rewards
+  uint256 minStakeFraction; // Minimum stake as percent of required stake (100% means single-staker)
+
+  uint256 maxVoteFraction; // The percent of total domain rep we need before closing the vote
+  uint256 voterRewardFraction; // Percent of stake paid out to voters as rewards (immediately taken from the stake)
   uint256 votePowerFraction; // Percent of domain rep used as vote power if no-contest
-  bool crowdFunding; // Flag allowing or disallowing crowdfunding polls
+
+  uint256 stakePeriod; // Length of time for staking
+  uint256 submitPeriod; // Length of time for submitting votes
+  uint256 revealPeriod; // Length of time for revealing votes
 
   constructor(address _colony) public {
     colony = IColony(_colony);
@@ -76,9 +85,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   function initialise(
     uint256 _stakeFraction,
+    uint256 _minStakeFraction,
+    uint256 _maxVoteFraction,
     uint256 _voterRewardFraction,
     uint256 _votePowerFraction,
-    bool _crowdFunding
+    uint256 _stakePeriod,
+    uint256 _submitPeriod,
+    uint256 _revealPeriod
   )
     public
   {
@@ -86,15 +99,28 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
 
     require(_stakeFraction <= WAD, "voting-rep-must-be-wad");
+    require(_minStakeFraction <= WAD, "voting-rep-must-be-wad");
+
+    require(_maxVoteFraction <= WAD, "voting-rep-must-be-wad");
     require(_voterRewardFraction <= WAD, "voting-rep-must-be-wad");
     require(_votePowerFraction <= WAD, "voting-rep-must-be-wad");
+
+    require(_stakePeriod <= 365 days, "voting-rep-period-too-long");
+    require(_submitPeriod <= 365 days, "voting-rep-period-too-long");
+    require(_revealPeriod <= 365 days, "voting-rep-period-too-long");
 
     state = ExtensionState.Active;
 
     stakeFraction = _stakeFraction;
+    minStakeFraction = _minStakeFraction;
+
+    maxVoteFraction = _maxVoteFraction;
     voterRewardFraction = _voterRewardFraction;
     votePowerFraction = _votePowerFraction;
-    crowdFunding = _crowdFunding;
+
+    stakePeriod = _stakePeriod;
+    submitPeriod = _submitPeriod;
+    revealPeriod = _revealPeriod;
 
     emit ExtensionInitialised();
   }
@@ -108,15 +134,17 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   // Data structures
-  enum PollState { Staking, Voting, Reveal, Closed, Executable, Executed, Failed }
+  enum PollState { Staking, Submit, Reveal, Closed, Executable, Executed, Failed }
   enum Response { None, Fold, Call }
 
   struct Poll {
-    uint256 lastEvent; // Set at creation / escalation & when staked + responded
+    uint256[4] events; // Creation, Staking, Submission, Revelation
     bytes32 rootHash;
     uint256 domainId;
     uint256 skillId;
     uint256 skillRep;
+    uint256 repSubmitted;
+    uint256 repRevealed;
     uint256 unpaidRewards;
     uint256[2] stakes; // [nay, yay]
     uint256[2] votes; // [nay, yay]
@@ -200,16 +228,18 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       "voting-rep-competing-poll-exists"
     );
 
-    uint256 amount = min(_amount, sub(getRequiredStake(_pollId), poll.stakes[_vote]));
-    uint256 stakerRep = checkReputation(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
-
-    require(add(stakes[_pollId][msg.sender][_vote], amount) <= stakerRep, "voting-rep-insufficient-rep");
+    uint256 requiredStake = getRequiredStake(_pollId);
+    uint256 amount = min(_amount, sub(requiredStake, poll.stakes[_vote]));
+    uint256 stakerTotalAmount = add(stakes[_pollId][msg.sender][_vote], amount);
 
     require(
-      crowdFunding || add(poll.stakes[_vote], amount) == getRequiredStake(_pollId),
-      "voting-rep-stake-must-be-exact"
+      stakerTotalAmount <= checkReputation(_pollId, msg.sender, _key, _value, _branchMask, _siblings),
+      "voting-rep-insufficient-rep"
     );
-
+    require(
+      stakerTotalAmount >= wmul(requiredStake, minStakeFraction),
+      "voting-rep-insufficient-stake"
+    );
 
     colony.obligateStake(msg.sender, poll.domainId, amount);
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, poll.domainId, amount, address(this));
@@ -217,7 +247,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     // Update the stake
     poll.unpaidRewards = add(poll.unpaidRewards, amount);
     poll.stakes[_vote] = add(poll.stakes[_vote], amount);
-    stakes[_pollId][msg.sender][_vote] = add(stakes[_pollId][msg.sender][_vote], amount);
+    stakes[_pollId][msg.sender][_vote] = stakerTotalAmount;
 
     // Update the lead if the stake is larger
     if (stakes[_pollId][poll.leads[_vote]][_vote] < amount) {
@@ -225,7 +255,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
 
     // Activate poll to prevent competing polls from being activated
-    if (poll.stakes[YAY] == getRequiredStake(_pollId) && _vote == YAY) {
+    if (poll.stakes[YAY] == requiredStake && _vote == YAY) {
       activePolls[hashAction(poll.action)] = _pollId;
 
       // Increment counter & extend claim delay if staking for an expenditure state change
@@ -239,7 +269,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
 
     // Claim tokens if fully staked
-    if (poll.stakes[YAY] == getRequiredStake(_pollId) && poll.stakes[NAY] == getRequiredStake(_pollId)) {
+    if (poll.stakes[YAY] == requiredStake && poll.stakes[NAY] == requiredStake) {
       tokenLocking.claim(token, true);
     }
 
@@ -258,13 +288,31 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll.responses[_vote] = _response;
 
     if (poll.responses[YAY] != Response.None && poll.responses[NAY] != Response.None) {
-      poll.lastEvent = now;
+      poll.events[STAKE_END] = now;
     }
   }
 
-  function submitVote(uint256 _pollId, bytes32 _voteSecret) public {
-    require(getPollState(_pollId) == PollState.Voting, "voting-rep-poll-not-open");
+  function submitVote(
+    uint256 _pollId,
+    bytes32 _voteSecret,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    public
+  {
+    Poll storage poll = polls[_pollId];
+    require(getPollState(_pollId) == PollState.Submit, "voting-rep-poll-not-open");
+
+    uint256 userRep = checkReputation(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
+
     voteSecrets[msg.sender][_pollId] = _voteSecret;
+    poll.repSubmitted = add(poll.repSubmitted, userRep);
+
+    if (poll.repSubmitted >= wmul(poll.skillRep, maxVoteFraction)) {
+      poll.events[SUBMIT_END] = now;
+    }
 
     emit PollVoteSubmitted(_pollId, msg.sender);
   }
@@ -281,21 +329,19 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     public
   {
     Poll storage poll = polls[_pollId];
-    require(getPollState(_pollId) != PollState.Voting, "voting-rep-poll-still-open");
+    require(getPollState(_pollId) == PollState.Reveal, "voting-rep-poll-not-reveal");
+
+    uint256 userRep = checkReputation(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
 
     bytes32 voteSecret = voteSecrets[msg.sender][_pollId];
     require(voteSecret == getVoteSecret(_salt, _vote), "voting-rep-secret-no-match");
-
-    // Validate proof and get reputation value
-    uint256 userRep = checkReputation(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
-
-    // Remove the secret
     delete voteSecrets[msg.sender][_pollId];
 
-    // Increment the vote if poll in reveal, otherwise skip
-    // NOTE: since there's no locking, we could just `require` PollState.Reveal
-    if (getPollState(_pollId) == PollState.Reveal) {
-      poll.votes[_vote] = add(poll.votes[_vote], userRep);
+    poll.votes[_vote] = add(poll.votes[_vote], userRep);
+    poll.repRevealed = add(poll.repRevealed, userRep);
+
+    if (poll.repRevealed >= wmul(poll.skillRep, maxVoteFraction)) {
+      poll.events[REVEAL_END] = now;
     }
 
     uint256 pctReputation = wdiv(userRep, poll.skillRep);
@@ -326,12 +372,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 childSkillId = colonyNetwork.getChildSkillId(newDomainSkillId, _childSkillIndex);
     require(childSkillId == poll.skillId, "voting-rep-invalid-domain-proof");
 
-    poll.lastEvent = now;
+    delete poll.events;
+    delete poll.responses;
+
+    poll.events[CREATE] = now;
     poll.domainId = _newDomainId;
     poll.skillId = newDomainSkillId;
     poll.skillRep = checkReputation(_pollId, address(0x0), _key, _value, _branchMask, _siblings);
-
-    delete poll.responses;
   }
 
   function executePoll(uint256 _pollId) public {
@@ -411,6 +458,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 rewardFraction = wdiv(poll.unpaidRewards, totalStake);
     uint256 rewardStake = wmul(stake, rewardFraction);
 
+    delete stakes[_pollId][_user][_vote];
+
     uint256 stakerReward;
     uint256 repPenalty;
 
@@ -442,7 +491,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       stakerReward = rewardStake;
     }
 
-    delete stakes[_pollId][_user][_vote];
     tokenLocking.transfer(token, stakerReward, _user, true);
 
     if (repPenalty > 0) {
@@ -498,7 +546,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       poll.stakes[NAY] < requiredStake
     ) {
       // Are we still staking?
-      if (now < poll.lastEvent + STAKE_PERIOD) {
+      if (now < poll.events[CREATE] + stakePeriod && poll.events[STAKE_END] == 0) {
         return PollState.Staking;
       // If not, did the YAY side stake?
       } else if (poll.stakes[YAY] == requiredStake) {
@@ -518,31 +566,46 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       return PollState.Executable;
 
     // Do we need to keep waiting?
-    } else if (
-      now < poll.lastEvent + STAKE_PERIOD &&
-      (poll.responses[YAY] == Response.None ||
-      poll.responses[NAY] == Response.None)
-    ) {
+    } else if (now < poll.events[CREATE] + stakePeriod && poll.events[STAKE_END] == 0) {
       return PollState.Staking;
 
     // Fully staked, no folds, go to a vote
     } else {
 
-      // Infer the right timestamp (since only updated if both parties respond)
-      uint256 lastEvent = poll.lastEvent + ((
-        poll.responses[YAY] == Response.None ||
-        poll.responses[NAY] == Response.None
-      ) ? STAKE_PERIOD : 0);
-
-      if (now < lastEvent + VOTE_PERIOD) {
-        return PollState.Voting;
-      } else if (now < lastEvent + (VOTE_PERIOD + REVEAL_PERIOD)) {
+      if (now < min(
+        poll.events[CREATE] + stakePeriod + submitPeriod,
+        min(
+          selfOrMax(poll.events[STAKE_END]) + submitPeriod,
+          selfOrMax(poll.events[SUBMIT_END])
+        )
+      )) {
+        return PollState.Submit;
+      } else if (now < min(
+        poll.events[CREATE] + stakePeriod + submitPeriod + revealPeriod,
+        min(
+          selfOrMax(poll.events[STAKE_END]) + submitPeriod + revealPeriod,
+          min(
+            selfOrMax(poll.events[SUBMIT_END]) + revealPeriod,
+            selfOrMax(poll.events[REVEAL_END])
+          )
+        )
+      )) {
         return PollState.Reveal;
-      } else if (now < lastEvent + (VOTE_PERIOD + REVEAL_PERIOD + STAKE_PERIOD)) {
+      } else if (now < min(
+        poll.events[CREATE] + stakePeriod + submitPeriod + revealPeriod + stakePeriod,
+        min(
+          selfOrMax(poll.events[STAKE_END]) + submitPeriod + revealPeriod + stakePeriod,
+          min(
+            selfOrMax(poll.events[SUBMIT_END]) + revealPeriod + stakePeriod,
+            selfOrMax(poll.events[REVEAL_END]) + stakePeriod
+          )
+        )
+      )) {
         return PollState.Closed;
       } else {
         return PollState.Executable;
       }
+
     }
   }
 
@@ -563,7 +626,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(state == ExtensionState.Active, "voting-rep-not-active");
 
     pollCount += 1;
-    polls[pollCount].lastEvent = now;
+    polls[pollCount].events[CREATE] = now;
     polls[pollCount].rootHash = colonyNetwork.getReputationRootHash();
     polls[pollCount].domainId = _domainId;
     polls[pollCount].skillId = _skillId;
@@ -584,6 +647,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   function flip(uint256 _vote) internal pure returns (uint256) {
     return 1 - _vote;
+  }
+
+  function selfOrMax(uint256 _timestamp) internal pure returns (uint256) {
+    return (_timestamp == 0) ? UINT128_MAX : _timestamp;
   }
 
   function checkReputation(
@@ -700,6 +767,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     public
     returns (bytes memory)
   {
+    // See https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
+    //  for documentation on how the action `bytes` is encoded
+
     bytes32 functionSignature;
     uint256 permissionDomainId;
     uint256 childSkillIndex;

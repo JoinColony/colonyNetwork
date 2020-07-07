@@ -65,9 +65,16 @@ contract("Voting Reputation", (accounts) => {
   let user1Mask;
   let user1Siblings;
 
-  const STAKE_WINDOW = SECONDS_PER_DAY * 3;
-  const VOTE_WINDOW = SECONDS_PER_DAY * 2;
-  const REVEAL_WINDOW = SECONDS_PER_DAY * 2;
+  const STAKE_FRACTION = WAD.divn(1000); // 0.1 %
+  const MIN_STAKE_FRACTION = WAD.divn(10); // 10 %
+
+  const MAX_VOTE_FRACTION = WAD.divn(10).muln(8); // 80 %
+  const VOTER_REWARD_FRACTION = WAD.divn(10); // 10 %
+  const VOTE_POWER_FRACTION = WAD.muln(2).divn(3); // 66 %
+
+  const STAKE_PERIOD = SECONDS_PER_DAY * 3;
+  const VOTE_PERIOD = SECONDS_PER_DAY * 2;
+  const REVEAL_PERIOD = SECONDS_PER_DAY * 2;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
@@ -81,7 +88,7 @@ contract("Voting Reputation", (accounts) => {
   const YAY = 1;
 
   const STAKING = 0;
-  const VOTING = 1;
+  const SUBMIT = 1;
   const REVEAL = 2;
   // const CLOSED = 3;
   const EXECUTABLE = 4;
@@ -122,7 +129,18 @@ contract("Voting Reputation", (accounts) => {
     await votingFactory.deployExtension(colony.address);
     const votingAddress = await votingFactory.deployedExtensions(colony.address);
     voting = await VotingReputation.at(votingAddress);
-    await voting.initialise(WAD.divn(1000), WAD.divn(10), WAD.muln(2).divn(3), true);
+
+    await voting.initialise(
+      STAKE_FRACTION,
+      MIN_STAKE_FRACTION,
+      MAX_VOTE_FRACTION,
+      VOTER_REWARD_FRACTION,
+      VOTE_POWER_FRACTION,
+      STAKE_PERIOD,
+      VOTE_PERIOD,
+      REVEAL_PERIOD
+    );
+
     await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
     await colony.setAdministrationRole(1, UINT256_MAX, voting.address, 1, true);
 
@@ -226,8 +244,12 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot initialise twice or if not root", async () => {
-      await checkErrorRevert(voting.initialise(WAD, WAD, WAD, true), "voting-rep-already-initialised");
-      await checkErrorRevert(voting.initialise(WAD, WAD, WAD, true, { from: USER2 }), "voting-rep-user-not-root");
+      await checkErrorRevert(voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-already-initialised");
+
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD, { from: USER2 }),
+        "voting-rep-user-not-root"
+      );
     });
 
     it("cannot initialise with invalid values", async () => {
@@ -236,11 +258,26 @@ contract("Voting Reputation", (accounts) => {
       const votingAddress = await votingFactory.deployedExtensions(colony.address);
       voting = await VotingReputation.at(votingAddress);
 
-      await checkErrorRevert(voting.initialise(WAD.addn(1), WAD, WAD, true), "voting-rep-must-be-wad");
-      await checkErrorRevert(voting.initialise(WAD, WAD.addn(1), WAD, true), "voting-rep-must-be-wad");
-      await checkErrorRevert(voting.initialise(WAD, WAD, WAD.addn(1), true), "voting-rep-must-be-wad");
+      await checkErrorRevert(voting.initialise(WAD.addn(1), WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-must-be-wad");
+      await checkErrorRevert(voting.initialise(WAD, WAD.addn(1), WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-must-be-wad");
+      await checkErrorRevert(voting.initialise(WAD, WAD, WAD.addn(1), WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-must-be-wad");
+      await checkErrorRevert(voting.initialise(WAD, WAD, WAD, WAD.addn(1), WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-must-be-wad");
+      await checkErrorRevert(voting.initialise(WAD, WAD, WAD, WAD, WAD.addn(1), STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-must-be-wad");
 
-      await voting.initialise(WAD, WAD, WAD, true);
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD, WAD, WAD, SECONDS_PER_DAY * 366, VOTE_PERIOD, REVEAL_PERIOD),
+        "voting-rep-period-too-long"
+      );
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, SECONDS_PER_DAY * 366, REVEAL_PERIOD),
+        "voting-rep-period-too-long"
+      );
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, SECONDS_PER_DAY * 366),
+        "voting-rep-period-too-long"
+      );
+
+      await voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD);
     });
   });
 
@@ -309,17 +346,28 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can stake on a poll", async () => {
-      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, 100, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, 100, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(2), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(2), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       const poll = await voting.getPoll(pollId);
       expect(poll.stakes[0]).to.be.zero;
-      expect(poll.stakes[1]).to.eq.BN(200);
+      expect(poll.stakes[1]).to.eq.BN(REQUIRED_STAKE);
 
       const stake0 = await voting.getStake(pollId, USER0, YAY);
       const stake1 = await voting.getStake(pollId, USER1, YAY);
-      expect(stake0).to.eq.BN(100);
-      expect(stake1).to.eq.BN(100);
+      expect(stake0).to.eq.BN(REQUIRED_STAKE.divn(2));
+      expect(stake1).to.eq.BN(REQUIRED_STAKE.divn(2));
+    });
+
+    it("cannot stake less than the minStake", async () => {
+      const minStake = REQUIRED_STAKE.divn(10);
+
+      await checkErrorRevert(
+        voting.stakePoll(pollId, 1, UINT256_MAX, YAY, minStake.subn(1), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-insufficient-stake"
+      );
+
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, minStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
     });
 
     it("can update the poll states correctly", async () => {
@@ -340,17 +388,17 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.respondToStake(pollId, NAY, CALL, { from: USER1 });
       pollState = await voting.getPollState(pollId);
-      expect(pollState).to.eq.BN(VOTING);
+      expect(pollState).to.eq.BN(SUBMIT);
     });
 
     it("can go to a vote even if both sides do not call", async () => {
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const pollState = await voting.getPollState(pollId);
-      expect(pollState).to.eq.BN(VOTING);
+      expect(pollState).to.eq.BN(SUBMIT);
     });
 
     it("cannot execute if the YAY side stakes and folds", async () => {
@@ -388,7 +436,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       await checkErrorRevert(voting.respondToStake(pollId, YAY, CALL, { from: USER0 }), "voting-rep-not-staking");
     });
@@ -416,7 +464,7 @@ contract("Voting Reputation", (accounts) => {
       activePoll = await voting.getActivePoll(soliditySha3(action));
       expect(activePoll).to.be.zero;
 
-      await forwardTime(STAKE_WINDOW / 2, this);
+      await forwardTime(STAKE_PERIOD / 2, this);
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       activePoll = await voting.getActivePoll(soliditySha3(action));
@@ -431,7 +479,7 @@ contract("Voting Reputation", (accounts) => {
       );
 
       // But, can stake once the first poll is executed.
-      await forwardTime(STAKE_WINDOW / 2, this);
+      await forwardTime(STAKE_PERIOD / 2, this);
       await voting.executePoll(pollId);
 
       activePoll = await voting.getActivePoll(soliditySha3(action));
@@ -590,7 +638,7 @@ contract("Voting Reputation", (accounts) => {
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
       await voting.executePoll(pollId1);
 
       expenditurePollCount = await voting.getExpenditurePollCount(expenditureHash);
@@ -627,7 +675,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot stake once time runs out", async () => {
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       await checkErrorRevert(
         voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
@@ -637,23 +685,6 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(
         voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
         "voting-rep-staking-closed"
-      );
-    });
-
-    it("cannot crowdfund if prohibited in initialisation", async () => {
-      await votingFactory.removeExtension(colony.address);
-      await votingFactory.deployExtension(colony.address);
-      const votingAddress = await votingFactory.deployedExtensions(colony.address);
-      voting = await VotingReputation.at(votingAddress);
-      await voting.initialise(WAD.divn(1000), WAD.divn(10), WAD.muln(2).divn(3), false);
-
-      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      pollId = await voting.getPollCount();
-
-      await checkErrorRevert(
-        voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.subn(1), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-stake-must-be-exact"
       );
     });
 
@@ -668,12 +699,12 @@ contract("Voting Reputation", (accounts) => {
       pollState = await voting.getPollState(pollId);
       expect(pollState).to.eq.BN(STAKING);
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       pollState = await voting.getPollState(pollId);
-      expect(pollState).to.eq.BN(VOTING);
+      expect(pollState).to.eq.BN(SUBMIT);
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       pollState = await voting.getPollState(pollId);
       expect(pollState).to.eq.BN(REVEAL);
@@ -690,12 +721,12 @@ contract("Voting Reputation", (accounts) => {
       pollState = await voting.getPollState(pollId);
       expect(pollState).to.eq.BN(STAKING);
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       pollState = await voting.getPollState(pollId);
-      expect(pollState).to.eq.BN(VOTING);
+      expect(pollState).to.eq.BN(SUBMIT);
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       pollState = await voting.getPollState(pollId);
       expect(pollState).to.eq.BN(REVEAL);
@@ -718,33 +749,31 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can rate and reveal for a poll", async () => {
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
     });
 
     it("can tally votes from two users", async () => {
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER0 });
-      await voting.submitVote(pollId, soliditySha3(SALT, YAY), { from: USER1 });
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await forwardTime(VOTE_WINDOW, this);
-
-      await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.revealVote(pollId, SALT, YAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       // See final counts
       const { votes } = await voting.getPoll(pollId);
-      expect(votes[0]).to.eq.BN(WAD);
-      expect(votes[1]).to.eq.BN(WAD.muln(2));
+      expect(votes[0]).to.be.zero;
+      expect(votes[1]).to.eq.BN(WAD.muln(3));
     });
 
     it("can update votes, but just the last one counts", async () => {
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER0 });
-      await voting.submitVote(pollId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       // Revealing first vote fails
       await checkErrorRevert(
@@ -756,24 +785,10 @@ contract("Voting Reputation", (accounts) => {
       await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
     });
 
-    it("can reveal votes after poll closes, but doesn't count", async () => {
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER0 });
-
-      await forwardTime(VOTE_WINDOW, this);
-      await forwardTime(REVEAL_WINDOW, this);
-
-      await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      // Vote didn't count
-      const { votes } = await voting.getPoll(pollId);
-      expect(votes[0]).to.be.zero;
-      expect(votes[1]).to.be.zero;
-    });
-
     it("cannot reveal a vote twice, and so cannot vote twice", async () => {
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
@@ -784,10 +799,12 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can vote in two polls with two reputation states, with different proofs", async () => {
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      const oldRootHash = await reputationTree.getRootHash();
 
       // Update reputation state
-      const user0Value2 = makeReputationValue(WAD.muln(3), 2);
+      const user0Value2 = makeReputationValue(WAD.muln(2), 2);
       await reputationTree.insert(user0Key, user0Value2);
 
       const [domain1Mask2, domain1Siblings2] = await reputationTree.getProof(domain1Key);
@@ -796,10 +813,11 @@ contract("Voting Reputation", (accounts) => {
 
       // Set new rootHash
       const rootHash = await reputationTree.getRootHash();
-      const repCycle = await getActiveRepCycle(colonyNetwork);
+      expect(oldRootHash).to.not.equal(rootHash);
 
       await forwardTime(MINING_CYCLE_DURATION, this);
 
+      const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
       await repCycle.confirmNewHash(0);
 
@@ -811,37 +829,52 @@ contract("Voting Reputation", (accounts) => {
       await voting.respondToStake(pollId2, YAY, CALL, { from: USER0 });
       await voting.respondToStake(pollId2, NAY, CALL, { from: USER1 });
 
-      await voting.submitVote(pollId2, soliditySha3(SALT, NAY), { from: USER0 });
+      await voting.submitVote(pollId2, soliditySha3(SALT, NAY), user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.revealVote(pollId2, SALT, NAY, user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
     });
 
     it("cannot submit a vote if voting is closed", async () => {
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
-      await checkErrorRevert(voting.submitVote(pollId, soliditySha3(SALT, NAY)), "voting-rep-poll-not-open");
+      await checkErrorRevert(
+        voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-poll-not-open"
+      );
     });
 
     it("cannot reveal a vote if voting is open", async () => {
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY));
-      await checkErrorRevert(voting.revealVote(pollId, SALT, YAY, FAKE, FAKE, 0, []), "voting-rep-poll-still-open");
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await checkErrorRevert(voting.revealVote(pollId, SALT, YAY, FAKE, FAKE, 0, [], { from: USER0 }), "voting-rep-poll-not-reveal");
+    });
+
+    it("cannot reveal a vote after voting closes", async () => {
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(VOTE_PERIOD, this);
+      await forwardTime(REVEAL_PERIOD, this);
+
+      await checkErrorRevert(voting.revealVote(pollId, SALT, NAY, FAKE, FAKE, 0, [], { from: USER0 }), "voting-rep-poll-not-reveal");
     });
 
     it("cannot reveal a vote with a bad secret", async () => {
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY));
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
-      await checkErrorRevert(voting.revealVote(pollId, SALT, YAY, FAKE, FAKE, 0, []), "voting-rep-secret-no-match");
+      await checkErrorRevert(
+        voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-secret-no-match"
+      );
     });
 
     it("cannot reveal a vote with a bad proof", async () => {
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       // Invalid proof (wrong root hash)
       await checkErrorRevert(voting.revealVote(pollId, SALT, NAY, FAKE, FAKE, 0, [], { from: USER0 }), "voting-rep-invalid-root-hash");
@@ -881,7 +914,7 @@ contract("Voting Reputation", (accounts) => {
         from: USER0,
       });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       await checkErrorRevert(voting.executePoll(pollId), "voting-rep-poll-failed");
     });
@@ -892,7 +925,7 @@ contract("Voting Reputation", (accounts) => {
         from: USER1,
       });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const { logs } = await voting.executePoll(pollId);
       expect(logs[0].args.success).to.be.true;
@@ -906,7 +939,7 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const { logs } = await voting.executePoll(pollId);
       expect(logs[0].args.success).to.be.true;
@@ -922,7 +955,7 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const balanceBefore = await otherColony.getFundingPotBalance(1, token.address);
       expect(balanceBefore).to.be.zero;
@@ -940,7 +973,7 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const { logs } = await voting.executePoll(pollId);
       expect(logs[0].args.success).to.be.false;
@@ -959,14 +992,14 @@ contract("Voting Reputation", (accounts) => {
       await voting.respondToStake(pollId, NAY, CALL, { from: USER1 });
 
       pollState = await voting.getPollState(pollId);
-      expect(pollState).to.eq.BN(VOTING);
+      expect(pollState).to.eq.BN(SUBMIT);
       await checkErrorRevert(voting.executePoll(pollId), "voting-rep-poll-not-executable");
     });
 
     it("cannot take an action twice", async () => {
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const { logs } = await voting.executePoll(pollId);
       expect(logs[0].args.success).to.be.true;
@@ -980,17 +1013,17 @@ contract("Voting Reputation", (accounts) => {
       await voting.respondToStake(pollId, YAY, CALL, { from: USER0 });
       await voting.respondToStake(pollId, NAY, CALL, { from: USER1 });
 
-      await voting.submitVote(pollId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(REVEAL_WINDOW, this);
+      await forwardTime(REVEAL_PERIOD, this);
 
       await checkErrorRevert(voting.executePoll(pollId), "voting-rep-poll-escalation-window-open");
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const { logs } = await voting.executePoll(pollId);
       expect(logs[0].args.success).to.be.true;
@@ -1002,14 +1035,14 @@ contract("Voting Reputation", (accounts) => {
       await voting.respondToStake(pollId, YAY, CALL, { from: USER0 });
       await voting.respondToStake(pollId, NAY, CALL, { from: USER1 });
 
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(REVEAL_WINDOW, this);
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const { logs } = await voting.executePoll(pollId);
       expect(logs[0].args.success).to.be.false;
@@ -1029,14 +1062,14 @@ contract("Voting Reputation", (accounts) => {
       await voting.respondToStake(pollId1, YAY, CALL, { from: USER0 });
       await voting.respondToStake(pollId1, NAY, CALL, { from: USER1 });
 
-      await voting.submitVote(pollId1, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(pollId1, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       await voting.revealVote(pollId1, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(REVEAL_WINDOW, this);
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       let logs;
       ({ logs } = await voting.executePoll(pollId1));
@@ -1051,14 +1084,14 @@ contract("Voting Reputation", (accounts) => {
       await voting.respondToStake(pollId2, YAY, CALL, { from: USER0 });
       await voting.respondToStake(pollId2, NAY, CALL, { from: USER1 });
 
-      await voting.submitVote(pollId2, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(pollId2, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       await voting.revealVote(pollId2, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(REVEAL_WINDOW, this);
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       ({ logs } = await voting.executePoll(pollId2));
       expect(logs[0].args.success).to.be.false;
@@ -1072,7 +1105,7 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       await voting.executePoll(pollId);
       const slot = soliditySha3(action.slice(0, action.length - 64));
@@ -1091,14 +1124,14 @@ contract("Voting Reputation", (accounts) => {
       await voting.respondToStake(pollId, YAY, CALL, { from: USER0 });
       await voting.respondToStake(pollId, NAY, CALL, { from: USER1 });
 
-      await voting.submitVote(pollId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(REVEAL_WINDOW, this);
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       await voting.executePoll(pollId);
       const slot = soliditySha3(action.slice(0, action.length - 64));
@@ -1126,7 +1159,7 @@ contract("Voting Reputation", (accounts) => {
         from: USER1,
       });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       await voting.executePoll(pollId);
 
@@ -1140,8 +1173,8 @@ contract("Voting Reputation", (accounts) => {
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
 
       // Note that no voter rewards were paid out
-      const expectedReward0 = REQUIRED_STAKE.add(REQUIRED_STAKE.divn(20)); // stake + (stake / 20)
-      const expectedReward1 = REQUIRED_STAKE.divn(20).muln(9); // (stake * 9 / 20)
+      const expectedReward0 = REQUIRED_STAKE.add(REQUIRED_STAKE.divn(20)); // 110% of stake
+      const expectedReward1 = REQUIRED_STAKE.divn(20).muln(9); // 90% of stake
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
@@ -1166,16 +1199,13 @@ contract("Voting Reputation", (accounts) => {
       await voting.respondToStake(pollId, YAY, CALL, { from: USER0 });
       await voting.respondToStake(pollId, NAY, CALL, { from: USER1 });
 
-      await voting.submitVote(pollId, soliditySha3(SALT, YAY), { from: USER0 });
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER1 });
-
-      await forwardTime(VOTE_WINDOW, this);
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.revealVote(pollId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await forwardTime(REVEAL_WINDOW, this);
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       await voting.executePoll(pollId);
 
@@ -1209,10 +1239,10 @@ contract("Voting Reputation", (accounts) => {
       const repCycle = await IReputationMiningCycle.at(addr);
       const numEntriesPrev = await repCycle.getReputationUpdateLogLength();
 
-      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, 100, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, 100, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(2), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.divn(2), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
@@ -1226,8 +1256,8 @@ contract("Voting Reputation", (accounts) => {
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
 
       expect(numEntriesPrev).to.eq.BN(numEntriesPost);
-      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(100);
-      expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(100);
+      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(REQUIRED_STAKE.divn(2));
+      expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(REQUIRED_STAKE.divn(2));
     });
 
     it("cannot claim rewards twice", async () => {
@@ -1237,14 +1267,14 @@ contract("Voting Reputation", (accounts) => {
       await voting.respondToStake(pollId, YAY, CALL, { from: USER0 });
       await voting.respondToStake(pollId, NAY, CALL, { from: USER1 });
 
-      await voting.submitVote(pollId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(VOTE_WINDOW, this);
+      await forwardTime(VOTE_PERIOD, this);
 
       await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(REVEAL_WINDOW, this);
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       await voting.executePoll(pollId);
 
@@ -1290,15 +1320,11 @@ contract("Voting Reputation", (accounts) => {
       await voting.respondToStake(pollId, NAY, CALL, { from: USER1 });
 
       // Note that this is a passing vote
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER0 });
-      await voting.submitVote(pollId, soliditySha3(SALT, YAY), { from: USER1 });
-
-      await forwardTime(VOTE_WINDOW, this);
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.revealVote(pollId, SALT, YAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-
-      await forwardTime(REVEAL_WINDOW, this);
     });
 
     it("can internally escalate a domain poll after a vote", async () => {
@@ -1310,7 +1336,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot internally escalate a domain poll if not in a 'closed' state", async () => {
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       await voting.executePoll(pollId);
 
@@ -1357,7 +1383,7 @@ contract("Voting Reputation", (accounts) => {
       const remainingStake = REQUIRED_STAKE.sub(WAD.divn(1000));
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, remainingStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const { logs } = await voting.executePoll(pollId);
       expect(logs[0].args.success).to.be.true;
@@ -1373,7 +1399,7 @@ contract("Voting Reputation", (accounts) => {
       const remainingStake = REQUIRED_STAKE.sub(WAD.divn(1000));
       await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, remainingStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const { logs } = await voting.executePoll(pollId);
       expect(logs[0].args.success).to.be.false;
@@ -1382,7 +1408,7 @@ contract("Voting Reputation", (accounts) => {
     it("can fall back on the previous vote if both sides fail to stake", async () => {
       await voting.escalatePoll(pollId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       // Note that the previous vote succeeded
       const { logs } = await voting.executePoll(pollId);
@@ -1408,16 +1434,13 @@ contract("Voting Reputation", (accounts) => {
       await voting.respondToStake(pollId, NAY, CALL, { from: USER1 });
 
       // Make the vote fail this time (everyone votes against)
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER0 });
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), { from: USER1 });
-
-      await forwardTime(VOTE_WINDOW, this);
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.revealVote(pollId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await forwardTime(REVEAL_WINDOW, this);
-      await forwardTime(STAKE_WINDOW, this);
+      await forwardTime(STAKE_PERIOD, this);
 
       const { logs } = await voting.executePoll(pollId);
       expect(logs[0].args.success).to.be.false;
