@@ -54,29 +54,33 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can initialise", async () => {
-      await coinMachine.initialise(purchaseToken.address, 60, 256, 10, 10, 0);
+      await coinMachine.initialise(purchaseToken.address, 60, 511, 10, 10, 0);
     });
 
     it("can handle a large windowSize", async () => {
-      await coinMachine.initialise(purchaseToken.address, 60, 256, 10, 10, 0);
+      await coinMachine.initialise(purchaseToken.address, 60, 511, 10, 10, 0);
 
       // Advance an entire window
-      await forwardTime(60 * 256 + 1, this);
+      await forwardTime(60 * 511 + 1, this);
 
       await coinMachine.updatePeriod();
     });
 
     it("cannot initialise with bad arguments", async () => {
-      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 0, 256, 10, 10, 0), "coin-machine-period-too-small");
+      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 0, 511, 10, 10, 0), "coin-machine-period-too-small");
       await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 0, 10, 10, 0), "coin-machine-window-too-small");
-      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 257, 10, 10, 0), "coin-machine-window-too-large");
-      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 256, 0, 10, 0), "coin-machine-target-too-small");
-      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 256, 10, 9, 0), "coin-machine-max-too-small");
+      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 512, 10, 10, 0), "coin-machine-window-too-large");
+      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 511, 0, 10, 0), "coin-machine-target-too-small");
+      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 511, 10, 9, 0), "coin-machine-max-too-small");
     });
 
     it("cannot initialise twice", async () => {
-      await coinMachine.initialise(purchaseToken.address, 60, 256, 10, 10, 0);
-      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 256, 10, 10, 0), "coin-machine-already-initialised");
+      await coinMachine.initialise(purchaseToken.address, 60, 511, 10, 10, 0);
+      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 511, 10, 10, 0), "coin-machine-already-initialised");
+    });
+
+    it("cannot initialise if not root", async () => {
+      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 511, 10, 10, 0, { from: USER1 }), "coin-machine-not-root");
     });
   });
 

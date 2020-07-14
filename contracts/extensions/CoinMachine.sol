@@ -19,6 +19,7 @@ pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
+import "./../colony/ColonyDataTypes.sol";
 import "./../colony/IColony.sol";
 import "./../common/ERC20Extended.sol";
 
@@ -36,14 +37,14 @@ contract CoinMachine is DSMath {
   // Storage
   address purchaseToken; // The token in which we receive payments, 0x0 for eth
 
-  uint256 periodLength; // Duration of a sale period in seconds (e.g. one hour)
+  uint256 periodLength; // Duration of a sale period in seconds (e.g. 3600 = 1 hour)
   uint256 windowSize; // Number of periods in the price averaging window in integers (e.g. 10)
 
   uint256 targetPerPeriod; // Target number of tokens to sell in a period
   uint256 maxPerPeriod; // Maximum number of tokens sellable in a period
 
   uint256 activePeriod; // The active sale period
-  uint256 activePrice; // The active sale price (a WAD-denominated ratio)
+  uint256 activePrice; // The active sale price (a WAD ratio of averageIntake / targetPerPeriod)
 
   uint256 tokensSold; // Tokens sold in the active period
   uint256 activeIntake; // Payment received in the active period
@@ -62,11 +63,12 @@ contract CoinMachine is DSMath {
   )
     public
   {
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "coin-machine-not-root");
     require(activePeriod == 0, "coin-machine-already-initialised");
 
     require(_periodLength > 0, "coin-machine-period-too-small");
     require(_windowSize > 0, "coin-machine-window-too-small");
-    require(_windowSize <= 256, "coin-machine-window-too-large");
+    require(_windowSize <= 511, "coin-machine-window-too-large");
     require(_targetPerPeriod > 0, "coin-machine-target-too-small");
     require(_maxPerPeriod >= _targetPerPeriod, "coin-machine-max-too-small");
 
@@ -91,20 +93,20 @@ contract CoinMachine is DSMath {
     updatePeriod();
 
     uint256 numTokens = min(_numTokens, maxPerPeriod - tokensSold);
-    uint256 totalPrice = wmul(numTokens, activePrice);
+    uint256 totalCost = wmul(numTokens, activePrice);
 
-    activeIntake += totalPrice;
+    activeIntake += totalCost;
     tokensSold += numTokens;
 
     assert(tokensSold <= maxPerPeriod);
 
     if (purchaseToken == address(0x0)) {
-      require(msg.value >= totalPrice, "coin-machine-insufficient-funds");
-      if (msg.value > totalPrice) {
-        msg.sender.transfer(msg.value - totalPrice);
+      require(msg.value >= totalCost, "coin-machine-insufficient-funds");
+      if (msg.value > totalCost) {
+        msg.sender.transfer(msg.value - totalCost);
       }
     } else {
-      ERC20Extended(purchaseToken).transferFrom(msg.sender, address(this), totalPrice);
+      ERC20Extended(purchaseToken).transferFrom(msg.sender, address(this), totalCost);
     }
 
     colony.mintTokensFor(msg.sender, numTokens);
@@ -116,12 +118,14 @@ contract CoinMachine is DSMath {
 
     // If we've missed an entire window, skip ahead
     uint256 periodGap = currentPeriod - activePeriod;
-    if (periodGap % windowSize < periodGap) {
-      activePeriod = currentPeriod - (periodGap % windowSize + windowSize);
-    }
+    activePeriod = currentPeriod - min(periodGap, windowSize);
+
+    bool newPeriod;
 
     // Handle the recently elapsed period
     if (activePeriod < currentPeriod) {
+      newPeriod = true;
+
       pastIntakes[toBin(activePeriod)] = activeIntake;
       activeIntake = 0;
 
@@ -136,13 +140,15 @@ contract CoinMachine is DSMath {
     }
 
     // Update the price
-    uint256 sum;
+    if (newPeriod) {
+      uint256 sum;
 
-    for (uint256 i; i < windowSize; i++) {
-      sum += pastIntakes[i];
+      for (uint256 i; i < windowSize; i++) {
+        sum += pastIntakes[i];
+      }
+
+      activePrice = wdiv(sum / windowSize, targetPerPeriod);
     }
-
-    activePrice = wdiv(sum / windowSize, targetPerPeriod);
   }
 
   function getPeriodLength() public view returns (uint256) {
