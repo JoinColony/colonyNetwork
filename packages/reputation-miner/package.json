@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "bn.js": "^5.0.0",
+    "discord.js": "^12.2.0",
     "ethers": "^5.0.0",
     "express": "^4.16.3",
     "ganache-core": "^2.8.0",

@@ -342,7 +342,8 @@ class ReputationMiner {
 
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.eq(0)) {
-      const nLeaves = await this.colonyNetwork.getReputationRootHashNLeaves({ blockTag: blockNumber });
+      // TODO: Once getReputationRootHashNLeaves exists, use it
+      const nLeaves = await this.colonyNetwork.getReputationRootHashNNodes({ blockTag: blockNumber });
       const localRootHash = await this.reputationTree.getRootHash();
       const currentRootHash = await this.colonyNetwork.getReputationRootHash({ blockTag: blockNumber });
       if (!nLeaves.eq(this.nReputations) || localRootHash !== currentRootHash) {
@@ -1169,7 +1170,8 @@ class ReputationMiner {
 
     // Check final state
     const currentHash = await this.colonyNetwork.getReputationRootHash();
-    const currentNLeaves = await this.colonyNetwork.getReputationRootHashNLeaves();
+    // TODO: Once getReputationRootHashNLeaves exists, use it
+    const currentNLeaves = await this.colonyNetwork.getReputationRootHashNNodes();
     localHash = await this.reputationTree.getRootHash();
     const localNLeaves = await this.nReputations;
     if (localHash !== currentHash || !currentNLeaves.eq(localNLeaves)) {
@@ -1320,6 +1322,19 @@ class ReputationMiner {
         value text NOT NULL
       )`
     );
+
+    // Do we have to do a database upgrade, from when we renamed n_nodes to n_leaves?
+    const nNodesColumn = await db.all("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') WHERE name='n_nodes';")
+    if (nNodesColumn.length === 1) {
+      await db.run("ALTER TABLE 'reputation_states' RENAME COLUMN n_nodes to n_leaves");
+      const check1 = await db.all("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') where name='n_nodes'")
+      const check2 = await db.all("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') where name='n_leaves'")
+      if (check1.length !== 0 || check2.length !== 1){
+        console.log('Unexpected result of DB upgrade');
+        process.exit();
+      }
+      console.log('n_nodes -> n_leaves database upgrade complete');
+    }
     await db.close();
   }
 

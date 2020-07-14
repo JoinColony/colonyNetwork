@@ -8,7 +8,7 @@ const { argv } = require("yargs");
 const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
-const TruffleLoader = require("../TruffleLoader");
+const TruffleLoader = require("../TruffleLoader").default;
 
 const supportedInfuraNetworks = ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"];
 const {
@@ -50,6 +50,8 @@ let adapterObject;
 
 if (adapter === 'slack') {
   adapterObject = require('../adapters/slack').default; // eslint-disable-line global-require
+} else if (adapter === 'discord'){
+  adapterObject = require('../adapters/discord').default; // eslint-disable-line global-require
 } else {
   adapterObject = require('../adapters/console').default; // eslint-disable-line global-require
 }
