@@ -38,7 +38,7 @@ contract CoinMachine is DSMath {
   address purchaseToken; // The token in which we receive payments, 0x0 for eth
 
   uint256 periodLength; // Duration of a sale period in seconds (e.g. 3600 = 1 hour)
-  uint256 windowSize; // Number of periods in the price averaging window in integers (e.g. 10)
+  uint256 alpha; // WAD-denominated float between 0 and 1 that controls how quickly the EMA adjusts.
 
   uint256 targetPerPeriod; // Target number of tokens to sell in a period
   uint256 maxPerPeriod; // Maximum number of tokens sellable in a period
@@ -49,7 +49,7 @@ contract CoinMachine is DSMath {
   uint256 tokensSold; // Tokens sold in the active period
   uint256 activeIntake; // Payment received in the active period
 
-  mapping (uint256 => uint256) pastIntakes; // Payment received in past periods
+  uint256 emaIntake;
 
   // Public
 
@@ -75,7 +75,9 @@ contract CoinMachine is DSMath {
     purchaseToken = _purchaseToken;
 
     periodLength = _periodLength;
-    windowSize = _windowSize;
+    alpha = wdiv(2, _windowSize + 1); // Two ints enter, 1 WAD leaves
+    // In the long-term, 86% of the weighting will be in this window size. This is a 'standard' conversion
+    // used between SMAs and EMAs, as the center of mass of the weightings is the same if this is used.
 
     targetPerPeriod = _targetPerPeriod;
     maxPerPeriod = _maxPerPeriod;
@@ -83,10 +85,7 @@ contract CoinMachine is DSMath {
     activePrice = _startingPrice;
     activePeriod = getCurrentPeriod();
 
-    uint256 startingIntake = wmul(targetPerPeriod, _startingPrice);
-    for (uint256 i; i < _windowSize; i++) {
-      pastIntakes[i] = startingIntake;
-    }
+    emaIntake = wmul(targetPerPeriod, _startingPrice);
   }
 
   function buyTokens(uint256 _numTokens) public payable {
@@ -116,47 +115,29 @@ contract CoinMachine is DSMath {
   function updatePeriod() public {
     uint256 currentPeriod = getCurrentPeriod();
 
-    // If we've missed an entire window, skip ahead
-    uint256 periodGap = currentPeriod - activePeriod;
-    activePeriod = currentPeriod - min(periodGap, windowSize);
-
-    bool newPeriod;
-
-    // Handle the recently elapsed period
+    // We need to update the price if the active period is not the current one.
     if (activePeriod < currentPeriod) {
-      newPeriod = true;
 
-      pastIntakes[toBin(activePeriod)] = activeIntake;
+      emaIntake = wmul((WAD - alpha), emaIntake) + wmul(alpha, activeIntake); // wmul(wad, int) => int
       activeIntake = 0;
 
       tokensSold = 0;
-      activePeriod += 1;
-    }
 
-    // Handle any additional missed periods
-    while (activePeriod < currentPeriod) {
-      pastIntakes[toBin(activePeriod)] = 0;
-      activePeriod += 1;
-    }
-
-    // Update the price
-    if (newPeriod) {
-      uint256 sum;
-
-      for (uint256 i; i < windowSize; i++) {
-        sum += pastIntakes[i];
+      // Handle any additional missed periods
+      uint256 periodGap = currentPeriod - activePeriod - 1;
+      if (periodGap != 0) {
+        emaIntake = wmul(wpow((WAD - alpha), periodGap), emaIntake);
       }
 
-      activePrice = wdiv(sum / windowSize, targetPerPeriod);
+      activePeriod = currentPeriod;
+
+      // Update the price
+      activePrice = wdiv(emaIntake, targetPerPeriod);
     }
   }
 
   function getPeriodLength() public view returns (uint256) {
     return periodLength;
-  }
-
-  function getWindowSize() public view returns (uint256) {
-    return windowSize;
   }
 
   function getTargetPerPeriod() public view returns (uint256) {
@@ -175,19 +156,16 @@ contract CoinMachine is DSMath {
 
     // Otherwise, infer the new price
     } else {
-      uint256 sum;
-      uint256 period = currentPeriod - windowSize;
+      uint256 newIntake = emaIntake;
 
-      for (; period <= currentPeriod; period++) {
-        if (period < activePeriod) {
-          sum += pastIntakes[toBin(period)];
-        } else if (period == activePeriod) {
-          sum += activeIntake;
-        }
-        // No `else`, any intakes between activePeriod and currentPeriod are 0
-      }
+      // Accommodate the activePeriod
+      newIntake = wmul((WAD - alpha), newIntake) + wmul(alpha, activeIntake);
 
-      return wdiv(sum / windowSize, targetPerPeriod);
+      // Accommodate periods between the activePeriod and the currentPeriod
+      uint256 periodGap = currentPeriod - activePeriod - 1;
+      emaIntake = wmul(wpow((WAD - alpha), periodGap), emaIntake);
+
+      return wdiv(newIntake, targetPerPeriod);
     }
   }
 
@@ -202,7 +180,8 @@ contract CoinMachine is DSMath {
     return now / periodLength;
   }
 
-  function toBin(uint256 period) internal view returns(uint256) {
-    return period % windowSize;
+  function wpow(uint256 x, uint256 n) internal pure returns (uint256) {
+    // Must convert WAD (10 ** 18) to RAY (10 ** 27) and back
+    return rpow(x * (10 ** 9), n) / (10 ** 9);
   }
 }
