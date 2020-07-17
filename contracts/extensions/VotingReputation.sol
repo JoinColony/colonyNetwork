@@ -135,7 +135,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   // Data structures
   enum PollState { Staking, Submit, Reveal, Closed, Executable, Executed, Failed }
-  enum Response { None, Fold, Call }
 
   struct Poll {
     uint256[4] events; // Creation, Staking, Submission, Revelation
@@ -148,8 +147,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 unpaidRewards;
     uint256[2] stakes; // [nay, yay]
     uint256[2] votes; // [nay, yay]
-    address[2] leads; // [nay, yay]
-    Response[2] responses; // [nay, yay]
     bool executed;
     address target;
     bytes action;
@@ -249,11 +246,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll.stakes[_vote] = add(poll.stakes[_vote], amount);
     stakes[_pollId][msg.sender][_vote] = stakerTotalAmount;
 
-    // Update the lead if the stake is larger
-    if (stakes[_pollId][poll.leads[_vote]][_vote] < amount) {
-      poll.leads[_vote] = msg.sender;
-    }
-
     // Activate poll to prevent competing polls from being activated
     if (poll.stakes[YAY] == requiredStake && _vote == YAY) {
       activePolls[hashAction(poll.action)] = _pollId;
@@ -270,26 +262,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     // Claim tokens if fully staked
     if (poll.stakes[YAY] == requiredStake && poll.stakes[NAY] == requiredStake) {
+      poll.events[STAKE_END] = now;
       tokenLocking.claim(token, true);
     }
 
     emit PollStaked(_pollId, msg.sender, _vote, amount);
-  }
-
-  function respondToStake(uint256 _pollId, uint256 _vote, Response _response) public {
-    Poll storage poll = polls[_pollId];
-    uint256 requiredStake = getRequiredStake(_pollId);
-
-    require(poll.stakes[YAY] == requiredStake && poll.stakes[NAY] == requiredStake, "voting-rep-not-fully-staked");
-    require(getPollState(_pollId) == PollState.Staking, "voting-rep-not-staking");
-    require(poll.leads[_vote] == msg.sender, "voting-rep-not-lead");
-    require(poll.responses[_vote] == Response.None, "voting-rep-already-responded");
-
-    poll.responses[_vote] = _response;
-
-    if (poll.responses[YAY] != Response.None && poll.responses[NAY] != Response.None) {
-      poll.events[STAKE_END] = now;
-    }
   }
 
   function submitVote(
@@ -373,7 +350,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(childSkillId == poll.skillId, "voting-rep-invalid-domain-proof");
 
     delete poll.events;
-    delete poll.responses;
 
     poll.events[CREATE] = now;
     poll.domainId = _newDomainId;
@@ -558,12 +534,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       } else {
         return PollState.Failed;
       }
-
-    // Fully staked, check for any folds
-    } else if (poll.responses[YAY] == Response.Fold) {
-      return PollState.Failed;
-    } else if (poll.responses[NAY] == Response.Fold) {
-      return PollState.Executable;
 
     // Do we need to keep waiting?
     } else if (now < poll.events[CREATE] + stakePeriod && poll.events[STAKE_END] == 0) {
