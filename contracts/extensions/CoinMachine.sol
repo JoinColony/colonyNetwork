@@ -39,6 +39,7 @@ contract CoinMachine is DSMath {
 
   uint256 periodLength; // Duration of a sale period in seconds (e.g. 3600 = 1 hour)
   uint256 alpha; // WAD-denominated float between 0 and 1 that controls how quickly the EMA adjusts.
+  uint256 windowSize; // In the long-term, 86% of the weighting will be in this window size.
 
   uint256 targetPerPeriod; // Target number of tokens to sell in a period
   uint256 maxPerPeriod; // Maximum number of tokens sellable in a period
@@ -78,6 +79,7 @@ contract CoinMachine is DSMath {
     alpha = wdiv(2, _windowSize + 1); // Two ints enter, 1 WAD leaves
     // In the long-term, 86% of the weighting will be in this window size. This is a 'standard' conversion
     // used between SMAs and EMAs, as the center of mass of the weightings is the same if this is used.
+    windowSize = _windowSize;
 
     targetPerPeriod = _targetPerPeriod;
     maxPerPeriod = _maxPerPeriod;
@@ -140,6 +142,10 @@ contract CoinMachine is DSMath {
     return periodLength;
   }
 
+  function getWindowSize() public view returns (uint256) {
+    return windowSize;
+  }
+
   function getTargetPerPeriod() public view returns (uint256) {
     return targetPerPeriod;
   }
@@ -163,7 +169,9 @@ contract CoinMachine is DSMath {
 
       // Accommodate periods between the activePeriod and the currentPeriod
       uint256 periodGap = currentPeriod - activePeriod - 1;
-      emaIntake = wmul(wpow((WAD - alpha), periodGap), emaIntake);
+      if (periodGap != 0) {
+        newIntake = wmul(wpow((WAD - alpha), periodGap), newIntake);
+      }
 
       return wdiv(newIntake, targetPerPeriod);
     }

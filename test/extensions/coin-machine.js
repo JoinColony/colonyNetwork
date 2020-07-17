@@ -173,6 +173,8 @@ contract("Coin Machine", (accounts) => {
     it("can adjust prices according to demand", async () => {
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
+      const windowSize = await coinMachine.getWindowSize();
+      const alphaAsWad = new BN(2).mul(WAD).divRound(windowSize.addn(1));
 
       let currentPrice;
 
@@ -186,24 +188,55 @@ contract("Coin Machine", (accounts) => {
       await forwardTime(periodLength.toNumber(), this);
       await coinMachine.updatePeriod();
 
-      // Expect price to increase by 10% since we sold 200% in 1/10 of the periods
-      // No deficit though since we include the unsold tokens in this period
-      currentPrice = await coinMachine.getCurrentPrice();
-      expect(currentPrice).to.eq.BN(WAD.divn(10).muln(11));
+      let emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
 
+      let expectedPrice = emaIntake.divRound(WAD.muln(100));
+      currentPrice = await coinMachine.getCurrentPrice();
+      expect(currentPrice).to.eq.BN(expectedPrice);
+
+      // We don't buy anything for a period
       await forwardTime(periodLength.toNumber(), this);
       await coinMachine.updatePeriod();
 
-      // Expect price to return to baseline since we sold no tokens
+      emaIntake = emaIntake.mul(WAD.sub(alphaAsWad)).divRound(WAD);
+      expectedPrice = emaIntake.divRound(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
-      expect(currentPrice).to.eq.BN(WAD);
+      expect(currentPrice).to.eq.BN(expectedPrice);
 
+      // And again, we don't buy anything for a period
       await forwardTime(periodLength.toNumber(), this);
       await coinMachine.updatePeriod();
 
-      // Expect price to decrease by 10% to baseline since we sold 0% in 1/10 periods
+      emaIntake = emaIntake.mul(WAD.sub(alphaAsWad)).divRound(WAD);
+      expectedPrice = emaIntake.divRound(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
-      expect(currentPrice).to.eq.BN(WAD.divn(10).muln(9));
+      expect(currentPrice).to.eq.BN(expectedPrice);
+    });
+
+    it("it monotonically adjusts prices according to demand", async () => {
+      const periodLength = await coinMachine.getPeriodLength();
+      const maxPerPeriod = await coinMachine.getMaxPerPeriod();
+
+      let currentPrice;
+
+      await purchaseToken.mint(USER0, maxPerPeriod.muln(10000), { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, maxPerPeriod.muln(10000), { from: USER0 });
+
+      let previousPrice = maxPerPeriod.muln(10000); // A very large number.
+      let steadyState = false;
+      for (let i = 0; i < 100; i += 1) {
+        currentPrice = await coinMachine.getCurrentPrice();
+        expect(currentPrice).to.be.lte.BN(previousPrice);
+        if (steadyState) {
+          expect(currentPrice).to.eq.BN(previousPrice);
+        } else if (currentPrice.eq(previousPrice)) {
+          // This is the first time it's happened, so on future loops check it's still the case
+          steadyState = true;
+        }
+        previousPrice = currentPrice;
+        await coinMachine.buyTokens(WAD.divRound(currentPrice).mul(WAD), { from: USER0 });
+        await forwardTime(periodLength.toNumber(), this);
+      }
     });
 
     it("can handle long periods of inactivity", async () => {
@@ -230,6 +263,8 @@ contract("Coin Machine", (accounts) => {
       const periodLength = await coinMachine.getPeriodLength();
       const targetPerPeriod = await coinMachine.getTargetPerPeriod();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
+      const windowSize = await coinMachine.getWindowSize();
+      const alphaAsWad = new BN(2).mul(WAD).divRound(windowSize.addn(1));
 
       let currentPrice = await coinMachine.getCurrentPrice();
       let numAvailable = await coinMachine.getNumAvailable();
@@ -271,8 +306,11 @@ contract("Coin Machine", (accounts) => {
       currentPrice = await coinMachine.getCurrentPrice();
       numAvailable = await coinMachine.getNumAvailable();
 
-      // Bought maxPerPeriod tokens so price should be up 10%
-      expect(currentPrice).to.eq.BN(WAD.divn(10).muln(11));
+      let emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
+      let expectedPrice = emaIntake.divRound(WAD.muln(100));
+
+      // Bought maxPerPeriod tokens so price should be up
+      expect(currentPrice).to.eq.BN(expectedPrice);
       expect(numAvailable).to.eq.BN(maxPerPeriod);
 
       // Advance to next period without calling `updatePeriod`
@@ -281,17 +319,20 @@ contract("Coin Machine", (accounts) => {
 
       currentPrice = await coinMachine.getCurrentPrice();
       numAvailable = await coinMachine.getNumAvailable();
+      emaIntake = emaIntake.mul(WAD.sub(alphaAsWad)).divRound(WAD);
+      expectedPrice = emaIntake.divRound(WAD.muln(100));
 
-      expect(currentPrice).to.eq.BN(WAD);
+      expect(currentPrice).to.eq.BN(expectedPrice);
       expect(numAvailable).to.eq.BN(maxPerPeriod);
 
       // Now buy some tokens
       await coinMachine.buyTokens(maxPerPeriod, { from: USER0 });
 
+      // Price should be the same, but no tokens available.
       currentPrice = await coinMachine.getCurrentPrice();
       numAvailable = await coinMachine.getNumAvailable();
 
-      expect(currentPrice).to.eq.BN(WAD);
+      expect(currentPrice).to.eq.BN(expectedPrice);
       expect(numAvailable).to.be.zero;
     });
 
