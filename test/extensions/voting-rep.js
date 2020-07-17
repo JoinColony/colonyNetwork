@@ -75,6 +75,7 @@ contract("Voting Reputation", (accounts) => {
   const STAKE_PERIOD = SECONDS_PER_DAY * 3;
   const VOTE_PERIOD = SECONDS_PER_DAY * 2;
   const REVEAL_PERIOD = SECONDS_PER_DAY * 2;
+  const ESCALATION_PERIOD = SECONDS_PER_DAY;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
@@ -135,7 +136,8 @@ contract("Voting Reputation", (accounts) => {
       VOTE_POWER_FRACTION,
       STAKE_PERIOD,
       VOTE_PERIOD,
-      REVEAL_PERIOD
+      REVEAL_PERIOD,
+      ESCALATION_PERIOD
     );
 
     await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
@@ -241,10 +243,13 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot initialise twice or if not root", async () => {
-      await checkErrorRevert(voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-already-initialised");
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-already-initialised"
+      );
 
       await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD, { from: USER2 }),
+        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD, { from: USER2 }),
         "voting-rep-user-not-root"
       );
     });
@@ -255,26 +260,52 @@ contract("Voting Reputation", (accounts) => {
       const votingAddress = await votingFactory.deployedExtensions(colony.address);
       voting = await VotingReputation.at(votingAddress);
 
-      await checkErrorRevert(voting.initialise(WAD.addn(1), WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-must-be-wad");
-      await checkErrorRevert(voting.initialise(WAD, WAD.addn(1), WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-must-be-wad");
-      await checkErrorRevert(voting.initialise(WAD, WAD, WAD.addn(1), WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-must-be-wad");
-      await checkErrorRevert(voting.initialise(WAD, WAD, WAD, WAD.addn(1), WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-must-be-wad");
-      await checkErrorRevert(voting.initialise(WAD, WAD, WAD, WAD, WAD.addn(1), STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD), "voting-rep-must-be-wad");
-
       await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD, WAD, SECONDS_PER_DAY * 366, VOTE_PERIOD, REVEAL_PERIOD),
-        "voting-rep-period-too-long"
-      );
-      await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, SECONDS_PER_DAY * 366, REVEAL_PERIOD),
-        "voting-rep-period-too-long"
-      );
-      await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, SECONDS_PER_DAY * 366),
-        "voting-rep-period-too-long"
+        voting.initialise(WAD.addn(1), WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-must-be-wad"
       );
 
-      await voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD);
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD.addn(1), WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-must-be-wad"
+      );
+
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD.addn(1), WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-must-be-wad"
+      );
+
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD, WAD.addn(1), WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-must-be-wad"
+      );
+
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD, WAD, WAD.addn(1), STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-must-be-wad"
+      );
+
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD, WAD, WAD, SECONDS_PER_DAY * 366, VOTE_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-period-too-long"
+      );
+
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, SECONDS_PER_DAY * 366, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-period-too-long"
+      );
+
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, SECONDS_PER_DAY * 366, ESCALATION_PERIOD),
+        "voting-rep-period-too-long"
+      );
+
+      await checkErrorRevert(
+        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD, SECONDS_PER_DAY * 366),
+        "voting-rep-period-too-long"
+      );
+
+      await voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, VOTE_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD);
     });
   });
 
@@ -356,6 +387,18 @@ contract("Voting Reputation", (accounts) => {
       expect(stake1).to.eq.BN(REQUIRED_STAKE.divn(2));
     });
 
+    it("can withdraw a stake", async () => {
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      let poll = await voting.getPoll(pollId);
+      expect(poll.stakes[1]).to.eq.BN(REQUIRED_STAKE);
+
+      await voting.unstakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+
+      poll = await voting.getPoll(pollId);
+      expect(poll.stakes[1]).to.be.zero;
+    });
+
     it("cannot stake less than the minStake", async () => {
       const minStake = REQUIRED_STAKE.divn(10);
 
@@ -385,40 +428,6 @@ contract("Voting Reputation", (accounts) => {
         voting.stakePoll(pollId, 1, UINT256_MAX, 2, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "voting-rep-bad-vote"
       );
-    });
-
-    it("cannot stake for an action while there is an active poll for the same action", async () => {
-      let activePoll;
-
-      const { action } = await voting.getPoll(pollId);
-      activePoll = await voting.getActivePoll(soliditySha3(action));
-      expect(activePoll).to.be.zero;
-
-      await forwardTime(STAKE_PERIOD / 2, this);
-      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      activePoll = await voting.getActivePoll(soliditySha3(action));
-      expect(activePoll).to.eq.BN(pollId);
-
-      await voting.createRootPoll(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      const otherPollId = await voting.getPollCount();
-
-      await checkErrorRevert(
-        voting.stakePoll(otherPollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-competing-poll-exists"
-      );
-
-      // But, can stake once the first poll is executed.
-      await forwardTime(STAKE_PERIOD / 2, this);
-      await voting.executePoll(pollId);
-
-      activePoll = await voting.getActivePoll(soliditySha3(action));
-      expect(activePoll).to.be.zero;
-
-      await voting.stakePoll(otherPollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      activePoll = await voting.getActivePoll(soliditySha3(action));
-      expect(activePoll).to.eq.BN(otherPollId);
     });
 
     it("can update the expenditure globalClaimDelay if voting on expenditure state", async () => {

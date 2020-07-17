@@ -34,6 +34,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   event ExtensionDeprecated();
   event PollCreated(uint256 indexed pollId, uint256 indexed skillId);
   event PollStaked(uint256 indexed pollId, address indexed staker, uint256 indexed vote, uint256 amount);
+  event PollUnstaked(uint256 indexed pollId, address indexed staker, uint256 indexed vote, uint256 amount);
   event PollVoteSubmitted(uint256 indexed pollId, address indexed voter);
   event PollVoteRevealed(uint256 indexed pollId, address indexed voter, uint256 indexed vote);
   event PollExecuted(uint256 indexed pollId, bytes action, bool success);
@@ -75,6 +76,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   uint256 stakePeriod; // Length of time for staking
   uint256 submitPeriod; // Length of time for submitting votes
   uint256 revealPeriod; // Length of time for revealing votes
+  uint256 escalationPeriod; // Length of time for escalating after a vote
 
   constructor(address _colony) public {
     colony = IColony(_colony);
@@ -91,7 +93,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 _votePowerFraction,
     uint256 _stakePeriod,
     uint256 _submitPeriod,
-    uint256 _revealPeriod
+    uint256 _revealPeriod,
+    uint256 _escalationPeriod
   )
     public
   {
@@ -108,6 +111,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(_stakePeriod <= 365 days, "voting-rep-period-too-long");
     require(_submitPeriod <= 365 days, "voting-rep-period-too-long");
     require(_revealPeriod <= 365 days, "voting-rep-period-too-long");
+    require(_escalationPeriod <= 365 days, "voting-rep-period-too-long");
 
     state = ExtensionState.Active;
 
@@ -121,6 +125,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     stakePeriod = _stakePeriod;
     submitPeriod = _submitPeriod;
     revealPeriod = _revealPeriod;
+    escalationPeriod = _escalationPeriod;
 
     emit ExtensionInitialised();
   }
@@ -160,7 +165,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   mapping (address => mapping (uint256 => bytes32)) voteSecrets;
 
   mapping (bytes32 => uint256) pastPolls; // action signature => voting power
-  mapping (bytes32 => uint256) activePolls; // action signature => pollId
   mapping (bytes32 => uint256) expenditurePollCounts; // expenditure signature => count
 
   // Public functions (interface)
@@ -219,12 +223,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(_vote <= 1, "voting-rep-bad-vote");
     require(getPollState(_pollId) == PollState.Staking, "voting-rep-staking-closed");
 
-    require(
-      activePolls[hashAction(poll.action)] == 0 ||
-      activePolls[hashAction(poll.action)] == _pollId,
-      "voting-rep-competing-poll-exists"
-    );
-
     uint256 requiredStake = getRequiredStake(_pollId);
     uint256 amount = min(_amount, sub(requiredStake, poll.stakes[_vote]));
     uint256 stakerTotalAmount = add(stakes[_pollId][msg.sender][_vote], amount);
@@ -246,18 +244,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll.stakes[_vote] = add(poll.stakes[_vote], amount);
     stakes[_pollId][msg.sender][_vote] = stakerTotalAmount;
 
-    // Activate poll to prevent competing polls from being activated
-    if (poll.stakes[YAY] == requiredStake && _vote == YAY) {
-      activePolls[hashAction(poll.action)] = _pollId;
-
-      // Increment counter & extend claim delay if staking for an expenditure state change
-      if (getSig(poll.action) == CHANGE_FUNCTION) {
-        bytes32 expenditureHash = hashExpenditureAction(poll.action);
-        expenditurePollCounts[expenditureHash] = add(expenditurePollCounts[expenditureHash], 1);
-
-        bytes memory claimDelayAction = createClaimDelayAction(poll.action, UINT256_MAX);
-        executeCall(_pollId, claimDelayAction);
-      }
+    // Increment counter & extend claim delay if staking for an expenditure state change
+    if (poll.stakes[YAY] == requiredStake && _vote == YAY && getSig(poll.action) == CHANGE_FUNCTION) {
+      bytes32 expenditureHash = hashExpenditureAction(poll.action);
+      expenditurePollCounts[expenditureHash] = add(expenditurePollCounts[expenditureHash], 1);
+      bytes memory claimDelayAction = createClaimDelayAction(poll.action, UINT256_MAX);
+      executeCall(_pollId, claimDelayAction);
     }
 
     // Claim tokens if fully staked
@@ -267,6 +259,27 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
 
     emit PollStaked(_pollId, msg.sender, _vote, amount);
+  }
+
+  function unstakePoll(
+    uint256 _pollId,
+    uint256 _permissionDomainId, // For extension's arbitration permission
+    uint256 _childSkillIndex, // For extension's arbitration permission
+    uint256 _vote,
+    uint256 _amount
+  )
+    public
+  {
+    Poll storage poll = polls[_pollId];
+    require(getPollState(_pollId) == PollState.Staking, "voting-rep-not-staking");
+
+    tokenLocking.transfer(token, _amount, msg.sender, true);
+
+    poll.unpaidRewards = sub(poll.unpaidRewards, _amount);
+    poll.stakes[_vote] = sub(poll.stakes[_vote], _amount);
+    stakes[_pollId][msg.sender][_vote] = sub(stakes[_pollId][msg.sender][_vote], _amount);
+
+    emit PollUnstaked(_pollId, msg.sender, _vote, _amount);
   }
 
   function submitVote(
@@ -368,7 +381,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(pollState == PollState.Executable, "voting-rep-poll-not-executable");
 
     poll.executed = true;
-    delete activePolls[actionHash];
 
     bool canExecute = (
       poll.stakes[NAY] <= poll.stakes[YAY] &&
@@ -492,10 +504,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll = polls[_pollId];
   }
 
-  function getActivePoll(bytes32 _actionHash) public view returns (uint256) {
-    return activePolls[_actionHash];
-  }
-
   function getExpenditurePollCount(bytes32 _expenditureHash) public view returns (uint256) {
     return expenditurePollCounts[_expenditureHash];
   }
@@ -539,7 +547,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     } else if (now < poll.events[CREATE] + stakePeriod && poll.events[STAKE_END] == 0) {
       return PollState.Staking;
 
-    // Fully staked, no folds, go to a vote
+    // Fully staked, go to a vote
     } else {
 
       if (now < min(
@@ -562,12 +570,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       )) {
         return PollState.Reveal;
       } else if (now < min(
-        poll.events[CREATE] + stakePeriod + submitPeriod + revealPeriod + stakePeriod,
+        poll.events[CREATE] + stakePeriod + submitPeriod + revealPeriod + escalationPeriod,
         min(
-          selfOrMax(poll.events[STAKE_END]) + submitPeriod + revealPeriod + stakePeriod,
+          selfOrMax(poll.events[STAKE_END]) + submitPeriod + revealPeriod + escalationPeriod,
           min(
-            selfOrMax(poll.events[SUBMIT_END]) + revealPeriod + stakePeriod,
-            selfOrMax(poll.events[REVEAL_END]) + stakePeriod
+            selfOrMax(poll.events[SUBMIT_END]) + revealPeriod + escalationPeriod,
+            selfOrMax(poll.events[REVEAL_END]) + escalationPeriod
           )
         )
       )) {
