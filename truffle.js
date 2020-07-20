@@ -2,6 +2,8 @@ require("@babel/register");
 require("@babel/polyfill");
 const HDWalletProvider = require("truffle-hdwallet-provider");
 
+const DISABLE_DOCKER = !process.env.DISABLE_DOCKER;
+
 module.exports = {
   networks: {
     development: {
@@ -62,7 +64,7 @@ module.exports = {
   compilers: {
     solc: {
       version: "0.5.8",
-      docker: true,
+      docker: DISABLE_DOCKER,
       settings: {
         optimizer: {
           enabled: true,
