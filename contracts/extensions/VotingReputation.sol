@@ -52,6 +52,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   uint256 constant SUBMIT_END = 2;
   uint256 constant REVEAL_END = 3;
 
+  uint256 constant WITHDRAW_FRACTION = (WAD / 4) * 3; // 75%, cannot withdraw stake after this
+
   bytes4 constant CHANGE_FUNCTION = bytes4(
     keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
   );
@@ -272,6 +274,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     Poll storage poll = polls[_pollId];
     require(getPollState(_pollId) == PollState.Staking, "voting-rep-not-staking");
+    require(now < add(poll.events[CREATE], wmul(stakePeriod, WITHDRAW_FRACTION)), "voting-rep-cannot-withdraw");
 
     tokenLocking.transfer(token, _amount, msg.sender, true);
 
