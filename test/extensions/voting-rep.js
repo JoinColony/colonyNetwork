@@ -410,6 +410,26 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(voting.unstakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 }), "voting-rep-cannot-withdraw");
     });
 
+    it("cannot stake during the last 25% of the staking period if other side is not fully staked", async () => {
+      await forwardTime(STAKE_PERIOD * 0.75 + 1, this);
+
+      await checkErrorRevert(
+        voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
+        "voting-rep-cannot-stake"
+      );
+    });
+
+    it("can stake during the last 25% of the staking period if other side is fully staked", async () => {
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      const poll = await voting.getPoll(pollId);
+      expect(poll.stakes[1]).to.eq.BN(REQUIRED_STAKE);
+
+      await forwardTime(STAKE_PERIOD * 0.75 + 1, this);
+
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+    });
+
     it("cannot stake less than the minStake", async () => {
       const minStake = REQUIRED_STAKE.divn(10);
 

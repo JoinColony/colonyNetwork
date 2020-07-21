@@ -52,7 +52,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   uint256 constant SUBMIT_END = 2;
   uint256 constant REVEAL_END = 3;
 
-  uint256 constant WITHDRAW_FRACTION = (WAD / 4) * 3; // 75%, cannot withdraw stake after this
+  uint256 constant STAKE_COMMIT_FRACTION = (WAD / 4) * 3; // 75%, cannot stake / withdraw after this
 
   bytes4 constant CHANGE_FUNCTION = bytes4(
     keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
@@ -68,12 +68,16 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   ITokenLocking tokenLocking;
   address token;
 
+  // All `Fraction` variables are WAD-denominated
+
   uint256 stakeFraction; // Percent of domain reputation needed for staking
   uint256 minStakeFraction; // Minimum stake as percent of required stake (100% means single-staker)
 
   uint256 maxVoteFraction; // The percent of total domain rep we need before closing the vote
   uint256 voterRewardFraction; // Percent of stake paid out to voters as rewards (immediately taken from the stake)
   uint256 votePowerFraction; // Percent of domain rep used as vote power if no-contest
+
+  // All `Period` variables are second-denominated
 
   uint256 stakePeriod; // Length of time for staking
   uint256 submitPeriod; // Length of time for submitting votes
@@ -226,6 +230,14 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(getPollState(_pollId) == PollState.Staking, "voting-rep-staking-closed");
 
     uint256 requiredStake = getRequiredStake(_pollId);
+
+    // Either we are before the commit deadline or other side is fully staked
+    require(
+      now < add(poll.events[CREATE], wmul(stakePeriod, STAKE_COMMIT_FRACTION)) ||
+      poll.stakes[flip(_vote)] == requiredStake,
+      "voting-rep-cannot-stake"
+    );
+
     uint256 amount = min(_amount, sub(requiredStake, poll.stakes[_vote]));
     uint256 stakerTotalAmount = add(stakes[_pollId][msg.sender][_vote], amount);
 
@@ -274,7 +286,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     Poll storage poll = polls[_pollId];
     require(getPollState(_pollId) == PollState.Staking, "voting-rep-not-staking");
-    require(now < add(poll.events[CREATE], wmul(stakePeriod, WITHDRAW_FRACTION)), "voting-rep-cannot-withdraw");
+    require(now < add(poll.events[CREATE], wmul(stakePeriod, STAKE_COMMIT_FRACTION)), "voting-rep-cannot-withdraw");
 
     tokenLocking.transfer(token, _amount, msg.sender, true);
 
