@@ -166,8 +166,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   mapping (address => mapping (uint256 => bytes32)) voteSecrets;
 
-  mapping (bytes32 => uint256) pastPolls; // action signature => voting power
-  mapping (bytes32 => uint256) expenditurePollCounts; // expenditure signature => count
+  mapping (bytes32 => uint256) expenditurePastPolls; // expenditure slot signature => voting power
+  mapping (bytes32 => uint256) expenditurePollCounts; // expenditure struct signature => count
 
   // Public functions (interface)
 
@@ -248,8 +248,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     // Increment counter & extend claim delay if staking for an expenditure state change
     if (poll.stakes[YAY] == requiredStake && _vote == YAY && getSig(poll.action) == CHANGE_FUNCTION) {
-      bytes32 expenditureHash = hashExpenditureAction(poll.action);
-      expenditurePollCounts[expenditureHash] = add(expenditurePollCounts[expenditureHash], 1);
+      bytes32 structHash = hashExpenditureStruct(poll.action);
+      expenditurePollCounts[structHash] = add(expenditurePollCounts[structHash], 1);
       bytes memory claimDelayAction = createClaimDelayAction(poll.action, UINT256_MAX);
       executeCall(_pollId, claimDelayAction);
     }
@@ -376,7 +376,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   function executePoll(uint256 _pollId) public {
     Poll storage poll = polls[_pollId];
     PollState pollState = getPollState(_pollId);
-    bytes32 actionHash = hashAction(poll.action);
 
     require(pollState != PollState.Failed, "voting-rep-poll-failed");
     require(pollState != PollState.Closed, "voting-rep-poll-escalation-window-open");
@@ -391,11 +390,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     );
 
     if (getSig(poll.action) == CHANGE_FUNCTION) {
-      bytes32 expenditureHash = hashExpenditureAction(poll.action);
-      expenditurePollCounts[expenditureHash] = sub(expenditurePollCounts[expenditureHash], 1);
+      bytes32 structHash = hashExpenditureStruct(poll.action);
+      expenditurePollCounts[structHash] = sub(expenditurePollCounts[structHash], 1);
 
       // Release the claimDelay if this is the last active poll
-      if (expenditurePollCounts[expenditureHash] == 0) {
+      if (expenditurePollCounts[structHash] == 0) {
         bytes memory claimDelayAction = createClaimDelayAction(poll.action, 0);
         executeCall(_pollId, claimDelayAction);
       }
@@ -411,8 +410,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
         votePower = poll.votes[YAY];
       }
 
-      if (pastPolls[actionHash] < votePower) {
-        pastPolls[actionHash] = votePower;
+      bytes32 slotHash = hashExpenditureSlot(poll.action);
+      if (expenditurePastPolls[slotHash] < votePower) {
+        expenditurePastPolls[slotHash] = votePower;
         canExecute = canExecute && true;
       } else {
         canExecute = canExecute && false;
@@ -507,16 +507,16 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll = polls[_pollId];
   }
 
-  function getExpenditurePollCount(bytes32 _expenditureHash) public view returns (uint256) {
-    return expenditurePollCounts[_expenditureHash];
-  }
-
   function getStake(uint256 _pollId, address _staker, uint256 _vote) public view returns (uint256) {
     return stakes[_pollId][_staker][_vote];
   }
 
-  function getPastPoll(bytes32 _slot) public view returns (uint256) {
-    return pastPolls[_slot];
+  function getExpenditurePollCount(bytes32 _structHash) public view returns (uint256) {
+    return expenditurePollCounts[_structHash];
+  }
+
+  function getExpenditurePastPoll(bytes32 _slotHash) public view returns (uint256) {
+    return expenditurePastPolls[_slotHash];
   }
 
   function getPollState(uint256 _pollId) public view returns (PollState) {
@@ -706,25 +706,18 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
   }
 
-  function hashAction(bytes memory action) internal returns (bytes32 hash) {
-    if (getSig(action) == CHANGE_FUNCTION) {
-      assembly {
-        // Hash all but last (value) bytes32
-        //  Recall: mload(action) gives length of bytes array
-        //  So skip past the first bytes32 (length), and the last bytes32 (value)
-        hash := keccak256(add(action, 0x20), sub(mload(action), 0x20))
-      }
-    } else {
-      assembly {
-        // Hash entire action
-        //  Recall: mload(action) gives length of bytes array
-        //  So skip past the first bytes32 (length)
-        hash := keccak256(add(action, 0x20), mload(action))
-      }
+  function hashExpenditureSlot(bytes memory action) internal returns (bytes32 hash) {
+    assert(getSig(action) == CHANGE_FUNCTION);
+
+    assembly {
+      // Hash all but last (value) bytes32
+      //  Recall: mload(action) gives length of bytes array
+      //  So skip past the first bytes32 (length), and the last bytes32 (value)
+      hash := keccak256(add(action, 0x20), sub(mload(action), 0x20))
     }
   }
 
-  function hashExpenditureAction(bytes memory action) internal returns (bytes32 hash) {
+  function hashExpenditureStruct(bytes memory action) internal returns (bytes32 hash) {
     assert(getSig(action) == CHANGE_FUNCTION);
 
     uint256 expenditureId;

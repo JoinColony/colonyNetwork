@@ -999,8 +999,8 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(STAKE_PERIOD, this);
 
       await voting.executePoll(pollId);
-      const slot = soliditySha3(action.slice(0, action.length - 64));
-      const pastPoll = await voting.getPastPoll(slot);
+      const slotHash = soliditySha3(`0x${action.slice(2, action.length - 64)}`);
+      const pastPoll = await voting.getExpenditurePastPoll(slotHash);
       expect(pastPoll).to.eq.BN(WAD.muln(2).subn(2)); // ~66.6% of 3 WAD
     });
 
@@ -1020,11 +1020,11 @@ contract("Voting Reputation", (accounts) => {
       await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
-      await forwardTime(STAKE_PERIOD, this);
+      await forwardTime(ESCALATION_PERIOD, this);
 
       await voting.executePoll(pollId);
-      const slot = soliditySha3(action.slice(0, action.length - 64));
-      const pastPoll = await voting.getPastPoll(slot);
+      const slotHash = soliditySha3(`0x${action.slice(2, action.length - 64)}`);
+      const pastPoll = await voting.getExpenditurePastPoll(slotHash);
       expect(pastPoll).to.eq.BN(WAD); // USER0 had 1 WAD of reputation
     });
   });
