@@ -131,8 +131,10 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @param _user Address of the user
   /// @return lock Lock object containing:
   ///   `lockCount` User's token lock count,
-  ///   `amount` User's deposited amount,
-  ///   `timestamp` Timestamp of deposit.
+  ///   `balance` User's deposited amount,
+  ///   `DEPRECATED_timestamp` Timestamp of deposit (deprecated)
+  ///   `pendingBalance` Tokens that have been sent to them, but are inaccessible until all locks are cleared and then these
+  ///                    tokens are claimed
   function getUserLock(address _token, address _user) public view returns (Lock memory lock);
 
   /// @notice See the total amount of a user's obligation.

@@ -88,6 +88,10 @@ contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   mapping (address => MiningStake) miningStakes; // Storage slot 33
   mapping (address => uint256) pendingMiningRewards; // Storage slot 34
 
+  uint256 totalMinerRewardPerCycle; // Storage slot 35
+  uint256 annualMetaColonyStipend; // Storage slot 36
+  uint256 lastMetaColonyStipendIssued; // Storage slot 37
+
   modifier calledByColony() {
     require(_isColony[msg.sender], "colony-caller-must-be-colony");
     _;

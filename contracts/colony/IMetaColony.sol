@@ -49,4 +49,13 @@ contract IMetaColony is IColony {
   /// @param _version The new Colony contract version
   /// @param _resolver Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
   function addNetworkColonyVersion(uint256 _version, address _resolver) public;
+
+  /// @notice Called to set the metaColony stipend. This value will be the total amount of CLNY created for the metacolony in a single year.
+  /// @param _amount The amount of CLNY to issue to the metacolony every year
+  /// @dev Calls the corresponding function on the ColonyNetwork.
+  function setAnnualMetaColonyStipend(uint256 _amount) public;
+
+  /// @notice Called to set the total per-cycle reputation reward, which will be split between all miners.
+  /// @dev Calls the corresponding function on the ColonyNetwork.
+  function setReputationMiningCycleReward(uint256 _amount) public;
 }

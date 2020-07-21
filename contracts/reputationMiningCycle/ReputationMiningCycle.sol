@@ -218,8 +218,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     IColonyNetwork(colonyNetworkAddress).setReputationRootHash(
       submission.proposedNewRootHash,
       submission.nLeaves,
-      submittedHashes[submission.proposedNewRootHash][submission.nLeaves][submission.jrh],
-      0 * WAD // TODO: Make this a function of reputation state
+      submittedHashes[submission.proposedNewRootHash][submission.nLeaves][submission.jrh]
     );
     selfdestruct(colonyNetworkAddress);
   }

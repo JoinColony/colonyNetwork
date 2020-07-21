@@ -195,12 +195,19 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return resolverAddress Address of the `Resolver` contract
   function getColonyVersionResolver(uint256 _version) public view returns (address resolverAddress);
 
+  /// @notice This version of setReputationRootHash is deprecated and will be removed in a future release. It transparently
+  /// calls the new version if it is called (essentially, removing the `reward` parameter.
+  /// @param newHash The reputation root hash
+  /// @param newNLeaves The updated leaves count value
+  /// @param stakers Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
+  /// @param reward Amount of CLNY to be distributed as reward to miners (not used)
+  function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers, uint256 reward) public;
+
   /// @notice Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
   /// @param newHash The reputation root hash
   /// @param newNLeaves The updated leaves count value
   /// @param stakers Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-  /// @param reward Amount of CLNY to be distributed as reward to miners
-  function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers, uint256 reward) public;
+  function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers) public;
 
   /// @notice Starts a new Reputation Mining cycle. Explicitly called only the first time,
   /// subsequently called from within `setReputationRootHash`.
@@ -320,4 +327,26 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @dev Can be called by anyone, not just _recipient
   /// @param _recipient The user whose rewards to claim
   function claimMiningReward(address _recipient) public;
+
+  /// @notice Called to set the metaColony stipend. This value will be the total amount of CLNY created for the metacolony in a single year. The
+  /// corresponding `issueMetaColonyStipend` function can be called at any interval.
+  /// @param _amount The amount of CLNY to issue to the metacolony every year
+  /// @dev Can only be called by the MetaColony.
+  function setAnnualMetaColonyStipend(uint256 _amount) public;
+
+  /// @notice Called to issue the metaColony stipend. This public function can be called by anyone at any interval, and an appropriate amount of CLNY will
+  /// be minted based on the time since the last time it was called.
+  function issueMetaColonyStipend() public;
+
+  /// @notice Called to set the total per-cycle reputation reward, which will be split between all miners.
+  /// @dev Can only be called by the MetaColony.
+  function setReputationMiningCycleReward(uint256 _amount) public;
+
+  /// @notice Called to get the total per-cycle reputation mining reward.
+  /// @return The CLNY awarded per mining cycle to the miners.
+  function getReputationMiningCycleReward() public view returns (uint256);
+
+  /// @notice Called to get the total per-cycle reputation mining reward.
+  /// @return The CLNY awarded per year to the metacolony.
+  function getAnnualMetaColonyStipend() public view returns (uint256);
 }
