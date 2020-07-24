@@ -34,11 +34,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   event ExtensionDeprecated();
   event PollCreated(uint256 indexed pollId, address creator, uint256 indexed domainId);
   event PollStaked(uint256 indexed pollId, address indexed staker, uint256 indexed vote, uint256 amount);
-  event PollUnstaked(uint256 indexed pollId, address indexed staker, uint256 indexed vote, uint256 amount);
   event PollVoteSubmitted(uint256 indexed pollId, address indexed voter);
   event PollVoteRevealed(uint256 indexed pollId, address indexed voter, uint256 indexed vote);
   event PollExecuted(uint256 indexed pollId, bytes action, bool success);
+  event PollEscalated(uint256 indexed pollId, address escalator, uint256 indexed domainId);
   event PollRewardClaimed(uint256 indexed pollId, address indexed staker, uint256 indexed vote, uint256 amount);
+  event PollEventSet(uint256 indexed pollId, uint256 eventIndex);
 
   // Constants
   uint256 constant UINT256_MAX = 2**256 - 1;
@@ -66,14 +67,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   ITokenLocking tokenLocking;
   address token;
 
-  // All `Fraction` variables are WAD-denominated
+  // All `Fraction` variables are denominated in WADs (1 WAD = 100%)
 
-  uint256 stakeFraction; // Percent of domain reputation needed for staking
-  uint256 minStakeFraction; // Minimum stake as percent of required stake (100% means single-staker)
+  uint256 totalStakeFraction; // Percent of domain reputation needed for staking
+  uint256 userMinStakeFraction; // Minimum stake as percent of required stake (100% means single-staker)
 
-  uint256 maxVoteFraction; // The percent of total domain rep we need before closing the vote
+  uint256 maxVoteFraction; // Percent of total domain rep we need before closing the vote
   uint256 voterRewardFraction; // Percent of stake paid out to voters as rewards (immediately taken from the stake)
-  uint256 votePowerFraction; // Percent of domain rep used as vote power if no-contest
 
   // All `Period` variables are second-denominated
 
@@ -89,12 +89,20 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     token = colony.getToken();
   }
 
+  /// @notice Initialise the extension
+  /// @param _totalStakeFraction The percent of the domain's reputation we need to stake
+  /// @param _userMinStakeFraction The minimum per-user stake as percent of total stake
+  /// @param _maxVoteFraction The percent of the domain's reputation which must submit for quick-end
+  /// @param _voterRewardFraction The percent of the total stake paid out to voters as rewards
+  /// @param _stakePeriod The length of the staking period in seconds
+  /// @param _submitPeriod The length of the submit period in seconds
+  /// @param _revealPeriod The length of the reveal period in seconds
+  /// @param _escalationPeriod The length of the escalation period in seconds
   function initialise(
-    uint256 _stakeFraction,
-    uint256 _minStakeFraction,
+    uint256 _totalStakeFraction,
+    uint256 _userMinStakeFraction,
     uint256 _maxVoteFraction,
     uint256 _voterRewardFraction,
-    uint256 _votePowerFraction,
     uint256 _stakePeriod,
     uint256 _submitPeriod,
     uint256 _revealPeriod,
@@ -105,12 +113,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-user-not-root");
     require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
 
-    require(_stakeFraction <= WAD, "voting-rep-must-be-wad");
-    require(_minStakeFraction <= WAD, "voting-rep-must-be-wad");
+    require(_totalStakeFraction <= WAD, "voting-rep-greater-than-wad");
+    require(_userMinStakeFraction <= WAD, "voting-rep-greater-than-wad");
 
-    require(_maxVoteFraction <= WAD, "voting-rep-must-be-wad");
-    require(_voterRewardFraction <= WAD, "voting-rep-must-be-wad");
-    require(_votePowerFraction <= WAD, "voting-rep-must-be-wad");
+    require(_maxVoteFraction <= WAD, "voting-rep-greater-than-wad");
+    require(_voterRewardFraction <= WAD / 2, "voting-rep-greater-than-half-wad");
 
     require(_stakePeriod <= 365 days, "voting-rep-period-too-long");
     require(_submitPeriod <= 365 days, "voting-rep-period-too-long");
@@ -119,12 +126,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     state = ExtensionState.Active;
 
-    stakeFraction = _stakeFraction;
-    minStakeFraction = _minStakeFraction;
+    totalStakeFraction = _totalStakeFraction;
+    userMinStakeFraction = _userMinStakeFraction;
 
     maxVoteFraction = _maxVoteFraction;
     voterRewardFraction = _voterRewardFraction;
-    votePowerFraction = _votePowerFraction;
 
     stakePeriod = _stakePeriod;
     submitPeriod = _submitPeriod;
@@ -134,6 +140,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     emit ExtensionInitialised();
   }
 
+  /// @notice Deprecate the extension, prevening new polls from being created
   function deprecate() public {
     require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-user-not-root");
 
@@ -146,14 +153,14 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   enum PollState { Staking, Submit, Reveal, Closed, Executable, Executed, Failed }
 
   struct Poll {
-    uint64[4] events; // Staking 1, Staking 2, Submission, Revelation
+    uint64[4] events; // For recording poll lifecycle timestamps (STAKE1, STAKE2, SUBMIT, REVEAL)
     bytes32 rootHash;
     uint256 domainId;
     uint256 skillId;
     uint256 skillRep;
     uint256 repSubmitted;
     uint256 repRevealed;
-    uint256 unpaidRewards;
+    uint256 paidVoterComp;
     uint256[2] stakes; // [nay, yay]
     uint256[2] votes; // [nay, yay]
     bool executed;
@@ -172,6 +179,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   // Public functions (interface)
 
+  /// @notice Create a poll in the root domain
+  /// @param _target The contract to which we send the action (0x0 for the colony)
+  /// @param _action A bytes array encoding a function call
+  /// @param _key Reputation tree key for the root domain
+  /// @param _value Reputation tree value for the root domain
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
   function createRootPoll(
     address _target,
     bytes memory _action,
@@ -186,6 +200,15 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     createPoll(_target, _action, 1, rootSkillId, _key, _value, _branchMask, _siblings);
   }
 
+  /// @notice Create a poll in any domain
+  /// @param _domainId The domain where we vote on the poll
+  /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
+  /// @param _target The contract to which we send the action (0x0 for the colony)
+  /// @param _action A bytes array encoding a function call
+  /// @param _key Reputation tree key for the domain
+  /// @param _value Reputation tree value for the domain
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
   function createDomainPoll(
     uint256 _domainId,
     uint256 _childSkillIndex,
@@ -209,10 +232,20 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     createPoll(_target, _action, _domainId, domainSkillId, _key, _value, _branchMask, _siblings);
   }
 
+  /// @notice Stake on a poll
+  /// @param _pollId The id of the poll
+  /// @param _permissionDomainId The domain where the extension has the arbitration permission
+  /// @param _childSkillIndex For the domain in which the poll is occurring
+  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
+  /// @param _amount The amount of tokens being staked
+  /// @param _key Reputation tree key for the staker/domain
+  /// @param _value Reputation tree value for the staker/domain
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
   function stakePoll(
     uint256 _pollId,
-    uint256 _permissionDomainId, // For extension's arbitration permission
-    uint256 _childSkillIndex, // For extension's arbitration permission
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
     uint256 _vote,
     uint256 _amount,
     bytes memory _key,
@@ -235,7 +268,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       "voting-rep-insufficient-rep"
     );
     require(
-      stakerTotalAmount >= wmul(requiredStake, minStakeFraction),
+      stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction),
       "voting-rep-insufficient-stake"
     );
 
@@ -243,7 +276,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, poll.domainId, amount, address(this));
 
     // Update the stake
-    poll.unpaidRewards = add(poll.unpaidRewards, amount);
     poll.stakes[_vote] = add(poll.stakes[_vote], amount);
     stakes[_pollId][msg.sender][_vote] = stakerTotalAmount;
 
@@ -264,6 +296,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       poll.events[STAKE2_END] = uint64(now + stakePeriod);
       poll.events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
       poll.events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
+
+      emit PollEventSet(_pollId, STAKE1_END);
     }
 
     // Claim tokens once both sides are fully staked
@@ -272,11 +306,20 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       poll.events[SUBMIT_END] = uint64(now + submitPeriod);
       poll.events[REVEAL_END] = uint64(now + submitPeriod + revealPeriod);
       tokenLocking.claim(token, true);
+
+      emit PollEventSet(_pollId, STAKE2_END);
     }
 
     emit PollStaked(_pollId, msg.sender, _vote, amount);
   }
 
+  /// @notice Submit a vote secret for a poll
+  /// @param _pollId The id of the poll
+  /// @param _voteSecret The hashed vote secret
+  /// @param _key Reputation tree key for the staker/domain
+  /// @param _value Reputation tree value for the staker/domain
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
   function submitVote(
     uint256 _pollId,
     bytes32 _voteSecret,
@@ -289,20 +332,35 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     Poll storage poll = polls[_pollId];
     require(getPollState(_pollId) == PollState.Submit, "voting-rep-poll-not-open");
+    require(_voteSecret != bytes32(0), "voting-rep-invalid-secret");
 
     uint256 userRep = getReputationFromProof(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
 
+    // Count reputation if first submission
+    if (voteSecrets[_pollId][msg.sender] == bytes32(0)) {
+      poll.repSubmitted = add(poll.repSubmitted, userRep);
+    }
+
     voteSecrets[_pollId][msg.sender] = _voteSecret;
-    poll.repSubmitted = add(poll.repSubmitted, userRep);
 
     if (poll.repSubmitted >= wmul(poll.skillRep, maxVoteFraction)) {
       poll.events[SUBMIT_END] = uint64(now);
       poll.events[REVEAL_END] = uint64(now + revealPeriod);
+
+      emit PollEventSet(_pollId, SUBMIT_END);
     }
 
     emit PollVoteSubmitted(_pollId, msg.sender);
   }
 
+  /// @notice Reveal a vote secret for a poll
+  /// @param _pollId The id of the poll
+  /// @param _salt The salt used to hash the vote
+  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
+  /// @param _key Reputation tree key for the staker/domain
+  /// @param _value Reputation tree value for the staker/domain
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
   function revealVote(
     uint256 _pollId,
     bytes32 _salt,
@@ -326,20 +384,30 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll.votes[_vote] = add(poll.votes[_vote], userRep);
     poll.repRevealed = add(poll.repRevealed, userRep);
 
-    if (poll.repRevealed >= wmul(poll.skillRep, maxVoteFraction)) {
+    if (poll.repRevealed == poll.repSubmitted) {
       poll.events[REVEAL_END] = uint64(now);
+
+      emit PollEventSet(_pollId, REVEAL_END);
     }
 
     uint256 pctReputation = wdiv(userRep, poll.skillRep);
     uint256 totalStake = add(poll.stakes[YAY], poll.stakes[NAY]);
     uint256 voterReward = wmul(wmul(pctReputation, totalStake), voterRewardFraction);
 
-    poll.unpaidRewards = sub(poll.unpaidRewards, voterReward);
+    poll.paidVoterComp = add(poll.paidVoterComp, voterReward);
     tokenLocking.transfer(token, voterReward, msg.sender, true);
 
     emit PollVoteRevealed(_pollId, msg.sender, _vote);
   }
 
+  /// @notice Escalate a poll to a higher domain
+  /// @param _pollId The id of the poll
+  /// @param _newDomainId The desired domain of escalation
+  /// @param _childSkillIndex For the current domain, relative to the escalated domain
+  /// @param _key Reputation tree key for the new domain
+  /// @param _value Reputation tree value for the new domain
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
   function escalatePoll(
     uint256 _pollId,
     uint256 _newDomainId,
@@ -368,6 +436,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll.domainId = _newDomainId;
     poll.skillId = newDomainSkillId;
     poll.skillRep = getReputationFromProof(_pollId, address(0x0), _key, _value, _branchMask, _siblings);
+
+    emit PollEscalated(_pollId, msg.sender, _newDomainId);
   }
 
   function executePoll(uint256 _pollId) public {
@@ -391,18 +461,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
         executeCall(_pollId, claimDelayAction);
       }
 
-      // Conditions:
-      //  - Yay side staked and nay side did not, and doman has sufficient vote power
-      //  - Both sides staked and yay side won, with sufficient vote power
-
-      uint256 votePower;
-      if (poll.stakes[NAY] < getRequiredStake(_pollId)) {
-        votePower = wmul(poll.skillRep, votePowerFraction);
-      } else {
-        votePower = poll.votes[YAY];
-      }
-
+      uint256 requiredStake = getRequiredStake(_pollId);
+      uint256 votePower = (poll.stakes[NAY] < requiredStake) ? poll.stakes[YAY] : poll.votes[YAY];
       bytes32 slotHash = hashExpenditureSlot(poll.action);
+
       if (expenditurePastPolls[slotHash] < votePower) {
         expenditurePastPolls[slotHash] = votePower;
         canExecute = canExecute && true;
@@ -419,10 +481,16 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     emit PollExecuted(_pollId, poll.action, success);
   }
 
+  /// @notice Claim the staker's reward
+  /// @param _pollId The id of the poll
+  /// @param _permissionDomainId The domain where the extension has the arbitration permission
+  /// @param _childSkillIndex For the domain in which the poll is occurring
+  /// @param _user The user whose reward is being claimed
+  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
   function claimReward(
     uint256 _pollId,
-    uint256 _permissionDomainId, // For extension's arbitration permission
-    uint256 _childSkillIndex, // For extension's arbitration permission
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
     address _user,
     uint256 _vote
   )
@@ -435,11 +503,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       "voting-rep-not-failed-or-executed"
     );
 
-    // Calculate how much of the stake is left after voter compensation (>= 90%)
     uint256 stake = stakes[_pollId][_user][_vote];
-    uint256 totalStake = add(poll.stakes[NAY], poll.stakes[YAY]);
-    uint256 rewardFraction = wdiv(poll.unpaidRewards, totalStake);
-    uint256 rewardStake = wmul(stake, rewardFraction);
+    uint256 requiredStake = getRequiredStake(_pollId);
 
     delete stakes[_pollId][_user][_vote];
 
@@ -447,31 +512,52 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 repPenalty;
 
     // Went to a vote, use vote to determine reward or penalty
-    if (
-      poll.stakes[NAY] == getRequiredStake(_pollId) &&
-      poll.stakes[YAY] == getRequiredStake(_pollId)
-    ) {
-      uint256 stakerVotes = poll.votes[_vote];
+    if (poll.stakes[NAY] == requiredStake && poll.stakes[YAY] == requiredStake) {
+
+      uint256 loserStake = sub(
+        (poll.votes[NAY] < poll.votes[YAY]) ? poll.stakes[NAY] : poll.stakes[YAY],
+        poll.paidVoterComp
+      );
+
+      uint256 stakerSideVotes = poll.votes[_vote];
       uint256 totalVotes = add(poll.votes[NAY], poll.votes[YAY]);
-      uint256 winPercent = wdiv(stakerVotes, totalVotes);
-      uint256 winShare = wmul(winPercent, 2 * WAD);
-      stakerReward = wmul(rewardStake, winShare);
-      repPenalty = (winShare < WAD) ? sub(stake, wmul(winShare, stake)) : 0;
+      uint256 winFraction = wdiv(stakerSideVotes, totalVotes);
+      uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0 - 2 WAD
+
+      uint256 stakeFraction = wdiv(stake, poll.stakes[_vote]);
+
+      if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
+        stakerReward = add(stake, wmul(stakeFraction, wmul(loserStake, winShare - WAD)));
+      } else {
+        stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));
+        repPenalty = sub(stake, stakerReward);
+      }
 
     // Your side fully staked, receive 10% (proportional) of loser's stake
-    } else if (poll.stakes[_vote] == getRequiredStake(_pollId)) {
-      uint256 stakePercent = wdiv(stake, poll.stakes[_vote]);
-      uint256 totalPenalty = wmul(poll.stakes[flip(_vote)], WAD / 10);
-      stakerReward = add(rewardStake, wmul(stakePercent, totalPenalty));
+    } else if (poll.stakes[_vote] == requiredStake) {
+
+      uint256 loserStake = sub(poll.stakes[flip(_vote)], poll.paidVoterComp);
+      uint256 stakeFraction = wdiv(stake, poll.stakes[_vote]);
+      uint256 totalPenalty = wmul(loserStake, WAD / 10);
+
+      stakerReward = add(stake, wmul(stakeFraction, totalPenalty));
 
     // Opponent's side fully staked, pay 10% penalty
-    } else if (poll.stakes[flip(_vote)] == getRequiredStake(_pollId)) {
-      stakerReward = wmul(rewardStake, (WAD / 10) * 9);
-      repPenalty = stake / 10;
+    } else if (poll.stakes[flip(_vote)] == requiredStake) {
+
+      uint256 loserStake = sub(poll.stakes[_vote], poll.paidVoterComp);
+      uint256 stakeFraction = wdiv(stake, poll.stakes[_vote]);
+      uint256 totalPenalty = wmul(loserStake, WAD / 10);
+
+      stakerReward = sub(stake, wmul(stakeFraction, totalPenalty));
+      repPenalty = sub(stake, stakerReward);
 
     // Neither side fully staked, no reward or penalty
     } else {
-      stakerReward = rewardStake;
+
+      uint256 totalStake = add(poll.stakes[NAY], poll.stakes[YAY]);
+      uint256 rewardShare = wdiv(sub(totalStake, poll.paidVoterComp), totalStake);
+      stakerReward = wmul(stake, rewardShare);
     }
 
     tokenLocking.transfer(token, stakerReward, _user, true);
@@ -491,26 +577,44 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   // Public view functions
 
+  /// @notice Get the total poll count
+  /// @return The total poll count
   function getPollCount() public view returns (uint256) {
     return pollCount;
   }
 
+  /// @notice Get the data for a single poll
+  /// @param _pollId The id of the poll
+  /// @return poll The poll struct
   function getPoll(uint256 _pollId) public view returns (Poll memory poll) {
     poll = polls[_pollId];
   }
 
+  /// @notice Get a user's stake on a poll
+  /// @param _pollId The id of the poll
+  /// @param _staker The staker address
+  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
+  /// @return The user's stake
   function getStake(uint256 _pollId, address _staker, uint256 _vote) public view returns (uint256) {
     return stakes[_pollId][_staker][_vote];
   }
 
+  /// @notice Get the number of ongoing polls for a single expenditure / slot
+  /// @param _structHash The hash of the expenditureId or expenditureId*expenditureSlot
+  /// @return The number of ongoing polls
   function getExpenditurePollCount(bytes32 _structHash) public view returns (uint256) {
     return expenditurePollCounts[_structHash];
   }
 
+  /// @notice Get the largest past vote on a single expenditure variable
+  /// @param _slotHash The hash of the particular expenditure slot
+  /// @return The largest past vote on this variable
   function getExpenditurePastPoll(bytes32 _slotHash) public view returns (uint256) {
     return expenditurePastPolls[_slotHash];
   }
 
+  /// @notice Get the current state of the poll
+  /// @return The current poll state
   function getPollState(uint256 _pollId) public view returns (PollState) {
     Poll storage poll = polls[_pollId];
     uint256 requiredStake = getRequiredStake(_pollId);
@@ -599,7 +703,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   function getRequiredStake(uint256 _pollId) internal view returns (uint256) {
-    return wmul(polls[_pollId].skillRep, stakeFraction);
+    return wmul(polls[_pollId].skillRep, totalStakeFraction);
   }
 
   function flip(uint256 _vote) internal pure returns (uint256) {

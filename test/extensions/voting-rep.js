@@ -65,12 +65,11 @@ contract("Voting Reputation", (accounts) => {
   let user1Mask;
   let user1Siblings;
 
-  const STAKE_FRACTION = WAD.divn(1000); // 0.1 %
-  const MIN_STAKE_FRACTION = WAD.divn(10); // 10 %
+  const TOTAL_STAKE_FRACTION = WAD.divn(1000); // 0.1 %
+  const USER_MIN_STAKE_FRACTION = WAD.divn(10); // 10 %
 
   const MAX_VOTE_FRACTION = WAD.divn(10).muln(8); // 80 %
   const VOTER_REWARD_FRACTION = WAD.divn(10); // 10 %
-  const VOTE_POWER_FRACTION = WAD.muln(2).divn(3); // 66 %
 
   const STAKE_PERIOD = SECONDS_PER_DAY * 3;
   const SUBMIT_PERIOD = SECONDS_PER_DAY * 2;
@@ -129,11 +128,10 @@ contract("Voting Reputation", (accounts) => {
     voting = await VotingReputation.at(votingAddress);
 
     await voting.initialise(
-      STAKE_FRACTION,
-      MIN_STAKE_FRACTION,
+      TOTAL_STAKE_FRACTION,
+      USER_MIN_STAKE_FRACTION,
       MAX_VOTE_FRACTION,
       VOTER_REWARD_FRACTION,
-      VOTE_POWER_FRACTION,
       STAKE_PERIOD,
       SUBMIT_PERIOD,
       REVEAL_PERIOD,
@@ -244,12 +242,14 @@ contract("Voting Reputation", (accounts) => {
 
     it("cannot initialise twice or if not root", async () => {
       await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        voting.initialise(WAD, WAD, WAD, WAD.divn(2), STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
         "voting-rep-already-initialised"
       );
 
       await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD, { from: USER2 }),
+        voting.initialise(WAD, WAD, WAD, WAD.divn(2), STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD, {
+          from: USER2,
+        }),
         "voting-rep-user-not-root"
       );
     });
@@ -260,52 +260,49 @@ contract("Voting Reputation", (accounts) => {
       const votingAddress = await votingFactory.deployedExtensions(colony.address);
       voting = await VotingReputation.at(votingAddress);
 
+      const half = WAD.divn(2);
+
       await checkErrorRevert(
-        voting.initialise(WAD.addn(1), WAD, WAD, WAD, WAD, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
-        "voting-rep-must-be-wad"
+        voting.initialise(WAD.addn(1), WAD, WAD, half, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-greater-than-wad"
       );
 
       await checkErrorRevert(
-        voting.initialise(WAD, WAD.addn(1), WAD, WAD, WAD, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
-        "voting-rep-must-be-wad"
+        voting.initialise(WAD, WAD.addn(1), WAD, half, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-greater-than-wad"
       );
 
       await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD.addn(1), WAD, WAD, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
-        "voting-rep-must-be-wad"
+        voting.initialise(WAD, WAD, WAD.addn(1), half, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-greater-than-wad"
       );
 
       await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD.addn(1), WAD, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
-        "voting-rep-must-be-wad"
+        voting.initialise(WAD, WAD, WAD, half.addn(1), STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        "voting-rep-greater-than-half-wad"
       );
 
       await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD, WAD.addn(1), STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
-        "voting-rep-must-be-wad"
-      );
-
-      await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD, WAD, SECONDS_PER_DAY * 366, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
+        voting.initialise(WAD, WAD, WAD, half, SECONDS_PER_DAY * 366, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD),
         "voting-rep-period-too-long"
       );
 
       await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, SECONDS_PER_DAY * 366, REVEAL_PERIOD, ESCALATION_PERIOD),
+        voting.initialise(WAD, WAD, WAD, half, STAKE_PERIOD, SECONDS_PER_DAY * 366, REVEAL_PERIOD, ESCALATION_PERIOD),
         "voting-rep-period-too-long"
       );
 
       await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, SUBMIT_PERIOD, SECONDS_PER_DAY * 366, ESCALATION_PERIOD),
+        voting.initialise(WAD, WAD, WAD, half, STAKE_PERIOD, SUBMIT_PERIOD, SECONDS_PER_DAY * 366, ESCALATION_PERIOD),
         "voting-rep-period-too-long"
       );
 
       await checkErrorRevert(
-        voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, SECONDS_PER_DAY * 366),
+        voting.initialise(WAD, WAD, WAD, half, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, SECONDS_PER_DAY * 366),
         "voting-rep-period-too-long"
       );
 
-      await voting.initialise(WAD, WAD, WAD, WAD, WAD, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD);
+      await voting.initialise(WAD, WAD, WAD, half, STAKE_PERIOD, SUBMIT_PERIOD, REVEAL_PERIOD, ESCALATION_PERIOD);
     });
   });
 
@@ -409,6 +406,19 @@ contract("Voting Reputation", (accounts) => {
       await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       pollState = await voting.getPollState(pollId);
       expect(pollState).to.eq.BN(SUBMIT);
+    });
+
+    it("can stake even with a locked token", async () => {
+      await token.mint(colony.address, WAD);
+      await colony.setRewardInverse(100);
+      await colony.claimColonyFunds(token.address);
+      await colony.startNextRewardPayout(token.address, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      const lock = await tokenLocking.getUserLock(token.address, voting.address);
+      expect(lock.balance).to.eq.BN(REQUIRED_STAKE.muln(2));
     });
 
     it("cannot stake a nonexistent side", async () => {
@@ -665,15 +675,29 @@ contract("Voting Reputation", (accounts) => {
       await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
     });
 
-    it("cannot reveal a vote twice, and so cannot vote twice", async () => {
+    it("can update votes, but the total reputation does not change", async () => {
+      let poll = await voting.getPoll(pollId);
+      expect(poll.repSubmitted).to.be.zero;
+
       await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(SUBMIT_PERIOD, this);
+      poll = await voting.getPoll(pollId);
+      expect(poll.repSubmitted).to.eq.BN(WAD);
 
-      await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      poll = await voting.getPoll(pollId);
+      expect(poll.repSubmitted).to.eq.BN(WAD);
+    });
+
+    it("cannot reveal a vote twice, and so cannot vote twice", async () => {
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await checkErrorRevert(
-        voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "voting-rep-secret-no-match"
       );
     });
@@ -713,6 +737,13 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.revealVote(pollId2, SALT, NAY, user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+    });
+
+    it("cannot submit a null vote", async () => {
+      await checkErrorRevert(
+        voting.submitVote(pollId, "0x0", user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-invalid-secret"
+      );
     });
 
     it("cannot submit a vote if voting is closed", async () => {
@@ -893,9 +924,7 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await forwardTime(REVEAL_PERIOD, this);
-
-      await checkErrorRevert(voting.executePoll(pollId), "voting-rep-poll-not-executable");
+      // Don't need to wait for the reveal period, since 100% of the secret is revealed
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -978,7 +1007,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.executePoll(pollId);
       const slotHash = soliditySha3(`0x${action.slice(2, action.length - 64)}`);
       const pastPoll = await voting.getExpenditurePastPoll(slotHash);
-      expect(pastPoll).to.eq.BN(WAD.muln(2).subn(2)); // ~66.6% of 3 WAD
+      expect(pastPoll).to.eq.BN(REQUIRED_STAKE);
     });
 
     it("can set vote power correctly after a vote", async () => {
@@ -1068,7 +1097,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.revealVote(pollId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await forwardTime(STAKE_PERIOD, this);
+      await forwardTime(ESCALATION_PERIOD, this);
 
       await voting.executePoll(pollId);
 
@@ -1081,9 +1110,9 @@ contract("Voting Reputation", (accounts) => {
       const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
 
-      const stakerRewards = REQUIRED_STAKE.divn(10).muln(9);
-      const expectedReward0 = stakerRewards.divn(3).muln(2); // (stake * .9) * (winPct = 1/3 * 2)
-      const expectedReward1 = stakerRewards.divn(3).muln(4); // (stake * .9) * (winPct = 2/3 * 2)
+      const loserStake = REQUIRED_STAKE.divn(10).muln(8); // Take out voter comp
+      const expectedReward0 = loserStake.divn(3).muln(2); // (stake * .8) * (winPct = 1/3 * 2)
+      const expectedReward1 = REQUIRED_STAKE.add(loserStake.divn(3)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
@@ -1094,7 +1123,93 @@ contract("Voting Reputation", (accounts) => {
 
       const repUpdate = await repCycle.getReputationUpdateLogEntry(numEntriesPost.subn(1));
       expect(repUpdate.user).to.equal(USER0);
-      expect(repUpdate.amount).to.eq.BN(REQUIRED_STAKE.divn(3).neg());
+      expect(repUpdate.amount).to.eq.BN(REQUIRED_STAKE.sub(expectedReward0).neg());
+    });
+
+    it("can let stakers claim rewards, based on the vote outcome, with multiple losing stakers", async () => {
+      const user2Key = makeReputationKey(colony.address, domain1.skillId, USER2);
+      const user2Value = makeReputationValue(REQUIRED_STAKE.subn(1), 8);
+      const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
+
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.divn(3).muln(2), user1Key, user1Value, user1Mask, user1Siblings, {
+        from: USER1,
+      });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.divn(3), user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 });
+
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(pollId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await forwardTime(ESCALATION_PERIOD, this);
+
+      await voting.executePoll(pollId);
+
+      const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
+      const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
+      const user2LockPre = await tokenLocking.getUserLock(token.address, USER2);
+
+      await voting.claimReward(pollId, 1, UINT256_MAX, USER0, YAY);
+      await voting.claimReward(pollId, 1, UINT256_MAX, USER1, NAY);
+      await voting.claimReward(pollId, 1, UINT256_MAX, USER2, NAY);
+
+      const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
+      const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
+      const user2LockPost = await tokenLocking.getUserLock(token.address, USER2);
+
+      const loserStake = REQUIRED_STAKE.divn(10).muln(8); // Take out voter comp
+      const expectedReward0 = loserStake.divn(3).muln(2); // (stake * .8) * (winPct = 1/3 * 2)
+      const expectedReward1 = REQUIRED_STAKE.add(loserStake.divn(3)).divn(3).muln(2); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
+      const expectedReward2 = REQUIRED_STAKE.add(loserStake.divn(3)).divn(3); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
+
+      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
+      expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1.addn(1)); // Rounding
+      expect(new BN(user2LockPost.balance).sub(new BN(user2LockPre.balance))).to.eq.BN(expectedReward2.addn(1)); // Rounding
+    });
+
+    it("can let stakers claim rewards, based on the vote outcome, with multiple winning stakers", async () => {
+      const user2Key = makeReputationKey(colony.address, domain1.skillId, USER2);
+      const user2Value = makeReputationValue(REQUIRED_STAKE.subn(1), 8);
+      const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
+
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(3).muln(2), user0Key, user0Value, user0Mask, user0Siblings, {
+        from: USER0,
+      });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(3), user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 });
+
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(pollId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await forwardTime(ESCALATION_PERIOD, this);
+
+      await voting.executePoll(pollId);
+
+      const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
+      const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
+      const user2LockPre = await tokenLocking.getUserLock(token.address, USER2);
+
+      await voting.claimReward(pollId, 1, UINT256_MAX, USER0, YAY);
+      await voting.claimReward(pollId, 1, UINT256_MAX, USER1, NAY);
+      await voting.claimReward(pollId, 1, UINT256_MAX, USER2, YAY);
+
+      const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
+      const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
+      const user2LockPost = await tokenLocking.getUserLock(token.address, USER2);
+
+      const loserStake = REQUIRED_STAKE.divn(10).muln(8); // Take out voter comp
+      const expectedReward0 = loserStake.divn(3).muln(2).divn(3).muln(2); // (stake * .8) * (winPct = 1/3 * 2)
+      const expectedReward1 = REQUIRED_STAKE.add(loserStake.divn(3)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
+      const expectedReward2 = loserStake.divn(3).muln(2).divn(3); // (stake * .8) * (winPct = 1/3 * 2)
+
+      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0.addn(1)); // Rounding
+      expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
+      expect(new BN(user2LockPost.balance).sub(new BN(user2LockPre.balance))).to.eq.BN(expectedReward2);
     });
 
     it("can let stakers claim their original stake if neither side fully staked", async () => {
@@ -1134,7 +1249,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
-      await forwardTime(STAKE_PERIOD, this);
+      await forwardTime(ESCALATION_PERIOD, this);
 
       await voting.executePoll(pollId);
 
@@ -1193,7 +1308,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot internally escalate a domain poll if not in a 'closed' state", async () => {
-      await forwardTime(STAKE_PERIOD, this);
+      await forwardTime(ESCALATION_PERIOD, this);
 
       await voting.executePoll(pollId);
 
