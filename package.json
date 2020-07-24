@@ -73,7 +73,6 @@
     "@codechecks/client": "^0.1.5",
     "@colony/eslint-config-colony": "8.0.1",
     "@eth-optimism/ovm-truffle-provider-wrapper": "^0.0.1-alpha.25",
-    "@eth-optimism/solc-transpiler": "^0.0.1-alpha.25",
     "async-request": "^1.2.0",
     "babel-plugin-istanbul": "^6.0.0",
     "bignumber.js": "^9.0.0",
@@ -108,7 +107,7 @@
     "solidity-coverage": "0.7.9",
     "solidity-parser-antlr": "^0.4.11",
     "solidity-steamroller": "^1.1.0",
-    "truffle": "^5.1.8",
+    "truffle": "^5.1.35",
     "truffle-hdwallet-provider": "^1.0.9",
     "truffle-security": "^1.6.2",
     "web3-utils": "^1.2.9"
@@ -117,5 +116,7 @@
   "workspaces": [
     "packages/*"
   ],
-  "dependencies": {}
+  "dependencies": {
+    "@eth-optimism/solc-transpiler": "0.0.1-alpha.27"
+  }
 }
