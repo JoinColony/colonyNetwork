@@ -425,11 +425,15 @@ class ReputationMinerClient {
       this.endDoBlockChecks();
     } catch (err) {
       this._adapter.error(`Error during block checks: ${err}`);
-      if (this._exitOnError) {
-        process.exit(1);
-        // Note we don't call this.endDoBlockChecks here... this is a deliberate choice on my part; depending on what the error is,
-        // we might no longer be in a sane state, and might have only half-processed the reputation log, or similar. So playing it safe,
-        // and not unblocking the doBlockCheck function.
+      // If it's out-of-ether...
+      if (err.toString().indexOf('does not have enough funds') >= 0 ) {
+        // This could obviously be much better in the future, but for now, we'll settle for this not triggering a restart loop.
+        this._adapter.error(`Block checks suspended due to not enough Ether. Send ether to \`${this._miner.minerAddress}\`, then restart the miner`);
+      } else if (this._exitOnError) {
+          process.exit(1);
+          // Note we don't call this.endDoBlockChecks here... this is a deliberate choice on my part; depending on what the error is,
+          // we might no longer be in a sane state, and might have only half-processed the reputation log, or similar. So playing it safe,
+          // and not unblocking the doBlockCheck function.
       }
     }
   }
