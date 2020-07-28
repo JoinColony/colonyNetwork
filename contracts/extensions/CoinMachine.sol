@@ -28,6 +28,11 @@ import "./../common/ERC20Extended.sol";
 
 contract CoinMachine is DSMath {
 
+  // Events
+
+  event TokensBought(address buyer, uint256 numTokens, uint256 totalCost);
+  event PeriodUpdated(uint256 activePeriod, uint256 currentPeriod);
+
   IColony colony;
 
   constructor(address _colony) public {
@@ -35,11 +40,12 @@ contract CoinMachine is DSMath {
   }
 
   // Storage
+
   address purchaseToken; // The token in which we receive payments, 0x0 for eth
 
   uint256 periodLength; // Duration of a sale period in seconds (e.g. 3600 = 1 hour)
-  uint256 alpha; // WAD-denominated float between 0 and 1 that controls how quickly the EMA adjusts.
-  uint256 windowSize; // In the long-term, 86% of the weighting will be in this window size.
+  uint256 alpha; // WAD-denominated float between 0 and 1 that controls how quickly the EMA adjusts
+  uint256 windowSize; // In the long-term, 86% of the weighting will be in this window size
 
   uint256 targetPerPeriod; // Target number of tokens to sell in a period
   uint256 maxPerPeriod; // Maximum number of tokens sellable in a period
@@ -50,7 +56,7 @@ contract CoinMachine is DSMath {
   uint256 tokensSold; // Tokens sold in the active period
   uint256 activeIntake; // Payment received in the active period
 
-  uint256 emaIntake;
+  uint256 emaIntake; // Averaged payment intake
 
   // Public
 
@@ -90,6 +96,8 @@ contract CoinMachine is DSMath {
     emaIntake = wmul(targetPerPeriod, _startingPrice);
   }
 
+  /// @notice Purchase tokens from Coin Machine.
+  /// @param _numTokens The number of tokens to purchase
   function buyTokens(uint256 _numTokens) public payable {
     updatePeriod();
 
@@ -103,19 +111,20 @@ contract CoinMachine is DSMath {
 
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
-      if (msg.value > totalCost) {
-        msg.sender.transfer(msg.value - totalCost);
-      }
+      if (msg.value > totalCost) { msg.sender.transfer(msg.value - totalCost); }
     } else {
       ERC20Extended(purchaseToken).transferFrom(msg.sender, address(this), totalCost);
     }
 
     colony.mintTokensFor(msg.sender, numTokens);
+
+    emit TokensBought(msg.sender, _numTokens, totalCost);
   }
 
-  // Make sure this is called at least once during the averaging period
+  /// @notice Bring the token accounting current
   function updatePeriod() public {
     uint256 currentPeriod = getCurrentPeriod();
+    uint256 initialActivePeriod = activePeriod;
 
     // We need to update the price if the active period is not the current one.
     if (activePeriod < currentPeriod) {
@@ -136,24 +145,31 @@ contract CoinMachine is DSMath {
       // Update the price
       activePrice = wdiv(emaIntake, targetPerPeriod);
     }
+
+    emit PeriodUpdated(initialActivePeriod, currentPeriod);
   }
 
+  /// @notice Get the length of the sale period
   function getPeriodLength() public view returns (uint256) {
     return periodLength;
   }
 
+  /// @notice Get the size of the averaging window
   function getWindowSize() public view returns (uint256) {
     return windowSize;
   }
 
+  /// @notice Get the target number of tokens to sell per period
   function getTargetPerPeriod() public view returns (uint256) {
     return targetPerPeriod;
   }
 
+  /// @notice Get the maximum number of tokens to sell per period
   function getMaxPerPeriod() public view returns (uint256) {
     return maxPerPeriod;
   }
 
+  /// @notice Get the current price per token
   function getCurrentPrice() public view returns (uint256) {
     uint256 currentPeriod = getCurrentPeriod();
 
@@ -177,6 +193,7 @@ contract CoinMachine is DSMath {
     }
   }
 
+  /// @notice Get the number of remaining tokens for sale this period
   function getNumAvailable() public view returns (uint256) {
     return maxPerPeriod -
       ((activePeriod == getCurrentPeriod()) ? tokensSold : 0);
