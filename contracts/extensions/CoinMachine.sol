@@ -60,6 +60,13 @@ contract CoinMachine is DSMath {
 
   // Public
 
+  /// @notice Must be called before any sales can be made
+  /// @param _purchaseToken The token to receive payments in. Use 0x0 for ether
+  /// @param _periodLength How long in seconds each period of the sale should last
+  /// @param _windowSize Characteristic number of periods that should be used for the moving average. In the long-term, 86% of the weighting will be in this window size. The higher the number, the slower the price will be to adjust
+  /// @param _targetPerPeriod The number of tokens to aim to sell per period
+  /// @param _maxPerPeriod The maximum number of tokens that can be sold per period
+  /// @param _startingPrice The sale price to start at, expressed in units of _purchaseToken per token being sold, as a WAD
   function initialise(
     address _purchaseToken,
     uint256 _periodLength,
