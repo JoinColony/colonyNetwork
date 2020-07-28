@@ -116,24 +116,6 @@ Used by a user to claim any mining rewards due to them. This will place them in 
 
 ### `createColony`
 
-Creates a new colony in the network, at version 3
-
-*Note: This is now deprecated and will be removed in a future version*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|colonyAddress|address|Address of the newly created colony
-
-### `createColony`
-
 Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options
 
 *Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
@@ -147,6 +129,24 @@ Overload of the simpler `createColony` -- creates a new colony in the network wi
 |_colonyName|string|The label to register (if null, no label is registered)
 |_orbitdb|string|The path of the orbitDB database associated with the user profile
 |_useExtensionManager|bool|If true, give the ExtensionManager the root role in the colony
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
+Creates a new colony in the network, at version 3
+
+*Note: This is now deprecated and will be removed in a future version*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
 
 **Return Parameters**
 

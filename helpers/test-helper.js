@@ -262,6 +262,9 @@ export async function expectAllEvents(tx, eventNames) {
 }
 
 export async function forwardTime(seconds, test) {
+  if (typeof seconds !== "number") {
+    throw new Error("typeof seconds is not a number");
+  }
   const client = await web3GetClient();
   const p = new Promise((resolve, reject) => {
     if (client.indexOf("TestRPC") === -1) {

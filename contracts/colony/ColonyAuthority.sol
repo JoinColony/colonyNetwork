@@ -74,18 +74,19 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "addGlobalSkill()");
     addRoleCapability(ROOT_ROLE, "deprecateGlobalSkill(uint256)");
 
-    // Added in colony v3
+    // Added in colony v3 (auburn-glider)
     addRoleCapability(ROOT_ROLE, "updateColonyOrbitDB(string)");
     addRoleCapability(ROOT_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
     addRoleCapability(ARCHITECTURE_ROLE, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
 
-    // Added in colony v4
+    // Added in colony v4 (burgundy-glider)
     addRoleCapability(ADMINISTRATION_ROLE, "makeExpenditure(uint256,uint256,uint256)");
     addRoleCapability(ARBITRATION_ROLE, "transferExpenditureViaArbitration(uint256,uint256,uint256,address)");
     addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)");
     addRoleCapability(ARBITRATION_ROLE, "setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)");
 
-    // Added in colony v5 (current version)
+    // Added in colony v5 (cerulean-lwss)
+    addRoleCapability(ROOT_ROLE, "mintTokensFor(address,uint256)");
     addRoleCapability(ARBITRATION_ROLE, "transferStake(uint256,uint256,address,address,uint256,uint256,address)");
     addRoleCapability(ARBITRATION_ROLE, "emitDomainReputationPenalty(uint256,uint256,uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "emitSkillReputationPenalty(uint256,address,int256)");

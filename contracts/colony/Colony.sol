@@ -196,6 +196,13 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     ERC20Extended(token).mint(address(this), _wad); // ignore-swc-107
   }
 
+  function mintTokensFor(address _guy, uint _wad) public
+  stoppable
+  auth
+  {
+    ERC20Extended(token).mint(_guy, _wad); // ignore-swc-107
+  }
+
   function mintTokensForColonyNetwork(uint _wad) public stoppable {
     // Only the colony Network can call this function
     require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
