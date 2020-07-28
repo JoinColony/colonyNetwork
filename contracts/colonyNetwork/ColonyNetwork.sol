@@ -307,13 +307,12 @@ contract ColonyNetwork is ColonyNetworkStorage {
     require(lastMetaColonyStipendIssued > 0, "colony-network-metacolony-stipend-not-set");
     // When was the last one issued
     // How much in total should have been issued since then
-    uint256 amountToIssue = mul(annualMetaColonyStipend, sub(now,lastMetaColonyStipendIssued)) / (60*60*24*365);
+    uint256 amountToIssue = mul(annualMetaColonyStipend, sub(now, lastMetaColonyStipendIssued)) / (365 days);
     lastMetaColonyStipendIssued = now;
     // amountToIssue = 0;
-    IMetaColony meta = IMetaColony(metaColony);
 
     // mintTokensFor is coming in #835, use that instead of this.
-    meta.mintTokensForColonyNetwork(amountToIssue);
+    IMetaColony(metaColony).mintTokensForColonyNetwork(amountToIssue);
     ERC20Extended clnyToken = ERC20Extended(IColony(metaColony).getToken());
     clnyToken.transfer(metaColony, amountToIssue);
   }

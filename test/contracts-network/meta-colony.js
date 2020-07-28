@@ -5,7 +5,7 @@ import bnChai from "bn-chai";
 import BN from "bn.js";
 
 import { soliditySha3 } from "web3-utils";
-import { UINT256_MAX, INITIAL_FUNDING, SPECIFICATION_HASH, GLOBAL_SKILL_ID, WAD } from "../../helpers/constants";
+import { UINT256_MAX, INITIAL_FUNDING, SPECIFICATION_HASH, GLOBAL_SKILL_ID, WAD, SECONDS_PER_DAY } from "../../helpers/constants";
 import { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit, makeTxAtTimestamp, currentBlockTime } from "../../helpers/test-helper";
 import { executeSignedTaskChange } from "../../helpers/task-review-signing";
 
@@ -548,7 +548,7 @@ contract("Meta Colony", (accounts) => {
   describe("when setting the metaColony stipend", () => {
     it("should allow the metacolony stipend to be set", async () => {
       const stipendBefore = await colonyNetwork.getAnnualMetaColonyStipend();
-      expect(stipendBefore).to.eq.BN(0);
+      expect(stipendBefore).to.be.zero;
       await metaColony.setAnnualMetaColonyStipend(WAD);
       const stipendAfter = await colonyNetwork.getAnnualMetaColonyStipend();
       expect(stipendAfter).to.eq.BN(WAD);
@@ -568,7 +568,7 @@ contract("Meta Colony", (accounts) => {
       await metaColony.setAnnualMetaColonyStipend(WAD);
       // In a year, we should get the full reward
       let time = await currentBlockTime();
-      time = new BN(time).addn(24 * 3600 * 365);
+      time = new BN(time).addn(SECONDS_PER_DAY * 365);
       await makeTxAtTimestamp(colonyNetwork.issueMetaColonyStipend, [], time.toNumber(), this);
       let potBefore = await metaColony.getFundingPotBalance(1, clnyToken.address);
       await metaColony.claimColonyFunds(clnyToken.address);
@@ -590,7 +590,7 @@ contract("Meta Colony", (accounts) => {
   describe("when setting the per-cycle miner reward", () => {
     it("should allow the reward to be set", async () => {
       const rewardBefore = await colonyNetwork.getReputationMiningCycleReward();
-      expect(rewardBefore).to.eq.BN(0);
+      expect(rewardBefore).to.be.zero;
       await metaColony.setReputationMiningCycleReward(WAD);
       const rewardAfter = await colonyNetwork.getReputationMiningCycleReward();
       expect(rewardAfter).to.eq.BN(WAD);

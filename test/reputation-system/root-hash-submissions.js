@@ -198,7 +198,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       );
     });
 
-    it("should allow a user to back the same hash more than once in a same cycle with different entries, and be rewarded", async () => {
+    it.only("should allow a user to back the same hash more than once in a same cycle with different entries, and be rewarded", async () => {
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -213,11 +213,9 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       expect(nUniqueSubmittedHashes).to.eq.BN(1);
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      const lockedFor1 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       await repCycle.confirmNewHash(0);
-
-      // Check that they received the reward
-      const balance1Updated = await clnyToken.balanceOf(MINER1);
-      expect(balance1Updated, "Account was not rewarded properly").to.be.zero; // Reward is 0 for now
+      const lockedFor1Updated = await tokenLocking.getUserLock(clnyToken.address, MINER1);
 
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveRepCycle = await IReputationMiningCycle.at(addr);
@@ -235,10 +233,14 @@ contract("Reputation mining - root hash submissions", (accounts) => {
         .mul(mw2.mul(WAD).divRound(mw1.add(mw2)))
         .divRound(WAD);
 
+      // Check they've been awarded the tokens
+      const m1Reward = new BN(lockedFor1Updated.balance).sub(new BN(lockedFor1.balance));
+      expect(m1Reward, "Account was not rewarded properly").to.be.eq.BN(r1.add(r2));
+
       // Check that they will be getting the reputation owed to them.
       let repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(0);
       expect(repLogEntryMiner.user).to.equal(MINER1);
-      expect(repLogEntryMiner.amount).to.eq.BN(r1); // Reward is 0 for now
+      expect(repLogEntryMiner.amount).to.eq.BN(r1);
       expect(repLogEntryMiner.skillId).to.eq.BN(2);
       expect(repLogEntryMiner.colony).to.equal(metaColony.address);
       expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
@@ -246,7 +248,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryMiner.user).to.equal(MINER1);
-      expect(repLogEntryMiner.amount).to.eq.BN(r2); // Reward is 0 for now
+      expect(repLogEntryMiner.amount).to.eq.BN(r2);
       expect(repLogEntryMiner.skillId).to.eq.BN(2);
       expect(repLogEntryMiner.colony).to.equal(metaColony.address);
       expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
