@@ -305,11 +305,9 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function issueMetaColonyStipend() public stoppable {
     // Can be called by anyone
     require(lastMetaColonyStipendIssued > 0, "colony-network-metacolony-stipend-not-set");
-    // When was the last one issued
     // How much in total should have been issued since then
     uint256 amountToIssue = mul(annualMetaColonyStipend, sub(now, lastMetaColonyStipendIssued)) / (365 days);
     lastMetaColonyStipendIssued = now;
-    // amountToIssue = 0;
 
     // mintTokensFor is coming in #835, use that instead of this.
     IMetaColony(metaColony).mintTokensForColonyNetwork(amountToIssue);

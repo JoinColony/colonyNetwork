@@ -198,7 +198,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       );
     });
 
-    it.only("should allow a user to back the same hash more than once in a same cycle with different entries, and be rewarded", async () => {
+    it("should allow a user to back the same hash more than once in a same cycle with different entries, and be rewarded", async () => {
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
