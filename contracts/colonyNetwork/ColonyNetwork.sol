@@ -19,8 +19,10 @@ pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
 import "./../common/EtherRouter.sol";
+import "./../common/ERC20Extended.sol";
 import "./../colony/ColonyAuthority.sol";
 import "./../colony/IColony.sol";
+import "./../colony/IMetaColony.sol";
 import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
 
@@ -298,6 +300,30 @@ contract ColonyNetwork is ColonyNetworkStorage {
     feeInverse = _feeInverse;
 
     emit NetworkFeeInverseSet(_feeInverse);
+  }
+
+  function issueMetaColonyStipend() public stoppable {
+    // Can be called by anyone
+    require(lastMetaColonyStipendIssued > 0, "colony-network-metacolony-stipend-not-set");
+    // How much in total should have been issued since then
+    uint256 amountToIssue = mul(annualMetaColonyStipend, sub(now, lastMetaColonyStipendIssued)) / (365 days);
+    lastMetaColonyStipendIssued = now;
+
+    // mintTokensFor is coming in #835, use that instead of this.
+    IMetaColony(metaColony).mintTokensForColonyNetwork(amountToIssue);
+    ERC20Extended clnyToken = ERC20Extended(IColony(metaColony).getToken());
+    clnyToken.transfer(metaColony, amountToIssue);
+  }
+
+  function setAnnualMetaColonyStipend(uint256 amount) public stoppable
+  calledByMetaColony
+  {
+    if (lastMetaColonyStipendIssued == 0) { lastMetaColonyStipendIssued = now; }
+    annualMetaColonyStipend = amount;
+  }
+
+  function getAnnualMetaColonyStipend() public view returns (uint256) {
+    return annualMetaColonyStipend;
   }
 
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {

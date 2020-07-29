@@ -303,12 +303,38 @@ export async function forwardTime(seconds, test) {
   return p;
 }
 
-export async function mineBlock() {
+export async function forwardTimeTo(timestamp, test) {
+  const lastBlockTime = await getBlockTime("latest");
+  const amountToForward = new BN(timestamp).sub(new BN(lastBlockTime));
+  // Forward that much
+  await forwardTime(amountToForward.toNumber(), test);
+}
+
+export async function mineBlock(timestamp) {
   return new Promise((resolve, reject) => {
     web3.currentProvider.send(
       {
         jsonrpc: "2.0",
         method: "evm_mine",
+        params: timestamp ? [timestamp] : [],
+        id: new Date().getTime(),
+      },
+      (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve();
+      }
+    );
+  });
+}
+
+export async function stopMining() {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "miner_stop",
         params: [],
         id: new Date().getTime(),
       },
@@ -320,6 +346,37 @@ export async function mineBlock() {
       }
     );
   });
+}
+
+export async function startMining() {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "miner_start",
+        params: [],
+        id: new Date().getTime(),
+      },
+      (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve();
+      }
+    );
+  });
+}
+
+export async function makeTxAtTimestamp(f, args, timestamp, test) {
+  const client = await web3GetClient();
+  if (client.indexOf("TestRPC") === -1) {
+    test.skip();
+  }
+  await stopMining();
+  const promise = f(...args);
+  await mineBlock(timestamp);
+  await startMining();
+  return promise;
 }
 
 export function bnSqrt(bn, isGreater) {

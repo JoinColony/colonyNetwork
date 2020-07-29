@@ -245,6 +245,22 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.setFeeInverse(_feeInverse); // ignore-swc-107
   }
 
+  function setAnnualMetaColonyStipend(uint256 _amount) public
+  stoppable
+  auth
+  {
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    return colonyNetwork.setAnnualMetaColonyStipend(_amount); // ignore-swc-107
+  }
+
+  function setReputationMiningCycleReward(uint256 _amount) public
+  stoppable
+  auth
+  {
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    return colonyNetwork.setReputationMiningCycleReward(_amount); // ignore-swc-107
+  }
+
   function addNetworkColonyVersion(uint256 _version, address _resolver) public
   stoppable
   auth
@@ -339,6 +355,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
     sig = bytes4(keccak256("emitSkillReputationPenalty(uint256,address,int256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+
+    // Add CLNY issuance functionality
+    sig = bytes4(keccak256("setAnnualMetaColonyStipend(uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("setReputationMiningCycleReward(uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

@@ -70,14 +70,21 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   stoppable
   onlyReputationMiningCycle
   {
+    setReputationRootHash(newHash, newNLeaves, stakers);
+  }
+
+  function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers) public
+  stoppable
+  onlyReputationMiningCycle
+  {
     reputationRootHash = newHash;
     reputationRootHashNLeaves = newNLeaves;
     // Reward stakers
     activeReputationMiningCycle = address(0x0);
     startNextCycle();
-    rewardStakers(stakers, reward);
+    rewardStakers(stakers);
 
-    emit ReputationRootHashSet(newHash, newNLeaves, stakers, reward);
+    emit ReputationRootHashSet(newHash, newNLeaves, stakers, totalMinerRewardPerCycle);
   }
 
   function initialiseReputationMining() public stoppable {
@@ -138,7 +145,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     return wmul(stakeTerm, submissionTerm);
   }
 
-  function rewardStakers(address[] memory stakers, uint256 reward) internal {
+  function rewardStakers(address[] memory stakers) internal {
     // Internal unlike punish, because it's only ever called from setReputationRootHash
 
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
@@ -161,7 +168,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     uint256 realReward; // Used to prevent dust buildup due to small imprecisions in WAD arithmetic.
     for (i = 0; i < stakers.length; i++) {
       minerWeights[i] = wdiv(minerWeights[i], minerWeightsTotal);
-      realReward += wmul(reward, minerWeights[i]);
+      realReward += wmul(totalMinerRewardPerCycle, minerWeights[i]);
     }
 
     // II. Disburse reputation and tokens
@@ -170,7 +177,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     ERC20Extended(clnyToken).approve(tokenLocking, realReward);
 
     for (i = 0; i < stakers.length; i++) {
-      ITokenLocking(tokenLocking).depositFor(clnyToken, wmul(reward, minerWeights[i]), stakers[i]);
+      ITokenLocking(tokenLocking).depositFor(clnyToken, wmul(totalMinerRewardPerCycle, minerWeights[i]), stakers[i]);
     }
 
     // This gives them reputation in the next update cycle.
@@ -178,7 +185,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
       stakers,
       minerWeights,
       metaColony,
-      realReward,
+      totalMinerRewardPerCycle,
       reputationMiningSkillId
     );
   }
@@ -234,6 +241,16 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   function burnUnneededRewards(uint256 _amount) public stoppable onlyReputationMiningCycle() {
     ITokenLocking(tokenLocking).claim(IMetaColony(metaColony).getToken(), true);
     ITokenLocking(tokenLocking).burn(_amount);
+  }
+
+  function setReputationMiningCycleReward(uint256 _amount) public stoppable
+  calledByMetaColony
+  {
+    totalMinerRewardPerCycle = _amount;
+  }
+
+  function getReputationMiningCycleReward() public view returns (uint256) {
+    return totalMinerRewardPerCycle;
   }
 
   uint256 constant UINT192_MAX = 2**192 - 1; // Used for updating the stake timestamp
