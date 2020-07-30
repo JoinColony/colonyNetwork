@@ -36,7 +36,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   event PollStaked(uint256 indexed pollId, address indexed staker, uint256 indexed vote, uint256 amount);
   event PollVoteSubmitted(uint256 indexed pollId, address indexed voter);
   event PollVoteRevealed(uint256 indexed pollId, address indexed voter, uint256 indexed vote);
-  event PollExecuted(uint256 indexed pollId, bytes action, bool success);
+  event PollFinalized(uint256 indexed pollId, bytes action, bool executed);
   event PollEscalated(uint256 indexed pollId, address escalator, uint256 indexed domainId);
   event PollRewardClaimed(uint256 indexed pollId, address indexed staker, uint256 indexed vote, uint256 amount);
   event PollEventSet(uint256 indexed pollId, uint256 eventIndex);
@@ -150,7 +150,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   // Data structures
-  enum PollState { Staking, Submit, Reveal, Closed, Executable, Executed, Failed }
+  enum PollState { Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
 
   struct Poll {
     uint64[4] events; // For recording poll lifecycle timestamps (STAKE1, STAKE2, SUBMIT, REVEAL)
@@ -163,7 +163,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 paidVoterComp;
     uint256[2] stakes; // [nay, yay]
     uint256[2] votes; // [nay, yay]
-    bool executed;
+    bool finalized;
     address target;
     bytes action;
   }
@@ -440,11 +440,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     emit PollEscalated(_pollId, msg.sender, _newDomainId);
   }
 
-  function executePoll(uint256 _pollId) public {
+  function finalizePoll(uint256 _pollId) public {
     Poll storage poll = polls[_pollId];
-    require(getPollState(_pollId) == PollState.Executable, "voting-rep-poll-not-executable");
+    require(getPollState(_pollId) == PollState.Finalizable, "voting-rep-poll-not-executable");
 
-    poll.executed = true;
+    poll.finalized = true;
 
     bool canExecute = (
       poll.stakes[NAY] <= poll.stakes[YAY] &&
@@ -473,12 +473,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       }
     }
 
-    bool success;
+    bool executed;
+
     if (canExecute) {
-      success = executeCall(_pollId, poll.action);
+      executed = executeCall(_pollId, poll.action);
     }
 
-    emit PollExecuted(_pollId, poll.action, success);
+    emit PollFinalized(_pollId, poll.action, executed);
   }
 
   /// @notice Claim the staker's reward
@@ -498,9 +499,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     Poll storage poll = polls[_pollId];
     require(
-      getPollState(_pollId) == PollState.Executed ||
+      getPollState(_pollId) == PollState.Finalized ||
       getPollState(_pollId) == PollState.Failed,
-      "voting-rep-not-failed-or-executed"
+      "voting-rep-not-failed-or-finalized"
     );
 
     uint256 stake = stakes[_pollId][_user][_vote];
@@ -619,10 +620,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     Poll storage poll = polls[_pollId];
     uint256 requiredStake = getRequiredStake(_pollId);
 
-    // If executed, we're done
-    if (poll.executed) {
+    // If finalized, we're done
+    if (poll.finalized) {
 
-      return PollState.Executed;
+      return PollState.Finalized;
 
     // Not fully staked
     } else if (
@@ -635,10 +636,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
         return PollState.Staking;
       // If not, did the YAY side stake?
       } else if (poll.stakes[YAY] == requiredStake) {
-        return PollState.Executable;
+        return PollState.Finalizable;
       // If not, was there a prior vote we can fall back on?
       } else if (poll.votes[NAY] > 0 || poll.votes[YAY] > 0) {
-        return PollState.Executable;
+        return PollState.Finalizable;
       // Otherwise, the poll failed
       } else {
         return PollState.Failed;
@@ -659,7 +660,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       } else if (now < poll.events[REVEAL_END] + escalationPeriod) {
         return PollState.Closed;
       } else {
-        return PollState.Executable;
+        return PollState.Finalizable;
       }
 
     }

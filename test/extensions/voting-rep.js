@@ -576,7 +576,7 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
 
       await forwardTime(STAKE_PERIOD, this);
-      await voting.executePoll(pollId1);
+      await voting.finalizePoll(pollId1);
 
       expenditurePollCount = await voting.getExpenditurePollCount(expenditureHash);
       expect(expenditurePollCount).to.eq.BN(1);
@@ -584,7 +584,7 @@ contract("Voting Reputation", (accounts) => {
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
 
-      await voting.executePoll(pollId2);
+      await voting.finalizePoll(pollId2);
 
       expenditurePollCount = await voting.getExpenditurePollCount(expenditureHash);
       expect(expenditurePollCount).to.be.zero;
@@ -825,7 +825,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      await checkErrorRevert(voting.executePoll(pollId), "voting-rep-poll-not-executable");
+      await checkErrorRevert(voting.finalizePoll(pollId), "voting-rep-poll-not-executable");
     });
 
     it("can take an action if there is insufficient opposition", async () => {
@@ -836,8 +836,8 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const { logs } = await voting.executePoll(pollId);
-      expect(logs[0].args.success).to.be.true;
+      const { logs } = await voting.finalizePoll(pollId);
+      expect(logs[0].args.executed).to.be.true;
     });
 
     it("can take an action with a return value", async () => {
@@ -850,8 +850,8 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const { logs } = await voting.executePoll(pollId);
-      expect(logs[0].args.success).to.be.true;
+      const { logs } = await voting.finalizePoll(pollId);
+      expect(logs[0].args.executed).to.be.true;
     });
 
     it("can take an action with an arbitrary target", async () => {
@@ -869,7 +869,7 @@ contract("Voting Reputation", (accounts) => {
       const balanceBefore = await otherColony.getFundingPotBalance(1, token.address);
       expect(balanceBefore).to.be.zero;
 
-      await voting.executePoll(pollId);
+      await voting.finalizePoll(pollId);
 
       const balanceAfter = await otherColony.getFundingPotBalance(1, token.address);
       expect(balanceAfter).to.eq.BN(WAD);
@@ -884,8 +884,8 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const { logs } = await voting.executePoll(pollId);
-      expect(logs[0].args.success).to.be.false;
+      const { logs } = await voting.finalizePoll(pollId);
+      expect(logs[0].args.executed).to.be.false;
     });
 
     it("cannot take an action during staking or voting", async () => {
@@ -894,13 +894,13 @@ contract("Voting Reputation", (accounts) => {
 
       pollState = await voting.getPollState(pollId);
       expect(pollState).to.eq.BN(STAKING);
-      await checkErrorRevert(voting.executePoll(pollId), "voting-rep-poll-not-executable");
+      await checkErrorRevert(voting.finalizePoll(pollId), "voting-rep-poll-not-executable");
 
       await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       pollState = await voting.getPollState(pollId);
       expect(pollState).to.eq.BN(SUBMIT);
-      await checkErrorRevert(voting.executePoll(pollId), "voting-rep-poll-not-executable");
+      await checkErrorRevert(voting.finalizePoll(pollId), "voting-rep-poll-not-executable");
     });
 
     it("cannot take an action twice", async () => {
@@ -908,10 +908,10 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const { logs } = await voting.executePoll(pollId);
-      expect(logs[0].args.success).to.be.true;
+      const { logs } = await voting.finalizePoll(pollId);
+      expect(logs[0].args.executed).to.be.true;
 
-      await checkErrorRevert(voting.executePoll(pollId), "voting-rep-poll-not-executable");
+      await checkErrorRevert(voting.finalizePoll(pollId), "voting-rep-poll-not-executable");
     });
 
     it("can take an action if the poll passes", async () => {
@@ -928,8 +928,8 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const { logs } = await voting.executePoll(pollId);
-      expect(logs[0].args.success).to.be.true;
+      const { logs } = await voting.finalizePoll(pollId);
+      expect(logs[0].args.executed).to.be.true;
     });
 
     it("cannot take an action if the poll fails", async () => {
@@ -945,8 +945,8 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(STAKE_PERIOD, this);
 
-      const { logs } = await voting.executePoll(pollId);
-      expect(logs[0].args.success).to.be.false;
+      const { logs } = await voting.finalizePoll(pollId);
+      expect(logs[0].args.executed).to.be.false;
     });
 
     it("cannot take an action if there is insufficient voting power (state change actions)", async () => {
@@ -971,8 +971,8 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(STAKE_PERIOD, this);
 
       let logs;
-      ({ logs } = await voting.executePoll(pollId1));
-      expect(logs[0].args.success).to.be.true;
+      ({ logs } = await voting.finalizePoll(pollId1));
+      expect(logs[0].args.executed).to.be.true;
 
       // Create another poll for the same variable
       await voting.createDomainPoll(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
@@ -990,8 +990,8 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(STAKE_PERIOD, this);
 
-      ({ logs } = await voting.executePoll(pollId2));
-      expect(logs[0].args.success).to.be.false;
+      ({ logs } = await voting.finalizePoll(pollId2));
+      expect(logs[0].args.executed).to.be.false;
     });
 
     it("can set vote power correctly if there is insufficient opposition", async () => {
@@ -1004,7 +1004,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      await voting.executePoll(pollId);
+      await voting.finalizePoll(pollId);
       const slotHash = soliditySha3(`0x${action.slice(2, action.length - 64)}`);
       const pastPoll = await voting.getExpenditurePastPoll(slotHash);
       expect(pastPoll).to.eq.BN(REQUIRED_STAKE);
@@ -1028,7 +1028,7 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(ESCALATION_PERIOD, this);
 
-      await voting.executePoll(pollId);
+      await voting.finalizePoll(pollId);
       const slotHash = soliditySha3(`0x${action.slice(2, action.length - 64)}`);
       const pastPoll = await voting.getExpenditurePastPoll(slotHash);
       expect(pastPoll).to.eq.BN(WAD); // USER0 had 1 WAD of reputation
@@ -1056,7 +1056,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      await voting.executePoll(pollId);
+      await voting.finalizePoll(pollId);
 
       const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
@@ -1099,7 +1099,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(ESCALATION_PERIOD, this);
 
-      await voting.executePoll(pollId);
+      await voting.finalizePoll(pollId);
 
       const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
@@ -1145,7 +1145,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(ESCALATION_PERIOD, this);
 
-      await voting.executePoll(pollId);
+      await voting.finalizePoll(pollId);
 
       const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
@@ -1188,7 +1188,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(ESCALATION_PERIOD, this);
 
-      await voting.executePoll(pollId);
+      await voting.finalizePoll(pollId);
 
       const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
@@ -1251,7 +1251,7 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(ESCALATION_PERIOD, this);
 
-      await voting.executePoll(pollId);
+      await voting.finalizePoll(pollId);
 
       await voting.claimReward(pollId, 1, UINT256_MAX, USER0, YAY);
       const userLock0 = await tokenLocking.getUserLock(token.address, USER0);
@@ -1261,7 +1261,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot claim rewards before a poll is executed", async () => {
-      await checkErrorRevert(voting.claimReward(pollId, 1, UINT256_MAX, USER0, YAY), "voting-rep-not-failed-or-executed");
+      await checkErrorRevert(voting.claimReward(pollId, 1, UINT256_MAX, USER0, YAY), "voting-rep-not-failed-or-finalized");
     });
   });
 
@@ -1310,7 +1310,7 @@ contract("Voting Reputation", (accounts) => {
     it("cannot internally escalate a domain poll if not in a 'closed' state", async () => {
       await forwardTime(ESCALATION_PERIOD, this);
 
-      await voting.executePoll(pollId);
+      await voting.finalizePoll(pollId);
 
       await checkErrorRevert(
         voting.escalatePoll(pollId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER2 }),
@@ -1357,8 +1357,8 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const { logs } = await voting.executePoll(pollId);
-      expect(logs[0].args.success).to.be.true;
+      const { logs } = await voting.finalizePoll(pollId);
+      expect(logs[0].args.executed).to.be.true;
     });
 
     it("cannot execute after internally escalating a domain poll, if there is insufficient support", async () => {
@@ -1373,8 +1373,8 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const { logs } = await voting.executePoll(pollId);
-      expect(logs[0].args.success).to.be.false;
+      const { logs } = await voting.finalizePoll(pollId);
+      expect(logs[0].args.executed).to.be.false;
     });
 
     it("can fall back on the previous vote if both sides fail to stake", async () => {
@@ -1383,8 +1383,8 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(STAKE_PERIOD, this);
 
       // Note that the previous vote succeeded
-      const { logs } = await voting.executePoll(pollId);
-      expect(logs[0].args.success).to.be.true;
+      const { logs } = await voting.finalizePoll(pollId);
+      expect(logs[0].args.executed).to.be.true;
     });
 
     it("can use the result of a new vote after internally escalating a domain poll", async () => {
@@ -1411,8 +1411,8 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const { logs } = await voting.executePoll(pollId);
-      expect(logs[0].args.success).to.be.false;
+      const { logs } = await voting.finalizePoll(pollId);
+      expect(logs[0].args.executed).to.be.false;
     });
   });
 });
