@@ -67,13 +67,19 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   ITokenLocking tokenLocking;
   address token;
 
-  // All `Fraction` variables are denominated in WADs (1 WAD = 100%)
+  // All `Fraction` variables are stored as WADs i.e. fixed-point numbers with 18 digits after the radix. So 
+  // 1 WAD = 10**18, which is interpreted as 1.
 
-  uint256 totalStakeFraction; // Percent of domain reputation needed for staking
-  uint256 userMinStakeFraction; // Minimum stake as percent of required stake (100% means single-staker)
+  uint256 totalStakeFraction; // Fraction of the domain's reputation needed to stake on each side in order to go to a poll. NB if set to over
+  // 0.5, then votes can never occur.
+  uint256 userMinStakeFraction; // Minimum stake as fraction of required stake. 1 means a single user will be required to 
+  // provide the whole stake on each side, which may not be possible depending on totalStakeFraction and the distribution of
+  // reputation in a domain.
 
-  uint256 maxVoteFraction; // Percent of total domain rep we need before closing the vote
-  uint256 voterRewardFraction; // Percent of stake paid out to voters as rewards (immediately taken from the stake)
+  uint256 maxVoteFraction; // Fraction of total domain reputation that needs to commit votes before closing to further votes.
+  // Setting this to anything other than 1 will mean it is likely not all those eligible to vote will be able to do so.
+  uint256 voterRewardFraction; // Fraction of staked tokens paid out to voters as rewards. This will be paid from the staked  
+  // tokens of the losing side. This can be set to a maximum of 0.5.
 
   // All `Period` variables are second-denominated
 
@@ -90,10 +96,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   /// @notice Initialise the extension
-  /// @param _totalStakeFraction The percent of the domain's reputation we need to stake
-  /// @param _userMinStakeFraction The minimum per-user stake as percent of total stake
-  /// @param _maxVoteFraction The percent of the domain's reputation which must submit for quick-end
-  /// @param _voterRewardFraction The percent of the total stake paid out to voters as rewards
+  /// @param _totalStakeFraction The fraction of the domain's reputation we need to stake
+  /// @param _userMinStakeFraction The minimum per-user stake as fraction of total stake
+  /// @param _maxVoteFraction The fraction of the domain's reputation which must submit for quick-end
+  /// @param _voterRewardFraction The fraction of the total stake paid out to voters as rewards
   /// @param _stakePeriod The length of the staking period in seconds
   /// @param _submitPeriod The length of the submit period in seconds
   /// @param _revealPeriod The length of the reveal period in seconds
@@ -390,9 +396,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       emit PollEventSet(_pollId, REVEAL_END);
     }
 
-    uint256 pctReputation = wdiv(userRep, poll.skillRep);
+    uint256 fractionUserReputation = wdiv(userRep, poll.skillRep);
     uint256 totalStake = add(poll.stakes[YAY], poll.stakes[NAY]);
-    uint256 voterReward = wmul(wmul(pctReputation, totalStake), voterRewardFraction);
+    uint256 voterReward = wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
 
     poll.paidVoterComp = add(poll.paidVoterComp, voterReward);
     tokenLocking.transfer(token, voterReward, msg.sender, true);
