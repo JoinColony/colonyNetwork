@@ -48,10 +48,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   uint256 constant NAY = 0;
   uint256 constant YAY = 1;
 
-  uint256 constant STAKE1_END = 0;
-  uint256 constant STAKE2_END = 1;
-  uint256 constant SUBMIT_END = 2;
-  uint256 constant REVEAL_END = 3;
+  uint256 constant STAKE_END = 0;
+  uint256 constant SUBMIT_END = 1;
+  uint256 constant REVEAL_END = 2;
 
   bytes4 constant CHANGE_FUNCTION = bytes4(
     keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
@@ -67,19 +66,19 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   ITokenLocking tokenLocking;
   address token;
 
-  // All `Fraction` variables are stored as WADs i.e. fixed-point numbers with 18 digits after the radix. So 
+  // All `Fraction` variables are stored as WADs i.e. fixed-point numbers with 18 digits after the radix. So
   // 1 WAD = 10**18, which is interpreted as 1.
 
-  uint256 totalStakeFraction; // Fraction of the domain's reputation needed to stake on each side in order to go to a poll. NB if set to over
-  // 0.5, then votes can never occur.
-  uint256 userMinStakeFraction; // Minimum stake as fraction of required stake. 1 means a single user will be required to 
+  uint256 totalStakeFraction; // Fraction of the domain's reputation needed to stake on each side in order to go to a poll.
+  // This can be set to a maximum of 0.5.
+  uint256 voterRewardFraction; // Fraction of staked tokens paid out to voters as rewards. This will be paid from the staked
+  // tokens of the losing side. This can be set to a maximum of 0.5.
+
+  uint256 userMinStakeFraction; // Minimum stake as fraction of required stake. 1 means a single user will be required to
   // provide the whole stake on each side, which may not be possible depending on totalStakeFraction and the distribution of
   // reputation in a domain.
-
   uint256 maxVoteFraction; // Fraction of total domain reputation that needs to commit votes before closing to further votes.
   // Setting this to anything other than 1 will mean it is likely not all those eligible to vote will be able to do so.
-  uint256 voterRewardFraction; // Fraction of staked tokens paid out to voters as rewards. This will be paid from the staked  
-  // tokens of the losing side. This can be set to a maximum of 0.5.
 
   // All `Period` variables are second-denominated
 
@@ -106,9 +105,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   /// @param _escalationPeriod The length of the escalation period in seconds
   function initialise(
     uint256 _totalStakeFraction,
+    uint256 _voterRewardFraction,
     uint256 _userMinStakeFraction,
     uint256 _maxVoteFraction,
-    uint256 _voterRewardFraction,
     uint256 _stakePeriod,
     uint256 _submitPeriod,
     uint256 _revealPeriod,
@@ -119,11 +118,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-user-not-root");
     require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
 
-    require(_totalStakeFraction <= WAD, "voting-rep-greater-than-wad");
-    require(_userMinStakeFraction <= WAD, "voting-rep-greater-than-wad");
-
-    require(_maxVoteFraction <= WAD, "voting-rep-greater-than-wad");
+    require(_totalStakeFraction <= WAD / 2, "voting-rep-greater-than-half-wad");
     require(_voterRewardFraction <= WAD / 2, "voting-rep-greater-than-half-wad");
+
+    require(_userMinStakeFraction <= WAD, "voting-rep-greater-than-wad");
+    require(_maxVoteFraction <= WAD, "voting-rep-greater-than-wad");
 
     require(_stakePeriod <= 365 days, "voting-rep-period-too-long");
     require(_submitPeriod <= 365 days, "voting-rep-period-too-long");
@@ -133,10 +132,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     state = ExtensionState.Active;
 
     totalStakeFraction = _totalStakeFraction;
-    userMinStakeFraction = _userMinStakeFraction;
-
-    maxVoteFraction = _maxVoteFraction;
     voterRewardFraction = _voterRewardFraction;
+
+    userMinStakeFraction = _userMinStakeFraction;
+    maxVoteFraction = _maxVoteFraction;
 
     stakePeriod = _stakePeriod;
     submitPeriod = _submitPeriod;
@@ -159,7 +158,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   enum PollState { Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
 
   struct Poll {
-    uint64[4] events; // For recording poll lifecycle timestamps (STAKE1, STAKE2, SUBMIT, REVEAL)
+    uint64[3] events; // For recording poll lifecycle timestamps (STAKE, SUBMIT, REVEAL)
     bytes32 rootHash;
     uint256 domainId;
     uint256 skillId;
@@ -263,6 +262,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     Poll storage poll = polls[_pollId];
     require(_vote <= 1, "voting-rep-bad-vote");
+    require(_amount > 0, "voting-rep-bad-amount");
     require(getPollState(_pollId) == PollState.Staking, "voting-rep-staking-closed");
 
     uint256 requiredStake = getRequiredStake(_pollId);
@@ -290,7 +290,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       bytes32 structHash = hashExpenditureStruct(poll.action);
       expenditurePollCounts[structHash] = add(expenditurePollCounts[structHash], 1);
       bytes memory claimDelayAction = createClaimDelayAction(poll.action, UINT256_MAX);
-      executeCall(_pollId, claimDelayAction);
+      require(executeCall(_pollId, claimDelayAction), "voting-rep-expenditure-lock-failed");
     }
 
     // Move to second staking window once one side is fully staked
@@ -298,22 +298,21 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       (_vote == YAY && poll.stakes[YAY] == requiredStake && poll.stakes[NAY] < requiredStake) ||
       (_vote == NAY && poll.stakes[NAY] == requiredStake && poll.stakes[YAY] < requiredStake)
     ) {
-      poll.events[STAKE1_END] = uint64(now);
-      poll.events[STAKE2_END] = uint64(now + stakePeriod);
+      poll.events[STAKE_END] = uint64(now + stakePeriod);
       poll.events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
       poll.events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
 
-      emit PollEventSet(_pollId, STAKE1_END);
+      emit PollEventSet(_pollId, STAKE_END);
     }
 
     // Claim tokens once both sides are fully staked
     if (poll.stakes[YAY] == requiredStake && poll.stakes[NAY] == requiredStake) {
-      poll.events[STAKE2_END] = uint64(now);
+      poll.events[STAKE_END] = uint64(now);
       poll.events[SUBMIT_END] = uint64(now + submitPeriod);
       poll.events[REVEAL_END] = uint64(now + submitPeriod + revealPeriod);
       tokenLocking.claim(token, true);
 
-      emit PollEventSet(_pollId, STAKE2_END);
+      emit PollEventSet(_pollId, STAKE_END);
     }
 
     emit PollStaked(_pollId, msg.sender, _vote, amount);
@@ -349,14 +348,14 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     voteSecrets[_pollId][msg.sender] = _voteSecret;
 
+    emit PollVoteSubmitted(_pollId, msg.sender);
+
     if (poll.repSubmitted >= wmul(poll.skillRep, maxVoteFraction)) {
       poll.events[SUBMIT_END] = uint64(now);
       poll.events[REVEAL_END] = uint64(now + revealPeriod);
 
       emit PollEventSet(_pollId, SUBMIT_END);
     }
-
-    emit PollVoteSubmitted(_pollId, msg.sender);
   }
 
   /// @notice Reveal a vote secret for a poll
@@ -390,11 +389,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll.votes[_vote] = add(poll.votes[_vote], userRep);
     poll.repRevealed = add(poll.repRevealed, userRep);
 
-    if (poll.repRevealed == poll.repSubmitted) {
-      poll.events[REVEAL_END] = uint64(now);
-
-      emit PollEventSet(_pollId, REVEAL_END);
-    }
 
     uint256 fractionUserReputation = wdiv(userRep, poll.skillRep);
     uint256 totalStake = add(poll.stakes[YAY], poll.stakes[NAY]);
@@ -404,6 +398,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     tokenLocking.transfer(token, voterReward, msg.sender, true);
 
     emit PollVoteRevealed(_pollId, msg.sender, _vote);
+
+    if (poll.repRevealed == poll.repSubmitted) {
+      poll.events[REVEAL_END] = uint64(now);
+
+      emit PollEventSet(_pollId, REVEAL_END);
+    }
   }
 
   /// @notice Escalate a poll to a higher domain
@@ -434,8 +434,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     delete poll.events;
 
-    poll.events[STAKE1_END] = uint64(now + stakePeriod);
-    poll.events[STAKE2_END] = uint64(now + stakePeriod);
+    poll.events[STAKE_END] = uint64(now + stakePeriod);
     poll.events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
     poll.events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
 
@@ -464,7 +463,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       // Release the claimDelay if this is the last active poll
       if (expenditurePollCounts[structHash] == 0) {
         bytes memory claimDelayAction = createClaimDelayAction(poll.action, 0);
-        executeCall(_pollId, claimDelayAction);
+        require(executeCall(_pollId, claimDelayAction), "voting-rep-expenditure-unlock-failed");
       }
 
       uint256 requiredStake = getRequiredStake(_pollId);
@@ -511,7 +510,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     );
 
     uint256 stake = stakes[_pollId][_user][_vote];
-    uint256 requiredStake = getRequiredStake(_pollId);
 
     delete stakes[_pollId][_user][_vote];
 
@@ -519,7 +517,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 repPenalty;
 
     // Went to a vote, use vote to determine reward or penalty
-    if (poll.stakes[NAY] == requiredStake && poll.stakes[YAY] == requiredStake) {
+    if (add(poll.votes[NAY],  poll.votes[YAY]) > 0) {
 
       uint256 loserStake = sub(
         (poll.votes[NAY] < poll.votes[YAY]) ? poll.stakes[NAY] : poll.stakes[YAY],
@@ -541,7 +539,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       }
 
     // Your side fully staked, receive 10% (proportional) of loser's stake
-    } else if (poll.stakes[_vote] == requiredStake) {
+    } else if (poll.stakes[_vote] == getRequiredStake(_pollId)) {
 
       uint256 loserStake = sub(poll.stakes[flip(_vote)], poll.paidVoterComp);
       uint256 stakeFraction = wdiv(stake, poll.stakes[_vote]);
@@ -550,7 +548,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       stakerReward = add(stake, wmul(stakeFraction, totalPenalty));
 
     // Opponent's side fully staked, pay 10% penalty
-    } else if (poll.stakes[flip(_vote)] == requiredStake) {
+    } else if (poll.stakes[flip(_vote)] == getRequiredStake(_pollId)) {
 
       uint256 loserStake = sub(poll.stakes[_vote], poll.paidVoterComp);
       uint256 stakeFraction = wdiv(stake, poll.stakes[_vote]);
@@ -638,7 +636,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     ) {
 
       // Are we still staking?
-      if (now < poll.events[STAKE2_END]) {
+      if (now < poll.events[STAKE_END]) {
         return PollState.Staking;
       // If not, did the YAY side stake?
       } else if (poll.stakes[YAY] == requiredStake) {
@@ -652,7 +650,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       }
 
     // Do we need to keep waiting?
-    } else if (now < poll.events[STAKE2_END]) {
+    } else if (now < poll.events[STAKE_END]) {
 
       return PollState.Staking;
 
@@ -690,8 +688,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     pollCount += 1;
 
-    polls[pollCount].events[STAKE1_END] = uint64(now + stakePeriod);
-    polls[pollCount].events[STAKE2_END] = uint64(now + stakePeriod);
+    polls[pollCount].events[STAKE_END] = uint64(now + stakePeriod);
     polls[pollCount].events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
     polls[pollCount].events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
 
