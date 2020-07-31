@@ -384,7 +384,7 @@ contract("Voting Reputation", (accounts) => {
       );
     });
 
-    it("cannot stake less than the minStake", async () => {
+    it("cannot stake less than the minStake, unless there is less than minStake to go", async () => {
       const minStake = REQUIRED_STAKE.divn(10);
 
       await checkErrorRevert(
@@ -393,6 +393,12 @@ contract("Voting Reputation", (accounts) => {
       );
 
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, minStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      // Unless there's less than the minStake to go!
+
+      const stake = REQUIRED_STAKE.sub(minStake.muln(2)).addn(1);
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, stake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, minStake.subn(1), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
     });
 
     it("can update the expenditure globalClaimDelay if voting on expenditure state", async () => {
@@ -1386,7 +1392,7 @@ contract("Voting Reputation", (accounts) => {
 
       const remainingStake = REQUIRED_STAKE.sub(WAD.divn(1000));
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, remainingStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, remainingStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       // Make the vote fail this time (everyone votes against)
       await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });

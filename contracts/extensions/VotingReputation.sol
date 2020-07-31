@@ -262,19 +262,21 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     Poll storage poll = polls[_pollId];
     require(_vote <= 1, "voting-rep-bad-vote");
-    require(_amount > 0, "voting-rep-bad-amount");
     require(getPollState(_pollId) == PollState.Staking, "voting-rep-staking-closed");
 
     uint256 requiredStake = getRequiredStake(_pollId);
     uint256 amount = min(_amount, sub(requiredStake, poll.stakes[_vote]));
     uint256 stakerTotalAmount = add(stakes[_pollId][msg.sender][_vote], amount);
 
+    require(amount > 0, "voting-rep-bad-amount");
+
     require(
       stakerTotalAmount <= getReputationFromProof(_pollId, msg.sender, _key, _value, _branchMask, _siblings),
       "voting-rep-insufficient-rep"
     );
     require(
-      stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction),
+      stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction) ||
+      add(poll.stakes[_vote], amount) == requiredStake, // To prevent a residual stake from being un-stakable
       "voting-rep-insufficient-stake"
     );
 
@@ -286,7 +288,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     stakes[_pollId][msg.sender][_vote] = stakerTotalAmount;
 
     // Increment counter & extend claim delay if staking for an expenditure state change
-    if (poll.stakes[YAY] == requiredStake && _vote == YAY && getSig(poll.action) == CHANGE_FUNCTION) {
+    if (
+      _vote == YAY &&
+      poll.stakes[YAY] == requiredStake &&
+      getSig(poll.action) == CHANGE_FUNCTION &&
+      add(poll.votes[NAY], poll.votes[YAY]) == 0
+    ) {
       bytes32 structHash = hashExpenditureStruct(poll.action);
       expenditurePollCounts[structHash] = add(expenditurePollCounts[structHash], 1);
       bytes memory claimDelayAction = createClaimDelayAction(poll.action, UINT256_MAX);
@@ -432,8 +439,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 childSkillId = colonyNetwork.getChildSkillId(newDomainSkillId, _childSkillIndex);
     require(childSkillId == poll.skillId, "voting-rep-invalid-domain-proof");
 
-    delete poll.events;
-
     poll.events[STAKE_END] = uint64(now + stakePeriod);
     poll.events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
     poll.events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
@@ -442,7 +447,24 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll.skillId = newDomainSkillId;
     poll.skillRep = getReputationFromProof(_pollId, address(0x0), _key, _value, _branchMask, _siblings);
 
+    if (poll.votes[NAY] < poll.votes[YAY]) {
+      poll.stakes[NAY] = sub(poll.stakes[NAY], poll.paidVoterComp);
+    } else {
+      poll.stakes[YAY] = sub(poll.stakes[YAY], poll.paidVoterComp);
+    }
+
+    delete poll.paidVoterComp;
+
     emit PollEscalated(_pollId, msg.sender, _newDomainId);
+
+    // Check to see if the stake is unchanged, if so skip the staking period
+    if (poll.stakes[NAY] == getRequiredStake(_pollId)) {
+      poll.events[STAKE_END] = uint64(now);
+      poll.events[SUBMIT_END] = uint64(now + submitPeriod);
+      poll.events[REVEAL_END] = uint64(now + submitPeriod + revealPeriod);
+
+      emit PollEventSet(_pollId, STAKE_END);
+    }
   }
 
   function finalizePoll(uint256 _pollId) public {
@@ -714,10 +736,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     return 1 - _vote;
   }
 
-  function selfOrMax(uint256 _timestamp) internal pure returns (uint256) {
-    return (_timestamp == 0) ? UINT128_MAX : _timestamp;
-  }
-
   function getReputationFromProof(
     uint256 _pollId,
     address _who,
@@ -827,6 +845,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     // See https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
     //  for documentation on how the action `bytes` is encoded
+    // In brief, the first byte32 is the length of the array. Then we have
+    //   4 bytes of function signature, following by an arbitrary number of
+    //   additional byte32 arguments. 32 in hex is 0x20, so every increment
+    //   of 0x20 represents advancing one byte, 4 is the function signature.
+    // So: 0x[length][sig][args...]
 
     bytes32 functionSignature;
     uint256 permissionDomainId;
