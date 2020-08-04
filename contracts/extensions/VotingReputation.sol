@@ -796,9 +796,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     assembly {
       // Hash all but last (value) bytes32
-      //  Recall: mload(action) gives length of bytes array
-      //  So skip past the first bytes32 (length), and the last bytes32 (value)
-      hash := keccak256(add(action, 0x20), sub(mload(action), 0x20))
+      // Recall: mload(action) gives length of bytes array
+      // So skip past the three bytes32 (length + domain proof),
+      //   and the last bytes32 (value).
+      hash := keccak256(add(action, 0x64), sub(mload(action), 0x64))
     }
   }
 

@@ -994,7 +994,7 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(STAKE_PERIOD, this);
 
       await voting.finalizePoll(pollId);
-      const slotHash = soliditySha3(`0x${action.slice(2, action.length - 64)}`);
+      const slotHash = soliditySha3(`0x${action.slice(2 + 8 + 128, action.length - 64)}`);
       const pastPoll = await voting.getExpenditurePastPoll(slotHash);
       expect(pastPoll).to.eq.BN(REQUIRED_STAKE);
     });
@@ -1021,7 +1021,7 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(ESCALATION_PERIOD, this);
 
       await voting.finalizePoll(pollId);
-      const slotHash = soliditySha3(`0x${action.slice(2, action.length - 64)}`);
+      const slotHash = soliditySha3(`0x${action.slice(2 + 8 + 128, action.length - 64)}`);
       const pastPoll = await voting.getExpenditurePastPoll(slotHash);
       expect(pastPoll).to.eq.BN(WAD); // USER0 had 1 WAD of reputation
     });
