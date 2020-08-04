@@ -93,7 +93,7 @@ contract("Voting Reputation", (accounts) => {
   // const CLOSED = 3;
   // const EXECUTABLE = 4;
   // const EXECUTED = 5;
-  // const FAILED = 6;
+  const FAILED = 6;
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
   const REQUIRED_STAKE = WAD.muln(3).divn(1000);
@@ -1041,10 +1041,9 @@ contract("Voting Reputation", (accounts) => {
       const repCycle = await IReputationMiningCycle.at(addr);
       const numEntriesPrev = await repCycle.getReputationUpdateLogLength();
 
+      const nayStake = REQUIRED_STAKE.divn(2);
       await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.divn(2), user1Key, user1Value, user1Mask, user1Siblings, {
-        from: USER1,
-      });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1265,13 +1264,13 @@ contract("Voting Reputation", (accounts) => {
       const domain2Value = makeReputationValue(WAD, 6);
       const [domain2Mask, domain2Siblings] = await reputationTree.getProof(domain2Key);
 
-      user0Key = makeReputationKey(colony.address, domain2.skillId, USER0);
-      user0Value = makeReputationValue(WAD.divn(3), 9);
-      [user0Mask, user0Siblings] = await reputationTree.getProof(user0Key);
+      const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
+      const user0Value2 = makeReputationValue(WAD.divn(3), 9);
+      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
 
-      user1Key = makeReputationKey(colony.address, domain2.skillId, USER1);
-      user1Value = makeReputationValue(WAD.divn(3).muln(2), 10);
-      [user1Mask, user1Siblings] = await reputationTree.getProof(user1Key);
+      const user1Key2 = makeReputationKey(colony.address, domain2.skillId, USER1);
+      const user1Value2 = makeReputationValue(WAD.divn(3).muln(2), 10);
+      const [user1Mask2, user1Siblings2] = await reputationTree.getProof(user1Key2);
 
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
       await voting.createDomainPoll(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
@@ -1280,15 +1279,15 @@ contract("Voting Reputation", (accounts) => {
       await colony.approveStake(voting.address, 2, WAD, { from: USER0 });
       await colony.approveStake(voting.address, 2, WAD, { from: USER1 });
 
-      await voting.stakePoll(pollId, 1, 0, YAY, WAD.divn(1000), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakePoll(pollId, 1, 0, NAY, WAD.divn(1000), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakePoll(pollId, 1, 0, NAY, WAD.divn(1000), user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await voting.stakePoll(pollId, 1, 0, YAY, WAD.divn(1000), user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
 
       // Note that this is a passing vote
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
 
-      await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(pollId, SALT, YAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(pollId, SALT, NAY, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await voting.revealVote(pollId, SALT, YAY, user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
     });
 
     it("can internally escalate a domain poll after a vote", async () => {
@@ -1324,28 +1323,20 @@ contract("Voting Reputation", (accounts) => {
     it("can stake after internally escalating a domain poll", async () => {
       await voting.escalatePoll(pollId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
-      user0Key = makeReputationKey(colony.address, domain1.skillId, USER0);
-      user0Value = makeReputationValue(WAD, 2);
-      [user0Mask, user0Siblings] = await reputationTree.getProof(user0Key);
+      const yayStake = REQUIRED_STAKE.sub(WAD.divn(1000));
+      const nayStake = yayStake.add(REQUIRED_STAKE.divn(10));
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, yayStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      user1Key = makeReputationKey(colony.address, domain1.skillId, USER1);
-      user1Value = makeReputationValue(WAD.muln(2), 5);
-      [user1Mask, user1Siblings] = await reputationTree.getProof(user1Key);
-
-      const remainingStake = REQUIRED_STAKE.sub(WAD.divn(1000));
-      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, remainingStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, remainingStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      const pollState = await voting.getPollState(pollId);
+      expect(pollState).to.eq.BN(SUBMIT);
     });
 
     it("can execute after internally escalating a domain poll, if there is insufficient opposition", async () => {
       await voting.escalatePoll(pollId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
-      user0Key = makeReputationKey(colony.address, domain1.skillId, USER0);
-      user0Value = makeReputationValue(WAD, 2);
-      [user0Mask, user0Siblings] = await reputationTree.getProof(user0Key);
-
-      const remainingStake = REQUIRED_STAKE.sub(WAD.divn(1000));
-      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, remainingStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      const yayStake = REQUIRED_STAKE.sub(WAD.divn(1000));
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, yayStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1356,12 +1347,8 @@ contract("Voting Reputation", (accounts) => {
     it("cannot execute after internally escalating a domain poll, if there is insufficient support", async () => {
       await voting.escalatePoll(pollId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
-      user1Key = makeReputationKey(colony.address, domain1.skillId, USER1);
-      user1Value = makeReputationValue(WAD.muln(2), 5);
-      [user1Mask, user1Siblings] = await reputationTree.getProof(user1Key);
-
-      const remainingStake = REQUIRED_STAKE.sub(WAD.divn(1000));
-      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, remainingStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      const yayStake = REQUIRED_STAKE.sub(WAD.divn(1000));
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, yayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1379,32 +1366,73 @@ contract("Voting Reputation", (accounts) => {
       expect(logs[0].args.executed).to.be.true;
     });
 
-    it("can use the result of a new vote after internally escalating a domain poll", async () => {
+    it("can use the result of a new stake after internally escalating a domain poll", async () => {
       await voting.escalatePoll(pollId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
-      user0Key = makeReputationKey(colony.address, domain1.skillId, USER0);
-      user0Value = makeReputationValue(WAD, 2);
-      [user0Mask, user0Siblings] = await reputationTree.getProof(user0Key);
-
-      user1Key = makeReputationKey(colony.address, domain1.skillId, USER1);
-      user1Value = makeReputationValue(WAD.muln(2), 5);
-      [user1Mask, user1Siblings] = await reputationTree.getProof(user1Key);
-
-      const remainingStake = REQUIRED_STAKE.sub(WAD.divn(1000));
-      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, remainingStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-
-      // Make the vote fail this time (everyone votes against)
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-
-      await voting.revealVote(pollId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(pollId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      const yayStake = REQUIRED_STAKE.sub(WAD.divn(1000));
+      const nayStake = yayStake.add(REQUIRED_STAKE.divn(10));
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
 
+      const pollState = await voting.getPollState(pollId);
+      expect(pollState).to.eq.BN(FAILED);
+
+      // Now check that the rewards come out properly
+      const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
+      const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
+
+      await voting.claimReward(pollId, 1, UINT256_MAX, USER0, YAY);
+      await voting.claimReward(pollId, 1, UINT256_MAX, USER1, NAY);
+
+      const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
+      const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
+
+      const expectedReward1 = (REQUIRED_STAKE.add(WAD.divn(1000 * 10))).divn(32).muln(22); // eslint-disable-line prettier/prettier
+
+      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.be.zero;
+      expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
+    });
+
+    it("can use the result of a new vote after internally escalating a domain poll", async () => {
+      await voting.escalatePoll(pollId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+
+      const yayStake = REQUIRED_STAKE.sub(WAD.divn(1000));
+      const nayStake = yayStake.add(REQUIRED_STAKE.divn(10));
+      await voting.stakePoll(pollId, 1, UINT256_MAX, YAY, yayStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakePoll(pollId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      // Vote fails
+      await voting.submitVote(pollId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(pollId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.revealVote(pollId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(pollId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await forwardTime(ESCALATION_PERIOD, this);
+
       const { logs } = await voting.finalizePoll(pollId);
       expect(logs[0].args.executed).to.be.false;
+
+      // Now check that the rewards come out properly
+      // 1st voter reward paid by YAY (user0), 2nd paid by NAY (user1)
+      const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
+      const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
+
+      await voting.claimReward(pollId, 1, UINT256_MAX, USER0, YAY);
+      await voting.claimReward(pollId, 1, UINT256_MAX, USER1, NAY);
+
+      const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
+      const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
+
+      const loserStake = REQUIRED_STAKE.divn(10).muln(8);
+      // (stake * .8) * (winPct = 1/3 * 2) * 2/3 (since 1/3 of stake is from other user!)
+      const expectedReward0 = loserStake.divn(3).muln(2).divn(3).muln(2);
+      // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2)) * 22/32) (since 10/32 of stake is from other user!)
+      const expectedReward1 = REQUIRED_STAKE.add(loserStake.divn(3)).divn(32).muln(22);
+
+      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0.addn(1)); // Rounding
+      expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
     });
   });
 });

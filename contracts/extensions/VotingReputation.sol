@@ -166,6 +166,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 repSubmitted;
     uint256 repRevealed;
     uint256 paidVoterComp;
+    uint256[2] pastVoterComp; // [nay, yay]
     uint256[2] stakes; // [nay, yay]
     uint256[2] votes; // [nay, yay]
     bool finalized;
@@ -308,6 +309,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       poll.events[STAKE_END] = uint64(now + stakePeriod);
       poll.events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
       poll.events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
+      delete poll.votes; // New stake supersedes prior votes
 
       emit PollEventSet(_pollId, STAKE_END);
     }
@@ -447,24 +449,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     poll.skillId = newDomainSkillId;
     poll.skillRep = getReputationFromProof(_pollId, address(0x0), _key, _value, _branchMask, _siblings);
 
-    if (poll.votes[NAY] < poll.votes[YAY]) {
-      poll.stakes[NAY] = sub(poll.stakes[NAY], poll.paidVoterComp);
-    } else {
-      poll.stakes[YAY] = sub(poll.stakes[YAY], poll.paidVoterComp);
-    }
-
+    uint256 loser = (poll.votes[NAY] < poll.votes[YAY]) ? NAY : YAY;
+    poll.stakes[loser] = sub(poll.stakes[loser], poll.paidVoterComp);
+    poll.pastVoterComp[loser] = add(poll.pastVoterComp[loser], poll.paidVoterComp);
     delete poll.paidVoterComp;
 
     emit PollEscalated(_pollId, msg.sender, _newDomainId);
-
-    // Check to see if the stake is unchanged, if so skip the staking period
-    if (poll.stakes[NAY] == getRequiredStake(_pollId)) {
-      poll.events[STAKE_END] = uint64(now);
-      poll.events[SUBMIT_END] = uint64(now + submitPeriod);
-      poll.events[REVEAL_END] = uint64(now + submitPeriod + revealPeriod);
-
-      emit PollEventSet(_pollId, STAKE_END);
-    }
   }
 
   function finalizePoll(uint256 _pollId) public {
@@ -488,9 +478,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
         require(executeCall(_pollId, claimDelayAction), "voting-rep-expenditure-unlock-failed");
       }
 
-      uint256 requiredStake = getRequiredStake(_pollId);
-      uint256 votePower = (poll.stakes[NAY] < requiredStake) ? poll.stakes[YAY] : poll.votes[YAY];
       bytes32 slotHash = hashExpenditureSlot(poll.action);
+      uint256 votePower = (add(poll.votes[NAY], poll.votes[YAY]) > 0) ?
+        poll.votes[YAY] : poll.stakes[YAY];
 
       if (expenditurePastPolls[slotHash] < votePower) {
         expenditurePastPolls[slotHash] = votePower;
@@ -531,60 +521,58 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       "voting-rep-not-failed-or-finalized"
     );
 
-    uint256 stake = stakes[_pollId][_user][_vote];
+    uint256 stakeFraction = wdiv(
+      stakes[_pollId][_user][_vote],
+      add(poll.stakes[_vote], poll.pastVoterComp[_vote])
+    );
 
     delete stakes[_pollId][_user][_vote];
+
+    uint256 realStake = wmul(stakeFraction, poll.stakes[_vote]);
+    uint256 requiredStake = getRequiredStake(_pollId);
 
     uint256 stakerReward;
     uint256 repPenalty;
 
     // Went to a vote, use vote to determine reward or penalty
-    if (add(poll.votes[NAY],  poll.votes[YAY]) > 0) {
+    if (add(poll.votes[NAY], poll.votes[YAY]) > 0) {
+      assert(poll.stakes[NAY] == requiredStake && poll.stakes[YAY] == requiredStake);
 
-      uint256 loserStake = sub(
-        (poll.votes[NAY] < poll.votes[YAY]) ? poll.stakes[NAY] : poll.stakes[YAY],
-        poll.paidVoterComp
-      );
-
-      uint256 stakerSideVotes = poll.votes[_vote];
+      uint256 loserStake = sub(requiredStake, poll.paidVoterComp);
       uint256 totalVotes = add(poll.votes[NAY], poll.votes[YAY]);
-      uint256 winFraction = wdiv(stakerSideVotes, totalVotes);
-      uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0 - 2 WAD
-
-      uint256 stakeFraction = wdiv(stake, poll.stakes[_vote]);
+      uint256 winFraction = wdiv(poll.votes[_vote], totalVotes);
+      uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
 
       if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
-        stakerReward = add(stake, wmul(stakeFraction, wmul(loserStake, winShare - WAD)));
+        stakerReward = wmul(stakeFraction, add(requiredStake, wmul(loserStake, winShare - WAD)));
       } else {
         stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));
-        repPenalty = sub(stake, stakerReward);
+        repPenalty = sub(realStake, stakerReward);
       }
 
     // Your side fully staked, receive 10% (proportional) of loser's stake
-    } else if (poll.stakes[_vote] == getRequiredStake(_pollId)) {
+    } else if (poll.stakes[_vote] == requiredStake) {
 
       uint256 loserStake = sub(poll.stakes[flip(_vote)], poll.paidVoterComp);
-      uint256 stakeFraction = wdiv(stake, poll.stakes[_vote]);
       uint256 totalPenalty = wmul(loserStake, WAD / 10);
 
-      stakerReward = add(stake, wmul(stakeFraction, totalPenalty));
+      stakerReward = wmul(stakeFraction, add(requiredStake, totalPenalty));
 
     // Opponent's side fully staked, pay 10% penalty
-    } else if (poll.stakes[flip(_vote)] == getRequiredStake(_pollId)) {
+    } else if (poll.stakes[flip(_vote)] == requiredStake) {
 
       uint256 loserStake = sub(poll.stakes[_vote], poll.paidVoterComp);
-      uint256 stakeFraction = wdiv(stake, poll.stakes[_vote]);
       uint256 totalPenalty = wmul(loserStake, WAD / 10);
 
-      stakerReward = sub(stake, wmul(stakeFraction, totalPenalty));
-      repPenalty = sub(stake, stakerReward);
+      stakerReward = wmul(stakeFraction, sub(loserStake, totalPenalty));
+      repPenalty = sub(realStake, stakerReward);
 
     // Neither side fully staked, no reward or penalty
     } else {
 
       uint256 totalStake = add(poll.stakes[NAY], poll.stakes[YAY]);
       uint256 rewardShare = wdiv(sub(totalStake, poll.paidVoterComp), totalStake);
-      stakerReward = wmul(stake, rewardShare);
+      stakerReward = wmul(realStake, rewardShare);
     }
 
     tokenLocking.transfer(token, stakerReward, _user, true);
@@ -670,11 +658,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       } else {
         return PollState.Failed;
       }
-
-    // Do we need to keep waiting?
-    } else if (now < poll.events[STAKE_END]) {
-
-      return PollState.Staking;
 
     // Fully staked, go to a vote
     } else {
