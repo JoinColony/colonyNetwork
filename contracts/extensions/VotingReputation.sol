@@ -32,14 +32,14 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   // Events
   event ExtensionInitialised();
   event ExtensionDeprecated();
-  event PollCreated(uint256 indexed pollId, address creator, uint256 indexed domainId);
-  event PollStaked(uint256 indexed pollId, address indexed staker, uint256 indexed vote, uint256 amount);
-  event PollVoteSubmitted(uint256 indexed pollId, address indexed voter);
-  event PollVoteRevealed(uint256 indexed pollId, address indexed voter, uint256 indexed vote);
-  event PollFinalized(uint256 indexed pollId, bytes action, bool executed);
-  event PollEscalated(uint256 indexed pollId, address escalator, uint256 indexed domainId);
-  event PollRewardClaimed(uint256 indexed pollId, address indexed staker, uint256 indexed vote, uint256 amount);
-  event PollEventSet(uint256 indexed pollId, uint256 eventIndex);
+  event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
+  event MotionStaked(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);
+  event MotionVoteSubmitted(uint256 indexed motionId, address indexed voter);
+  event MotionVoteRevealed(uint256 indexed motionId, address indexed voter, uint256 indexed vote);
+  event MotionFinalized(uint256 indexed motionId, bytes action, bool executed);
+  event MotionEscalated(uint256 indexed motionId, address escalator, uint256 indexed domainId);
+  event MotionRewardClaimed(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);
+  event MotionEventSet(uint256 indexed motionId, uint256 eventIndex);
 
   // Constants
   uint256 constant UINT256_MAX = 2**256 - 1;
@@ -69,7 +69,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   // All `Fraction` variables are stored as WADs i.e. fixed-point numbers with 18 digits after the radix. So
   // 1 WAD = 10**18, which is interpreted as 1.
 
-  uint256 totalStakeFraction; // Fraction of the domain's reputation needed to stake on each side in order to go to a poll.
+  uint256 totalStakeFraction; // Fraction of the domain's reputation needed to stake on each side in order to go to a motion.
   // This can be set to a maximum of 0.5.
   uint256 voterRewardFraction; // Fraction of staked tokens paid out to voters as rewards. This will be paid from the staked
   // tokens of the losing side. This can be set to a maximum of 0.5.
@@ -145,7 +145,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     emit ExtensionInitialised();
   }
 
-  /// @notice Deprecate the extension, prevening new polls from being created
+  /// @notice Deprecate the extension, prevening new motions from being created
   function deprecate() public {
     require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-user-not-root");
 
@@ -155,10 +155,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   // Data structures
-  enum PollState { Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
+  enum MotionState { Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
 
-  struct Poll {
-    uint64[3] events; // For recording poll lifecycle timestamps (STAKE, SUBMIT, REVEAL)
+  struct Motion {
+    uint64[3] events; // For recording motion lifecycle timestamps (STAKE, SUBMIT, REVEAL)
     bytes32 rootHash;
     uint256 domainId;
     uint256 skillId;
@@ -175,24 +175,24 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   // Storage
-  uint256 pollCount;
-  mapping (uint256 => Poll) polls;
+  uint256 motionCount;
+  mapping (uint256 => Motion) motions;
   mapping (uint256 => mapping (address => mapping (uint256 => uint256))) stakes;
   mapping (uint256 => mapping (address => bytes32)) voteSecrets;
 
-  mapping (bytes32 => uint256) expenditurePastPolls; // expenditure slot signature => voting power
-  mapping (bytes32 => uint256) expenditurePollCounts; // expenditure struct signature => count
+  mapping (bytes32 => uint256) expenditurePastMotions; // expenditure slot signature => voting power
+  mapping (bytes32 => uint256) expenditureMotionCounts; // expenditure struct signature => count
 
   // Public functions (interface)
 
-  /// @notice Create a poll in the root domain
+  /// @notice Create a motion in the root domain
   /// @param _target The contract to which we send the action (0x0 for the colony)
   /// @param _action A bytes array encoding a function call
   /// @param _key Reputation tree key for the root domain
   /// @param _value Reputation tree value for the root domain
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
-  function createRootPoll(
+  function createRootMotion(
     address _target,
     bytes memory _action,
     bytes memory _key,
@@ -203,11 +203,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     public
   {
     uint256 rootSkillId = colony.getDomain(1).skillId;
-    createPoll(_target, _action, 1, rootSkillId, _key, _value, _branchMask, _siblings);
+    createMotion(_target, _action, 1, rootSkillId, _key, _value, _branchMask, _siblings);
   }
 
-  /// @notice Create a poll in any domain
-  /// @param _domainId The domain where we vote on the poll
+  /// @notice Create a motion in any domain
+  /// @param _domainId The domain where we vote on the motion
   /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
   /// @param _target The contract to which we send the action (0x0 for the colony)
   /// @param _action A bytes array encoding a function call
@@ -215,7 +215,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   /// @param _value Reputation tree value for the domain
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
-  function createDomainPoll(
+  function createDomainMotion(
     uint256 _domainId,
     uint256 _childSkillIndex,
     address _target,
@@ -235,21 +235,21 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
     }
 
-    createPoll(_target, _action, _domainId, domainSkillId, _key, _value, _branchMask, _siblings);
+    createMotion(_target, _action, _domainId, domainSkillId, _key, _value, _branchMask, _siblings);
   }
 
-  /// @notice Stake on a poll
-  /// @param _pollId The id of the poll
+  /// @notice Stake on a motion
+  /// @param _motionId The id of the motion
   /// @param _permissionDomainId The domain where the extension has the arbitration permission
-  /// @param _childSkillIndex For the domain in which the poll is occurring
+  /// @param _childSkillIndex For the domain in which the motion is occurring
   /// @param _vote The side being supported (0 = NAY, 1 = YAY)
   /// @param _amount The amount of tokens being staked
   /// @param _key Reputation tree key for the staker/domain
   /// @param _value Reputation tree value for the staker/domain
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
-  function stakePoll(
-    uint256 _pollId,
+  function stakeMotion(
+    uint256 _motionId,
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _vote,
@@ -261,81 +261,81 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     public
   {
-    Poll storage poll = polls[_pollId];
+    Motion storage motion = motions[_motionId];
     require(_vote <= 1, "voting-rep-bad-vote");
-    require(getPollState(_pollId) == PollState.Staking, "voting-rep-staking-closed");
+    require(getMotionState(_motionId) == MotionState.Staking, "voting-rep-staking-closed");
 
-    uint256 requiredStake = getRequiredStake(_pollId);
-    uint256 amount = min(_amount, sub(requiredStake, poll.stakes[_vote]));
-    uint256 stakerTotalAmount = add(stakes[_pollId][msg.sender][_vote], amount);
+    uint256 requiredStake = getRequiredStake(_motionId);
+    uint256 amount = min(_amount, sub(requiredStake, motion.stakes[_vote]));
+    uint256 stakerTotalAmount = add(stakes[_motionId][msg.sender][_vote], amount);
 
     require(amount > 0, "voting-rep-bad-amount");
 
     require(
-      stakerTotalAmount <= getReputationFromProof(_pollId, msg.sender, _key, _value, _branchMask, _siblings),
+      stakerTotalAmount <= getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings),
       "voting-rep-insufficient-rep"
     );
     require(
       stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction) ||
-      add(poll.stakes[_vote], amount) == requiredStake, // To prevent a residual stake from being un-stakable
+      add(motion.stakes[_vote], amount) == requiredStake, // To prevent a residual stake from being un-stakable
       "voting-rep-insufficient-stake"
     );
 
-    colony.obligateStake(msg.sender, poll.domainId, amount);
-    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, poll.domainId, amount, address(this));
+    colony.obligateStake(msg.sender, motion.domainId, amount);
+    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, motion.domainId, amount, address(this));
 
     // Update the stake
-    poll.stakes[_vote] = add(poll.stakes[_vote], amount);
-    stakes[_pollId][msg.sender][_vote] = stakerTotalAmount;
+    motion.stakes[_vote] = add(motion.stakes[_vote], amount);
+    stakes[_motionId][msg.sender][_vote] = stakerTotalAmount;
 
     // Increment counter & extend claim delay if staking for an expenditure state change
     if (
       _vote == YAY &&
-      poll.stakes[YAY] == requiredStake &&
-      getSig(poll.action) == CHANGE_FUNCTION &&
-      add(poll.votes[NAY], poll.votes[YAY]) == 0
+      motion.stakes[YAY] == requiredStake &&
+      getSig(motion.action) == CHANGE_FUNCTION &&
+      add(motion.votes[NAY], motion.votes[YAY]) == 0
     ) {
-      bytes32 structHash = hashExpenditureStruct(poll.action);
-      expenditurePollCounts[structHash] = add(expenditurePollCounts[structHash], 1);
-      bytes memory claimDelayAction = createClaimDelayAction(poll.action, UINT256_MAX);
-      require(executeCall(_pollId, claimDelayAction), "voting-rep-expenditure-lock-failed");
+      bytes32 structHash = hashExpenditureStruct(motion.action);
+      expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
+      bytes memory claimDelayAction = createClaimDelayAction(motion.action, UINT256_MAX);
+      require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
     }
 
     // Move to second staking window once one side is fully staked
     if (
-      (_vote == YAY && poll.stakes[YAY] == requiredStake && poll.stakes[NAY] < requiredStake) ||
-      (_vote == NAY && poll.stakes[NAY] == requiredStake && poll.stakes[YAY] < requiredStake)
+      (_vote == YAY && motion.stakes[YAY] == requiredStake && motion.stakes[NAY] < requiredStake) ||
+      (_vote == NAY && motion.stakes[NAY] == requiredStake && motion.stakes[YAY] < requiredStake)
     ) {
-      poll.events[STAKE_END] = uint64(now + stakePeriod);
-      poll.events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
-      poll.events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
-      delete poll.votes; // New stake supersedes prior votes
+      motion.events[STAKE_END] = uint64(now + stakePeriod);
+      motion.events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
+      motion.events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
+      delete motion.votes; // New stake supersedes prior votes
 
-      emit PollEventSet(_pollId, STAKE_END);
+      emit MotionEventSet(_motionId, STAKE_END);
     }
 
     // Claim tokens once both sides are fully staked
-    if (poll.stakes[YAY] == requiredStake && poll.stakes[NAY] == requiredStake) {
-      poll.events[STAKE_END] = uint64(now);
-      poll.events[SUBMIT_END] = uint64(now + submitPeriod);
-      poll.events[REVEAL_END] = uint64(now + submitPeriod + revealPeriod);
+    if (motion.stakes[YAY] == requiredStake && motion.stakes[NAY] == requiredStake) {
+      motion.events[STAKE_END] = uint64(now);
+      motion.events[SUBMIT_END] = uint64(now + submitPeriod);
+      motion.events[REVEAL_END] = uint64(now + submitPeriod + revealPeriod);
       tokenLocking.claim(token, true);
 
-      emit PollEventSet(_pollId, STAKE_END);
+      emit MotionEventSet(_motionId, STAKE_END);
     }
 
-    emit PollStaked(_pollId, msg.sender, _vote, amount);
+    emit MotionStaked(_motionId, msg.sender, _vote, amount);
   }
 
-  /// @notice Submit a vote secret for a poll
-  /// @param _pollId The id of the poll
+  /// @notice Submit a vote secret for a motion
+  /// @param _motionId The id of the motion
   /// @param _voteSecret The hashed vote secret
   /// @param _key Reputation tree key for the staker/domain
   /// @param _value Reputation tree value for the staker/domain
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
   function submitVote(
-    uint256 _pollId,
+    uint256 _motionId,
     bytes32 _voteSecret,
     bytes memory _key,
     bytes memory _value,
@@ -344,31 +344,31 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     public
   {
-    Poll storage poll = polls[_pollId];
-    require(getPollState(_pollId) == PollState.Submit, "voting-rep-poll-not-open");
+    Motion storage motion = motions[_motionId];
+    require(getMotionState(_motionId) == MotionState.Submit, "voting-rep-motion-not-open");
     require(_voteSecret != bytes32(0), "voting-rep-invalid-secret");
 
-    uint256 userRep = getReputationFromProof(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
+    uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
 
     // Count reputation if first submission
-    if (voteSecrets[_pollId][msg.sender] == bytes32(0)) {
-      poll.repSubmitted = add(poll.repSubmitted, userRep);
+    if (voteSecrets[_motionId][msg.sender] == bytes32(0)) {
+      motion.repSubmitted = add(motion.repSubmitted, userRep);
     }
 
-    voteSecrets[_pollId][msg.sender] = _voteSecret;
+    voteSecrets[_motionId][msg.sender] = _voteSecret;
 
-    emit PollVoteSubmitted(_pollId, msg.sender);
+    emit MotionVoteSubmitted(_motionId, msg.sender);
 
-    if (poll.repSubmitted >= wmul(poll.skillRep, maxVoteFraction)) {
-      poll.events[SUBMIT_END] = uint64(now);
-      poll.events[REVEAL_END] = uint64(now + revealPeriod);
+    if (motion.repSubmitted >= wmul(motion.skillRep, maxVoteFraction)) {
+      motion.events[SUBMIT_END] = uint64(now);
+      motion.events[REVEAL_END] = uint64(now + revealPeriod);
 
-      emit PollEventSet(_pollId, SUBMIT_END);
+      emit MotionEventSet(_motionId, SUBMIT_END);
     }
   }
 
-  /// @notice Reveal a vote secret for a poll
-  /// @param _pollId The id of the poll
+  /// @notice Reveal a vote secret for a motion
+  /// @param _motionId The id of the motion
   /// @param _salt The salt used to hash the vote
   /// @param _vote The side being supported (0 = NAY, 1 = YAY)
   /// @param _key Reputation tree key for the staker/domain
@@ -376,7 +376,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
   function revealVote(
-    uint256 _pollId,
+    uint256 _motionId,
     bytes32 _salt,
     uint256 _vote,
     bytes memory _key,
@@ -386,45 +386,45 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     public
   {
-    Poll storage poll = polls[_pollId];
-    require(getPollState(_pollId) == PollState.Reveal, "voting-rep-poll-not-reveal");
+    Motion storage motion = motions[_motionId];
+    require(getMotionState(_motionId) == MotionState.Reveal, "voting-rep-motion-not-reveal");
 
-    uint256 userRep = getReputationFromProof(_pollId, msg.sender, _key, _value, _branchMask, _siblings);
+    uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
 
-    bytes32 voteSecret = voteSecrets[_pollId][msg.sender];
+    bytes32 voteSecret = voteSecrets[_motionId][msg.sender];
     require(voteSecret == getVoteSecret(_salt, _vote), "voting-rep-secret-no-match");
-    delete voteSecrets[_pollId][msg.sender];
+    delete voteSecrets[_motionId][msg.sender];
 
-    poll.votes[_vote] = add(poll.votes[_vote], userRep);
-    poll.repRevealed = add(poll.repRevealed, userRep);
+    motion.votes[_vote] = add(motion.votes[_vote], userRep);
+    motion.repRevealed = add(motion.repRevealed, userRep);
 
 
-    uint256 fractionUserReputation = wdiv(userRep, poll.skillRep);
-    uint256 totalStake = add(poll.stakes[YAY], poll.stakes[NAY]);
+    uint256 fractionUserReputation = wdiv(userRep, motion.skillRep);
+    uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
     uint256 voterReward = wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
 
-    poll.paidVoterComp = add(poll.paidVoterComp, voterReward);
+    motion.paidVoterComp = add(motion.paidVoterComp, voterReward);
     tokenLocking.transfer(token, voterReward, msg.sender, true);
 
-    emit PollVoteRevealed(_pollId, msg.sender, _vote);
+    emit MotionVoteRevealed(_motionId, msg.sender, _vote);
 
-    if (poll.repRevealed == poll.repSubmitted) {
-      poll.events[REVEAL_END] = uint64(now);
+    if (motion.repRevealed == motion.repSubmitted) {
+      motion.events[REVEAL_END] = uint64(now);
 
-      emit PollEventSet(_pollId, REVEAL_END);
+      emit MotionEventSet(_motionId, REVEAL_END);
     }
   }
 
-  /// @notice Escalate a poll to a higher domain
-  /// @param _pollId The id of the poll
+  /// @notice Escalate a motion to a higher domain
+  /// @param _motionId The id of the motion
   /// @param _newDomainId The desired domain of escalation
   /// @param _childSkillIndex For the current domain, relative to the escalated domain
   /// @param _key Reputation tree key for the new domain
   /// @param _value Reputation tree value for the new domain
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
-  function escalatePoll(
-    uint256 _pollId,
+  function escalateMotion(
+    uint256 _motionId,
     uint256 _newDomainId,
     uint256 _childSkillIndex,
     bytes memory _key,
@@ -434,56 +434,56 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     public
   {
-    Poll storage poll = polls[_pollId];
-    require(getPollState(_pollId) == PollState.Closed, "voting-rep-poll-not-closed");
+    Motion storage motion = motions[_motionId];
+    require(getMotionState(_motionId) == MotionState.Closed, "voting-rep-motion-not-closed");
 
     uint256 newDomainSkillId = colony.getDomain(_newDomainId).skillId;
     uint256 childSkillId = colonyNetwork.getChildSkillId(newDomainSkillId, _childSkillIndex);
-    require(childSkillId == poll.skillId, "voting-rep-invalid-domain-proof");
+    require(childSkillId == motion.skillId, "voting-rep-invalid-domain-proof");
 
-    poll.events[STAKE_END] = uint64(now + stakePeriod);
-    poll.events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
-    poll.events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
+    motion.events[STAKE_END] = uint64(now + stakePeriod);
+    motion.events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
+    motion.events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
 
-    poll.domainId = _newDomainId;
-    poll.skillId = newDomainSkillId;
-    poll.skillRep = getReputationFromProof(_pollId, address(0x0), _key, _value, _branchMask, _siblings);
+    motion.domainId = _newDomainId;
+    motion.skillId = newDomainSkillId;
+    motion.skillRep = getReputationFromProof(_motionId, address(0x0), _key, _value, _branchMask, _siblings);
 
-    uint256 loser = (poll.votes[NAY] < poll.votes[YAY]) ? NAY : YAY;
-    poll.stakes[loser] = sub(poll.stakes[loser], poll.paidVoterComp);
-    poll.pastVoterComp[loser] = add(poll.pastVoterComp[loser], poll.paidVoterComp);
-    delete poll.paidVoterComp;
+    uint256 loser = (motion.votes[NAY] < motion.votes[YAY]) ? NAY : YAY;
+    motion.stakes[loser] = sub(motion.stakes[loser], motion.paidVoterComp);
+    motion.pastVoterComp[loser] = add(motion.pastVoterComp[loser], motion.paidVoterComp);
+    delete motion.paidVoterComp;
 
-    emit PollEscalated(_pollId, msg.sender, _newDomainId);
+    emit MotionEscalated(_motionId, msg.sender, _newDomainId);
   }
 
-  function finalizePoll(uint256 _pollId) public {
-    Poll storage poll = polls[_pollId];
-    require(getPollState(_pollId) == PollState.Finalizable, "voting-rep-poll-not-executable");
+  function finalizeMotion(uint256 _motionId) public {
+    Motion storage motion = motions[_motionId];
+    require(getMotionState(_motionId) == MotionState.Finalizable, "voting-rep-motion-not-executable");
 
-    poll.finalized = true;
+    motion.finalized = true;
 
     bool canExecute = (
-      poll.stakes[NAY] <= poll.stakes[YAY] &&
-      poll.votes[NAY] <= poll.votes[YAY]
+      motion.stakes[NAY] <= motion.stakes[YAY] &&
+      motion.votes[NAY] <= motion.votes[YAY]
     );
 
-    if (getSig(poll.action) == CHANGE_FUNCTION) {
-      bytes32 structHash = hashExpenditureStruct(poll.action);
-      expenditurePollCounts[structHash] = sub(expenditurePollCounts[structHash], 1);
+    if (getSig(motion.action) == CHANGE_FUNCTION) {
+      bytes32 structHash = hashExpenditureStruct(motion.action);
+      expenditureMotionCounts[structHash] = sub(expenditureMotionCounts[structHash], 1);
 
-      // Release the claimDelay if this is the last active poll
-      if (expenditurePollCounts[structHash] == 0) {
-        bytes memory claimDelayAction = createClaimDelayAction(poll.action, 0);
-        require(executeCall(_pollId, claimDelayAction), "voting-rep-expenditure-unlock-failed");
+      // Release the claimDelay if this is the last active motion
+      if (expenditureMotionCounts[structHash] == 0) {
+        bytes memory claimDelayAction = createClaimDelayAction(motion.action, 0);
+        require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-unlock-failed");
       }
 
-      bytes32 slotHash = hashExpenditureSlot(poll.action);
-      uint256 votePower = (add(poll.votes[NAY], poll.votes[YAY]) > 0) ?
-        poll.votes[YAY] : poll.stakes[YAY];
+      bytes32 slotHash = hashExpenditureSlot(motion.action);
+      uint256 votePower = (add(motion.votes[NAY], motion.votes[YAY]) > 0) ?
+        motion.votes[YAY] : motion.stakes[YAY];
 
-      if (expenditurePastPolls[slotHash] < votePower) {
-        expenditurePastPolls[slotHash] = votePower;
+      if (expenditurePastMotions[slotHash] < votePower) {
+        expenditurePastMotions[slotHash] = votePower;
         canExecute = canExecute && true;
       } else {
         canExecute = canExecute && false;
@@ -493,20 +493,20 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     bool executed;
 
     if (canExecute) {
-      executed = executeCall(_pollId, poll.action);
+      executed = executeCall(_motionId, motion.action);
     }
 
-    emit PollFinalized(_pollId, poll.action, executed);
+    emit MotionFinalized(_motionId, motion.action, executed);
   }
 
   /// @notice Claim the staker's reward
-  /// @param _pollId The id of the poll
+  /// @param _motionId The id of the motion
   /// @param _permissionDomainId The domain where the extension has the arbitration permission
-  /// @param _childSkillIndex For the domain in which the poll is occurring
+  /// @param _childSkillIndex For the domain in which the motion is occurring
   /// @param _user The user whose reward is being claimed
   /// @param _vote The side being supported (0 = NAY, 1 = YAY)
   function claimReward(
-    uint256 _pollId,
+    uint256 _motionId,
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     address _user,
@@ -514,33 +514,33 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     public
   {
-    Poll storage poll = polls[_pollId];
+    Motion storage motion = motions[_motionId];
     require(
-      getPollState(_pollId) == PollState.Finalized ||
-      getPollState(_pollId) == PollState.Failed,
+      getMotionState(_motionId) == MotionState.Finalized ||
+      getMotionState(_motionId) == MotionState.Failed,
       "voting-rep-not-failed-or-finalized"
     );
 
     uint256 stakeFraction = wdiv(
-      stakes[_pollId][_user][_vote],
-      add(poll.stakes[_vote], poll.pastVoterComp[_vote])
+      stakes[_motionId][_user][_vote],
+      add(motion.stakes[_vote], motion.pastVoterComp[_vote])
     );
 
-    delete stakes[_pollId][_user][_vote];
+    delete stakes[_motionId][_user][_vote];
 
-    uint256 realStake = wmul(stakeFraction, poll.stakes[_vote]);
-    uint256 requiredStake = getRequiredStake(_pollId);
+    uint256 realStake = wmul(stakeFraction, motion.stakes[_vote]);
+    uint256 requiredStake = getRequiredStake(_motionId);
 
     uint256 stakerReward;
     uint256 repPenalty;
 
     // Went to a vote, use vote to determine reward or penalty
-    if (add(poll.votes[NAY], poll.votes[YAY]) > 0) {
-      assert(poll.stakes[NAY] == requiredStake && poll.stakes[YAY] == requiredStake);
+    if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
+      assert(motion.stakes[NAY] == requiredStake && motion.stakes[YAY] == requiredStake);
 
-      uint256 loserStake = sub(requiredStake, poll.paidVoterComp);
-      uint256 totalVotes = add(poll.votes[NAY], poll.votes[YAY]);
-      uint256 winFraction = wdiv(poll.votes[_vote], totalVotes);
+      uint256 loserStake = sub(requiredStake, motion.paidVoterComp);
+      uint256 totalVotes = add(motion.votes[NAY], motion.votes[YAY]);
+      uint256 winFraction = wdiv(motion.votes[_vote], totalVotes);
       uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
 
       if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
@@ -551,17 +551,17 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       }
 
     // Your side fully staked, receive 10% (proportional) of loser's stake
-    } else if (poll.stakes[_vote] == requiredStake) {
+    } else if (motion.stakes[_vote] == requiredStake) {
 
-      uint256 loserStake = sub(poll.stakes[flip(_vote)], poll.paidVoterComp);
+      uint256 loserStake = sub(motion.stakes[flip(_vote)], motion.paidVoterComp);
       uint256 totalPenalty = wmul(loserStake, WAD / 10);
 
       stakerReward = wmul(stakeFraction, add(requiredStake, totalPenalty));
 
     // Opponent's side fully staked, pay 10% penalty
-    } else if (poll.stakes[flip(_vote)] == requiredStake) {
+    } else if (motion.stakes[flip(_vote)] == requiredStake) {
 
-      uint256 loserStake = sub(poll.stakes[_vote], poll.paidVoterComp);
+      uint256 loserStake = sub(motion.stakes[_vote], motion.paidVoterComp);
       uint256 totalPenalty = wmul(loserStake, WAD / 10);
 
       stakerReward = wmul(stakeFraction, sub(loserStake, totalPenalty));
@@ -570,8 +570,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     // Neither side fully staked, no reward or penalty
     } else {
 
-      uint256 totalStake = add(poll.stakes[NAY], poll.stakes[YAY]);
-      uint256 rewardShare = wdiv(sub(totalStake, poll.paidVoterComp), totalStake);
+      uint256 totalStake = add(motion.stakes[NAY], motion.stakes[YAY]);
+      uint256 rewardShare = wdiv(sub(totalStake, motion.paidVoterComp), totalStake);
       stakerReward = wmul(realStake, rewardShare);
     }
 
@@ -581,95 +581,95 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       colony.emitDomainReputationPenalty(
         _permissionDomainId,
         _childSkillIndex,
-        poll.domainId,
+        motion.domainId,
         _user,
         -int256(repPenalty)
       );
     }
 
-    emit PollRewardClaimed(_pollId, _user, _vote, stakerReward);
+    emit MotionRewardClaimed(_motionId, _user, _vote, stakerReward);
   }
 
   // Public view functions
 
-  /// @notice Get the total poll count
-  /// @return The total poll count
-  function getPollCount() public view returns (uint256) {
-    return pollCount;
+  /// @notice Get the total motion count
+  /// @return The total motion count
+  function getMotionCount() public view returns (uint256) {
+    return motionCount;
   }
 
-  /// @notice Get the data for a single poll
-  /// @param _pollId The id of the poll
-  /// @return poll The poll struct
-  function getPoll(uint256 _pollId) public view returns (Poll memory poll) {
-    poll = polls[_pollId];
+  /// @notice Get the data for a single motion
+  /// @param _motionId The id of the motion
+  /// @return motion The motion struct
+  function getMotion(uint256 _motionId) public view returns (Motion memory motion) {
+    motion = motions[_motionId];
   }
 
-  /// @notice Get a user's stake on a poll
-  /// @param _pollId The id of the poll
+  /// @notice Get a user's stake on a motion
+  /// @param _motionId The id of the motion
   /// @param _staker The staker address
   /// @param _vote The side being supported (0 = NAY, 1 = YAY)
   /// @return The user's stake
-  function getStake(uint256 _pollId, address _staker, uint256 _vote) public view returns (uint256) {
-    return stakes[_pollId][_staker][_vote];
+  function getStake(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256) {
+    return stakes[_motionId][_staker][_vote];
   }
 
-  /// @notice Get the number of ongoing polls for a single expenditure / slot
+  /// @notice Get the number of ongoing motions for a single expenditure / slot
   /// @param _structHash The hash of the expenditureId or expenditureId*expenditureSlot
-  /// @return The number of ongoing polls
-  function getExpenditurePollCount(bytes32 _structHash) public view returns (uint256) {
-    return expenditurePollCounts[_structHash];
+  /// @return The number of ongoing motions
+  function getExpenditureMotionCount(bytes32 _structHash) public view returns (uint256) {
+    return expenditureMotionCounts[_structHash];
   }
 
   /// @notice Get the largest past vote on a single expenditure variable
   /// @param _slotHash The hash of the particular expenditure slot
   /// @return The largest past vote on this variable
-  function getExpenditurePastPoll(bytes32 _slotHash) public view returns (uint256) {
-    return expenditurePastPolls[_slotHash];
+  function getExpenditurePastMotion(bytes32 _slotHash) public view returns (uint256) {
+    return expenditurePastMotions[_slotHash];
   }
 
-  /// @notice Get the current state of the poll
-  /// @return The current poll state
-  function getPollState(uint256 _pollId) public view returns (PollState) {
-    Poll storage poll = polls[_pollId];
-    uint256 requiredStake = getRequiredStake(_pollId);
+  /// @notice Get the current state of the motion
+  /// @return The current motion state
+  function getMotionState(uint256 _motionId) public view returns (MotionState) {
+    Motion storage motion = motions[_motionId];
+    uint256 requiredStake = getRequiredStake(_motionId);
 
     // If finalized, we're done
-    if (poll.finalized) {
+    if (motion.finalized) {
 
-      return PollState.Finalized;
+      return MotionState.Finalized;
 
     // Not fully staked
     } else if (
-      poll.stakes[YAY] < requiredStake ||
-      poll.stakes[NAY] < requiredStake
+      motion.stakes[YAY] < requiredStake ||
+      motion.stakes[NAY] < requiredStake
     ) {
 
       // Are we still staking?
-      if (now < poll.events[STAKE_END]) {
-        return PollState.Staking;
+      if (now < motion.events[STAKE_END]) {
+        return MotionState.Staking;
       // If not, did the YAY side stake?
-      } else if (poll.stakes[YAY] == requiredStake) {
-        return PollState.Finalizable;
+      } else if (motion.stakes[YAY] == requiredStake) {
+        return MotionState.Finalizable;
       // If not, was there a prior vote we can fall back on?
-      } else if (poll.votes[NAY] > 0 || poll.votes[YAY] > 0) {
-        return PollState.Finalizable;
-      // Otherwise, the poll failed
+      } else if (motion.votes[NAY] > 0 || motion.votes[YAY] > 0) {
+        return MotionState.Finalizable;
+      // Otherwise, the motion failed
       } else {
-        return PollState.Failed;
+        return MotionState.Failed;
       }
 
     // Fully staked, go to a vote
     } else {
 
-      if (now < poll.events[SUBMIT_END]) {
-        return PollState.Submit;
-      } else if (now < poll.events[REVEAL_END]) {
-        return PollState.Reveal;
-      } else if (now < poll.events[REVEAL_END] + escalationPeriod) {
-        return PollState.Closed;
+      if (now < motion.events[SUBMIT_END]) {
+        return MotionState.Submit;
+      } else if (now < motion.events[REVEAL_END]) {
+        return MotionState.Reveal;
+      } else if (now < motion.events[REVEAL_END] + escalationPeriod) {
+        return MotionState.Closed;
       } else {
-        return PollState.Finalizable;
+        return MotionState.Finalizable;
       }
 
     }
@@ -677,7 +677,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
   // Internal functions
 
-  function createPoll(
+  function createMotion(
     address _target,
     bytes memory _action,
     uint256 _domainId,
@@ -691,28 +691,31 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     require(state == ExtensionState.Active, "voting-rep-not-active");
 
-    pollCount += 1;
+    motionCount += 1;
 
-    polls[pollCount].events[STAKE_END] = uint64(now + stakePeriod);
-    polls[pollCount].events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
-    polls[pollCount].events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
 
-    polls[pollCount].rootHash = colonyNetwork.getReputationRootHash();
-    polls[pollCount].domainId = _domainId;
-    polls[pollCount].skillId = _skillId;
-    polls[pollCount].skillRep = getReputationFromProof(pollCount, address(0x0), _key, _value, _branchMask, _siblings);
-    polls[pollCount].target = _target;
-    polls[pollCount].action = _action;
+    motions[motionCount].events[STAKE_END] = uint64(now + stakePeriod);
+    motions[motionCount].events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
+    motions[motionCount].events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
 
-    emit PollCreated(pollCount, msg.sender, _domainId);
+    motions[motionCount].rootHash = colonyNetwork.getReputationRootHash();
+    motions[motionCount].domainId = _domainId;
+    motions[motionCount].skillId = _skillId;
+
+    uint256 skillRep = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
+    motions[motionCount].skillRep = skillRep;
+    motions[motionCount].target = _target;
+    motions[motionCount].action = _action;
+
+    emit MotionCreated(motionCount, msg.sender, _domainId);
   }
 
   function getVoteSecret(bytes32 _salt, uint256 _vote) internal pure returns (bytes32) {
     return keccak256(abi.encodePacked(_salt, _vote));
   }
 
-  function getRequiredStake(uint256 _pollId) internal view returns (uint256) {
-    return wmul(polls[_pollId].skillRep, totalStakeFraction);
+  function getRequiredStake(uint256 _motionId) internal view returns (uint256) {
+    return wmul(motions[_motionId].skillRep, totalStakeFraction);
   }
 
   function flip(uint256 _vote) internal pure returns (uint256) {
@@ -720,7 +723,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   function getReputationFromProof(
-    uint256 _pollId,
+    uint256 _motionId,
     address _who,
     bytes memory _key,
     bytes memory _value,
@@ -730,7 +733,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     internal view returns (uint256)
   {
     bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
-    require(polls[_pollId].rootHash == impliedRoot, "voting-rep-invalid-root-hash");
+    require(motions[_motionId].rootHash == impliedRoot, "voting-rep-invalid-root-hash");
 
     uint256 reputationValue;
     address keyColonyAddress;
@@ -745,7 +748,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
 
     require(keyColonyAddress == address(colony), "voting-rep-invalid-colony-address");
-    require(keySkill == polls[_pollId].skillId, "voting-rep-invalid-skill-id");
+    require(keySkill == motions[_motionId].skillId, "voting-rep-invalid-skill-id");
     require(keyUserAddress == _who, "voting-rep-invalid-user-address");
 
     return reputationValue;
@@ -769,8 +772,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
   }
 
-  function executeCall(uint256 pollId, bytes memory action) internal returns (bool success) {
-    address target = polls[pollId].target;
+  function executeCall(uint256 motionId, bytes memory action) internal returns (bool success) {
+    address target = motions[motionId].target;
     address to = (target == address(0x0)) ? address(colony) : target;
 
     assembly {
