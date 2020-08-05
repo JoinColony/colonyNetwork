@@ -1358,13 +1358,12 @@ contract("Voting Reputation", (accounts) => {
     it("cannot execute after internally escalating a domain motion, if there is insufficient support", async () => {
       await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
-      const yayStake = REQUIRED_STAKE.sub(WAD.divn(1000));
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, yayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const { logs } = await voting.finalizeMotion(motionId);
-      expect(logs[0].args.executed).to.be.false;
+      const motionState = await voting.getMotionState(motionId);
+      expect(motionState).to.eq.BN(FAILED);
     });
 
     it("can fall back on the previous vote if both sides fail to stake", async () => {

@@ -464,8 +464,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     motion.finalized = true;
 
     bool canExecute = (
-      motion.stakes[NAY] <= motion.stakes[YAY] &&
-      motion.votes[NAY] <= motion.votes[YAY]
+      motion.stakes[NAY] < motion.stakes[YAY] ||
+      motion.votes[NAY] < motion.votes[YAY]
     );
 
     if (getSig(motion.action) == CHANGE_FUNCTION) {
@@ -652,7 +652,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       } else if (motion.stakes[YAY] == requiredStake) {
         return MotionState.Finalizable;
       // If not, was there a prior vote we can fall back on?
-      } else if (motion.votes[NAY] > 0 || motion.votes[YAY] > 0) {
+      } else if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
         return MotionState.Finalizable;
       // Otherwise, the motion failed
       } else {
@@ -692,7 +692,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(state == ExtensionState.Active, "voting-rep-not-active");
 
     motionCount += 1;
-
 
     motions[motionCount].events[STAKE_END] = uint64(now + stakePeriod);
     motions[motionCount].events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
