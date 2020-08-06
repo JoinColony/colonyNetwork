@@ -25,8 +25,9 @@ import "./../common/ERC20Extended.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 
+import "./ColonyExtension.sol";
 
-contract FundingQueue is DSMath, PatriciaTreeProofs {
+contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
 
   // Events
   event ProposalCreated(uint256 id, uint256 indexed fromPot, uint256 indexed toPot, address indexed token, uint256 amount);
@@ -85,6 +86,27 @@ contract FundingQueue is DSMath, PatriciaTreeProofs {
   mapping (uint256 => uint256) queue; // proposalId => nextProposalId
 
   // Public functions
+  /// @notice Returns the version of the extension
+  function version() public pure returns (uint256) {
+    return 1;
+  }
+
+  /// @notice Configures the extension
+  /// @param _colony The colony in which the extension holds permissions
+  function install(address _colony) public auth {
+    require(address(colony) == address(0x0), "extension-already-installed");
+
+    colony = IColony(_colony);
+    colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
+  }
+
+  /// @notice Called when upgrading the extension (currently a no-op since this OneTxPayment does not support upgrading)
+  function finishUpgrade() public auth {}
+
+  /// @notice Called when uninstalling the extension
+  function uninstall() public auth {
+    selfdestruct(address(uint160(address(colony))));
+  }
 
   function createProposal(
     uint256 _domainId,

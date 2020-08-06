@@ -171,9 +171,9 @@ contract ColonyNetwork is ColonyNetworkStorage {
     }
 
     // TODO: Uncomment this after merging colonyNetwork#714
-    // if (_useExtensionManager) {
-    //   IColony(colonyAddress).setRootRole(extensionManagerAddress, true);
-    // }
+    if (_useExtensionManager) {
+      IColony(colonyAddress).setRootRole(extensionManagerAddress, true);
+    }
 
     setFounderPermissions(colonyAddress);
     return colonyAddress;
