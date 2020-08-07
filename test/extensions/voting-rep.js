@@ -817,7 +817,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-executable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
     });
 
     it("can take an action if there is insufficient opposition", async () => {
@@ -886,13 +886,13 @@ contract("Voting Reputation", (accounts) => {
 
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(STAKING);
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-executable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(SUBMIT);
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-executable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
     });
 
     it("cannot take an action twice", async () => {
@@ -903,7 +903,7 @@ contract("Voting Reputation", (accounts) => {
       const { logs } = await voting.finalizeMotion(motionId);
       expect(logs[0].args.executed).to.be.true;
 
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-executable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
     });
 
     it("can take an action if the motion passes", async () => {

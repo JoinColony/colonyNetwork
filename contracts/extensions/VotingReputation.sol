@@ -169,6 +169,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256[2] pastVoterComp; // [nay, yay]
     uint256[2] stakes; // [nay, yay]
     uint256[2] votes; // [nay, yay]
+    bool escalated;
     bool finalized;
     address target;
     bytes action;
@@ -291,15 +292,17 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     // Increment counter & extend claim delay if staking for an expenditure state change
     if (
       _vote == YAY &&
+      !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
-      getSig(motion.action) == CHANGE_FUNCTION &&
-      add(motion.votes[NAY], motion.votes[YAY]) == 0
+      getSig(motion.action) == CHANGE_FUNCTION
     ) {
       bytes32 structHash = hashExpenditureStruct(motion.action);
       expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
       bytes memory claimDelayAction = createClaimDelayAction(motion.action, UINT256_MAX);
       require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
     }
+
+    emit MotionStaked(_motionId, msg.sender, _vote, amount);
 
     // Move to second staking window once one side is fully staked
     if (
@@ -323,8 +326,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
       emit MotionEventSet(_motionId, STAKE_END);
     }
-
-    emit MotionStaked(_motionId, msg.sender, _vote, amount);
   }
 
   /// @notice Submit a vote secret for a motion
@@ -441,10 +442,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 childSkillId = colonyNetwork.getChildSkillId(newDomainSkillId, _childSkillIndex);
     require(childSkillId == motion.skillId, "voting-rep-invalid-domain-proof");
 
-    motion.events[STAKE_END] = uint64(now + stakePeriod);
-    motion.events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
-    motion.events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
-
     motion.domainId = _newDomainId;
     motion.skillId = newDomainSkillId;
     motion.skillRep = getReputationFromProof(_motionId, address(0x0), _key, _value, _branchMask, _siblings);
@@ -454,12 +451,23 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     motion.pastVoterComp[loser] = add(motion.pastVoterComp[loser], motion.paidVoterComp);
     delete motion.paidVoterComp;
 
+    uint256 requiredStake = getRequiredStake(_motionId);
+    motion.events[STAKE_END] = (motion.stakes[NAY] < requiredStake || motion.stakes[YAY] < requiredStake) ?
+      uint64(now + stakePeriod) : uint64(now);
+
+    motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+    motion.events[REVEAL_END] = motion.events[STAKE_END] + uint64(submitPeriod + revealPeriod);
+
+    motion.escalated = true;
+
     emit MotionEscalated(_motionId, msg.sender, _newDomainId);
   }
 
   function finalizeMotion(uint256 _motionId) public {
     Motion storage motion = motions[_motionId];
-    require(getMotionState(_motionId) == MotionState.Finalizable, "voting-rep-motion-not-executable");
+    require(getMotionState(_motionId) == MotionState.Finalizable, "voting-rep-motion-not-finalizable");
+
+    assert(motion.stakes[YAY] == getRequiredStake(_motionId) || add(motion.votes[NAY], motion.votes[YAY]) > 0);
 
     motion.finalized = true;
 
@@ -475,7 +483,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       // Release the claimDelay if this is the last active motion
       if (expenditureMotionCounts[structHash] == 0) {
         bytes memory claimDelayAction = createClaimDelayAction(motion.action, 0);
-        require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-unlock-failed");
+        // No require this time, since we don't want stakes to be permanently locked
+        executeCall(_motionId, claimDelayAction);
       }
 
       bytes32 slotHash = hashExpenditureSlot(motion.action);
@@ -536,7 +545,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     // Went to a vote, use vote to determine reward or penalty
     if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
-      assert(motion.stakes[NAY] == requiredStake && motion.stakes[YAY] == requiredStake);
 
       uint256 loserStake = sub(requiredStake, motion.paidVoterComp);
       uint256 totalVotes = add(motion.votes[NAY], motion.votes[YAY]);
@@ -550,29 +558,40 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
         repPenalty = sub(realStake, stakerReward);
       }
 
-    // Your side fully staked, receive 10% (proportional) of loser's stake
-    } else if (motion.stakes[_vote] == requiredStake) {
-
-      uint256 loserStake = sub(motion.stakes[flip(_vote)], motion.paidVoterComp);
-      uint256 totalPenalty = wmul(loserStake, WAD / 10);
-
-      stakerReward = wmul(stakeFraction, add(requiredStake, totalPenalty));
-
-    // Opponent's side fully staked, pay 10% penalty
-    } else if (motion.stakes[flip(_vote)] == requiredStake) {
-
-      uint256 loserStake = sub(motion.stakes[_vote], motion.paidVoterComp);
-      uint256 totalPenalty = wmul(loserStake, WAD / 10);
-
-      stakerReward = wmul(stakeFraction, sub(loserStake, totalPenalty));
-      repPenalty = sub(realStake, stakerReward);
-
-    // Neither side fully staked, no reward or penalty
+    // Determine rewards based on stakes alone
     } else {
 
-      uint256 totalStake = add(motion.stakes[NAY], motion.stakes[YAY]);
-      uint256 rewardShare = wdiv(sub(totalStake, motion.paidVoterComp), totalStake);
-      stakerReward = wmul(realStake, rewardShare);
+      assert(motion.paidVoterComp == 0);
+
+      // Your side fully staked, receive 10% (proportional) of loser's stake
+      if (
+        motion.stakes[_vote] == requiredStake &&
+        motion.stakes[flip(_vote)] < requiredStake
+      ) {
+
+        uint256 loserStake = motion.stakes[flip(_vote)];
+        uint256 totalPenalty = wmul(loserStake, WAD / 10);
+
+        stakerReward = wmul(stakeFraction, add(requiredStake, totalPenalty));
+
+      // Opponent's side fully staked, pay 10% penalty
+      } else if (
+        motion.stakes[_vote] < requiredStake &&
+        motion.stakes[flip(_vote)] == requiredStake
+      ) {
+
+        uint256 loserStake = motion.stakes[_vote];
+        uint256 totalPenalty = wmul(loserStake, WAD / 10);
+
+        stakerReward = wmul(stakeFraction, sub(loserStake, totalPenalty));
+        repPenalty = sub(realStake, stakerReward);
+
+      // Neither side fully staked (or no votes were revealed), no reward or penalty
+      } else {
+
+        stakerReward = realStake;
+
+      }
     }
 
     tokenLocking.transfer(token, stakerReward, _user, true);
@@ -800,7 +819,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       // Hash all but last (value) bytes32
       // Recall: mload(action) gives length of bytes array
       // So skip past the three bytes32 (length + domain proof),
-      //   and the last bytes32 (value).
+      //   and the last bytes32 (value), plus 4 bytes for the sig.
       hash := keccak256(add(action, 0x64), sub(mload(action), 0x64))
     }
   }
