@@ -10,7 +10,7 @@ import { soliditySha3 } from "web3-utils";
 import { checkErrorRevert, web3GetBalance, rolesToBytes32 } from "../../helpers/test-helper";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
-import { ROOT_ROLE, ARBITRATION_ROLE, ARCHITECTURE_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE } from "../../helpers/constants";
+import { ROOT_ROLE, ARBITRATION_ROLE, ARCHITECTURE_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE, UINT256_MAX } from "../../helpers/constants";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -81,10 +81,10 @@ contract("ExtensionManager", accounts => {
 
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
-    await colony.addDomain(1, 0, 1); // Domain 2
+    await colony.addDomain(1, UINT256_MAX, 1); // Domain 2
 
     await colony.setRootRole(extensionManager.address, true);
-    await colony.setArchitectureRole(1, 0, ARCHITECT, 1, true);
+    await colony.setArchitectureRole(1, UINT256_MAX, ARCHITECT, 1, true);
   });
 
   describe("without the extension manager", () => {
@@ -212,7 +212,7 @@ contract("ExtensionManager", accounts => {
     });
 
     it("allows a root user to enable and disable an extension", async () => {
-      await extensionManager.enableExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: ROOT });
+      await extensionManager.enableExtension(TEST_EXTENSION, colony.address, UINT256_MAX, 1, UINT256_MAX, 1, { from: ROOT });
 
       const extensionAddress = await extensionManager.getExtension(TEST_EXTENSION, colony.address);
       let hasFundingRole = await colony.hasUserRole(extensionAddress, 1, FUNDING_ROLE);
@@ -220,7 +220,7 @@ contract("ExtensionManager", accounts => {
       expect(hasFundingRole).to.be.true;
       expect(hasAdministrationRole).to.be.true;
 
-      await extensionManager.disableExtension(TEST_EXTENSION, colony.address, 0, 1, 0, 1, { from: ROOT });
+      await extensionManager.disableExtension(TEST_EXTENSION, colony.address, UINT256_MAX, 1, UINT256_MAX, 1, { from: ROOT });
 
       hasFundingRole = await colony.hasUserRole(extensionAddress, 1, FUNDING_ROLE);
       hasAdministrationRole = await colony.hasUserRole(extensionAddress, 1, ADMINISTRATION_ROLE);
@@ -268,7 +268,7 @@ contract("ExtensionManager", accounts => {
 
       await checkErrorRevert(extensionManager.enableExtension(extensionId, colony.address, 0, 1, 0, 2, { from: ROOT }), "colony-bad-domain-for-role");
 
-      await extensionManager.enableExtension(extensionId, colony.address, 0, 1, 0, 1, { from: ROOT });
+      await extensionManager.enableExtension(extensionId, colony.address, UINT256_MAX, 1, UINT256_MAX, 1, { from: ROOT });
     });
 
     it("allows an extension to be enabled with all roles", async () => {
@@ -277,7 +277,7 @@ contract("ExtensionManager", accounts => {
 
       await metaColony.addExtension(extensionId, resolver1.address, rolesToBytes32(allRoles));
       await extensionManager.installExtension(extensionId, 1, colony.address);
-      await extensionManager.enableExtension(extensionId, colony.address, 0, 1, 0, 1, { from: ROOT });
+      await extensionManager.enableExtension(extensionId, colony.address, UINT256_MAX, 1, UINT256_MAX, 1, { from: ROOT });
     });
   });
 

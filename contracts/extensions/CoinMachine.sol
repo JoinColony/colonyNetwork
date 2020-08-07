@@ -22,11 +22,12 @@ import "./../../lib/dappsys/math.sol";
 import "./../colony/ColonyDataTypes.sol";
 import "./../colony/IColony.sol";
 import "./../common/ERC20Extended.sol";
+import "./ColonyExtension.sol";
 
 // ignore-file-swc-108
 
 
-contract CoinMachine is DSMath {
+contract CoinMachine is DSMath, ColonyExtension {
 
   // Events
 
@@ -59,6 +60,27 @@ contract CoinMachine is DSMath {
   uint256 emaIntake; // Averaged payment intake
 
   // Public
+
+  /// @notice Returns the version of the extension
+  function version() public pure returns (uint256) {
+    return 1;
+  }
+
+  /// @notice Configures the extension
+  /// @param _colony The colony in which the extension holds permissions
+  function install(address _colony) public auth {
+    require(address(colony) == address(0x0), "extension-already-installed");
+
+    colony = IColony(_colony);
+  }
+
+  /// @notice Called when upgrading the extension (currently a no-op since this OneTxPayment does not support upgrading)
+  function finishUpgrade() public auth {}
+
+  /// @notice Called when uninstalling the extension
+  function uninstall() public auth {
+    selfdestruct(address(uint160(address(colony))));
+  }
 
   /// @notice Must be called before any sales can be made
   /// @param _purchaseToken The token to receive payments in. Use 0x0 for ether

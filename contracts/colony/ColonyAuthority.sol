@@ -91,6 +91,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "setReputationMiningCycleReward(uint256)");
     addRoleCapability(ROOT_ROLE, "setExtensionManager(address)");
     addRoleCapability(ROOT_ROLE, "addExtension(address,bytes32,uint256,address,uint8[])");
+    addRoleCapability(ROOT_ROLE, "setUserRoles(uint256,uint256,address,uint256,bytes32,bool)");
     addRoleCapability(ARBITRATION_ROLE, "transferStake(uint256,uint256,address,address,uint256,uint256,address)");
     addRoleCapability(ARBITRATION_ROLE, "emitDomainReputationPenalty(uint256,uint256,uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "emitSkillReputationPenalty(uint256,address,int256)");

@@ -95,7 +95,7 @@ contract("ColonyPermissions", (accounts) => {
     });
 
     it("should let users query for role-setting permissions in domains", async () => {
-      await colony.setArchitectureRole(1, 0, USER1, 1, true);
+      await colony.setArchitectureRole(1, UINT256_MAX, USER1, 1, true);
       await colony.setArchitectureRole(1, 0, USER2, 2, true);
 
       const founderDomain1 = await colony.userCanSetRoles(FOUNDER, 1, 0, 1);
@@ -363,18 +363,18 @@ contract("ColonyPermissions", (accounts) => {
     });
 
     it("should be able to set many roles at once", async () => {
-      const roleRoot = ethers.utils.bigNumberify(2 ** 1).toHexString();
-      const roleArbitration = ethers.utils.bigNumberify(2 ** 2).toHexString();
-      const roleFunding = ethers.utils.bigNumberify(2 ** 5).toHexString();
+      const roleRoot = ethers.BigNumber.from(2 ** 1).toHexString();
+      const roleArbitration = ethers.BigNumber.from(2 ** 2).toHexString();
+      const roleFunding = ethers.BigNumber.from(2 ** 5).toHexString();
 
-      const rolesRoot = ethers.utils.hexZeroPad(ethers.utils.bigNumberify(roleRoot | roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
-      const rolesArch = ethers.utils.hexZeroPad(ethers.utils.bigNumberify(roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
+      const rolesRoot = ethers.utils.hexZeroPad(ethers.BigNumber.from(roleRoot | roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
+      const rolesArch = ethers.utils.hexZeroPad(ethers.BigNumber.from(roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
 
       let userRoles;
-      await colony.setArchitectureRole(1, 0, USER1, 1, true);
+      await colony.setArchitectureRole(1, UINT256_MAX, USER1, 1, true);
 
       // Root can set root roles
-      await colony.setUserRoles(1, 0, USER2, 1, rolesRoot, true, { from: FOUNDER });
+      await colony.setUserRoles(1, UINT256_MAX, USER2, 1, rolesRoot, true, { from: FOUNDER });
       userRoles = await colony.getUserRoles(USER2, 1);
       expect(userRoles).to.equal(rolesRoot);
 
@@ -387,7 +387,7 @@ contract("ColonyPermissions", (accounts) => {
       expect(userRoles).to.equal(rolesArch);
 
       // Arch cannot set root roles!
-      await checkErrorRevert(colony.setUserRoles(1, 0, USER2, 1, rolesRoot, true, { from: USER1 }), "ds-auth-only-authorized-in-child-domain");
+      await checkErrorRevert(colony.setUserRoles(1, UINT256_MAX, USER2, 1, rolesRoot, true, { from: USER1 }), "ds-auth-only-authorized-in-child-domain");
 
       // But can set arch roles in subdomains
       await colony.setUserRoles(1, 1, USER2, 3, rolesArch, true, { from: USER1 });
