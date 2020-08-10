@@ -20,6 +20,7 @@ pragma experimental ABIEncoderV2;
 
 import "./ColonyStorage.sol";
 
+
 contract ColonyRoles is ColonyStorage {
 
   function setRootRole(address _user, bool _setTo) public stoppable auth {

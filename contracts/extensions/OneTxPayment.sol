@@ -26,6 +26,7 @@ import "./ColonyExtension.sol";
 
 // ignore-file-swc-108
 
+
 contract OneTxPayment is ColonyExtension {
   uint256 constant UINT256_MAX = 2**256 - 1;
   bytes4 constant ADD_PAYMENT_SIG = bytes4(keccak256("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"));

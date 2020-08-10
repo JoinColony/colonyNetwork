@@ -27,6 +27,7 @@ import "./../tokenLocking/ITokenLocking.sol";
 
 import "./ColonyExtension.sol";
 
+
 contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
 
   // Events

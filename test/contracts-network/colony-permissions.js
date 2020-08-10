@@ -387,7 +387,10 @@ contract("ColonyPermissions", (accounts) => {
       expect(userRoles).to.equal(rolesArch);
 
       // Arch cannot set root roles!
-      await checkErrorRevert(colony.setUserRoles(1, UINT256_MAX, USER2, 1, rolesRoot, true, { from: USER1 }), "ds-auth-only-authorized-in-child-domain");
+      await checkErrorRevert(
+        colony.setUserRoles(1, UINT256_MAX, USER2, 1, rolesRoot, true, { from: USER1 }),
+        "ds-auth-only-authorized-in-child-domain"
+      );
 
       // But can set arch roles in subdomains
       await colony.setUserRoles(1, 1, USER2, 3, rolesArch, true, { from: USER1 });

@@ -909,5 +909,5 @@ export function bn2bytes32(x, size = 64) {
 }
 
 export function rolesToBytes32(roles) {
-  return `0x${new BN(roles.map(role => new BN(1).shln(role)).reduce((a, b) => a.or(b), new BN(0))).toString(16, 64)}`;
+  return `0x${new BN(roles.map((role) => new BN(1).shln(role)).reduce((a, b) => a.or(b), new BN(0))).toString(16, 64)}`;
 }

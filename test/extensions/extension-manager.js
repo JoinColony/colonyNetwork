@@ -24,7 +24,7 @@ const TestExtension3 = artifacts.require("TestExtension3");
 const Resolver = artifacts.require("Resolver");
 const IMetaColony = artifacts.require("IMetaColony");
 
-contract("ExtensionManager", accounts => {
+contract("ExtensionManager", (accounts) => {
   let extensionManager;
   let colonyNetwork;
   let metaColony;
