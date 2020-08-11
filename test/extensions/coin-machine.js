@@ -24,17 +24,17 @@ const Token = artifacts.require("Token");
 const CoinMachine = artifacts.require("CoinMachine");
 const ExtensionManager = artifacts.require("ExtensionManager");
 const Resolver = artifacts.require("Resolver");
+
 const COIN_MACHINE = soliditySha3("CoinMachine");
 
 contract("Coin Machine", (accounts) => {
   let colony;
   let token;
   let purchaseToken;
-
   let colonyNetwork;
   let metaColony;
-  let coinMachine;
   let extensionManager;
+  let coinMachine;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
@@ -65,12 +65,17 @@ contract("Coin Machine", (accounts) => {
   });
 
   describe("using the extension manager", async () => {
-    it("can install the extension once if root and uninstall", async () => {
+    it("can install the extension once and uninstall if root", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.setRootRole(extensionManager.address, true);
-      await checkErrorRevert(extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER1 }), "colony-extension-user-not-root");
       await extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
-      await checkErrorRevert(extensionManager.installExtension(COIN_MACHINE, 1, colony.address, {from: USER0 }), "colony-extension-already-deployed");
+
+      await checkErrorRevert(
+        extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 }),
+        "extension-manager-already-installed"
+      );
+
+      await checkErrorRevert(extensionManager.uninstallExtension(COIN_MACHINE, colony.address, { from: USER1 }), "extension-manager-unauthorized");
+
       await extensionManager.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
     });
 

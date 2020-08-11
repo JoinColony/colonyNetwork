@@ -54,9 +54,7 @@ contract("Funding Queues", (accounts) => {
   let colonyNetwork;
   let tokenLocking;
   let extensionManager;
-
   let fundingQueue;
-  let fundingQueueFactory;
 
   let reputationTree;
 
@@ -168,13 +166,19 @@ contract("Funding Queues", (accounts) => {
     await repCycle.confirmNewHash(0);
   });
 
-  describe("using the extension factory", async () => {
-    it("can install the extension factory once if root and uninstall", async () => {
+  describe("using the extension manager", async () => {
+    it("can install the extension once and uninstall if root", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await checkErrorRevert(fundingQueueFactory.deployExtension(colony.address, { from: USER1 }), "colony-extension-user-not-root");
-      await fundingQueueFactory.deployExtension(colony.address, { from: USER0 });
-      await checkErrorRevert(fundingQueueFactory.deployExtension(colony.address, { from: USER0 }), "colony-extension-already-deployed");
-      await fundingQueueFactory.removeExtension(colony.address, { from: USER0 });
+      await extensionManager.installExtension(FUNDING_QUEUE, 1, colony.address, { from: USER0 });
+
+      await checkErrorRevert(
+        extensionManager.installExtension(FUNDING_QUEUE, 1, colony.address, { from: USER0 }),
+        "extension-manager-already-installed"
+      );
+
+      await checkErrorRevert(extensionManager.uninstallExtension(FUNDING_QUEUE, colony.address, { from: USER1 }), "extension-manager-unauthorized");
+
+      await extensionManager.uninstallExtension(FUNDING_QUEUE, colony.address, { from: USER0 });
     });
   });
 

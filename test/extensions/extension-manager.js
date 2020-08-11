@@ -186,7 +186,7 @@ contract("ExtensionManager", (accounts) => {
     it("allows non root users to install an extension with the latest version only", async () => {
       await checkErrorRevert(
         extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, { from: USER }),
-        "extension-manager-only-latest-version"
+        "extension-manager-root-or-latest"
       );
 
       await extensionManager.installExtension(TEST_EXTENSION, 3, colony.address, { from: USER });

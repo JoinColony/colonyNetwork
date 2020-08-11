@@ -67,7 +67,7 @@ contract ExtensionManager {
   {
     require(resolvers[_extensionId][_version] != address(0x0), "extension-manager-bad-version");
     require(installations[_extensionId][_colony] == address(0x0), "extension-manager-already-installed");
-    require(root(_colony) || resolvers[_extensionId][_version + 1] == address(0x0), "extension-manager-only-latest-version");
+    require(root(_colony) || resolvers[_extensionId][_version + 1] == address(0x0), "extension-manager-root-or-latest");
 
     EtherRouter extension = new EtherRouter();
     installations[_extensionId][_colony] = address(extension);

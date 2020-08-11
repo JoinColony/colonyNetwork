@@ -94,9 +94,6 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
     token = colony.getToken();
 
     proposals[HEAD].totalSupport = UINT256_MAX; // Initialize queue
-
-
-
   }
 
   /// @notice Called when upgrading the extension (currently a no-op since this OneTxPayment does not support upgrading)
@@ -347,7 +344,6 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
 
     return fundingToTransfer;
   }
-
 
   function getDecayRate(uint256 backingPercent) internal view returns (uint256) {
     assert(backingPercent <= WAD);
