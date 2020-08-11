@@ -4,17 +4,27 @@ import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 
-import { WAD } from "../../helpers/constants";
+import { WAD, ROOT_ROLE, UINT256_MAX } from "../../helpers/constants";
+import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { checkErrorRevert, forwardTime, web3GetBalance, makeTxAtTimestamp, currentBlockTime } from "../../helpers/test-helper";
-import { setupColonyNetwork, setupRandomToken, setupRandomColony, setupColony } from "../../helpers/test-data-generator";
+import {
+  setupColonyNetwork,
+  setupRandomToken,
+  setupRandomColony,
+  setupColony,
+  setupMetaColonyWithLockedCLNYToken,
+} from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const Token = artifacts.require("Token");
 const CoinMachine = artifacts.require("CoinMachine");
-const CoinMachineFactory = artifacts.require("CoinMachineFactory");
+const ExtensionManager = artifacts.require("ExtensionManager");
+const Resolver = artifacts.require("Resolver");
+const COIN_MACHINE = soliditySha3("CoinMachine");
 
 contract("Coin Machine", (accounts) => {
   let colony;
@@ -22,35 +32,46 @@ contract("Coin Machine", (accounts) => {
   let purchaseToken;
 
   let colonyNetwork;
-
+  let metaColony;
   let coinMachine;
-  let coinMachineFactory;
+  let extensionManager;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
 
   before(async () => {
     colonyNetwork = await setupColonyNetwork();
-    coinMachineFactory = await CoinMachineFactory.new();
+    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+    extensionManager = await ExtensionManager.new(colonyNetwork.address);
+    await metaColony.setExtensionManager(extensionManager.address);
+
+    const coinMachineImplementation = await CoinMachine.new();
+    const resolver = await Resolver.new();
+    await setupEtherRouter("CoinMachine", { CoinMachine: coinMachineImplementation.address }, resolver);
+    await metaColony.addExtension(COIN_MACHINE, resolver.address, rolesToBytes32([ROOT_ROLE]));
   });
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     purchaseToken = await setupRandomToken();
 
-    await coinMachineFactory.deployExtension(colony.address);
-    const coinMachineAddress = await coinMachineFactory.deployedExtensions(colony.address);
-    coinMachine = await CoinMachine.at(coinMachineAddress);
-    await colony.setRootRole(coinMachineAddress, true);
+    await colony.setRootRole(extensionManager.address, true);
+    await extensionManager.installExtension(COIN_MACHINE, 1, colony.address);
+    await extensionManager.enableExtension(COIN_MACHINE, colony.address, UINT256_MAX, 1, UINT256_MAX, 1);
+
+    const extensionAddress = await extensionManager.getExtension(COIN_MACHINE, colony.address);
+    coinMachine = await CoinMachine.at(extensionAddress);
   });
 
-  describe("using the extension factory", async () => {
-    it("can install the extension factory once if root and uninstall", async () => {
+  describe("using the extension manager", async () => {
+    it("can install the extension once if root and uninstall", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await checkErrorRevert(coinMachineFactory.deployExtension(colony.address, { from: USER1 }), "colony-extension-user-not-root");
-      await coinMachineFactory.deployExtension(colony.address, { from: USER0 });
-      await checkErrorRevert(coinMachineFactory.deployExtension(colony.address, { from: USER0 }), "colony-extension-already-deployed");
-      await coinMachineFactory.removeExtension(colony.address, { from: USER0 });
+      await colony.setRootRole(extensionManager.address, true);
+      await checkErrorRevert(extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER1 }), "colony-extension-user-not-root");
+      await extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
+      await checkErrorRevert(extensionManager.installExtension(COIN_MACHINE, 1, colony.address, {from: USER0 }), "colony-extension-already-deployed");
+      await extensionManager.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
     });
 
     it("can initialise", async () => {
@@ -111,9 +132,10 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can buy tokens with eth", async () => {
-      await coinMachineFactory.removeExtension(colony.address, { from: USER0 });
-      await coinMachineFactory.deployExtension(colony.address, { from: USER0 });
-      const coinMachineAddress = await coinMachineFactory.deployedExtensions(colony.address);
+      await extensionManager.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
+      await extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
+      const coinMachineAddress = await extensionManager.getExtension(COIN_MACHINE, colony.address);
+
       coinMachine = await CoinMachine.at(coinMachineAddress);
       await colony.setRootRole(coinMachineAddress, true);
 
@@ -348,8 +370,9 @@ contract("Coin Machine", (accounts) => {
       await token.unlock();
       await token.setOwner(colony.address);
 
-      await coinMachineFactory.deployExtension(colony.address);
-      const coinMachineAddress = await coinMachineFactory.deployedExtensions(colony.address);
+      await extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
+      const coinMachineAddress = await extensionManager.getExtension(COIN_MACHINE, colony.address);
+
       coinMachine = await CoinMachine.at(coinMachineAddress);
       await colony.setRootRole(coinMachineAddress, true);
       await coinMachine.initialise(purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
@@ -367,9 +390,9 @@ contract("Coin Machine", (accounts) => {
       purchaseToken = await Token.new("Test Token", "TEST", 9);
       await purchaseToken.unlock();
 
-      await coinMachineFactory.removeExtension(colony.address);
-      await coinMachineFactory.deployExtension(colony.address);
-      const coinMachineAddress = await coinMachineFactory.deployedExtensions(colony.address);
+      await extensionManager.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
+      await extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
+      const coinMachineAddress = await extensionManager.getExtension(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
       await colony.setRootRole(coinMachineAddress, true);
       await coinMachine.initialise(purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);

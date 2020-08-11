@@ -51,15 +51,6 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
   ITokenLocking tokenLocking;
   address token;
 
-  constructor(address _colony) public {
-    colony = IColony(_colony);
-    colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
-    tokenLocking = ITokenLocking(colonyNetwork.getTokenLocking());
-    token = colony.getToken();
-
-    proposals[HEAD].totalSupport = UINT256_MAX; // Initialize queue
-  }
-
   // Data structures
   enum ProposalState { Inactive, Active, Completed, Cancelled }
 
@@ -99,6 +90,13 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
 
     colony = IColony(_colony);
     colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
+    tokenLocking = ITokenLocking(colonyNetwork.getTokenLocking());
+    token = colony.getToken();
+
+    proposals[HEAD].totalSupport = UINT256_MAX; // Initialize queue
+
+
+
   }
 
   /// @notice Called when upgrading the extension (currently a no-op since this OneTxPayment does not support upgrading)
@@ -350,37 +348,50 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
     return fundingToTransfer;
   }
 
-  // Used for mapping backing percent to the appropriate decay rate (10 second intervals)
-  // Result of evaluating ((1 - backingPercent / 2) ** (1 / (7 * 24 * 60 * 6)))
-  //  at the following points: [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]
-  uint256[11] decayRates = [
-    1000000000000000000,
-    999999151896947103,
-    999998257929499257,
-    999997312851998332,
-    999996310463960536,
-    999995243363289488,
-    999994102614216063,
-    999992877291965621,
-    999991553844799874,
-    999990115177810890,
-    999988539298800050
-  ];
 
   function getDecayRate(uint256 backingPercent) internal view returns (uint256) {
     assert(backingPercent <= WAD);
 
     if (backingPercent == WAD) {
-      return decayRates[10];
+      return getDecayRateFromBin(10);
     }
 
     uint256 lowerBin = backingPercent / (10 ** 17);
     uint256 lowerPct = (backingPercent - (lowerBin * 10 ** 17)) * 10;
 
     return add(
-      wmul(decayRates[lowerBin], sub(WAD, lowerPct)),
-      wmul(decayRates[lowerBin + 1], lowerPct)
+      wmul(getDecayRateFromBin(lowerBin), sub(WAD, lowerPct)),
+      wmul(getDecayRateFromBin(lowerBin + 1), lowerPct)
     );
+  }
+
+  function getDecayRateFromBin(uint256 bin) internal pure returns (uint256) {
+    // Used for mapping backing percent to the appropriate decay rate (10 second intervals)
+    // Result of evaluating ((1 - backingPercent / 2) ** (1 / (7 * 24 * 60 * 6)))
+    //  at the following points: [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]
+    if (bin == 0) {
+      return 1000000000000000000;
+    } else if (bin == 1) {
+      return 999999151896947103;
+    } else if (bin == 2) {
+      return 999998257929499257;
+    } else if (bin == 3) {
+      return 999997312851998332;
+    } else if (bin == 4) {
+      return 999996310463960536;
+    } else if (bin == 5) {
+      return 999995243363289488;
+    } else if (bin == 6) {
+      return 999994102614216063;
+    } else if (bin == 7) {
+      return 999992877291965621;
+    } else if (bin == 8) {
+      return 999991553844799874;
+    } else if (bin == 9) {
+      return 999990115177810890;
+    } else {
+      return 999988539298800050;
+    }
   }
 
   function checkReputation(

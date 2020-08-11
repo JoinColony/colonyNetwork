@@ -36,10 +36,6 @@ contract CoinMachine is DSMath, ColonyExtension {
 
   IColony colony;
 
-  constructor(address _colony) public {
-    colony = IColony(_colony);
-  }
-
   // Storage
 
   address purchaseToken; // The token in which we receive payments, 0x0 for eth

@@ -3,16 +3,36 @@
 import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
+import { soliditySha3 } from "web3-utils";
 
-import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE, SECONDS_PER_DAY, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
-import { checkErrorRevert, makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime, getBlockTime } from "../../helpers/test-helper";
+import {
+  UINT256_MAX,
+  WAD,
+  MINING_CYCLE_DURATION,
+  DEFAULT_STAKE,
+  SECONDS_PER_DAY,
+  FUNDING_ROLE,
+  SUBMITTER_ONLY_WINDOW
+} from "../../helpers/constants";
+
+import {
+  checkErrorRevert,
+  makeReputationKey,
+  makeReputationValue,
+  getActiveRepCycle,
+  forwardTime,
+  getBlockTime,
+  rolesToBytes32,
+} from "../../helpers/test-helper";
 
 import {
   setupColonyNetwork,
-  setupMetaColonyWithLockedCLNYToken,
   setupRandomColony,
   giveUserCLNYTokensAndStake,
+  setupMetaColonyWithLockedCLNYToken,
 } from "../../helpers/test-data-generator";
+
+import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
 import PatriciaTree from "../../packages/reputation-miner/patricia";
 
@@ -21,7 +41,10 @@ chai.use(bnChai(web3.utils.BN));
 
 const TokenLocking = artifacts.require("TokenLocking");
 const FundingQueue = artifacts.require("FundingQueue");
-const FundingQueueFactory = artifacts.require("FundingQueueFactory");
+const Resolver = artifacts.require("Resolver");
+const ExtensionManager = artifacts.require("ExtensionManager");
+
+const FUNDING_QUEUE = soliditySha3("FundingQueue");
 
 contract("Funding Queues", (accounts) => {
   let colony;
@@ -30,6 +53,7 @@ contract("Funding Queues", (accounts) => {
   let metaColony;
   let colonyNetwork;
   let tokenLocking;
+  let extensionManager;
 
   let fundingQueue;
   let fundingQueueFactory;
@@ -69,10 +93,16 @@ contract("Funding Queues", (accounts) => {
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
 
-    fundingQueueFactory = await FundingQueueFactory.new();
-
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await TokenLocking.at(tokenLockingAddress);
+
+    extensionManager = await ExtensionManager.new(colonyNetwork.address);
+    await metaColony.setExtensionManager(extensionManager.address);
+
+    const fundingQueueImplementation = await FundingQueue.new();
+    const resolver = await Resolver.new();
+    await setupEtherRouter("FundingQueue", { FundingQueue: fundingQueueImplementation.address }, resolver);
+    await metaColony.addExtension(FUNDING_QUEUE, resolver.address, rolesToBytes32([FUNDING_ROLE]));
   });
 
   beforeEach(async () => {
@@ -83,10 +113,11 @@ contract("Funding Queues", (accounts) => {
     await colony.addDomain(1, UINT256_MAX, 1);
     domain1 = await colony.getDomain(1);
 
-    await fundingQueueFactory.deployExtension(colony.address);
-    const fundingQueueAddress = await fundingQueueFactory.deployedExtensions(colony.address);
-    fundingQueue = await FundingQueue.at(fundingQueueAddress);
-    await colony.setFundingRole(1, UINT256_MAX, fundingQueue.address, 1, true);
+    await extensionManager.installExtension(FUNDING_QUEUE, 1, colony.address);
+    await extensionManager.enableExtension(FUNDING_QUEUE, colony.address, UINT256_MAX, 1, UINT256_MAX, 1);
+
+    const extensionAddress = await extensionManager.getExtension(FUNDING_QUEUE, colony.address);
+    fundingQueue = await FundingQueue.at(extensionAddress);
 
     await token.mint(colony.address, WAD);
     await colony.claimColonyFunds(token.address);
@@ -454,7 +485,6 @@ contract("Funding Queues", (accounts) => {
     beforeEach(async () => {
       await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
       proposalId = await fundingQueue.getProposalCount();
-
       await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
     });
 
