@@ -30,11 +30,11 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   /// @notice Size of mining window in seconds
   uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
 
-  function expectedBranchMask(uint256 nNodes, uint256 node) public pure returns (uint256) {
+  function expectedBranchMask(uint256 _nNodes, uint256 _node) public pure returns (uint256) {
     // Gets the expected branchmask for a patricia tree which has nNodes, with keys from 0 to nNodes -1
     // i.e. the tree is 'full' - there are no missing nodes
-    uint256 mask = sub(nNodes, 1); // Every branchmask in a full tree has at least these 1s set
-    uint256 xored = mask ^ node; // Where do mask and node differ?
+    uint256 mask = sub(_nNodes, 1); // Every branchmask in a full tree has at least these 1s set
+    uint256 xored = mask ^ _node; // Where do mask and node differ?
     // Set every bit in the mask from the first bit where they differ to 1
     uint256 remainderMask = sub(nextPowerOfTwoInclusive(add(xored, 1)), 1);
     return mask | remainderMask;
@@ -94,19 +94,19 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
 
   // https://ethereum.stackexchange.com/questions/8086/logarithm-math-operation-in-solidity
   // Some impressive de Bruijn sequence magic here...
-  function log2Ceiling(uint x) internal pure returns (uint y) {
+  function log2Ceiling(uint _x) internal pure returns (uint y) {
     assembly {
-        let arg := x
-        x := sub(x,1)
-        x := or(x, div(x, 0x02))
-        x := or(x, div(x, 0x04))
-        x := or(x, div(x, 0x10))
-        x := or(x, div(x, 0x100))
-        x := or(x, div(x, 0x10000))
-        x := or(x, div(x, 0x100000000))
-        x := or(x, div(x, 0x10000000000000000))
-        x := or(x, div(x, 0x100000000000000000000000000000000))
-        x := add(x, 1)
+        let arg := _x
+        _x := sub(_x,1)
+        _x := or(_x, div(_x, 0x02))
+        _x := or(_x, div(_x, 0x04))
+        _x := or(_x, div(_x, 0x10))
+        _x := or(_x, div(_x, 0x100))
+        _x := or(_x, div(_x, 0x10000))
+        _x := or(_x, div(_x, 0x100000000))
+        _x := or(_x, div(_x, 0x10000000000000000))
+        _x := or(_x, div(_x, 0x100000000000000000000000000000000))
+        _x := add(_x, 1)
         let m := mload(0x40)
         mstore(m,           0xf8f9cbfae6cc78fbefe7cdc3a1793dfcf4f0e8bbd8cec470b6a28a7a5a3e1efd)
         mstore(add(m,0x20), 0xf5ecf1b3e9debc68e1d9cfabc5997135bfb7a7a3938b7b606b5b4b3f2f1f0ffe)
@@ -119,7 +119,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
         mstore(0x40, add(m, 0x100))
         let magic := 0x818283848586878898a8b8c8d8e8f929395969799a9b9d9e9faaeb6bedeeff
         let shift := 0x100000000000000000000000000000000000000000000000000000000000000
-        let a := div(mul(x, magic), shift)
+        let a := div(mul(_x, magic), shift)
         y := div(mload(add(m,sub(255,a))), shift)
         y := add(y, mul(256, gt(arg, 0x8000000000000000000000000000000000000000000000000000000000000000)))
     }
@@ -129,50 +129,50 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   uint256 constant SUBMITTER_ONLY_WINDOW = 60 * 10;
   uint256 constant Y = UINT256_MAX / SUBMITTER_ONLY_WINDOW;
 
-  function responsePossible(DisputeStages stage, uint256 since) internal view returns (bool) {
-    if (since > now) {
+  function responsePossible(DisputeStages _stage, uint256 _since) internal view returns (bool) {
+    if (_since > now) {
       return false;
     }
 
-    uint256 delta = now - since;
+    uint256 delta = now - _since;
     if (delta <= SUBMITTER_ONLY_WINDOW) {
       // require user made a submission
       if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0x00)) {
         return false;
       }
       uint256 target = delta * Y;
-      if (uint256(keccak256(abi.encodePacked(msg.sender, stage))) > target) {
+      if (uint256(keccak256(abi.encodePacked(msg.sender, _stage))) > target) {
         return false;
       }
     }
     return true;
   }
 
-  function nextPowerOfTwoInclusive(uint256 v) internal pure returns (uint) { // solium-disable-line security/no-assign-params
+  function nextPowerOfTwoInclusive(uint256 _v) internal pure returns (uint) { // solium-disable-line security/no-assign-params
     // Returns the next power of two, or v if v is already a power of two.
     // Doesn't work for zero.
-    v = sub(v, 1);
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    v |= v >> 32;
-    v |= v >> 64;
-    v |= v >> 128;
-    v = add(v, 1);
-    return v;
+    _v = sub(_v, 1);
+    _v |= _v >> 1;
+    _v |= _v >> 2;
+    _v |= _v >> 4;
+    _v |= _v >> 8;
+    _v |= _v >> 16;
+    _v |= _v >> 32;
+    _v |= _v >> 64;
+    _v |= _v >> 128;
+    _v = add(_v, 1);
+    return _v;
   }
 
-  function expectedProofLength(uint256 nNodes, uint256 node) internal pure returns (uint256) { // solium-disable-line security/no-assign-params
-    nNodes -= 1;
-    uint256 nextPowerOfTwo = nextPowerOfTwoInclusive(nNodes + 1);
+  function expectedProofLength(uint256 _nNodes, uint256 _node) internal pure returns (uint256) { // solium-disable-line security/no-assign-params
+    _nNodes -= 1;
+    uint256 nextPowerOfTwo = nextPowerOfTwoInclusive(_nNodes + 1);
     uint256 layers = 0;
-    while (nNodes != 0 && (node+1 > nextPowerOfTwo / 2)) {
-      nNodes -= nextPowerOfTwo/2;
-      node -= nextPowerOfTwo/2;
+    while (_nNodes != 0 && (_node+1 > nextPowerOfTwo / 2)) {
+      _nNodes -= nextPowerOfTwo/2;
+      _node -= nextPowerOfTwo/2;
       layers += 1;
-      nextPowerOfTwo = nextPowerOfTwoInclusive(nNodes + 1);
+      nextPowerOfTwo = nextPowerOfTwoInclusive(_nNodes + 1);
     }
     while (nextPowerOfTwo > 1) {
       layers += 1;

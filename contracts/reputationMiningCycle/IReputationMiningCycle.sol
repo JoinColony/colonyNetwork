@@ -34,11 +34,11 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   function getReputationHashSubmission(address _user) public view returns (Submission memory submission);
 
   /// @notice Get the hash for the corresponding entry.
-  /// @param submitter The address that submitted the hash
-  /// @param entryIndex The index of the entry that they used to submit the hash
-  /// @param newHash The hash that they submitted
+  /// @param _submitter The address that submitted the hash
+  /// @param _entryIndex The index of the entry that they used to submit the hash
+  /// @param _newHash The hash that they submitted
   /// @return entryHash The hash for the corresponding entry
-  function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32 entryHash);
+  function getEntryHash(address _submitter, uint256 _entryIndex, bytes32 _newHash) public pure returns (bytes32 entryHash);
 
   /// @notice Returns a boolean result of whether the miner has already submitted at this entry index.
   /// @param _miner The address that submitted the hash
@@ -51,53 +51,53 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   function resetWindow() public;
 
   /// @notice Submit a new reputation root hash.
-  /// @param newHash The proposed new reputation root hash
-  /// @param nLeaves Number of leaves in tree with root `newHash`
-  /// @param jrh The justifcation root hash for this submission
-  /// @param entryIndex The entry number for the given `newHash` and `nLeaves`
-  function submitRootHash(bytes32 newHash, uint256 nLeaves, bytes32 jrh, uint256 entryIndex) public;
+  /// @param _newHash The proposed new reputation root hash
+  /// @param _nLeaves Number of leaves in tree with root `newHash`
+  /// @param _jrh The justifcation root hash for this submission
+  /// @param _entryIndex The entry number for the given `newHash` and `nLeaves`
+  function submitRootHash(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex) public;
 
   /// @notice Get whether a challenge round is complete.
-  /// @param round The round number to check
+  /// @param _round The round number to check
   /// @return complete Boolean indicating whether the given round challenge is complete
-  function challengeRoundComplete(uint256 round) public view returns (bool complete);
+  function challengeRoundComplete(uint256 _round) public view returns (bool complete);
 
   /// @notice Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle,
   /// or the last one standing after all others have been proved wrong.
-  /// @param roundNumber The round number that the hash being confirmed is in as the only contendender. If only one hash was submitted, then this is zero.
-  function confirmNewHash(uint256 roundNumber) public;
+  /// @param _roundNumber The round number that the hash being confirmed is in as the only contendender. If only one hash was submitted, then this is zero.
+  function confirmNewHash(uint256 _roundNumber) public;
 
   /// @notice Invalidate a hash that has timed out relative to its opponent its current challenge step. Note that this can be called to 'invalidate'
   /// a nonexistent hash, if the round has an odd number of entrants and so the last hash is being given a bye to the next round.
-  /// @param round The round number the hash being invalidated is in
-  /// @param idx The index in the round that the hash being invalidated is in
-  function invalidateHash(uint256 round, uint256 idx) public;
+  /// @param _round The round number the hash being invalidated is in
+  /// @param _idx The index in the round that the hash being invalidated is in
+  function invalidateHash(uint256 _round, uint256 _idx) public;
 
   /// @notice Respond to a binary search step, to eventually discover where two submitted hashes differ in their Justification trees.
-  /// @param round The round number the hash we are responding on behalf of is in
-  /// @param idx The index in the round that the hash we are responding on behalf of is in
-  /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetLeaf` (see function description). The value of `targetLeaf` is computed locally to establish what to submit to this function.
-  /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetLeaf`
+  /// @param _round The round number the hash we are responding on behalf of is in
+  /// @param _idx The index in the round that the hash we are responding on behalf of is in
+  /// @param _jhIntermediateValue The contents of the Justification Tree at the key given by `targetLeaf` (see function description). The value of `targetLeaf` is computed locally to establish what to submit to this function.
+  /// @param _siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetLeaf`
   function respondToBinarySearchForChallenge(
-    uint256 round,
-    uint256 idx,
-    bytes memory jhIntermediateValue,
-    bytes32[] memory siblings) public;
+    uint256 _round,
+    uint256 _idx,
+    bytes memory _jhIntermediateValue,
+    bytes32[] memory _siblings) public;
 
   /// @notice Confirm the result of a binary search - depending on how exactly the binary search finished, the saved binary search intermediate state might be incorrect.
   /// @notice This function ensures that the intermediate hashes saved are correct.
-  /// @param round The round number the hash we are responding on behalf of is in
-  /// @param idx The index in the round that the hash we are responding on behalf of is in
-  /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetLeaf` (see function description). The value of `targetLeaf` is computed locally to establish what to submit to this function.
-  /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetLeaf`
+  /// @param _round The round number the hash we are responding on behalf of is in
+  /// @param _idx The index in the round that the hash we are responding on behalf of is in
+  /// @param _jhIntermediateValue The contents of the Justification Tree at the key given by `targetLeaf` (see function description). The value of `targetLeaf` is computed locally to establish what to submit to this function.
+  /// @param _siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetLeaf`
   function confirmBinarySearchResult(
-    uint256 round,
-    uint256 idx,
-    bytes memory jhIntermediateValue,
-    bytes32[] memory siblings) public;
+    uint256 _round,
+    uint256 _idx,
+    bytes memory _jhIntermediateValue,
+    bytes32[] memory _siblings) public;
 
   /// @notice Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
-  /// @param u A `uint256[27]` array. The elements of this array, in order are:
+  /// @param _u A `uint256[27]` array. The elements of this array, in order are:
   /// * 1. The current round of the hash being responded on behalf of
   /// * 2. The current index in the round of the hash being responded on behalf of
   /// * 3. The branchMask of the proof that the reputation is in the reputation state tree for the reputation with the disputed change
@@ -126,7 +126,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 24. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
   /// * 25. The value of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
   /// * 26. The value of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
-  /// @param b32 A `bytes32[8]` array. The elements of this array, in order are:
+  /// @param _b32 A `bytes32[8]` array. The elements of this array, in order are:
   /// * 1. The colony address in the key of the reputation being changed that the disagreement is over.
   /// * 2. The skillid in the key of the reputation being changed that the disagreement is over.
   /// * 3. The user address in the key of the reputation being changed that the disagreement is over.
@@ -135,38 +135,38 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 6. The keccak256 hash of the key of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
   /// * 7. The keccak256 hash of the key of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
   /// @dev note that these are all bytes32; the address should be left padded from 20 bytes to 32 bytes. Strictly, I do not believe the padding matters, but you should use 0s for your own sanity!
-  /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
-  /// @param agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
-  /// @param disagreeStateSiblings The siblings of the Merkle proof that the first reputation state the submitted hashes disagreed on is in this submitted hash's justification tree
-  /// @param userOriginReputationSiblings Nonzero for child updates only. The siblings of the Merkle proof of the user's origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// @param childReputationSiblings Nonzero for child updates of a colony-wide global skill. The siblings of the Merkle proof of the child skill reputation of the user in the same skill this global update is for
-  /// @param adjacentReputationSiblings Nonzero for updates involving insertion of a new skill. The siblings of the Merkle proof of a reputation in the agree state that ends adjacent to the new reputation
+  /// @param _reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
+  /// @param _agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
+  /// @param _disagreeStateSiblings The siblings of the Merkle proof that the first reputation state the submitted hashes disagreed on is in this submitted hash's justification tree
+  /// @param _userOriginReputationSiblings Nonzero for child updates only. The siblings of the Merkle proof of the user's origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+  /// @param _childReputationSiblings Nonzero for child updates of a colony-wide global skill. The siblings of the Merkle proof of the child skill reputation of the user in the same skill this global update is for
+  /// @param _adjacentReputationSiblings Nonzero for updates involving insertion of a new skill. The siblings of the Merkle proof of a reputation in the agree state that ends adjacent to the new reputation
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
-    uint256[26] memory u, //An array of 26 UINT Params, ordered as given above.
-    bytes32[7] memory b32,
-    bytes32[] memory reputationSiblings,
-    bytes32[] memory agreeStateSiblings,
-    bytes32[] memory disagreeStateSiblings,
-    bytes32[] memory userOriginReputationSiblings,
-    bytes32[] memory childReputationSiblings,
-    bytes32[] memory adjacentReputationSiblings) public;
+    uint256[26] memory _u, //An array of 26 UINT Params, ordered as given above.
+    bytes32[7] memory _b32,
+    bytes32[] memory _reputationSiblings,
+    bytes32[] memory _agreeStateSiblings,
+    bytes32[] memory _disagreeStateSiblings,
+    bytes32[] memory _userOriginReputationSiblings,
+    bytes32[] memory _childReputationSiblings,
+    bytes32[] memory _adjacentReputationSiblings) public;
 
   /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible.
-  /// @param round The round that the hash is currently in.
-  /// @param index The index in the round that the hash is currently in
-  /// @param siblings1 The siblings for the same Merkle proof
-  /// @param siblings2 The siblings for the same Merkle proof
+  /// @param _round The round that the hash is currently in.
+  /// @param _index The index in the round that the hash is currently in
+  /// @param _siblings1 The siblings for the same Merkle proof
+  /// @param _siblings2 The siblings for the same Merkle proof
   /// @dev The majority of calls to this function will have `round` equal to `0`. The exception to this is when a submitted hash is given a bye, in which case `round` will be nonzero.
   /// @dev Note that it is possible for this function to be required to be called in every round - the hash getting the bye can wait until they will also be awarded the bye in the next round, if
   /// one is going to exist. There is an incentive to do so from a gas-cost perspective, but they don't know for sure there's going to be a bye until the submission window has expired, so I think
   /// this is okay.
   function confirmJustificationRootHash(
-    uint256 round,
-    uint256 index,
-    bytes32[] memory siblings1,
-    bytes32[] memory siblings2) public;
+    uint256 _round,
+    uint256 _index,
+    bytes32[] memory _siblings1,
+    bytes32[] memory _siblings2) public;
 
   /// @notice Add a new entry to the reputation update log.
   /// @param _user The address of the user having their reputation changed by this log entry
@@ -194,20 +194,20 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   function getReputationUpdateLogEntry(uint256 _id) public view returns (ReputationLogEntry memory reputationUpdateLogEntry);
 
   /// @notice Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
-  /// @param stakers The array of stakers addresses to receive the reward.
-  /// @param weights The array of weights determining the proportion of reward to go to each staker
-  /// @param metaColonyAddress The address of the meta colony, which the special mining skill is earned in
-  /// @param reward The amount of reputation to be rewarded to each staker
-  /// @param miningSkillId Skill id of the special mining skill
+  /// @param _stakers The array of stakers addresses to receive the reward.
+  /// @param _weights The array of weights determining the proportion of reward to go to each staker
+  /// @param _metaColonyAddress The address of the meta colony, which the special mining skill is earned in
+  /// @param _reward The amount of reputation to be rewarded to each staker
+  /// @param _miningSkillId Skill id of the special mining skill
   /// @dev Only callable by colonyNetwork.
   /// Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the
   /// same address backed the same hash multiple times with different entries.
   function rewardStakersWithReputation(
-    address[] memory stakers,
-    uint256[] memory weights,
-    address metaColonyAddress,
-    uint256 reward,
-    uint256 miningSkillId
+    address[] memory _stakers,
+    uint256[] memory _weights,
+    address _metaColonyAddress,
+    uint256 _reward,
+    uint256 _miningSkillId
     ) public;
 
   /// @notice Get the timestamp that the current reputation mining window opened.
@@ -216,9 +216,9 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
 
   /// @notice Initialise this reputation mining cycle.
   /// @dev This will only be called once, by ColonyNetwork, in the same transaction that deploys this contract.
-  /// @param tokenLocking Address of the TokenLocking contract
-  /// @param clnyToken Address of the CLNY token
-  function initialise(address tokenLocking, address clnyToken) public;
+  /// @param _tokenLocking Address of the TokenLocking contract
+  /// @param _clnyToken Address of the CLNY token
+  function initialise(address _tokenLocking, address _clnyToken) public;
 
   /// @notice Get the number of unique hash/nleaves/jrh sets that have been submitted this mining cycle.
   /// @return nUniqueSubmittedHashes Number of unique hash/nleaves/jrh sets in this cycle
