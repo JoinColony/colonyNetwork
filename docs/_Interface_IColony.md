@@ -1469,7 +1469,7 @@ Updates the expenditure owner. Can only be called by expenditure owner.
 
 ### `transferExpenditureViaArbitration`
 
-Updates the expenditure owner. Can only be called by Arbitration role.
+DEPRECATED Updates the expenditure owner. Can only be called by Arbitration role.
 
 
 **Parameters**

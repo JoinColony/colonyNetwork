@@ -222,7 +222,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _newOwner New owner of expenditure
   function transferExpenditure(uint256 _id, address _newOwner) public;
 
-  /// @notice Updates the expenditure owner. Can only be called by Arbitration role.
+  /// @notice DEPRECATED Updates the expenditure owner. Can only be called by Arbitration role.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
   /// (only used if `_permissionDomainId` is different to `_domainId`)

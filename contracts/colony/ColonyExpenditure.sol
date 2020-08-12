@@ -68,7 +68,7 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureTransferred(_id, _newOwner);
   }
 
-  // Can deprecate
+  // Deprecated
   function transferExpenditureViaArbitration(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -190,6 +190,7 @@ contract ColonyExpenditure is ColonyStorage {
   )
     public
     stoppable
+    expenditureExists(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     require(_keys.length > 0, "colony-expenditure-no-keys");
@@ -204,8 +205,7 @@ contract ColonyExpenditure is ColonyStorage {
     // Only allow editing expenditure status, owner, and finalizedTimestamp
     //  Note that status + owner occupy one slot
     if (_slot == EXPENDITURES_SLOT) {
-      uint256 offset = uint256(_keys[0]);
-      require(_keys.length == 1, "colony-expenditure-bad-keys");
+      uint256 offset = uint256(_keys[_keys.length - 1]);
       require(offset == 0 || offset == 3, "colony-expenditure-bad-offset");
     }
 
@@ -233,8 +233,8 @@ contract ColonyExpenditure is ColonyStorage {
   // Internal functions
 
   bool constant MAPPING = false;
-  bool constant OFFSET = true;
-  uint256 constant MAX_OFFSET = 1024; // Prevent writing to arbitrary storage slots
+  bool constant ARRAY = true;
+  uint256 constant MAX_ARRAY = 1024; // Prevent writing arbitrary slots
 
   function executeStateChange(
     bytes32 _slot,
@@ -256,11 +256,15 @@ contract ColonyExpenditure is ColonyStorage {
         slot = keccak256(abi.encode(_keys[i], slot));
       }
 
-      if (_mask[i] == OFFSET) {
-        require(uint256(_keys[i]) <= MAX_OFFSET, "colony-expenditure-large-offset");
+      if (_mask[i] == ARRAY) {
+        require(uint256(_keys[i]) <= MAX_ARRAY, "colony-expenditure-large-offset");
 
         slot = bytes32(add(uint256(_keys[i]), uint256(slot)));
-        if (i != _keys.length - 1) { // If not last offset
+        // If we are indexing in to an array, and this was the last entry
+        //  in keys, then we have arrived at the storage slot that we want
+        //  to set, and so do not hash the slot (which would take us to the
+        //  start of the storage of a hypothetical array at this location).
+        if (i != _keys.length - 1) {
           slot = keccak256(abi.encode(slot));
         }
       }

@@ -190,7 +190,7 @@ Get user token lock info (lock count and deposited amount).
 
 |Name|Type|Description|
 |---|---|---|
-|lock|Lock|Lock object containing:   `lockCount` User's token lock count,   `amount` User's deposited amount,   `timestamp` Timestamp of deposit.
+|lock|Lock|Lock object containing:   `lockCount` User's token lock count,   `balance` User's deposited amount,   `DEPRECATED_timestamp` Timestamp of deposit (deprecated)   `pendingBalance` Tokens that have been sent to them, but are inaccessible until all locks are cleared and then these                    tokens are claimed
 
 ### `incrementLockCounterTo`
 

@@ -655,6 +655,44 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditureSlot.skills[0]).to.eq.BN(100);
     });
 
+    it("should allow arbitration users to add or remove expenditure slot skills", async () => {
+      await colony.setExpenditureSkill(expenditureId, 0, GLOBAL_SKILL_ID, { from: ADMIN });
+
+      let expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.skills.length).to.eq.BN(1);
+      expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+
+      // Lengthen the array
+      let mask = [MAPPING, OFFSET];
+      let keys = ["0x0", bn2bytes32(new BN(3))];
+      let value = bn2bytes32(new BN(2));
+
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
+
+      // Set the new skillId
+      mask = [MAPPING, OFFSET, OFFSET];
+      keys = ["0x0", bn2bytes32(new BN(3)), bn2bytes32(new BN(1))];
+      value = bn2bytes32(new BN(100));
+
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.skills.length).to.eq.BN(2);
+      expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(expenditureSlot.skills[1]).to.eq.BN(100);
+
+      // Shrink the array
+      mask = [MAPPING, OFFSET];
+      keys = ["0x0", bn2bytes32(new BN(3))];
+      value = bn2bytes32(new BN(1));
+
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.skills.length).to.eq.BN(1);
+      expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+    });
+
     it("should allow arbitration users to update expenditure slot payouts", async () => {
       const mask = [MAPPING, MAPPING];
       const keys = ["0x0", bn2bytes32(new BN(token.address.slice(2), 16))];
