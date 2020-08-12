@@ -165,7 +165,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
       await forwardTime(MINING_CYCLE_DURATION, this);
 
       let nSubmissionsForHash = await repCycle.getNSubmissionsForHash("0x12345678", 10, "0x00");
-      expect(nSubmissionsForHash).to.eq.BN(0);
+      expect(nSubmissionsForHash).to.be.zero;
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 1, { from: MINER1 });
       nSubmissionsForHash = await repCycle.getNSubmissionsForHash("0x12345678", 10, "0x00");
       expect(nSubmissionsForHash).to.eq.BN(1);

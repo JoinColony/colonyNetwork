@@ -126,21 +126,21 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   }
 
   uint256 constant UINT256_MAX = 2**256 - 1;
-  uint256 constant SUBMITTER_ONLY_WINDOW = 60 * 10;
-  uint256 constant Y = UINT256_MAX / SUBMITTER_ONLY_WINDOW;
+  uint256 constant SUBMITTER_ONLY_WINDOW_DURATION = 60 * 10;
+  uint256 constant Y = UINT256_MAX / SUBMITTER_ONLY_WINDOW_DURATION;
 
-  function responsePossible(DisputeStages _stage, uint256 _since) internal view returns (bool) {
-    if (_since > now) {
+  function responsePossible(DisputeStages _stage, uint256 _responseWindowOpened) internal view returns (bool) {
+    if (_responseWindowOpened > now) {
       return false;
     }
 
-    uint256 delta = now - _since;
-    if (delta <= SUBMITTER_ONLY_WINDOW) {
+    if (now <= _responseWindowOpened + SUBMITTER_ONLY_WINDOW_DURATION) {
       // require user made a submission
       if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0x00)) {
         return false;
       }
-      uint256 target = delta * Y;
+      uint256 windowOpenFor = now - _responseWindowOpened;
+      uint256 target = windowOpenFor * Y;
       if (uint256(keccak256(abi.encodePacked(msg.sender, _stage))) > target) {
         return false;
       }

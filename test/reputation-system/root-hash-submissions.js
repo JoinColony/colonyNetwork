@@ -847,7 +847,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       await goodClient.submitRootHash();
       let reward = await repCycle.getDisputeRewardSize();
-      expect(reward).to.eq.BN("0");
+      expect(reward).to.be.zero;
 
       await badClient.submitRootHash();
       reward = await repCycle.getDisputeRewardSize();
