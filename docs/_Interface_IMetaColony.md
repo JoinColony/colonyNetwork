@@ -59,6 +59,19 @@ Mints CLNY in the Meta Colony and transfers them to the colony network. Only all
 |_wad|uint256|Amount to mint and transfer to the colony network
 
 
+### `setAnnualMetaColonyStipend`
+
+Called to set the metaColony stipend. This value will be the total amount of CLNY created for the metacolony in a single year.
+
+*Note: Calls the corresponding function on the ColonyNetwork.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|The amount of CLNY to issue to the metacolony every year
+
+
 ### `setNetworkFeeInverse`
 
 Set the Colony Network fee inverse amount.
@@ -70,3 +83,16 @@ Set the Colony Network fee inverse amount.
 |Name|Type|Description|
 |---|---|---|
 |_feeInverse|uint256|Nonzero amount for the fee inverse
+
+
+### `setReputationMiningCycleReward`
+
+Called to set the total per-cycle reputation reward, which will be split between all miners.
+
+*Note: Calls the corresponding function on the ColonyNetwork.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|

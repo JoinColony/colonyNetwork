@@ -178,6 +178,18 @@ Mark a global skill as deprecated which stops new tasks and payments from using 
 |_skillId|uint256|Id of the skill
 
 
+### `getAnnualMetaColonyStipend`
+
+Called to get the total per-cycle reputation mining reward.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
+
 ### `getChildSkillId`
 
 Get the id of the child skill at index `_childSkillIndex` for skill with Id `_skillId`.
@@ -406,6 +418,18 @@ Get the address of either the active or inactive reputation mining cycle, based 
 |---|---|---|
 |repMiningCycleAddress|address|address of active or inactive ReputationMiningCycle
 
+### `getReputationMiningCycleReward`
+
+Called to get the total per-cycle reputation mining reward.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
+
 ### `getReputationMiningSkillId`
 
 Get the `skillId` of the reputation mining skill. Only set once the metacolony is set up.
@@ -535,6 +559,13 @@ Check if specific address is a colony created on colony network.
 |---|---|---|
 |addressIsColony|bool|true if specified address is a colony, otherwise false
 
+### `issueMetaColonyStipend`
+
+Called to issue the metaColony stipend. This public function can be called by anyone at any interval, and an appropriate amount of CLNY will be minted based on the time since the last time it was called.
+
+
+
+
 ### `lookupRegisteredENSDomain`
 
 Reverse lookup a username from an address.
@@ -606,6 +637,19 @@ Used to track that a user is eligible to claim a reward
 |_amount|uint256|The amount of CLNY to be awarded
 
 
+### `setAnnualMetaColonyStipend`
+
+Called to set the metaColony stipend. This value will be the total amount of CLNY created for the metacolony in a single year. The corresponding `issueMetaColonyStipend` function can be called at any interval.
+
+*Note: Can only be called by the MetaColony.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|The amount of CLNY to issue to the metacolony every year
+
+
 ### `setFeeInverse`
 
 Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as `_feeInverse`.
@@ -650,6 +694,19 @@ Set a replacement log entry if we're in recovery mode.
 |_nPreviousUpdates|uint128|The number of updates in the log before this entry
 
 
+### `setReputationMiningCycleReward`
+
+Called to set the total per-cycle reputation reward, which will be split between all miners.
+
+*Note: Can only be called by the MetaColony.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|
+
+
 ### `setReputationRootHash`
 
 Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
@@ -662,7 +719,21 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |newHash|bytes32|The reputation root hash
 |newNLeaves|uint256|The updated leaves count value
 |stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-|reward|uint256|Amount of CLNY to be distributed as reward to miners
+
+
+### `setReputationRootHash`
+
+This version of setReputationRootHash is deprecated and will be removed in a future release. It transparently calls the new version if it is called (essentially, removing the `reward` parameter.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|newHash|bytes32|The reputation root hash
+|newNLeaves|uint256|The updated leaves count value
+|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
+|reward|uint256|Amount of CLNY to be distributed as reward to miners (not used)
 
 
 ### `setTokenLocking`
