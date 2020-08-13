@@ -12,6 +12,7 @@ const ColonyExpenditure = artifacts.require("ColonyExpenditure");
 const ColonyTask = artifacts.require("ColonyTask");
 const ColonyPayment = artifacts.require("ColonyPayment");
 const ColonyFunding = artifacts.require("ColonyFunding");
+const ColonyRoles = artifacts.require("ColonyRoles");
 const ContractRecovery = artifacts.require("ContractRecovery");
 const UpdatedColony = artifacts.require("UpdatedColony");
 const IUpdatedColony = artifacts.require("IUpdatedColony");
@@ -41,6 +42,7 @@ contract("Colony contract upgrade", (accounts) => {
     const colonyTask = await ColonyTask.new();
     const colonyPayment = await ColonyPayment.new();
     const colonyFunding = await ColonyFunding.new();
+    const colonyRoles = await ColonyRoles.new();
     const contractRecovery = await ContractRecovery.new();
 
     dueDate = await currentBlockTime();
@@ -51,7 +53,16 @@ contract("Colony contract upgrade", (accounts) => {
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
     await resolver.register("isUpdated()", updatedColonyContract.address);
-    await setupColonyVersionResolver(updatedColonyContract, colonyExpenditure, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
+    await setupColonyVersionResolver(
+      updatedColonyContract,
+      colonyExpenditure,
+      colonyTask,
+      colonyPayment,
+      colonyFunding,
+      colonyRoles,
+      contractRecovery,
+      resolver
+    );
 
     updatedColonyVersion = await updatedColonyContract.version();
     await metaColony.addNetworkColonyVersion(updatedColonyVersion.toNumber(), resolver.address);
