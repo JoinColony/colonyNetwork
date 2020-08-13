@@ -211,6 +211,11 @@ contract("ExtensionManager", (accounts) => {
       await extensionManager.installExtension(TEST_EXTENSION, 1, colony.address, { from: ROOT });
     });
 
+    it("allows users to see the required roles for the extension", async () => {
+      const roles = await extensionManager.getRoles(TEST_EXTENSION);
+      expect(roles).to.equal(rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]));
+    });
+
     it("allows a root user to enable and disable an extension", async () => {
       await extensionManager.enableExtension(TEST_EXTENSION, colony.address, UINT256_MAX, 1, UINT256_MAX, 1, { from: ROOT });
 

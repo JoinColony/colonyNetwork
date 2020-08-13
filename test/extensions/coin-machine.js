@@ -64,8 +64,19 @@ contract("Coin Machine", (accounts) => {
     coinMachine = await CoinMachine.at(extensionAddress);
   });
 
-  describe("using the extension manager", async () => {
-    it("can install the extension once and uninstall if root", async () => {
+  describe("managing the extension", async () => {
+    it("can install the extension manually", async () => {
+      coinMachine = await CoinMachine.new();
+      await coinMachine.install(colony.address);
+
+      await checkErrorRevert(coinMachine.install(colony.address), "extension-already-installed");
+
+      await coinMachine.finishUpgrade();
+
+      await coinMachine.uninstall();
+    });
+
+    it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
 

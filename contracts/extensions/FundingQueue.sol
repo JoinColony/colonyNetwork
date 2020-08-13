@@ -96,7 +96,7 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
     proposals[HEAD].totalSupport = UINT256_MAX; // Initialize queue
   }
 
-  /// @notice Called when upgrading the extension (currently a no-op since this OneTxPayment does not support upgrading)
+  /// @notice Called when upgrading the extension
   function finishUpgrade() public auth {}
 
   /// @notice Called when uninstalling the extension

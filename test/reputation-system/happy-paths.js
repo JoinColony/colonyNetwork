@@ -127,6 +127,12 @@ contract("Reputation Mining - happy paths", (accounts) => {
   });
 
   describe("when executing intended behaviours", () => {
+    it("should be able to get the number of submissions per hash", async () => {
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const nSubmissions = await repCycle.getNSubmissionsForHash("0x0", 0, "0x0");
+      expect(nSubmissions).to.be.zero;
+    });
+
     it("should cope with many hashes being submitted and eliminated before a winner is assigned", async function manySubmissionTest() {
       this.timeout(100000000);
 
