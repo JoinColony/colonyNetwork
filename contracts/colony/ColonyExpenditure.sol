@@ -208,7 +208,7 @@ contract ColonyExpenditure is ColonyStorage {
     if (_storageSlot == EXPENDITURES_SLOT) {
       uint256 offset = uint256(_keys[0]);
       require(_keys.length == 1, "colony-expenditure-bad-keys");
-      require(offset == 0 || offset == 3, "colony-expenditure-bad-offset");
+      require(offset == 0 || offset == 3 || offset == 4, "colony-expenditure-bad-offset");
     }
 
     executeStateChange(keccak256(abi.encode(_id, _storageSlot)), _mask, _keys, _value);
