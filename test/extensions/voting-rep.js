@@ -87,13 +87,14 @@ contract("Voting Reputation", (accounts) => {
   const NAY = 0;
   const YAY = 1;
 
-  const STAKING = 0;
-  const SUBMIT = 1;
-  // const REVEAL = 2;
-  // const CLOSED = 3;
-  // const EXECUTABLE = 4;
-  // const EXECUTED = 5;
-  const FAILED = 6;
+  // const NULL = 0;
+  const STAKING = 1;
+  const SUBMIT = 2;
+  // const REVEAL = 3;
+  // const CLOSED = 4;
+  // const EXECUTABLE = 5;
+  // const EXECUTED = 6;
+  const FAILED = 7;
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
   const REQUIRED_STAKE = WAD.muln(3).divn(1000);
@@ -372,6 +373,13 @@ contract("Voting Reputation", (accounts) => {
       expect(lock.balance).to.eq.BN(REQUIRED_STAKE.muln(2));
     });
 
+    it("cannot stake on a non-existent motion", async () => {
+      await checkErrorRevert(
+        voting.stakeMotion(0, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-motion-not-staking"
+      );
+    });
+
     it("cannot stake 0", async () => {
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, 0, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
@@ -604,12 +612,12 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-staking-closed"
+        "voting-rep-motion-not-staking"
       );
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
-        "voting-rep-staking-closed"
+        "voting-rep-motion-not-staking"
       );
     });
   });
@@ -727,6 +735,13 @@ contract("Voting Reputation", (accounts) => {
       await voting.revealVote(motionId2, SALT, NAY, user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
     });
 
+    it("cannot submit a vote on a non-existent motion", async () => {
+      await checkErrorRevert(
+        voting.submitVote(0, "0x0", user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-motion-not-open"
+      );
+    });
+
     it("cannot submit a null vote", async () => {
       await checkErrorRevert(
         voting.submitVote(motionId, "0x0", user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
@@ -740,6 +755,15 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(
         voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "voting-rep-motion-not-open"
+      );
+    });
+
+    it("cannot reveal a vote on a non-existent motion", async () => {
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await checkErrorRevert(
+        voting.revealVote(0, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-motion-not-reveal"
       );
     });
 
@@ -808,6 +832,10 @@ contract("Voting Reputation", (accounts) => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
+    });
+
+    it("cannot execute a non-existent motion", async () => {
+      await checkErrorRevert(voting.finalizeMotion(0), "voting-rep-motion-not-finalizable");
     });
 
     it("cannot take an action if there is insufficient support", async () => {
@@ -1042,6 +1070,10 @@ contract("Voting Reputation", (accounts) => {
       motionId = await voting.getMotionCount();
     });
 
+    it("cannot claim rewards from a non-existent motion", async () => {
+      await checkErrorRevert(voting.claimReward(0, 1, UINT256_MAX, USER0, YAY), "voting-rep-motion-not-claimable");
+    });
+
     it("can let stakers claim rewards, based on the stake outcome", async () => {
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -1263,7 +1295,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot claim rewards before a motion is finalized", async () => {
-      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-rep-not-failed-or-finalized");
+      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-rep-motion-not-claimable");
     });
   });
 

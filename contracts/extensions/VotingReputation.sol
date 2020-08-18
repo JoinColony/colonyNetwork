@@ -155,7 +155,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   // Data structures
-  enum MotionState { Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
+  enum MotionState { Null, Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
 
   struct Motion {
     uint64[3] events; // For recording motion lifecycle timestamps (STAKE, SUBMIT, REVEAL)
@@ -264,13 +264,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     Motion storage motion = motions[_motionId];
     require(_vote <= 1, "voting-rep-bad-vote");
-    require(getMotionState(_motionId) == MotionState.Staking, "voting-rep-staking-closed");
+    require(getMotionState(_motionId) == MotionState.Staking, "voting-rep-motion-not-staking");
 
     uint256 requiredStake = getRequiredStake(_motionId);
     uint256 amount = min(_amount, sub(requiredStake, motion.stakes[_vote]));
-    uint256 stakerTotalAmount = add(stakes[_motionId][msg.sender][_vote], amount);
-
     require(amount > 0, "voting-rep-bad-amount");
+
+    uint256 stakerTotalAmount = add(stakes[_motionId][msg.sender][_vote], amount);
 
     require(
       stakerTotalAmount <= getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings),
@@ -527,7 +527,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(
       getMotionState(_motionId) == MotionState.Finalized ||
       getMotionState(_motionId) == MotionState.Failed,
-      "voting-rep-not-failed-or-finalized"
+      "voting-rep-motion-not-claimable"
     );
 
     uint256 stakeFraction = wdiv(
@@ -653,8 +653,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     Motion storage motion = motions[_motionId];
     uint256 requiredStake = getRequiredStake(_motionId);
 
+    // Check for valid motion Id
+    if (_motionId == 0 || _motionId > motionCount) {
+
+      return MotionState.Null;
+
     // If finalized, we're done
-    if (motion.finalized) {
+    } else if (motion.finalized) {
 
       return MotionState.Finalized;
 
