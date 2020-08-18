@@ -284,6 +284,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     colony.obligateStake(msg.sender, motion.domainId, amount);
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, motion.domainId, amount, address(this));
+    tokenLocking.claim(token, true);
 
     // Update the stake
     motion.stakes[_vote] = add(motion.stakes[_vote], amount);
@@ -322,7 +323,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       motion.events[STAKE_END] = uint64(now);
       motion.events[SUBMIT_END] = uint64(now + submitPeriod);
       motion.events[REVEAL_END] = uint64(now + submitPeriod + revealPeriod);
-      tokenLocking.claim(token, true);
 
       emit MotionEventSet(_motionId, STAKE_END);
     }
@@ -461,6 +461,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     motion.escalated = true;
 
     emit MotionEscalated(_motionId, msg.sender, _newDomainId);
+
+    if (motion.events[STAKE_END] == uint64(now)) {
+      emit MotionEventSet(_motionId, STAKE_END);
+    }
   }
 
   function finalizeMotion(uint256 _motionId) public {
