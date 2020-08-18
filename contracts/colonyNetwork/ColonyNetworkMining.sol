@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 pragma experimental "ABIEncoderV2";
 
 import "./../common/ERC20Extended.sol";
@@ -161,7 +161,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
     for (i = 0; i < stakers.length; i++) {
       timeStaked = miningStakes[stakers[i]].timestamp;
-      minerWeights[i] = calculateMinerWeight(now - timeStaked, i);
+      minerWeights[i] = calculateMinerWeight(block.timestamp - timeStaked, i);
       minerWeightsTotal = add(minerWeightsTotal, minerWeights[i]);
     }
 
@@ -222,7 +222,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     ITokenLocking(tokenLocking).approveStake(msg.sender, _amount, clnyToken);
     ITokenLocking(tokenLocking).obligateStake(msg.sender, _amount, clnyToken);
 
-    miningStakes[msg.sender].timestamp = getNewTimestamp(existingObligation, _amount, miningStakes[msg.sender].timestamp, now);
+    miningStakes[msg.sender].timestamp = getNewTimestamp(existingObligation, _amount, miningStakes[msg.sender].timestamp, block.timestamp);
     miningStakes[msg.sender].amount = add(miningStakes[msg.sender].amount, _amount);
   }
 

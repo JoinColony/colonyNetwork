@@ -15,20 +15,20 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8; // ignore-swc-103
+pragma solidity 0.7.0; // ignore-swc-103
 
 import "./../../lib/dappsys/erc20.sol";
 
 
-contract ERC20Extended is ERC20 {
+abstract contract ERC20Extended is ERC20 {
   event Mint(address indexed guy, uint wad);
   event Burn(address indexed guy, uint wad);
 
-  function mint(uint wad) public;
+  function mint(uint wad) public virtual;
 
-  function mint(address guy, uint wad) public;
+  function mint(address guy, uint wad) public virtual;
 
-  function burn(uint wad) public;
+  function burn(uint wad) public virtual;
 
-  function burn(address guy, uint wad) public;
+  function burn(address guy, uint wad) public virtual;
 }

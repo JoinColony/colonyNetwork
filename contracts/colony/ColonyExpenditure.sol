@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -36,11 +36,8 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureCount += 1;
     fundingPotCount += 1;
 
-    fundingPots[fundingPotCount] = FundingPot({
-      associatedType: FundingPotAssociatedType.Expenditure,
-      associatedTypeId: expenditureCount,
-      payoutsWeCannotMake: 0
-    });
+    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType.Expenditure;
+    fundingPots[fundingPotCount].associatedTypeId = expenditureCount;
 
     expenditures[expenditureCount] = Expenditure({
       status: ExpenditureStatus.Active,
@@ -110,7 +107,7 @@ contract ColonyExpenditure is ColonyStorage {
     require(fundingPot.payoutsWeCannotMake == 0, "colony-expenditure-not-funded");
 
     expenditures[_id].status = ExpenditureStatus.Finalized;
-    expenditures[_id].finalizedTimestamp = now;
+    expenditures[_id].finalizedTimestamp = block.timestamp;
 
     emit ExpenditureFinalized(_id);
   }

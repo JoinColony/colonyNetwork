@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 pragma experimental "ABIEncoderV2";
 
 import "./../../lib/dappsys/math.sol";
@@ -25,9 +25,9 @@ import "./ReputationMiningCycleStorage.sol";
 
 
 contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
-  /// @notice Minimum reputation mining stake in CLNY
+  // Minimum reputation mining stake in CLNY
   uint256 constant MIN_STAKE = 2000 * WAD;
-  /// @notice Size of mining window in seconds
+  // Size of mining window in seconds
   uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
 
   function expectedBranchMask(uint256 _nNodes, uint256 _node) public pure returns (uint256) {
@@ -48,7 +48,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   }
 
   function submissionWindowClosed() internal view returns (bool) {
-    return now - reputationMiningWindowOpenTimestamp >= MINING_WINDOW_SIZE;
+    return block.timestamp - reputationMiningWindowOpenTimestamp >= MINING_WINDOW_SIZE;
   }
 
   function disputeRewardSize() internal returns (uint256) {

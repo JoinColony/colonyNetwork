@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -41,11 +41,9 @@ contract ColonyPayment is ColonyStorage {
     paymentCount += 1;
 
     fundingPotCount += 1;
-    fundingPots[fundingPotCount] = FundingPot({
-      associatedType: FundingPotAssociatedType.Payment,
-      associatedTypeId: paymentCount,
-      payoutsWeCannotMake: _amount > 0 ? 1 : 0
-    });
+    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType.Payment;
+    fundingPots[fundingPotCount].associatedTypeId = paymentCount;
+    fundingPots[fundingPotCount].payoutsWeCannotMake = _amount > 0 ? 1 : 0;
 
     fundingPots[fundingPotCount].payouts[_token] = _amount;
 

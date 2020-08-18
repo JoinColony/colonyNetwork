@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
@@ -232,7 +232,7 @@ contract CoinMachine is DSMath, ColonyExtension {
   // Internal
 
   function getCurrentPeriod() internal view returns (uint256) {
-    return now / periodLength;
+    return block.timestamp / periodLength;
   }
 
   function wpow(uint256 x, uint256 n) internal pure returns (uint256) {

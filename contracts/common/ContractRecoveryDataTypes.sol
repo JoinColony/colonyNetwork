@@ -15,10 +15,10 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 
 
-contract ContractRecoveryDataTypes {
+interface ContractRecoveryDataTypes {
   /// @notice Event logged when user gets/loses the recovery role.
   /// @param user The address being modified
   /// @param setTo The boolean indicating whether the role is being granted or revoked

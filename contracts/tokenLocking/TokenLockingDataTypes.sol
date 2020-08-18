@@ -15,10 +15,10 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 
 
-contract TokenLockingDataTypes {
+interface TokenLockingDataTypes {
 
   event ColonyNetworkSet(address colonyNetwork);
   event TokenLocked(address token, uint256 lockCount);

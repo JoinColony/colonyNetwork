@@ -15,14 +15,13 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "./../common/EtherRouter.sol";
 import "./../colony/IColony.sol";
 
-
-contract ColonyExtension is DSAuth {
+abstract contract ColonyExtension is DSAuth {
   address resolver; // Align storage with EtherRouter
 
   IColony colony;
@@ -33,9 +32,9 @@ contract ColonyExtension is DSAuth {
     _;
   }
 
-  function version() public pure returns (uint256);
-  function install(address _colony) public;
-  function finishUpgrade() public;
-  function deprecate(bool _deprecated) public;
-  function uninstall() public;
+  function version() public pure virtual returns (uint256);
+  function install(address _colony) public virtual;
+  function finishUpgrade() public virtual;
+  function deprecate(bool _deprecated) public virtual;
+  function uninstall() public virtual;
 }

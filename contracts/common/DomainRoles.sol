@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8; // ignore-swc-103
+pragma solidity 0.7.0; // ignore-swc-103
 
 import "./../../lib/dappsys/roles.sol";
 
@@ -61,15 +61,15 @@ contract DomainRoles is DSRoles {
 
   // Support old function signatures for root domain
 
-  function setUserRole(address who, uint8 role, bool enabled) public auth {
+  function setUserRole(address who, uint8 role, bool enabled) public override auth {
     return setUserRole(who, 1, role, enabled);
   }
 
-  function hasUserRole(address who, uint8 role) public view returns (bool) {
+  function hasUserRole(address who, uint8 role) public view override returns (bool) {
     return hasUserRole(who, 1, role);
   }
 
-  function canCall(address caller, address code, bytes4 sig) public view returns (bool) {
+  function canCall(address caller, address code, bytes4 sig) public view override returns (bool) {
     return canCall(caller, 1, code, sig);
   }
 

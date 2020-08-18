@@ -15,23 +15,23 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.5.8; // ignore-swc-103
+pragma solidity >=0.7.0; // ignore-swc-103
 pragma experimental ABIEncoderV2;
 
 // Note that we have deliberately left the fallback function off here to accommodate
 // address / address payable conversion issues where we want to use this.
 
 
-contract IEtherRouter {
+interface IEtherRouter {
   /// @notice Sets the resolver address. This is used in the routing of all delegatecalls by the EtherRouter.
   /// @param _resolver Address of the new Resolver
-  function setResolver(address _resolver) public;
+  function setResolver(address _resolver) external;
 
   /// @notice Sets the EtherRouter owner. Inherited from DSAuth.
   /// @param owner_ Address of the new owner
-  function setOwner(address owner_) public;
+  function setOwner(address owner_) external;
 
   /// @notice Sets the EtherRouter authority. Inherited from DSAuth.
   /// @param authority_ Address of the new DSAuthority instance
-  function setAuthority(address authority_) public;
+  function setAuthority(address authority_) external;
 }

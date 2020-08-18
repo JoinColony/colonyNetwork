@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 pragma experimental "ABIEncoderV2";
 
 import "./../tokenLocking/ITokenLocking.sol";
@@ -107,7 +107,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     ExpenditureSlot storage slot = expenditureSlots[_id][_slot];
 
     require(
-      add(expenditure.finalizedTimestamp, add(expenditure.globalClaimDelay, slot.claimDelay)) <= now,
+      add(expenditure.finalizedTimestamp, add(expenditure.globalClaimDelay, slot.claimDelay)) <= block.timestamp,
       "colony-expenditure-cannot-claim"
     );
 

@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 
 import "./../../lib/dappsys/auth.sol";
 import "./Resolver.sol";
@@ -24,7 +24,7 @@ import "./Resolver.sol";
 contract EtherRouter is DSAuth {
   Resolver public resolver;
 
-  function() external payable {
+  fallback() external payable {
     if (msg.sig == 0) {
       return;
     }
@@ -51,13 +51,13 @@ contract EtherRouter is DSAuth {
       let size := extcodesize(destination)
       if eq(size, 0) { revert(0,0) }
 
-      calldatacopy(mload(0x40), 0, calldatasize)
-      let result := delegatecall(gas, destination, mload(0x40), calldatasize, mload(0x40), 0) // ignore-swc-113
+      calldatacopy(mload(0x40), 0, calldatasize())
+      let result := delegatecall(gas(), destination, mload(0x40), calldatasize(), mload(0x40), 0) // ignore-swc-113
       // as their addresses are controlled by the Resolver which we trust
-      returndatacopy(mload(0x40), 0, returndatasize)
+      returndatacopy(mload(0x40), 0, returndatasize())
       switch result
-      case 1 { return(mload(0x40), returndatasize) }
-      default { revert(mload(0x40), returndatasize) }
+      case 1 { return(mload(0x40), returndatasize()) }
+      default { revert(mload(0x40), returndatasize()) }
     }
   }
 

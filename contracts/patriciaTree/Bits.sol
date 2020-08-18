@@ -1,12 +1,12 @@
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 pragma experimental "ABIEncoderV2";
 
 
 library Bits {
-  /// @title Bits library
-  /// @notice Subset of the bits library found at https://github.com/ethereum/solidity-examples
-  /// only these parts are used by the PatriciaTree implementation, so removed the unused functions
-  /// for brevity
+  // Bits library
+  // Subset of the bits library found at https://github.com/ethereum/solidity-examples
+  // only these parts are used by the PatriciaTree implementation, so removed the unused functions
+  // for brevity
 
   uint constant internal ONE = uint(1);
 

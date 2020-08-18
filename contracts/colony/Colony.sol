@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "./../common/IEtherRouter.sol";
@@ -390,11 +390,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     domainCount += 1;
     // Create a new funding pot
     fundingPotCount += 1;
-    fundingPots[fundingPotCount] = FundingPot({
-      associatedType: FundingPotAssociatedType.Domain,
-      associatedTypeId: domainCount,
-      payoutsWeCannotMake: 0
-    });
+    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType.Domain;
+    fundingPots[fundingPotCount].associatedTypeId = domainCount;
 
     // Create a new domain with the given skill and new funding pot
     domains[domainCount] = Domain({

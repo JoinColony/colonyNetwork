@@ -15,10 +15,10 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 
 
-contract ColonyNetworkDataTypes {
+interface ColonyNetworkDataTypes {
   /// @notice Event logged when the colony network is intialised. This is only ever emitted once in a network's lifetime
   /// @param resolver The Resolver contract address used by the Colony version 1
   event ColonyNetworkInitialised(address resolver);
