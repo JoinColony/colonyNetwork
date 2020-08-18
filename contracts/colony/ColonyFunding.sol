@@ -95,6 +95,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     }
   }
 
+  int256 constant MAX_PAYOUT_MODIFIER = int256(WAD);
+  int256 constant MIN_PAYOUT_MODIFIER = -int256(WAD);
+
   function claimExpenditurePayout(uint256 _id, uint256 _slot, address _token) public
   stoppable
   expenditureExists(_id)
@@ -102,17 +105,24 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   {
     Expenditure storage expenditure = expenditures[_id];
     ExpenditureSlot storage slot = expenditureSlots[_id][_slot];
-    require(add(expenditure.finalizedTimestamp, slot.claimDelay) <= now, "colony-expenditure-cannot-claim");
+
+    require(
+      add(expenditure.finalizedTimestamp, add(expenditure.globalClaimDelay, slot.claimDelay)) <= now,
+      "colony-expenditure-cannot-claim"
+    );
 
     FundingPot storage fundingPot = fundingPots[expenditure.fundingPotId];
     assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
 
     uint256 initialPayout = expenditureSlotPayouts[_id][_slot][_token];
-    uint256 payoutScalar = uint256(slot.payoutModifier + int256(WAD));
+    delete expenditureSlotPayouts[_id][_slot][_token];
+
+    int256 payoutModifier = imin(imax(slot.payoutModifier, MIN_PAYOUT_MODIFIER), MAX_PAYOUT_MODIFIER);
+    uint256 payoutScalar = uint256(payoutModifier + int256(WAD));
+
     uint256 repPayout = wmul(initialPayout, payoutScalar);
     uint256 tokenPayout = min(initialPayout, repPayout);
     uint256 tokenSurplus = sub(initialPayout, tokenPayout);
-    expenditureSlotPayouts[_id][_slot][_token] = 0;
 
     // Process reputation updates if own token
     if (_token == token) {
