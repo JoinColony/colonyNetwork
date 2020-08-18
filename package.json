@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Contracts for Colony Network",
   "scripts": {
-    "solium-staged": "bash ./scripts/solium.sh",
+    "solhint-staged": "bash ./scripts/solhint.sh",
     "eslint-staged": "bash ./scripts/eslint.sh",
     "eslint": "eslint .",
-    "solium": "solium --dir .",
+    "solhint": "solhint ./contracts/**/*.sol",
     "build:docs": "scripts/docgen.js",
     "ping:osx": "osascript -e 'display notification \"Ping!\"'",
     "check:storagevars": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-storage.js",
@@ -52,7 +52,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn eslint-staged && yarn solium-staged && yarn build:docs && git add docs"
+      "pre-commit": "yarn eslint-staged && yarn solhint-staged && yarn build:docs && git add docs"
     }
   },
   "repository": {
@@ -90,7 +90,7 @@
     "ethereumjs-account": "^3.0.0",
     "ethereumjs-util": "^7.0.0",
     "ethers": "^5.0.0",
-    "ethlint": "^1.2.4",
+    "ethlint": "^1.2.5",
     "find-in-files": "^0.5.0",
     "ganache-cli": "^6.10.1",
     "ganache-core": "^2.11.2",
@@ -106,6 +106,7 @@
     "prettier": "^2.0.0",
     "rimraf": "^3.0.0",
     "shortid": "^2.2.14",
+    "solhint": "^3.2.0",
     "solidity-coverage": "0.7.11",
     "solidity-parser-antlr": "^0.4.11",
     "solidity-steamroller": "^1.1.0",

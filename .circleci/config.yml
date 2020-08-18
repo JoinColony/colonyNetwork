@@ -103,7 +103,7 @@ jobs:
           command: yarn run eslint
       - run:
           name: "Linting Solidity"
-          command: yarn run solium
+          command: yarn run solhint
       - run:
           name: "Checking contract storage variables"
           command: yarn run check:storagevars

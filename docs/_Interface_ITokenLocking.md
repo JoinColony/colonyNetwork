@@ -26,7 +26,7 @@ Allow the colony to obligate some amount of tokens as a stake.
 
 Function called to burn CLNY tokens held by TokenLocking.
 
-*Note: While public, it can only be called successfully by colonyNetwork and is only used for reputation mining.*
+*Note: While external, it can only be called successfully by colonyNetwork and is only used for reputation mining.*
 
 **Parameters**
 

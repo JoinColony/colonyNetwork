@@ -657,7 +657,7 @@ Check if specific address is a colony created on colony network.
 
 ### `issueMetaColonyStipend`
 
-Called to issue the metaColony stipend. This public function can be called by anyone at any interval, and an appropriate amount of CLNY will be minted based on the time since the last time it was called.
+Called to issue the metaColony stipend. This external function can be called by anyone at any interval, and an appropriate amount of CLNY will be minted based on the time since the last time it was called.
 
 
 
@@ -683,7 +683,7 @@ Reverse lookup a username from an address.
 
 Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
 
-*Note: While public, it can only be called successfully by the current ReputationMiningCycle.*
+*Note: While external, it can only be called successfully by the current ReputationMiningCycle.*
 
 **Parameters**
 
