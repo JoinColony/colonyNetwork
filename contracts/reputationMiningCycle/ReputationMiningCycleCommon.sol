@@ -134,12 +134,13 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
       return false;
     }
 
-    if (now <= _responseWindowOpened + SUBMITTER_ONLY_WINDOW_DURATION) {
+    uint256 windowOpenFor = now - _responseWindowOpened;
+
+    if (windowOpenFor <= SUBMITTER_ONLY_WINDOW_DURATION) {
       // require user made a submission
       if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0x00)) {
         return false;
       }
-      uint256 windowOpenFor = now - _responseWindowOpened;
       uint256 target = windowOpenFor * Y;
       if (uint256(keccak256(abi.encodePacked(msg.sender, _stage))) > target) {
         return false;
