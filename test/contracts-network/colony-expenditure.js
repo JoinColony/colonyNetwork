@@ -505,8 +505,10 @@ contract("Colony Expenditure", (accounts) => {
 
     it("should delay claims by claimDelay", async () => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
-      await colony.setExpenditureClaimDelay(1, UINT256_MAX, expenditureId, SLOT0, SECONDS_PER_DAY);
-      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, 25, [ARRAY], [bn2bytes32(new BN(4))], bn2bytes32(new BN(SECONDS_PER_DAY)));
+
+      const day32 = bn2bytes32(new BN(SECONDS_PER_DAY));
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, [ARRAY], [bn2bytes32(new BN(4))], day32);
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, [MAPPING, ARRAY], ["0x0", bn2bytes32(new BN(1))], day32);
 
       const expenditure = await colony.getExpenditure(expenditureId);
       await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
@@ -608,8 +610,8 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should allow arbitration users to update expenditure slot recipient", async () => {
-      const mask = [MAPPING];
-      const keys = ["0x0"];
+      const mask = [MAPPING, ARRAY];
+      const keys = ["0x0", "0x0"];
       const value = bn2bytes32(new BN(USER.slice(2), 16));
 
       await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
@@ -702,17 +704,6 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditureSlotPayout).to.eq.BN(100);
     });
 
-    it("should not allow arbitration users to pass empty keys", async () => {
-      const mask = [];
-      const keys = [];
-      const value = "0x0";
-
-      await checkErrorRevert(
-        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, value, { from: ARBITRATOR }),
-        "colony-expenditure-no-keys"
-      );
-    });
-
     it("should not allow arbitration users to pass invalid slots", async () => {
       const mask = [ARRAY];
       const keys = ["0x0"];
@@ -737,8 +728,8 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should not allow arbitration users to pass offsets greater than 1024", async () => {
-      const mask = [ARRAY];
-      const keys = [bn2bytes32(new BN(1025))];
+      const mask = [MAPPING, ARRAY, ARRAY];
+      const keys = ["0x0", bn2bytes32(new BN(3)), bn2bytes32(new BN(1025))];
       const value = bn2bytes32(new BN(100));
 
       await checkErrorRevert(
