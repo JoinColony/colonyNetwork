@@ -414,8 +414,9 @@ contract("Voting Reputation", (accounts) => {
     it("can update the expenditure globalClaimDelay if voting on expenditure state", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
+      await colony.finalizeExpenditure(expenditureId);
 
-      // Set payoutModifier to 1 for expenditure slot 0
+      // Set finalizedTimestamp to WAD
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
 
       await voting.createDomainMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
@@ -436,11 +437,14 @@ contract("Voting Reputation", (accounts) => {
 
       expenditureSlot = await colony.getExpenditure(expenditureId);
       expect(expenditureSlot.globalClaimDelay).to.eq.BN(UINT256_MAX);
+
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
     });
 
     it("can update the expenditure slot claimDelay if voting on expenditure slot state", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
+      await colony.finalizeExpenditure(expenditureId);
 
       // Set payoutModifier to 1 for expenditure slot 0
       const action = await encodeTxData(colony, "setExpenditureState", [
@@ -471,11 +475,14 @@ contract("Voting Reputation", (accounts) => {
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
+
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
     });
 
     it("can update the expenditure slot claimDelay if voting on expenditure payout state", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
+      await colony.finalizeExpenditure(expenditureId);
 
       // Set payout to WAD for expenditure slot 0, internal token
       const action = await encodeTxData(colony, "setExpenditureState", [
@@ -506,6 +513,64 @@ contract("Voting Reputation", (accounts) => {
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
+
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
+    });
+
+    it("can update the expenditure slot claimDelay if voting on multiple expenditure states", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+      await colony.finalizeExpenditure(expenditureId);
+
+      let action;
+
+      // Motion 1
+      // Set finalizedTimestamp to WAD
+      action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
+
+      await voting.createDomainMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      // Motion 2
+      // Set payoutModifier to 1 for expenditure slot 0
+      action = await encodeTxData(colony, "setExpenditureState", [
+        1,
+        UINT256_MAX,
+        expenditureId,
+        26,
+        [false, true],
+        ["0x0", bn2bytes32(new BN(2))],
+        WAD32,
+      ]);
+
+      await voting.createDomainMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      // Motion 2
+      // Set payout to WAD for expenditure slot 0, internal token
+      action = await encodeTxData(colony, "setExpenditureState", [
+        1,
+        UINT256_MAX,
+        expenditureId,
+        27,
+        [false, false],
+        ["0x0", bn2bytes32(new BN(token.address.slice(2), 16))],
+        WAD32,
+      ]);
+
+      await voting.createDomainMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.globalClaimDelay).to.eq.BN(UINT256_MAX.divn(3));
+
+      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX.divn(3));
+
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
     });
 
     it("cannot update the expenditure slot claimDelay if given an invalid action", async () => {

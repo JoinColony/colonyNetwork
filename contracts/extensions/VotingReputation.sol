@@ -299,7 +299,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     ) {
       bytes32 structHash = hashExpenditureStruct(motion.action);
       expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
-      bytes memory claimDelayAction = createClaimDelayAction(motion.action, UINT256_MAX);
+      // Set to UINT256_MAX / 3 to avoid overflow (finalizedTimestamp + globalClaimDelay + claimDelay)
+      bytes memory claimDelayAction = createClaimDelayAction(motion.action, UINT256_MAX / 3);
       require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
     }
 
@@ -318,7 +319,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       emit MotionEventSet(_motionId, STAKE_END);
     }
 
-    // Claim tokens once both sides are fully staked
+    // Move to vote submission once both sides are fully staked
     if (motion.stakes[YAY] == requiredStake && motion.stakes[NAY] == requiredStake) {
       motion.events[STAKE_END] = uint64(now);
       motion.events[SUBMIT_END] = uint64(now + submitPeriod);
