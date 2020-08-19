@@ -1413,6 +1413,23 @@ Assigning worker role. Can only be set if there is no one currently assigned to 
 |_user|address|Address of the user we want to give a worker role to
 
 
+### `setUserRoles`
+
+Set several roles in one transaction. Can be called by root role or architecture role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|Domain in which the caller has root/architecture role
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_user|address|User we want to give a role to
+|_domainId|uint256|Domain in which we are giving user the role
+|_roles|bytes32|Byte array representing all the roles to be set
+|_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
+
+
 ### `startNextRewardPayout`
 
 Add a new payment in the colony. Can only be called by users with root permission. All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.

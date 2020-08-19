@@ -20,6 +20,21 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 |_resolver|address|Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
 
 
+### `addExtension`
+
+Add a new extension/version to the ExtensionManager.
+
+*Note: Calls `ExtensionManager.addExtension`.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|_resolver|address|The deployed resolver containing the extension contract logic
+|_roles|bytes32|A bytes array containing the roles required by the extension
+
+
 ### `addr`
 
 Returns the address the supplied node resolves do, if we are the resolver.
@@ -277,6 +292,18 @@ Returns the address of the ENSRegistrar for the Network.
 |Name|Type|Description|
 |---|---|---|
 |address|address|The address the ENSRegistrar resolves to
+
+### `getExtensionManager`
+
+Get the address for the ExtensionManager.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionManagerAddress|address|Address of the ExtensionManager contract
 
 ### `getFeeInverse`
 
@@ -650,6 +677,18 @@ Called to set the metaColony stipend. This value will be the total amount of CLN
 |_amount|uint256|The amount of CLNY to issue to the metacolony every year
 
 
+### `setExtensionManager`
+
+Set the address for the ExtensionManager.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_extensionManagerAddress|address|Address of the ExtensionManager contract
+
+
 ### `setFeeInverse`
 
 Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as `_feeInverse`.
@@ -709,20 +748,6 @@ Called to set the total per-cycle reputation reward, which will be split between
 
 ### `setReputationRootHash`
 
-Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|newHash|bytes32|The reputation root hash
-|newNLeaves|uint256|The updated leaves count value
-|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-
-
-### `setReputationRootHash`
-
 This version of setReputationRootHash is deprecated and will be removed in a future release. It transparently calls the new version if it is called (essentially, removing the `reward` parameter.
 
 
@@ -734,6 +759,20 @@ This version of setReputationRootHash is deprecated and will be removed in a fut
 |newNLeaves|uint256|The updated leaves count value
 |stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 |reward|uint256|Amount of CLNY to be distributed as reward to miners (not used)
+
+
+### `setReputationRootHash`
+
+Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|newHash|bytes32|The reputation root hash
+|newNLeaves|uint256|The updated leaves count value
+|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 
 
 ### `setTokenLocking`

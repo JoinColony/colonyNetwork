@@ -8,7 +8,7 @@ import { soliditySha3 } from "web3-utils";
 
 import { WAD, ROOT_ROLE, UINT256_MAX } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
-import { checkErrorRevert, forwardTime, web3GetBalance, makeTxAtTimestamp, currentBlockTime } from "../../helpers/test-helper";
+import { checkErrorRevert, forwardTime, web3GetBalance, makeTxAtTimestamp, currentBlockTime, rolesToBytes32 } from "../../helpers/test-helper";
 import {
   setupColonyNetwork,
   setupRandomToken,

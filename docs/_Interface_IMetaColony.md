@@ -11,16 +11,15 @@ order: 4
 
 Add a new extension/version to the ExtensionManager.
 
-*Note: Calls `IExtensionManager.addExtension`.*
+*Note: Calls `IColonyNetwork.addExtension`.*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_manager|address|Address of the ExtensionManager contract
 |_extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |_resolver|address|The deployed resolver containing the extension contract logic
-|_roles|uint8[]|An array containing the roles required by the extension
+|_roles|bytes32|A byte array containing the roles required by the extension
 
 
 ### `addGlobalSkill`
@@ -86,6 +85,19 @@ Called to set the metaColony stipend. This value will be the total amount of CLN
 |Name|Type|Description|
 |---|---|---|
 |_amount|uint256|The amount of CLNY to issue to the metacolony every year
+
+
+### `setExtensionManager`
+
+Set the address for the ExtensionManager.
+
+*Note: Calls `IColonyNetwork.setExtensionManager`.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_extensionManagerAddress|address|Address of the ExtensionManager contract
 
 
 ### `setNetworkFeeInverse`
