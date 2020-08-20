@@ -426,17 +426,17 @@ contract("Voting Reputation", (accounts) => {
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
       expect(expenditureMotionCount).to.be.zero;
 
-      let expenditureSlot;
-      expenditureSlot = await colony.getExpenditure(expenditureId);
-      expect(expenditureSlot.globalClaimDelay).to.be.zero;
+      let expenditure;
+      expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.globalClaimDelay).to.be.zero;
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
       expect(expenditureMotionCount).to.eq.BN(1);
 
-      expenditureSlot = await colony.getExpenditure(expenditureId);
-      expect(expenditureSlot.globalClaimDelay).to.eq.BN(UINT256_MAX);
+      expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.globalClaimDelay).to.eq.BN(UINT256_MAX.divn(3));
 
       await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
     });
@@ -474,7 +474,7 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditureMotionCount).to.eq.BN(1);
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
+      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX.divn(3));
 
       await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
     });
@@ -512,7 +512,7 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditureMotionCount).to.eq.BN(1);
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
+      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX.divn(3));
 
       await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
     });
@@ -634,7 +634,7 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditureMotionCount).to.eq.BN(2);
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
+      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX.divn(3));
 
       await forwardTime(STAKE_PERIOD, this);
       await voting.finalizeMotion(motionId1);
@@ -643,7 +643,7 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditureMotionCount).to.eq.BN(1);
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX);
+      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX.divn(3));
 
       await voting.finalizeMotion(motionId2);
 
