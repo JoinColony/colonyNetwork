@@ -365,7 +365,7 @@ View an approval to obligate tokens.
 
 |Name|Type|Description|
 |---|---|---|
-|approval|uint256|
+|approval|uint256|The amount the user has approved
 
 ### `getColonyNetwork`
 
@@ -594,7 +594,7 @@ View an obligation of tokens.
 
 |Name|Type|Description|
 |---|---|---|
-|obligation|uint256|
+|obligation|uint256|The amount that is currently obligated
 
 ### `getPayment`
 

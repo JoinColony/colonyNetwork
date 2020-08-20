@@ -7,6 +7,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const UpdatedReputationMiningCycle = artifacts.require("./UpdatedReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("./ReputationMiningCycleRespond");
+const ReputationMiningCycleBinarySearch = artifacts.require("./ReputationMiningCycleBinarySearch");
 
 contract("ReputationMiningCycle contract upgrade", function () {
   let colonyNetwork;
@@ -20,10 +21,17 @@ contract("ReputationMiningCycle contract upgrade", function () {
     // Register a new version of the ReputationMiningCycleResolver on the ColonyNetwork
     const reputationMiningCycle = await UpdatedReputationMiningCycle.new();
     const reputationMiningCycleRespond = await ReputationMiningCycleRespond.deployed();
+    const reputationMiningCycleBinarySearch = await ReputationMiningCycleBinarySearch.deployed();
 
     const resolver = await Resolver.new();
     await resolver.register("isUpdated()", reputationMiningCycle.address);
-    await setupReputationMiningCycleResolver(reputationMiningCycle, reputationMiningCycleRespond, resolver, colonyNetwork);
+    await setupReputationMiningCycleResolver(
+      reputationMiningCycle,
+      reputationMiningCycleRespond,
+      reputationMiningCycleBinarySearch,
+      resolver,
+      colonyNetwork
+    );
   });
 
   describe("when upgrading ReputationMiningCycle contract", function () {

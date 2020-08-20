@@ -20,6 +20,7 @@ import {
   DEFAULT_STAKE,
   INITIAL_FUNDING,
   GLOBAL_SKILL_ID,
+  SUBMITTER_ONLY_WINDOW,
 } from "../helpers/constants";
 
 import {
@@ -265,6 +266,7 @@ contract("All", function (accounts) {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(2);
 
       // withdraw

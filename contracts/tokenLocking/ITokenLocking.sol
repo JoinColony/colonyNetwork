@@ -85,6 +85,9 @@ contract ITokenLocking is TokenLockingDataTypes {
   function withdraw(address _token, uint256 _amount, bool _force) public;
 
   /// @notice This function is deprecated and only exists to aid upgrades.
+  /// @param _recipient The address to receive the reward
+  /// @param _amount The amount to reward
+  /// @dev It's a NOOP. You don't need to call this, and if you write a contract that does it will break in the future.
   function reward(address _recipient, uint256 _amount) public;
 
   /// @notice Function called to burn CLNY tokens held by TokenLocking.
@@ -140,17 +143,20 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @notice See the total amount of a user's obligation.
   /// @param _user Address of the obligated account.
   /// @param _token The token for which the user is obligated.
-  function getTotalObligation(address _user, address _token) public view returns (uint256);
+  /// @return obligation The total amount this user is obligated
+  function getTotalObligation(address _user, address _token) public view returns (uint256 obligation);
 
-  /// @notice See the total amount of a user's obligation.
+  /// @notice See how much an address has approved another address to obligate on their behalf.
   /// @param _user Address of the account that has approved _approvee to obligate their funds.
   /// @param _token The token for which the user has provided the approval.
   /// @param _obligator The address that has been approved to obligate the funds.
-  function getApproval(address _user, address _token, address _obligator) public view returns (uint256);
+  /// @return approval The total amount for this obligation
+  function getApproval(address _user, address _token, address _obligator) public view returns (uint256 approval);
 
-  /// @notice See the total amount of a user's obligation.
+  /// @notice See how much a user is currently obligated by another.
   /// @param _user Address of the account that has had their funds obligated.
   /// @param _token The token for which the user has provided the approval.
   /// @param _obligator The address that obligated the funds (and therefore can slash or return them).
-  function getObligation(address _user, address _token, address _obligator) public view returns (uint256);
+  /// @return approval The total amount for this obligation
+  function getObligation(address _user, address _token, address _obligator) public view returns (uint256 approval);
 }

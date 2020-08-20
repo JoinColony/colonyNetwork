@@ -107,7 +107,7 @@ Returns the amount of CLNY given for defending a hash during the current dispute
 
 |Name|Type|Description|
 |---|---|---|
-|reward|uint256|
+|_reward|uint256|uint256 The amount of CLNY given.
 
 ### `getDisputeRound`
 
@@ -270,6 +270,24 @@ Get the length of the ReputationUpdateLog stored on this instance of the Reputat
 |---|---|---|
 |nUpdates|uint256|
 
+### `getResponsePossible`
+
+Returns whether the caller is able to currently respond to a dispute stage.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|stage|disputeStages|The dispute stage in question. Practically, this is a number that indexes in to the corresponding enum in ReputationMiningCycleDataTypes
+|since|uint256|The timestamp the last response for the submission in the dispute in question was made at.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|possible|bool|bool Whether the user can respond at the current time.
+
 ### `getSubmissionUser`
 
 Get the address that made a particular submission.
@@ -425,4 +443,4 @@ Returns whether a particular address has been involved in the current mining cyc
 
 |Name|Type|Description|
 |---|---|---|
-|involved|bool|
+|involved|bool|Whether the address has been involved in the current mining cycle

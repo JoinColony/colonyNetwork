@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { WAD } from "../../helpers/constants";
-import { checkErrorRevert, forwardTime, web3GetBalance } from "../../helpers/test-helper";
+import { checkErrorRevert, forwardTime, web3GetBalance, makeTxAtTimestamp, currentBlockTime } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupRandomToken, setupRandomColony, setupColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -234,8 +234,14 @@ contract("Coin Machine", (accounts) => {
           steadyState = true;
         }
         previousPrice = currentPrice;
-        await coinMachine.buyTokens(WAD.divRound(currentPrice).mul(WAD), { from: USER0 });
-        await forwardTime(periodLength.toNumber(), this);
+        const currentBlockTimestamp = await currentBlockTime();
+
+        await makeTxAtTimestamp(
+          coinMachine.buyTokens,
+          [WAD.divRound(currentPrice).mul(WAD), { from: USER0 }],
+          currentBlockTimestamp + periodLength.toNumber(),
+          this
+        );
       }
     });
 

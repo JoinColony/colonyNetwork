@@ -40,6 +40,7 @@ import {
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
   GLOBAL_SKILL_ID,
+  SUBMITTER_ONLY_WINDOW,
 } from "../../helpers/constants";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -191,6 +192,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       });
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(3);
     });
 
@@ -211,6 +213,8 @@ contract("Reputation Mining - happy paths", (accounts) => {
           }
         );
       }
+
+      console.log("Finished setting up tasks for test");
 
       // Complete two reputation cycles to process the log
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -236,6 +240,8 @@ contract("Reputation Mining - happy paths", (accounts) => {
         );
       }
 
+      console.log("Finished setting up tasks for test");
+
       // Complete two reputation cycles to process the log
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree: false, minerAddress: MINER1 });
@@ -255,17 +261,21 @@ contract("Reputation Mining - happy paths", (accounts) => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
       await runBinarySearch(goodClient, badClient);
 
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await goodClient.respondToChallenge();
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.invalidateHash(0, 1);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -300,6 +310,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -333,6 +344,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -376,8 +388,9 @@ contract("Reputation Mining - happy paths", (accounts) => {
         workerRating: 3,
       });
 
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(0);
 
       repCycle = await getActiveRepCycle(colonyNetwork);
@@ -385,6 +398,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-reputation-not-max-int128" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -406,7 +420,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       const rootHash = await goodClient.getRootHash();
       let repCycle = await getActiveRepCycle(colonyNetwork);
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
       await repCycle.confirmNewHash(0);
 
@@ -415,6 +429,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
 
       const largeCalculationResult = INT128_MAX.subn(1).mul(DECAY_RATE.NUMERATOR).div(DECAY_RATE.DENOMINATOR);
@@ -809,6 +824,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
     });
 
@@ -818,7 +834,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await goodClient.addLogContentsToReputationTree();
       const newRootHash = await goodClient.getRootHash();
 
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, this);
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
       await repCycle.submitRootHash(newRootHash, 10, "0x00", 10, { from: MINER1 });
@@ -878,9 +894,10 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       const rootHash = await goodClient.getRootHash();
 
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, this);
       let repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(0);
 
       // Check we have exactly one reputation.
@@ -890,13 +907,16 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
 
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
@@ -924,6 +944,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       });
 
       repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(1);
 
       // Check it 'decayed' from 0 to 0

@@ -91,7 +91,7 @@ Deposit `_amount` of colony tokens in the recipient's account. Goes into pending
 
 ### `getApproval`
 
-See the total amount of a user's obligation.
+See how much an address has approved another address to obligate on their behalf.
 
 
 **Parameters**
@@ -106,7 +106,7 @@ See the total amount of a user's obligation.
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|approval|uint256|The total amount for this obligation
 
 ### `getColonyNetwork`
 
@@ -122,7 +122,7 @@ Get ColonyNetwork address.
 
 ### `getObligation`
 
-See the total amount of a user's obligation.
+See how much a user is currently obligated by another.
 
 
 **Parameters**
@@ -137,7 +137,7 @@ See the total amount of a user's obligation.
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|approval|uint256|The total amount for this obligation
 
 ### `getTotalLockCount`
 
@@ -172,7 +172,7 @@ See the total amount of a user's obligation.
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|obligation|uint256|The total amount this user is obligated
 
 ### `getUserLock`
 
@@ -240,13 +240,14 @@ Obligate the user some amount of tokens as a stake. Can only be called by a colo
 
 This function is deprecated and only exists to aid upgrades.
 
+*Note: It's a NOOP. You don't need to call this, and if you write a contract that does it will break in the future.*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_recipient|address|
-|_amount|uint256|
+|_recipient|address|The address to receive the reward
+|_amount|uint256|The amount to reward
 
 
 ### `setColonyNetwork`
