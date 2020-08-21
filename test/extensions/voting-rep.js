@@ -215,6 +215,7 @@ contract("Voting Reputation", (accounts) => {
     const repCycle = await getActiveRepCycle(colonyNetwork);
     await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, this);
     await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
+    await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
     await repCycle.confirmNewHash(0);
   });
 
@@ -808,6 +809,7 @@ contract("Voting Reputation", (accounts) => {
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       await repCycle.confirmNewHash(0);
 
       // Create new motion with new reputation state
