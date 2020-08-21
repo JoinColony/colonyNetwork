@@ -23,7 +23,6 @@ import "./../common/ERC20Extended.sol";
 import "./../colony/ColonyAuthority.sol";
 import "./../colony/IColony.sol";
 import "./../colony/IMetaColony.sol";
-import "./../extensions/ExtensionManager.sol";
 import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
 
@@ -117,29 +116,13 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return miningCycleResolver;
   }
 
-  function setExtensionManager(address _extensionManagerAddress) public
-  stoppable calledByMetaColony
-  {
-    extensionManagerAddress = _extensionManagerAddress;
-  }
-
-  function getExtensionManager() public view returns (address) {
-    return extensionManagerAddress;
-  }
-
-  function addExtension(bytes32 _extensionId, address _resolver, bytes32 _roles)
-  public stoppable calledByMetaColony
-  {
-    ExtensionManager(extensionManagerAddress).addExtension(_extensionId, _resolver, _roles);
-  }
-
   function createMetaColony(address _tokenAddress) public
   stoppable
   auth
   {
     require(metaColony == address(0x0), "colony-meta-colony-exists-already");
 
-    metaColony = createColony(_tokenAddress, currentColonyVersion, "", "", false);
+    metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
 
     // Add the special mining skill
     reputationMiningSkillId = this.addSkill(skillCount);
@@ -152,9 +135,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
   stoppable
   returns (address)
   {
-    return createColony(_tokenAddress, 3, "", "", false);
+    return createColony(_tokenAddress, 3, "", "");
   }
 
+  // DEPRECATED
   function createColony(
     address _tokenAddress,
     uint256 _version,
@@ -163,16 +147,22 @@ contract ColonyNetwork is ColonyNetworkStorage {
     bool _useExtensionManager
   ) public stoppable returns (address)
   {
+    return createColony(_tokenAddress, _version, _colonyName, _orbitdb);
+  }
+
+  // DEPRECATED
+  function createColony(
+    address _tokenAddress,
+    uint256 _version,
+    string memory _colonyName,
+    string memory _orbitdb
+  ) public stoppable returns (address)
+  {
     uint256 version = (_version == 0) ? currentColonyVersion : _version;
     address colonyAddress = deployColony(_tokenAddress, version);
 
     if (bytes(_colonyName).length > 0) {
       IColony(colonyAddress).registerColonyLabel(_colonyName, _orbitdb);
-    }
-
-    // TODO: Uncomment this after merging colonyNetwork#714
-    if (_useExtensionManager) {
-      IColony(colonyAddress).setRootRole(extensionManagerAddress, true);
     }
 
     setFounderPermissions(colonyAddress);

@@ -20,19 +20,11 @@ pragma experimental ABIEncoderV2;
 
 import "../colony/ColonyDataTypes.sol";
 import "../colonyNetwork/IColonyNetwork.sol";
-import "./ColonyExtension.sol";
+import "../extensions/ColonyExtension.sol";
+import "./ColonyNetworkStorage.sol";
 
 
-contract ExtensionManager {
-  IColonyNetwork colonyNetwork;
-
-  // [_extensionId] => roles
-  mapping(bytes32 => bytes32) roles;
-  // [_extensionId][version] => resolver
-  mapping(bytes32 => mapping(uint256 => address)) resolvers;
-  // [_extensionId][colony] => address
-  mapping(bytes32 => mapping(address => address payable)) installations;
-
+contract ColonyNetworkExtensions is ColonyNetworkStorage {
   event ExtensionAdded(bytes32 indexed extensionId, uint256 version);
   event ExtensionInstalled(bytes32 indexed extensionId, uint256 version, address indexed colony);
 
@@ -42,14 +34,12 @@ contract ExtensionManager {
   event ExtensionEnabled(bytes32 indexed extensionId, address indexed colony, uint256 indexed domainId);
   event ExtensionDisabled(bytes32 indexed extensionId, address indexed colony, uint256 indexed domainId);
 
-  constructor(address _colonyNetworkAddress) public {
-    colonyNetwork = IColonyNetwork(_colonyNetworkAddress);
-  }
+  // Public functions
 
   function addExtension(bytes32 _extensionId, address _resolver, bytes32 _roles)
     public
+    calledByMetaColony
   {
-    require(msg.sender == address(colonyNetwork), "extension-manager-not-network");
     require(_resolver != address(0x0), "extension-manager-bad-resolver");
 
     uint256 version = getResolverVersion(_resolver);
@@ -67,7 +57,7 @@ contract ExtensionManager {
   {
     require(resolvers[_extensionId][_version] != address(0x0), "extension-manager-bad-version");
     require(installations[_extensionId][_colony] == address(0x0), "extension-manager-already-installed");
-    require(root(_colony) || resolvers[_extensionId][_version + 1] == address(0x0), "extension-manager-root-or-latest");
+    require(root(_colony), "extension-manager-unauthorized");
 
     EtherRouter extension = new EtherRouter();
     installations[_extensionId][_colony] = address(extension);
@@ -108,47 +98,9 @@ contract ExtensionManager {
     emit ExtensionUninstalled(_extensionId, _colony);
   }
 
-  function enableExtension(
-    bytes32 _extensionId,
-    address _colony,
-    uint256 _rootChildSkillIndex,
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainId
-  )
-    public
-  {
-    require(authorized(_colony, _permissionDomainId, _childSkillIndex, _domainId), "extension-manager-unauthorized");
+  // Public view functions
 
-    address extension = installations[_extensionId][_colony];
-    bytes32 userRoles = roles[_extensionId];
-
-    IColony(_colony).setUserRoles(1, _rootChildSkillIndex, extension, _domainId, userRoles, true);
-
-    emit ExtensionEnabled(_extensionId, _colony, _domainId);
-  }
-
-  function disableExtension(
-    bytes32 _extensionId,
-    address _colony,
-    uint256 _rootChildSkillIndex,
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainId
-  )
-    public
-  {
-    require(authorized(_colony, _permissionDomainId, _childSkillIndex, _domainId), "extension-manager-unauthorized");
-
-    address extension = installations[_extensionId][_colony];
-    bytes32 userRoles = roles[_extensionId];
-
-    IColony(_colony).setUserRoles(1, _rootChildSkillIndex, extension, _domainId, userRoles, false);
-
-    emit ExtensionDisabled(_extensionId, _colony, _domainId);
-  }
-
-  function getRoles(bytes32 _extensionId)
+  function getExtensionRoles(bytes32 _extensionId)
     public
     view
     returns (bytes32)
@@ -156,7 +108,7 @@ contract ExtensionManager {
     return roles[_extensionId];
   }
 
-  function getResolver(bytes32 _extensionId, uint256 _version)
+  function getExtensionResolver(bytes32 _extensionId, uint256 _version)
     public
     view
     returns (address)
@@ -164,7 +116,7 @@ contract ExtensionManager {
     return resolvers[_extensionId][_version];
   }
 
-  function getExtension(bytes32 _extensionId, address _colony)
+  function getExtensionInstallation(bytes32 _extensionId, address _colony)
     public
     view
     returns (address)
@@ -172,13 +124,7 @@ contract ExtensionManager {
     return installations[_extensionId][_colony];
   }
 
-  function authorized(address _colony, uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId)
-    internal
-    view
-    returns (bool)
-  {
-    return IColony(_colony).userCanSetRoles(msg.sender, _permissionDomainId, _childSkillIndex, _domainId);
-  }
+  // Internal functions
 
   function root(address _colony) internal view returns (bool) {
     return IColony(_colony).hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root);

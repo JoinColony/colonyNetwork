@@ -191,12 +191,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.addColonyVersion(_version, _resolver);
   }
 
-  function setExtensionManager(address _extensionManagerAddress)
-  public stoppable auth
-  {
-    IColonyNetwork(colonyNetworkAddress).setExtensionManager(_extensionManagerAddress);
-  }
-
   function addExtension(bytes32 _extensionId, address _resolver, bytes32 _roles)
   public stoppable auth
   {
@@ -307,8 +301,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
     // Add extension manager functionality
-    sig = bytes4(keccak256("setExtensionManager(address)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
     sig = bytes4(keccak256("addExtension(bytes32,address,bytes32)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
     sig = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32,bool)"));

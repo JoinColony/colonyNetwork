@@ -22,17 +22,17 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 
 ### `addExtension`
 
-Add a new extension/version to the ExtensionManager.
+Add a new extension/version to the Extensions repository.
 
-*Note: Calls `ExtensionManager.addExtension`.*
+*Note: The extension version is queried from the resolver itself.*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
-|_resolver|address|The deployed resolver containing the extension contract logic
-|_roles|bytes32|A bytes array containing the roles required by the extension
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|resolver|address|The deployed resolver containing the extension contract logic
+|roles|bytes32|A bytes array containing the roles required by the extension
 
 
 ### `addr`
@@ -143,7 +143,6 @@ Overload of the simpler `createColony` -- creates a new colony in the network wi
 |_version|uint256|The version of colony to deploy (pass 0 for the current version)
 |_colonyName|string|The label to register (if null, no label is registered)
 |_orbitdb|string|The path of the orbitDB database associated with the user profile
-|_useExtensionManager|bool|If true, give the ExtensionManager the root role in the colony
 
 **Return Parameters**
 
@@ -162,6 +161,28 @@ Creates a new colony in the network, at version 3
 |Name|Type|Description|
 |---|---|---|
 |_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
+Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options
+
+*Note: This is now deprecated and will be removed in a future version*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
+|_orbitdb|string|The path of the orbitDB database associated with the user profile
+|_useExtensionManager|bool|DEPRECATED Currently a no-op
 
 **Return Parameters**
 
@@ -293,17 +314,58 @@ Returns the address of the ENSRegistrar for the Network.
 |---|---|---|
 |address|address|The address the ENSRegistrar resolves to
 
-### `getExtensionManager`
-
-Get the address for the ExtensionManager.
+### `getExtensionInstallation`
 
 
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|
+|colony|address|
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|extensionManagerAddress|address|Address of the ExtensionManager contract
+|address|address|
+
+### `getExtensionResolver`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|
+|version|uint256|
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|address|address|
+
+### `getExtensionRoles`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|bytes32|bytes32|
 
 ### `getFeeInverse`
 
@@ -569,6 +631,20 @@ Creates initial inactive reputation mining cycle.
 
 
 
+### `installExtension`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|
+|version|uint256|
+|colony|address|
+
+
 ### `isColony`
 
 Check if specific address is a colony created on colony network.
@@ -677,18 +753,6 @@ Called to set the metaColony stipend. This value will be the total amount of CLN
 |_amount|uint256|The amount of CLNY to issue to the metacolony every year
 
 
-### `setExtensionManager`
-
-Set the address for the ExtensionManager.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_extensionManagerAddress|address|Address of the ExtensionManager contract
-
-
 ### `setFeeInverse`
 
 Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as `_feeInverse`.
@@ -748,6 +812,20 @@ Called to set the total per-cycle reputation reward, which will be split between
 
 ### `setReputationRootHash`
 
+Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|newHash|bytes32|The reputation root hash
+|newNLeaves|uint256|The updated leaves count value
+|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
+
+
+### `setReputationRootHash`
+
 This version of setReputationRootHash is deprecated and will be removed in a future release. It transparently calls the new version if it is called (essentially, removing the `reward` parameter.
 
 
@@ -759,20 +837,6 @@ This version of setReputationRootHash is deprecated and will be removed in a fut
 |newNLeaves|uint256|The updated leaves count value
 |stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 |reward|uint256|Amount of CLNY to be distributed as reward to miners (not used)
-
-
-### `setReputationRootHash`
-
-Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|newHash|bytes32|The reputation root hash
-|newNLeaves|uint256|The updated leaves count value
-|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 
 
 ### `setTokenLocking`
@@ -849,6 +913,19 @@ Query if a contract implements an interface
 |---|---|---|
 |status|bool|`true` if the contract implements `interfaceID`
 
+### `uninstallExtension`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|
+|colony|address|
+
+
 ### `unstakeForMining`
 
 Unstake CLNY currently staked for reputation mining.
@@ -883,3 +960,17 @@ Update a user's orbitdb address. Can only be called by a user with a registered 
 |Name|Type|Description|
 |---|---|---|
 |orbitdb|string|The path of the orbitDB database to be associated with the user
+
+
+### `upgradeExtension`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|
+|colony|address|
+|newVersion|uint256|

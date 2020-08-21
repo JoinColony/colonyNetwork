@@ -12,7 +12,7 @@ import {
   DEFAULT_STAKE,
   SECONDS_PER_DAY,
   FUNDING_ROLE,
-  SUBMITTER_ONLY_WINDOW
+  SUBMITTER_ONLY_WINDOW,
 } from "../../helpers/constants";
 
 import {
@@ -42,7 +42,6 @@ chai.use(bnChai(web3.utils.BN));
 const TokenLocking = artifacts.require("TokenLocking");
 const FundingQueue = artifacts.require("FundingQueue");
 const Resolver = artifacts.require("Resolver");
-const ExtensionManager = artifacts.require("ExtensionManager");
 
 const FUNDING_QUEUE = soliditySha3("FundingQueue");
 
@@ -53,7 +52,6 @@ contract("Funding Queues", (accounts) => {
   let metaColony;
   let colonyNetwork;
   let tokenLocking;
-  let extensionManager;
   let fundingQueue;
 
   let reputationTree;
@@ -96,9 +94,6 @@ contract("Funding Queues", (accounts) => {
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await TokenLocking.at(tokenLockingAddress);
 
-    extensionManager = await ExtensionManager.new(colonyNetwork.address);
-    await metaColony.setExtensionManager(extensionManager.address);
-
     const fundingQueueImplementation = await FundingQueue.new();
     const resolver = await Resolver.new();
     await setupEtherRouter("FundingQueue", { FundingQueue: fundingQueueImplementation.address }, resolver);
@@ -113,11 +108,12 @@ contract("Funding Queues", (accounts) => {
     await colony.addDomain(1, UINT256_MAX, 1);
     domain1 = await colony.getDomain(1);
 
-    await extensionManager.installExtension(FUNDING_QUEUE, 1, colony.address);
-    await extensionManager.enableExtension(FUNDING_QUEUE, colony.address, UINT256_MAX, 1, UINT256_MAX, 1);
+    await colonyNetwork.installExtension(FUNDING_QUEUE, 1, colony.address);
 
-    const extensionAddress = await extensionManager.getExtension(FUNDING_QUEUE, colony.address);
-    fundingQueue = await FundingQueue.at(extensionAddress);
+    const fundingQueueAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
+    fundingQueue = await FundingQueue.at(fundingQueueAddress);
+
+    await colony.setFundingRole(1, UINT256_MAX, fundingQueue.address, 1, true);
 
     await token.mint(colony.address, WAD);
     await colony.claimColonyFunds(token.address);
@@ -182,16 +178,16 @@ contract("Funding Queues", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await extensionManager.installExtension(FUNDING_QUEUE, 1, colony.address, { from: USER0 });
+      await colonyNetwork.installExtension(FUNDING_QUEUE, 1, colony.address, { from: USER0 });
 
       await checkErrorRevert(
-        extensionManager.installExtension(FUNDING_QUEUE, 1, colony.address, { from: USER0 }),
+        colonyNetwork.installExtension(FUNDING_QUEUE, 1, colony.address, { from: USER0 }),
         "extension-manager-already-installed"
       );
 
-      await checkErrorRevert(extensionManager.uninstallExtension(FUNDING_QUEUE, colony.address, { from: USER1 }), "extension-manager-unauthorized");
+      await checkErrorRevert(colonyNetwork.uninstallExtension(FUNDING_QUEUE, colony.address, { from: USER1 }), "extension-manager-unauthorized");
 
-      await extensionManager.uninstallExtension(FUNDING_QUEUE, colony.address, { from: USER0 });
+      await colonyNetwork.uninstallExtension(FUNDING_QUEUE, colony.address, { from: USER0 });
     });
   });
 

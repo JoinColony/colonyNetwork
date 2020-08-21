@@ -9,7 +9,7 @@ order: 4
 
 ### `addExtension`
 
-Add a new extension/version to the ExtensionManager.
+Add a new extension/version to the Extensions repository.
 
 *Note: Calls `IColonyNetwork.addExtension`.*
 
@@ -85,19 +85,6 @@ Called to set the metaColony stipend. This value will be the total amount of CLN
 |Name|Type|Description|
 |---|---|---|
 |_amount|uint256|The amount of CLNY to issue to the metacolony every year
-
-
-### `setExtensionManager`
-
-Set the address for the ExtensionManager.
-
-*Note: Calls `IColonyNetwork.setExtensionManager`.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_extensionManagerAddress|address|Address of the ExtensionManager contract
 
 
 ### `setNetworkFeeInverse`

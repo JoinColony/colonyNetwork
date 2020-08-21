@@ -139,7 +139,18 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _version The version of colony to deploy (pass 0 for the current version)
   /// @param _colonyName The label to register (if null, no label is registered)
   /// @param _orbitdb The path of the orbitDB database associated with the user profile
-  /// @param _useExtensionManager If true, give the ExtensionManager the root role in the colony
+  /// @return colonyAddress Address of the newly created colony
+  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _orbitdb)
+    public returns (address colonyAddress);
+
+  /// @notice Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options
+  /// @dev This is now deprecated and will be removed in a future version
+  /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
+  /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
+  /// @param _version The version of colony to deploy (pass 0 for the current version)
+  /// @param _colonyName The label to register (if null, no label is registered)
+  /// @param _orbitdb The path of the orbitDB database associated with the user profile
+  /// @param _useExtensionManager DEPRECATED Currently a no-op
   /// @return colonyAddress Address of the newly created colony
   function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _orbitdb, bool _useExtensionManager)
     public returns (address colonyAddress);
@@ -285,22 +296,25 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return miningResolverAddress The address of the mining cycle resolver currently used by new instances
   function getMiningResolver() public view returns (address miningResolverAddress);
 
-  /// @notice Set the address for the ExtensionManager.
-  /// @param _extensionManagerAddress Address of the ExtensionManager contract
-  function setExtensionManager(address _extensionManagerAddress) public;
-
-  /// @notice Get the address for the ExtensionManager.
-  /// @return extensionManagerAddress Address of the ExtensionManager contract
-  function getExtensionManager() public view returns (address extensionManagerAddress);
-
-  /// @notice Add a new extension/version to the ExtensionManager.
-  /// @dev Calls `ExtensionManager.addExtension`.
+  /// @notice Add a new extension/version to the Extensions repository.
   /// @dev The extension version is queried from the resolver itself.
-  /// @dev The _roles array can be set only for version == 1 (must be empty otherwise).
-  /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
-  /// @param _resolver The deployed resolver containing the extension contract logic
-  /// @param _roles A bytes array containing the roles required by the extension
-  function addExtension(bytes32 _extensionId, address _resolver, bytes32 _roles) public;
+  /// @dev The roles array can be set only for version == 1 (must be empty otherwise).
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param resolver The deployed resolver containing the extension contract logic
+  /// @param roles A bytes array containing the roles required by the extension
+  function addExtension(bytes32 extensionId, address resolver, bytes32 roles) public;
+
+  function installExtension(bytes32 extensionId, uint256 version, address colony) public;
+
+  function upgradeExtension(bytes32 extensionId, address colony, uint256 newVersion) public;
+
+  function uninstallExtension(bytes32 extensionId, address colony) public;
+
+  function getExtensionRoles(bytes32 extensionId) public view returns (bytes32);
+
+  function getExtensionResolver(bytes32 extensionId, uint256 version) public view returns (address);
+
+  function getExtensionInstallation(bytes32 extensionId, address colony) public view returns (address);
 
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
   /// @return _feeInverse The inverse of the network fee

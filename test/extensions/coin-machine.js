@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { WAD, ROOT_ROLE, UINT256_MAX } from "../../helpers/constants";
+import { WAD, ROOT_ROLE } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { checkErrorRevert, forwardTime, web3GetBalance, makeTxAtTimestamp, currentBlockTime, rolesToBytes32 } from "../../helpers/test-helper";
 import {
@@ -22,7 +22,6 @@ chai.use(bnChai(web3.utils.BN));
 
 const Token = artifacts.require("Token");
 const CoinMachine = artifacts.require("CoinMachine");
-const ExtensionManager = artifacts.require("ExtensionManager");
 const Resolver = artifacts.require("Resolver");
 
 const COIN_MACHINE = soliditySha3("CoinMachine");
@@ -33,7 +32,6 @@ contract("Coin Machine", (accounts) => {
   let purchaseToken;
   let colonyNetwork;
   let metaColony;
-  let extensionManager;
   let coinMachine;
 
   const USER0 = accounts[0];
@@ -42,9 +40,6 @@ contract("Coin Machine", (accounts) => {
   before(async () => {
     colonyNetwork = await setupColonyNetwork();
     ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-
-    extensionManager = await ExtensionManager.new(colonyNetwork.address);
-    await metaColony.setExtensionManager(extensionManager.address);
 
     const coinMachineImplementation = await CoinMachine.new();
     const resolver = await Resolver.new();
@@ -56,12 +51,12 @@ contract("Coin Machine", (accounts) => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     purchaseToken = await setupRandomToken();
 
-    await colony.setRootRole(extensionManager.address, true);
-    await extensionManager.installExtension(COIN_MACHINE, 1, colony.address);
-    await extensionManager.enableExtension(COIN_MACHINE, colony.address, UINT256_MAX, 1, UINT256_MAX, 1);
+    await colonyNetwork.installExtension(COIN_MACHINE, 1, colony.address);
 
-    const extensionAddress = await extensionManager.getExtension(COIN_MACHINE, colony.address);
-    coinMachine = await CoinMachine.at(extensionAddress);
+    const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+    coinMachine = await CoinMachine.at(coinMachineAddress);
+
+    await colony.setRootRole(coinMachine.address, true);
   });
 
   describe("managing the extension", async () => {
@@ -78,16 +73,13 @@ contract("Coin Machine", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
+      await colonyNetwork.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
 
-      await checkErrorRevert(
-        extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 }),
-        "extension-manager-already-installed"
-      );
+      await checkErrorRevert(colonyNetwork.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 }), "extension-manager-already-installed");
 
-      await checkErrorRevert(extensionManager.uninstallExtension(COIN_MACHINE, colony.address, { from: USER1 }), "extension-manager-unauthorized");
+      await checkErrorRevert(colonyNetwork.uninstallExtension(COIN_MACHINE, colony.address, { from: USER1 }), "extension-manager-unauthorized");
 
-      await extensionManager.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
+      await colonyNetwork.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
     });
 
     it("can initialise", async () => {
@@ -148,9 +140,9 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can buy tokens with eth", async () => {
-      await extensionManager.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
-      await extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
-      const coinMachineAddress = await extensionManager.getExtension(COIN_MACHINE, colony.address);
+      await colonyNetwork.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
+      await colonyNetwork.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
 
       coinMachine = await CoinMachine.at(coinMachineAddress);
       await colony.setRootRole(coinMachineAddress, true);
@@ -386,8 +378,8 @@ contract("Coin Machine", (accounts) => {
       await token.unlock();
       await token.setOwner(colony.address);
 
-      await extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
-      const coinMachineAddress = await extensionManager.getExtension(COIN_MACHINE, colony.address);
+      await colonyNetwork.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
 
       coinMachine = await CoinMachine.at(coinMachineAddress);
       await colony.setRootRole(coinMachineAddress, true);
@@ -406,9 +398,9 @@ contract("Coin Machine", (accounts) => {
       purchaseToken = await Token.new("Test Token", "TEST", 9);
       await purchaseToken.unlock();
 
-      await extensionManager.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
-      await extensionManager.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
-      const coinMachineAddress = await extensionManager.getExtension(COIN_MACHINE, colony.address);
+      await colonyNetwork.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
+      await colonyNetwork.installExtension(COIN_MACHINE, 1, colony.address, { from: USER0 });
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
       await colony.setRootRole(coinMachineAddress, true);
       await coinMachine.initialise(purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);

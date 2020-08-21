@@ -4,7 +4,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent, getColonyEditable } from "../../helpers/test-helper";
-import { CURR_VERSION, GLOBAL_SKILL_ID, ROOT_ROLE, MIN_STAKE } from "../../helpers/constants";
+import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
@@ -16,7 +16,6 @@ chai.use(bnChai(web3.utils.BN));
 const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
-const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
@@ -410,38 +409,6 @@ contract("Colony Network", (accounts) => {
 
       const name = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
       expect(name).to.equal("test.colony.joincolony.eth");
-    });
-
-    it.skip("should be able to create a colony configured with the extension manager in one tx", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address, 0, "", "", true);
-      const { colonyAddress } = logs[0].args;
-
-      const name = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
-      expect(name).to.equal("");
-
-      // No conflict for setting "multiple" null names...
-      await colonyNetwork.createColony(token.address, 0, "", "", true);
-      await colonyNetwork.createColony(token.address, 0, "", "", true);
-
-      const colony = await IColony.at(colonyAddress);
-      const extensionManagerAddress = await colonyNetwork.getExtensionManager();
-      const hasUserRole = await colony.hasUserRole(extensionManagerAddress, 1, ROOT_ROLE);
-      expect(hasUserRole).to.be.true;
-    });
-
-    it.skip("should be able to create a colony with label and configured with the extension manager in one tx", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address, 0, "test", orbitDBAddress, true);
-      const { colonyAddress } = logs[0].args;
-
-      const name = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
-      expect(name).to.equal("test.colony.joincolony.eth");
-
-      const colony = await IColony.at(colonyAddress);
-      const extensionManagerAddress = await colonyNetwork.getExtensionManager();
-      const hasUserRole = await colony.hasUserRole(extensionManagerAddress, 1, ROOT_ROLE);
-      expect(hasUserRole).to.be.true;
     });
 
     it("should own the root domains", async () => {

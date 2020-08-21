@@ -13,7 +13,6 @@ import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColo
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const ExtensionManager = artifacts.require("ExtensionManager");
 const OneTxPayment = artifacts.require("OneTxPayment");
 const Resolver = artifacts.require("Resolver");
 
@@ -21,7 +20,6 @@ contract("One transaction payments", (accounts) => {
   let colony;
   let token;
   let colonyNetwork;
-  let extensionManager;
   let metaColony;
   let oneTxExtension;
 
@@ -35,9 +33,6 @@ contract("One transaction payments", (accounts) => {
     colonyNetwork = await setupColonyNetwork();
     ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
-    extensionManager = await ExtensionManager.new(colonyNetwork.address);
-    await metaColony.setExtensionManager(extensionManager.address);
-
     const oneTxPayment = await OneTxPayment.new();
     const resolver = await Resolver.new();
     await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPayment.address }, resolver);
@@ -50,16 +45,17 @@ contract("One transaction payments", (accounts) => {
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-    await colony.setRootRole(extensionManager.address, true);
-    await extensionManager.installExtension(ONE_TX_PAYMENT, 1, colony.address);
-    await extensionManager.enableExtension(ONE_TX_PAYMENT, colony.address, UINT256_MAX, 1, UINT256_MAX, 1);
 
-    const extensionAddress = await extensionManager.getExtension(ONE_TX_PAYMENT, colony.address);
-    oneTxExtension = await OneTxPayment.at(extensionAddress);
+    await colonyNetwork.installExtension(ONE_TX_PAYMENT, 1, colony.address);
+
+    const oneTxExtensionAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
+    oneTxExtension = await OneTxPayment.at(oneTxExtensionAddress);
+
+    const requiredRoles = await colonyNetwork.getExtensionRoles(ONE_TX_PAYMENT);
+    await colony.setUserRoles(1, UINT256_MAX, oneTxExtension.address, 1, requiredRoles, true);
 
     // Give a user colony administration rights (needed for one-tx)
-    await colony.setAdministrationRole(1, UINT256_MAX, COLONY_ADMIN, 1, true);
-    await colony.setFundingRole(1, UINT256_MAX, COLONY_ADMIN, 1, true);
+    await colony.setUserRoles(1, UINT256_MAX, COLONY_ADMIN, 1, requiredRoles, true);
   });
 
   describe("one tx payments", () => {
