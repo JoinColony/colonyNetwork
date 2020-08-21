@@ -295,7 +295,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       _vote == YAY &&
       !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
-      getSig(motion.action) == CHANGE_FUNCTION
+      getSig(motion.action) == CHANGE_FUNCTION &&
+      (motion.target == address(0x0) || colonyNetwork.isColony(motion.target))
     ) {
       bytes32 structHash = hashExpenditureStruct(motion.action);
       expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
@@ -312,8 +313,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       (_vote == NAY && motion.stakes[NAY] == requiredStake && motion.stakes[YAY] < requiredStake)
     ) {
       motion.events[STAKE_END] = uint64(now + stakePeriod);
-      motion.events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
-      motion.events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
+      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
       delete motion.votes; // New stake supersedes prior votes
 
       emit MotionEventSet(_motionId, STAKE_END);
@@ -322,8 +323,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     // Move to vote submission once both sides are fully staked
     if (motion.stakes[YAY] == requiredStake && motion.stakes[NAY] == requiredStake) {
       motion.events[STAKE_END] = uint64(now);
-      motion.events[SUBMIT_END] = uint64(now + submitPeriod);
-      motion.events[REVEAL_END] = uint64(now + submitPeriod + revealPeriod);
+      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
       emit MotionEventSet(_motionId, STAKE_END);
     }
@@ -390,6 +391,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   {
     Motion storage motion = motions[_motionId];
     require(getMotionState(_motionId) == MotionState.Reveal, "voting-rep-motion-not-reveal");
+    require(_vote <= 1, "voting-rep-bad-vote");
 
     uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
 
@@ -399,7 +401,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     motion.votes[_vote] = add(motion.votes[_vote], userRep);
     motion.repRevealed = add(motion.repRevealed, userRep);
-
 
     uint256 fractionUserReputation = wdiv(userRep, motion.skillRep);
     uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
@@ -457,7 +458,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       uint64(now + stakePeriod) : uint64(now);
 
     motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-    motion.events[REVEAL_END] = motion.events[STAKE_END] + uint64(submitPeriod + revealPeriod);
+    motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
     motion.escalated = true;
 
@@ -719,21 +720,22 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     internal
   {
     require(state == ExtensionState.Active, "voting-rep-not-active");
+    require(_target != address(colony), "voting-rep-target-cannot-be-colony");
 
     motionCount += 1;
+    Motion storage motion = motions[motionCount];
 
-    motions[motionCount].events[STAKE_END] = uint64(now + stakePeriod);
-    motions[motionCount].events[SUBMIT_END] = uint64(now + stakePeriod + submitPeriod);
-    motions[motionCount].events[REVEAL_END] = uint64(now + stakePeriod + submitPeriod + revealPeriod);
+    motion.events[STAKE_END] = uint64(now + stakePeriod);
+    motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+    motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
-    motions[motionCount].rootHash = colonyNetwork.getReputationRootHash();
-    motions[motionCount].domainId = _domainId;
-    motions[motionCount].skillId = _skillId;
+    motion.rootHash = colonyNetwork.getReputationRootHash();
+    motion.domainId = _domainId;
+    motion.skillId = _skillId;
 
-    uint256 skillRep = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
-    motions[motionCount].skillRep = skillRep;
-    motions[motionCount].target = _target;
-    motions[motionCount].action = _action;
+    motion.skillRep = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
+    motion.target = _target;
+    motion.action = _action;
 
     emit MotionCreated(motionCount, msg.sender, _domainId);
   }

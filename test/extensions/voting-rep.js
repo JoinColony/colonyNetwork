@@ -7,7 +7,7 @@ import shortid from "shortid";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, DEFAULT_STAKE } from "../../helpers/constants";
+import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
 import {
   checkErrorRevert,
   makeReputationKey,
@@ -213,7 +213,7 @@ contract("Voting Reputation", (accounts) => {
 
     const rootHash = await reputationTree.getRootHash();
     const repCycle = await getActiveRepCycle(colonyNetwork);
-    await forwardTime(MINING_CYCLE_DURATION, this);
+    await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, this);
     await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
     await repCycle.confirmNewHash(0);
   });
@@ -309,6 +309,19 @@ contract("Voting Reputation", (accounts) => {
       const motionId = await voting.getMotionCount();
       const motion = await voting.getMotion(motionId);
       expect(motion.skillId).to.eq.BN(domain1.skillId);
+    });
+
+    it("can create a motion with an alternative target", async () => {
+      const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
+      await voting.createRootMotion(voting.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+    });
+
+    it("can create a motion with an alternative target", async () => {
+      const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
+      await checkErrorRevert(
+        voting.createRootMotion(colony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        "voting-rep-target-cannot-be-colony"
+      );
     });
 
     it("cannot externally escalate a domain motion with an invalid domain proof", async () => {
@@ -751,6 +764,17 @@ contract("Voting Reputation", (accounts) => {
       expect(motion.repSubmitted).to.eq.BN(WAD);
     });
 
+    it("cannot reveal an invalid vote", async () => {
+      await voting.submitVote(motionId, soliditySha3(SALT, 2), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await checkErrorRevert(
+        voting.revealVote(motionId, SALT, 2, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-bad-vote"
+      );
+    });
+
     it("cannot reveal a vote twice, and so cannot vote twice", async () => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
@@ -780,7 +804,7 @@ contract("Voting Reputation", (accounts) => {
       const rootHash = await reputationTree.getRootHash();
       expect(oldRootHash).to.not.equal(rootHash);
 
-      await forwardTime(MINING_CYCLE_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, this);
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
