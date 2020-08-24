@@ -321,7 +321,7 @@ contract("Voting Reputation", (accounts) => {
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
       await checkErrorRevert(
         voting.createRootMotion(colony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
-        "voting-rep-target-cannot-be-colony"
+        "voting-rep-alt-target-cannot-be-colony"
       );
     });
 

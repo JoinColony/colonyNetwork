@@ -171,7 +171,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256[2] votes; // [nay, yay]
     bool escalated;
     bool finalized;
-    address target;
+    address altTarget;
     bytes action;
   }
 
@@ -187,14 +187,14 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   // Public functions (interface)
 
   /// @notice Create a motion in the root domain
-  /// @param _target The contract to which we send the action (0x0 for the colony)
+  /// @param _altTarget The contract to which we send the action (0x0 for the colony)
   /// @param _action A bytes array encoding a function call
   /// @param _key Reputation tree key for the root domain
   /// @param _value Reputation tree value for the root domain
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
   function createRootMotion(
-    address _target,
+    address _altTarget,
     bytes memory _action,
     bytes memory _key,
     bytes memory _value,
@@ -204,13 +204,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     public
   {
     uint256 rootSkillId = colony.getDomain(1).skillId;
-    createMotion(_target, _action, 1, rootSkillId, _key, _value, _branchMask, _siblings);
+    createMotion(_altTarget, _action, 1, rootSkillId, _key, _value, _branchMask, _siblings);
   }
 
   /// @notice Create a motion in any domain
   /// @param _domainId The domain where we vote on the motion
   /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
-  /// @param _target The contract to which we send the action (0x0 for the colony)
+  /// @param _altTarget The contract to which we send the action (0x0 for the colony)
   /// @param _action A bytes array encoding a function call
   /// @param _key Reputation tree key for the domain
   /// @param _value Reputation tree value for the domain
@@ -219,7 +219,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   function createDomainMotion(
     uint256 _domainId,
     uint256 _childSkillIndex,
-    address _target,
+    address _altTarget,
     bytes memory _action,
     bytes memory _key,
     bytes memory _value,
@@ -236,7 +236,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
     }
 
-    createMotion(_target, _action, _domainId, domainSkillId, _key, _value, _branchMask, _siblings);
+    createMotion(_altTarget, _action, _domainId, domainSkillId, _key, _value, _branchMask, _siblings);
   }
 
   /// @notice Stake on a motion
@@ -296,7 +296,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
       getSig(motion.action) == CHANGE_FUNCTION &&
-      (motion.target == address(0x0) || colonyNetwork.isColony(motion.target))
+      (motion.altTarget == address(0x0) || colonyNetwork.isColony(motion.altTarget))
     ) {
       bytes32 structHash = hashExpenditureStruct(motion.action);
       expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
@@ -708,7 +708,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   // Internal functions
 
   function createMotion(
-    address _target,
+    address _altTarget,
     bytes memory _action,
     uint256 _domainId,
     uint256 _skillId,
@@ -720,7 +720,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     internal
   {
     require(state == ExtensionState.Active, "voting-rep-not-active");
-    require(_target != address(colony), "voting-rep-target-cannot-be-colony");
+    require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-colony");
 
     motionCount += 1;
     Motion storage motion = motions[motionCount];
@@ -734,7 +734,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     motion.skillId = _skillId;
 
     motion.skillRep = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
-    motion.target = _target;
+    motion.altTarget = _altTarget;
     motion.action = _action;
 
     emit MotionCreated(motionCount, msg.sender, _domainId);
@@ -803,8 +803,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   function executeCall(uint256 motionId, bytes memory action) internal returns (bool success) {
-    address target = motions[motionId].target;
-    address to = (target == address(0x0)) ? address(colony) : target;
+    address altTarget = motions[motionId].altTarget;
+    address to = (altTarget == address(0x0)) ? address(colony) : altTarget;
 
     assembly {
               // call contract at address a with input mem[in…(in+insize))
