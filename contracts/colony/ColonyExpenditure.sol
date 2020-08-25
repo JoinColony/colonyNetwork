@@ -145,7 +145,7 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureSkillSet(_id, _slot, _skillId);
   }
 
-  // Can deprecate
+  // Deprecated
   function setExpenditurePayoutModifier(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -163,7 +163,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureSlots[_id][_slot].payoutModifier = _payoutModifier;
   }
 
-  // Can deprecate
+  // Deprecated
   function setExpenditureClaimDelay(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,

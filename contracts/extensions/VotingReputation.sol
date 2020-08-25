@@ -164,7 +164,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 skillId;
     uint256 skillRep;
     uint256 repSubmitted;
-    uint256 repRevealed;
     uint256 paidVoterComp;
     uint256[2] pastVoterComp; // [nay, yay]
     uint256[2] stakes; // [nay, yay]
@@ -315,7 +314,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       motion.events[STAKE_END] = uint64(now + stakePeriod);
       motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
       motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
-      delete motion.votes; // New stake supersedes prior votes
+
+      // New stake supersedes prior votes
+      delete motion.votes;
+      delete motion.repSubmitted;
 
       emit MotionEventSet(_motionId, STAKE_END);
     }
@@ -400,7 +402,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     delete voteSecrets[_motionId][msg.sender];
 
     motion.votes[_vote] = add(motion.votes[_vote], userRep);
-    motion.repRevealed = add(motion.repRevealed, userRep);
 
     uint256 fractionUserReputation = wdiv(userRep, motion.skillRep);
     uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
@@ -411,7 +412,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     emit MotionVoteRevealed(_motionId, msg.sender, _vote);
 
-    if (motion.repRevealed == motion.repSubmitted) {
+    // See if reputation revealed matches reputation submitted
+    if (add(motion.votes[NAY], motion.votes[YAY]) == motion.repSubmitted) {
       motion.events[REVEAL_END] = uint64(now);
 
       emit MotionEventSet(_motionId, REVEAL_END);
@@ -482,7 +484,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       motion.votes[NAY] < motion.votes[YAY]
     );
 
-    if (getSig(motion.action) == CHANGE_FUNCTION) {
+    if (
+      getSig(motion.action) == CHANGE_FUNCTION &&
+      (motion.altTarget == address(0x0) || colonyNetwork.isColony(motion.altTarget))
+    ) {
       bytes32 structHash = hashExpenditureStruct(motion.action);
       expenditureMotionCounts[structHash] = sub(expenditureMotionCounts[structHash], 1);
 
@@ -541,6 +546,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       add(motion.stakes[_vote], motion.pastVoterComp[_vote])
     );
 
+    require(stakeFraction > 0, "voting-rep-nothing-to-claim");
     delete stakes[_motionId][_user][_vote];
 
     uint256 realStake = wmul(stakeFraction, motion.stakes[_vote]);
@@ -749,7 +755,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   function flip(uint256 _vote) internal pure returns (uint256) {
-    return 1 - _vote;
+    return sub(1, _vote);
   }
 
   function getReputationFromProof(
@@ -825,14 +831,14 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   function hashExpenditureSlot(bytes memory action) internal returns (bytes32 hash) {
-    assert(getSig(action) == CHANGE_FUNCTION);
-
     assembly {
-      // Hash all but last (value) bytes32
+      // Hash all but the domain proof and value
       // Recall: mload(action) gives length of bytes array
       // So skip past the three bytes32 (length + domain proof),
-      //   and the last bytes32 (value), plus 4 bytes for the sig.
-      hash := keccak256(add(action, 0x64), sub(mload(action), 0x64))
+      //   plus 4 bytes for the sig. Subtract the same from the end, less
+      //   the length bytes32. The value itself is located at 0xe4, zero it out.
+      mstore(add(action, 0xe4), 0x0)
+      hash := keccak256(add(action, 0x64), sub(mload(action), 0x44))
     }
   }
 

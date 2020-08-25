@@ -1090,8 +1090,9 @@ Set new colony architecture role. Can be called by root role or architecture rol
 
 ### `setExpenditureClaimDelay`
 
-Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
+DEPRECATED Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
 
+*Note: This is now deprecated and will be removed in a future version*
 
 **Parameters**
 
@@ -1121,9 +1122,9 @@ Set the token payout on an expenditure slot. Can only be called by expenditure o
 
 ### `setExpenditurePayoutModifier`
 
-Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
+DEPRECATED Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
 
-*Note: Note that when determining payouts the payoutModifier is incremented by WAD and converted into payoutScalar*
+*Note: This is now deprecated and will be removed in a future version*
 
 **Parameters**
 
@@ -1176,9 +1177,9 @@ Set arbitrary state on an expenditure slot. Can only be called by Arbitration ro
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
 |_id|uint256|Expenditure identifier
-|_slot|uint256|Number of the top-level storage slot
-|_mask|bool[]|Array of booleans indicated whether a key is a mapping (F) or offset (T).
-|_keys|bytes32[]|Array of additional keys (mappings & offsets)
+|_storageSlot|uint256|Number of the top-level storage slot (25, 26, or 27)
+|_mask|bool[]|Array of booleans indicated whether a key is a mapping (F) or an array index (T).
+|_keys|bytes32[]|Array of additional keys (for mappings & arrays)
 |_value|bytes32|Value to set at location
 
 
@@ -1471,6 +1472,7 @@ Updates the expenditure owner. Can only be called by expenditure owner.
 
 DEPRECATED Updates the expenditure owner. Can only be called by Arbitration role.
 
+*Note: This is now deprecated and will be removed in a future version*
 
 **Parameters**
 
