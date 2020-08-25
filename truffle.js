@@ -1,6 +1,9 @@
 require("@babel/register");
 require("@babel/polyfill");
 const HDWalletProvider = require("truffle-hdwallet-provider");
+const ganache = require("ganache-core");
+
+const ganacheProvider = ganache.provider({ total_accounts: 14, seed: "smoketest" });
 
 const DISABLE_DOCKER = !process.env.DISABLE_DOCKER;
 
@@ -49,6 +52,12 @@ module.exports = {
         return new HDWalletProvider("replace-with-private-key-when-using", "https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d");
       },
       network_id: "1",
+    },
+    storageSmoke: {
+      provider: () => {
+        return ganacheProvider;
+      },
+      network_id: "*",
     },
   },
   mocha: {
