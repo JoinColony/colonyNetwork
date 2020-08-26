@@ -87,6 +87,7 @@
     "eslint-plugin-prettier": "^3.1.2",
     "eth-ens-namehash": "^2.0.8",
     "eth-gas-reporter": "^0.2.15",
+    "ethereumjs-account": "^3.0.0",
     "ethereumjs-util": "^7.0.0",
     "ethers": "^5.0.0",
     "ethlint": "^1.2.4",

@@ -6,6 +6,8 @@ import { BN } from "bn.js";
 import { UINT256_MAX, WAD, GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { fundColonyWithTokens, setupColony } from "../../helpers/test-data-generator";
 
+const Account = require("ethereumjs-account").default;
+
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
@@ -94,7 +96,8 @@ contract("Contract Storage", (accounts) => {
       await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
 
       const miningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-      const miningCycleStorageHash = await getAddressStateHash(miningCycleAddress);
+      const miningCycleStateHash = await getAddressStateHash(miningCycleAddress);
+      const miningCycleAccount = new Account(miningCycleStateHash);
 
       // For this test to be reproducible, have to zero timestamps / time depenedent things
       // For colonyNetwork, that means the mining staking timestamp
@@ -113,7 +116,8 @@ contract("Contract Storage", (accounts) => {
 
       await editableNetwork.setStorageSlot(slot, "0x0000000000000000000000000000000000000000000000000000000000000000");
 
-      const colonyNetworkStorageHash = await getAddressStateHash(colonyNetwork.address);
+      const colonyNetworkStateHash = await getAddressStateHash(colonyNetwork.address);
+      const colonyNetworkAccount = new Account(colonyNetworkStateHash);
 
       // We did a whole expenditure above, so let's take out the finalized timestamp
 
@@ -130,37 +134,30 @@ contract("Contract Storage", (accounts) => {
       const editableColony = await ContractEditing.at(colony.address);
       await editableColony.setStorageSlot(slot, "0x0000000000000000000000000000000000000000000000000000000000000000");
 
-      const colonyStorageHash = await getAddressStateHash(colony.address);
+      const colonyStateHash = await getAddressStateHash(colony.address);
+      const colonyAccount = new Account(colonyStateHash);
 
-      const metaColonyStorageHash = await getAddressStateHash(metaColony.address);
+      const metaColonyStateHash = await getAddressStateHash(metaColony.address);
+      const metaColonyAccount = new Account(metaColonyStateHash);
 
-      const tokenLockingStorageHash = await getAddressStateHash(tokenLockingAddress);
+      const tokenLockingStateHash = await getAddressStateHash(tokenLockingAddress);
+      const tokenLockingAccount = new Account(tokenLockingStateHash);
 
-      console.log("colonyNetworkStorageHash:", colonyNetworkStorageHash);
-      console.log("colonyStorageHash:", colonyStorageHash);
-      console.log("metaColonyStorageHash:", metaColonyStorageHash);
-      console.log("miningCycleStorageHash:", miningCycleStorageHash);
-      console.log("tokenLockingStorageHash:", tokenLockingStorageHash);
+      console.log("colonyNetworkStateHash:", colonyNetworkAccount.stateRoot.toString("hex"));
+      console.log("colonyStateHash:", colonyAccount.stateRoot.toString("hex"));
+      console.log("metaColonyStateHash:", metaColonyAccount.stateRoot.toString("hex"));
+      console.log("miningCycleStateHash:", miningCycleAccount.stateRoot.toString("hex"));
+      console.log("tokenLockingStateHash:", tokenLockingAccount.stateRoot.toString("hex"));
 
-      expect(colonyNetworkStorageHash).to.equal(
-        "f8440780a0a6383dbeb3ca5768338ec11bef44acc1d901ffe33f03a07be0a970f6991264dba02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
-      );
+      expect(colonyNetworkAccount.stateRoot.toString("hex")).to.equal("a6383dbeb3ca5768338ec11bef44acc1d901ffe33f03a07be0a970f6991264db");
 
-      expect(colonyStorageHash).to.equal(
-        "f8440180a0c71b63072286b366b099e430b22cd9be1bac436b893ac434e8a591b793dc352ca02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
-      );
+      expect(colonyAccount.stateRoot.toString("hex")).to.equal("c71b63072286b366b099e430b22cd9be1bac436b893ac434e8a591b793dc352c");
 
-      expect(metaColonyStorageHash).to.equal(
-        "f8440180a03f0e1fa982f18cf177224730e757666fe63b21897f44f0696ebf538a9af4000aa02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
-      );
+      expect(metaColonyAccount.stateRoot.toString("hex")).to.equal("3f0e1fa982f18cf177224730e757666fe63b21897f44f0696ebf538a9af4000a");
 
-      expect(miningCycleStorageHash).to.equal(
-        "f8440180a06791380e387b3ede4e58b379a49eba420e6fc6cf82e34039e4e300703eff281da02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
-      );
+      expect(miningCycleAccount.stateRoot.toString("hex")).to.equal("6791380e387b3ede4e58b379a49eba420e6fc6cf82e34039e4e300703eff281d");
 
-      expect(tokenLockingStorageHash).to.equal(
-        "f8440180a07d6a1437ac785acaa94a36cdea6dc980da6e1b94abf4b73e8c246848787aac67a02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
-      );
+      expect(tokenLockingAccount.stateRoot.toString("hex")).to.equal("7d6a1437ac785acaa94a36cdea6dc980da6e1b94abf4b73e8c246848787aac67");
     });
   });
 });
