@@ -95,9 +95,6 @@ contract("Contract Storage", (accounts) => {
 
       const miningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const miningCycleStorageHash = await getAddressStateHash(miningCycleAddress);
-      expect(miningCycleStorageHash).to.equal(
-        "f8440180a06791380e387b3ede4e58b379a49eba420e6fc6cf82e34039e4e300703eff281da02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
-      );
 
       // For this test to be reproducible, have to zero timestamps / time depenedent things
       // For colonyNetwork, that means the mining staking timestamp
@@ -117,9 +114,6 @@ contract("Contract Storage", (accounts) => {
       await editableNetwork.setStorageSlot(slot, "0x0000000000000000000000000000000000000000000000000000000000000000");
 
       const colonyNetworkStorageHash = await getAddressStateHash(colonyNetwork.address);
-      expect(colonyNetworkStorageHash).to.equal(
-        "f8440780a0a6383dbeb3ca5768338ec11bef44acc1d901ffe33f03a07be0a970f6991264dba02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
-      );
 
       // We did a whole expenditure above, so let's take out the finalized timestamp
 
@@ -137,16 +131,33 @@ contract("Contract Storage", (accounts) => {
       await editableColony.setStorageSlot(slot, "0x0000000000000000000000000000000000000000000000000000000000000000");
 
       const colonyStorageHash = await getAddressStateHash(colony.address);
+
+      const metaColonyStorageHash = await getAddressStateHash(metaColony.address);
+
+      const tokenLockingStorageHash = await getAddressStateHash(tokenLockingAddress);
+
+      console.log("colonyNetworkStorageHash:", colonyNetworkStorageHash);
+      console.log("colonyStorageHash:", colonyStorageHash);
+      console.log("metaColonyStorageHash:", metaColonyStorageHash);
+      console.log("miningCycleStorageHash:", miningCycleStorageHash);
+      console.log("tokenLockingStorageHash:", tokenLockingStorageHash);
+
+      expect(colonyNetworkStorageHash).to.equal(
+        "f8440780a0a6383dbeb3ca5768338ec11bef44acc1d901ffe33f03a07be0a970f6991264dba02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
+      );
+
       expect(colonyStorageHash).to.equal(
         "f8440180a0c71b63072286b366b099e430b22cd9be1bac436b893ac434e8a591b793dc352ca02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
       );
 
-      const metaColonyStorageHash = await getAddressStateHash(metaColony.address);
       expect(metaColonyStorageHash).to.equal(
         "f8440180a03f0e1fa982f18cf177224730e757666fe63b21897f44f0696ebf538a9af4000aa02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
       );
 
-      const tokenLockingStorageHash = await getAddressStateHash(tokenLockingAddress);
+      expect(miningCycleStorageHash).to.equal(
+        "f8440180a06791380e387b3ede4e58b379a49eba420e6fc6cf82e34039e4e300703eff281da02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
+      );
+
       expect(tokenLockingStorageHash).to.equal(
         "f8440180a07d6a1437ac785acaa94a36cdea6dc980da6e1b94abf4b73e8c246848787aac67a02563894bf029d2c8a084865d05170215569e20a1bcf3ad5e5521c0401b712178"
       );
