@@ -38,6 +38,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
 
   function addExtension(bytes32 _extensionId, address _resolver, bytes32 _roles)
     public
+    stoppable
     calledByMetaColony
   {
     require(_resolver != address(0x0), "extension-manager-bad-resolver");
@@ -54,6 +55,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
 
   function installExtension(bytes32 _extensionId, uint256 _version, address _colony)
     public
+    stoppable
   {
     require(resolvers[_extensionId][_version] != address(0x0), "extension-manager-bad-version");
     require(installations[_extensionId][_colony] == address(0x0), "extension-manager-already-installed");
@@ -70,6 +72,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
 
   function upgradeExtension(bytes32 _extensionId, address _colony, uint256 _newVersion)
     public
+    stoppable
   {
     require(root(_colony), "extension-manager-unauthorized");
     require(installations[_extensionId][_colony] != address(0x0), "extension-manager-not-installed");
@@ -87,6 +90,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
 
   function uninstallExtension(bytes32 _extensionId, address _colony)
     public
+    stoppable
   {
     require(root(_colony), "extension-manager-unauthorized");
     require(installations[_extensionId][_colony] != address(0x0), "extension-manager-not-installed");
