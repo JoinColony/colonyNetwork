@@ -125,9 +125,6 @@ jobs:
       - run:
           name: "Running patricia tree tests"
           command: yarn run test:contracts:patricia
-      - run:
-          name: "Running storage consistency smoke tests"
-          command: yarn run test:contracts:smoke
       - <<: *step_save_cache
       # Save test results
       - store_test_results:
