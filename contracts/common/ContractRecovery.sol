@@ -37,7 +37,8 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
     // NB. This isn't necessarily a colony - could be ColonyNetwork. But they both have this function, so it's okay.
     IRecovery(address(this)).checkNotAdditionalProtectedVariable(_slot); // ignore-swc-123
 
-    // Protect key variables
+    // Protect key variables - not sure this requires explicit protecting, as this is actually in RESOLVER_SLOT
+    // which is already forbidden
     uint64 _recoveryRolesCount = recoveryRolesCount;
 
     // Make recovery edit
