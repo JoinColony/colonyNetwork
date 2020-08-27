@@ -46,7 +46,7 @@ contract("One transaction payments", (accounts) => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-    await colonyNetwork.installExtension(ONE_TX_PAYMENT, 1, colony.address);
+    await colonyNetwork.installExtension(ONE_TX_PAYMENT, colony.address, 1);
 
     const oneTxExtensionAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
     oneTxExtension = await OneTxPayment.at(oneTxExtensionAddress);

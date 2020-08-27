@@ -108,7 +108,7 @@ contract("Funding Queues", (accounts) => {
     await colony.addDomain(1, UINT256_MAX, 1);
     domain1 = await colony.getDomain(1);
 
-    await colonyNetwork.installExtension(FUNDING_QUEUE, 1, colony.address);
+    await colonyNetwork.installExtension(FUNDING_QUEUE, colony.address, 1);
 
     const fundingQueueAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
     fundingQueue = await FundingQueue.at(fundingQueueAddress);
@@ -178,10 +178,10 @@ contract("Funding Queues", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colonyNetwork.installExtension(FUNDING_QUEUE, 1, colony.address, { from: USER0 });
+      await colonyNetwork.installExtension(FUNDING_QUEUE, colony.address, 1, { from: USER0 });
 
       await checkErrorRevert(
-        colonyNetwork.installExtension(FUNDING_QUEUE, 1, colony.address, { from: USER0 }),
+        colonyNetwork.installExtension(FUNDING_QUEUE, colony.address, 1, { from: USER0 }),
         "extension-manager-already-installed"
       );
 

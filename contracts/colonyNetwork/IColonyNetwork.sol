@@ -296,7 +296,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return miningResolverAddress The address of the mining cycle resolver currently used by new instances
   function getMiningResolver() public view returns (address miningResolverAddress);
 
-  /// @notice Add a new extension/version to the Extensions repository.
+  /// @notice Add a new extension resolver to the Extensions repository.
   /// @dev The extension version is queried from the resolver itself.
   /// @dev The roles array can be set only for version == 1 (must be empty otherwise).
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
@@ -304,17 +304,39 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param roles A bytes array containing the roles required by the extension
   function addExtension(bytes32 extensionId, address resolver, bytes32 roles) public;
 
-  function installExtension(bytes32 extensionId, uint256 version, address colony) public;
+  /// @notice Install an extension in a colony.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param colony Address of the colony to install the extension in
+  /// @param version Version of the extension to install
+  function installExtension(bytes32 extensionId, address colony, uint256 version) public;
 
+  /// @notice Upgrade an extension in a colony.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param colony Address of the colony the extension is installed in
+  /// @param newVersion Version of the extension to upgrade to (must be one greater than current)
   function upgradeExtension(bytes32 extensionId, address colony, uint256 newVersion) public;
 
+  /// @notice Uninstall an extension in a colony.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param colony Address of the colony the extension is installed in
   function uninstallExtension(bytes32 extensionId, address colony) public;
 
-  function getExtensionRoles(bytes32 extensionId) public view returns (bytes32);
+  /// @notice Get an extension's required roles.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @return roles A bytes32 bit mask of the required roles
+  function getExtensionRoles(bytes32 extensionId) public view returns (bytes32 roles);
 
-  function getExtensionResolver(bytes32 extensionId, uint256 version) public view returns (address);
+  /// @notice Get an extension's resolver.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param version Version of the extension
+  /// @return resolver The address of the deployed resolver
+  function getExtensionResolver(bytes32 extensionId, uint256 version) public view returns (address resolver);
 
-  function getExtensionInstallation(bytes32 extensionId, address colony) public view returns (address);
+  /// @notice Get an extension's installation.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param colony Address of the colony the extension is installed in
+  /// @return installation The address of the installed extension
+  function getExtensionInstallation(bytes32 extensionId, address colony) public view returns (address installation);
 
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
   /// @return _feeInverse The inverse of the network fee

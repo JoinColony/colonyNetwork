@@ -159,7 +159,7 @@ contract("Colony Network Extensions", (accounts) => {
 
   describe("installing extensions", () => {
     it("allows a root user to install an extension with any version", async () => {
-      await colonyNetwork.installExtension(TEST_EXTENSION, 1, colony.address, { from: ROOT });
+      await colonyNetwork.installExtension(TEST_EXTENSION, colony.address, 1, { from: ROOT });
 
       const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
       const extension = await TestExtension1.at(extensionAddress);
@@ -171,14 +171,14 @@ contract("Colony Network Extensions", (accounts) => {
     });
 
     it("does not allow an extension to be installed with a nonexistent resolver", async () => {
-      await checkErrorRevert(colonyNetwork.installExtension(TEST_EXTENSION, 0, colony.address, { from: ROOT }), "extension-manager-bad-version");
+      await checkErrorRevert(colonyNetwork.installExtension(TEST_EXTENSION, colony.address, 0, { from: ROOT }), "extension-manager-bad-version");
     });
 
     it("does not allow an extension to be installed twice", async () => {
-      await colonyNetwork.installExtension(TEST_EXTENSION, 1, colony.address, { from: ROOT });
+      await colonyNetwork.installExtension(TEST_EXTENSION, colony.address, 1, { from: ROOT });
 
       await checkErrorRevert(
-        colonyNetwork.installExtension(TEST_EXTENSION, 1, colony.address, { from: ROOT }),
+        colonyNetwork.installExtension(TEST_EXTENSION, colony.address, 1, { from: ROOT }),
         "extension-manager-already-installed"
       );
     });
@@ -186,7 +186,7 @@ contract("Colony Network Extensions", (accounts) => {
 
   describe("upgrading extensions", () => {
     it("allows root users to upgrade an extension", async () => {
-      await colonyNetwork.installExtension(TEST_EXTENSION, 1, colony.address, { from: ROOT });
+      await colonyNetwork.installExtension(TEST_EXTENSION, colony.address, 1, { from: ROOT });
 
       const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
       expect(extensionAddress).to.not.equal(ethers.constants.AddressZero);
@@ -203,7 +203,7 @@ contract("Colony Network Extensions", (accounts) => {
     });
 
     it("does not allow non-root users to upgrade an extension", async () => {
-      await colonyNetwork.installExtension(TEST_EXTENSION, 1, colony.address, { from: ROOT });
+      await colonyNetwork.installExtension(TEST_EXTENSION, colony.address, 1, { from: ROOT });
 
       await checkErrorRevert(
         colonyNetwork.upgradeExtension(TEST_EXTENSION, colony.address, 2, { from: ARCHITECT }),
@@ -218,14 +218,14 @@ contract("Colony Network Extensions", (accounts) => {
     });
 
     it("does not allow upgrading a extension to a version which does not exist", async () => {
-      await colonyNetwork.installExtension(TEST_EXTENSION, 3, colony.address, { from: ROOT });
+      await colonyNetwork.installExtension(TEST_EXTENSION, colony.address, 3, { from: ROOT });
 
       // Can't upgrade from version 3 to nonexistent 4
       await checkErrorRevert(colonyNetwork.upgradeExtension(TEST_EXTENSION, colony.address, 4, { from: ROOT }), "extension-manager-bad-version");
     });
 
     it("does not allow upgrading a extension out of order", async () => {
-      await colonyNetwork.installExtension(TEST_EXTENSION, 1, colony.address, { from: ROOT });
+      await colonyNetwork.installExtension(TEST_EXTENSION, colony.address, 1, { from: ROOT });
 
       await checkErrorRevert(colonyNetwork.upgradeExtension(TEST_EXTENSION, colony.address, 3, { from: ROOT }), "extension-manager-bad-increment");
     });
@@ -233,7 +233,7 @@ contract("Colony Network Extensions", (accounts) => {
 
   describe("removing extensions", () => {
     it("allows root users to uninstall an extension and send ether to the beneficiary", async () => {
-      await colonyNetwork.installExtension(TEST_EXTENSION, 1, colony.address, { from: ROOT });
+      await colonyNetwork.installExtension(TEST_EXTENSION, colony.address, 1, { from: ROOT });
 
       const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
       const extension = await TestExtension1.at(extensionAddress);

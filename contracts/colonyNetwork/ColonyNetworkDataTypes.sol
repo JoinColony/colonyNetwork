@@ -103,15 +103,15 @@ contract ColonyNetworkDataTypes {
 
   /// @notice Event logged when an extension is installed in a colony
   /// @param extensionId The identifier for the extension
-  /// @param version The version of the extension
   /// @param colony The address of the colony
-  event ExtensionInstalled(bytes32 indexed extensionId, uint256 version, address indexed colony);
+  /// @param version The version of the extension
+  event ExtensionInstalled(bytes32 indexed extensionId, address indexed colony, uint256 version);
 
   /// @notice Event logged when an extension is upgraded in a colony
   /// @param extensionId The identifier for the extension
-  /// @param version The new version of the extension
   /// @param colony The address of the colony
-  event ExtensionUpgraded(bytes32 indexed extensionId, uint256 version, address indexed colony);
+  /// @param version The new version of the extension
+  event ExtensionUpgraded(bytes32 indexed extensionId, address indexed colony, uint256 version);
 
   /// @notice Event logged when an extension is uninstalled from a
   /// @param extensionId The identifier for the extension

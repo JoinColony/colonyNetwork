@@ -45,7 +45,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     emit ExtensionAdded(_extensionId, version);
   }
 
-  function installExtension(bytes32 _extensionId, uint256 _version, address _colony)
+  function installExtension(bytes32 _extensionId, address _colony, uint256 _version)
     public
     stoppable
   {
@@ -59,7 +59,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     extension.setResolver(resolvers[_extensionId][_version]);
     ColonyExtension(address(extension)).install(_colony);
 
-    emit ExtensionInstalled(_extensionId, _version, _colony);
+    emit ExtensionInstalled(_extensionId, _colony, _version);
   }
 
   function upgradeExtension(bytes32 _extensionId, address _colony, uint256 _newVersion)
@@ -77,7 +77,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     ColonyExtension(extension).finishUpgrade();
     assert(ColonyExtension(extension).version() == _newVersion);
 
-    emit ExtensionUpgraded(_extensionId, _newVersion, _colony);
+    emit ExtensionUpgraded(_extensionId, _colony, _newVersion);
   }
 
   function uninstallExtension(bytes32 _extensionId, address _colony)
