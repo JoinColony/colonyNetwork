@@ -37,7 +37,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   event MotionVoteSubmitted(uint256 indexed motionId, address indexed voter);
   event MotionVoteRevealed(uint256 indexed motionId, address indexed voter, uint256 indexed vote);
   event MotionFinalized(uint256 indexed motionId, bytes action, bool executed);
-  event MotionEscalated(uint256 indexed motionId, address escalator, uint256 indexed domainId);
+  event MotionEscalated(uint256 indexed motionId, address escalator, uint256 indexed domainId, uint256 indexed newDomainId);
   event MotionRewardClaimed(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);
   event MotionEventSet(uint256 indexed motionId, uint256 eventIndex);
 
@@ -446,6 +446,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     uint256 childSkillId = colonyNetwork.getChildSkillId(newDomainSkillId, _childSkillIndex);
     require(childSkillId == motion.skillId, "voting-rep-invalid-domain-proof");
 
+    uint256 domainId = motion.domainId;
     motion.domainId = _newDomainId;
     motion.skillId = newDomainSkillId;
     motion.skillRep = getReputationFromProof(_motionId, address(0x0), _key, _value, _branchMask, _siblings);
@@ -464,7 +465,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     motion.escalated = true;
 
-    emit MotionEscalated(_motionId, msg.sender, _newDomainId);
+    emit MotionEscalated(_motionId, msg.sender, domainId, _newDomainId);
 
     if (motion.events[STAKE_END] == uint64(now)) {
       emit MotionEventSet(_motionId, STAKE_END);
@@ -702,7 +703,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
         return MotionState.Submit;
       } else if (now < motion.events[REVEAL_END]) {
         return MotionState.Reveal;
-      } else if (now < motion.events[REVEAL_END] + escalationPeriod) {
+      } else if (
+        now < motion.events[REVEAL_END] + escalationPeriod &&
+        motion.domainId > 1
+      ) {
         return MotionState.Closed;
       } else {
         return MotionState.Finalizable;
