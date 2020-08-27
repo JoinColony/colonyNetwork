@@ -3,8 +3,8 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { BN } from "bn.js";
 
-import { UINT256_MAX, WAD, GLOBAL_SKILL_ID } from "../../helpers/constants";
-import { fundColonyWithTokens, setupColony } from "../../helpers/test-data-generator";
+import { UINT256_MAX, WAD, GLOBAL_SKILL_ID } from "../helpers/constants";
+import { fundColonyWithTokens, setupColony } from "../helpers/test-data-generator";
 
 const Account = require("ethereumjs-account").default;
 
