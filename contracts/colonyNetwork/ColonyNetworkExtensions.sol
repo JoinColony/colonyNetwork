@@ -25,14 +25,6 @@ import "./ColonyNetworkStorage.sol";
 
 
 contract ColonyNetworkExtensions is ColonyNetworkStorage {
-  event ExtensionAdded(bytes32 indexed extensionId, uint256 version);
-  event ExtensionInstalled(bytes32 indexed extensionId, uint256 version, address indexed colony);
-
-  event ExtensionUpgraded(bytes32 indexed extensionId, uint256 version, address indexed colony);
-  event ExtensionUninstalled(bytes32 indexed extensionId, address indexed colony);
-
-  event ExtensionEnabled(bytes32 indexed extensionId, address indexed colony, uint256 indexed domainId);
-  event ExtensionDisabled(bytes32 indexed extensionId, address indexed colony, uint256 indexed domainId);
 
   // Public functions
 
