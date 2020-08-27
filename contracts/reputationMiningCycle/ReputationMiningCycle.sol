@@ -481,16 +481,6 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     return disputeRewardSize();
   }
 
-  function expectedBranchMask(uint256 _nLeaves, uint256 _leaf) public pure returns (uint256) {
-    // Gets the expected branchmask for a patricia tree which has nLeaves, with keys from 0 to nLeaves -1
-    // i.e. the tree is 'full' - there are no missing leaves
-    uint256 mask = sub(_nLeaves, 1); // Every branchmask in a full tree has at least these 1s set
-    uint256 xored = mask ^ _leaf; // Where do mask and leaf differ?
-    // Set every bit in the mask from the first bit where they differ to 1
-    uint256 remainderMask = sub(nextPowerOfTwoInclusive(add(xored, 1)), 1);
-    return mask | remainderMask;
-  }
-
   function userInvolvedInMiningCycle(address _user) public view returns (bool) {
     return reputationHashSubmissions[_user].proposedNewRootHash != 0x00 || respondedToChallenge[_user];
   }
@@ -569,7 +559,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       startPairingInRound(_roundNumber);
     } else {
       // Update the 'last responded time'
-      disputeRounds[_roundNumber][nInRound-1].lastResponseTimestamp = now;
+      disputeRounds[_roundNumber][nInRound-1].lastResponseTimestamp = block.timestamp;
     }
   }
 }

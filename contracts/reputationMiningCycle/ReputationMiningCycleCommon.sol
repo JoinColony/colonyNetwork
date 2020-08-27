@@ -30,11 +30,11 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   // Size of mining window in seconds
   uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
 
-  function expectedBranchMask(uint256 _nNodes, uint256 _node) public pure returns (uint256) {
-    // Gets the expected branchmask for a patricia tree which has nNodes, with keys from 0 to nNodes -1
-    // i.e. the tree is 'full' - there are no missing nodes
-    uint256 mask = sub(_nNodes, 1); // Every branchmask in a full tree has at least these 1s set
-    uint256 xored = mask ^ _node; // Where do mask and node differ?
+  function expectedBranchMask(uint256 _nLeaves, uint256 _leaf) public pure returns (uint256) {
+    // Gets the expected branchmask for a patricia tree which has nLeaves, with keys from 0 to nLeaves -1
+    // i.e. the tree is 'full' - there are no missing leaves
+    uint256 mask = sub(_nLeaves, 1); // Every branchmask in a full tree has at least these 1s set
+    uint256 xored = mask ^ _leaf; // Where do mask and leaf differ?
     // Set every bit in the mask from the first bit where they differ to 1
     uint256 remainderMask = sub(nextPowerOfTwoInclusive(add(xored, 1)), 1);
     return mask | remainderMask;
@@ -130,11 +130,11 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   uint256 constant Y = UINT256_MAX / SUBMITTER_ONLY_WINDOW_DURATION;
 
   function responsePossible(DisputeStages _stage, uint256 _responseWindowOpened) internal view returns (bool) {
-    if (_responseWindowOpened > now) {
+    if (_responseWindowOpened > block.timestamp) {
       return false;
     }
 
-    uint256 windowOpenFor = now - _responseWindowOpened;
+    uint256 windowOpenFor = block.timestamp - _responseWindowOpened;
 
     if (windowOpenFor <= SUBMITTER_ONLY_WINDOW_DURATION) {
       // require user made a submission
