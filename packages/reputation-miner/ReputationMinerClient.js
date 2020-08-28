@@ -190,7 +190,7 @@ class ReputationMinerClient {
     const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
     this.confirmTimeoutCheck = setTimeout(
       this.reportConfirmTimeout.bind(this),
-      (DAY_IN_SECONDS + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
+      (DAY_IN_SECONDS * 7 + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
     );
 
     this.miningCycleAddress = repCycle.address;
@@ -273,7 +273,7 @@ class ReputationMinerClient {
           clearTimeout(this.confirmTimeoutCheck);
         }
         // If we don't see this next cycle completed in the next day and ten minutes, then report it
-        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (DAY_IN_SECONDS + 10 * MINUTE_IN_SECONDS) * 1000);
+        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (DAY_IN_SECONDS * 7 + 10 * MINUTE_IN_SECONDS) * 1000);
 
         // Let's process the reputation log if it's been ten blocks
         if (this.blocksSinceCycleCompleted < 10) {
@@ -415,7 +415,7 @@ class ReputationMinerClient {
         }
       }
 
-      if (lastHashStanding && ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
+      if (lastHashStanding && ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration.mul(7))) { // TODO: Remove this mul(7) when gas is low again
         // If the submission window is closed and we are the last hash, confirm it
         this.best12Submissions = []; // Clear the submissions
         this.submissionIndex = 0;
@@ -425,11 +425,15 @@ class ReputationMinerClient {
       this.endDoBlockChecks();
     } catch (err) {
       this._adapter.error(`Error during block checks: ${err}`);
-      if (this._exitOnError) {
-        process.exit(1);
-        // Note we don't call this.endDoBlockChecks here... this is a deliberate choice on my part; depending on what the error is,
-        // we might no longer be in a sane state, and might have only half-processed the reputation log, or similar. So playing it safe,
-        // and not unblocking the doBlockCheck function.
+      // If it's out-of-ether...
+      if (err.toString().indexOf('does not have enough funds') >= 0 ) {
+        // This could obviously be much better in the future, but for now, we'll settle for this not triggering a restart loop.
+        this._adapter.error(`Block checks suspended due to not enough Ether. Send ether to \`${this._miner.minerAddress}\`, then restart the miner`);
+      } else if (this._exitOnError) {
+          process.exit(1);
+          // Note we don't call this.endDoBlockChecks here... this is a deliberate choice on my part; depending on what the error is,
+          // we might no longer be in a sane state, and might have only half-processed the reputation log, or similar. So playing it safe,
+          // and not unblocking the doBlockCheck function.
       }
     }
   }
