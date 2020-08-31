@@ -209,7 +209,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   /// @notice Create a motion in any domain
   /// @param _domainId The domain where we vote on the motion
   /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
-  /// @param _altTarget The contract to which we send the action (0x0 for the colony)
   /// @param _action A bytes array encoding a function call
   /// @param _key Reputation tree key for the domain
   /// @param _value Reputation tree value for the domain
@@ -218,7 +217,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   function createDomainMotion(
     uint256 _domainId,
     uint256 _childSkillIndex,
-    address _altTarget,
     bytes memory _action,
     bytes memory _key,
     bytes memory _value,
@@ -235,7 +233,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
     }
 
-    createMotion(_altTarget, _action, _domainId, domainSkillId, _key, _value, _branchMask, _siblings);
+    createMotion(address(0x0), _action, _domainId, domainSkillId, _key, _value, _branchMask, _siblings);
   }
 
   /// @notice Stake on a motion
@@ -306,10 +304,18 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
 
     emit MotionStaked(_motionId, msg.sender, _vote, amount);
 
+    // Move to vote submission once both sides are fully staked
+    if (motion.stakes[NAY] == requiredStake && motion.stakes[YAY] == requiredStake) {
+      motion.events[STAKE_END] = uint64(now);
+      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
+
+      emit MotionEventSet(_motionId, STAKE_END);
+
     // Move to second staking window once one side is fully staked
-    if (
-      (_vote == YAY && motion.stakes[YAY] == requiredStake && motion.stakes[NAY] < requiredStake) ||
-      (_vote == NAY && motion.stakes[NAY] == requiredStake && motion.stakes[YAY] < requiredStake)
+    } else if (
+      (_vote == NAY && motion.stakes[NAY] == requiredStake) ||
+      (_vote == YAY && motion.stakes[YAY] == requiredStake)
     ) {
       motion.events[STAKE_END] = uint64(now + stakePeriod);
       motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
@@ -322,14 +328,6 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       emit MotionEventSet(_motionId, STAKE_END);
     }
 
-    // Move to vote submission once both sides are fully staked
-    if (motion.stakes[YAY] == requiredStake && motion.stakes[NAY] == requiredStake) {
-      motion.events[STAKE_END] = uint64(now);
-      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
-
-      emit MotionEventSet(_motionId, STAKE_END);
-    }
   }
 
   /// @notice Submit a vote secret for a motion
@@ -396,17 +394,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     require(_vote <= 1, "voting-rep-bad-vote");
 
     uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
+    motion.votes[_vote] = add(motion.votes[_vote], userRep);
 
     bytes32 voteSecret = voteSecrets[_motionId][msg.sender];
     require(voteSecret == getVoteSecret(_salt, _vote), "voting-rep-secret-no-match");
     delete voteSecrets[_motionId][msg.sender];
 
-    motion.votes[_vote] = add(motion.votes[_vote], userRep);
-
-    uint256 fractionUserReputation = wdiv(userRep, motion.skillRep);
-    uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
-    uint256 voterReward = wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
-
+    uint256 voterReward = getVoterReward(_motionId, userRep);
     motion.paidVoterComp = add(motion.paidVoterComp, voterReward);
     tokenLocking.transfer(token, voterReward, msg.sender, true);
 
@@ -524,13 +518,13 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   /// @param _motionId The id of the motion
   /// @param _permissionDomainId The domain where the extension has the arbitration permission
   /// @param _childSkillIndex For the domain in which the motion is occurring
-  /// @param _user The user whose reward is being claimed
+  /// @param _staker The staker whose reward is being claimed
   /// @param _vote The side being supported (0 = NAY, 1 = YAY)
   function claimReward(
     uint256 _motionId,
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
-    address _user,
+    address _staker,
     uint256 _vote
   )
     public
@@ -542,87 +536,75 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       "voting-rep-motion-not-claimable"
     );
 
-    uint256 stakeFraction = wdiv(
-      stakes[_motionId][_user][_vote],
-      add(motion.stakes[_vote], motion.pastVoterComp[_vote])
-    );
+    (uint256 stakerReward, uint256 repPenalty) = getStakerReward(_motionId, _staker, _vote);
 
-    require(stakeFraction > 0, "voting-rep-nothing-to-claim");
-    delete stakes[_motionId][_user][_vote];
+    require(stakerReward > 0, "voting-rep-nothing-to-claim");
+    delete stakes[_motionId][_staker][_vote];
 
-    uint256 realStake = wmul(stakeFraction, motion.stakes[_vote]);
-    uint256 requiredStake = getRequiredStake(_motionId);
-
-    uint256 stakerReward;
-    uint256 repPenalty;
-
-    // Went to a vote, use vote to determine reward or penalty
-    if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
-
-      uint256 loserStake = sub(requiredStake, motion.paidVoterComp);
-      uint256 totalVotes = add(motion.votes[NAY], motion.votes[YAY]);
-      uint256 winFraction = wdiv(motion.votes[_vote], totalVotes);
-      uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
-
-      if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
-        stakerReward = wmul(stakeFraction, add(requiredStake, wmul(loserStake, winShare - WAD)));
-      } else {
-        stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));
-        repPenalty = sub(realStake, stakerReward);
-      }
-
-    // Determine rewards based on stakes alone
-    } else {
-
-      assert(motion.paidVoterComp == 0);
-
-      // Your side fully staked, receive 10% (proportional) of loser's stake
-      if (
-        motion.stakes[_vote] == requiredStake &&
-        motion.stakes[flip(_vote)] < requiredStake
-      ) {
-
-        uint256 loserStake = motion.stakes[flip(_vote)];
-        uint256 totalPenalty = wmul(loserStake, WAD / 10);
-
-        stakerReward = wmul(stakeFraction, add(requiredStake, totalPenalty));
-
-      // Opponent's side fully staked, pay 10% penalty
-      } else if (
-        motion.stakes[_vote] < requiredStake &&
-        motion.stakes[flip(_vote)] == requiredStake
-      ) {
-
-        uint256 loserStake = motion.stakes[_vote];
-        uint256 totalPenalty = wmul(loserStake, WAD / 10);
-
-        stakerReward = wmul(stakeFraction, sub(loserStake, totalPenalty));
-        repPenalty = sub(realStake, stakerReward);
-
-      // Neither side fully staked (or no votes were revealed), no reward or penalty
-      } else {
-
-        stakerReward = realStake;
-
-      }
-    }
-
-    tokenLocking.transfer(token, stakerReward, _user, true);
+    tokenLocking.transfer(token, stakerReward, _staker, true);
 
     if (repPenalty > 0) {
       colony.emitDomainReputationPenalty(
         _permissionDomainId,
         _childSkillIndex,
         motion.domainId,
-        _user,
+        _staker,
         -int256(repPenalty)
       );
     }
 
-    emit MotionRewardClaimed(_motionId, _user, _vote, stakerReward);
+    emit MotionRewardClaimed(_motionId, _staker, _vote, stakerReward);
   }
 
   // Public view functions
+
+  /// @notice Get the total stake fraction
+  /// @return The total stake fraction
+  function getTotalStakeFraction() public view returns (uint256) {
+    return totalStakeFraction;
+  }
+
+  /// @notice Get the voter reward fraction
+  /// @return The voter reward fraction
+  function getVoterRewardFraction() public view returns (uint256) {
+    return voterRewardFraction;
+  }
+
+  /// @notice Get the user min stake fraction
+  /// @return The user min stake fraction
+  function getUserMinStakeFraction() public view returns (uint256) {
+    return userMinStakeFraction;
+  }
+
+  /// @notice Get the max vote fraction
+  /// @return The max vote fraction
+  function getMaxVoteFraction() public view returns (uint256) {
+    return maxVoteFraction;
+  }
+
+  /// @notice Get the stake period
+  /// @return The stake period
+  function getStakePeriod() public view returns (uint256) {
+    return stakePeriod;
+  }
+
+  /// @notice Get the submit period
+  /// @return The submit period
+  function getSubmitPeriod() public view returns (uint256) {
+    return submitPeriod;
+  }
+
+  /// @notice Get the reveal period
+  /// @return The reveal period
+  function getRevealPeriod() public view returns (uint256) {
+    return revealPeriod;
+  }
+
+  /// @notice Get the escalation period
+  /// @return The escalation period
+  function getEscalationPeriod() public view returns (uint256) {
+    return escalationPeriod;
+  }
 
   /// @notice Get the total motion count
   /// @return The total motion count
@@ -715,6 +697,87 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
   }
 
+  /// @notice Get the voter reward
+  /// @param _motionId The id of the motion
+  /// @param _voterRep The reputation the voter has in the domain
+  /// @return The voter reward
+  function getVoterReward(uint256 _motionId, uint256 _voterRep) public view returns (uint256) {
+    Motion storage motion = motions[_motionId];
+    uint256 fractionUserReputation = wdiv(_voterRep, motion.skillRep);
+    uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
+    return wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
+  }
+
+  /// @notice Get the staker reward
+  /// @param _motionId The id of the motion
+  /// @param _staker The staker's address
+  /// @param _vote The vote (0 = NAY, 1 = YAY)
+  /// @return The staker reward and the reputation penalty (if any)
+  function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256, uint256) {
+    Motion storage motion = motions[_motionId];
+
+    uint256 stakeFraction = wdiv(
+      stakes[_motionId][_staker][_vote],
+      add(motion.stakes[_vote], motion.pastVoterComp[_vote])
+    );
+
+    uint256 realStake = wmul(stakeFraction, motion.stakes[_vote]);
+    uint256 requiredStake = getRequiredStake(_motionId);
+
+    uint256 stakerReward;
+    uint256 repPenalty;
+
+    // Went to a vote, use vote to determine reward or penalty
+    if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
+
+      uint256 loserStake = sub(requiredStake, motion.paidVoterComp);
+      uint256 totalVotes = add(motion.votes[NAY], motion.votes[YAY]);
+      uint256 winFraction = wdiv(motion.votes[_vote], totalVotes);
+      uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
+
+      if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
+        stakerReward = wmul(stakeFraction, add(requiredStake, wmul(loserStake, winShare - WAD)));
+      } else {
+        stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));
+        repPenalty = sub(realStake, stakerReward);
+      }
+
+    // Determine rewards based on stakes alone
+    } else {
+      assert(motion.paidVoterComp == 0);
+
+      // Your side fully staked, receive 10% (proportional) of loser's stake
+      if (
+        motion.stakes[_vote] == requiredStake &&
+        motion.stakes[flip(_vote)] < requiredStake
+      ) {
+
+        uint256 loserStake = motion.stakes[flip(_vote)];
+        uint256 totalPenalty = wmul(loserStake, WAD / 10);
+        stakerReward = wmul(stakeFraction, add(requiredStake, totalPenalty));
+
+      // Opponent's side fully staked, pay 10% penalty
+      } else if (
+        motion.stakes[_vote] < requiredStake &&
+        motion.stakes[flip(_vote)] == requiredStake
+      ) {
+
+        uint256 loserStake = motion.stakes[_vote];
+        uint256 totalPenalty = wmul(loserStake, WAD / 10);
+        stakerReward = wmul(stakeFraction, sub(loserStake, totalPenalty));
+        repPenalty = sub(realStake, stakerReward);
+
+      // Neither side fully staked (or no votes were revealed), no reward or penalty
+      } else {
+
+        stakerReward = realStake;
+
+      }
+    }
+
+    return (stakerReward, repPenalty);
+  }
+
   // Internal functions
 
   function createMotion(
@@ -730,7 +793,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     internal
   {
     require(state == ExtensionState.Active, "voting-rep-not-active");
-    require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-colony");
+    require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");
 
     motionCount += 1;
     Motion storage motion = motions[motionCount];
