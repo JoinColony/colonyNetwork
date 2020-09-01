@@ -150,7 +150,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return createColony(_tokenAddress, _version, _colonyName, _orbitdb);
   }
 
-  // DEPRECATED
   function createColony(
     address _tokenAddress,
     uint256 _version,

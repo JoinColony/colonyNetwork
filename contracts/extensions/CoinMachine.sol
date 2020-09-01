@@ -70,7 +70,7 @@ contract CoinMachine is DSMath, ColonyExtension {
     colony = IColony(_colony);
   }
 
-  /// @notice Called when upgrading the extension (currently a no-op since this OneTxPayment does not support upgrading)
+  /// @notice Called when upgrading the extension
   function finishUpgrade() public auth {}
 
   /// @notice Called when uninstalling the extension
