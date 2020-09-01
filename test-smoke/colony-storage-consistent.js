@@ -62,7 +62,6 @@ contract("Contract Storage", (accounts) => {
     await fundColonyWithTokens(colony, otherToken, UINT256_MAX);
   });
 
-  // x.engine.manager.state.blockchain.stateTrie.get(utils.toBuffer(y.address), (err, res)=>console.log(res.toString('hex')))
   function getAddressStateHash(address) {
     return new Promise((resolve, reject) => {
       web3.currentProvider.engine.manager.state.blockchain.stateTrie.get(utils.toBuffer(address), (err, res) => {
@@ -109,9 +108,14 @@ contract("Contract Storage", (accounts) => {
       await colonyNetworkResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
       const editableNetwork = await ContractEditing.at(colonyNetwork.address);
 
+      // Following
+      // https://solidity.readthedocs.io/en/v0.6.8/internals/layout_in_storage.html#mappings-and-dynamic-arrays
+      // This is the hash of the key (the address) and the storage slot containing the mapping (33)
       let hashable = `0x000000000000000000000000${accounts[5].slice(2)}${new BN(33).toString(16, 64)}`;
-      let hashed = web3.utils.sha3(hashable);
+      let hashed = web3.utils.soliditySha3(hashable);
       let slot = new BN(hashed.slice(2), 16);
+      // To get the slot containing the timestamp of the miner submission, we add one to where the struct starts
+      // (see ColonyNetworkDataTypes)
       slot = slot.addn(1);
 
       await editableNetwork.setStorageSlot(slot, "0x0000000000000000000000000000000000000000000000000000000000000000");
@@ -120,13 +124,13 @@ contract("Contract Storage", (accounts) => {
       const colonyNetworkAccount = new Account(colonyNetworkStateHash);
 
       // We did a whole expenditure above, so let's take out the finalized timestamp
-
+      // This is the hash of the expenditure id (1) with the storage slot (25) to find the location of the struct
       hashable = `0x${new BN(1).toString(16, 64)}${new BN(25).toString(16, 64)}`;
-      hashed = web3.utils.sha3(hashable);
+      hashed = web3.utils.soliditySha3(hashable);
       slot = new BN(hashed.slice(2), 16);
+      // To find the slot storing the timestamp, we add three to where the struct starts (see ColonyDataTypes).
       slot = slot.addn(3);
-      // const valueBefore = await web3.eth.getStorageAt(colony.address, slot);
-      // console.log(valueBefore)
+
       const colonyAsER = await EtherRouter.at(colony.address);
       const colonyResolverAddress = await colonyAsER.resolver();
       const colonyResolver = await Resolver.at(colonyResolverAddress);
