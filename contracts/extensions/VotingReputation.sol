@@ -293,7 +293,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
       getSig(motion.action) == CHANGE_FUNCTION &&
-      (motion.altTarget == address(0x0) || colonyNetwork.isColony(motion.altTarget))
+      motion.altTarget == address(0x0)
     ) {
       bytes32 structHash = hashExpenditureStruct(motion.action);
       expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
@@ -470,7 +470,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     Motion storage motion = motions[_motionId];
     require(getMotionState(_motionId) == MotionState.Finalizable, "voting-rep-motion-not-finalizable");
 
-    assert(motion.stakes[YAY] == getRequiredStake(_motionId) || add(motion.votes[NAY], motion.votes[YAY]) > 0);
+    assert(
+      motion.stakes[YAY] == getRequiredStake(_motionId) ||
+      add(motion.votes[NAY], motion.votes[YAY]) > 0
+    );
 
     motion.finalized = true;
 
@@ -479,10 +482,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       motion.votes[NAY] < motion.votes[YAY]
     );
 
-    if (
-      getSig(motion.action) == CHANGE_FUNCTION &&
-      (motion.altTarget == address(0x0) || colonyNetwork.isColony(motion.altTarget))
-    ) {
+    if (getSig(motion.action) == CHANGE_FUNCTION && motion.altTarget == address(0x0)) {
       bytes32 structHash = hashExpenditureStruct(motion.action);
       expenditureMotionCounts[structHash] = sub(expenditureMotionCounts[structHash], 1);
 
