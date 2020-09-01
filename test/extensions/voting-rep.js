@@ -184,7 +184,7 @@ contract("Voting Reputation", (accounts) => {
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain3.skillId), // Colony total, domain 3
-      makeReputationValue(WAD, 7)
+      makeReputationValue(WAD.muln(3), 7)
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER2), // User2, very little rep
@@ -197,6 +197,14 @@ contract("Voting Reputation", (accounts) => {
     await reputationTree.insert(
       makeReputationKey(colony.address, domain2.skillId, USER1), // User1, domain 2
       makeReputationValue(WAD.divn(3).muln(2), 10)
+    );
+    await reputationTree.insert(
+      makeReputationKey(colony.address, domain3.skillId, USER0), // User0, domain 3
+      makeReputationValue(WAD, 11)
+    );
+    await reputationTree.insert(
+      makeReputationKey(colony.address, domain3.skillId, USER1), // User1, domain 3
+      makeReputationValue(WAD.muln(2), 12)
     );
 
     domain1Key = makeReputationKey(colony.address, domain1.skillId);
@@ -354,7 +362,7 @@ contract("Voting Reputation", (accounts) => {
 
     it("cannot externally escalate a domain motion with an invalid domain proof", async () => {
       const key = makeReputationKey(colony.address, domain3.skillId);
-      const value = makeReputationValue(WAD, 7);
+      const value = makeReputationValue(WAD.muln(3), 7);
       const [mask, siblings] = await reputationTree.getProof(key);
 
       // Provide proof for (3) instead of (2)
@@ -1668,6 +1676,63 @@ contract("Voting Reputation", (accounts) => {
 
       const state = await voting.getMotionState(motionId);
       expect(state).to.eq.BN(EXECUTABLE);
+    });
+
+    it("can skip the staking phase if no new stake is required", async () => {
+      // Deploy a new extension with no voter compensation
+      await votingFactory.removeExtension(colony.address, { from: USER0 });
+      await votingFactory.deployExtension(colony.address, { from: USER0 });
+      const votingAddress = await votingFactory.deployedExtensions(colony.address);
+      voting = await VotingReputation.at(votingAddress);
+
+      await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
+
+      await voting.initialise(
+        TOTAL_STAKE_FRACTION,
+        0, // No voter compensation
+        USER_MIN_STAKE_FRACTION,
+        MAX_VOTE_FRACTION,
+        STAKE_PERIOD,
+        SUBMIT_PERIOD,
+        REVEAL_PERIOD,
+        ESCALATION_PERIOD
+      );
+
+      // Run a vote in domain 3, same rep as domain 1
+      const domain3Key = makeReputationKey(colony.address, domain3.skillId);
+      const domain3Value = makeReputationValue(WAD.muln(3), 7);
+      const [domain3Mask, domain3Siblings] = await reputationTree.getProof(domain3Key);
+
+      const user0Key3 = makeReputationKey(colony.address, domain3.skillId, USER0);
+      const user0Value3 = makeReputationValue(WAD, 11);
+      const [user0Mask3, user0Siblings3] = await reputationTree.getProof(user0Key3);
+
+      const user1Key3 = makeReputationKey(colony.address, domain3.skillId, USER1);
+      const user1Value3 = makeReputationValue(WAD.muln(2), 12);
+      const [user1Mask3, user1Siblings3] = await reputationTree.getProof(user1Key3);
+
+      const action = await encodeTxData(colony, "makeTask", [1, 1, FAKE, 3, 0, 0]);
+      await voting.createDomainMotion(3, UINT256_MAX, action, domain3Key, domain3Value, domain3Mask, domain3Siblings);
+      motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 3, WAD, { from: USER0 });
+      await colony.approveStake(voting.address, 3, WAD, { from: USER1 });
+
+      await voting.stakeMotion(motionId, 1, 1, NAY, REQUIRED_STAKE, user0Key3, user0Value3, user0Mask3, user0Siblings3, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, 1, YAY, REQUIRED_STAKE, user1Key3, user1Value3, user1Mask3, user1Siblings3, { from: USER1 });
+
+      // Note that this is a passing vote
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key3, user0Value3, user0Mask3, user0Siblings3, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user1Key3, user1Value3, user1Mask3, user1Siblings3, { from: USER1 });
+
+      await voting.revealVote(motionId, SALT, NAY, user0Key3, user0Value3, user0Mask3, user0Siblings3, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, user1Key3, user1Value3, user1Mask3, user1Siblings3, { from: USER1 });
+
+      // Now escalate, should go directly into submit phase
+      await voting.escalateMotion(motionId, 1, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+
+      const state = await voting.getMotionState(motionId);
+      expect(state).to.eq.BN(SUBMIT);
     });
   });
 });
