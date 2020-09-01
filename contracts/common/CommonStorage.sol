@@ -34,9 +34,9 @@ contract CommonStorage is DSAuth {
   address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
 
   // Recovery variables
-  bool recoveryMode; // Storage slot 3
+  bool recoveryMode;
   uint64 recoveryRolesCount;
-  uint64 recoveryApprovalCount;
+  uint64 recoveryApprovalCount;// Storage slot 3
   uint256 recoveryEditedTimestamp; // Storage slot 4
   mapping (address => uint256) recoveryApprovalTimestamps; // Storage slot 5
 

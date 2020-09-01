@@ -54,6 +54,9 @@ jobs:
       - run:
           name: "Running reputation system unit tests"
           command: yarn run test:reputation
+      - run:
+          name: "Running storage consistency smoke tests"
+          command: yarn run test:contracts:smoke
   lint-and-unit-test:
     <<: *job_common
     steps:
