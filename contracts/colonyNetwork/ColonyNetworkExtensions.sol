@@ -28,7 +28,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
 
   // Public functions
 
-  function addExtension(bytes32 _extensionId, address _resolver, bytes32 _roles)
+  function addExtension(bytes32 _extensionId, address _resolver)
     public
     stoppable
     calledByMetaColony
@@ -36,14 +36,12 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     require(_resolver != address(0x0), "colony-network-extension-bad-resolver");
 
     uint256 version = getResolverVersion(_resolver);
-    require(version == 1 || _roles == 0, "colony-network-extension-nonempty-roles");
     require(
       version == 1 || resolvers[_extensionId][version - 1] != address(0x0),
       "colony-network-extension-bad-version"
     );
 
     resolvers[_extensionId][version] = _resolver;
-    if (version == 1) { roles[_extensionId] = _roles; }
 
     emit ExtensionAdded(_extensionId, version);
   }
@@ -98,14 +96,6 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
   }
 
   // Public view functions
-
-  function getExtensionRoles(bytes32 _extensionId)
-    public
-    view
-    returns (bytes32)
-  {
-    return roles[_extensionId];
-  }
 
   function getExtensionResolver(bytes32 _extensionId, uint256 _version)
     public

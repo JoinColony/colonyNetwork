@@ -301,8 +301,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @dev The roles array can be set only for version == 1 (must be empty otherwise).
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param resolver The deployed resolver containing the extension contract logic
-  /// @param roles A bytes array containing the roles required by the extension
-  function addExtension(bytes32 extensionId, address resolver, bytes32 roles) public;
+  function addExtension(bytes32 extensionId, address resolver) public;
 
   /// @notice Install an extension in a colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
@@ -320,11 +319,6 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param colony Address of the colony the extension is installed in
   function uninstallExtension(bytes32 extensionId, address colony) public;
-
-  /// @notice Get an extension's required roles.
-  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
-  /// @return roles A bytes32 bit mask of the required roles
-  function getExtensionRoles(bytes32 extensionId) public view returns (bytes32 roles);
 
   /// @notice Get an extension's resolver.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier

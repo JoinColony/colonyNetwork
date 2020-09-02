@@ -24,6 +24,7 @@ contract("One transaction payments", (accounts) => {
   let oneTxPayment;
 
   const ONE_TX_PAYMENT = soliditySha3("OneTxPayment");
+  const ROLES = rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]);
 
   const RECIPIENT = accounts[3];
   const RECIPIENT2 = accounts[4];
@@ -36,7 +37,7 @@ contract("One transaction payments", (accounts) => {
     const oneTxPaymentImplementation = await OneTxPayment.new();
     const resolver = await Resolver.new();
     await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPaymentImplementation.address }, resolver);
-    await metaColony.addExtension(ONE_TX_PAYMENT, resolver.address, rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]));
+    await metaColony.addExtension(ONE_TX_PAYMENT, resolver.address);
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
@@ -51,11 +52,9 @@ contract("One transaction payments", (accounts) => {
     const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
     oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
 
-    const requiredRoles = await colonyNetwork.getExtensionRoles(ONE_TX_PAYMENT);
-    await colony.setUserRoles(1, UINT256_MAX, oneTxPayment.address, 1, requiredRoles, true);
-
+    await colony.setUserRoles(1, UINT256_MAX, oneTxPayment.address, 1, ROLES, true);
     // Give a user colony administration rights (needed for one-tx)
-    await colony.setUserRoles(1, UINT256_MAX, COLONY_ADMIN, 1, requiredRoles, true);
+    await colony.setUserRoles(1, UINT256_MAX, COLONY_ADMIN, 1, ROLES, true);
   });
 
   describe("one tx payments", () => {

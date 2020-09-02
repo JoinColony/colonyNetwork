@@ -7,10 +7,10 @@ import { BN } from "bn.js";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { checkErrorRevert, web3GetBalance, rolesToBytes32 } from "../../helpers/test-helper";
+import { checkErrorRevert, web3GetBalance } from "../../helpers/test-helper";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
-import { ROOT_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE, UINT256_MAX } from "../../helpers/constants";
+import { UINT256_MAX } from "../../helpers/constants";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -69,9 +69,9 @@ contract("Colony Network Extensions", (accounts) => {
     resolver2 = await setupResolver(2);
     resolver3 = await setupResolver(3);
 
-    await metaColony.addExtension(TEST_EXTENSION, resolver1.address, rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]));
-    await metaColony.addExtension(TEST_EXTENSION, resolver2.address, ethers.constants.HashZero);
-    await metaColony.addExtension(TEST_EXTENSION, resolver3.address, ethers.constants.HashZero);
+    await metaColony.addExtension(TEST_EXTENSION, resolver1.address);
+    await metaColony.addExtension(TEST_EXTENSION, resolver2.address);
+    await metaColony.addExtension(TEST_EXTENSION, resolver3.address);
   });
 
   beforeEach(async () => {
@@ -112,24 +112,24 @@ contract("Colony Network Extensions", (accounts) => {
 
     it("allows the meta colony to add new extensions", async () => {
       // Versions start at 1
-      await checkErrorRevert(metaColony.addExtension(extensionId, resolver0.address, ethers.constants.HashZero), "colony-network-extension-bad-version");
+      await checkErrorRevert(metaColony.addExtension(extensionId, resolver0.address), "colony-network-extension-bad-version");
 
-      await metaColony.addExtension(extensionId, resolver1.address, ethers.constants.HashZero);
-      await metaColony.addExtension(extensionId, resolver2.address, ethers.constants.HashZero);
+      await metaColony.addExtension(extensionId, resolver1.address);
+      await metaColony.addExtension(extensionId, resolver2.address);
 
       const resolverAddress = await colonyNetwork.getExtensionResolver(extensionId, 1);
       expect(resolverAddress).to.equal(resolver1.address);
     });
 
     it("allows the meta colony to overwrite existing extensions", async () => {
-      await metaColony.addExtension(extensionId, resolver1.address, resolver2.address);
+      await metaColony.addExtension(extensionId, resolver1.address);
     });
 
     it("does not allow the meta colony to add versions out of order", async () => {
-      await checkErrorRevert(metaColony.addExtension(extensionId, resolver2.address, ethers.constants.HashZero), "colony-network-extension-bad-version");
+      await checkErrorRevert(metaColony.addExtension(extensionId, resolver2.address), "colony-network-extension-bad-version");
 
-      await metaColony.addExtension(extensionId, resolver1.address, ethers.constants.HashZero);
-      await metaColony.addExtension(extensionId, resolver2.address, ethers.constants.HashZero);
+      await metaColony.addExtension(extensionId, resolver1.address);
+      await metaColony.addExtension(extensionId, resolver2.address);
     });
 
     it("does not allow the meta colony to pass roles after version 1", async () => {
@@ -143,17 +143,15 @@ contract("Colony Network Extensions", (accounts) => {
 
     it("does not allow the meta colony to add a null resolver", async () => {
       await checkErrorRevert(
-        metaColony.addExtension(extensionId, ethers.constants.AddressZero, ethers.constants.HashZero),
+        metaColony.addExtension(extensionId, ethers.constants.AddressZero),
         "colony-network-extension-bad-resolver"
       );
     });
 
     it("does not allow other colonies to add new extensions", async () => {
       const fakeMetaColony = await IMetaColony.at(colony.address);
-      await checkErrorRevert(
-        fakeMetaColony.addExtension(extensionId, resolver1.address, ethers.constants.HashZero),
-        "colony-caller-must-be-meta-colony"
-      );
+
+      await checkErrorRevert(fakeMetaColony.addExtension(extensionId, resolver1.address), "colony-caller-must-be-meta-colony");
     });
   });
 
@@ -177,10 +175,7 @@ contract("Colony Network Extensions", (accounts) => {
     it("does not allow an extension to be installed twice", async () => {
       await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
-      await checkErrorRevert(
-        colony.installExtension(TEST_EXTENSION, 1, { from: ROOT }),
-        "colony-network-extension-already-installed"
-      );
+      await checkErrorRevert(colony.installExtension(TEST_EXTENSION, 1, { from: ROOT }), "colony-network-extension-already-installed");
     });
   });
 
@@ -205,11 +200,7 @@ contract("Colony Network Extensions", (accounts) => {
     it("does not allow non-root users to upgrade an extension", async () => {
       await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
-      await checkErrorRevert(
-        colony.upgradeExtension(TEST_EXTENSION, 2, { from: ARCHITECT }),
-        "ds-auth-unauthorized"
-      );
-
+      await checkErrorRevert(colony.upgradeExtension(TEST_EXTENSION, 2, { from: ARCHITECT }), "ds-auth-unauthorized");
       await checkErrorRevert(colony.upgradeExtension(TEST_EXTENSION, 2, { from: USER }), "ds-auth-unauthorized");
     });
 

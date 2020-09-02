@@ -97,7 +97,7 @@ contract("Funding Queues", (accounts) => {
     const fundingQueueImplementation = await FundingQueue.new();
     const resolver = await Resolver.new();
     await setupEtherRouter("FundingQueue", { FundingQueue: fundingQueueImplementation.address }, resolver);
-    await metaColony.addExtension(FUNDING_QUEUE, resolver.address, rolesToBytes32([FUNDING_ROLE]));
+    await metaColony.addExtension(FUNDING_QUEUE, resolver.address);
   });
 
   beforeEach(async () => {

@@ -44,7 +44,7 @@ contract("Coin Machine", (accounts) => {
     const coinMachineImplementation = await CoinMachine.new();
     const resolver = await Resolver.new();
     await setupEtherRouter("CoinMachine", { CoinMachine: coinMachineImplementation.address }, resolver);
-    await metaColony.addExtension(COIN_MACHINE, resolver.address, rolesToBytes32([ROOT_ROLE]));
+    await metaColony.addExtension(COIN_MACHINE, resolver.address);
   });
 
   beforeEach(async () => {
