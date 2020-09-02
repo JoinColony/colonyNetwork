@@ -33,11 +33,14 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     stoppable
     calledByMetaColony
   {
-    require(_resolver != address(0x0), "extension-manager-bad-resolver");
+    require(_resolver != address(0x0), "colony-network-extension-bad-resolver");
 
     uint256 version = getResolverVersion(_resolver);
-    require(version == 1 || _roles == 0, "extension-manager-nonempty-roles");
-    require(version == 1 || resolvers[_extensionId][version - 1] != address(0x0), "extension-manager-bad-version");
+    require(version == 1 || _roles == 0, "colony-network-extension-nonempty-roles");
+    require(
+      version == 1 || resolvers[_extensionId][version - 1] != address(0x0),
+      "colony-network-extension-bad-version"
+    );
 
     resolvers[_extensionId][version] = _resolver;
     if (version == 1) { roles[_extensionId] = _roles; }
@@ -48,10 +51,10 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
   function installExtension(bytes32 _extensionId, address _colony, uint256 _version)
     public
     stoppable
+    calledByColony
   {
-    require(resolvers[_extensionId][_version] != address(0x0), "extension-manager-bad-version");
-    require(installations[_extensionId][_colony] == address(0x0), "extension-manager-already-installed");
-    require(root(_colony), "extension-manager-unauthorized");
+    require(resolvers[_extensionId][_version] != address(0x0), "colony-network-extension-bad-version");
+    require(installations[_extensionId][_colony] == address(0x0), "colony-network-extension-already-installed");
 
     EtherRouter extension = new EtherRouter();
     installations[_extensionId][_colony] = address(extension);
@@ -65,13 +68,13 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
   function upgradeExtension(bytes32 _extensionId, address _colony, uint256 _newVersion)
     public
     stoppable
+    calledByColony
   {
-    require(root(_colony), "extension-manager-unauthorized");
-    require(installations[_extensionId][_colony] != address(0x0), "extension-manager-not-installed");
+    require(installations[_extensionId][_colony] != address(0x0), "colony-network-extension-not-installed");
 
     address payable extension = installations[_extensionId][_colony];
-    require(_newVersion == ColonyExtension(extension).version() + 1, "extension-manager-bad-increment");
-    require(resolvers[_extensionId][_newVersion] != address(0x0), "extension-manager-bad-version");
+    require(_newVersion == ColonyExtension(extension).version() + 1, "colony-network-extension-bad-increment");
+    require(resolvers[_extensionId][_newVersion] != address(0x0), "colony-network-extension-bad-version");
 
     EtherRouter(extension).setResolver(resolvers[_extensionId][_newVersion]);
     ColonyExtension(extension).finishUpgrade();
@@ -83,9 +86,9 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
   function uninstallExtension(bytes32 _extensionId, address _colony)
     public
     stoppable
+    calledByColony
   {
-    require(root(_colony), "extension-manager-unauthorized");
-    require(installations[_extensionId][_colony] != address(0x0), "extension-manager-not-installed");
+    require(installations[_extensionId][_colony] != address(0x0), "colony-network-extension-not-installed");
 
     ColonyExtension extension = ColonyExtension(installations[_extensionId][_colony]);
     installations[_extensionId][_colony] = address(0x0);
@@ -121,10 +124,6 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
   }
 
   // Internal functions
-
-  function root(address _colony) internal view returns (bool) {
-    return IColony(_colony).hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root);
-  }
 
   bytes4 constant VERSION_SIG = bytes4(keccak256("version()"));
 

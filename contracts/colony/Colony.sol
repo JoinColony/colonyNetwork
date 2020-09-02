@@ -197,6 +197,24 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork(colonyNetworkAddress).addExtension(_extensionId, _resolver, _roles);
   }
 
+  function installExtension(bytes32 _extensionId, uint256 _version)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, address(this), _version);
+  }
+
+  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extensionId, address(this), _newVersion);
+  }
+
+  function uninstallExtension(bytes32 _extensionId)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId, address(this));
+  }
+
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
@@ -303,8 +321,15 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Add extension manager functionality
     sig = bytes4(keccak256("addExtension(bytes32,address,bytes32)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("installExtension(bytes32,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("upgradeExtension(bytes32,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("uninstallExtension(bytes32)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
     sig = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
+
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

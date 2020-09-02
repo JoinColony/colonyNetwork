@@ -210,6 +210,20 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param orbitdb The path of the orbitDB database to be associated with the colony
   function updateColonyOrbitDB(string memory orbitdb) public;
 
+  /// @notice Install an extension to the colony. Secured function to authorised members.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param version The new extension version to install
+  function installExtension(bytes32 extensionId, uint256 version) public;
+
+  /// @notice Upgrade an extension in a colony. Secured function to authorised members.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param newVersion The version to upgrade to (must be one larger than the current version)
+  function upgradeExtension(bytes32 extensionId, uint256 newVersion) public;
+
+  /// @notice Uninstall an extension from a colony. Secured function to authorised members.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  function uninstallExtension(bytes32 extensionId) public;
+
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`.
   /// New funding pot is created and associated with the domain here.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
