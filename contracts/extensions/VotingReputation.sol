@@ -19,6 +19,7 @@ pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
+import "./../../lib/dappsys/roles.sol";
 import "./../colony/ColonyDataTypes.sol";
 import "./../colony/IColony.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
@@ -225,6 +226,8 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     public
   {
+    require(colony.getCapabilityRoles(getSig(_action)) != bytes32(0), "voting-rep-invalid-function");
+
     uint256 domainSkillId = colony.getDomain(_domainId).skillId;
     uint256 actionDomainSkillId = getActionDomainSkillId(_action);
 

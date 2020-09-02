@@ -360,6 +360,15 @@ contract("Voting Reputation", (accounts) => {
       );
     });
 
+    it("cannot create a domain motion with a non-permissioned function as the action", async () => {
+      const action = await encodeTxData(colony, "claimColonyFunds", [token.address]);
+
+      await checkErrorRevert(
+        voting.createDomainMotion(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        "voting-rep-invalid-function"
+      );
+    });
+
     it("cannot externally escalate a domain motion with an invalid domain proof", async () => {
       const key = makeReputationKey(colony.address, domain3.skillId);
       const value = makeReputationValue(WAD.muln(3), 7);

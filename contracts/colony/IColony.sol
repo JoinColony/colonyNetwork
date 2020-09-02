@@ -122,10 +122,15 @@ contract IColony is ColonyDataTypes, IRecovery {
     public view returns (bool hasRole);
 
   /// @notice Gets the bytes32 representation of the roles for a user in a given domain
-  /// @param who The user whose roles we want to get
-  /// @param where The domain where we want to get roles for
-  /// @return roles bytes32 representation of the roles
-  function getUserRoles(address who, uint256 where) public view returns (bytes32 roles);
+  /// @param _user The user whose roles we want to get
+  /// @param _domain The_domain domain where we want to get roles for
+  /// @return roles bytes32 representation of the held roles
+  function getUserRoles(address _user, uint256 _domain) public view returns (bytes32 roles);
+
+  /// @notice Gets the bytes32 representation of the roles authorized to call a function
+  /// @param _sig The function signature
+  /// @return roles bytes32 representation of the authorized roles
+  function getCapabilityRoles(bytes4 _sig) public view returns (bytes32 roles);
 
   /// @notice Emit a negative domain reputation update. Available only to Arbitration role holders
   /// @param _permissionDomainId The domainId in which I hold the Arbitration role
