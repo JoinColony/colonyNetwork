@@ -53,6 +53,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   uint256 constant SUBMIT_END = 1;
   uint256 constant REVEAL_END = 2;
 
+  bytes32 constant ROOT_ROLES = (
+    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Recovery) |
+    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
+  );
+
   bytes4 constant CHANGE_FUNCTION = bytes4(
     keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
   );
@@ -226,7 +231,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     public
   {
-    require(colony.getCapabilityRoles(getSig(_action)) != bytes32(0), "voting-rep-invalid-function");
+    require(
+      colony.getCapabilityRoles(getSig(_action)) & ~ROOT_ROLES != bytes32(0),
+      "voting-rep-invalid-function"
+    );
 
     uint256 domainSkillId = colony.getDomain(_domainId).skillId;
     uint256 actionDomainSkillId = getActionDomainSkillId(_action);

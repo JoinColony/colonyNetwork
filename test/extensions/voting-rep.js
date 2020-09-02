@@ -360,11 +360,20 @@ contract("Voting Reputation", (accounts) => {
       );
     });
 
-    it("cannot create a domain motion with a non-permissioned function as the action", async () => {
-      const action = await encodeTxData(colony, "claimColonyFunds", [token.address]);
+    it("cannot create a domain motion with a non-domain-permissioned function as the action", async () => {
+      // Unpermissioned action
+      const action1 = await encodeTxData(colony, "claimColonyFunds", [token.address]);
+
+      // Root permissioned action
+      const action2 = await encodeTxData(colony, "upgrade", [2]);
 
       await checkErrorRevert(
-        voting.createDomainMotion(1, UINT256_MAX, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        voting.createDomainMotion(1, UINT256_MAX, action1, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        "voting-rep-invalid-function"
+      );
+
+      await checkErrorRevert(
+        voting.createDomainMotion(1, UINT256_MAX, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings),
         "voting-rep-invalid-function"
       );
     });
