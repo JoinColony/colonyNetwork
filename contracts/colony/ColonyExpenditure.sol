@@ -196,31 +196,25 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureExists(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
-    require(
-      _storageSlot == EXPENDITURES_SLOT ||
-      _storageSlot == EXPENDITURESLOTS_SLOT ||
-      _storageSlot == EXPENDITURESLOTPAYOUTS_SLOT,
-      "colony-expenditure-bad-slot"
-    );
-
     // Only allow editing expenditure status, owner, and finalizedTimestamp
     //  Note that status + owner occupy one slot
     if (_storageSlot == EXPENDITURES_SLOT) {
       require(_keys.length == 1, "colony-expenditure-bad-keys");
       uint256 offset = uint256(_keys[0]);
       require(offset == 0 || offset == 3 || offset == 4, "colony-expenditure-bad-offset");
-    }
 
     // Explicitly whitelist all slots, in case we add new slots in the future
-    if (_storageSlot == EXPENDITURESLOTS_SLOT) {
+    } else if (_storageSlot == EXPENDITURESLOTS_SLOT) {
       require(_keys.length >= 2, "colony-expenditure-bad-keys");
       uint256 offset = uint256(_keys[1]);
       require(offset <= 3, "colony-expenditure-bad-offset");
-    }
 
     // Should always be two mappings
-    if (_storageSlot == EXPENDITURESLOTPAYOUTS_SLOT) {
+    } else if (_storageSlot == EXPENDITURESLOTPAYOUTS_SLOT) {
       require(_keys.length == 2, "colony-expenditure-bad-keys");
+
+    } else {
+      require(false, "colony-expenditure-bad-slot");
     }
 
     executeStateChange(keccak256(abi.encode(_id, _storageSlot)), _mask, _keys, _value);
