@@ -515,7 +515,15 @@ contract("Voting Reputation", (accounts) => {
       await otherColony.finalizeExpenditure(expenditureId);
 
       // Set finalizedTimestamp to WAD
-      const action = await encodeTxData(otherColony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
+      const action = await encodeTxData(otherColony, "setExpenditureState", [
+        1,
+        UINT256_MAX,
+        expenditureId,
+        25,
+        [true],
+        [bn2bytes32(new BN(3))],
+        WAD32,
+      ]);
 
       await voting.createRootMotion(otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
