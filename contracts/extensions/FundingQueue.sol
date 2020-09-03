@@ -371,6 +371,8 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
     // Used for mapping backing percent to the appropriate decay rate (10 second intervals)
     // Result of evaluating ((1 - backingPercent / 2) ** (1 / (7 * 24 * 60 * 6)))
     //  at the following points: [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1]
+    assert(bin <= 10);
+
     if (bin == 0) {
       return 1000000000000000000;
     } else if (bin == 1) {

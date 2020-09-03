@@ -181,7 +181,7 @@ contract("Colony Network", (accounts) => {
 
       const token = await Token.new(...getTokenArgs());
       await token.unlock();
-      await colonyNetwork.createColony(token.address, oldVersion, "", "");
+      await colonyNetwork.createColony(token.address, oldVersion, "");
 
       const colonyAddress = await colonyNetwork.getColony(2);
 
@@ -195,7 +195,7 @@ contract("Colony Network", (accounts) => {
       const nonexistentVersion = currentColonyVersion.addn(1);
       const token = await Token.new(...getTokenArgs());
 
-      await checkErrorRevert(colonyNetwork.createColony(token.address, nonexistentVersion, "", ""), "colony-network-invalid-version");
+      await checkErrorRevert(colonyNetwork.createColony(token.address, nonexistentVersion, ""), "colony-network-invalid-version");
     });
 
     it("should allow use of the deprecated one-parameter createColony", async () => {
@@ -223,13 +223,13 @@ contract("Colony Network", (accounts) => {
     it("should maintain correct count of colonies", async () => {
       const token = await Token.new(...getTokenArgs());
       await token.unlock();
-      await colonyNetwork.createColony(token.address, 0, "", "");
-      await colonyNetwork.createColony(token.address, 0, "", "");
-      await colonyNetwork.createColony(token.address, 0, "", "");
-      await colonyNetwork.createColony(token.address, 0, "", "");
-      await colonyNetwork.createColony(token.address, 0, "", "");
-      await colonyNetwork.createColony(token.address, 0, "", "");
-      await colonyNetwork.createColony(token.address, 0, "", "");
+      await colonyNetwork.createColony(token.address, 0, "");
+      await colonyNetwork.createColony(token.address, 0, "");
+      await colonyNetwork.createColony(token.address, 0, "");
+      await colonyNetwork.createColony(token.address, 0, "");
+      await colonyNetwork.createColony(token.address, 0, "");
+      await colonyNetwork.createColony(token.address, 0, "");
+      await colonyNetwork.createColony(token.address, 0, "");
       const colonyCount = await colonyNetwork.getColonyCount();
       expect(colonyCount).to.eq.BN(8);
     });
@@ -258,7 +258,7 @@ contract("Colony Network", (accounts) => {
     });
 
     it("should not allow users to create a colony with empty token", async () => {
-      await checkErrorRevert(colonyNetwork.createColony(ethers.constants.AddressZero, 0, "", ""), "colony-token-invalid-address");
+      await checkErrorRevert(colonyNetwork.createColony(ethers.constants.AddressZero, 0, ""), "colony-token-invalid-address");
     });
 
     it("when any colony is created, should have the root local skill initialised", async () => {
@@ -282,8 +282,8 @@ contract("Colony Network", (accounts) => {
 
     it("should fail if ETH is sent", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      const sig = "createColony(address,uint256,string,string)";
-      await checkErrorRevert(colonyNetwork.methods[sig](token.address, 0, "", "", { value: 1, gas: createColonyGas }));
+      const sig = "createColony(address,uint256,string)";
+      await checkErrorRevert(colonyNetwork.methods[sig](token.address, 0, "", { value: 1, gas: createColonyGas }));
 
       const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
       expect(colonyNetworkBalance).to.be.zero;
@@ -291,16 +291,16 @@ contract("Colony Network", (accounts) => {
 
     it("should log a ColonyAdded event", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      await expectEvent(colonyNetwork.createColony(token.address, 0, "", ""), "ColonyAdded");
+      await expectEvent(colonyNetwork.createColony(token.address, 0, ""), "ColonyAdded");
     });
   });
 
   describe("when getting existing colonies", () => {
     it("should allow users to get the address of a colony by its index", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      await colonyNetwork.createColony(token.address, 0, "", "");
-      await colonyNetwork.createColony(token.address, 0, "", "");
-      await colonyNetwork.createColony(token.address, 0, "", "");
+      await colonyNetwork.createColony(token.address, 0, "");
+      await colonyNetwork.createColony(token.address, 0, "");
+      await colonyNetwork.createColony(token.address, 0, "");
       const colonyAddress = await colonyNetwork.getColony(3);
       expect(colonyAddress).to.not.equal(ethers.constants.AddressZero);
     });
@@ -404,7 +404,7 @@ contract("Colony Network", (accounts) => {
 
     it("should be able to create a colony with label in one tx", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address, 0, "test", orbitDBAddress);
+      const { logs } = await colonyNetwork.createColony(token.address, 0, "test");
       const { colonyAddress } = logs[0].args;
 
       const name = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
