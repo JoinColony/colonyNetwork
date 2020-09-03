@@ -5,25 +5,8 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { soliditySha3 } from "web3-utils";
 
-import {
-  UINT256_MAX,
-  WAD,
-  MINING_CYCLE_DURATION,
-  DEFAULT_STAKE,
-  SECONDS_PER_DAY,
-  FUNDING_ROLE,
-  SUBMITTER_ONLY_WINDOW,
-} from "../../helpers/constants";
-
-import {
-  checkErrorRevert,
-  makeReputationKey,
-  makeReputationValue,
-  getActiveRepCycle,
-  forwardTime,
-  getBlockTime,
-  rolesToBytes32,
-} from "../../helpers/test-helper";
+import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE, SECONDS_PER_DAY, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
+import { checkErrorRevert, makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime, getBlockTime } from "../../helpers/test-helper";
 
 import {
   setupColonyNetwork,
@@ -178,14 +161,10 @@ contract("Funding Queues", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colonyNetwork.installExtension(FUNDING_QUEUE, 1, { from: USER0 });
+      await colony.installExtension(FUNDING_QUEUE, 1, { from: USER0 });
 
-      await checkErrorRevert(
-        colonyNetwork.installExtension(FUNDING_QUEUE, 1, { from: USER0 }),
-        "extension-manager-already-installed"
-      );
-
-      await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "extension-manager-unauthorized");
+      await checkErrorRevert(colony.installExtension(FUNDING_QUEUE, 1, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });
     });

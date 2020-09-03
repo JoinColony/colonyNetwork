@@ -75,9 +75,8 @@ contract("Coin Machine", (accounts) => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(COIN_MACHINE, 1, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(COIN_MACHINE, 1, { from: USER0 }), "extension-manager-already-installed");
-
-      await checkErrorRevert(colony.uninstallExtension(COIN_MACHINE, { from: USER1 }), "extension-manager-unauthorized");
+      await checkErrorRevert(colony.installExtension(COIN_MACHINE, 1, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.uninstallExtension(COIN_MACHINE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
     });
