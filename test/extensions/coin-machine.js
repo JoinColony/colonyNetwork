@@ -6,9 +6,9 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { WAD, ROOT_ROLE } from "../../helpers/constants";
+import { WAD } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
-import { checkErrorRevert, forwardTime, web3GetBalance, makeTxAtTimestamp, currentBlockTime, rolesToBytes32 } from "../../helpers/test-helper";
+import { checkErrorRevert, forwardTime, web3GetBalance, makeTxAtTimestamp, currentBlockTime } from "../../helpers/test-helper";
 import {
   setupColonyNetwork,
   setupRandomToken,
@@ -51,7 +51,7 @@ contract("Coin Machine", (accounts) => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     purchaseToken = await setupRandomToken();
 
-    await colonyNetwork.installExtension(COIN_MACHINE, colony.address, 1);
+    await colony.installExtension(COIN_MACHINE, 1);
 
     const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
     coinMachine = await CoinMachine.at(coinMachineAddress);
@@ -67,19 +67,19 @@ contract("Coin Machine", (accounts) => {
       await checkErrorRevert(coinMachine.install(colony.address), "extension-already-installed");
 
       await coinMachine.finishUpgrade();
-
+      await coinMachine.deprecate(true);
       await coinMachine.uninstall();
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colonyNetwork.installExtension(COIN_MACHINE, colony.address, 1, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, 1, { from: USER0 });
 
-      await checkErrorRevert(colonyNetwork.installExtension(COIN_MACHINE, colony.address, 1, { from: USER0 }), "extension-manager-already-installed");
+      await checkErrorRevert(colony.installExtension(COIN_MACHINE, 1, { from: USER0 }), "extension-manager-already-installed");
 
-      await checkErrorRevert(colonyNetwork.uninstallExtension(COIN_MACHINE, colony.address, { from: USER1 }), "extension-manager-unauthorized");
+      await checkErrorRevert(colony.uninstallExtension(COIN_MACHINE, { from: USER1 }), "extension-manager-unauthorized");
 
-      await colonyNetwork.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
+      await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
     });
 
     it("can initialise", async () => {
@@ -139,9 +139,15 @@ contract("Coin Machine", (accounts) => {
       await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "ds-token-insufficient-balance");
     });
 
+    it("cannot buy tokens if deprecated", async () => {
+      await colony.deprecateExtension(COIN_MACHINE, true);
+
+      await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "colony-extension-deprecated");
+    });
+
     it("can buy tokens with eth", async () => {
-      await colonyNetwork.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
-      await colonyNetwork.installExtension(COIN_MACHINE, colony.address, 1, { from: USER0 });
+      await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, 1, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
 
       coinMachine = await CoinMachine.at(coinMachineAddress);
@@ -378,7 +384,7 @@ contract("Coin Machine", (accounts) => {
       await token.unlock();
       await token.setOwner(colony.address);
 
-      await colonyNetwork.installExtension(COIN_MACHINE, colony.address, 1, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, 1, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
 
       coinMachine = await CoinMachine.at(coinMachineAddress);
@@ -398,8 +404,8 @@ contract("Coin Machine", (accounts) => {
       purchaseToken = await Token.new("Test Token", "TEST", 9);
       await purchaseToken.unlock();
 
-      await colonyNetwork.uninstallExtension(COIN_MACHINE, colony.address, { from: USER0 });
-      await colonyNetwork.installExtension(COIN_MACHINE, colony.address, 1, { from: USER0 });
+      await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, 1, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
       await colony.setRootRole(coinMachineAddress, true);

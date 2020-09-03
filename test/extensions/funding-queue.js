@@ -108,7 +108,7 @@ contract("Funding Queues", (accounts) => {
     await colony.addDomain(1, UINT256_MAX, 1);
     domain1 = await colony.getDomain(1);
 
-    await colonyNetwork.installExtension(FUNDING_QUEUE, colony.address, 1);
+    await colony.installExtension(FUNDING_QUEUE, 1);
 
     const fundingQueueAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
     fundingQueue = await FundingQueue.at(fundingQueueAddress);
@@ -172,22 +172,22 @@ contract("Funding Queues", (accounts) => {
       await checkErrorRevert(fundingQueue.install(colony.address), "extension-already-installed");
 
       await fundingQueue.finishUpgrade();
-
+      await fundingQueue.deprecate(true);
       await fundingQueue.uninstall();
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colonyNetwork.installExtension(FUNDING_QUEUE, colony.address, 1, { from: USER0 });
+      await colonyNetwork.installExtension(FUNDING_QUEUE, 1, { from: USER0 });
 
       await checkErrorRevert(
-        colonyNetwork.installExtension(FUNDING_QUEUE, colony.address, 1, { from: USER0 }),
+        colonyNetwork.installExtension(FUNDING_QUEUE, 1, { from: USER0 }),
         "extension-manager-already-installed"
       );
 
-      await checkErrorRevert(colonyNetwork.uninstallExtension(FUNDING_QUEUE, colony.address, { from: USER1 }), "extension-manager-unauthorized");
+      await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "extension-manager-unauthorized");
 
-      await colonyNetwork.uninstallExtension(FUNDING_QUEUE, colony.address, { from: USER0 });
+      await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });
     });
   });
 
@@ -199,6 +199,15 @@ contract("Funding Queues", (accounts) => {
       const proposal = await fundingQueue.getProposal(proposalId);
       expect(proposal.domainId).to.eq.BN(1);
       expect(proposal.state).to.eq.BN(STATE_INACTIVE);
+    });
+
+    it("cannot create a basic proposal if deprecated", async () => {
+      await colony.deprecateExtension(FUNDING_QUEUE, true);
+
+      await checkErrorRevert(
+        fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 }),
+        "colony-extension-deprecated"
+      );
     });
 
     it("cannot create a basic proposal with bad inheritence", async () => {

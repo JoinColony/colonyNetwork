@@ -22,8 +22,6 @@ import "../extensions/ColonyExtension.sol";
 
 
 contract TestExtension is ColonyExtension {
-  function version() public pure returns (uint256);
-
   function install(address _colony) public auth {
     require(address(colony) == address(0x0), "extension-already-installed");
 
@@ -31,6 +29,10 @@ contract TestExtension is ColonyExtension {
   }
 
   function finishUpgrade() public auth {}
+
+  function deprecate(bool _deprecated) public auth {
+    deprecated = _deprecated;
+  }
 
   function uninstall() public auth {
     selfdestruct(address(uint160(address(colony))));
@@ -46,6 +48,7 @@ contract TestExtension0 is TestExtension {
 contract TestExtension1 is TestExtension {
   function version() public pure returns (uint256) { return 1; }
   function sendEther() external payable {}
+  function foo() public undeprecated {}
 }
 
 

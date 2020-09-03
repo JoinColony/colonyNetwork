@@ -297,28 +297,31 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   function getMiningResolver() public view returns (address miningResolverAddress);
 
   /// @notice Add a new extension resolver to the Extensions repository.
+  /// @dev Can only be called by the MetaColony.
   /// @dev The extension version is queried from the resolver itself.
   /// @dev The roles array can be set only for version == 1 (must be empty otherwise).
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param resolver The deployed resolver containing the extension contract logic
   function addExtension(bytes32 extensionId, address resolver) public;
 
-  /// @notice Install an extension in a colony.
+  /// @notice Install an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
-  /// @param colony Address of the colony to install the extension in
   /// @param version Version of the extension to install
-  function installExtension(bytes32 extensionId, address colony, uint256 version) public;
+  function installExtension(bytes32 extensionId, uint256 version) public;
 
-  /// @notice Upgrade an extension in a colony.
+  /// @notice Upgrade an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
-  /// @param colony Address of the colony the extension is installed in
   /// @param newVersion Version of the extension to upgrade to (must be one greater than current)
-  function upgradeExtension(bytes32 extensionId, address colony, uint256 newVersion) public;
+  function upgradeExtension(bytes32 extensionId, uint256 newVersion) public;
 
-  /// @notice Uninstall an extension in a colony.
+  /// @notice Deprecate an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
-  /// @param colony Address of the colony the extension is installed in
-  function uninstallExtension(bytes32 extensionId, address colony) public;
+  /// @param deprecated Whether to deprecate the extension or not
+  function deprecateExtension(bytes32 extensionId, bool deprecated) public;
+
+  /// @notice Uninstall an extension in a colony. Can only be called by a Colony.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  function uninstallExtension(bytes32 extensionId) public;
 
   /// @notice Get an extension's resolver.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier

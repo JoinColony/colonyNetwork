@@ -99,6 +99,11 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
   /// @notice Called when upgrading the extension
   function finishUpgrade() public auth {}
 
+  /// @notice Called when deprecating (or undeprecating) the extension
+  function deprecate(bool _deprecated) public auth {
+    deprecated = _deprecated;
+  }
+
   /// @notice Called when uninstalling the extension
   function uninstall() public auth {
     selfdestruct(address(uint160(address(colony))));
@@ -114,6 +119,7 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
     address _token
   )
     public
+    undeprecated
   {
     uint256 fromDomain = colony.getDomainFromFundingPot(_fromPot);
     uint256 toDomain = colony.getDomainFromFundingPot(_toPot);

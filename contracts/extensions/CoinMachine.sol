@@ -73,6 +73,11 @@ contract CoinMachine is DSMath, ColonyExtension {
   /// @notice Called when upgrading the extension
   function finishUpgrade() public auth {}
 
+  /// @notice Called when deprecating (or undeprecating) the extension
+  function deprecate(bool _deprecated) public auth {
+    deprecated = _deprecated;
+  }
+
   /// @notice Called when uninstalling the extension
   function uninstall() public auth {
     selfdestruct(address(uint160(address(colony))));
@@ -123,7 +128,7 @@ contract CoinMachine is DSMath, ColonyExtension {
 
   /// @notice Purchase tokens from Coin Machine.
   /// @param _numTokens The number of tokens to purchase
-  function buyTokens(uint256 _numTokens) public payable {
+  function buyTokens(uint256 _numTokens) public payable undeprecated {
     updatePeriod();
 
     uint256 numTokens = min(_numTokens, maxPerPeriod - tokensSold);

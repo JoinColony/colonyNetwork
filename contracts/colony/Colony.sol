@@ -200,19 +200,25 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function installExtension(bytes32 _extensionId, uint256 _version)
   public stoppable auth
   {
-    IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, address(this), _version);
+    IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
   }
 
   function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
   public stoppable auth
   {
-    IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extensionId, address(this), _newVersion);
+    IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extensionId, _newVersion);
+  }
+
+  function deprecateExtension(bytes32 _extensionId, bool _deprecated)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extensionId, _deprecated);
   }
 
   function uninstallExtension(bytes32 _extensionId)
   public stoppable auth
   {
-    IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId, address(this));
+    IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId);
   }
 
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
@@ -324,6 +330,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     sig = bytes4(keccak256("installExtension(bytes32,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
     sig = bytes4(keccak256("upgradeExtension(bytes32,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("deprecateExtension(bytes32,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
     sig = bytes4(keccak256("uninstallExtension(bytes32)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);

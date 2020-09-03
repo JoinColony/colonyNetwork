@@ -222,7 +222,32 @@ contract("Colony Network Extensions", (accounts) => {
     });
   });
 
-  describe("removing extensions", () => {
+  describe("deprecating extensions", () => {
+    it("allows root users to deprecate and undeprecate an extension", async () => {
+      await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
+
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
+      const extension = await TestExtension1.at(extensionAddress);
+
+      await extension.foo();
+
+      await colony.deprecateExtension(TEST_EXTENSION, true, { from: ROOT });
+
+      await checkErrorRevert(extension.foo(), "colony-extension-deprecated");
+
+      await colony.deprecateExtension(TEST_EXTENSION, false, { from: ROOT });
+
+      await extension.foo();
+    });
+
+    it("does not allow non-root users to deprecate an extension", async () => {
+      await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
+
+      await checkErrorRevert(colony.deprecateExtension(TEST_EXTENSION, true, { from: ARCHITECT }), "ds-auth-unauthorized");
+    });
+  });
+
+  describe("uninstalling extensions", () => {
     it("allows root users to uninstall an extension and send ether to the beneficiary", async () => {
       await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 

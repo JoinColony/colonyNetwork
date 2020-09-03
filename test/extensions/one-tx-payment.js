@@ -47,7 +47,7 @@ contract("One transaction payments", (accounts) => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-    await colonyNetwork.installExtension(ONE_TX_PAYMENT, colony.address, 1);
+    await colony.installExtension(ONE_TX_PAYMENT, 1);
 
     const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
     oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
@@ -68,8 +68,9 @@ contract("One transaction payments", (accounts) => {
       await checkErrorRevert(extension.install(colony.address), "extension-already-installed");
 
       await extension.finishUpgrade();
-
+      await extension.deprecate(true);
       await extension.uninstall();
+
       const code = await web3GetCode(extension.address);
       expect(code).to.equal("0x");
     });

@@ -24,10 +24,18 @@ import "../colony/IColony.sol";
 
 contract ColonyExtension is DSAuth {
   address resolver; // Align storage with EtherRouter
+
   IColony colony;
+  bool deprecated;
+
+  modifier undeprecated() {
+    require(!deprecated, "colony-extension-deprecated");
+    _;
+  }
 
   function version() public pure returns (uint256);
   function install(address _colony) public;
   function finishUpgrade() public;
+  function deprecate(bool _deprecated) public;
   function uninstall() public;
 }
