@@ -47,7 +47,8 @@ contract ColonyExpenditure is ColonyStorage {
       owner: msg.sender,
       fundingPotId: fundingPotCount,
       domainId: _domainId,
-      finalizedTimestamp: 0
+      finalizedTimestamp: 0,
+      globalClaimDelay: 0
     });
 
     emit FundingPotAdded(fundingPotCount);
@@ -144,6 +145,7 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureSkillSet(_id, _slot, _skillId);
   }
 
+  // Deprecated
   function setExpenditurePayoutModifier(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -161,6 +163,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureSlots[_id][_slot].payoutModifier = _payoutModifier;
   }
 
+  // Deprecated
   function setExpenditureClaimDelay(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -183,7 +186,7 @@ contract ColonyExpenditure is ColonyStorage {
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _id,
-    uint256 _slot,
+    uint256 _storageSlot,
     bool[] memory _mask,
     bytes32[] memory _keys,
     bytes32 _value
@@ -193,23 +196,28 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureExists(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
-    require(_keys.length > 0, "colony-expenditure-no-keys");
-
-    require(
-      _slot == EXPENDITURES_SLOT ||
-      _slot == EXPENDITURESLOTS_SLOT ||
-      _slot == EXPENDITURESLOTPAYOUTS_SLOT,
-      "colony-expenditure-bad-slot"
-    );
-
     // Only allow editing expenditure status, owner, and finalizedTimestamp
     //  Note that status + owner occupy one slot
-    if (_slot == EXPENDITURES_SLOT) {
-      uint256 offset = uint256(_keys[_keys.length - 1]);
-      require(offset == 0 || offset == 3, "colony-expenditure-bad-offset");
+    if (_storageSlot == EXPENDITURES_SLOT) {
+      require(_keys.length == 1, "colony-expenditure-bad-keys");
+      uint256 offset = uint256(_keys[0]);
+      require(offset == 0 || offset == 3 || offset == 4, "colony-expenditure-bad-offset");
+
+    // Explicitly whitelist all slots, in case we add new slots in the future
+    } else if (_storageSlot == EXPENDITURESLOTS_SLOT) {
+      require(_keys.length >= 2, "colony-expenditure-bad-keys");
+      uint256 offset = uint256(_keys[1]);
+      require(offset <= 3, "colony-expenditure-bad-offset");
+
+    // Should always be two mappings
+    } else if (_storageSlot == EXPENDITURESLOTPAYOUTS_SLOT) {
+      require(_keys.length == 2, "colony-expenditure-bad-keys");
+
+    } else {
+      require(false, "colony-expenditure-bad-slot");
     }
 
-    executeStateChange(keccak256(abi.encode(_id, _slot)), _mask, _keys, _value);
+    executeStateChange(keccak256(abi.encode(_id, _storageSlot)), _mask, _keys, _value);
   }
 
   // Public view functions

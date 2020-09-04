@@ -122,10 +122,15 @@ contract IColony is ColonyDataTypes, IRecovery {
     public view returns (bool hasRole);
 
   /// @notice Gets the bytes32 representation of the roles for a user in a given domain
-  /// @param who The user whose roles we want to get
-  /// @param where The domain where we want to get roles for
-  /// @return roles bytes32 representation of the roles
-  function getUserRoles(address who, uint256 where) public view returns (bytes32 roles);
+  /// @param _user The user whose roles we want to get
+  /// @param _domain The domain we want to get roles in
+  /// @return roles bytes32 representation of the held roles
+  function getUserRoles(address _user, uint256 _domain) public view returns (bytes32 roles);
+
+  /// @notice Gets the bytes32 representation of the roles authorized to call a function
+  /// @param _sig The function signature
+  /// @return roles bytes32 representation of the authorized roles
+  function getCapabilityRoles(bytes4 _sig) public view returns (bytes32 roles);
 
   /// @notice Emit a negative domain reputation update. Available only to Arbitration role holders
   /// @param _permissionDomainId The domainId in which I hold the Arbitration role
@@ -223,6 +228,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   function transferExpenditure(uint256 _id, address _newOwner) public;
 
   /// @notice DEPRECATED Updates the expenditure owner. Can only be called by Arbitration role.
+  /// @dev This is now deprecated and will be removed in a future version
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
   /// (only used if `_permissionDomainId` is different to `_domainId`)
@@ -257,7 +263,8 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _skillId Id of the new skill to set
   function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId) public;
 
-  /// @notice Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
+  /// @notice DEPRECATED Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
+  /// @dev This is now deprecated and will be removed in a future version
   /// @dev Note that when determining payouts the payoutModifier is incremented by WAD and converted into payoutScalar
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
@@ -273,7 +280,8 @@ contract IColony is ColonyDataTypes, IRecovery {
     int256 _payoutModifier
     ) public;
 
-  /// @notice Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
+  /// @notice DEPRECATED Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
+  /// @dev This is now deprecated and will be removed in a future version
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
   /// (only used if `_permissionDomainId` is different to `_domainId`)
@@ -293,15 +301,15 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
   /// (only used if `_permissionDomainId` is different to `_domainId`)
   /// @param _id Expenditure identifier
-  /// @param _slot Number of the top-level storage slot
-  /// @param _mask Array of booleans indicated whether a key is a mapping (F) or offset (T).
-  /// @param _keys Array of additional keys (mappings & offsets)
+  /// @param _storageSlot Number of the top-level storage slot (25, 26, or 27)
+  /// @param _mask Array of booleans indicated whether a key is a mapping (F) or an array index (T).
+  /// @param _keys Array of additional keys (for mappings & arrays)
   /// @param _value Value to set at location
   function setExpenditureState(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _id,
-    uint256 _slot,
+    uint256 _storageSlot,
     bool[] memory _mask,
     bytes32[] memory _keys,
     bytes32 _value
