@@ -508,7 +508,7 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
     });
 
-    it("cannot update the expenditure globalClaimDelay if the target is another colony", async () => {
+    it("does not update the expenditure globalClaimDelay if the target is another colony", async () => {
       const { colony: otherColony } = await setupRandomColony(colonyNetwork);
       await otherColony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await otherColony.getExpenditureCount();
@@ -940,12 +940,12 @@ contract("Voting Reputation", (accounts) => {
       );
     });
 
-    it("cannot reveal a vote if voting is open", async () => {
+    it("cannot reveal a vote during the submit period", async () => {
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, FAKE, FAKE, 0, [], { from: USER0 }), "voting-rep-motion-not-reveal");
     });
 
-    it("cannot reveal a vote after voting closes", async () => {
+    it("cannot reveal a vote after the reveal period ends", async () => {
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
@@ -1210,8 +1210,8 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.finalizeMotion(motionId);
       const slotHash = hashExpenditureSlot(action);
-      const pastMotion = await voting.getExpenditurePastMotion(slotHash);
-      expect(pastMotion).to.eq.BN(WAD); // USER0 had 1 WAD of reputation
+      const pastVote = await voting.getExpenditurePastVote(slotHash);
+      expect(pastVote).to.eq.BN(WAD); // USER0 had 1 WAD of reputation
     });
 
     it("can use vote power correctly for different values of the same variable", async () => {
@@ -1258,8 +1258,8 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.finalizeMotion(motionId);
       const slotHash = hashExpenditureSlot(action);
-      const pastMotion = await voting.getExpenditurePastMotion(slotHash);
-      expect(pastMotion).to.eq.BN(REQUIRED_STAKE);
+      const pastVote = await voting.getExpenditurePastVote(slotHash);
+      expect(pastVote).to.eq.BN(REQUIRED_STAKE);
     });
   });
 

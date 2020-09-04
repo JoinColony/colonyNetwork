@@ -186,7 +186,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   mapping (uint256 => mapping (address => mapping (uint256 => uint256))) stakes;
   mapping (uint256 => mapping (address => bytes32)) voteSecrets;
 
-  mapping (bytes32 => uint256) expenditurePastMotions; // expenditure slot signature => voting power
+  mapping (bytes32 => uint256) expenditurePastVotes; // expenditure slot signature => voting power
   mapping (bytes32 => uint256) expenditureMotionCounts; // expenditure struct signature => count
 
   // Public functions (interface)
@@ -231,8 +231,9 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     public
   {
+    // Check the function requires a non-root permission (and thus a domain proof)
     require(
-      colony.getCapabilityRoles(getSig(_action)) & ~ROOT_ROLES != bytes32(0),
+      colony.getCapabilityRoles(getSig(_action)) | ROOT_ROLES != ROOT_ROLES,
       "voting-rep-invalid-function"
     );
 
@@ -306,7 +307,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
       getSig(motion.action) == CHANGE_FUNCTION &&
       motion.altTarget == address(0x0)
     ) {
-      bytes32 structHash = hashExpenditureStruct(motion.action);
+      bytes32 structHash = hashExpenditureActionStruct(motion.action);
       expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
       // Set to UINT256_MAX / 3 to avoid overflow (finalizedTimestamp + globalClaimDelay + claimDelay)
       bytes memory claimDelayAction = createClaimDelayAction(motion.action, UINT256_MAX / 3);
@@ -494,7 +495,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     );
 
     if (getSig(motion.action) == CHANGE_FUNCTION && motion.altTarget == address(0x0)) {
-      bytes32 structHash = hashExpenditureStruct(motion.action);
+      bytes32 structHash = hashExpenditureActionStruct(motion.action);
       expenditureMotionCounts[structHash] = sub(expenditureMotionCounts[structHash], 1);
 
       // Release the claimDelay if this is the last active motion
@@ -504,12 +505,12 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
         executeCall(_motionId, claimDelayAction);
       }
 
-      bytes32 slotHash = hashExpenditureSlot(motion.action);
+      bytes32 actionHash = hashExpenditureAction(motion.action);
       uint256 votePower = (add(motion.votes[NAY], motion.votes[YAY]) > 0) ?
         motion.votes[YAY] : motion.stakes[YAY];
 
-      if (expenditurePastMotions[slotHash] < votePower) {
-        expenditurePastMotions[slotHash] = votePower;
+      if (expenditurePastVotes[actionHash] < votePower) {
+        expenditurePastVotes[actionHash] = votePower;
         canExecute = canExecute && true;
       } else {
         canExecute = canExecute && false;
@@ -639,7 +640,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     return stakes[_motionId][_staker][_vote];
   }
 
-  /// @notice Get the number of ongoing motions for a single expenditure / slot
+  /// @notice Get the number of ongoing motions for a single expenditure / expenditure slot
   /// @param _structHash The hash of the expenditureId or expenditureId*expenditureSlot
   /// @return The number of ongoing motions
   function getExpenditureMotionCount(bytes32 _structHash) public view returns (uint256) {
@@ -647,10 +648,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   }
 
   /// @notice Get the largest past vote on a single expenditure variable
-  /// @param _slotHash The hash of the particular expenditure slot
+  /// @param _actionHash The hash of the particular expenditure action
   /// @return The largest past vote on this variable
-  function getExpenditurePastMotion(bytes32 _slotHash) public view returns (uint256) {
-    return expenditurePastMotions[_slotHash];
+  function getExpenditurePastVote(bytes32 _actionHash) public view returns (uint256) {
+    return expenditurePastVotes[_actionHash];
   }
 
   /// @notice Get the current state of the motion
@@ -908,9 +909,10 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
   }
 
-  function hashExpenditureSlot(bytes memory action) internal returns (bytes32 hash) {
+  function hashExpenditureAction(bytes memory action) internal returns (bytes32 hash) {
     assembly {
-      // Hash all but the domain proof and value
+      // Hash all but the domain proof and value, so actions for the same
+      //   storage slot return the same value.
       // Recall: mload(action) gives length of bytes array
       // So skip past the three bytes32 (length + domain proof),
       //   plus 4 bytes for the sig. Subtract the same from the end, less
@@ -920,7 +922,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     }
   }
 
-  function hashExpenditureStruct(bytes memory action) internal returns (bytes32 hash) {
+  function hashExpenditureActionStruct(bytes memory action) internal returns (bytes32 hash) {
     assert(getSig(action) == CHANGE_FUNCTION);
 
     uint256 expenditureId;

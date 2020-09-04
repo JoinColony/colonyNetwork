@@ -123,7 +123,7 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Gets the bytes32 representation of the roles for a user in a given domain
   /// @param _user The user whose roles we want to get
-  /// @param _domain The_domain domain where we want to get roles for
+  /// @param _domain The domain we want to get roles in
   /// @return roles bytes32 representation of the held roles
   function getUserRoles(address _user, uint256 _domain) public view returns (bytes32 roles);
 
