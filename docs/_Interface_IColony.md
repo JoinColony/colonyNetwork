@@ -367,6 +367,23 @@ View an approval to obligate tokens.
 |---|---|---|
 |approval|uint256|The amount the user has approved
 
+### `getCapabilityRoles`
+
+Gets the bytes32 representation of the roles authorized to call a function
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_sig|bytes4|The function signature
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|roles|bytes32|bytes32 representation of the authorized roles
+
 ### `getColonyNetwork`
 
 Returns the colony network address set on the Colony.
@@ -801,14 +818,14 @@ Gets the bytes32 representation of the roles for a user in a given domain
 
 |Name|Type|Description|
 |---|---|---|
-|who|address|The user whose roles we want to get
-|where|uint256|The domain where we want to get roles for
+|_user|address|The user whose roles we want to get
+|_domain|uint256|The_domain domain where we want to get roles for
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|roles|bytes32|bytes32 representation of the roles
+|roles|bytes32|bytes32 representation of the held roles
 
 ### `hasInheritedUserRole`
 
