@@ -38,7 +38,7 @@ contract ColonyDataTypes {
 
   /// @notice Event logged when a user/domain/role is granted or revoked
   /// @param user The address of the user being affected
-  /// @param domainId The damainId of the role
+  /// @param domainId The domainId of the role
   /// @param role The role being granted/revoked
   /// @param setTo A boolean representing the action -- granted (`true`) or revoked (`false`)
   event ColonyRoleSet(address indexed user, uint256 indexed domainId, uint8 indexed role, bool setTo);
