@@ -18,8 +18,8 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
-import "../common/EtherRouter.sol";
-import "../colony/IColony.sol";
+import "./../common/EtherRouter.sol";
+import "./../colony/IColony.sol";
 
 
 contract ColonyExtension is DSAuth {

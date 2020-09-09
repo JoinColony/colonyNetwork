@@ -138,7 +138,11 @@ contract ColonyRoles is ColonyStorage {
     );
   }
 
-  function getUserRoles(address who, uint256 where) public view returns (bytes32) {
-    return ColonyAuthority(address(authority)).getUserRoles(who, where);
+  function getUserRoles(address _user, uint256 _domain) public view returns (bytes32) {
+    return ColonyAuthority(address(authority)).getUserRoles(_user, _domain);
+  }
+
+  function getCapabilityRoles(bytes4 _sig) public view returns (bytes32) {
+    return ColonyAuthority(address(authority)).getCapabilityRoles(address(this), _sig);
   }
 }
