@@ -819,7 +819,7 @@ Gets the bytes32 representation of the roles for a user in a given domain
 |Name|Type|Description|
 |---|---|---|
 |_user|address|The user whose roles we want to get
-|_domain|uint256|The_domain domain where we want to get roles for
+|_domain|uint256|The domain we want to get roles in
 
 **Return Parameters**
 
