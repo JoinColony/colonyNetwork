@@ -206,6 +206,19 @@ Deobligate the user some amount of tokens, releasing the stake.
 |_amount|uint256|Amount of internal token we are deobligating.
 
 
+### `deprecateExtension`
+
+Upgrade an extension in a colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|deprecated|bool|Whether to deprecate the extension or not
+
+
 ### `emitDomainReputationPenalty`
 
 Emit a negative domain reputation update. Available only to Arbitration role holders
@@ -881,6 +894,19 @@ Called once when the colony is created to initialise certain storage slot values
 |_token|address|Address of the colony ERC20 Token
 
 
+### `installExtension`
+
+Install an extension to the colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|version|uint256|The new extension version to install
+
+
 ### `makeExpenditure`
 
 Add a new expenditure in the colony. Secured function to authorised members.
@@ -1536,6 +1562,18 @@ Transfer some amount of obligated tokens. Can be called by the arbitration role.
 |_recipient|address|Recipient of the transferred tokens.
 
 
+### `uninstallExtension`
+
+Uninstall an extension from a colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+
+
 ### `updateColonyOrbitDB`
 
 Update a colony's orbitdb address. Can only be called by a colony with a registered subdomain
@@ -1559,6 +1597,19 @@ Upgrades a colony to a new Colony contract version `_newVersion`.
 |Name|Type|Description|
 |---|---|---|
 |_newVersion|uint|The target version for the upgrade
+
+
+### `upgradeExtension`
+
+Upgrade an extension in a colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|newVersion|uint256|The version to upgrade to (must be one larger than the current version)
 
 
 ### `userCanSetRoles`

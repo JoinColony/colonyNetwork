@@ -19,7 +19,6 @@ Add a new extension/version to the Extensions repository.
 |---|---|---|
 |_extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |_resolver|address|The deployed resolver containing the extension contract logic
-|_roles|bytes32|A byte array containing the roles required by the extension
 
 
 ### `addGlobalSkill`
