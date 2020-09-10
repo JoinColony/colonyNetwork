@@ -39,7 +39,7 @@ const Resolver = artifacts.require("Resolver");
 
 const VOTING_REPUTATION = soliditySha3("VotingReputation");
 
-contract.only("Voting Reputation", (accounts) => {
+contract("Voting Reputation", (accounts) => {
   let colony;
   let token;
   let domain1;
@@ -292,6 +292,26 @@ contract.only("Voting Reputation", (accounts) => {
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR + 1), "voting-rep-period-too-long");
 
       await voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR);
+    });
+
+    it("can query for initialisation values", async () => {
+      const totalStakeFraction = await voting.getTotalStakeFraction();
+      const voterRewardFraction = await voting.getVoterRewardFraction();
+      const userMinStakeFraction = await voting.getUserMinStakeFraction();
+      const maxVoteFraction = await voting.getMaxVoteFraction();
+      const stakePeriod = await voting.getStakePeriod();
+      const submitPeriod = await voting.getSubmitPeriod();
+      const revealPeriod = await voting.getRevealPeriod();
+      const escalationPeriod = await voting.getEscalationPeriod();
+
+      expect(totalStakeFraction).to.eq.BN(TOTAL_STAKE_FRACTION);
+      expect(voterRewardFraction).to.eq.BN(VOTER_REWARD_FRACTION);
+      expect(userMinStakeFraction).to.eq.BN(USER_MIN_STAKE_FRACTION);
+      expect(maxVoteFraction).to.eq.BN(MAX_VOTE_FRACTION);
+      expect(stakePeriod).to.eq.BN(STAKE_PERIOD);
+      expect(submitPeriod).to.eq.BN(SUBMIT_PERIOD);
+      expect(revealPeriod).to.eq.BN(REVEAL_PERIOD);
+      expect(escalationPeriod).to.eq.BN(ESCALATION_PERIOD);
     });
   });
 
