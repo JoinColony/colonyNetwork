@@ -1566,6 +1566,7 @@ Transfer some amount of obligated tokens. Can be called by the arbitration role.
 
 Uninstall an extension from a colony. Secured function to authorised members.
 
+*Note: This is a permanent action -- re-installing the extension will deploy a new contract*
 
 **Parameters**
 

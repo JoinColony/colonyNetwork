@@ -132,20 +132,8 @@ contract("Colony Network Extensions", (accounts) => {
       await metaColony.addExtension(extensionId, resolver2.address);
     });
 
-    it("does not allow the meta colony to pass roles after version 1", async () => {
-      await metaColony.addExtension(extensionId, resolver1.address, rolesToBytes32([ROOT_ROLE]));
-
-      await checkErrorRevert(
-        metaColony.addExtension(extensionId, resolver2.address, rolesToBytes32([ROOT_ROLE])),
-        "colony-network-extension-nonempty-roles"
-      );
-    });
-
     it("does not allow the meta colony to add a null resolver", async () => {
-      await checkErrorRevert(
-        metaColony.addExtension(extensionId, ethers.constants.AddressZero),
-        "colony-network-extension-bad-resolver"
-      );
+      await checkErrorRevert(metaColony.addExtension(extensionId, ethers.constants.AddressZero), "colony-network-extension-bad-resolver");
     });
 
     it("does not allow other colonies to add new extensions", async () => {
