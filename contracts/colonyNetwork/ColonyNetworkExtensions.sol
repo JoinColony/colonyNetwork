@@ -36,6 +36,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     require(_resolver != address(0x0), "colony-network-extension-bad-resolver");
 
     uint256 version = getResolverVersion(_resolver);
+    require(resolvers[_extensionId][version] == address(0x0), "colony-network-extension-already-set");
     require(
       version == 1 || resolvers[_extensionId][version - 1] != address(0x0),
       "colony-network-extension-bad-version"

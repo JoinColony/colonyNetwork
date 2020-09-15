@@ -123,6 +123,8 @@ contract("Colony Network Extensions", (accounts) => {
 
     it("allows the meta colony to overwrite existing extensions", async () => {
       await metaColony.addExtension(extensionId, resolver1.address);
+
+      await checkErrorRevert(metaColony.addExtension(extensionId, resolver1.address), "colony-network-extension-already-set");
     });
 
     it("does not allow the meta colony to add versions out of order", async () => {
