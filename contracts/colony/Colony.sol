@@ -143,8 +143,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
     require(colonyNetworkAddress == address(0x0), "colony-already-initialised-network");
     require(token == address(0x0), "colony-already-initialised-token");
+
     colonyNetworkAddress = _colonyNetworkAddress;
     token = _token;
+    tokenLockingAddress = IColonyNetwork(colonyNetworkAddress).getTokenLocking();
 
     // Initialise the task update reviewers
     setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), TaskRole.Manager, TaskRole.Worker);
@@ -347,6 +349,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // v4 to v5
   function finishUpgrade() public always {
+    tokenLockingAddress = IColonyNetwork(colonyNetworkAddress).getTokenLocking();
+
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
@@ -378,20 +382,20 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function approveStake(address _approvee, uint256 _domainId, uint256 _amount) public stoppable {
     approvals[msg.sender][_approvee][_domainId] = add(approvals[msg.sender][_approvee][_domainId], _amount);
 
-    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).approveStake(msg.sender, _amount, token);
+    ITokenLocking(tokenLockingAddress).approveStake(msg.sender, _amount, token);
   }
 
   function obligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
     approvals[_user][msg.sender][_domainId] = sub(approvals[_user][msg.sender][_domainId], _amount);
     obligations[_user][msg.sender][_domainId] = add(obligations[_user][msg.sender][_domainId], _amount);
 
-    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).obligateStake(_user, _amount, token);
+    ITokenLocking(tokenLockingAddress).obligateStake(_user, _amount, token);
   }
 
   function deobligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
     obligations[_user][msg.sender][_domainId] = sub(obligations[_user][msg.sender][_domainId], _amount);
 
-    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).deobligateStake(_user, _amount, token);
+    ITokenLocking(tokenLockingAddress).deobligateStake(_user, _amount, token);
   }
 
   function transferStake(
@@ -406,7 +410,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   {
     obligations[_user][_obligator][_domainId] = sub(obligations[_user][_obligator][_domainId], _amount);
 
-    ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking()).transferStake(_user, _amount, token, _beneficiary);
+    ITokenLocking(tokenLockingAddress).transferStake(_user, _amount, token, _beneficiary);
   }
 
   function getApproval(address _user, address _obligator, uint256 _domainId) public view returns (uint256) {
