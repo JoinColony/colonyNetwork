@@ -822,7 +822,7 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
     bytes32[] memory _siblings
   )
     internal
-    undeprecated
+    notDeprecated
   {
     require(state == ExtensionState.Active, "voting-rep-not-active");
     require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");

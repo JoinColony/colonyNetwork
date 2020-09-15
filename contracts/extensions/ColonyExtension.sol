@@ -28,7 +28,7 @@ contract ColonyExtension is DSAuth {
   IColony colony;
   bool deprecated;
 
-  modifier undeprecated() {
+  modifier notDeprecated() {
     require(!deprecated, "colony-extension-deprecated");
     _;
   }

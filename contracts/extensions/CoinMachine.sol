@@ -128,7 +128,7 @@ contract CoinMachine is DSMath, ColonyExtension {
 
   /// @notice Purchase tokens from Coin Machine.
   /// @param _numTokens The number of tokens to purchase
-  function buyTokens(uint256 _numTokens) public payable undeprecated {
+  function buyTokens(uint256 _numTokens) public payable notDeprecated {
     updatePeriod();
 
     uint256 numTokens = min(_numTokens, maxPerPeriod - tokensSold);

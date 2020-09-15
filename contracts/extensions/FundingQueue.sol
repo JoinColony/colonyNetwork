@@ -119,7 +119,7 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
     address _token
   )
     public
-    undeprecated
+    notDeprecated
   {
     uint256 fromDomain = colony.getDomainFromFundingPot(_fromPot);
     uint256 toDomain = colony.getDomainFromFundingPot(_toPot);

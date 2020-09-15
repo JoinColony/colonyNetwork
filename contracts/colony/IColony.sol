@@ -226,6 +226,8 @@ contract IColony is ColonyDataTypes, IRecovery {
   function deprecateExtension(bytes32 extensionId, bool deprecated) public;
 
   /// @notice Uninstall an extension from a colony. Secured function to authorised members.
+  /// @dev This is a permanent action -- re-installing the extension will deploy a new contract
+  /// @dev It is recommended to deprecate an extension before uninstalling to allow active objects to be resolved
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   function uninstallExtension(bytes32 extensionId) public;
 

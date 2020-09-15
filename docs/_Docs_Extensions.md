@@ -22,7 +22,7 @@ const extensionAddress = await colonyNetwork.getExtensionInstallation(oneTxExten
 const oneTxExtension = await OneTxPayment.at(extensionAddress)
 ```
 
-Once the extension is setup, it will need the `Funding` permission in your colony to function. Permissions can be given is any domain you require the extension to work in, here is an example of permitting it those in the root with domainId 1.
+Once the extension is setup, it will need the `Funding` permission in at least one domain in your colony to function. Permissions can be given is any domain you require the extension to work in, here is an example of permitting it those in the root with domainId 1.
 
 ```
 await colony.setFundingRole(1, UINT256_MAX, oneTxExtension.address, 1, true)
