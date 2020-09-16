@@ -47,7 +47,7 @@ contract TestExtension0 is TestExtension {
 
 contract TestExtension1 is TestExtension {
   function version() public pure returns (uint256) { return 1; }
-  function sendEther() external payable {}
+  function receiveEther() external payable {}
   function foo() public notDeprecated {}
 }
 

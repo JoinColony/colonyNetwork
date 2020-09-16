@@ -37,7 +37,7 @@ contract("One transaction payments", (accounts) => {
     const oneTxPaymentImplementation = await OneTxPayment.new();
     const resolver = await Resolver.new();
     await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPaymentImplementation.address }, resolver);
-    await metaColony.addExtension(ONE_TX_PAYMENT, resolver.address);
+    await metaColony.addExtensionToNetwork(ONE_TX_PAYMENT, resolver.address);
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();

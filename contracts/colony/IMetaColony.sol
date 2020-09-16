@@ -60,9 +60,9 @@ contract IMetaColony is IColony {
   function setReputationMiningCycleReward(uint256 _amount) public;
 
   /// @notice Add a new extension/version to the Extensions repository.
-  /// @dev Calls `IColonyNetwork.addExtension`.
+  /// @dev Calls `IColonyNetwork.addExtensionToNetwork`.
   /// @dev The extension version is queried from the resolver itself.
   /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param _resolver The deployed resolver containing the extension contract logic
-  function addExtension(bytes32 _extensionId, address _resolver) public;
+  function addExtensionToNetwork(bytes32 _extensionId, address _resolver) public;
 }

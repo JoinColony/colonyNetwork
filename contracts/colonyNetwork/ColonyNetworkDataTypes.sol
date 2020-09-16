@@ -96,10 +96,10 @@ contract ColonyNetworkDataTypes {
 
   event ReputationMinerPenalised(address miner, uint256 tokensLost);
 
-  /// @notice Event logged when a new extension resolver is added
+  /// @notice Event logged when a new extension resolver is added to the network
   /// @param extensionId The identifier for the extension
   /// @param version The version of the extension
-  event ExtensionAdded(bytes32 indexed extensionId, uint256 version);
+  event ExtensionAddedToNetwork(bytes32 indexed extensionId, uint256 version);
 
   /// @notice Event logged when an extension is installed in a colony
   /// @param extensionId The identifier for the extension
@@ -113,7 +113,7 @@ contract ColonyNetworkDataTypes {
   /// @param version The new version of the extension
   event ExtensionUpgraded(bytes32 indexed extensionId, address indexed colony, uint256 version);
 
-  /// @notice Event logged when an extension is upgraded in a colony
+  /// @notice Event logged when an extension is (un)deprecated in a colony
   /// @param extensionId The identifier for the extension
   /// @param colony The address of the colony
   /// @param deprecated Whether the extension is deprecated or not

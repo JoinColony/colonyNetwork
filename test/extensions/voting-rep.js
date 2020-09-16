@@ -119,7 +119,7 @@ contract("Voting Reputation", (accounts) => {
     const votingImplementation = await VotingReputation.new();
     const resolver = await Resolver.new();
     await setupEtherRouter("VotingReputation", { VotingReputation: votingImplementation.address }, resolver);
-    await metaColony.addExtension(VOTING_REPUTATION, resolver.address);
+    await metaColony.addExtensionToNetwork(VOTING_REPUTATION, resolver.address);
   });
 
   beforeEach(async () => {

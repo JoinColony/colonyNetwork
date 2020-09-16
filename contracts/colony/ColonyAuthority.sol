@@ -89,7 +89,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "mintTokensFor(address,uint256)");
     addRoleCapability(ROOT_ROLE, "setAnnualMetaColonyStipend(uint256)");
     addRoleCapability(ROOT_ROLE, "setReputationMiningCycleReward(uint256)");
-    addRoleCapability(ROOT_ROLE, "addExtension(bytes32,address)");
+    addRoleCapability(ROOT_ROLE, "addExtensionToNetwork(bytes32,address)");
     addRoleCapability(ROOT_ROLE, "setUserRoles(uint256,uint256,address,uint256,bytes32,bool)");
     addRoleCapability(ROOT_ROLE, "installExtension(bytes32,uint256)");
     addRoleCapability(ROOT_ROLE, "upgradeExtension(bytes32,uint256)");

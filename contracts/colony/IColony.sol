@@ -220,7 +220,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param newVersion The version to upgrade to (must be one larger than the current version)
   function upgradeExtension(bytes32 extensionId, uint256 newVersion) public;
 
-  /// @notice Upgrade an extension in a colony. Secured function to authorised members.
+  /// @notice Set the deprecation of an extension in a colony. Secured function to authorised members.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param deprecated Whether to deprecate the extension or not
   function deprecateExtension(bytes32 extensionId, bool deprecated) public;

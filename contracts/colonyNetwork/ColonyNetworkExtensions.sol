@@ -28,7 +28,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
 
   // Public functions
 
-  function addExtension(bytes32 _extensionId, address _resolver)
+  function addExtensionToNetwork(bytes32 _extensionId, address _resolver)
     public
     stoppable
     calledByMetaColony
@@ -44,7 +44,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
 
     resolvers[_extensionId][version] = _resolver;
 
-    emit ExtensionAdded(_extensionId, version);
+    emit ExtensionAddedToNetwork(_extensionId, version);
   }
 
   function installExtension(bytes32 _extensionId, uint256 _version)

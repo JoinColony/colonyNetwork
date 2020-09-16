@@ -298,10 +298,9 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Add a new extension resolver to the Extensions repository.
   /// @dev Can only be called by the MetaColony.
   /// @dev The extension version is queried from the resolver itself.
-  /// @dev The roles array can be set only for version == 1 (must be empty otherwise).
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param resolver The deployed resolver containing the extension contract logic
-  function addExtension(bytes32 extensionId, address resolver) public;
+  function addExtensionToNetwork(bytes32 extensionId, address resolver) public;
 
   /// @notice Install an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
@@ -313,7 +312,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param newVersion Version of the extension to upgrade to (must be one greater than current)
   function upgradeExtension(bytes32 extensionId, uint256 newVersion) public;
 
-  /// @notice Deprecate an extension in a colony. Can only be called by a Colony.
+  /// @notice Set the deprecation of an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param deprecated Whether to deprecate the extension or not
   function deprecateExtension(bytes32 extensionId, bool deprecated) public;
