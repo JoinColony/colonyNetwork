@@ -155,9 +155,9 @@ contract("Contract Storage", (accounts) => {
 
       expect(colonyNetworkAccount.stateRoot.toString("hex")).to.equal("4795c6cf36580719d2b3122e8a2d314024e5eb67ef0925dc35c5bbbcb26e20c9");
 
-      expect(colonyAccount.stateRoot.toString("hex")).to.equal("d11be7ccfed823de8fff1713f0ed3c3cc25572ab32d3a05db8d02e28b6b19271");
+      expect(colonyAccount.stateRoot.toString("hex")).to.equal("8de351231d2738f6d6f3a680e986461029afb48b1638e06a40b07e70604dab66");
 
-      expect(metaColonyAccount.stateRoot.toString("hex")).to.equal("004cce93f8bca95ddf05b7737bc758804c0d200a361638c372910849f6ca9b63");
+      expect(metaColonyAccount.stateRoot.toString("hex")).to.equal("867fa1b5d2ada64ae601031e0654f9b2d7a1cc024493fac71e13ef91fb862119");
 
       expect(miningCycleAccount.stateRoot.toString("hex")).to.equal("47ed02166271709fee6816f42d511e3d0c56e4ee5fc1f2e24c5f05a3954d0292");
 

@@ -288,7 +288,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
   public stoppable auth
   {
-    ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
+    ITokenLocking tokenLocking = ITokenLocking(tokenLockingAddress);
     uint256 totalLockCount = tokenLocking.lockToken(token);
     uint256 thisPayoutAmount = sub(fundingPots[0].balance[_token], pendingRewardPayments[_token]);
     require(thisPayoutAmount > 0, "colony-reward-payout-no-rewards");
@@ -430,7 +430,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     // Checking if payout is active
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
 
-    ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
+    ITokenLocking tokenLocking = ITokenLocking(tokenLockingAddress);
     uint256 userTokens = tokenLocking.getUserLock(token, msg.sender).balance;
 
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");

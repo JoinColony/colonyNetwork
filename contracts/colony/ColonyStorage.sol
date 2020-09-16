@@ -90,6 +90,8 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   mapping (address => mapping (address => mapping (uint256 => uint256))) approvals; // Storage slot 28
   mapping (address => mapping (address => mapping (uint256 => uint256))) obligations; // Storage slot 29
 
+  address tokenLockingAddress; // Storage slot 30
+
   // Modifiers
 
   modifier validPayoutAmount(uint256 _amount) {
