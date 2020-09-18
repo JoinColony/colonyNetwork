@@ -375,8 +375,32 @@ export async function makeTxAtTimestamp(f, args, timestamp, test) {
     test.skip();
   }
   await stopMining();
+  let mined;
+  // Send the transaction to the RPC endpoint. This might be a truffle contract object, which doesn't
+  // return until the transaction has been mined... but we've stopped mining. So we can't await it
+  // now. But if we `mineBlock` straight away, the transaction might not have pecolated all the way through
+  // to the pending transaction pool, especially on CI.
+
+  // I have tried lots of better ways to solve this problem. The problem is, while mining is stopped, the
+  // 'pending' block isn't updated and, even when mining, in some cases it is interpreted to mean 'latest' in
+  // ganache cli. The sender's nonce isn't updated, the number of pending transactions is not updated... I'm at a
+  // loss for how to do this better.
+  // This works for ethers and truffle
   const promise = f(...args);
-  await mineBlock(timestamp);
+  // Chaining these directly on the above declaration doesn't work in the case of being passed an ethers function
+  // (They don't seem to return the original promise, somehow?)
+  promise
+    .then(() => {
+      mined = true;
+    })
+    .catch(() => {
+      mined = true;
+    });
+  while (!mined) {
+    // eslint-disable-next-line no-await-in-loop
+    await mineBlock(timestamp);
+  }
+  // Turn auto-mining back on
   await startMining();
   return promise;
 }

@@ -653,15 +653,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       let goodEntry = disputeRound[0];
       let timestamp = parseInt(goodEntry.lastResponseTimestamp, 10);
 
-      // Forward time again so clients can start responding to challenges
-      await checkErrorRevertEthers(
-        makeTxAtTimestamp(goodClient.confirmJustificationRootHash.bind(goodClient), [], timestamp, this),
-        "colony-reputation-mining-user-ineligible-to-respond"
-      );
-
       // Check it cannot respond at the start of the window
       await checkErrorRevertEthers(
-        makeTxAtTimestamp(goodClient.confirmJustificationRootHash.bind(goodClient), [], timestamp + 1, this),
+        makeTxAtTimestamp(goodClient.confirmJustificationRootHash.bind(goodClient), [], timestamp, this),
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 
