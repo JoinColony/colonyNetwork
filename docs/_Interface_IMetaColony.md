@@ -7,11 +7,11 @@ order: 4
   
 ## Interface Methods
 
-### `addExtension`
+### `addExtensionToNetwork`
 
 Add a new extension/version to the Extensions repository.
 
-*Note: Calls `IColonyNetwork.addExtension`.*
+*Note: Calls `IColonyNetwork.addExtensionToNetwork`.*
 
 **Parameters**
 

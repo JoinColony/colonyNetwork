@@ -208,7 +208,7 @@ Deobligate the user some amount of tokens, releasing the stake.
 
 ### `deprecateExtension`
 
-Upgrade an extension in a colony. Secured function to authorised members.
+Set the deprecation of an extension in a colony. Secured function to authorised members.
 
 
 **Parameters**

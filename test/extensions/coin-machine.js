@@ -8,7 +8,7 @@ import { soliditySha3 } from "web3-utils";
 
 import { WAD } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
-import { checkErrorRevert, forwardTime, web3GetBalance, makeTxAtTimestamp, currentBlockTime } from "../../helpers/test-helper";
+import { checkErrorRevert, forwardTime, web3GetBalance, makeTxAtTimestamp, currentBlockTime, forwardTimeTo } from "../../helpers/test-helper";
 import {
   setupColonyNetwork,
   setupRandomToken,
@@ -57,6 +57,11 @@ contract("Coin Machine", (accounts) => {
     coinMachine = await CoinMachine.at(coinMachineAddress);
 
     await colony.setRootRole(coinMachine.address, true);
+
+    // Forward time to start of a Coin Machine period - so long a test doesn't take an hour to run, should be reproducible!
+    // (I still don't like this functionality of CoinMachine though!)
+    const time = await currentBlockTime();
+    await forwardTimeTo(Math.ceil(time / 3600) * 3600);
   });
 
   describe("managing the extension", async () => {

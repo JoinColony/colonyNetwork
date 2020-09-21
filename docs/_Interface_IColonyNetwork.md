@@ -20,7 +20,7 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 |_resolver|address|Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
 
 
-### `addExtension`
+### `addExtensionToNetwork`
 
 Add a new extension resolver to the Extensions repository.
 
@@ -202,7 +202,7 @@ Create the Meta Colony, same as a normal colony plus the root skill.
 
 ### `deprecateExtension`
 
-Deprecate an extension in a colony. Can only be called by a Colony.
+Set the deprecation of an extension in a colony. Can only be called by a Colony.
 
 
 **Parameters**
