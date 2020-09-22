@@ -121,7 +121,7 @@ contract("Colony Network Extensions", (accounts) => {
       expect(resolverAddress).to.equal(resolver1.address);
     });
 
-    it("allows the meta colony to overwrite existing extensions", async () => {
+    it("does not allow the meta colony to overwrite existing extensions", async () => {
       await metaColony.addExtensionToNetwork(extensionId, resolver1.address);
 
       await checkErrorRevert(metaColony.addExtensionToNetwork(extensionId, resolver1.address), "colony-network-extension-already-set");
