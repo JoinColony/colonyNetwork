@@ -397,5 +397,10 @@ contract("ColonyPermissions", (accounts) => {
       userRoles = await colony.getUserRoles(USER2, 3);
       expect(userRoles).to.equal(rolesArch);
     });
+
+    it("should not allow a role to be set that doesn't exist", async () => {
+      const nonexistentRole = ethers.BigNumber.from(2).pow(7).toHexString();
+      await checkErrorRevert(colony.setUserRoles(1, 0, USER2, 2, nonexistentRole, true, { from: FOUNDER }), "colony-roles-do-not-exist");
+    });
   });
 });

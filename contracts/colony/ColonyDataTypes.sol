@@ -251,7 +251,8 @@ contract ColonyDataTypes {
 
   enum TaskStatus { Active, Cancelled, Finalized }
 
-  enum ColonyRole { Recovery, Root, Arbitration, Architecture, ArchitectureSubdomain_DEPRECATED, Funding, Administration }
+  // Any new roles added should be added before NUMBER_OF_ROLES, which should always be the last entry in this enum
+  enum ColonyRole { Recovery, Root, Arbitration, Architecture, ArchitectureSubdomain_DEPRECATED, Funding, Administration, NUMBER_OF_ROLES }
 
   struct Role {
     // Address of the user for the given role
