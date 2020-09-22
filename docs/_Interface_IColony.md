@@ -206,6 +206,19 @@ Deobligate the user some amount of tokens, releasing the stake.
 |_amount|uint256|Amount of internal token we are deobligating.
 
 
+### `deprecateExtension`
+
+Set the deprecation of an extension in a colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|deprecated|bool|Whether to deprecate the extension or not
+
+
 ### `emitDomainReputationPenalty`
 
 Emit a negative domain reputation update. Available only to Arbitration role holders
@@ -881,6 +894,19 @@ Called once when the colony is created to initialise certain storage slot values
 |_token|address|Address of the colony ERC20 Token
 
 
+### `installExtension`
+
+Install an extension to the colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|version|uint256|The new extension version to install
+
+
 ### `makeExpenditure`
 
 Add a new expenditure in the colony. Secured function to authorised members.
@@ -1413,6 +1439,23 @@ Assigning worker role. Can only be set if there is no one currently assigned to 
 |_user|address|Address of the user we want to give a worker role to
 
 
+### `setUserRoles`
+
+Set several roles in one transaction. Can be called by root role or architecture role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|Domain in which the caller has root/architecture role
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_user|address|User we want to give a role to
+|_domainId|uint256|Domain in which we are giving user the role
+|_roles|bytes32|Byte array representing all the roles to be set
+|_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
+
+
 ### `startNextRewardPayout`
 
 Add a new payment in the colony. Can only be called by users with root permission. All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
@@ -1519,6 +1562,19 @@ Transfer some amount of obligated tokens. Can be called by the arbitration role.
 |_recipient|address|Recipient of the transferred tokens.
 
 
+### `uninstallExtension`
+
+Uninstall an extension from a colony. Secured function to authorised members.
+
+*Note: This is a permanent action -- re-installing the extension will deploy a new contract*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+
+
 ### `updateColonyOrbitDB`
 
 Update a colony's orbitdb address. Can only be called by a colony with a registered subdomain
@@ -1543,6 +1599,39 @@ Upgrades a colony to a new Colony contract version `_newVersion`.
 |---|---|---|
 |_newVersion|uint|The target version for the upgrade
 
+
+### `upgradeExtension`
+
+Upgrade an extension in a colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|newVersion|uint256|The version to upgrade to (must be one larger than the current version)
+
+
+### `userCanSetRoles`
+
+Check whether a given user can modify roles in the target domain `_childDomainId`. Mostly a convenience function to provide a uniform interface for extension contracts validating permissions
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|The user whose permissions we want to check
+|_domainId|uint256|Domain in which the caller has the role (currently Root or Architecture)
+|_childSkillIndex|uint256|The index that the `_childDomainId` is relative to `_domainId`
+|_childDomainId|uint256|The domain where we want to edit roles
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|canSet|bool|Boolean indicating whether the given user is allowed to edit roles in the target domain.
 
 ### `verifyReputationProof`
 

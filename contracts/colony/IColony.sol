@@ -102,6 +102,23 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
   function setAdministrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
 
+  /// @notice Set several roles in one transaction.
+  /// Can be called by root role or architecture role.
+  /// @param _permissionDomainId Domain in which the caller has root/architecture role
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _user User we want to give a role to
+  /// @param _domainId Domain in which we are giving user the role
+  /// @param _roles Byte array representing all the roles to be set
+  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
+  function setUserRoles(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bytes32 _roles,
+    bool _setTo
+    ) public;
+
   /// @notice Check whether a given user has a given role for the colony.
   /// Calls the function of the same name on the colony's authority contract.
   /// @param _user The user whose role we want to check
@@ -120,6 +137,16 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return hasRole Boolean indicating whether the given user has the given role in domain
   function hasInheritedUserRole(address _user, uint256 _domainId, ColonyRole _role, uint256 _childSkillIndex, uint256 _childDomainId)
     public view returns (bool hasRole);
+
+  /// @notice Check whether a given user can modify roles in the target domain `_childDomainId`.
+  /// Mostly a convenience function to provide a uniform interface for extension contracts validating permissions
+  /// @param _user The user whose permissions we want to check
+  /// @param _domainId Domain in which the caller has the role (currently Root or Architecture)
+  /// @param _childSkillIndex The index that the `_childDomainId` is relative to `_domainId`
+  /// @param _childDomainId The domain where we want to edit roles
+  /// @return canSet Boolean indicating whether the given user is allowed to edit roles in the target domain.
+  function userCanSetRoles(address _user, uint256 _domainId, uint256 _childSkillIndex, uint256 _childDomainId)
+    public view returns (bool canSet);
 
   /// @notice Gets the bytes32 representation of the roles for a user in a given domain
   /// @param _user The user whose roles we want to get
@@ -182,6 +209,27 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Update a colony's orbitdb address. Can only be called by a colony with a registered subdomain
   /// @param orbitdb The path of the orbitDB database to be associated with the colony
   function updateColonyOrbitDB(string memory orbitdb) public;
+
+  /// @notice Install an extension to the colony. Secured function to authorised members.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param version The new extension version to install
+  function installExtension(bytes32 extensionId, uint256 version) public;
+
+  /// @notice Upgrade an extension in a colony. Secured function to authorised members.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param newVersion The version to upgrade to (must be one larger than the current version)
+  function upgradeExtension(bytes32 extensionId, uint256 newVersion) public;
+
+  /// @notice Set the deprecation of an extension in a colony. Secured function to authorised members.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param deprecated Whether to deprecate the extension or not
+  function deprecateExtension(bytes32 extensionId, bool deprecated) public;
+
+  /// @notice Uninstall an extension from a colony. Secured function to authorised members.
+  /// @dev This is a permanent action -- re-installing the extension will deploy a new contract
+  /// @dev It is recommended to deprecate an extension before uninstalling to allow active objects to be resolved
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  function uninstallExtension(bytes32 extensionId) public;
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`.
   /// New funding pot is created and associated with the domain here.

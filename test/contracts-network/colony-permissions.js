@@ -94,6 +94,23 @@ contract("ColonyPermissions", (accounts) => {
       expect(administrationRole).to.be.false;
     });
 
+    it("should let users query for role-setting permissions in domains", async () => {
+      await colony.setArchitectureRole(1, UINT256_MAX, USER1, 1, true);
+      await colony.setArchitectureRole(1, 0, USER2, 2, true);
+
+      const founderDomain1 = await colony.userCanSetRoles(FOUNDER, 1, 0, 1);
+      const founderDomain2 = await colony.userCanSetRoles(FOUNDER, 1, 0, 2);
+      const user1Domain1 = await colony.userCanSetRoles(USER1, 1, 0, 1);
+      const user1Domain2 = await colony.userCanSetRoles(USER1, 1, 0, 2);
+      const user2Domain2 = await colony.userCanSetRoles(USER2, 2, 0, 2);
+
+      expect(founderDomain1).to.be.true;
+      expect(founderDomain2).to.be.true;
+      expect(user1Domain1).to.be.false;
+      expect(user1Domain2).to.be.true;
+      expect(user2Domain2).to.be.false;
+    });
+
     it("should allow users with funding permission manipulate funds in their domains only", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
@@ -343,6 +360,47 @@ contract("ColonyPermissions", (accounts) => {
       await colony.setAdministrationRole(1, 0, USER2, 2, true, { from: FOUNDER });
       const roles2 = await colony.getUserRoles(USER2, 2);
       expect(roles2).to.equal(ethers.utils.hexZeroPad(roleAdministration, 32));
+    });
+
+    it("should be able to set many roles at once", async () => {
+      const roleRoot = ethers.BigNumber.from(2 ** 1).toHexString();
+      const roleArbitration = ethers.BigNumber.from(2 ** 2).toHexString();
+      const roleFunding = ethers.BigNumber.from(2 ** 5).toHexString();
+
+      const rolesRoot = ethers.utils.hexZeroPad(ethers.BigNumber.from(roleRoot | roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
+      const rolesArch = ethers.utils.hexZeroPad(ethers.BigNumber.from(roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
+
+      let userRoles;
+      await colony.setArchitectureRole(1, UINT256_MAX, USER1, 1, true);
+
+      // Root can set root roles
+      await colony.setUserRoles(1, UINT256_MAX, USER2, 1, rolesRoot, true, { from: FOUNDER });
+      userRoles = await colony.getUserRoles(USER2, 1);
+      expect(userRoles).to.equal(rolesRoot);
+
+      // But not in subdomains!
+      await checkErrorRevert(colony.setUserRoles(1, 0, USER2, 2, rolesRoot, true, { from: FOUNDER }), "colony-bad-domain-for-role");
+
+      // But can set arch roles in subdomains
+      await colony.setUserRoles(1, 0, USER2, 2, rolesArch, true, { from: FOUNDER });
+      userRoles = await colony.getUserRoles(USER2, 2);
+      expect(userRoles).to.equal(rolesArch);
+
+      // Arch cannot set root roles!
+      await checkErrorRevert(
+        colony.setUserRoles(1, UINT256_MAX, USER2, 1, rolesRoot, true, { from: USER1 }),
+        "ds-auth-only-authorized-in-child-domain"
+      );
+
+      // But can set arch roles in subdomains
+      await colony.setUserRoles(1, 1, USER2, 3, rolesArch, true, { from: USER1 });
+      userRoles = await colony.getUserRoles(USER2, 3);
+      expect(userRoles).to.equal(rolesArch);
+    });
+
+    it("should not allow a role to be set that doesn't exist", async () => {
+      const nonexistentRole = ethers.BigNumber.from(2).pow(7).toHexString();
+      await checkErrorRevert(colony.setUserRoles(1, 0, USER2, 2, nonexistentRole, true, { from: FOUNDER }), "colony-roles-do-not-exist");
     });
   });
 });

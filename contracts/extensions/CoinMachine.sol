@@ -22,11 +22,12 @@ import "./../../lib/dappsys/math.sol";
 import "./../colony/ColonyDataTypes.sol";
 import "./../colony/IColony.sol";
 import "./../common/ERC20Extended.sol";
+import "./ColonyExtension.sol";
 
 // ignore-file-swc-108
 
 
-contract CoinMachine is DSMath {
+contract CoinMachine is DSMath, ColonyExtension {
 
   // Events
 
@@ -34,10 +35,6 @@ contract CoinMachine is DSMath {
   event PeriodUpdated(uint256 activePeriod, uint256 currentPeriod);
 
   IColony colony;
-
-  constructor(address _colony) public {
-    colony = IColony(_colony);
-  }
 
   // Storage
 
@@ -59,6 +56,32 @@ contract CoinMachine is DSMath {
   uint256 emaIntake; // Averaged payment intake
 
   // Public
+
+  /// @notice Returns the version of the extension
+  function version() public pure returns (uint256) {
+    return 1;
+  }
+
+  /// @notice Configures the extension
+  /// @param _colony The colony in which the extension holds permissions
+  function install(address _colony) public auth {
+    require(address(colony) == address(0x0), "extension-already-installed");
+
+    colony = IColony(_colony);
+  }
+
+  /// @notice Called when upgrading the extension
+  function finishUpgrade() public auth {}
+
+  /// @notice Called when deprecating (or undeprecating) the extension
+  function deprecate(bool _deprecated) public auth {
+    deprecated = _deprecated;
+  }
+
+  /// @notice Called when uninstalling the extension
+  function uninstall() public auth {
+    selfdestruct(address(uint160(address(colony))));
+  }
 
   /// @notice Must be called before any sales can be made
   /// @param _purchaseToken The token to receive payments in. Use 0x0 for ether
@@ -105,7 +128,7 @@ contract CoinMachine is DSMath {
 
   /// @notice Purchase tokens from Coin Machine.
   /// @param _numTokens The number of tokens to purchase
-  function buyTokens(uint256 _numTokens) public payable {
+  function buyTokens(uint256 _numTokens) public payable notDeprecated {
     updatePeriod();
 
     uint256 numTokens = min(_numTokens, maxPerPeriod - tokensSold);

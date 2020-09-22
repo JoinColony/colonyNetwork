@@ -22,22 +22,41 @@ import "./../colony/ColonyAuthority.sol";
 import "./../colony/ColonyDataTypes.sol";
 import "./../colony/IColony.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
+import "./ColonyExtension.sol";
 
 // ignore-file-swc-108
 
 
-contract OneTxPayment {
-
+contract OneTxPayment is ColonyExtension {
   uint256 constant UINT256_MAX = 2**256 - 1;
   bytes4 constant ADD_PAYMENT_SIG = bytes4(keccak256("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"));
   bytes4 constant MOVE_FUNDS_SIG = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"));
 
-  IColony colony;
   IColonyNetwork colonyNetwork;
 
-  constructor(address _colony) public {
+  /// @notice Returns the version of the extension
+  function version() public pure returns (uint256) {
+    return 1;
+  }
+
+  /// @notice Configures the extension
+  /// @param _colony The colony in which the extension holds permissions
+  function install(address _colony) public auth {
+    require(address(colony) == address(0x0), "extension-already-installed");
+
     colony = IColony(_colony);
     colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
+  }
+
+  /// @notice Called when upgrading the extension (currently a no-op since this OneTxPayment does not support upgrading)
+  function finishUpgrade() public auth {}
+
+  /// @notice Called when deprecating (or undeprecating) the extension (currently a no-op since OneTxPayment is stateless)
+  function deprecate(bool _deprecated) public auth {}
+
+  /// @notice Called when uninstalling the extension
+  function uninstall() public auth {
+    selfdestruct(address(uint160(address(colony))));
   }
 
   /// @notice Completes a colony payment in a single transaction

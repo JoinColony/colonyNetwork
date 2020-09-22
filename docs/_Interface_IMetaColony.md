@@ -7,6 +7,20 @@ order: 4
   
 ## Interface Methods
 
+### `addExtensionToNetwork`
+
+Add a new extension/version to the Extensions repository.
+
+*Note: Calls `IColonyNetwork.addExtensionToNetwork`.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|_resolver|address|The deployed resolver containing the extension contract logic
+
+
 ### `addGlobalSkill`
 
 Add a new global skill.

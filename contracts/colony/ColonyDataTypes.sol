@@ -251,7 +251,8 @@ contract ColonyDataTypes {
 
   enum TaskStatus { Active, Cancelled, Finalized }
 
-  enum ColonyRole { Recovery, Root, Arbitration, Architecture, ArchitectureSubdomain_DEPRECATED, Funding, Administration }
+  // Any new roles added should be added before NUMBER_OF_ROLES, which should always be the last entry in this enum
+  enum ColonyRole { Recovery, Root, Arbitration, Architecture, ArchitectureSubdomain_DEPRECATED, Funding, Administration, NUMBER_OF_ROLES }
 
   struct Role {
     // Address of the user for the given role
@@ -289,4 +290,6 @@ contract ColonyDataTypes {
   }
 
   uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs
+  bytes32 constant ROOT_ROLES = bytes32(uint256(1)) << uint8(ColonyRole.Recovery) | bytes32(uint256(1)) << uint8(ColonyRole.Root);
+  bytes32 constant BYTES32_1 = bytes32(uint256(1));
 }

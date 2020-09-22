@@ -122,7 +122,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   {
     require(metaColony == address(0x0), "colony-meta-colony-exists-already");
 
-    metaColony = createColony(_tokenAddress, currentColonyVersion, "", "", false);
+    metaColony = createColony(_tokenAddress, currentColonyVersion, "");
 
     // Add the special mining skill
     reputationMiningSkillId = this.addSkill(skillCount);
@@ -135,9 +135,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
   stoppable
   returns (address)
   {
-    return createColony(_tokenAddress, 3, "", "", false);
+    return createColony(_tokenAddress, 3, "");
   }
 
+  // DEPRECATED, only deploys version 4 colonies.
   function createColony(
     address _tokenAddress,
     uint256 _version,
@@ -146,17 +147,21 @@ contract ColonyNetwork is ColonyNetworkStorage {
     bool _useExtensionManager
   ) public stoppable returns (address)
   {
+    return createColony(_tokenAddress, 4, _colonyName);
+  }
+
+  function createColony(
+    address _tokenAddress,
+    uint256 _version,
+    string memory _colonyName
+  ) public stoppable returns (address)
+  {
     uint256 version = (_version == 0) ? currentColonyVersion : _version;
     address colonyAddress = deployColony(_tokenAddress, version);
 
     if (bytes(_colonyName).length > 0) {
-      IColony(colonyAddress).registerColonyLabel(_colonyName, _orbitdb);
+      IColony(colonyAddress).registerColonyLabel(_colonyName, "");
     }
-
-    // TODO: Uncomment this after merging colonyNetwork#714
-    // if (_useExtensionManager) {
-    //   IColony(colonyAddress).setRootRole(extensionManagerAddress, true);
-    // }
 
     setFounderPermissions(colonyAddress);
     return colonyAddress;

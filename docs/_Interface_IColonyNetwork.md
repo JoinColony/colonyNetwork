@@ -20,6 +20,20 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 |_resolver|address|Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
 
 
+### `addExtensionToNetwork`
+
+Add a new extension resolver to the Extensions repository.
+
+*Note: Can only be called by the MetaColony.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|resolver|address|The deployed resolver containing the extension contract logic
+
+
 ### `addr`
 
 Returns the address the supplied node resolves do, if we are the resolver.
@@ -116,7 +130,25 @@ Used by a user to claim any mining rewards due to them. This will place them in 
 
 ### `createColony`
 
-Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options
+Creates a new colony in the network, at version 3
+
+*Note: This is now deprecated and will be removed in a future version*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
+Creates a new colony in the network, with an optional ENS name
 
 *Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
 
@@ -127,8 +159,6 @@ Overload of the simpler `createColony` -- creates a new colony in the network wi
 |_tokenAddress|address|Address of an ERC20 token to serve as the colony token
 |_version|uint256|The version of colony to deploy (pass 0 for the current version)
 |_colonyName|string|The label to register (if null, no label is registered)
-|_orbitdb|string|The path of the orbitDB database associated with the user profile
-|_useExtensionManager|bool|If true, give the ExtensionManager the root role in the colony
 
 **Return Parameters**
 
@@ -138,7 +168,7 @@ Overload of the simpler `createColony` -- creates a new colony in the network wi
 
 ### `createColony`
 
-Creates a new colony in the network, at version 3
+Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options, at version 4
 
 *Note: This is now deprecated and will be removed in a future version*
 
@@ -146,7 +176,11 @@ Creates a new colony in the network, at version 3
 
 |Name|Type|Description|
 |---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
+|_orbitdb|string|DEPRECATED Currently a no-op
+|_useExtensionManager|bool|DEPRECATED Currently a no-op
 
 **Return Parameters**
 
@@ -164,6 +198,19 @@ Create the Meta Colony, same as a normal colony plus the root skill.
 |Name|Type|Description|
 |---|---|---|
 |_tokenAddress|address|Address of the CLNY token
+
+
+### `deprecateExtension`
+
+Set the deprecation of an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|deprecated|bool|Whether to deprecate the extension or not
 
 
 ### `deprecateSkill`
@@ -277,6 +324,42 @@ Returns the address of the ENSRegistrar for the Network.
 |Name|Type|Description|
 |---|---|---|
 |address|address|The address the ENSRegistrar resolves to
+
+### `getExtensionInstallation`
+
+Get an extension's installation.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|colony|address|Address of the colony the extension is installed in
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|installation|address|The address of the installed extension
+
+### `getExtensionResolver`
+
+Get an extension's resolver.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|version|uint256|Version of the extension
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|resolver|address|The address of the deployed resolver
 
 ### `getFeeInverse`
 
@@ -542,6 +625,19 @@ Creates initial inactive reputation mining cycle.
 
 
 
+### `installExtension`
+
+Install an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|version|uint256|Version of the extension to install
+
+
 ### `isColony`
 
 Check if specific address is a colony created on colony network.
@@ -709,20 +805,6 @@ Called to set the total per-cycle reputation reward, which will be split between
 
 ### `setReputationRootHash`
 
-Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|newHash|bytes32|The reputation root hash
-|newNLeaves|uint256|The updated leaves count value
-|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-
-
-### `setReputationRootHash`
-
 This version of setReputationRootHash is deprecated and will be removed in a future release. It transparently calls the new version if it is called (essentially, removing the `reward` parameter.
 
 
@@ -734,6 +816,20 @@ This version of setReputationRootHash is deprecated and will be removed in a fut
 |newNLeaves|uint256|The updated leaves count value
 |stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 |reward|uint256|Amount of CLNY to be distributed as reward to miners (not used)
+
+
+### `setReputationRootHash`
+
+Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|newHash|bytes32|The reputation root hash
+|newNLeaves|uint256|The updated leaves count value
+|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 
 
 ### `setTokenLocking`
@@ -810,6 +906,18 @@ Query if a contract implements an interface
 |---|---|---|
 |status|bool|`true` if the contract implements `interfaceID`
 
+### `uninstallExtension`
+
+Uninstall an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+
+
 ### `unstakeForMining`
 
 Unstake CLNY currently staked for reputation mining.
@@ -844,3 +952,16 @@ Update a user's orbitdb address. Can only be called by a user with a registered 
 |Name|Type|Description|
 |---|---|---|
 |orbitdb|string|The path of the orbitDB database to be associated with the user
+
+
+### `upgradeExtension`
+
+Upgrade an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|newVersion|uint256|Version of the extension to upgrade to (must be one greater than current)

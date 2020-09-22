@@ -7,6 +7,7 @@ const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("./ColonyNetworkAuction");
 const ColonyNetworkENS = artifacts.require("./ColonyNetworkENS");
+const ColonyNetworkExtensions = artifacts.require("./ColonyNetworkExtensions");
 const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
 
@@ -16,6 +17,7 @@ module.exports = async function (deployer) {
   const colonyNetworkMining = await ColonyNetworkMining.deployed();
   const colonyNetworkAuction = await ColonyNetworkAuction.deployed();
   const colonyNetworkENS = await ColonyNetworkENS.deployed();
+  const colonyNetworkExtensions = await ColonyNetworkExtensions.deployed();
   const etherRouter = await EtherRouter.deployed();
   const resolver = await Resolver.deployed();
   const contractRecovery = await ContractRecovery.deployed();
@@ -27,6 +29,7 @@ module.exports = async function (deployer) {
     colonyNetworkMining,
     colonyNetworkAuction,
     colonyNetworkENS,
+    colonyNetworkExtensions,
     contractRecovery
   );
 

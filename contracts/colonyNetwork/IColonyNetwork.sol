@@ -133,15 +133,25 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return colonyAddress Address of the newly created colony
   function createColony(address _tokenAddress) public returns (address colonyAddress);
 
-  /// @notice Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options
+  /// @notice Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options, at version 4
+  /// @dev This is now deprecated and will be removed in a future version
   /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
   /// @param _version The version of colony to deploy (pass 0 for the current version)
   /// @param _colonyName The label to register (if null, no label is registered)
-  /// @param _orbitdb The path of the orbitDB database associated with the user profile
-  /// @param _useExtensionManager If true, give the ExtensionManager the root role in the colony
+  /// @param _orbitdb DEPRECATED Currently a no-op
+  /// @param _useExtensionManager DEPRECATED Currently a no-op
   /// @return colonyAddress Address of the newly created colony
   function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _orbitdb, bool _useExtensionManager)
+    public returns (address colonyAddress);
+
+  /// @notice Creates a new colony in the network, with an optional ENS name
+  /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
+  /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
+  /// @param _version The version of colony to deploy (pass 0 for the current version)
+  /// @param _colonyName The label to register (if null, no label is registered)
+  /// @return colonyAddress Address of the newly created colony
+  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName)
     public returns (address colonyAddress);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
@@ -284,6 +294,44 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Get the resolver to be used by new instances of ReputationMiningCycle.
   /// @return miningResolverAddress The address of the mining cycle resolver currently used by new instances
   function getMiningResolver() public view returns (address miningResolverAddress);
+
+  /// @notice Add a new extension resolver to the Extensions repository.
+  /// @dev Can only be called by the MetaColony.
+  /// @dev The extension version is queried from the resolver itself.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param resolver The deployed resolver containing the extension contract logic
+  function addExtensionToNetwork(bytes32 extensionId, address resolver) public;
+
+  /// @notice Install an extension in a colony. Can only be called by a Colony.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param version Version of the extension to install
+  function installExtension(bytes32 extensionId, uint256 version) public;
+
+  /// @notice Upgrade an extension in a colony. Can only be called by a Colony.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param newVersion Version of the extension to upgrade to (must be one greater than current)
+  function upgradeExtension(bytes32 extensionId, uint256 newVersion) public;
+
+  /// @notice Set the deprecation of an extension in a colony. Can only be called by a Colony.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param deprecated Whether to deprecate the extension or not
+  function deprecateExtension(bytes32 extensionId, bool deprecated) public;
+
+  /// @notice Uninstall an extension in a colony. Can only be called by a Colony.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  function uninstallExtension(bytes32 extensionId) public;
+
+  /// @notice Get an extension's resolver.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param version Version of the extension
+  /// @return resolver The address of the deployed resolver
+  function getExtensionResolver(bytes32 extensionId, uint256 version) public view returns (address resolver);
+
+  /// @notice Get an extension's installation.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param colony Address of the colony the extension is installed in
+  /// @return installation The address of the installed extension
+  function getExtensionInstallation(bytes32 extensionId, address colony) public view returns (address installation);
 
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
   /// @return _feeInverse The inverse of the network fee

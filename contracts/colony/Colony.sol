@@ -29,90 +29,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256 colonyVersion) { return 4; }
 
-  function setRootRole(address _user, bool _setTo) public stoppable auth {
-    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
-
-    emit ColonyRoleSet(_user, 1, uint8(ColonyRole.Root), _setTo);
-  }
-
-  function setArbitrationRole(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    address _user,
-    uint256 _domainId,
-    bool _setTo
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) archSubdomain(_permissionDomainId, _domainId)
-  {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
-
-    emit ColonyRoleSet(_user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
-  }
-
-  function setArchitectureRole(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    address _user,
-    uint256 _domainId,
-    bool _setTo
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) archSubdomain(_permissionDomainId, _domainId)
-  {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Architecture), _setTo);
-
-    emit ColonyRoleSet(_user, _domainId, uint8(ColonyRole.Architecture), _setTo);
-  }
-
-  function setFundingRole(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    address _user,
-    uint256 _domainId,
-    bool _setTo
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) archSubdomain(_permissionDomainId, _domainId)
-  {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
-
-    emit ColonyRoleSet(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
-  }
-
-  function setAdministrationRole(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    address _user,
-    uint256 _domainId,
-    bool _setTo
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) archSubdomain(_permissionDomainId, _domainId)
-  {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
-
-    emit ColonyRoleSet(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
-  }
-
-  function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool) {
-    return ColonyAuthority(address(authority)).hasUserRole(_user, _domainId, uint8(_role));
-  }
-
-  function hasInheritedUserRole(
-    address _user,
-    uint256 _domainId,
-    ColonyRole _role,
-    uint256 _childSkillIndex,
-    uint256 _childDomainId
-  ) public view returns (bool)
-  {
-    return (
-      hasUserRole(_user, _domainId, _role) &&
-      validateDomainInheritance(_domainId, _childSkillIndex, _childDomainId)
-    );
-  }
-
-  function getUserRoles(address _user, uint256 _domainId) public view returns (bytes32) {
-    return ColonyAuthority(address(authority)).getUserRoles(_user, _domainId);
-  }
-
-  function getCapabilityRoles(bytes4 _sig) public view returns (bytes32) {
-    return ColonyAuthority(address(authority)).getCapabilityRoles(address(this), _sig);
-  }
-
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
   }
@@ -275,6 +191,36 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.addColonyVersion(_version, _resolver);
   }
 
+  function addExtensionToNetwork(bytes32 _extensionId, address _resolver)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).addExtensionToNetwork(_extensionId, _resolver);
+  }
+
+  function installExtension(bytes32 _extensionId, uint256 _version)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
+  }
+
+  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extensionId, _newVersion);
+  }
+
+  function deprecateExtension(bytes32 _extensionId, bool _deprecated)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extensionId, _deprecated);
+  }
+
+  function uninstallExtension(bytes32 _extensionId)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId);
+  }
+
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
@@ -373,6 +319,25 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Add expenditure state change support
     sig = bytes4(keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+
+    // Add coin machine support
+    sig = bytes4(keccak256("mintTokensFor(address,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    // Add extension manager functionality
+    sig = bytes4(keccak256("addExtensionToNetwork(bytes32,address)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("installExtension(bytes32,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("upgradeExtension(bytes32,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("deprecateExtension(bytes32,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("uninstallExtension(bytes32)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
+
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

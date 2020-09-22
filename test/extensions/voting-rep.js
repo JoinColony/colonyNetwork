@@ -25,15 +25,19 @@ import {
   giveUserCLNYTokensAndStake,
 } from "../../helpers/test-data-generator";
 
+import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+
 import PatriciaTree from "../../packages/reputation-miner/patricia";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const TokenLocking = artifacts.require("TokenLocking");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const TokenLocking = artifacts.require("TokenLocking");
 const VotingReputation = artifacts.require("VotingReputation");
-const VotingReputationFactory = artifacts.require("VotingReputationFactory");
+const Resolver = artifacts.require("Resolver");
+
+const VOTING_REPUTATION = soliditySha3("VotingReputation");
 
 contract("Voting Reputation", (accounts) => {
   let colony;
@@ -46,7 +50,6 @@ contract("Voting Reputation", (accounts) => {
   let tokenLocking;
 
   let voting;
-  let votingFactory;
 
   let reputationTree;
 
@@ -113,7 +116,10 @@ contract("Voting Reputation", (accounts) => {
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await TokenLocking.at(tokenLockingAddress);
 
-    votingFactory = await VotingReputationFactory.new();
+    const votingImplementation = await VotingReputation.new();
+    const resolver = await Resolver.new();
+    await setupEtherRouter("VotingReputation", { VotingReputation: votingImplementation.address }, resolver);
+    await metaColony.addExtensionToNetwork(VOTING_REPUTATION, resolver.address);
   });
 
   beforeEach(async () => {
@@ -126,8 +132,8 @@ contract("Voting Reputation", (accounts) => {
     domain2 = await colony.getDomain(2);
     domain3 = await colony.getDomain(3);
 
-    await votingFactory.deployExtension(colony.address);
-    const votingAddress = await votingFactory.deployedExtensions(colony.address);
+    await colony.installExtension(VOTING_REPUTATION, 1);
+    const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
     voting = await VotingReputation.at(votingAddress);
 
     await voting.initialise(
@@ -232,50 +238,38 @@ contract("Voting Reputation", (accounts) => {
     return soliditySha3(`0x${action.slice(preamble, preamble + 64 * 4)}${"0".repeat(64)}${action.slice(preamble + 64 * 5, action.length)}`);
   }
 
-  describe("deploying the extension", async () => {
-    it("can install the extension factory once if root and uninstall", async () => {
-      ({ colony } = await setupRandomColony(colonyNetwork));
-      await checkErrorRevert(votingFactory.deployExtension(colony.address, { from: USER1 }), "colony-extension-user-not-root");
-      await votingFactory.deployExtension(colony.address, { from: USER0 });
-      await checkErrorRevert(votingFactory.deployExtension(colony.address, { from: USER0 }), "colony-extension-already-deployed");
-      await votingFactory.removeExtension(colony.address, { from: USER0 });
+  describe("managing the extension", async () => {
+    it("can install the extension manually", async () => {
+      voting = await VotingReputation.new();
+      await voting.install(colony.address);
+
+      await checkErrorRevert(voting.install(colony.address), "extension-already-installed");
+
+      await voting.finishUpgrade();
+      await voting.deprecate(true);
+      await voting.uninstall();
     });
 
-    it("can query for initisalisation values", async () => {
-      const totalStakeFraction = await voting.getTotalStakeFraction();
-      const voterRewardFraction = await voting.getVoterRewardFraction();
-      const userMinStakeFraction = await voting.getUserMinStakeFraction();
-      const maxVoteFraction = await voting.getMaxVoteFraction();
+    it("can install the extension with the extension manager", async () => {
+      ({ colony } = await setupRandomColony(colonyNetwork));
+      await colony.installExtension(VOTING_REPUTATION, 1, { from: USER0 });
 
-      const stakePeriod = await voting.getStakePeriod();
-      const submitPeriod = await voting.getSubmitPeriod();
-      const revealPeriod = await voting.getRevealPeriod();
-      const escalationPeriod = await voting.getEscalationPeriod();
+      await checkErrorRevert(colony.installExtension(VOTING_REPUTATION, 1, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.uninstallExtension(VOTING_REPUTATION, { from: USER1 }), "ds-auth-unauthorized");
 
-      expect(totalStakeFraction).to.eq.BN(TOTAL_STAKE_FRACTION);
-      expect(voterRewardFraction).to.eq.BN(VOTER_REWARD_FRACTION);
-      expect(userMinStakeFraction).to.eq.BN(USER_MIN_STAKE_FRACTION);
-      expect(maxVoteFraction).to.eq.BN(MAX_VOTE_FRACTION);
-
-      expect(stakePeriod).to.eq.BN(STAKE_PERIOD);
-      expect(submitPeriod).to.eq.BN(SUBMIT_PERIOD);
-      expect(revealPeriod).to.eq.BN(REVEAL_PERIOD);
-      expect(escalationPeriod).to.eq.BN(ESCALATION_PERIOD);
+      await colony.uninstallExtension(VOTING_REPUTATION, { from: USER0 });
     });
 
     it("can deprecate the extension if root", async () => {
-      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await checkErrorRevert(colony.deprecateExtension(VOTING_REPUTATION, true, { from: USER2 }), "ds-auth-unauthorized");
 
-      // Must be root
-      await checkErrorRevert(voting.deprecate({ from: USER2 }), "voting-rep-user-not-root");
-
-      await voting.deprecate();
+      await colony.deprecateExtension(VOTING_REPUTATION, true);
 
       // Cant make new motions!
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await checkErrorRevert(
         voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
-        "voting-rep-not-active"
+        "colony-extension-deprecated"
       );
     });
 
@@ -285,10 +279,8 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot initialise with invalid values", async () => {
-      await votingFactory.removeExtension(colony.address, { from: USER0 });
-      await votingFactory.deployExtension(colony.address);
-      const votingAddress = await votingFactory.deployedExtensions(colony.address);
-      voting = await VotingReputation.at(votingAddress);
+      voting = await VotingReputation.new();
+      await voting.install(colony.address);
 
       await checkErrorRevert(voting.initialise(HALF.addn(1), HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-rep-greater-than-half-wad");
       await checkErrorRevert(voting.initialise(HALF, HALF.addn(1), WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-rep-greater-than-half-wad");
@@ -300,6 +292,26 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR + 1), "voting-rep-period-too-long");
 
       await voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR);
+    });
+
+    it("can query for initialisation values", async () => {
+      const totalStakeFraction = await voting.getTotalStakeFraction();
+      const voterRewardFraction = await voting.getVoterRewardFraction();
+      const userMinStakeFraction = await voting.getUserMinStakeFraction();
+      const maxVoteFraction = await voting.getMaxVoteFraction();
+      const stakePeriod = await voting.getStakePeriod();
+      const submitPeriod = await voting.getSubmitPeriod();
+      const revealPeriod = await voting.getRevealPeriod();
+      const escalationPeriod = await voting.getEscalationPeriod();
+
+      expect(totalStakeFraction).to.eq.BN(TOTAL_STAKE_FRACTION);
+      expect(voterRewardFraction).to.eq.BN(VOTER_REWARD_FRACTION);
+      expect(userMinStakeFraction).to.eq.BN(USER_MIN_STAKE_FRACTION);
+      expect(maxVoteFraction).to.eq.BN(MAX_VOTE_FRACTION);
+      expect(stakePeriod).to.eq.BN(STAKE_PERIOD);
+      expect(submitPeriod).to.eq.BN(SUBMIT_PERIOD);
+      expect(revealPeriod).to.eq.BN(REVEAL_PERIOD);
+      expect(escalationPeriod).to.eq.BN(ESCALATION_PERIOD);
     });
   });
 
@@ -1692,12 +1704,8 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can skip the staking phase if no new stake is required", async () => {
-      // Deploy a new extension with no voter compensation
-      await votingFactory.removeExtension(colony.address, { from: USER0 });
-      await votingFactory.deployExtension(colony.address, { from: USER0 });
-      const votingAddress = await votingFactory.deployedExtensions(colony.address);
-      voting = await VotingReputation.at(votingAddress);
-
+      voting = await VotingReputation.new();
+      await voting.install(colony.address);
       await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
 
       await voting.initialise(

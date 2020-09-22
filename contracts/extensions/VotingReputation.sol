@@ -27,12 +27,13 @@ import "./../common/ERC20Extended.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 
+import "./ColonyExtension.sol";
 
-contract VotingReputation is DSMath, PatriciaTreeProofs {
+
+contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
 
   // Events
   event ExtensionInitialised();
-  event ExtensionDeprecated();
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
   event MotionStaked(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);
   event MotionVoteSubmitted(uint256 indexed motionId, address indexed voter);
@@ -93,7 +94,17 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   uint256 revealPeriod; // Length of time for revealing votes
   uint256 escalationPeriod; // Length of time for escalating after a vote
 
-  constructor(address _colony) public {
+  /// @notice Return the version number
+  /// @return The version number
+  function version() public pure returns (uint256) {
+    return 1;
+  }
+
+  /// @notice Install the extension
+  /// @param _colony Base colony for the installation
+  function install(address _colony) public {
+    require(address(colony) == address(0x0), "extension-already-installed");
+
     colony = IColony(_colony);
     colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
     tokenLocking = ITokenLocking(colonyNetwork.getTokenLocking());
@@ -121,7 +132,11 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
   )
     public
   {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-user-not-root");
+    require(
+      colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root),
+      "voting-rep-user-not-root"
+    );
+
     require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
 
     require(_totalStakeFraction <= WAD / 2, "voting-rep-greater-than-half-wad");
@@ -151,13 +166,17 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     emit ExtensionInitialised();
   }
 
-  /// @notice Deprecate the extension, prevening new motions from being created
-  function deprecate() public {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-user-not-root");
+  /// @notice Called when upgrading the extension
+  function finishUpgrade() public auth {}
 
-    state = ExtensionState.Deprecated;
+  /// @notice Called when deprecating (or undeprecating) the extension
+  function deprecate(bool _deprecated) public auth {
+    deprecated = _deprecated;
+  }
 
-    emit ExtensionDeprecated();
+  /// @notice Called when uninstalling the extension
+  function uninstall() public auth {
+    selfdestruct(address(uint160(address(colony))));
   }
 
   // Data structures
@@ -803,6 +822,7 @@ contract VotingReputation is DSMath, PatriciaTreeProofs {
     bytes32[] memory _siblings
   )
     internal
+    notDeprecated
   {
     require(state == ExtensionState.Active, "voting-rep-not-active");
     require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");

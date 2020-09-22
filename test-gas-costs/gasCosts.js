@@ -1,8 +1,8 @@
 /* globals artifacts */
 
 import path from "path";
-
 import TruffleLoader from "../packages/reputation-miner/TruffleLoader";
+
 import {
   UINT256_MAX,
   WAD,
@@ -36,7 +36,6 @@ import {
 } from "../helpers/test-helper";
 
 import { giveUserCLNYTokensAndStake, fundColonyWithTokens, makeTask, setupRandomColony } from "../helpers/test-data-generator";
-
 import { executeSignedTaskChange, executeSignedRoleAssignment } from "../helpers/task-review-signing";
 
 import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -216,7 +215,8 @@ contract("All", function (accounts) {
       await colony.claimPayment(paymentId, token.address);
 
       // 1 transaction payment
-      const oneTxExtension = await OneTxPayment.new(colony.address);
+      const oneTxExtension = await OneTxPayment.new();
+      await oneTxExtension.install(colony.address);
       await colony.setAdministrationRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
       await colony.setFundingRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
 

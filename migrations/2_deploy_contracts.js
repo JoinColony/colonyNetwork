@@ -5,11 +5,10 @@ const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("./ColonyNetworkAuction");
 const ColonyNetworkENS = artifacts.require("./ColonyNetworkENS");
+const ColonyNetworkExtensions = artifacts.require("./ColonyNetworkExtensions");
 const ReputationMiningCycle = artifacts.require("./ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("./ReputationMiningCycleRespond");
 const ReputationMiningCycleBinarySearch = artifacts.require("./ReputationMiningCycleBinarySearch");
-const OneTxPaymentFactory = artifacts.require("./extensions/OneTxPaymentFactory");
-const CoinMachineFactory = artifacts.require("./extensions/CoinMachineFactory");
 
 const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
@@ -26,12 +25,11 @@ module.exports = (deployer, network) => {
   deployer.deploy(ColonyNetworkMining);
   deployer.deploy(ColonyNetworkAuction);
   deployer.deploy(ColonyNetworkENS);
+  deployer.deploy(ColonyNetworkExtensions);
   deployer.deploy(ReputationMiningCycle);
   deployer.deploy(ReputationMiningCycleRespond);
   deployer.deploy(ReputationMiningCycleBinarySearch);
   deployer.deploy(EtherRouter);
   deployer.deploy(Resolver);
   deployer.deploy(ContractRecovery);
-  deployer.deploy(OneTxPaymentFactory);
-  deployer.deploy(CoinMachineFactory);
 };

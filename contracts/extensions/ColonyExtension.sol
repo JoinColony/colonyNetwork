@@ -18,10 +18,24 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
+import "./../common/EtherRouter.sol";
+import "./../colony/IColony.sol";
 
-interface ExtensionFactory {
-  function deployExtension(address _colony) external;
-  function removeExtension(address _colony) external;
-  event ExtensionDeployed(string _name, address _colony, address _extension);
-  event ExtensionRemoved(string _name, address _colony);
+
+contract ColonyExtension is DSAuth {
+  address resolver; // Align storage with EtherRouter
+
+  IColony colony;
+  bool deprecated;
+
+  modifier notDeprecated() {
+    require(!deprecated, "colony-extension-deprecated");
+    _;
+  }
+
+  function version() public pure returns (uint256);
+  function install(address _colony) public;
+  function finishUpgrade() public;
+  function deprecate(bool _deprecated) public;
+  function uninstall() public;
 }
