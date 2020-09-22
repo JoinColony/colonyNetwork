@@ -18,13 +18,10 @@
 pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
-import "./../../lib/dappsys/auth.sol";
-import "./../../lib/dappsys/math.sol";
-import "./../colony/ColonyDataTypes.sol";
-import "./../colony/IColony.sol";
+import "./ColonyExtension.sol";
 
 
-contract TokenSupplier is DSMath, DSAuth {
+contract TokenSupplier is ColonyExtension {
 
   uint256 constant PERIOD = 1 days;
 
@@ -34,11 +31,6 @@ contract TokenSupplier is DSMath, DSAuth {
   event TokenIssuanceRateSet(uint256 tokenIssuanceRate);
   event TokensIssued(uint256 numTokens);
 
-  IColony colony;
-
-  constructor(address _colony) public {
-    colony = IColony(_colony);
-  }
 
   // Storage
 
@@ -47,9 +39,43 @@ contract TokenSupplier is DSMath, DSAuth {
   uint256 public tokenIssuanceRate;
   uint256 public lastPinged;
 
-  // Authed
+  // Modifiers
 
-  function initialise(uint256 _tokenSupplyCeiling, uint256 _tokenIssuanceRate) public auth {
+  modifier root() {
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "token-supplier-not-root");
+    _;
+  }
+
+  // Public
+
+  /// @notice Returns the version of the extension
+  function version() public pure returns (uint256) {
+    return 1;
+  }
+
+  /// @notice Configures the extension
+  /// @param _colony The colony in which the extension holds permissions
+  function install(address _colony) public auth {
+    require(address(colony) == address(0x0), "extension-already-installed");
+
+    colony = IColony(_colony);
+  }
+
+  /// @notice Called when upgrading the extension (currently a no-op)
+  function finishUpgrade() public auth {}
+
+  /// @notice Called when deprecating (or undeprecating) the extension (currently a no-op)
+  function deprecate(bool _deprecated) public auth {}
+
+  /// @notice Called when uninstalling the extension
+  function uninstall() public auth {
+    selfdestruct(address(uint160(address(colony))));
+  }
+
+  /// @notice Initialise the extension, must be called before any tokens can be issued
+  /// @param _tokenSupplyCeiling Total amount of tokens to issue
+  /// @param _tokenIssuanceRate Number of tokens to issue per day
+  function initialise(uint256 _tokenSupplyCeiling, uint256 _tokenIssuanceRate) public root {
     require(lastPinged == 0, "token-supplier-already-initialised");
 
     tokenSupplyCeiling = _tokenSupplyCeiling;
@@ -57,25 +83,26 @@ contract TokenSupplier is DSMath, DSAuth {
     lastPinged = now;
   }
 
-  function setTokenSupplyCeiling(uint256 _tokenSupplyCeiling) public {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "token-supplier-not-root");
-
-    tokenSupplyCeiling = _tokenSupplyCeiling;
+  /// @notice Update the tokenSupplyCeiling, cannot set below current tokenSupply
+  /// @param _tokenSupplyCeiling Total amount of tokens to issue
+  function setTokenSupplyCeiling(uint256 _tokenSupplyCeiling) public root {
+    tokenSupplyCeiling = max(_tokenSupplyCeiling, tokenSupply);
 
     emit TokenSupplyCeilingSet(tokenSupplyCeiling);
   }
 
-  function setTokenIssuanceRate(uint256 _tokenIssuanceRate) public {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "token-supplier-not-root");
-
+  /// @notice Update the tokenIssuanceRate
+  /// @param _tokenIssuanceRate Number of tokens to issue per day
+  function setTokenIssuanceRate(uint256 _tokenIssuanceRate) public root {
     tokenIssuanceRate = _tokenIssuanceRate;
 
     emit TokenIssuanceRateSet(tokenIssuanceRate);
   }
 
-  // Public
-
+  /// @notice Issue the appropriate amount of tokens
   function issueTokens() public {
+    require(lastPinged > 0, "token-supplier-not-initialised");
+
     uint256 newSupply = min(
       tokenSupplyCeiling - tokenSupply,
       wmul(tokenIssuanceRate, wdiv((now - lastPinged), PERIOD))

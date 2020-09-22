@@ -18,17 +18,14 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../../lib/dappsys/math.sol";
-import "./../colony/IColony.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../common/ERC20Extended.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
-
 import "./ColonyExtension.sol";
 
 
-contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
+contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
 
   // Events
   event ProposalCreated(uint256 id, uint256 indexed fromPot, uint256 indexed toPot, address indexed token, uint256 amount);

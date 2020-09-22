@@ -18,10 +18,13 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
+import "./../../lib/dappsys/math.sol";
 import "./../common/EtherRouter.sol";
 import "./../colony/IColony.sol";
+import "./../colony/ColonyDataTypes.sol";
 
-abstract contract ColonyExtension is DSAuth {
+
+abstract contract ColonyExtension is DSAuth, DSMath {
 
   event ExtensionInitialised();
 
