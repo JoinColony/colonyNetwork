@@ -37,6 +37,25 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return token;
   }
 
+  bytes4 constant TRANSFER_SIG = bytes4(keccak256("transfer(address,uint256)"));
+  bytes4 constant TRANSFER_FROM_SIG = bytes4(keccak256("transferFrom(address,address,uint256)"));
+
+  function makeArbitraryTransaction(address _to, uint256 _value, bytes memory _action)
+  public stoppable auth
+  returns (bool)
+  {
+    require(_to != colonyNetworkAddress, "colony-cannot-target-network");
+    require(_to != tokenLockingAddress, "colony-cannot-target-token-locking");
+
+    bytes4 sig;
+    assembly { sig := mload(add(_action, 0x20)) }
+
+    require(sig != TRANSFER_SIG, "colony-cannot-call-erc20-transfer");
+    require(sig != TRANSFER_FROM_SIG, "colony-cannot-call-erc20-transfer-from");
+
+    return executeCall(_to, _value, _action);
+  }
+
   function emitDomainReputationPenalty(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -338,6 +357,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     sig = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
 
+    // Add arbitrary tx functionality
+    sig = bytes4(keccak256("makeArbitraryTransaction(address,uint256,bytes)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

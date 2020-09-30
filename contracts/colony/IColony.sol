@@ -60,6 +60,13 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @return tokenAddress Address of the token contract
   function getToken() external view returns (address tokenAddress);
 
+  /// @notice Execute arbitrary transaction on behalf of the Colony
+  /// @param _to Contract to receive the function call (cannot be network or token locking)
+  /// @param _value Value in wei to inclue with the transaction
+  /// @param _action Bytes array encoding the function call and arguments
+  /// @return success Boolean indicating whether the transaction succeeded
+  function makeArbitraryTransaction(address _to, uint256 _value, bytes memory _action) public returns (bool success);
+
   /// @notice Set new colony root role.
   /// Can be called by root role only.
   /// @param _user User we want to give an root role to

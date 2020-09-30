@@ -536,6 +536,7 @@ contract ColonyTask is ColonyStorage {
     return reviewerAddresses;
   }
 
+<<<<<<< HEAD
   // The address.call() syntax is no longer recommended, see:
   // https://github.com/ethereum/solidity/issues/2884
   function executeCall(address to, uint256 value, bytes memory data) internal returns (bool success) {
@@ -544,6 +545,8 @@ contract ColonyTask is ColonyStorage {
       }
   }
 
+=======
+>>>>>>> Add support for arbitrary transactions
   // Get the function signature and task id from the transaction bytes data
   // Note: Relies on the encoded function's first parameter to be the uint256 taskId
   function deconstructCall(bytes memory _data) internal pure returns (bytes4 sig, uint256 taskId) {
