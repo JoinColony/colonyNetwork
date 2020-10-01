@@ -16,6 +16,7 @@
 */
 
 pragma solidity 0.5.8;
+pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
 import "./../common/CommonStorage.sol";
