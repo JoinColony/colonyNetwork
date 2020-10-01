@@ -335,7 +335,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
     sig = bytes4(keccak256("uninstallExtension(bytes32)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-    sig = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32,bool)"));
+    sig = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
 
   }

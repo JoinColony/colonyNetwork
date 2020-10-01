@@ -86,26 +86,24 @@ contract ColonyRoles is ColonyStorage {
     uint256 _childSkillIndex,
     address _user,
     uint256 _domainId,
-    bytes32 _roles,
-    bool _setTo
+    bytes32 _roles
   ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) archSubdomain(_permissionDomainId, _domainId)
   {
     // This is not strictly necessary, since these roles are never used in subdomains
     require(_roles & ROOT_ROLES == 0 || _domainId == 1, "colony-bad-domain-for-role");
-
     require(uint256(_roles) < 2 ** uint256(ColonyRole.NUMBER_OF_ROLES), "colony-roles-do-not-exist");
 
     bytes32 roles = _roles;
-    uint8 roleId;
+    bool setTo;
 
-    while (roles > 0) {
-      if (uint256(roles) % 2 == 1) {
-        ColonyAuthority(address(authority)).setUserRole(_user, _domainId, roleId, _setTo);
+    for (uint8 roleId; roleId < uint8(ColonyRole.NUMBER_OF_ROLES); roleId += 1) {
+      setTo = uint256(roles) % 2 == 1;
 
-        emit ColonyRoleSet(_user, _domainId, roleId, _setTo);
-      }
+      ColonyAuthority(address(authority)).setUserRole(_user, _domainId, roleId, setTo);
+
+      emit ColonyRoleSet(_user, _domainId, roleId, setTo);
+
       roles >>= 1;
-      roleId += 1;
     }
   }
 

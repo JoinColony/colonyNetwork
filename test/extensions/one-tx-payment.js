@@ -52,9 +52,9 @@ contract("One transaction payments", (accounts) => {
     const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
     oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
 
-    await colony.setUserRoles(1, UINT256_MAX, oneTxPayment.address, 1, ROLES, true);
+    await colony.setUserRoles(1, UINT256_MAX, oneTxPayment.address, 1, ROLES);
     // Give a user colony administration rights (needed for one-tx)
-    await colony.setUserRoles(1, UINT256_MAX, COLONY_ADMIN, 1, ROLES, true);
+    await colony.setUserRoles(1, UINT256_MAX, COLONY_ADMIN, 1, ROLES);
   });
 
   describe("one tx payments", () => {
