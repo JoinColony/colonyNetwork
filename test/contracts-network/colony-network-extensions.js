@@ -154,6 +154,9 @@ contract("Colony Network Extensions", (accounts) => {
       const owner = await extension.owner();
       expect(owner).to.equal(colonyNetwork.address);
 
+      const extensionId = await colonyNetwork.getExtensionIdentifier(extension.address, colony.address);
+      expect(extensionId).to.equal(TEST_EXTENSION);
+
       // Only colonyNetwork can install the extension
       await checkErrorRevert(extension.install(colony.address), "ds-auth-unauthorized");
     });
@@ -252,6 +255,9 @@ contract("Colony Network Extensions", (accounts) => {
 
       const colonyBalance = await web3GetBalance(colony.address);
       expect(new BN(colonyBalance)).to.eq.BN(100);
+
+      const extensionId = await colonyNetwork.getExtensionIdentifier(extension.address, colony.address);
+      expect(extensionId).to.equal(ethers.constants.HashZero);
     });
 
     it("does not allow non-root users to uninstall an extension", async () => {

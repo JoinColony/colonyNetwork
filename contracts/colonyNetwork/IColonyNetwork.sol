@@ -333,6 +333,12 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return installation The address of the installed extension
   function getExtensionInstallation(bytes32 extensionId, address colony) public view returns (address installation);
 
+  /// @notice Get an extension's identifier (if installed).
+  /// @param extension Address of the extension
+  /// @param colony Address of the colony the extension is installed in
+  /// @return extensionId The identifier of the extension
+  function getExtensionIdentifier(address extension, address colony) public view returns (bytes32 extensionId);
+
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
   /// @return _feeInverse The inverse of the network fee
   function getFeeInverse() public view returns (uint256 _feeInverse);
