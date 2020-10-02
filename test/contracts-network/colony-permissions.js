@@ -402,7 +402,9 @@ contract("ColonyPermissions", (accounts) => {
 
     it("should not allow a role to be set that doesn't exist", async () => {
       const nonexistentRole = ethers.BigNumber.from(2).pow(7).toHexString();
-      await checkErrorRevert(colony.setUserRoles(1, 0, USER2, 2, nonexistentRole, { from: FOUNDER }), "colony-roles-do-not-exist");
+      await colony.setUserRoles(1, 0, USER2, 2, nonexistentRole, { from: FOUNDER });
+      const userRoles = await colony.getUserRoles(USER2, 2);
+      expect(userRoles).to.equal(ethers.constants.HashZero);
     });
   });
 });

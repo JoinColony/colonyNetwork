@@ -91,7 +91,6 @@ contract ColonyRoles is ColonyStorage {
   {
     // This is not strictly necessary, since these roles are never used in subdomains
     require(_roles & ROOT_ROLES == 0 || _domainId == 1, "colony-bad-domain-for-role");
-    require(uint256(_roles) < 2 ** uint256(ColonyRole.NUMBER_OF_ROLES), "colony-roles-do-not-exist");
 
     bytes32 roles = _roles;
     bool setTo;
