@@ -1452,8 +1452,7 @@ Set several roles in one transaction. Can be called by root role or architecture
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_user|address|User we want to give a role to
 |_domainId|uint256|Domain in which we are giving user the role
-|_roles|bytes32|Byte array representing all the roles to be set
-|_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
+|_roles|bytes32|Byte array representing the desired role setting (1 for on, 0 for off)
 
 
 ### `startNextRewardPayout`

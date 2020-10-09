@@ -108,15 +108,13 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
   /// @param _user User we want to give a role to
   /// @param _domainId Domain in which we are giving user the role
-  /// @param _roles Byte array representing all the roles to be set
-  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
+  /// @param _roles Byte array representing the desired role setting (1 for on, 0 for off)
   function setUserRoles(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     address _user,
     uint256 _domainId,
-    bytes32 _roles,
-    bool _setTo
+    bytes32 _roles
     ) public;
 
   /// @notice Check whether a given user has a given role for the colony.

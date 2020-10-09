@@ -90,7 +90,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "setAnnualMetaColonyStipend(uint256)");
     addRoleCapability(ROOT_ROLE, "setReputationMiningCycleReward(uint256)");
     addRoleCapability(ROOT_ROLE, "addExtensionToNetwork(bytes32,address)");
-    addRoleCapability(ROOT_ROLE, "setUserRoles(uint256,uint256,address,uint256,bytes32,bool)");
+    addRoleCapability(ROOT_ROLE, "setUserRoles(uint256,uint256,address,uint256,bytes32)");
     addRoleCapability(ROOT_ROLE, "installExtension(bytes32,uint256)");
     addRoleCapability(ROOT_ROLE, "upgradeExtension(bytes32,uint256)");
     addRoleCapability(ROOT_ROLE, "deprecateExtension(bytes32,bool)");
@@ -99,7 +99,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ARBITRATION_ROLE, "emitDomainReputationPenalty(uint256,uint256,uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "emitSkillReputationPenalty(uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)");
-    addRoleCapability(ARCHITECTURE_ROLE, "setUserRoles(uint256,uint256,address,uint256,bytes32,bool)");
+    addRoleCapability(ARCHITECTURE_ROLE, "setUserRoles(uint256,uint256,address,uint256,bytes32)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {
