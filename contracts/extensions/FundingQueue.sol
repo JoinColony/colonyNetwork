@@ -77,6 +77,12 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
   mapping (uint256 => uint256) queue; // proposalId => nextProposalId
 
   // Public functions
+
+  /// @notice Returns the identifier of the extension
+  function identifier() public override pure returns (bytes32) {
+    return keccak256("FundingQueue");
+  }
+
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
     return 1;

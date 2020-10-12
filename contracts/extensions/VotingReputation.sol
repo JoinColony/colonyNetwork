@@ -93,6 +93,11 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
   uint256 revealPeriod; // Length of time for revealing votes
   uint256 escalationPeriod; // Length of time for escalating after a vote
 
+  /// @notice Returns the identifier of the extension
+  function identifier() public override pure returns (bytes32) {
+    return keccak256("VotingReputation");
+  }
+
   /// @notice Return the version number
   /// @return The version number
   function version() public pure override returns (uint256) {

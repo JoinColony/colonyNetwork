@@ -29,6 +29,11 @@ contract OneTxPayment is ColonyExtension, DSMath {
   ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
   ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
 
+  /// @notice Returns the identifier of the extension
+  function identifier() public override pure returns (bytes32) {
+    return keccak256("OneTxPayment");
+  }
+
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
     return 1;

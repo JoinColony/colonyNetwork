@@ -64,7 +64,7 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _to Contract to receive the function call (cannot be network or token locking)
   /// @param _action Bytes array encoding the function call and arguments
   /// @return success Boolean indicating whether the transaction succeeded
-  function makeArbitraryTransaction(address _to, bytes memory _action) public returns (bool success);
+  function makeArbitraryTransaction(address _to, bytes memory _action) external returns (bool success);
 
   /// @notice Set new colony root role.
   /// Can be called by root role only.

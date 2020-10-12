@@ -22,6 +22,10 @@ import "../extensions/ColonyExtension.sol";
 
 
 abstract contract TestExtension is ColonyExtension {
+  function identifier() public override pure returns (bytes32) {
+    return keccak256("TestExtension");
+  }
+
   function install(address _colony) public override auth {
     require(address(colony) == address(0x0), "extension-already-installed");
 

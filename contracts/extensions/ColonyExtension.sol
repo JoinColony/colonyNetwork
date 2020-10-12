@@ -32,6 +32,7 @@ abstract contract ColonyExtension is DSAuth {
     _;
   }
 
+  function identifier() public pure virtual returns (bytes32);
   function version() public pure virtual returns (uint256);
   function install(address _colony) public virtual;
   function finishUpgrade() public virtual;

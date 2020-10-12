@@ -6,7 +6,16 @@ import bnChai from "bn-chai";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE, SECONDS_PER_DAY, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
-import { checkErrorRevert, makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime, getBlockTime } from "../../helpers/test-helper";
+
+import {
+  checkErrorRevert,
+  web3GetCode,
+  makeReputationKey,
+  makeReputationValue,
+  getActiveRepCycle,
+  forwardTime,
+  getBlockTime,
+} from "../../helpers/test-helper";
 
 import {
   setupColonyNetwork,
@@ -154,9 +163,17 @@ contract("Funding Queues", (accounts) => {
 
       await checkErrorRevert(fundingQueue.install(colony.address), "extension-already-installed");
 
+      const identifier = await fundingQueue.identifier();
+      const version = await fundingQueue.version();
+      expect(identifier).to.equal(FUNDING_QUEUE);
+      expect(version).to.eq.BN(1);
+
       await fundingQueue.finishUpgrade();
       await fundingQueue.deprecate(true);
       await fundingQueue.uninstall();
+
+      const code = await web3GetCode(fundingQueue.address);
+      expect(code).to.equal("0x");
     });
 
     it("can install the extension with the extension manager", async () => {

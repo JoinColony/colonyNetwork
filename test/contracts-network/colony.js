@@ -29,7 +29,7 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const TransferTest = artifacts.require("TransferTest");
 const Token = artifacts.require("Token");
 
-contract.only("Colony", (accounts) => {
+contract("Colony", (accounts) => {
   let colony;
   let token;
   let colonyNetwork;
