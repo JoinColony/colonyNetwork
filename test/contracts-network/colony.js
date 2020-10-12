@@ -149,11 +149,11 @@ contract("Colony", (accounts) => {
     });
 
     it("should not be able to make arbitrary transactions to transfer tokens", async () => {
-      const action1 = await encodeTxData(token, "transfer", [USER0, WAD]);
-      const action2 = await encodeTxData(token, "transferFrom", [colony.address, USER0, WAD]);
+      const action1 = await encodeTxData(token, "approve", [USER0, WAD]);
+      const action2 = await encodeTxData(token, "transfer", [USER0, WAD]);
 
-      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, 0, action1), "colony-cannot-call-erc20-transfer");
-      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, 0, action2), "colony-cannot-call-erc20-transfer-from");
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, 0, action1), "colony-cannot-call-erc20-approve");
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, 0, action2), "colony-cannot-call-erc20-transfer");
     });
 
     it("should let funding pot information be read", async () => {
