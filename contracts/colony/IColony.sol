@@ -115,7 +115,7 @@ interface IColony is ColonyDataTypes, IRecovery {
     address _user,
     uint256 _domainId,
     bytes32 _roles
-    ) public;
+    ) external;
 
   /// @notice Check whether a given user has a given role for the colony.
   /// Calls the function of the same name on the colony's authority contract.
@@ -144,7 +144,7 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _childDomainId The domain where we want to edit roles
   /// @return canSet Boolean indicating whether the given user is allowed to edit roles in the target domain.
   function userCanSetRoles(address _user, uint256 _domainId, uint256 _childSkillIndex, uint256 _childDomainId)
-    public view returns (bool canSet);
+    external view returns (bool canSet);
 
   /// @notice Gets the bytes32 representation of the roles for a user in a given domain
   /// @param _user The user whose roles we want to get
@@ -211,23 +211,23 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @notice Install an extension to the colony. Secured function to authorised members.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param version The new extension version to install
-  function installExtension(bytes32 extensionId, uint256 version) public;
+  function installExtension(bytes32 extensionId, uint256 version) external;
 
   /// @notice Upgrade an extension in a colony. Secured function to authorised members.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param newVersion The version to upgrade to (must be one larger than the current version)
-  function upgradeExtension(bytes32 extensionId, uint256 newVersion) public;
+  function upgradeExtension(bytes32 extensionId, uint256 newVersion) external;
 
   /// @notice Set the deprecation of an extension in a colony. Secured function to authorised members.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param deprecated Whether to deprecate the extension or not
-  function deprecateExtension(bytes32 extensionId, bool deprecated) public;
+  function deprecateExtension(bytes32 extensionId, bool deprecated) external;
 
   /// @notice Uninstall an extension from a colony. Secured function to authorised members.
   /// @dev This is a permanent action -- re-installing the extension will deploy a new contract
   /// @dev It is recommended to deprecate an extension before uninstalling to allow active objects to be resolved
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
-  function uninstallExtension(bytes32 extensionId) public;
+  function uninstallExtension(bytes32 extensionId) external;
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`.
   /// New funding pot is created and associated with the domain here.

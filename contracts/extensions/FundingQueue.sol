@@ -46,7 +46,6 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
   uint256 constant COOLDOWN_PERIOD = 14 days;
 
   // Initialization data
-  IColony colony;
   IColonyNetwork colonyNetwork;
   ITokenLocking tokenLocking;
   address token;
@@ -79,13 +78,13 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
 
   // Public functions
   /// @notice Returns the version of the extension
-  function version() public pure returns (uint256) {
+  function version() public override pure returns (uint256) {
     return 1;
   }
 
   /// @notice Configures the extension
   /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public auth {
+  function install(address _colony) public override auth {
     require(address(colony) == address(0x0), "extension-already-installed");
 
     colony = IColony(_colony);
@@ -97,15 +96,15 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public auth {}
+  function finishUpgrade() public override auth {}
 
   /// @notice Called when deprecating (or undeprecating) the extension
-  function deprecate(bool _deprecated) public auth {
+  function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
   }
 
   /// @notice Called when uninstalling the extension
-  function uninstall() public auth {
+  function uninstall() public override auth {
     selfdestruct(address(uint160(address(colony))));
   }
 

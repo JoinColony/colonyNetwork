@@ -152,7 +152,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _colonyName The label to register (if null, no label is registered)
   /// @return colonyAddress Address of the newly created colony
   function createColony(address _tokenAddress, uint256 _version, string memory _colonyName)
-    public returns (address colonyAddress);
+    external returns (address colonyAddress);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
   /// Allowed to be called by the Meta Colony only.
@@ -300,38 +300,38 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @dev The extension version is queried from the resolver itself.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param resolver The deployed resolver containing the extension contract logic
-  function addExtensionToNetwork(bytes32 extensionId, address resolver) public;
+  function addExtensionToNetwork(bytes32 extensionId, address resolver) external;
 
   /// @notice Install an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param version Version of the extension to install
-  function installExtension(bytes32 extensionId, uint256 version) public;
+  function installExtension(bytes32 extensionId, uint256 version) external;
 
   /// @notice Upgrade an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param newVersion Version of the extension to upgrade to (must be one greater than current)
-  function upgradeExtension(bytes32 extensionId, uint256 newVersion) public;
+  function upgradeExtension(bytes32 extensionId, uint256 newVersion) external;
 
   /// @notice Set the deprecation of an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param deprecated Whether to deprecate the extension or not
-  function deprecateExtension(bytes32 extensionId, bool deprecated) public;
+  function deprecateExtension(bytes32 extensionId, bool deprecated) external;
 
   /// @notice Uninstall an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
-  function uninstallExtension(bytes32 extensionId) public;
+  function uninstallExtension(bytes32 extensionId) external;
 
   /// @notice Get an extension's resolver.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param version Version of the extension
   /// @return resolver The address of the deployed resolver
-  function getExtensionResolver(bytes32 extensionId, uint256 version) public view returns (address resolver);
+  function getExtensionResolver(bytes32 extensionId, uint256 version) external view returns (address resolver);
 
   /// @notice Get an extension's installation.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param colony Address of the colony the extension is installed in
   /// @return installation The address of the installed extension
-  function getExtensionInstallation(bytes32 extensionId, address colony) public view returns (address installation);
+  function getExtensionInstallation(bytes32 extensionId, address colony) external view returns (address installation);
 
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
   /// @return _feeInverse The inverse of the network fee

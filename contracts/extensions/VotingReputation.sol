@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
@@ -68,7 +68,6 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
   // Initialization data
   ExtensionState state;
 
-  IColony colony;
   IColonyNetwork colonyNetwork;
   ITokenLocking tokenLocking;
   address token;
@@ -96,13 +95,13 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
 
   /// @notice Return the version number
   /// @return The version number
-  function version() public pure returns (uint256) {
+  function version() public pure override returns (uint256) {
     return 1;
   }
 
   /// @notice Install the extension
   /// @param _colony Base colony for the installation
-  function install(address _colony) public {
+  function install(address _colony) public override {
     require(address(colony) == address(0x0), "extension-already-installed");
 
     colony = IColony(_colony);
@@ -167,15 +166,15 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public auth {}
+  function finishUpgrade() public override auth {}
 
   /// @notice Called when deprecating (or undeprecating) the extension
-  function deprecate(bool _deprecated) public auth {
+  function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
   }
 
   /// @notice Called when uninstalling the extension
-  function uninstall() public auth {
+  function uninstall() public override auth {
     selfdestruct(address(uint160(address(colony))));
   }
 
@@ -337,7 +336,7 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
 
     // Move to vote submission once both sides are fully staked
     if (motion.stakes[NAY] == requiredStake && motion.stakes[YAY] == requiredStake) {
-      motion.events[STAKE_END] = uint64(now);
+      motion.events[STAKE_END] = uint64(block.timestamp);
       motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
       motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
@@ -348,7 +347,7 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
       (_vote == NAY && motion.stakes[NAY] == requiredStake) ||
       (_vote == YAY && motion.stakes[YAY] == requiredStake)
     ) {
-      motion.events[STAKE_END] = uint64(now + stakePeriod);
+      motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
       motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
       motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
@@ -394,8 +393,8 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
     emit MotionVoteSubmitted(_motionId, msg.sender);
 
     if (motion.repSubmitted >= wmul(motion.skillRep, maxVoteFraction)) {
-      motion.events[SUBMIT_END] = uint64(now);
-      motion.events[REVEAL_END] = uint64(now + revealPeriod);
+      motion.events[SUBMIT_END] = uint64(block.timestamp);
+      motion.events[REVEAL_END] = uint64(block.timestamp + revealPeriod);
 
       emit MotionEventSet(_motionId, SUBMIT_END);
     }
@@ -439,7 +438,7 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
 
     // See if reputation revealed matches reputation submitted
     if (add(motion.votes[NAY], motion.votes[YAY]) == motion.repSubmitted) {
-      motion.events[REVEAL_END] = uint64(now);
+      motion.events[REVEAL_END] = uint64(block.timestamp);
 
       emit MotionEventSet(_motionId, REVEAL_END);
     }
@@ -483,7 +482,7 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
 
     uint256 requiredStake = getRequiredStake(_motionId);
     motion.events[STAKE_END] = (motion.stakes[NAY] < requiredStake || motion.stakes[YAY] < requiredStake) ?
-      uint64(now + stakePeriod) : uint64(now);
+      uint64(block.timestamp + stakePeriod) : uint64(block.timestamp);
 
     motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
     motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
@@ -492,7 +491,7 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
 
     emit MotionEscalated(_motionId, msg.sender, domainId, _newDomainId);
 
-    if (motion.events[STAKE_END] == uint64(now)) {
+    if (motion.events[STAKE_END] == uint64(block.timestamp)) {
       emit MotionEventSet(_motionId, STAKE_END);
     }
   }
@@ -696,7 +695,7 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
     ) {
 
       // Are we still staking?
-      if (now < motion.events[STAKE_END]) {
+      if (block.timestamp < motion.events[STAKE_END]) {
         return MotionState.Staking;
       // If not, did the YAY side stake?
       } else if (motion.stakes[YAY] == requiredStake) {
@@ -712,12 +711,12 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
     // Fully staked, go to a vote
     } else {
 
-      if (now < motion.events[SUBMIT_END]) {
+      if (block.timestamp < motion.events[SUBMIT_END]) {
         return MotionState.Submit;
-      } else if (now < motion.events[REVEAL_END]) {
+      } else if (block.timestamp < motion.events[REVEAL_END]) {
         return MotionState.Reveal;
       } else if (
-        now < motion.events[REVEAL_END] + escalationPeriod &&
+        block.timestamp < motion.events[REVEAL_END] + escalationPeriod &&
         motion.domainId > 1
       ) {
         return MotionState.Closed;
@@ -830,7 +829,7 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
     motionCount += 1;
     Motion storage motion = motions[motionCount];
 
-    motion.events[STAKE_END] = uint64(now + stakePeriod);
+    motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
     motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
     motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
@@ -917,7 +916,7 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
               //   returning 0 on error (eg. out of gas) and 1 on success
 
               // call(g,   a,  v, in,                insize,        out, outsize)
-      success := call(gas, to, 0, add(action, 0x20), mload(action), 0, 0)
+      success := call(gas(), to, 0, add(action, 0x20), mload(action), 0, 0)
     }
 
     return success;
