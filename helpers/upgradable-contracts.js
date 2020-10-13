@@ -38,7 +38,7 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
     const fName = value.name;
     const fType = value.type;
     // These are from DSAuth, and so are on EtherRouter itself without any more help.
-    if (fName !== "authority" && fName !== "owner" && !fName.includes("coverage_")) {
+    if (fName !== "authority" && fName !== "owner" && !fName.includes("c_0x")) {
       // We only care about functions.
       if (fType === "function") {
         // Gets the types of the parameters, which is all we care about for function signatures.
