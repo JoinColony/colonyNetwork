@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.0;
+pragma solidity 0.7.3;
 
 import "./../common/CommonAuthority.sol";
 

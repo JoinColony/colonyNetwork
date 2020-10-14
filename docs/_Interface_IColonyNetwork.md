@@ -148,26 +148,6 @@ Creates a new colony in the network, at version 3
 
 ### `createColony`
 
-Creates a new colony in the network, with an optional ENS name
-
-*Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
-|_version|uint256|The version of colony to deploy (pass 0 for the current version)
-|_colonyName|string|The label to register (if null, no label is registered)
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|colonyAddress|address|Address of the newly created colony
-
-### `createColony`
-
 Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options, at version 4
 
 *Note: This is now deprecated and will be removed in a future version*
@@ -181,6 +161,26 @@ Overload of the simpler `createColony` -- creates a new colony in the network wi
 |_colonyName|string|The label to register (if null, no label is registered)
 |_orbitdb|string|DEPRECATED Currently a no-op
 |_useExtensionManager|bool|DEPRECATED Currently a no-op
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
+Creates a new colony in the network, with an optional ENS name
+
+*Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
 
 **Return Parameters**
 
