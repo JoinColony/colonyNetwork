@@ -141,10 +141,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
   // DEPRECATED, only deploys version 4 colonies.
   function createColony(
     address _tokenAddress,
-    uint256 _version,
+    uint256 _version, // solhint-disable-line no-unused-vars
     string memory _colonyName,
-    string memory _orbitdb,
-    bool _useExtensionManager
+    string memory _orbitdb, // solhint-disable-line no-unused-vars
+    bool _useExtensionManager // solhint-disable-line no-unused-vars
   ) public stoppable returns (address)
   {
     return createColony(_tokenAddress, 4, _colonyName);
@@ -291,7 +291,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     );
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery { // solhint-disable-line no-empty-blocks
   }
 
   function getFeeInverse() public view returns (uint256 _feeInverse) {

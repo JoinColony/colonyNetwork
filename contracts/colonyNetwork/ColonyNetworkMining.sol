@@ -66,6 +66,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     return replacementReputationUpdateLogsExist[_reputationMiningCycle];
   }
 
+  // solhint-disable-next-line no-unused-vars
   function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers, uint256 reward) public
   stoppable
   onlyReputationMiningCycle

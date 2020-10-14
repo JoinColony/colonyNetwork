@@ -69,7 +69,7 @@ contract CoinMachine is DSMath, ColonyExtension {
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
+  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
 
   /// @notice Called when deprecating (or undeprecating) the extension
   function deprecate(bool _deprecated) public override auth {

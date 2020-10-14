@@ -24,7 +24,7 @@ import "./Resolver.sol";
 contract EtherRouter is DSAuth {
   Resolver public resolver;
 
-  fallback() external payable {
+  fallback() external payable { // solhint-disable-line no-complex-fallback
     if (msg.sig == 0) {
       return;
     }

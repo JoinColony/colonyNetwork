@@ -175,7 +175,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     makeConditionalDeposit(_token, _amount, _recipient);
   }
 
-  function reward(address _recipient, uint256 _amount) public pure {
+  function reward(address _recipient, uint256 _amount) public pure { // solhint-disable-line no-empty-blocks
 
   }
 

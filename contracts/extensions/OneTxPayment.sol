@@ -49,10 +49,10 @@ contract OneTxPayment is ColonyExtension {
   }
 
   /// @notice Called when upgrading the extension (currently a no-op since this OneTxPayment does not support upgrading)
-  function finishUpgrade() public override auth {}
+  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
 
   /// @notice Called when deprecating (or undeprecating) the extension (currently a no-op since OneTxPayment is stateless)
-  function deprecate(bool _deprecated) public override auth {}
+  function deprecate(bool _deprecated) public override auth {} // solhint-disable-line no-empty-blocks
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {

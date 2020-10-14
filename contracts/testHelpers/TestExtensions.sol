@@ -28,7 +28,7 @@ abstract contract TestExtension is ColonyExtension {
     colony = IColony(_colony);
   }
 
-  function finishUpgrade() public override auth {}
+  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
 
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
@@ -47,8 +47,8 @@ contract TestExtension0 is TestExtension {
 
 contract TestExtension1 is TestExtension {
   function version() public pure override returns (uint256) { return 1; }
-  function receiveEther() external payable {}
-  function foo() public notDeprecated {}
+  function receiveEther() external payable {} // solhint-disable-line no-empty-blocks
+  function foo() public notDeprecated {} // solhint-disable-line no-empty-blocks
 }
 
 

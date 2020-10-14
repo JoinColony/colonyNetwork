@@ -21,7 +21,7 @@ import "./../common/CommonAuthority.sol";
 
 
 contract ColonyNetworkAuthority is CommonAuthority {
-  constructor(address colonyNetwork) public CommonAuthority(colonyNetwork) {
+  constructor(address colonyNetwork) public CommonAuthority(colonyNetwork) { // solhint-disable-line no-empty-blocks
 
   }
 }

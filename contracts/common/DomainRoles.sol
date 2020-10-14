@@ -21,21 +21,21 @@ import "./../../lib/dappsys/roles.sol";
 
 
 contract DomainRoles is DSRoles {
-  mapping(address=>mapping(uint256=>bytes32)) internal _user_domain_roles;
+  mapping(address=>mapping(uint256=>bytes32)) internal userDomainRoles;
 
   // New function signatures taking arbitrary domains
 
   function getUserRoles(address who, uint256 where) public view returns (bytes32) {
-    return _user_domain_roles[who][where];
+    return userDomainRoles[who][where];
   }
 
   function setUserRole(address who, uint256 where, uint8 role, bool enabled) public auth {
-    bytes32 last_roles = _user_domain_roles[who][where];
+    bytes32 lastRoles = userDomainRoles[who][where];
     bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
     if (enabled) {
-      _user_domain_roles[who][where] = last_roles | shifted;
+      userDomainRoles[who][where] = lastRoles | shifted;
     } else {
-      _user_domain_roles[who][where] = last_roles & BITNOT(shifted);
+      userDomainRoles[who][where] = lastRoles & BITNOT(shifted);
     }
   }
 
@@ -46,17 +46,17 @@ contract DomainRoles is DSRoles {
   }
 
   function canCall(address caller, uint256 where, address code, bytes4 sig) public view returns (bool) {
-    bytes32 has_roles = getUserRoles(caller, where);
-    bytes32 needs_one_of = getCapabilityRoles(code, sig);
-    return bytes32(0) != has_roles & needs_one_of;
+    bytes32 hasRoles = getUserRoles(caller, where);
+    bytes32 needsOneOf = getCapabilityRoles(code, sig);
+    return bytes32(0) != hasRoles & needsOneOf;
   }
 
   function canCallOnlyBecause(address caller, uint256 where, uint8 role, address code, bytes4 sig) public view returns (bool) {
-    bytes32 has_roles = getUserRoles(caller, where);
-    bytes32 needs_one_of = getCapabilityRoles(code, sig);
+    bytes32 hasRoles = getUserRoles(caller, where);
+    bytes32 needsOneOf = getCapabilityRoles(code, sig);
     bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
     // See if the permission comes from a *specific* role
-    return bytes32(0) == (needs_one_of & has_roles) ^ shifted;
+    return bytes32(0) == (needsOneOf & hasRoles) ^ shifted;
   }
 
   // Support old function signatures for root domain

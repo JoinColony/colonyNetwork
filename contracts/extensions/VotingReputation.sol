@@ -166,7 +166,7 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
+  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
 
   /// @notice Called when deprecating (or undeprecating) the extension
   function deprecate(bool _deprecated) public override auth {
@@ -432,7 +432,6 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
 
     uint256 voterReward = getVoterReward(_motionId, userRep);
     motion.paidVoterComp = add(motion.paidVoterComp, voterReward);
-    tokenLocking.transfer(token, voterReward, msg.sender, true);
 
     emit MotionVoteRevealed(_motionId, msg.sender, _vote);
 
@@ -442,6 +441,7 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
 
       emit MotionEventSet(_motionId, REVEAL_END);
     }
+    tokenLocking.transfer(token, voterReward, msg.sender, true);
   }
 
   /// @notice Escalate a motion to a higher domain
