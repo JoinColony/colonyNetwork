@@ -11196,10 +11196,9 @@ solc@^0.6.0:
     semver "^5.5.0"
     tmp "0.0.33"
 
-solhint@^3.2.0:
+"solhint@https://github.com/area/solhint.git":
   version "3.2.1"
-  resolved "https://registry.yarnpkg.com/solhint/-/solhint-3.2.1.tgz#62f250930fe2fdaf8787e50ad35c038eedb52bbf"
-  integrity sha512-Pq6jZxHp1TJ3K7dGxuY5c+ByMmUwJ/vs8FTZmeryf0SKB+zjPDWfYGpchPqW+PSbVzRCpS2O/+57O64mG4x/JA==
+  resolved "https://github.com/area/solhint.git#697fae1e9dd1a98412aec31bec079d461095fea0"
   dependencies:
     "@solidity-parser/parser" "^0.8.1"
     ajv "^6.6.1"

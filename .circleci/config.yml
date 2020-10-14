@@ -2,7 +2,7 @@ version: 2
 
 job_common: &job_common
   docker:
-    - image: circleci/node:10.19-stretch
+    - image: circleci/node:12.16.3-stretch
   working_directory: ~/colonyNetwork
 job_python: &job_python
   docker:
