@@ -76,12 +76,12 @@ contract OneTxPayment is ColonyExtension {
   )
     public
   {
-    require(_workers.length == _tokens.length && _workers.length == _amounts.length, "colony-one-tx-payment-invalid-input");
+    require(_workers.length == _tokens.length && _workers.length == _amounts.length, "one-tx-payment-invalid-input");
 
     require(
       colony.hasInheritedUserRole(msg.sender, 1, FUNDING, _childSkillIndex, _domainId) &&
       colony.hasInheritedUserRole(msg.sender, _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
-      "colony-one-tx-payment-not-authorized"
+      "one-tx-payment-not-authorized"
     );
 
     if (_workers.length == 1) {
@@ -107,12 +107,16 @@ contract OneTxPayment is ColonyExtension {
 
          // If a new worker, start a new slot
         if (idx == 0 || _workers[idx] != _workers[idx-1]) {
+          require(idx == 0 || _workers[idx] > _workers[idx-1], "one-tx-payment-bad-worker-order");
+
           slot++;
           colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
 
           if (_skillId != 0) {
             colony.setExpenditureSkill(expenditureId, slot, _skillId);
           }
+        } else {
+          require(_tokens[idx] > _tokens[idx-1], "one-tx-payment-bad-token-order");
         }
 
         colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
@@ -149,13 +153,12 @@ contract OneTxPayment is ColonyExtension {
   )
     public
   {
-    require(_workers.length == _tokens.length && _workers.length == _amounts.length, "colony-one-tx-payment-invalid-input");
-    validatePermissions(_callerPermissionDomainId, _callerChildSkillIndex, _domainId);
+    require(_workers.length == _tokens.length && _workers.length == _amounts.length, "one-tx-payment-invalid-input");
 
     require(
       colony.hasInheritedUserRole(msg.sender, _callerPermissionDomainId, FUNDING, _callerChildSkillIndex, _domainId) &&
       colony.hasInheritedUserRole(msg.sender, _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
-      "colony-one-tx-payment-not-authorized"
+      "one-tx-payment-not-authorized"
     );
 
     if (_workers.length == 1) {
@@ -183,12 +186,16 @@ contract OneTxPayment is ColonyExtension {
 
          // If a new worker, start a new slot
         if (idx == 0 || _workers[idx] != _workers[idx-1]) {
+          require(idx == 0 || _workers[idx] > _workers[idx-1], "one-tx-payment-bad-worker-order");
+
           slot++;
           colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
 
           if (_skillId != 0) {
             colony.setExpenditureSkill(expenditureId, slot, _skillId);
           }
+        } else {
+          require(_tokens[idx] > _tokens[idx-1], "one-tx-payment-bad-token-order");
         }
 
         colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
@@ -223,16 +230,5 @@ contract OneTxPayment is ColonyExtension {
       }
       colony.claimExpenditurePayout(_expenditureId, slot, _tokens[idx]);
     }
-  }
-
-  function validatePermissions(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId)
-    internal
-    view
-  {
-    require(
-      colony.hasInheritedUserRole(msg.sender, _permissionDomainId, ColonyDataTypes.ColonyRole.Funding, _childSkillIndex, _domainId) &&
-      colony.hasInheritedUserRole(msg.sender, _permissionDomainId, ColonyDataTypes.ColonyRole.Administration, _childSkillIndex, _domainId),
-      "colony-one-tx-payment-not-authorized"
-    );
   }
 }
