@@ -1,0 +1,11 @@
+{
+  "extends": "solhint:recommended",
+  "rules": {
+    "compiler-version": ["error", "^0.7.3"],
+    "reason-string": ["warn",{"maxLength":96}],
+    "not-rely-on-time": ["off"],
+    "state-visibility": ["off"],
+    "no-inline-assembly": ["off"],
+    "max-states-count": ["off"]
+  }
+}

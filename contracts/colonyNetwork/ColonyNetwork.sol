@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental "ABIEncoderV2";
 
 import "./../common/EtherRouter.sol";
@@ -141,10 +141,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
   // DEPRECATED, only deploys version 4 colonies.
   function createColony(
     address _tokenAddress,
-    uint256 _version,
+    uint256 _version, // solhint-disable-line no-unused-vars
     string memory _colonyName,
-    string memory _orbitdb,
-    bool _useExtensionManager
+    string memory _orbitdb, // solhint-disable-line no-unused-vars
+    bool _useExtensionManager // solhint-disable-line no-unused-vars
   ) public stoppable returns (address)
   {
     return createColony(_tokenAddress, 4, _colonyName);
@@ -291,7 +291,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     );
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery { // solhint-disable-line no-empty-blocks
   }
 
   function getFeeInverse() public view returns (uint256 _feeInverse) {
@@ -311,8 +311,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
     // Can be called by anyone
     require(lastMetaColonyStipendIssued > 0, "colony-network-metacolony-stipend-not-set");
     // How much in total should have been issued since then
-    uint256 amountToIssue = mul(annualMetaColonyStipend, sub(now, lastMetaColonyStipendIssued)) / (365 days);
-    lastMetaColonyStipendIssued = now;
+    uint256 amountToIssue = mul(annualMetaColonyStipend, sub(block.timestamp, lastMetaColonyStipendIssued)) / (365 days);
+    lastMetaColonyStipendIssued = block.timestamp;
 
     // mintTokensFor is coming in #835, use that instead of this.
     IMetaColony(metaColony).mintTokensForColonyNetwork(amountToIssue);
@@ -323,7 +323,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function setAnnualMetaColonyStipend(uint256 amount) public stoppable
   calledByMetaColony
   {
-    if (lastMetaColonyStipendIssued == 0) { lastMetaColonyStipendIssued = now; }
+    if (lastMetaColonyStipendIssued == 0) { lastMetaColonyStipendIssued = block.timestamp; }
     annualMetaColonyStipend = amount;
   }
 

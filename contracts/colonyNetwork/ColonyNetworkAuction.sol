@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 
 import "./ColonyNetworkStorage.sol";
 
@@ -28,7 +28,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     require(_token != address(0x0), "colony-auction-invalid-token");
 
     uint lastAuctionTimestamp = recentAuctions[_token];
-    require(lastAuctionTimestamp == 0 || now - lastAuctionTimestamp >= 30 days, "colony-auction-start-too-soon");
+    require(lastAuctionTimestamp == 0 || block.timestamp - lastAuctionTimestamp >= 30 days, "colony-auction-start-too-soon");
 
     address clny = IMetaColony(metaColony).getToken();
     require(clny != address(0x0), "colony-auction-invalid-clny-token");
@@ -45,7 +45,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     DutchAuction auction = new DutchAuction(clny, _token, metaColony);
     assert(ERC20Extended(_token).transfer(address(auction), availableTokens));
     auction.start();
-    recentAuctions[_token] = now;
+    recentAuctions[_token] = block.timestamp;
     emit AuctionCreated(address(auction), _token, availableTokens);
   }
 }
@@ -130,7 +130,7 @@ contract DutchAuction is DSMath {
     // Set the minimum price as such that it doesn't cause the finalPrice to be 0
     minPrice = (quantity >= TOKEN_MULTIPLIER) ? 1 : TOKEN_MULTIPLIER / quantity;
 
-    startTime = now;
+    startTime = block.timestamp;
     started = true;
 
     emit AuctionStarted(address(token), quantity, minPrice);
@@ -163,7 +163,7 @@ contract DutchAuction is DSMath {
   auctionStartedAndOpen
   returns (uint256)
   {
-    uint duration = sub(now, startTime);
+    uint duration = sub(block.timestamp, startTime);
     uint daysOpen = duration / 86400;
     if (daysOpen > 36) {
       return minPrice;
@@ -188,10 +188,10 @@ contract DutchAuction is DSMath {
     } else if (_remainingToEndAuction != 0) {
       // Required amount left to end the auction is less than the bid, so adjust bid amount down to the required quantity only and close the auction
       amount = _remainingToEndAuction;
-      endTime = now;
+      endTime = block.timestamp;
     } else {
       // We've received sufficient quantity to end the auction so just close the auction and return
-      endTime = now;
+      endTime = block.timestamp;
       return;
     }
 

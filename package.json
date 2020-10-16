@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Contracts for Colony Network",
   "scripts": {
-    "solium-staged": "bash ./scripts/solium.sh",
+    "solhint-staged": "bash ./scripts/solhint.sh",
     "eslint-staged": "bash ./scripts/eslint.sh",
     "eslint": "eslint .",
-    "solium": "solium --dir .",
+    "solhint": "solhint ./contracts/**/*.sol",
     "build:docs": "scripts/docgen.js",
     "ping:osx": "osascript -e 'display notification \"Ping!\"'",
     "check:storagevars": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-storage.js",
@@ -33,11 +33,11 @@
     "test:contracts:coverage": "SOLIDITY_COVERAGE=1 truffle run coverage --network coverage --temp build --file='./test/{c,e}*/*'",
     "test:contracts:watch": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle watch --network development",
     "test:contracts:e2e": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test test-system/end-to-end.js --network development",
-    "test:contracts:smoke": "truffle test ./test-smoke/colony-storage-consistent.js --network storageSmoke",
+    "test:contracts:smoke": "truffle compile && truffle test ./test-smoke/colony-storage-consistent.js --network storageSmoke",
     "test:security:slither": "slither contracts/ --solc-disable-warnings --exclude-low --exclude-informational --exclude-optimization --exclude uninitialized-state-variables,uninitialized-local-variables,reentrancy-no-eth,constant-function --filter-paths lib",
     "test:security:mythril": "truffle run verify --mode quick --style json --limit 1 --swc-blacklist 101,123,128,131 > truffle-security-output.json; sed -i '/^\\[{/!d' ./truffle-security-output.json && node ./scripts/process-truffle-security.js",
     "pretest:contracts": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
-    "pretest:contracts:upgrade:parity": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
+    "pretest:contracts:upgrade:parity": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse && sed -i 's/this.config.resolver = new Resolver(config, true);/this.config.resolver = new Resolver(this.config, true);/g' ./node_modules/truffle/build/commands.bundled.js",
     "pretest:contracts:upgrade:ganache": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:gasCosts": "sed -ie \"s/mocha-circleci-reporter/eth-gas-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:coverage": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
@@ -52,7 +52,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn eslint-staged && yarn solium-staged && yarn build:docs && git add docs"
+      "pre-commit": "yarn eslint-staged && yarn solhint-staged && yarn build:docs && git add docs"
     }
   },
   "repository": {
@@ -90,7 +90,7 @@
     "ethereumjs-account": "^3.0.0",
     "ethereumjs-util": "^7.0.0",
     "ethers": "^5.0.0",
-    "ethlint": "^1.2.4",
+    "ethlint": "^1.2.5",
     "find-in-files": "^0.5.0",
     "ganache-cli": "^6.10.1",
     "ganache-core": "^2.11.2",
@@ -106,10 +106,11 @@
     "prettier": "^2.0.0",
     "rimraf": "^3.0.0",
     "shortid": "^2.2.14",
+    "solhint": "https://github.com/area/solhint.git",
     "solidity-coverage": "0.7.11",
-    "solidity-parser-antlr": "^0.4.11",
+    "solidity-parser-diligence": "^0.4.18",
     "solidity-steamroller": "^1.1.0",
-    "truffle": "^5.1.8",
+    "truffle": "^5.1.48",
     "truffle-hdwallet-provider": "^1.0.9",
     "truffle-security": "^1.6.2",
     "web3-utils": "^1.2.9"

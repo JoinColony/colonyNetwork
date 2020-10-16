@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental "ABIEncoderV2";
 
 import "./../../lib/dappsys/math.sol";
@@ -175,7 +175,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     makeConditionalDeposit(_token, _amount, _recipient);
   }
 
-  function reward(address _recipient, uint256 _amount) public pure {
+  function reward(address _recipient, uint256 _amount) public pure { // solhint-disable-line no-empty-blocks
 
   }
 

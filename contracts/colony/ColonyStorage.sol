@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
@@ -93,8 +93,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
 
   address tokenLockingAddress; // Storage slot 30
 
-  // Modifiers
+  // Constants
+  uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs
+  bytes32 constant ROOT_ROLES = bytes32(uint256(1)) << uint8(ColonyRole.Recovery) | bytes32(uint256(1)) << uint8(ColonyRole.Root);
+  bytes32 constant BYTES32_1 = bytes32(uint256(1));
 
+  // Modifiers
   modifier validPayoutAmount(uint256 _amount) {
     require(_amount <= MAX_PAYOUT, "colony-payout-too-large");
     _;
@@ -207,7 +211,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     _;
   }
 
-  modifier auth {
+  modifier auth override {
     require(isAuthorized(msg.sender, 1, msg.sig), "ds-auth-unauthorized");
     _;
   }

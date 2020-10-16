@@ -15,13 +15,13 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../colony/Colony.sol";
+import "./../colony/ColonyStorage.sol";
 
 
-contract NoLimitSubdomains is Colony {
+contract NoLimitSubdomains is ColonyStorage {
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
@@ -35,5 +35,23 @@ contract NoLimitSubdomains is Colony {
     // Add domain to local mapping
     initialiseDomain(newLocalSkill);
   }
+
+  function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {
+    domainCount += 1;
+    // Create a new funding pot
+    fundingPotCount += 1;
+    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType.Domain;
+    fundingPots[fundingPotCount].associatedTypeId = domainCount;
+
+    // Create a new domain with the given skill and new funding pot
+    domains[domainCount] = Domain({
+      skillId: _skillId,
+      fundingPotId: fundingPotCount
+    });
+
+    emit DomainAdded(domainCount);
+    emit FundingPotAdded(fundingPotCount);
+  }
+
 
 }

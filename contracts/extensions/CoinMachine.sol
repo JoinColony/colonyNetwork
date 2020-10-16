@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
@@ -33,8 +33,6 @@ contract CoinMachine is DSMath, ColonyExtension {
 
   event TokensBought(address buyer, uint256 numTokens, uint256 totalCost);
   event PeriodUpdated(uint256 activePeriod, uint256 currentPeriod);
-
-  IColony colony;
 
   // Storage
 
@@ -58,28 +56,28 @@ contract CoinMachine is DSMath, ColonyExtension {
   // Public
 
   /// @notice Returns the version of the extension
-  function version() public pure returns (uint256) {
+  function version() public override pure returns (uint256) {
     return 1;
   }
 
   /// @notice Configures the extension
   /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public auth {
+  function install(address _colony) public override auth {
     require(address(colony) == address(0x0), "extension-already-installed");
 
     colony = IColony(_colony);
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public auth {}
+  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
 
   /// @notice Called when deprecating (or undeprecating) the extension
-  function deprecate(bool _deprecated) public auth {
+  function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
   }
 
   /// @notice Called when uninstalling the extension
-  function uninstall() public auth {
+  function uninstall() public override auth {
     selfdestruct(address(uint160(address(colony))));
   }
 
@@ -232,7 +230,7 @@ contract CoinMachine is DSMath, ColonyExtension {
   // Internal
 
   function getCurrentPeriod() internal view returns (uint256) {
-    return now / periodLength;
+    return block.timestamp / periodLength;
   }
 
   function wpow(uint256 x, uint256 n) internal pure returns (uint256) {

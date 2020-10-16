@@ -1,4 +1,4 @@
-import parser from "solidity-parser-antlr";
+import parser from "solidity-parser-diligence";
 import fs from "fs";
 import path from "path";
 

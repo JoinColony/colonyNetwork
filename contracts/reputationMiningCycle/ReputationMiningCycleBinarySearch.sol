@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental "ABIEncoderV2";
 
 import "../../lib/dappsys/math.sol";
@@ -106,7 +106,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     while (2**(disputeRounds[_round][_idx].challengeStepCompleted - 2) <= submission.jrhNLeaves) {
       disputeRounds[_round][_idx].challengeStepCompleted += 1;
     }
-    disputeRounds[_round][_idx].lastResponseTimestamp = now;
+    disputeRounds[_round][_idx].lastResponseTimestamp = block.timestamp;
 
     rewardResponder(msg.sender);
 
@@ -120,7 +120,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     bytes32[2] memory _lastSiblings
   ) internal
   {
-    disputeRounds[_round][_idx].lastResponseTimestamp = now;
+    disputeRounds[_round][_idx].lastResponseTimestamp = block.timestamp;
     disputeRounds[_round][_idx].challengeStepCompleted += 1;
     // Save our intermediate hash
     bytes32 intermediateReputationHash;
@@ -182,6 +182,6 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     // Our opponent responded to this step of the challenge before we did, so we should
     // reset their 'last response' time to now, as they aren't able to respond
     // to the next challenge before they know what it is!
-    disputeRounds[_round][opponentIdx].lastResponseTimestamp = now;
+    disputeRounds[_round][opponentIdx].lastResponseTimestamp = block.timestamp;
   }
 }

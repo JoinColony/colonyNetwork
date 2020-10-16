@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
@@ -46,7 +46,6 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
   uint256 constant COOLDOWN_PERIOD = 14 days;
 
   // Initialization data
-  IColony colony;
   IColonyNetwork colonyNetwork;
   ITokenLocking tokenLocking;
   address token;
@@ -79,13 +78,13 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
 
   // Public functions
   /// @notice Returns the version of the extension
-  function version() public pure returns (uint256) {
+  function version() public override pure returns (uint256) {
     return 1;
   }
 
   /// @notice Configures the extension
   /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public auth {
+  function install(address _colony) public override auth {
     require(address(colony) == address(0x0), "extension-already-installed");
 
     colony = IColony(_colony);
@@ -97,15 +96,15 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public auth {}
+  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
 
   /// @notice Called when deprecating (or undeprecating) the extension
-  function deprecate(bool _deprecated) public auth {
+  function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
   }
 
   /// @notice Called when uninstalling the extension
-  function uninstall() public auth {
+  function uninstall() public override auth {
     selfdestruct(address(uint160(address(colony))));
   }
 
@@ -152,7 +151,7 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
       _toChildSkillIndex,
       _totalRequested,
       0,
-      now,
+      block.timestamp,
       0
     );
     queue[proposalCount] = proposalCount; // Initialize as a disconnected self-edge
@@ -169,12 +168,12 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
     require(queue[_prevId] == _id, "funding-queue-bad-prev-id");
 
     proposal.state = ProposalState.Cancelled;
-    proposal.lastUpdated = now;
+    proposal.lastUpdated = block.timestamp;
 
     queue[_prevId] = queue[_id];
     delete queue[_id];
 
-    proposals[queue[_prevId]].lastUpdated = now;
+    proposals[queue[_prevId]].lastUpdated = block.timestamp;
 
     emit ProposalCancelled(_id);
   }
@@ -271,7 +270,7 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
     uint256 updateTime = add(
       proposal.lastUpdated,
       wmul(
-        sub(now, proposal.lastUpdated),
+        sub(block.timestamp, proposal.lastUpdated),
         wdiv(actualFundingToTransfer, max(fundingToTransfer, 1)) // Avoid divide-by-zero
       )
     );
@@ -308,7 +307,7 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
     Proposal storage proposal = proposals[_id];
 
     require(proposal.state != ProposalState.Active, "funding-queue-proposal-still-active");
-    require(proposal.lastUpdated + COOLDOWN_PERIOD <= now, "funding-queue-cooldown-not-elapsed");
+    require(proposal.lastUpdated + COOLDOWN_PERIOD <= block.timestamp, "funding-queue-cooldown-not-elapsed");
 
     uint256 stake = wmul(proposal.domainTotalRep, STAKE_FRACTION);
     colony.deobligateStake(proposal.creator, proposal.domainId, stake);
@@ -343,7 +342,7 @@ contract FundingQueue is ColonyExtension, DSMath, PatriciaTreeProofs {
     uint256 backingPercent = min(WAD, wdiv(proposal.totalSupport, proposal.domainTotalRep));
 
     uint256 decayRate = getDecayRate(backingPercent);
-    uint256 unitsElapsed = (now - proposal.lastUpdated) / 10; // 10 second intervals
+    uint256 unitsElapsed = (block.timestamp - proposal.lastUpdated) / 10; // 10 second intervals
 
     uint256 newBalance = wmul(balance, wpow(decayRate, unitsElapsed));
     uint256 fundingToTransfer = sub(balance, newBalance);

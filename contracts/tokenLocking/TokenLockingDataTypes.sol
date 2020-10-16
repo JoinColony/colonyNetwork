@@ -15,10 +15,10 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 
 
-contract TokenLockingDataTypes {
+interface TokenLockingDataTypes {
 
   event ColonyNetworkSet(address colonyNetwork);
   event TokenLocked(address token, uint256 lockCount);
@@ -34,7 +34,7 @@ contract TokenLockingDataTypes {
     // Deposited balance
     uint256 balance;
     // Weighted average of deposit timestamps (no longer used)
-    uint256 DEPRECATED_timestamp;
+    uint256 DEPRECATED_timestamp; // solhint-disable-line var-name-mixedcase
     // Pending balance, can claim once unlocked
     uint256 pendingBalance;
   }

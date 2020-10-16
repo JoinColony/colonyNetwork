@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental "ABIEncoderV2";
 
 import "./../../lib/dappsys/math.sol";
@@ -78,7 +78,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     // Check the ticket is a winning one.
     // All entries are acceptable if the 24 hour-long window is closed, so skip this check if that's the case
     if (!submissionWindowClosed()) {
-      uint256 target = (now - reputationMiningWindowOpenTimestamp) * X;
+      uint256 target = (block.timestamp - reputationMiningWindowOpenTimestamp) * X;
       require(uint256(getEntryHash(msg.sender, _entryIndex, _newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
     }
     _;
@@ -135,7 +135,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
   function resetWindow() public {
     require(msg.sender == colonyNetworkAddress, "colony-reputation-mining-sender-not-network");
-    reputationMiningWindowOpenTimestamp = now;
+    reputationMiningWindowOpenTimestamp = block.timestamp;
   }
 
   function challengeRoundComplete(uint256 _round) public view returns (bool) {
@@ -274,7 +274,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       require(disputeRounds[_round][opponentIdx].challengeStepCompleted >= disputeRounds[_round][_idx].challengeStepCompleted, "colony-reputation-mining-less-challenge-rounds-completed");
 
       // Require that it has failed a challenge (i.e. failed to respond in time)
-      require(add(disputeRounds[_round][_idx].lastResponseTimestamp, 600) <= now, "colony-reputation-mining-not-timed-out"); // Timeout is ten minutes here.
+      require(add(disputeRounds[_round][_idx].lastResponseTimestamp, 600) <= block.timestamp, "colony-reputation-mining-not-timed-out"); // Timeout is ten minutes here.
 
       // The submission can be invalidated - now check the person invalidating is allowed to
       require(
@@ -371,7 +371,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     );
 
     // Record that they've responded
-    disputeRounds[_round][_index].lastResponseTimestamp = now;
+    disputeRounds[_round][_index].lastResponseTimestamp = block.timestamp;
     disputeRounds[_round][_index].challengeStepCompleted += 1;
 
     // Set bounds for first binary search if it's going to be needed
@@ -481,16 +481,6 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     return disputeRewardSize();
   }
 
-  function expectedBranchMask(uint256 _nLeaves, uint256 _leaf) public pure returns (uint256) {
-    // Gets the expected branchmask for a patricia tree which has nLeaves, with keys from 0 to nLeaves -1
-    // i.e. the tree is 'full' - there are no missing leaves
-    uint256 mask = sub(_nLeaves, 1); // Every branchmask in a full tree has at least these 1s set
-    uint256 xored = mask ^ _leaf; // Where do mask and leaf differ?
-    // Set every bit in the mask from the first bit where they differ to 1
-    uint256 remainderMask = sub(nextPowerOfTwoInclusive(add(xored, 1)), 1);
-    return mask | remainderMask;
-  }
-
   function userInvolvedInMiningCycle(address _user) public view returns (bool) {
     return reputationHashSubmissions[_user].proposedNewRootHash != 0x00 || respondedToChallenge[_user];
   }
@@ -542,7 +532,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
   function startMemberOfPair(uint256 _roundNumber, uint256 _index) internal {
     Submission storage submission = reputationHashSubmissions[disputeRounds[_roundNumber][_index].firstSubmitter];
-    disputeRounds[_roundNumber][_index].lastResponseTimestamp = now;
+    disputeRounds[_roundNumber][_index].lastResponseTimestamp = block.timestamp;
     disputeRounds[_roundNumber][_index].upperBound = submission.jrhNLeaves - 1;
     disputeRounds[_roundNumber][_index].lowerBound = 0;
     disputeRounds[_roundNumber][_index].targetHashDuringSearch = submission.jrh;
@@ -569,7 +559,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       startPairingInRound(_roundNumber);
     } else {
       // Update the 'last responded time'
-      disputeRounds[_roundNumber][nInRound-1].lastResponseTimestamp = now;
+      disputeRounds[_roundNumber][nInRound-1].lastResponseTimestamp = block.timestamp;
     }
   }
 }

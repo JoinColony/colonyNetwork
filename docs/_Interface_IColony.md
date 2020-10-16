@@ -339,7 +339,7 @@ Called after task work rating is complete which closes the task and logs the res
 
 A function to be called after an upgrade has been done from v2 to v3.
 
-*Note: Can only be called by the colony itself, and only expected to be called as part of the `upgrade()` call. Required to be public so it can be an external call.*
+*Note: Can only be called by the colony itself, and only expected to be called as part of the `upgrade()` call. Required to be external so it can be an external call.*
 
 
 
@@ -1636,7 +1636,7 @@ Check whether a given user can modify roles in the target domain `_childDomainId
 
 Helper function that can be used by a client to verify the correctness of a patricia proof they have been supplied with.
 
-*Note: For more detail about branchMask and siblings, examine the PatriciaTree implementation. While public, likely only to be used by the Colony contracts, as it checks that the user is proving their own reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function is not currently exposed on the Colony's EtherRouter.*
+*Note: For more detail about branchMask and siblings, examine the PatriciaTree implementation. While external, likely only to be used by the Colony contracts, as it checks that the user is proving their own reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function is not currently exposed on the Colony's EtherRouter.*
 
 **Parameters**
 

@@ -148,26 +148,6 @@ Creates a new colony in the network, at version 3
 
 ### `createColony`
 
-Creates a new colony in the network, with an optional ENS name
-
-*Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
-|_version|uint256|The version of colony to deploy (pass 0 for the current version)
-|_colonyName|string|The label to register (if null, no label is registered)
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|colonyAddress|address|Address of the newly created colony
-
-### `createColony`
-
 Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options, at version 4
 
 *Note: This is now deprecated and will be removed in a future version*
@@ -181,6 +161,26 @@ Overload of the simpler `createColony` -- creates a new colony in the network wi
 |_colonyName|string|The label to register (if null, no label is registered)
 |_orbitdb|string|DEPRECATED Currently a no-op
 |_useExtensionManager|bool|DEPRECATED Currently a no-op
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
+Creates a new colony in the network, with an optional ENS name
+
+*Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
 
 **Return Parameters**
 
@@ -657,7 +657,7 @@ Check if specific address is a colony created on colony network.
 
 ### `issueMetaColonyStipend`
 
-Called to issue the metaColony stipend. This public function can be called by anyone at any interval, and an appropriate amount of CLNY will be minted based on the time since the last time it was called.
+Called to issue the metaColony stipend. This external function can be called by anyone at any interval, and an appropriate amount of CLNY will be minted based on the time since the last time it was called.
 
 
 
@@ -683,7 +683,7 @@ Reverse lookup a username from an address.
 
 Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
 
-*Note: While public, it can only be called successfully by the current ReputationMiningCycle.*
+*Note: While external, it can only be called successfully by the current ReputationMiningCycle.*
 
 **Parameters**
 

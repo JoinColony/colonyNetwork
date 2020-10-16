@@ -26,7 +26,7 @@ Allow the colony to obligate some amount of tokens as a stake.
 
 Function called to burn CLNY tokens held by TokenLocking.
 
-*Note: While public, it can only be called successfully by colonyNetwork and is only used for reputation mining.*
+*Note: While external, it can only be called successfully by colonyNetwork and is only used for reputation mining.*
 
 **Parameters**
 
@@ -309,6 +309,19 @@ Increments the lock counter to `_lockId` for the `_user` if user's lock count is
 
 ### `withdraw`
 
+DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to withdraw from
+|_amount|uint256|Amount to withdraw
+
+
+### `withdraw`
+
 Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
 
 
@@ -319,16 +332,3 @@ Withdraw `_amount` of deposited tokens. Can only be called if user tokens are no
 |_token|address|Address of the token to withdraw from
 |_amount|uint256|Amount to withdraw
 |_force|bool|Pass true to forcibly unlock the token
-
-
-### `withdraw`
-
-DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_token|address|Address of the token to withdraw from
-|_amount|uint256|Amount to withdraw

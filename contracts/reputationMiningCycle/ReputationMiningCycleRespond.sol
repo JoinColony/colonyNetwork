@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental "ABIEncoderV2";
 
 import "./../colonyNetwork/IColonyNetwork.sol";
@@ -330,7 +330,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
   function confirmChallengeCompleted(uint256[26] memory _u) internal {
     // If everthing checked out, note that we've responded to the challenge.
     disputeRounds[_u[U_ROUND]][_u[U_IDX]].challengeStepCompleted += 1;
-    disputeRounds[_u[U_ROUND]][_u[U_IDX]].lastResponseTimestamp = now;
+    disputeRounds[_u[U_ROUND]][_u[U_IDX]].lastResponseTimestamp = block.timestamp;
     Submission storage submission = reputationHashSubmissions[disputeRounds[_u[U_ROUND]][_u[U_IDX]].firstSubmitter];
 
     // And reward the user
