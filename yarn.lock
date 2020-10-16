@@ -12051,7 +12051,7 @@ truffle-security@^1.6.2:
     tiny-async-pool "^1.0.4"
     uuid "^3.3.3"
 
-truffle@^5.1.8:
+truffle@^5.1.48:
   version "5.1.48"
   resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.48.tgz#43c78cb1fa8f51496a66de7bddfd6726ad132676"
   integrity sha512-Z8485qH5Db8P05dVy7SHQHcaa+hXAekvPcVkkv8zONsVBqOmS3q48eajukdeKNbLlfPWb3m7TYdPzrGFBDcFiQ==

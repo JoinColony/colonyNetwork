@@ -37,7 +37,7 @@
     "test:security:slither": "slither contracts/ --solc-disable-warnings --exclude-low --exclude-informational --exclude-optimization --exclude uninitialized-state-variables,uninitialized-local-variables,reentrancy-no-eth,constant-function --filter-paths lib",
     "test:security:mythril": "truffle run verify --mode quick --style json --limit 1 --swc-blacklist 101,123,128,131 > truffle-security-output.json; sed -i '/^\\[{/!d' ./truffle-security-output.json && node ./scripts/process-truffle-security.js",
     "pretest:contracts": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
-    "pretest:contracts:upgrade:parity": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
+    "pretest:contracts:upgrade:parity": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse && sed -i 's/this.config.resolver = new Resolver(config, true);/this.config.resolver = new Resolver(this.config, true);/g' ./node_modules/truffle/build/commands.bundled.js",
     "pretest:contracts:upgrade:ganache": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:gasCosts": "sed -ie \"s/mocha-circleci-reporter/eth-gas-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:coverage": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
@@ -110,7 +110,7 @@
     "solidity-coverage": "0.7.11",
     "solidity-parser-diligence": "^0.4.18",
     "solidity-steamroller": "^1.1.0",
-    "truffle": "^5.1.8",
+    "truffle": "^5.1.48",
     "truffle-hdwallet-provider": "^1.0.9",
     "truffle-security": "^1.6.2",
     "web3-utils": "^1.2.9"
