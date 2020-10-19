@@ -223,11 +223,11 @@ workflows:
     jobs:
       - lint-and-unit-test:
           context: dockerhub-credentials
-      - reputation-test
+      - reputation-test:
           context: dockerhub-credentials
-      - test-contracts-coverage
+      - test-contracts-coverage:
           context: dockerhub-credentials
-      - test-reputation-coverage
+      - test-reputation-coverage:
           context: dockerhub-credentials
       - check-coverage:
           context: dockerhub-credentials
