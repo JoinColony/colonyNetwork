@@ -3,10 +3,16 @@ version: 2
 job_common: &job_common
   docker:
     - image: circleci/node:12.16.3-stretch
+      auth:
+        username: colonyci
+        password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
 job_python: &job_python
   docker:
     - image: circleci/python:3.8.0b1-stretch-node
+      auth:
+        username: colonyci
+        password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
 step_save_cache: &step_save_cache
   save_cache:
@@ -215,11 +221,16 @@ workflows:
   version: 2
   commit:
     jobs:
-      - lint-and-unit-test
+      - lint-and-unit-test:
+          context: dockerhub-credentials
       - reputation-test
+          context: dockerhub-credentials
       - test-contracts-coverage
+          context: dockerhub-credentials
       - test-reputation-coverage
+          context: dockerhub-credentials
       - check-coverage:
+          context: dockerhub-credentials
           requires:
             - test-contracts-coverage
             - test-reputation-coverage
@@ -233,5 +244,7 @@ workflows:
                 - develop
     jobs:
       - security-analysis:
-          context: colony-network-context
+          context:
+            - colony-network-context
+            - dockerhub-credentials
       - end-to-end-tests
