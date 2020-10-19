@@ -3,6 +3,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 
 import {
   UINT256_MAX,
@@ -20,12 +21,13 @@ import { makeTask, setupRandomColony } from "../../helpers/test-data-generator";
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const Token = artifacts.require("Token");
-const ITokenLocking = artifacts.require("ITokenLocking");
-const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
-const TransferTest = artifacts.require("TransferTest");
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const ITokenLocking = artifacts.require("ITokenLocking");
+const TransferTest = artifacts.require("TransferTest");
+const Token = artifacts.require("Token");
+const VotingReputation = artifacts.require("VotingReputation");
 
 contract("Colony", (accounts) => {
   let colony;
@@ -154,6 +156,18 @@ contract("Colony", (accounts) => {
 
       await checkErrorRevert(colony.makeArbitraryTransaction(token.address, 0, action1), "colony-cannot-call-erc20-approve");
       await checkErrorRevert(colony.makeArbitraryTransaction(token.address, 0, action2), "colony-cannot-call-erc20-transfer");
+    });
+
+    it("should not be able to make arbitrary transactions to extensions", async () => {
+      const VOTING_REPUTATION = soliditySha3("VotingReputation");
+      await colony.installExtension(VOTING_REPUTATION, 1);
+
+      const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
+      const voting = await VotingReputation.at(votingAddress);
+
+      const action = await encodeTxData(voting, "deprecate", [true]);
+
+      await checkErrorRevert(colony.makeArbitraryTransaction(voting.address, 0, action), "colony-cannot-target-extensions");
     });
 
     it("should let funding pot information be read", async () => {

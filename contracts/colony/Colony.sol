@@ -19,6 +19,7 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../common/IEtherRouter.sol";
+import "./../extensions/ColonyExtension.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
@@ -44,14 +45,24 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   public stoppable auth
   returns (bool)
   {
+    // Prevent transactions to network contracts
     require(_to != colonyNetworkAddress, "colony-cannot-target-network");
     require(_to != tokenLockingAddress, "colony-cannot-target-token-locking");
 
+    // Prevent transactions to transfer held tokens
     bytes4 sig;
     assembly { sig := mload(add(_action, 0x20)) }
 
     require(sig != APPROVE_SIG, "colony-cannot-call-erc20-approve");
     require(sig != TRANSFER_SIG, "colony-cannot-call-erc20-transfer");
+
+    // Prevent transactions to network-managed extensions
+    try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
+      require(
+        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) != _to,
+        "colony-cannot-target-extensions"
+      );
+    } catch {}
 
     return executeCall(_to, _value, _action);
   }
