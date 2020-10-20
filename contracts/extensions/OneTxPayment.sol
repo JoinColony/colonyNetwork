@@ -18,12 +18,13 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
+import "./../../lib/dappsys/math.sol";
 import "./ColonyExtension.sol";
 
 // ignore-file-swc-108
 
 
-contract OneTxPayment is ColonyExtension {
+contract OneTxPayment is ColonyExtension, DSMath {
   uint256 constant UINT256_MAX = 2**256 - 1;
   ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
   ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
@@ -99,11 +100,12 @@ contract OneTxPayment is ColonyExtension {
       uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
       uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
+      prepareFunding(_childSkillIndex, fundingPotId, _tokens, _amounts);
+
       uint256 idx;
       uint256 slot;
 
       for (idx = 0; idx < _workers.length; idx++) {
-        colony.moveFundsBetweenPots(1, UINT256_MAX, _childSkillIndex, 1, fundingPotId, _amounts[idx], _tokens[idx]);
 
          // If a new worker, start a new slot
         if (idx == 0 || _workers[idx] != _workers[idx-1]) {
@@ -178,11 +180,12 @@ contract OneTxPayment is ColonyExtension {
       uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
       uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
 
+      prepareFundingWithinDomain(_permissionDomainId, _childSkillIndex, domainPotId, fundingPotId, _tokens, _amounts);
+
       uint256 idx;
       uint256 slot;
 
       for (idx = 0; idx < _workers.length; idx++) {
-        moveFundsWithinDomain(_permissionDomainId, _childSkillIndex, domainPotId, fundingPotId, _amounts[idx], _tokens[idx]);
 
          // If a new worker, start a new slot
         if (idx == 0 || _workers[idx] != _workers[idx-1]) {
@@ -203,6 +206,88 @@ contract OneTxPayment is ColonyExtension {
 
       finalizeAndClaim(expenditureId, _workers, _tokens);
 
+    }
+  }
+
+  function calculateUniqueAmounts(
+    address[] memory _tokens,
+    uint256[] memory _amounts
+  )
+    internal
+    pure
+    returns (uint256, address[] memory, uint256[] memory)
+  {
+    uint256 uniqueTokensIdx;
+    address[] memory uniqueTokens = new address[](_tokens.length);
+    uint256[] memory uniqueAmounts = new uint256[](_tokens.length);
+
+    for (uint256 i; i < _tokens.length; i++) {
+      bool isMatch;
+      for (uint256 j; j < uniqueTokensIdx && !isMatch; j++) {
+        if (_tokens[i] == uniqueTokens[j]) {
+          isMatch = true;
+          uniqueAmounts[j] = add(uniqueAmounts[j], _amounts[i]);
+        }
+      }
+      if (!isMatch) {
+        uniqueTokens[uniqueTokensIdx] = _tokens[i];
+        uniqueAmounts[uniqueTokensIdx] = _amounts[i];
+        uniqueTokensIdx++;
+      }
+    }
+
+    return (uniqueTokensIdx, uniqueTokens, uniqueAmounts);
+  }
+
+  function prepareFunding(
+    uint256 _childSkillIndex,
+    uint256 _fundingPotId,
+    address[] memory _tokens,
+    uint256[] memory _amounts
+  ) internal {
+    (
+      uint256 uniqueTokensIdx,
+      address[] memory uniqueTokens,
+      uint256[] memory uniqueAmounts
+    ) = calculateUniqueAmounts(_tokens, _amounts);
+
+    for (uint256 i; i < uniqueTokensIdx; i++) {
+      colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        _childSkillIndex,
+        1,
+        _fundingPotId,
+        uniqueAmounts[i],
+        uniqueTokens[i]
+      );
+    }
+  }
+
+  function prepareFundingWithinDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainPotId,
+    uint256 _fundingPotId,
+    address[] memory _tokens,
+    uint256[] memory _amounts
+  ) internal {
+    (
+      uint256 uniqueTokensIdx,
+      address[] memory uniqueTokens,
+      uint256[] memory uniqueAmounts
+    ) = calculateUniqueAmounts(_tokens, _amounts);
+
+    for (uint256 i; i < uniqueTokensIdx; i++) {
+      colony.moveFundsBetweenPots(
+        _permissionDomainId,
+        _childSkillIndex,
+        _childSkillIndex,
+        _domainPotId,
+        _fundingPotId,
+        uniqueAmounts[i],
+        uniqueTokens[i]
+      );
     }
   }
 

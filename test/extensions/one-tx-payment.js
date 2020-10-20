@@ -227,7 +227,7 @@ contract("One transaction payments", (accounts) => {
     });
 
     it("should allow a single-transaction payment to multiple workers", async () => {
-      const balanceBefore = await token.balanceOf(USER1);
+      const balanceBefore1 = await token.balanceOf(USER1);
       const balanceBefore2 = await token.balanceOf(USER2);
 
       await oneTxPayment.makePaymentFundedFromDomain(
@@ -242,15 +242,16 @@ contract("One transaction payments", (accounts) => {
         GLOBAL_SKILL_ID
       );
 
-      const balanceAfter = await token.balanceOf(USER1);
+      const balanceAfter1 = await token.balanceOf(USER1);
       const balanceAfter2 = await token.balanceOf(USER2);
-      expect(balanceAfter.sub(balanceBefore)).to.eq.BN(9);
+      expect(balanceAfter1.sub(balanceBefore1)).to.eq.BN(9);
       expect(balanceAfter2.sub(balanceBefore2)).to.eq.BN(4);
     });
 
     it("should allow a single-transaction payment to multiple workers of ETH to occur", async () => {
-      const balanceBefore = await web3.eth.getBalance(USER1);
+      const balanceBefore1 = await web3.eth.getBalance(USER1);
       const balanceBefore2 = await web3.eth.getBalance(USER2);
+
       await colony.send(15); // NB 15 wei, not ten ether!
       await colony.claimColonyFunds(ADDRESS_ZERO);
 
@@ -266,16 +267,17 @@ contract("One transaction payments", (accounts) => {
         GLOBAL_SKILL_ID
       );
 
-      const balanceAfter = await web3.eth.getBalance(USER1);
+      const balanceAfter1 = await web3.eth.getBalance(USER1);
       const balanceAfter2 = await web3.eth.getBalance(USER2);
       // So only 9 and 4 here, because of the same rounding errors as applied to the token
-      expect(new web3.utils.BN(balanceAfter).sub(new web3.utils.BN(balanceBefore))).to.eq.BN(9);
+      expect(new web3.utils.BN(balanceAfter1).sub(new web3.utils.BN(balanceBefore1))).to.eq.BN(9);
       expect(new web3.utils.BN(balanceAfter2).sub(new web3.utils.BN(balanceBefore2))).to.eq.BN(4);
     });
 
     it("should allow a single-transaction payment to multiple workers of different tokens", async () => {
-      const balanceTokenBefore = await token.balanceOf(USER1);
+      const balanceTokenBefore1 = await token.balanceOf(USER1);
       const balanceEthBefore2 = await web3.eth.getBalance(USER2);
+
       await colony.send(5); // NB 10 wei, not ten ether!
       await colony.claimColonyFunds(ADDRESS_ZERO);
 
@@ -291,15 +293,17 @@ contract("One transaction payments", (accounts) => {
         GLOBAL_SKILL_ID
       );
 
-      const balanceTokenAfter = await token.balanceOf(USER1);
+      const balanceTokenAfter1 = await token.balanceOf(USER1);
       const balanceEthAfter2 = await web3.eth.getBalance(USER2);
       // So only 9 and 4 here, because of the same rounding errors as applied to the token
-      expect(balanceTokenAfter.sub(balanceTokenBefore)).to.eq.BN(9);
+      expect(balanceTokenAfter1.sub(balanceTokenBefore1)).to.eq.BN(9);
       expect(new web3.utils.BN(balanceEthAfter2).sub(new web3.utils.BN(balanceEthBefore2))).to.eq.BN(4);
     });
 
     it("should allow a single-transaction payment to multiple workers in multiple tokens", async () => {
-      const balanceTokenBefore = await token.balanceOf(USER1);
+      const balanceTokenBefore1 = await token.balanceOf(USER1);
+      const balanceTokenBefore2 = await token.balanceOf(USER2);
+      const balanceEthBefore1 = await web3.eth.getBalance(USER1);
       const balanceEthBefore2 = await web3.eth.getBalance(USER2);
 
       await colony.send(10); // NB 10 wei, not ten ether!
@@ -317,15 +321,22 @@ contract("One transaction payments", (accounts) => {
         GLOBAL_SKILL_ID
       );
 
-      const balanceTokenAfter = await token.balanceOf(USER1);
+      const balanceTokenAfter1 = await token.balanceOf(USER1);
+      const balanceTokenAfter2 = await token.balanceOf(USER2);
+      const balanceEthAfter1 = await web3.eth.getBalance(USER1);
       const balanceEthAfter2 = await web3.eth.getBalance(USER2);
+
       // So only 9 and 4 here, because of the same rounding errors as applied to the token
-      expect(balanceTokenAfter.sub(balanceTokenBefore)).to.eq.BN(9);
+      expect(balanceTokenAfter1.sub(balanceTokenBefore1)).to.eq.BN(9);
+      expect(balanceTokenAfter2.sub(balanceTokenBefore2)).to.eq.BN(4);
+      expect(new web3.utils.BN(balanceEthAfter1).sub(new web3.utils.BN(balanceEthBefore1))).to.eq.BN(4);
       expect(new web3.utils.BN(balanceEthAfter2).sub(new web3.utils.BN(balanceEthBefore2))).to.eq.BN(4);
     });
 
     it("should allow a single-transaction to occur in a child domain, paid out from the root domain to multiple workers", async () => {
-      const balanceTokenBefore = await token.balanceOf(USER1);
+      const balanceTokenBefore1 = await token.balanceOf(USER1);
+      const balanceTokenBefore2 = await token.balanceOf(USER2);
+      const balanceEthBefore1 = await web3.eth.getBalance(USER1);
       const balanceEthBefore2 = await web3.eth.getBalance(USER2);
 
       await colony.send(10); // NB 10 wei, not ten ether!
@@ -344,21 +355,26 @@ contract("One transaction payments", (accounts) => {
         GLOBAL_SKILL_ID
       );
 
-      const balanceTokenAfter = await token.balanceOf(USER1);
+      const balanceTokenAfter1 = await token.balanceOf(USER1);
+      const balanceTokenAfter2 = await token.balanceOf(USER2);
+      const balanceEthAfter1 = await web3.eth.getBalance(USER1);
       const balanceEthAfter2 = await web3.eth.getBalance(USER2);
+
       // So only 9 and 4 here, because of the same rounding errors as applied to the token
-      expect(balanceTokenAfter.sub(balanceTokenBefore)).to.eq.BN(9);
+      expect(balanceTokenAfter1.sub(balanceTokenBefore1)).to.eq.BN(9);
+      expect(balanceTokenAfter2.sub(balanceTokenBefore2)).to.eq.BN(4);
+      expect(new web3.utils.BN(balanceEthAfter1).sub(new web3.utils.BN(balanceEthBefore1))).to.eq.BN(4);
       expect(new web3.utils.BN(balanceEthAfter2).sub(new web3.utils.BN(balanceEthBefore2))).to.eq.BN(4);
     });
 
     it("should not allow arrays of different sizes", async () => {
       await checkErrorRevert(
-        oneTxPayment.makePayment(1, 0, 1, 0, [USER2], [token.address, token.address], [10, 5], 2, GLOBAL_SKILL_ID),
+        oneTxPayment.makePayment(1, 0, 1, 0, [USER2], [token.address, token.address], [10, 5], 2, 0),
         "one-tx-payment-invalid-input"
       );
 
       await checkErrorRevert(
-        oneTxPayment.makePaymentFundedFromDomain(1, 0, 1, 0, [USER2], [token.address, token.address], [10, 5], 2, GLOBAL_SKILL_ID),
+        oneTxPayment.makePaymentFundedFromDomain(1, 0, 1, 0, [USER2], [token.address, token.address], [10, 5], 2, 0),
         "one-tx-payment-invalid-input"
       );
     });

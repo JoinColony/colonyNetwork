@@ -4,7 +4,7 @@ section: Interface
 order: 2
 ---
 
-
+  
 ## Interface Methods
 
 ### `addColonyVersion`
