@@ -34,23 +34,6 @@ Add a new extension resolver to the Extensions repository.
 |resolver|address|The deployed resolver containing the extension contract logic
 
 
-### `addr`
-
-Returns the address the supplied node resolves do, if we are the resolver.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|node|bytes32|The namehash of the ENS address being requested
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|address|address|The address the supplied node resolves to
-
 ### `addSkill`
 
 Adds a new skill to the global or local skills tree, under skill `_parentSkillId`. Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`. Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`.
@@ -68,6 +51,23 @@ Adds a new skill to the global or local skills tree, under skill `_parentSkillId
 |Name|Type|Description|
 |---|---|---|
 |skillId|uint256|Id of the added skill
+
+### `addr`
+
+Returns the address the supplied node resolves do, if we are the resolver.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|node|bytes32|The namehash of the ENS address being requested
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|address|address|The address the supplied node resolves to
 
 ### `appendReputationUpdateLog`
 
@@ -148,6 +148,26 @@ Creates a new colony in the network, at version 3
 
 ### `createColony`
 
+Creates a new colony in the network, with an optional ENS name
+
+*Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
 Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options, at version 4
 
 *Note: This is now deprecated and will be removed in a future version*
@@ -161,26 +181,6 @@ Overload of the simpler `createColony` -- creates a new colony in the network wi
 |_colonyName|string|The label to register (if null, no label is registered)
 |_orbitdb|string|DEPRECATED Currently a no-op
 |_useExtensionManager|bool|DEPRECATED Currently a no-op
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|colonyAddress|address|Address of the newly created colony
-
-### `createColony`
-
-Creates a new colony in the network, with an optional ENS name
-
-*Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
-|_version|uint256|The version of colony to deploy (pass 0 for the current version)
-|_colonyName|string|The label to register (if null, no label is registered)
 
 **Return Parameters**
 
@@ -805,6 +805,20 @@ Called to set the total per-cycle reputation reward, which will be split between
 
 ### `setReputationRootHash`
 
+Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|newHash|bytes32|The reputation root hash
+|newNLeaves|uint256|The updated leaves count value
+|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
+
+
+### `setReputationRootHash`
+
 This version of setReputationRootHash is deprecated and will be removed in a future release. It transparently calls the new version if it is called (essentially, removing the `reward` parameter.
 
 
@@ -816,20 +830,6 @@ This version of setReputationRootHash is deprecated and will be removed in a fut
 |newNLeaves|uint256|The updated leaves count value
 |stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 |reward|uint256|Amount of CLNY to be distributed as reward to miners (not used)
-
-
-### `setReputationRootHash`
-
-Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|newHash|bytes32|The reputation root hash
-|newNLeaves|uint256|The updated leaves count value
-|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 
 
 ### `setTokenLocking`
