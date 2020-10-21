@@ -222,18 +222,24 @@ contract OneTxPayment is ColonyExtension, DSMath {
     uint256[] memory uniqueAmounts = new uint256[](_tokens.length);
 
     for (uint256 i; i < _tokens.length; i++) {
+
       bool isMatch;
-      for (uint256 j; j < uniqueTokensIdx && !isMatch; j++) {
+      uint256 j;
+
+      while (j < uniqueTokensIdx && !isMatch) {
         if (_tokens[i] == uniqueTokens[j]) {
           isMatch = true;
           uniqueAmounts[j] = add(uniqueAmounts[j], _amounts[i]);
         }
+        j++;
       }
+
       if (!isMatch) {
         uniqueTokens[uniqueTokensIdx] = _tokens[i];
         uniqueAmounts[uniqueTokensIdx] = _amounts[i];
         uniqueTokensIdx++;
       }
+
     }
 
     return (uniqueTokensIdx, uniqueTokens, uniqueAmounts);
