@@ -145,18 +145,6 @@ Get the hash for the corresponding entry.
 |---|---|---|
 |entryHash|bytes32|The hash for the corresponding entry
 
-### `getMiningWindowDuration`
-
-Get the length of the mining window in seconds.
-
-
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|miningWindowDuration|uint256|Duration of the reputation mining window in seconds
-
 ### `getMinStake`
 
 Get the minimum stake of CLNY required to mine.
@@ -168,6 +156,18 @@ Get the minimum stake of CLNY required to mine.
 |Name|Type|Description|
 |---|---|---|
 |minStake|uint256|The minimum stake amount
+
+### `getMiningWindowDuration`
+
+Get the length of the mining window in seconds.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|miningWindowDuration|uint256|Duration of the reputation mining window in seconds
 
 ### `getNInvalidatedHashes`
 

@@ -239,8 +239,8 @@ INTERFACES.forEach(generateMarkdown);
 function printMethods(methods) {
   if (!methods.length) return "";
   methods.sort((a, b) => {
-    const x = a.name.toLowerCase();
-    const y = b.name.toLowerCase();
+    const x = astToSig(a);
+    const y = astToSig(b);
     if (x < y) return -1;
     if (x > y) return 1;
     return 0;
