@@ -907,6 +907,25 @@ Install an extension to the colony. Secured function to authorised members.
 |version|uint256|The new extension version to install
 
 
+### `makeArbitraryTransaction`
+
+Execute arbitrary transaction on behalf of the Colony
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_to|address|Contract to receive the function call (cannot be network or token locking)
+|_value|uint256|Value in wei to inclue with the transaction
+|_action|bytes|Bytes array encoding the function call and arguments
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|success|bool|Boolean indicating whether the transaction succeeded
+
 ### `makeExpenditure`
 
 Add a new expenditure in the colony. Secured function to authorised members.

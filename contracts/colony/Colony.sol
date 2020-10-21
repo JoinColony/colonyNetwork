@@ -56,7 +56,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(sig != APPROVE_SIG, "colony-cannot-call-erc20-approve");
     require(sig != TRANSFER_SIG, "colony-cannot-call-erc20-transfer");
 
-    // Prevent transactions to network-managed extensions
+    // Prevent transactions to network-managed extensions installed in this colony
     try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
       require(
         IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) != _to,

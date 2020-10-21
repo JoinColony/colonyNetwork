@@ -21,13 +21,13 @@ import { makeTask, setupRandomColony } from "../../helpers/test-data-generator";
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const CoinMachine = artifacts.require("CoinMachine");
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const TransferTest = artifacts.require("TransferTest");
 const Token = artifacts.require("Token");
-const VotingReputation = artifacts.require("VotingReputation");
 
 contract("Colony", (accounts) => {
   let colony;
@@ -158,16 +158,21 @@ contract("Colony", (accounts) => {
       await checkErrorRevert(colony.makeArbitraryTransaction(token.address, 0, action2), "colony-cannot-call-erc20-transfer");
     });
 
-    it("should not be able to make arbitrary transactions to extensions", async () => {
-      const VOTING_REPUTATION = soliditySha3("VotingReputation");
-      await colony.installExtension(VOTING_REPUTATION, 1);
+    it("should not be able to make arbitrary transactions to the colony's own extensions", async () => {
+      const COIN_MACHINE = soliditySha3("CoinMachine");
+      await colony.installExtension(COIN_MACHINE, 1);
 
-      const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
-      const voting = await VotingReputation.at(votingAddress);
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      const coinMachine = await CoinMachine.at(coinMachineAddress);
+      await coinMachine.initialise(ethers.constants.AddressZero, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
 
-      const action = await encodeTxData(voting, "deprecate", [true]);
+      const action = await encodeTxData(coinMachine, "buyTokens", [WAD]);
 
-      await checkErrorRevert(colony.makeArbitraryTransaction(voting.address, 0, action), "colony-cannot-target-extensions");
+      await checkErrorRevert(colony.makeArbitraryTransaction(coinMachine.address, 0, action), "colony-cannot-target-extensions");
+
+      // But other colonies can
+      const { colony: otherColony } = await setupRandomColony(colonyNetwork);
+      await otherColony.makeArbitraryTransaction(coinMachine.address, 0, action);
     });
 
     it("should let funding pot information be read", async () => {
