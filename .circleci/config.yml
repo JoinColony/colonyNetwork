@@ -49,7 +49,8 @@ jobs:
     steps:
       - checkout
       - <<: *step_restore_cache
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
@@ -68,7 +69,8 @@ jobs:
     steps:
       - checkout
       - <<: *step_restore_cache
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
@@ -144,7 +146,8 @@ jobs:
     steps:
       - checkout
       - <<: *step_restore_cache
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
@@ -161,7 +164,8 @@ jobs:
     steps:
       - checkout
       - <<: *step_restore_cache
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
@@ -194,7 +198,8 @@ jobs:
     steps:
       - checkout
       - <<: *step_restore_cache
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - <<: *step_setup_slither
@@ -210,7 +215,8 @@ jobs:
     steps:
       - checkout
       - <<: *step_restore_cache
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
