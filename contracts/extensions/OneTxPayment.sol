@@ -169,6 +169,7 @@ contract OneTxPayment is ColonyExtension, DSMath {
       uint256 fundingPotId = colony.getPayment(paymentId).fundingPotId;
       uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
 
+      // We use a separate function to get around the local variable limit :(
       moveFundsWithinDomain(_permissionDomainId, _childSkillIndex, domainPotId, fundingPotId, _amounts[0], _tokens[0]);
 
       colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
