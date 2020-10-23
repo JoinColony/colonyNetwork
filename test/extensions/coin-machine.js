@@ -31,7 +31,6 @@ contract("Coin Machine", (accounts) => {
   let token;
   let purchaseToken;
   let colonyNetwork;
-  let metaColony;
   let coinMachine;
 
   const USER0 = accounts[0];
@@ -39,7 +38,7 @@ contract("Coin Machine", (accounts) => {
 
   before(async () => {
     colonyNetwork = await setupColonyNetwork();
-    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+    const { metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
 
     const coinMachineImplementation = await CoinMachine.new();
     const resolver = await Resolver.new();
