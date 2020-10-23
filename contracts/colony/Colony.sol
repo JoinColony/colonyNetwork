@@ -41,7 +41,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   bytes4 constant APPROVE_SIG = bytes4(keccak256("approve(address,uint256)"));
   bytes4 constant TRANSFER_SIG = bytes4(keccak256("transfer(address,uint256)"));
 
-  function makeArbitraryTransaction(address _to, uint256 _value, bytes memory _action)
+  function makeArbitraryTransaction(address _to, bytes memory _action)
   public stoppable auth
   returns (bool)
   {
@@ -64,7 +64,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
       );
     } catch {}
 
-    return executeCall(_to, _value, _action);
+    return executeCall(_to, 0, _action);
   }
 
   function emitDomainReputationPenalty(
@@ -369,7 +369,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
 
     // Add arbitrary tx functionality
-    sig = bytes4(keccak256("makeArbitraryTransaction(address,uint256,bytes)"));
+    sig = bytes4(keccak256("makeArbitraryTransaction(address,bytes)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 

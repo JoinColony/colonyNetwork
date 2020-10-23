@@ -29,7 +29,7 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const TransferTest = artifacts.require("TransferTest");
 const Token = artifacts.require("Token");
 
-contract("Colony", (accounts) => {
+contract.only("Colony", (accounts) => {
   let colony;
   let token;
   let colonyNetwork;
@@ -127,7 +127,7 @@ contract("Colony", (accounts) => {
       const action = await encodeTxData(token, "mint", [WAD]);
       const balancePre = await token.balanceOf(colony.address);
 
-      await colony.makeArbitraryTransaction(token.address, 0, action);
+      await colony.makeArbitraryTransaction(token.address, action);
 
       const balancePost = await token.balanceOf(colony.address);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
@@ -136,7 +136,7 @@ contract("Colony", (accounts) => {
     it("should not be able to make arbitrary transactions if not root", async () => {
       const action = await encodeTxData(token, "mint", [WAD]);
 
-      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, 0, action, { from: accounts[1] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action, { from: accounts[1] }), "ds-auth-unauthorized");
     });
 
     it("should not be able to make arbitrary transactions to network or token locking", async () => {
@@ -146,16 +146,16 @@ contract("Colony", (accounts) => {
       const action1 = await encodeTxData(colonyNetwork, "addSkill", [0]);
       const action2 = await encodeTxData(tokenLocking, "lockToken", [token.address]);
 
-      await checkErrorRevert(colony.makeArbitraryTransaction(colonyNetwork.address, 0, action1), "colony-cannot-target-network");
-      await checkErrorRevert(colony.makeArbitraryTransaction(tokenLocking.address, 0, action2), "colony-cannot-target-token-locking");
+      await checkErrorRevert(colony.makeArbitraryTransaction(colonyNetwork.address, action1), "colony-cannot-target-network");
+      await checkErrorRevert(colony.makeArbitraryTransaction(tokenLocking.address, action2), "colony-cannot-target-token-locking");
     });
 
     it("should not be able to make arbitrary transactions to transfer tokens", async () => {
       const action1 = await encodeTxData(token, "approve", [USER0, WAD]);
       const action2 = await encodeTxData(token, "transfer", [USER0, WAD]);
 
-      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, 0, action1), "colony-cannot-call-erc20-approve");
-      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, 0, action2), "colony-cannot-call-erc20-transfer");
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action1), "colony-cannot-call-erc20-approve");
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action2), "colony-cannot-call-erc20-transfer");
     });
 
     it("should not be able to make arbitrary transactions to the colony's own extensions", async () => {
@@ -168,11 +168,11 @@ contract("Colony", (accounts) => {
 
       const action = await encodeTxData(coinMachine, "buyTokens", [WAD]);
 
-      await checkErrorRevert(colony.makeArbitraryTransaction(coinMachine.address, 0, action), "colony-cannot-target-extensions");
+      await checkErrorRevert(colony.makeArbitraryTransaction(coinMachine.address, action), "colony-cannot-target-extensions");
 
       // But other colonies can
       const { colony: otherColony } = await setupRandomColony(colonyNetwork);
-      await otherColony.makeArbitraryTransaction(coinMachine.address, 0, action);
+      await otherColony.makeArbitraryTransaction(coinMachine.address, action);
     });
 
     it("should let funding pot information be read", async () => {

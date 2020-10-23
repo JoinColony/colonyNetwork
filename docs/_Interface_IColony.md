@@ -917,7 +917,6 @@ Execute arbitrary transaction on behalf of the Colony
 |Name|Type|Description|
 |---|---|---|
 |_to|address|Contract to receive the function call (cannot be network or token locking)
-|_value|uint256|Value in wei to inclue with the transaction
 |_action|bytes|Bytes array encoding the function call and arguments
 
 **Return Parameters**
