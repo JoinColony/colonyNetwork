@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyExtension.sol";
@@ -49,26 +49,26 @@ contract TokenSupplier is ColonyExtension {
   // Public
 
   /// @notice Returns the version of the extension
-  function version() public pure returns (uint256) {
+  function version() public override pure returns (uint256) {
     return 1;
   }
 
   /// @notice Configures the extension
   /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public auth {
+  function install(address _colony) public override auth {
     require(address(colony) == address(0x0), "extension-already-installed");
 
     colony = IColony(_colony);
   }
 
   /// @notice Called when upgrading the extension (currently a no-op)
-  function finishUpgrade() public auth {}
+  function finishUpgrade() public override auth {}
 
   /// @notice Called when deprecating (or undeprecating) the extension (currently a no-op)
-  function deprecate(bool _deprecated) public auth {}
+  function deprecate(bool _deprecated) public override auth {}
 
   /// @notice Called when uninstalling the extension
-  function uninstall() public auth {
+  function uninstall() public override auth {
     selfdestruct(address(uint160(address(colony))));
   }
 
@@ -80,7 +80,7 @@ contract TokenSupplier is ColonyExtension {
 
     tokenSupplyCeiling = _tokenSupplyCeiling;
     tokenIssuanceRate = _tokenIssuanceRate;
-    lastPinged = now;
+    lastPinged = block.timestamp;
   }
 
   /// @notice Update the tokenSupplyCeiling, cannot set below current tokenSupply
@@ -105,13 +105,13 @@ contract TokenSupplier is ColonyExtension {
 
     uint256 newSupply = min(
       tokenSupplyCeiling - tokenSupply,
-      wmul(tokenIssuanceRate, wdiv((now - lastPinged), PERIOD))
+      wmul(tokenIssuanceRate, wdiv((block.timestamp - lastPinged), PERIOD))
     );
 
     require(newSupply > 0, "token-supplier-nothing-to-issue");
 
     tokenSupply = add(tokenSupply, newSupply);
-    lastPinged = now;
+    lastPinged = block.timestamp;
 
     assert(tokenSupply <= tokenSupplyCeiling);
 
