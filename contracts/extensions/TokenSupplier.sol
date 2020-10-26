@@ -48,6 +48,11 @@ contract TokenSupplier is ColonyExtension {
 
   // Public
 
+  /// @notice Returns the identifier of the extension
+  function identifier() public override pure returns (bytes32) {
+    return keccak256("TokenSupplier");
+  }
+
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
     return 1;
