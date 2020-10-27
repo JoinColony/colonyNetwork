@@ -26,7 +26,7 @@ module.exports = {
     coverage: {
       host: "localhost",
       port: 8555,
-      network_id: 1999,
+      network_id: parseInt(process.env.CHAIN_ID, 10) || 1999,
       skipDryRun: true,
     },
     goerliFork: {
@@ -80,7 +80,7 @@ module.exports = {
           enabled: true,
           runs: 200,
         },
-        evmVersion: "petersburg",
+        evmVersion: "istanbul",
       },
     },
   },

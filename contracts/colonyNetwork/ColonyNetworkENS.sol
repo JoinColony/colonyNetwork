@@ -118,9 +118,9 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
 
   function lookupRegisteredENSDomain(address addr) public view returns(string memory domain) {
     if (bytes(userLabels[addr]).length != 0) {
-      return string(abi.encodePacked(userLabels[addr], ".user.joincolony.eth"));
+      return string(abi.encodePacked(userLabels[addr], ".user.", getGlobalENSDomain()));
     } else if (bytes(colonyLabels[addr]).length != 0) {
-      return string(abi.encodePacked(colonyLabels[addr], ".colony.joincolony.eth"));
+      return string(abi.encodePacked(colonyLabels[addr], ".colony.", getGlobalENSDomain()));
     } else {
       return "";
     }
@@ -132,5 +132,26 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
 
   function getENSRegistrar() public view returns (address) {
     return ens;
+  }
+
+  function getGlobalENSDomain() internal view returns (string memory) {
+    // A chain ID that starts 265669 indicates that it is a QA fork of our own
+    uint256 chainId = getChainId();
+    if (chainId == 1 || chainId == 2656691) {
+      return "joincolony.eth";
+    } else if (chainId == 5 || chainId == 2656695) {
+      return "joincolony.test";
+    } else if (chainId == 100 || chainId == 265669100) {
+      return "joincolony.colonyxdai";
+    }
+    require(false, "colony-network-unsupported-network");
+  }
+
+  function getChainId() internal view returns (uint256) {
+    uint256 id;
+    assembly {
+        id := chainid()
+    }
+    return id;
   }
 }
