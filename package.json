@@ -11,7 +11,7 @@
     "ping:osx": "osascript -e 'display notification \"Ping!\"'",
     "check:storagevars": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-storage.js",
     "check:recoverymods": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-recovery.js",
-    "check:coverage": "yarn istanbul-combine -d coverage-merged -p detail -r html -r json coverage-contracts/coverage-final.json coverage-reputation/coverage-final.json && istanbul check-coverage ./coverage-merged/coverage-final.json --statements 99 --branches 94 --functions 99 --lines 99",
+    "check:coverage": "yarn istanbul-combine -d coverage-merged -p detail -r html -r json coverage-*/coverage-final.json && istanbul check-coverage ./coverage-merged/coverage-final.json --statements 99 --branches 94 --functions 99 --lines 99",
     "check:auth": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-auth.js",
     "version:contracts": "bash ./scripts/version-contracts.sh",
     "generate:test:contracts": "bash ./scripts/generate-test-contracts.sh",

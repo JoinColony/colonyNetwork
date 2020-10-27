@@ -177,6 +177,30 @@ jobs:
           root: ./
           paths:
             - coverage-reputation
+  test-chainid-coverage:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: 19.03.13
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running chainid tests with coverage"
+          command: CHAIN_ID=1 yarn run test:contracts:chainid:coverage
+          command: CHAIN_ID=5 yarn run test:contracts:chainid:coverage
+          command: CHAIN_ID=100 yarn run test:contracts:chainid:coverage
+          command: CHAIN_ID=777 yarn run test:contracts:chainid:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-chainid-1
+            - coverage-chainid-5
+            - coverage-chainid-100
+            - coverage-chainid-777
   check-coverage:
     <<: *job_common
     steps:
@@ -240,6 +264,7 @@ workflows:
           requires:
             - test-contracts-coverage
             - test-reputation-coverage
+            - test-chainid-coverage
   nightly:
     triggers:
       - schedule:
