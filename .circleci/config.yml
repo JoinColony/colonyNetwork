@@ -187,10 +187,22 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
-          name: "Running chainid tests with coverage"
+          name: "Running chainid tests with coverage for mainnet"
           command: CHAIN_ID=1 yarn run test:contracts:chainid:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - run:
+          name: "Running chainid tests with coverage for goerli"
           command: CHAIN_ID=5 yarn run test:contracts:chainid:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - run:
+          name: "Running chainid tests with coverage for xDai"
           command: CHAIN_ID=100 yarn run test:contracts:chainid:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - run:
+          name: "Running chainid tests with coverage for an unsupported network"
           command: CHAIN_ID=777 yarn run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
@@ -258,6 +270,8 @@ workflows:
       - test-contracts-coverage:
           context: dockerhub-credentials
       - test-reputation-coverage:
+          context: dockerhub-credentials
+      - test-chainid-coverage:
           context: dockerhub-credentials
       - check-coverage:
           context: dockerhub-credentials
