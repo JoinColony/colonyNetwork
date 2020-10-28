@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import { soliditySha3 } from "web3-utils";
 
 import { WAD, SECONDS_PER_DAY } from "../../helpers/constants";
-import { checkErrorRevert, currentBlockTime, makeTxAtTimestamp } from "../../helpers/test-helper";
+import { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, encodeTxData, forwardTime } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupRandomColony, setupMetaColonyWithLockedCLNYToken } from "../../helpers/test-data-generator";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
@@ -14,9 +14,14 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const TokenSupplier = artifacts.require("TokenSupplier");
+const VotingReputation = artifacts.require("TestVotingReputation");
+const VotingHybrid = artifacts.require("TestVotingHybrid");
+const RequireExecuteCall = artifacts.require("RequireExecuteCall");
 const Resolver = artifacts.require("Resolver");
 
 const TOKEN_SUPPLIER = soliditySha3("TokenSupplier");
+const VOTING_REPUTATION = soliditySha3("VotingReputation");
+const VOTING_HYBRID = soliditySha3("VotingHybrid");
 
 contract("Token Supplier", (accounts) => {
   let colony;
@@ -34,10 +39,21 @@ contract("Token Supplier", (accounts) => {
     colonyNetwork = await setupColonyNetwork();
     const { metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
 
+    let resolver;
     const tokenSupplierImplementation = await TokenSupplier.new();
-    const resolver = await Resolver.new();
+    resolver = await Resolver.new();
     await setupEtherRouter("TokenSupplier", { TokenSupplier: tokenSupplierImplementation.address }, resolver);
     await metaColony.addExtensionToNetwork(TOKEN_SUPPLIER, resolver.address);
+
+    const votingReputationImplementation = await VotingReputation.new();
+    resolver = await Resolver.new();
+    await setupEtherRouter("TestVotingReputation", { TestVotingReputation: votingReputationImplementation.address }, resolver);
+    await metaColony.addExtensionToNetwork(VOTING_REPUTATION, resolver.address);
+
+    const votingHybridImplementation = await VotingHybrid.new();
+    resolver = await Resolver.new();
+    await setupEtherRouter("TestVotingHybrid", { TestVotingHybrid: votingHybridImplementation.address }, resolver);
+    await metaColony.addExtensionToNetwork(VOTING_HYBRID, resolver.address);
   });
 
   beforeEach(async () => {
@@ -73,11 +89,11 @@ contract("Token Supplier", (accounts) => {
     });
 
     it("can initialise", async () => {
-      await tokenSupplier.initialise(SUPPLY_CEILING, WAD, { from: USER0 });
+      await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
     });
 
     it("cannot initialise twice", async () => {
-      await tokenSupplier.initialise(SUPPLY_CEILING, WAD, { from: USER0 });
+      await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
       await checkErrorRevert(tokenSupplier.initialise(SUPPLY_CEILING, WAD), "token-supplier-already-initialised");
     });
 
@@ -89,28 +105,99 @@ contract("Token Supplier", (accounts) => {
       await checkErrorRevert(tokenSupplier.issueTokens(), "token-supplier-not-initialised");
     });
 
-    it("can update the tokenSupplyCeiling if root", async () => {
-      await tokenSupplier.setTokenSupplyCeiling(SUPPLY_CEILING.muln(2), { from: USER0 });
+    it("can update the tokenSupplyCeiling via a hybrid vote", async () => {
+      await colony.installExtension(VOTING_HYBRID, 1);
+      const votingHybridAddress = await colonyNetwork.getExtensionInstallation(VOTING_HYBRID, colony.address);
+      const votingHybrid = await VotingHybrid.at(votingHybridAddress);
+      await colony.setRootRole(votingHybrid.address, true);
+
+      const action = await encodeTxData(tokenSupplier, "setTokenSupplyCeiling", [SUPPLY_CEILING.muln(2)]);
+      await votingHybrid.executeCall(tokenSupplier.address, action);
 
       const tokenSupplyCeiling = await tokenSupplier.tokenSupplyCeiling();
       expect(tokenSupplyCeiling).to.eq.BN(SUPPLY_CEILING.muln(2));
 
-      await checkErrorRevert(tokenSupplier.setTokenSupplyCeiling(SUPPLY_CEILING, { from: USER1 }), "token-supplier-not-root");
+      // Cannot set through a normal contract call
+      await checkErrorRevert(tokenSupplier.setTokenSupplyCeiling(SUPPLY_CEILING), "token-supplier-caller-must-be-contract");
+
+      // Cannot set if not a network-managed extension
+      const unofficialVotingHybrid = await VotingHybrid.new(colony.address);
+      await checkErrorRevert(unofficialVotingHybrid.executeCall(tokenSupplier.address, action), "transaction-failed");
+
+      // Cannot set if the caller does not implement `identifier()`
+      const requireExecuteCall = await RequireExecuteCall.new();
+      await checkErrorRevert(requireExecuteCall.executeCall(tokenSupplier.address, action), "transaction-failed");
+
+      // Cannot set if not VotingHybrid
+      await colony.installExtension(VOTING_REPUTATION, 1);
+      const votingReputationAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
+      const votingReputation = await VotingHybrid.at(votingReputationAddress);
+      await colony.setRootRole(votingReputation.address, true);
+      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action), "transaction-failed");
     });
 
-    it("can update the tokenIssuanceRate if root", async () => {
-      await tokenSupplier.setTokenIssuanceRate(WAD.muln(2), { from: USER0 });
+    it("can update the tokenIssuanceRate via a hybrid vote", async () => {
+      await colony.installExtension(VOTING_HYBRID, 1);
+      const votingHybridAddress = await colonyNetwork.getExtensionInstallation(VOTING_HYBRID, colony.address);
+      const votingHybrid = await VotingHybrid.at(votingHybridAddress);
+      await colony.setRootRole(votingHybrid.address, true);
+
+      const action = await encodeTxData(tokenSupplier, "setTokenIssuanceRate", [WAD.muln(2)]);
+      await votingHybrid.executeCall(tokenSupplier.address, action);
 
       const tokenIssuanceRate = await tokenSupplier.tokenIssuanceRate();
       expect(tokenIssuanceRate).to.eq.BN(WAD.muln(2));
 
-      await checkErrorRevert(tokenSupplier.setTokenIssuanceRate(WAD, { from: USER1 }), "token-supplier-not-root");
+      // Cannot set through a normal contract call
+      await checkErrorRevert(tokenSupplier.setTokenIssuanceRate(WAD), "token-supplier-caller-must-be-contract");
+
+      // Cannot set if not a network-managed extension
+      const unofficialVotingHybrid = await VotingHybrid.new(colony.address);
+      await checkErrorRevert(unofficialVotingHybrid.executeCall(tokenSupplier.address, action), "transaction-failed");
+
+      // Cannot set if the caller does not implement `identifier()`
+      const requireExecuteCall = await RequireExecuteCall.new();
+      await checkErrorRevert(requireExecuteCall.executeCall(tokenSupplier.address, action), "transaction-failed");
+    });
+
+    it("can update the tokenIssuanceRate via a reputation vote, by <=10% once every 4 weeks", async () => {
+      await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
+
+      await colony.installExtension(VOTING_REPUTATION, 1);
+      const votingReputationAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
+      const votingReputation = await VotingHybrid.at(votingReputationAddress);
+      await colony.setRootRole(votingReputation.address, true);
+
+      // Smaller change
+      const action1 = await encodeTxData(tokenSupplier, "setTokenIssuanceRate", [WAD.add(WAD.divn(10))]);
+      // Bigger change
+      const action2 = await encodeTxData(tokenSupplier, "setTokenIssuanceRate", [WAD.add(WAD.divn(9))]);
+
+      // Cannot change more than once in 4 weeks
+      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action1), "transaction-failed");
+
+      await forwardTime(SECONDS_PER_DAY * 28, this);
+
+      // Cannot change more than 10%
+      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action2), "transaction-failed");
+
+      await votingReputation.executeCall(tokenSupplier.address, action1);
+
+      const tokenIssuanceRate = await tokenSupplier.tokenIssuanceRate();
+      expect(tokenIssuanceRate).to.eq.BN(WAD.add(WAD.divn(10)));
+
+      // Cannot change more than once in 4 weeks
+      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action2), "transaction-failed");
+
+      await forwardTime(SECONDS_PER_DAY * 28, this);
+
+      await votingReputation.executeCall(tokenSupplier.address, action2);
     });
   });
 
   describe("issuing tokens", async () => {
     beforeEach(async () => {
-      await tokenSupplier.initialise(SUPPLY_CEILING, WAD, { from: USER0 });
+      await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
     });
 
     it("can claim tokenIssuanceRate tokens per day", async () => {

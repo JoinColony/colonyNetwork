@@ -65,6 +65,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/FunctionsNotAvailableOnColony.sol",
       "contracts/testHelpers/TestExtensions.sol",
       "contracts/testHelpers/TransferTest.sol",
+      "contracts/testHelpers/RequireExecuteCall.sol",
       "contracts/tokenLocking/ITokenLocking.sol",
       "contracts/tokenLocking/TokenLocking.sol",
       "contracts/tokenLocking/TokenLockingStorage.sol",
