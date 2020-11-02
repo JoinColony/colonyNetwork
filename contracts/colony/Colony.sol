@@ -45,6 +45,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   public stoppable auth
   returns (bool)
   {
+    // Ensure _to is a contract
+    uint256 size;
+    assembly { size := extcodesize(_to) }
+    require(size > 0, "colony-to-must-be-contract");
+
     // Prevent transactions to network contracts
     require(_to != colonyNetworkAddress, "colony-cannot-target-network");
     require(_to != tokenLockingAddress, "colony-cannot-target-token-locking");

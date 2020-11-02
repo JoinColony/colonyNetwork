@@ -139,6 +139,10 @@ contract("Colony", (accounts) => {
       await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action, { from: accounts[1] }), "ds-auth-unauthorized");
     });
 
+    it("should not be able to make arbitrary transactions to a user address", async () => {
+      await checkErrorRevert(colony.makeArbitraryTransaction(accounts[0], "0x0"), "colony-to-must-be-contract");
+    });
+
     it("should not be able to make arbitrary transactions to network or token locking", async () => {
       const tokenLockingAddress = await colonyNetwork.getTokenLocking();
       const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
