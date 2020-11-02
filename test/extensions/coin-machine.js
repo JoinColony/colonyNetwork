@@ -237,6 +237,15 @@ contract("Coin Machine", (accounts) => {
       expect(deprecated).to.equal(true);
     });
 
+    it("cannot buy tokens if extension does not have root permissions", async () => {
+      await colony.setRootRole(coinMachine.address, false);
+      await purchaseToken.mint(USER0, WAD, { from: USER0 });
+
+      await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
+
+      await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "ds-auth-unauthorized");
+    });
+
     it("can buy tokens with eth", async () => {
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
       await colony.installExtension(COIN_MACHINE, 1, { from: USER0 });
