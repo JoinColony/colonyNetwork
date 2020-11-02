@@ -127,6 +127,8 @@ contract CoinMachine is DSMath, ColonyExtension {
     activePeriod = getCurrentPeriod();
 
     emaIntake = wmul(targetPerPeriod, _startingPrice);
+
+    emit ExtensionInitialised();
   }
 
   /// @notice Purchase tokens from Coin Machine.
