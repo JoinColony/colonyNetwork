@@ -3,6 +3,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 
 import {
   UINT256_MAX,
@@ -14,22 +15,26 @@ import {
   RATING_2_SECRET,
   WAD,
 } from "../../helpers/constants";
-import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents } from "../../helpers/test-helper";
+import { getTokenArgs, web3GetBalance, checkErrorRevert, encodeTxData, expectAllEvents } from "../../helpers/test-helper";
 import { makeTask, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const Token = artifacts.require("Token");
-const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
-const TransferTest = artifacts.require("TransferTest");
+const CoinMachine = artifacts.require("CoinMachine");
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const ITokenLocking = artifacts.require("ITokenLocking");
+const TransferTest = artifacts.require("TransferTest");
+const Token = artifacts.require("Token");
 
 contract("Colony", (accounts) => {
   let colony;
   let token;
   let colonyNetwork;
+
+  const USER0 = accounts[0];
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
@@ -116,6 +121,62 @@ contract("Colony", (accounts) => {
       // A root skill should have been created for the Colony
       const rootLocalSkillId = await colonyNetwork.getSkillCount();
       expect(domain.skillId).to.eq.BN(rootLocalSkillId);
+    });
+
+    it("should be able to make arbitrary transactions", async () => {
+      const action = await encodeTxData(token, "mint", [WAD]);
+      const balancePre = await token.balanceOf(colony.address);
+
+      await colony.makeArbitraryTransaction(token.address, action);
+
+      const balancePost = await token.balanceOf(colony.address);
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
+    });
+
+    it("should not be able to make arbitrary transactions if not root", async () => {
+      const action = await encodeTxData(token, "mint", [WAD]);
+
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action, { from: accounts[1] }), "ds-auth-unauthorized");
+    });
+
+    it("should not be able to make arbitrary transactions to a user address", async () => {
+      await checkErrorRevert(colony.makeArbitraryTransaction(accounts[0], "0x0"), "colony-to-must-be-contract");
+    });
+
+    it("should not be able to make arbitrary transactions to network or token locking", async () => {
+      const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+      const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+
+      const action1 = await encodeTxData(colonyNetwork, "addSkill", [0]);
+      const action2 = await encodeTxData(tokenLocking, "lockToken", [token.address]);
+
+      await checkErrorRevert(colony.makeArbitraryTransaction(colonyNetwork.address, action1), "colony-cannot-target-network");
+      await checkErrorRevert(colony.makeArbitraryTransaction(tokenLocking.address, action2), "colony-cannot-target-token-locking");
+    });
+
+    it("should not be able to make arbitrary transactions to transfer tokens", async () => {
+      const action1 = await encodeTxData(token, "approve", [USER0, WAD]);
+      const action2 = await encodeTxData(token, "transfer", [USER0, WAD]);
+
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action1), "colony-cannot-call-erc20-approve");
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action2), "colony-cannot-call-erc20-transfer");
+    });
+
+    it("should not be able to make arbitrary transactions to the colony's own extensions", async () => {
+      const COIN_MACHINE = soliditySha3("CoinMachine");
+      await colony.installExtension(COIN_MACHINE, 1);
+
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      const coinMachine = await CoinMachine.at(coinMachineAddress);
+      await coinMachine.initialise(ethers.constants.AddressZero, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
+
+      const action = await encodeTxData(coinMachine, "buyTokens", [WAD]);
+
+      await checkErrorRevert(colony.makeArbitraryTransaction(coinMachine.address, action), "colony-cannot-target-extensions");
+
+      // But other colonies can
+      const { colony: otherColony } = await setupRandomColony(colonyNetwork);
+      await otherColony.makeArbitraryTransaction(coinMachine.address, action);
     });
 
     it("should let funding pot information be read", async () => {

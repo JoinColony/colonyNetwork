@@ -8,8 +8,10 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
+
 import {
   checkErrorRevert,
+  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
@@ -245,9 +247,17 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(voting.install(colony.address), "extension-already-installed");
 
+      const identifier = await voting.identifier();
+      const version = await voting.version();
+      expect(identifier).to.equal(VOTING_REPUTATION);
+      expect(version).to.eq.BN(1);
+
       await voting.finishUpgrade();
       await voting.deprecate(true);
       await voting.uninstall();
+
+      const code = await web3GetCode(voting.address);
+      expect(code).to.equal("0x");
     });
 
     it("can install the extension with the extension manager", async () => {

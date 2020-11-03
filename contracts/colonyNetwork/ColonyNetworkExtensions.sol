@@ -35,6 +35,9 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
   {
     require(_resolver != address(0x0), "colony-network-extension-bad-resolver");
 
+    bytes32 extensionId = getExtensionId(_resolver);
+    require(_extensionId == extensionId, "colony-network-extension-bad-identifier");
+
     uint256 version = getResolverVersion(_resolver);
     require(resolvers[_extensionId][version] == address(0x0), "colony-network-extension-already-set");
     require(
@@ -125,6 +128,13 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
   }
 
   // Internal functions
+
+  bytes4 constant IDENTIFIER_SIG = bytes4(keccak256("identifier()"));
+
+  function getExtensionId(address _resolver) internal returns (bytes32) {
+    address extension = Resolver(_resolver).lookup(IDENTIFIER_SIG);
+    return ColonyExtension(extension).identifier();
+  }
 
   bytes4 constant VERSION_SIG = bytes4(keccak256("version()"));
 

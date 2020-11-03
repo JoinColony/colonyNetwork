@@ -65,6 +65,11 @@ contract("One transaction payments", (accounts) => {
 
       await checkErrorRevert(oneTxPayment.install(colony.address), "extension-already-installed");
 
+      const identifier = await oneTxPayment.identifier();
+      const version = await oneTxPayment.version();
+      expect(identifier).to.equal(ONE_TX_PAYMENT);
+      expect(version).to.eq.BN(1);
+
       await oneTxPayment.finishUpgrade();
       await oneTxPayment.deprecate(true);
       await oneTxPayment.uninstall();

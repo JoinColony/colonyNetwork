@@ -19,6 +19,7 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../common/IEtherRouter.sol";
+import "./../extensions/ColonyExtension.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
@@ -35,6 +36,40 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function getToken() public view returns (address) {
     return token;
+  }
+
+  bytes4 constant APPROVE_SIG = bytes4(keccak256("approve(address,uint256)"));
+  bytes4 constant TRANSFER_SIG = bytes4(keccak256("transfer(address,uint256)"));
+
+  function makeArbitraryTransaction(address _to, bytes memory _action)
+  public stoppable auth
+  returns (bool)
+  {
+    // Ensure _to is a contract
+    uint256 size;
+    assembly { size := extcodesize(_to) }
+    require(size > 0, "colony-to-must-be-contract");
+
+    // Prevent transactions to network contracts
+    require(_to != colonyNetworkAddress, "colony-cannot-target-network");
+    require(_to != tokenLockingAddress, "colony-cannot-target-token-locking");
+
+    // Prevent transactions to transfer held tokens
+    bytes4 sig;
+    assembly { sig := mload(add(_action, 0x20)) }
+
+    require(sig != APPROVE_SIG, "colony-cannot-call-erc20-approve");
+    require(sig != TRANSFER_SIG, "colony-cannot-call-erc20-transfer");
+
+    // Prevent transactions to network-managed extensions installed in this colony
+    try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
+      require(
+        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) != _to,
+        "colony-cannot-target-extensions"
+      );
+    } catch {}
+
+    return executeCall(_to, 0, _action);
   }
 
   function emitDomainReputationPenalty(
@@ -338,6 +373,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     sig = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
 
+    // Add arbitrary tx functionality
+    sig = bytes4(keccak256("makeArbitraryTransaction(address,bytes)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

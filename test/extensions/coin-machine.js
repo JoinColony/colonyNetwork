@@ -8,7 +8,17 @@ import { soliditySha3 } from "web3-utils";
 
 import { WAD } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
-import { checkErrorRevert, forwardTime, web3GetBalance, makeTxAtTimestamp, currentBlockTime, forwardTimeTo } from "../../helpers/test-helper";
+
+import {
+  checkErrorRevert,
+  web3GetCode,
+  forwardTime,
+  web3GetBalance,
+  makeTxAtTimestamp,
+  currentBlockTime,
+  forwardTimeTo,
+} from "../../helpers/test-helper";
+
 import {
   setupColonyNetwork,
   setupRandomToken,
@@ -70,9 +80,17 @@ contract("Coin Machine", (accounts) => {
 
       await checkErrorRevert(coinMachine.install(colony.address), "extension-already-installed");
 
+      const identifier = await coinMachine.identifier();
+      const version = await coinMachine.version();
+      expect(identifier).to.equal(COIN_MACHINE);
+      expect(version).to.eq.BN(1);
+
       await coinMachine.finishUpgrade();
       await coinMachine.deprecate(true);
       await coinMachine.uninstall();
+
+      const code = await web3GetCode(coinMachine.address);
+      expect(code).to.equal("0x");
     });
 
     it("can install the extension with the extension manager", async () => {
