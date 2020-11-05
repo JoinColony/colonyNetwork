@@ -25,8 +25,8 @@ contract("One transaction payments", (accounts) => {
   let metaColony;
   let oneTxPayment;
 
-  const USER1 = accounts[1] < accounts[2] ? accounts[1] : accounts[2];
-  const USER2 = accounts[1] < accounts[2] ? accounts[2] : accounts[1];
+  const USER1 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[1] : accounts[2];
+  const USER2 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[2] : accounts[1];
 
   const ROLES = rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]);
   const ADDRESS_ZERO = ethers.constants.AddressZero;
