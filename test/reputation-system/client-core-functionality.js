@@ -7,9 +7,15 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
-import { DEFAULT_STAKE } from "../../helpers/constants";
+import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
 import { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle } from "../../helpers/test-helper";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
+import {
+  fundColonyWithTokens,
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  giveUserCLNYTokensAndStake,
+  setupFinalizedTask,
+} from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import ReputationMinerClient from "../../packages/reputation-miner/ReputationMinerClient";
 
@@ -161,14 +167,39 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("should correctly respond to a request for users that have a particular reputation in a colony", async () => {
-          const rootHash = await reputationMiner.getRootHash();
-          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/1/`;
-          const res = await request(url);
+          await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+
+          let rootHash = await reputationMiner.getRootHash();
+          await reputationMiner.saveCurrentState();
+
+          let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/1/`;
+          let res = await request(url);
+          expect(res.statusCode).to.equal(200);
+          let { addresses } = JSON.parse(res.body);
+          expect(addresses.length).to.equal(2);
+          expect(addresses[0]).to.equal(MINER1.toLowerCase());
+          expect(addresses[1]).to.equal(accounts[6].toLowerCase());
+
+          // Let's check that once accounts[6] has more reputation again, it's listed first.
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: accounts[6], manager: accounts[6] });
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: accounts[6], manager: accounts[6] });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          rootHash = await reputationMiner.reputationTree.getRootHash();
+          await reputationMiner.saveCurrentState();
+          url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/1/`;
+
+          res = await request(url);
           expect(res.statusCode).to.equal(200);
 
-          const { addresses } = JSON.parse(res.body);
-          expect(addresses.length).to.equal(1);
-          expect(addresses[0]).to.equal(MINER1.toLowerCase());
+          ({ addresses } = JSON.parse(res.body));
+          expect(addresses.length).to.equal(2);
+          expect(addresses[0]).to.equal(accounts[6].toLowerCase());
+          expect(addresses[1]).to.equal(MINER1.toLowerCase());
         });
       });
     });
