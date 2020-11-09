@@ -15,6 +15,7 @@ import {
   getActiveRepCycle,
   forwardTime,
   getBlockTime,
+  removeSubdomainLimit,
 } from "../../helpers/test-helper";
 
 import {
@@ -41,6 +42,7 @@ contract("Funding Queues", (accounts) => {
   let colony;
   let token;
   let domain1;
+  let domain2;
   let metaColony;
   let colonyNetwork;
   let tokenLocking;
@@ -90,16 +92,18 @@ contract("Funding Queues", (accounts) => {
     const resolver = await Resolver.new();
     await setupEtherRouter("FundingQueue", { FundingQueue: fundingQueueImplementation.address }, resolver);
     await metaColony.addExtensionToNetwork(FUNDING_QUEUE, resolver.address);
+    await removeSubdomainLimit(colonyNetwork);
   });
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
 
-    // 1 => { 2, 3 }
+    // 1 => { 2 => { 4 }, 3 }
     await colony.addDomain(1, UINT256_MAX, 1);
     await colony.addDomain(1, UINT256_MAX, 1);
+    await colony.addDomain(1, 0, 2);
     domain1 = await colony.getDomain(1);
-
+    domain2 = await colony.getDomain(2);
     await colony.installExtension(FUNDING_QUEUE, 1);
 
     const fundingQueueAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
@@ -120,6 +124,7 @@ contract("Funding Queues", (accounts) => {
       makeReputationKey(colony.address, domain1.skillId), // Colony total, domain 1
       makeReputationValue(WAD.muln(3), 1)
     );
+
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER0), // User0
       makeReputationValue(WAD, 2)
@@ -135,6 +140,18 @@ contract("Funding Queues", (accounts) => {
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER1), // User1 (and 2x value)
       makeReputationValue(WAD2, 5)
+    );
+    await reputationTree.insert(
+      makeReputationKey(colony.address, domain2.skillId), // Colony total, domain 2
+      makeReputationValue(WAD.muln(3), 6)
+    );
+    await reputationTree.insert(
+      makeReputationKey(colony.address, domain2.skillId, USER1), // User1 (and 2x value)
+      makeReputationValue(WAD2, 7)
+    );
+    await reputationTree.insert(
+      makeReputationKey(colony.address, domain2.skillId, USER0), // User0
+      makeReputationValue(WAD, 8)
     );
 
     colonyKey = makeReputationKey(colony.address, domain1.skillId);
@@ -791,6 +808,83 @@ contract("Funding Queues", (accounts) => {
         const amountTransferred = balanceBefore.sub(balanceAfter);
         expect(amountTransferred).to.eq.BN(prop.expectedTransferred);
       });
+    });
+  });
+
+  describe("pinging funding proposals with only subdomain permissions", async () => {
+    let proposalId;
+    let user0KeyDomain2;
+    let user0ValueDomain2;
+    let user0MaskDomain2;
+    let user0SiblingsDomain2;
+    let user1KeyDomain2;
+    let user1ValueDomain2;
+    let user1MaskDomain2;
+    let user1SiblingsDomain2;
+
+    beforeEach(async () => {
+      user0KeyDomain2 = makeReputationKey(colony.address, domain2.skillId, USER0);
+      user0ValueDomain2 = makeReputationValue(WAD, 8);
+      [user0MaskDomain2, user0SiblingsDomain2] = await reputationTree.getProof(user0KeyDomain2);
+
+      user1KeyDomain2 = makeReputationKey(colony.address, domain2.skillId, USER1);
+      user1ValueDomain2 = makeReputationValue(WAD2, 7);
+      [user1MaskDomain2, user1SiblingsDomain2] = await reputationTree.getProof(user1KeyDomain2);
+
+      const colonyKeyDomain2 = makeReputationKey(colony.address, domain2.skillId);
+      const colonyValueDomain2 = makeReputationValue(WAD.muln(3), 6);
+      const [colonyMaskDomain2, colonySiblingsDomain2] = await reputationTree.getProof(colonyKeyDomain2);
+
+      await colony.approveStake(fundingQueue.address, 2, WAD, { from: USER0 });
+
+      await colony.setFundingRole(1, UINT256_MAX, fundingQueue.address, 1, false);
+      await colony.setFundingRole(1, 0, fundingQueue.address, 2, true);
+      await colony.addDomain(1, 0, 2);
+
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, 1, 2, WAD, token.address);
+
+      await fundingQueue.createProposal(2, UINT256_MAX, 0, 2, 4, WAD, token.address, { from: USER0 });
+      proposalId = await fundingQueue.getProposalCount();
+      await fundingQueue.stakeProposal(proposalId, colonyKeyDomain2, colonyValueDomain2, colonyMaskDomain2, colonySiblingsDomain2, { from: USER0 });
+    });
+
+    it("can transfer 1/2 of funds after one week, with full backing", async () => {
+      // Back proposal with 100% of reputation
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0KeyDomain2, user0ValueDomain2, user0MaskDomain2, user0SiblingsDomain2, {
+        from: USER0,
+      });
+      await fundingQueue.backProposal(proposalId, WAD2, HEAD, HEAD, user1KeyDomain2, user1ValueDomain2, user1MaskDomain2, user1SiblingsDomain2, {
+        from: USER1,
+      });
+      const balanceBefore = await colony.getFundingPotBalance(2, token.address);
+
+      // Advance one week
+      await forwardTime(SECONDS_PER_DAY * 7, this);
+      await fundingQueue.pingProposal(proposalId);
+
+      // So 1 - (1 - 1/2 * 1) = 1/2 (50.0%) of the balance should be transferred
+      const balanceAfter = await colony.getFundingPotBalance(2, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("499999999998489825");
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
+    });
+
+    it("cannot transfer funds from higher up than it has permissions", async () => {
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
+      proposalId = await fundingQueue.getProposalCount();
+      await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
+
+      // Back proposal with 100% of reputation
+      await fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await fundingQueue.backProposal(proposalId, WAD2, HEAD, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      // Advance one week
+      await forwardTime(SECONDS_PER_DAY * 7, this);
+
+      await checkErrorRevert(fundingQueue.pingProposal(proposalId), "ds-auth-unauthorized");
+
+      // Currently, this blocks any other funding proposals with lower backing. It shouldn't do that!
+      assert(false, "Should not block other funding proposals");
     });
   });
 });
