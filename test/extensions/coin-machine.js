@@ -17,6 +17,7 @@ import {
   makeTxAtTimestamp,
   currentBlockTime,
   forwardTimeTo,
+  expectEvent,
 } from "../../helpers/test-helper";
 
 import {
@@ -104,7 +105,7 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can initialise", async () => {
-      await coinMachine.initialise(purchaseToken.address, 60, 511, 10, 10, 0);
+      await expectEvent(coinMachine.initialise(purchaseToken.address, 60, 511, 10, 10, 0), "ExtensionInitialised");
     });
 
     it("can handle a large windowSize", async () => {

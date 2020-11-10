@@ -18,6 +18,7 @@ import {
   forwardTime,
   encodeTxData,
   bn2bytes32,
+  expectEvent,
 } from "../../helpers/test-helper";
 
 import {
@@ -300,8 +301,13 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR + 1, YEAR, YEAR), "voting-rep-period-too-long");
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR + 1, YEAR), "voting-rep-period-too-long");
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR + 1), "voting-rep-period-too-long");
+    });
 
-      await voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR);
+    it("can initialised with valid values and emit expected event", async () => {
+      voting = await VotingReputation.new();
+      await voting.install(colony.address);
+
+      await expectEvent(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "ExtensionInitialised");
     });
 
     it("can query for initialisation values", async () => {
