@@ -289,7 +289,7 @@ contract("Voting Reputation", (accounts) => {
       expect(deprecated).to.equal(true);
     });
 
-    it("cannot initialise twice or if not root", async () => {
+    it("cannot initialise twice or more if not root", async () => {
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-rep-already-initialised");
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR, { from: USER2 }), "voting-rep-caller-not-root");
     });
