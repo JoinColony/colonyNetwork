@@ -211,7 +211,7 @@ contract("Token Supplier", (accounts) => {
       const balancePost = await token.balanceOf(colony.address);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
 
-      const tokenSupply = await tokenSupplier.tokenSupply();
+      const tokenSupply = await token.totalSupply();
       expect(tokenSupply).to.eq.BN(WAD);
     });
 
@@ -226,7 +226,7 @@ contract("Token Supplier", (accounts) => {
       const balancePost = await token.balanceOf(colony.address);
       expect(balancePost.sub(balancePre)).to.eq.BN(SUPPLY_CEILING);
 
-      const tokenSupply = await tokenSupplier.tokenSupply();
+      const tokenSupply = await token.totalSupply();
       expect(tokenSupply).to.eq.BN(SUPPLY_CEILING);
 
       await checkErrorRevert(tokenSupplier.issueTokens(), "token-supplier-nothing-to-issue");

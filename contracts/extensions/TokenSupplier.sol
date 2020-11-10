@@ -19,6 +19,7 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../common/ERC20Extended.sol";
 import "./ColonyExtension.sol";
 
 
@@ -147,19 +148,19 @@ contract TokenSupplier is ColonyExtension {
   function issueTokens() public {
     require(lastPinged > 0, "token-supplier-not-initialised");
 
+    address token = colony.getToken();
+    uint256 tokenSupply = ERC20Extended(token).totalSupply();
+
     uint256 newSupply = min(
-      tokenSupplyCeiling - tokenSupply,
+      sub(tokenSupplyCeiling, tokenSupply),
       wmul(tokenIssuanceRate, wdiv((block.timestamp - lastPinged), PERIOD))
     );
 
     require(newSupply > 0, "token-supplier-nothing-to-issue");
-
-    tokenSupply = add(tokenSupply, newSupply);
-    lastPinged = block.timestamp;
-
-    assert(tokenSupply <= tokenSupplyCeiling);
+    assert(add(tokenSupply, newSupply) <= tokenSupplyCeiling);
 
     colony.mintTokens(newSupply);
+    lastPinged = block.timestamp;
 
     emit TokensIssued(newSupply);
   }
