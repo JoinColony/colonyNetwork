@@ -42,7 +42,7 @@ abstract contract ColonyExtension is DSAuth {
   function deprecate(bool _deprecated) public virtual;
   function uninstall() public virtual;
 
-  function getDeprecated() public returns (bool deprecated) {
+  function getDeprecated() public view returns (bool) {
     return deprecated;
   }
 

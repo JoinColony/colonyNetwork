@@ -272,8 +272,10 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can deprecate the extension if root", async () => {
-      await checkErrorRevert(colony.deprecateExtension(VOTING_REPUTATION, true, { from: USER2 }), "ds-auth-unauthorized");
+      let deprecated = await voting.getDeprecated();
+      expect(deprecated).to.equal(false);
 
+      await checkErrorRevert(colony.deprecateExtension(VOTING_REPUTATION, true, { from: USER2 }), "ds-auth-unauthorized");
       await colony.deprecateExtension(VOTING_REPUTATION, true);
 
       // Cant make new motions!
@@ -282,6 +284,9 @@ contract("Voting Reputation", (accounts) => {
         voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
         "colony-extension-deprecated"
       );
+
+      deprecated = await voting.getDeprecated();
+      expect(deprecated).to.equal(true);
     });
 
     it("cannot initialise twice or if not root", async () => {
