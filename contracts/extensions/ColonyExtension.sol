@@ -22,6 +22,9 @@ import "./../common/EtherRouter.sol";
 import "./../colony/IColony.sol";
 
 abstract contract ColonyExtension is DSAuth {
+
+  event ExtensionInitialised();
+
   address resolver; // Align storage with EtherRouter
 
   IColony colony;

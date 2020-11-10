@@ -33,7 +33,6 @@ import "./ColonyExtension.sol";
 contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
 
   // Events
-  event ExtensionInitialised();
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
   event MotionStaked(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);
   event MotionVoteSubmitted(uint256 indexed motionId, address indexed voter);
