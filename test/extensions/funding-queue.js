@@ -198,12 +198,18 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("cannot create a basic proposal if deprecated", async () => {
+      let deprecated = await fundingQueue.getDeprecated();
+      expect(deprecated).to.equal(false);
+
       await colony.deprecateExtension(FUNDING_QUEUE, true);
 
       await checkErrorRevert(
         fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 }),
         "colony-extension-deprecated"
       );
+
+      deprecated = await fundingQueue.getDeprecated();
+      expect(deprecated).to.equal(true);
     });
 
     it("cannot create a basic proposal with bad inheritence", async () => {

@@ -162,9 +162,14 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("cannot buy tokens if deprecated", async () => {
+      let deprecated = await coinMachine.getDeprecated();
+      expect(deprecated).to.equal(false);
+
       await colony.deprecateExtension(COIN_MACHINE, true);
 
       await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "colony-extension-deprecated");
+      deprecated = await coinMachine.getDeprecated();
+      expect(deprecated).to.equal(true);
     });
 
     it("can buy tokens with eth", async () => {
