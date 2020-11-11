@@ -52,8 +52,8 @@ contract CoinMachine is ColonyExtension {
 
   // Modifiers
 
-  modifier root() {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "coin-machine-not-root");
+  modifier onlyRoot() {
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "coin-machine-caller-not-root");
     _;
   }
 
@@ -106,7 +106,7 @@ contract CoinMachine is ColonyExtension {
     uint256 _startingPrice
   )
     public
-    root
+    onlyRoot
   {
     require(activePeriod == 0, "coin-machine-already-initialised");
 

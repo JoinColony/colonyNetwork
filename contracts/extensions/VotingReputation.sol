@@ -89,8 +89,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
   // Modifiers
 
-  modifier root() {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-not-root");
+  modifier onlyRoot() {
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-caller-not-root");
     _;
   }
 
@@ -138,7 +138,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     uint256 _escalationPeriod
   )
     public
-    root
+    onlyRoot
   {
     require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
 

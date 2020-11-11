@@ -25,7 +25,7 @@ import "./ColonyExtension.sol";
 
 contract TokenSupplier is ColonyExtension {
 
-  uint256 constant PERIOD = 1 days;
+  uint256 constant ISSUANCE_PERIOD = 1 days;
   bytes32 constant VOTING_REPUTATION = keccak256("VotingReputation");
   bytes32 constant VOTING_HYBRID = keccak256("VotingHybrid");
 
@@ -37,20 +37,25 @@ contract TokenSupplier is ColonyExtension {
 
   // Storage
 
-  uint256 public tokenSupply;
-  uint256 public tokenSupplyCeiling;
-  uint256 public tokenIssuanceRate;
-  uint256 public lastPinged;
-  uint256 public lastRateUpdate;
+  address token;
+  uint256 tokenSupplyCeiling;
+  uint256 tokenIssuanceRate;
+  uint256 lastIssue;
+  uint256 lastRateUpdate;
 
   // Modifiers
 
-  modifier isRoot() {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "token-supplier-not-root");
+  modifier initialised() {
+    require(lastIssue > 0, "token-supplier-not-initialised");
     _;
   }
 
-  modifier isContract() {
+  modifier onlyRoot() {
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "token-supplier-caller-not-root");
+    _;
+  }
+
+  modifier onlyContract() {
     uint256 size;
     address msgSender = msg.sender;
     assembly { size := extcodesize(msgSender) }
@@ -76,6 +81,7 @@ contract TokenSupplier is ColonyExtension {
     require(address(colony) == address(0x0), "extension-already-installed");
 
     colony = IColony(_colony);
+    token = colony.getToken();
   }
 
   /// @notice Called when upgrading the extension (currently a no-op)
@@ -92,18 +98,18 @@ contract TokenSupplier is ColonyExtension {
   /// @notice Initialise the extension, must be called before any tokens can be issued
   /// @param _tokenSupplyCeiling Total amount of tokens to issue
   /// @param _tokenIssuanceRate Number of tokens to issue per day
-  function initialise(uint256 _tokenSupplyCeiling, uint256 _tokenIssuanceRate) public isRoot {
-    require(lastPinged == 0, "token-supplier-already-initialised");
+  function initialise(uint256 _tokenSupplyCeiling, uint256 _tokenIssuanceRate) public onlyRoot {
+    require(lastIssue == 0, "token-supplier-already-initialised");
 
     tokenSupplyCeiling = _tokenSupplyCeiling;
     tokenIssuanceRate = _tokenIssuanceRate;
-    lastPinged = block.timestamp;
+    lastIssue = block.timestamp;
     lastRateUpdate = block.timestamp;
   }
 
   /// @notice Update the tokenSupplyCeiling, cannot set below current tokenSupply
   /// @param _tokenSupplyCeiling Total amount of tokens to issue
-  function setTokenSupplyCeiling(uint256 _tokenSupplyCeiling) public isRoot isContract {
+  function setTokenSupplyCeiling(uint256 _tokenSupplyCeiling) public initialised onlyRoot onlyContract {
     try ColonyExtension(msg.sender).identifier() returns (bytes32 extensionId) {
       IColonyNetwork colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
       address installation = colonyNetwork.getExtensionInstallation(extensionId, address(colony));
@@ -113,14 +119,14 @@ contract TokenSupplier is ColonyExtension {
       require(false, "token-supplier-no-identifier");
     }
 
-    tokenSupplyCeiling = max(_tokenSupplyCeiling, tokenSupply);
+    tokenSupplyCeiling = _tokenSupplyCeiling;
 
     emit TokenSupplyCeilingSet(tokenSupplyCeiling);
   }
 
   /// @notice Update the tokenIssuanceRate
   /// @param _tokenIssuanceRate Number of tokens to issue per day
-  function setTokenIssuanceRate(uint256 _tokenIssuanceRate) public isRoot isContract {
+  function setTokenIssuanceRate(uint256 _tokenIssuanceRate) public initialised onlyRoot onlyContract {
     try ColonyExtension(msg.sender).identifier() returns (bytes32 extensionId) {
       IColonyNetwork colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
       address installation = colonyNetwork.getExtensionInstallation(extensionId, address(colony));
@@ -138,6 +144,10 @@ contract TokenSupplier is ColonyExtension {
       require(false, "token-supplier-no-identifier");
     }
 
+    // Issue any outstanding tokens under the previous rate and update timestamp
+    issueTokens();
+    lastIssue = block.timestamp;
+
     tokenIssuanceRate = _tokenIssuanceRate;
     lastRateUpdate = block.timestamp;
 
@@ -145,24 +155,39 @@ contract TokenSupplier is ColonyExtension {
   }
 
   /// @notice Issue the appropriate amount of tokens
-  function issueTokens() public {
-    require(lastPinged > 0, "token-supplier-not-initialised");
-
-    address token = colony.getToken();
+  function issueTokens() public initialised {
     uint256 tokenSupply = ERC20Extended(token).totalSupply();
 
     uint256 newSupply = min(
       sub(tokenSupplyCeiling, tokenSupply),
-      wmul(tokenIssuanceRate, wdiv((block.timestamp - lastPinged), PERIOD))
+      wmul(tokenIssuanceRate, wdiv((block.timestamp - lastIssue), ISSUANCE_PERIOD))
     );
 
-    require(newSupply > 0, "token-supplier-nothing-to-issue");
     assert(add(tokenSupply, newSupply) <= tokenSupplyCeiling);
 
-    colony.mintTokens(newSupply);
-    lastPinged = block.timestamp;
+    // Don't update lastIssue if we aren't actually issuing tokens
+    if (newSupply > 0) {
+      colony.mintTokens(newSupply);
+      lastIssue = block.timestamp;
 
-    emit TokensIssued(newSupply);
+      emit TokensIssued(newSupply);
+    }
+  }
+
+  function getTokenSupplyCeiling() public view returns (uint256) {
+    return tokenSupplyCeiling;
+  }
+
+  function getTokenIssuanceRate() public view returns (uint256) {
+    return tokenIssuanceRate;
+  }
+
+  function getLastPinged() public view returns (uint256) {
+    return lastIssue;
+  }
+
+  function getLastRateUpdate() public view returns (uint256) {
+    return lastRateUpdate;
   }
 
 }

@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import { soliditySha3 } from "web3-utils";
 
 import { WAD, SECONDS_PER_DAY } from "../../helpers/constants";
-import { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, encodeTxData, forwardTime } from "../../helpers/test-helper";
+import { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, getBlockTime, encodeTxData, forwardTime } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupRandomColony, setupMetaColonyWithLockedCLNYToken } from "../../helpers/test-data-generator";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
@@ -98,7 +98,7 @@ contract("Token Supplier", (accounts) => {
     });
 
     it("cannot initialise if not owner", async () => {
-      await checkErrorRevert(tokenSupplier.initialise(SUPPLY_CEILING, WAD, { from: USER1 }), "token-supplier-not-root");
+      await checkErrorRevert(tokenSupplier.initialise(SUPPLY_CEILING, WAD, { from: USER1 }), "token-supplier-caller-not-root");
     });
 
     it("cannot issues tokens if not initialised", async () => {
@@ -106,6 +106,8 @@ contract("Token Supplier", (accounts) => {
     });
 
     it("can update the tokenSupplyCeiling via a hybrid vote", async () => {
+      await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
+
       await colony.installExtension(VOTING_HYBRID, 1);
       const votingHybridAddress = await colonyNetwork.getExtensionInstallation(VOTING_HYBRID, colony.address);
       const votingHybrid = await VotingHybrid.at(votingHybridAddress);
@@ -114,7 +116,7 @@ contract("Token Supplier", (accounts) => {
       const action = await encodeTxData(tokenSupplier, "setTokenSupplyCeiling", [SUPPLY_CEILING.muln(2)]);
       await votingHybrid.executeCall(tokenSupplier.address, action);
 
-      const tokenSupplyCeiling = await tokenSupplier.tokenSupplyCeiling();
+      const tokenSupplyCeiling = await tokenSupplier.getTokenSupplyCeiling();
       expect(tokenSupplyCeiling).to.eq.BN(SUPPLY_CEILING.muln(2));
 
       // Cannot set through a normal contract call
@@ -139,6 +141,8 @@ contract("Token Supplier", (accounts) => {
     });
 
     it("can update the tokenIssuanceRate via a hybrid vote", async () => {
+      await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
+
       await colony.installExtension(VOTING_HYBRID, 1);
       const votingHybridAddress = await colonyNetwork.getExtensionInstallation(VOTING_HYBRID, colony.address);
       const votingHybrid = await VotingHybrid.at(votingHybridAddress);
@@ -147,7 +151,7 @@ contract("Token Supplier", (accounts) => {
       const action = await encodeTxData(tokenSupplier, "setTokenIssuanceRate", [WAD.muln(2)]);
       await votingHybrid.executeCall(tokenSupplier.address, action);
 
-      const tokenIssuanceRate = await tokenSupplier.tokenIssuanceRate();
+      const tokenIssuanceRate = await tokenSupplier.getTokenIssuanceRate();
       expect(tokenIssuanceRate).to.eq.BN(WAD.muln(2));
 
       // Cannot set through a normal contract call
@@ -187,7 +191,7 @@ contract("Token Supplier", (accounts) => {
 
       await votingReputation.executeCall(tokenSupplier.address, action1);
 
-      const tokenIssuanceRate = await tokenSupplier.tokenIssuanceRate();
+      const tokenIssuanceRate = await tokenSupplier.getTokenIssuanceRate();
       expect(tokenIssuanceRate).to.eq.BN(WAD.add(WAD.divn(10)));
 
       // Cannot change more than once in 4 weeks
@@ -196,6 +200,41 @@ contract("Token Supplier", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 28, this);
 
       await votingReputation.executeCall(tokenSupplier.address, action2);
+    });
+
+    it("can issue tokens before updating the tokenIssuanceRate", async () => {
+      await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
+
+      await colony.installExtension(VOTING_HYBRID, 1);
+      const votingHybridAddress = await colonyNetwork.getExtensionInstallation(VOTING_HYBRID, colony.address);
+      const votingHybrid = await VotingHybrid.at(votingHybridAddress);
+      await colony.setRootRole(votingHybrid.address, true);
+
+      const tx = await tokenSupplier.issueTokens();
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+
+      const balancePre = await token.balanceOf(colony.address);
+
+      const action = await encodeTxData(tokenSupplier, "setTokenIssuanceRate", [WAD.muln(2)]);
+      await makeTxAtTimestamp(votingHybrid.executeCall, [tokenSupplier.address, action], blockTime + SECONDS_PER_DAY, this);
+
+      const balancePost = await token.balanceOf(colony.address);
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
+    });
+
+    it("can view the storage variables", async () => {
+      const tx = await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+
+      const tokenSupplyCeiling = await tokenSupplier.getTokenSupplyCeiling();
+      const tokenIssuanceRate = await tokenSupplier.getTokenIssuanceRate();
+      const lastPinged = await tokenSupplier.getLastPinged();
+      const lastRateUpdate = await tokenSupplier.getLastRateUpdate();
+
+      expect(tokenSupplyCeiling).to.eq.BN(SUPPLY_CEILING);
+      expect(tokenIssuanceRate).to.eq.BN(WAD);
+      expect(lastPinged).to.eq.BN(blockTime);
+      expect(lastRateUpdate).to.eq.BN(blockTime);
     });
   });
 
@@ -219,6 +258,18 @@ contract("Token Supplier", (accounts) => {
       expect(tokenSupply).to.eq.BN(WAD);
     });
 
+    it("can claim tokenIssuanceRate at high frequencies", async () => {
+      const balancePre = await token.balanceOf(colony.address);
+
+      let time = await currentBlockTime();
+      time = new BN(time).addn(SECONDS_PER_DAY / 2);
+
+      await makeTxAtTimestamp(tokenSupplier.issueTokens, [], time.toNumber(), this);
+
+      const balancePost = await token.balanceOf(colony.address);
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD.divn(2));
+    });
+
     it("can claim up to the tokenSupplyCeiling", async () => {
       const balancePre = await token.balanceOf(colony.address);
 
@@ -230,10 +281,11 @@ contract("Token Supplier", (accounts) => {
       const balancePost = await token.balanceOf(colony.address);
       expect(balancePost.sub(balancePre)).to.eq.BN(SUPPLY_CEILING);
 
+      await forwardTime(SECONDS_PER_DAY, this);
+      await tokenSupplier.issueTokens();
+
       const tokenSupply = await token.totalSupply();
       expect(tokenSupply).to.eq.BN(SUPPLY_CEILING);
-
-      await checkErrorRevert(tokenSupplier.issueTokens(), "token-supplier-nothing-to-issue");
     });
   });
 });
