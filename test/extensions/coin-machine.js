@@ -32,6 +32,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const Token = artifacts.require("Token");
+const TokenAuthority = artifacts.require("TokenAuthority");
 const CoinMachine = artifacts.require("CoinMachine");
 const Resolver = artifacts.require("Resolver");
 
@@ -159,6 +160,44 @@ contract("Coin Machine", (accounts) => {
       // But not with insufficient funds
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
       await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "ds-token-insufficient-balance");
+    });
+
+    it("can buy tokens if tokens being sold are locked but the colony can transfer them", async () => {
+      token = await Token.new("a", "a", 18);
+      const locked = await token.locked();
+      expect(locked).to.equal(true);
+
+      colony = await setupColony(colonyNetwork, token.address);
+
+      const tokenAuthority = await TokenAuthority.new(token.address, colony.address, []);
+      await token.setAuthority(tokenAuthority.address);
+
+      await colony.installExtension(COIN_MACHINE, 1);
+
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      coinMachine = await CoinMachine.at(coinMachineAddress);
+
+      await colony.setRootRole(coinMachine.address, true);
+
+      const time = await currentBlockTime();
+      await forwardTimeTo(Math.ceil(time / 3600) * 3600);
+
+      await coinMachine.initialise(
+        purchaseToken.address, // purchase token
+        60 * 60, // period length
+        10, // number of periods for averaging
+        WAD.muln(100), // tokens per period
+        WAD.muln(200), // max per period
+        WAD // starting price
+      );
+
+      await purchaseToken.mint(USER0, WAD, { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
+
+      await coinMachine.buyTokens(WAD, { from: USER0 });
+
+      const balance = await token.balanceOf(USER0);
+      expect(balance).to.eq.BN(WAD);
     });
 
     it("cannot buy tokens if deprecated", async () => {
