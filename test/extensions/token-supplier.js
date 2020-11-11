@@ -122,10 +122,12 @@ contract("Token Supplier", (accounts) => {
 
       // Cannot set if not a network-managed extension
       const unofficialVotingHybrid = await VotingHybrid.new(colony.address);
+      await colony.setRootRole(unofficialVotingHybrid.address, true);
       await checkErrorRevert(unofficialVotingHybrid.executeCall(tokenSupplier.address, action), "transaction-failed");
 
       // Cannot set if the caller does not implement `identifier()`
       const requireExecuteCall = await RequireExecuteCall.new();
+      await colony.setRootRole(requireExecuteCall.address, true);
       await checkErrorRevert(requireExecuteCall.executeCall(tokenSupplier.address, action), "transaction-failed");
 
       // Cannot set if not VotingHybrid
@@ -153,10 +155,12 @@ contract("Token Supplier", (accounts) => {
 
       // Cannot set if not a network-managed extension
       const unofficialVotingHybrid = await VotingHybrid.new(colony.address);
+      await colony.setRootRole(unofficialVotingHybrid.address, true);
       await checkErrorRevert(unofficialVotingHybrid.executeCall(tokenSupplier.address, action), "transaction-failed");
 
       // Cannot set if the caller does not implement `identifier()`
       const requireExecuteCall = await RequireExecuteCall.new();
+      await colony.setRootRole(requireExecuteCall.address, true);
       await checkErrorRevert(requireExecuteCall.executeCall(tokenSupplier.address, action), "transaction-failed");
     });
 
