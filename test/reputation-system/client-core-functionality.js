@@ -176,7 +176,9 @@ process.env.SOLIDITY_COVERAGE
           let rootHash = await reputationMiner.getRootHash();
           await reputationMiner.saveCurrentState();
 
-          let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/1/`;
+          // Note that we're testing here with one URL with a trailing slash and one without.
+          // Both should work
+          let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/1`;
           let res = await request(url);
           expect(res.statusCode).to.equal(200);
           let { addresses } = JSON.parse(res.body);
