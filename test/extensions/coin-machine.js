@@ -166,7 +166,7 @@ contract("Coin Machine", (accounts) => {
       await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "ds-token-insufficient-balance");
     });
 
-    it("cannot buy more than totalMax tokens", async () => {
+    it("cannot buy more than tokensToSell tokens", async () => {
       ({ colony, token } = await setupRandomColony(colonyNetwork));
 
       await colony.installExtension(COIN_MACHINE, 1);
@@ -183,6 +183,9 @@ contract("Coin Machine", (accounts) => {
       await purchaseToken.approve(coinMachine.address, WAD.muln(2), { from: USER0 });
 
       await coinMachine.buyTokens(WAD, { from: USER0 });
+
+      const tokensToSell = await coinMachine.getTokensToSell();
+      expect(tokensToSell).to.be.zero;
 
       await forwardTime(periodLength.toNumber(), this);
 

@@ -42,8 +42,7 @@ contract CoinMachine is ColonyExtension {
   uint256 targetPerPeriod; // Target number of tokens to sell in a period
   uint256 maxPerPeriod; // Maximum number of tokens sellable in a period
 
-  uint256 maxTotal; // Maximum number of tokens to sell
-  uint256 totalSold; // Number of tokens sold so far
+  uint256 tokensToSell; // Number of tokens left to sell
 
   uint256 activePeriod; // The active sale period
   uint256 activePrice; // The active sale price (a WAD ratio of averageIntake / targetPerPeriod)
@@ -106,7 +105,7 @@ contract CoinMachine is ColonyExtension {
     uint256 _windowSize,
     uint256 _targetPerPeriod,
     uint256 _maxPerPeriod,
-    uint256 _maxTotal,
+    uint256 _tokensToSell,
     uint256 _startingPrice
   )
     public
@@ -130,7 +129,7 @@ contract CoinMachine is ColonyExtension {
 
     targetPerPeriod = _targetPerPeriod;
     maxPerPeriod = _maxPerPeriod;
-    maxTotal = _maxTotal;
+    tokensToSell = _tokensToSell;
 
     activePrice = _startingPrice;
     activePeriod = getCurrentPeriod();
@@ -145,15 +144,14 @@ contract CoinMachine is ColonyExtension {
   function buyTokens(uint256 _numTokens) public payable notDeprecated {
     updatePeriod();
 
-    uint256 numTokens = min(min(_numTokens, maxPerPeriod - activeSold), maxTotal - totalSold);
+    uint256 numTokens = min(min(_numTokens, maxPerPeriod - activeSold), tokensToSell);
     uint256 totalCost = wmul(numTokens, activePrice);
 
-    activeIntake += totalCost;
-    activeSold += numTokens;
-    totalSold += numTokens;
+    activeIntake = add(activeIntake, totalCost);
+    activeSold = add(activeSold, numTokens);
+    tokensToSell = sub(tokensToSell, numTokens);
 
     assert(activeSold <= maxPerPeriod);
-    assert(totalSold <= maxTotal);
 
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
@@ -215,6 +213,11 @@ contract CoinMachine is ColonyExtension {
     return maxPerPeriod;
   }
 
+  /// @notice Get the total number of tokens remaining for sale
+  function getTokensToSell() public view returns (uint256) {
+    return tokensToSell;
+  }
+
   /// @notice Get the current price per token
   function getCurrentPrice() public view returns (uint256) {
     uint256 currentPeriod = getCurrentPeriod();
@@ -241,8 +244,10 @@ contract CoinMachine is ColonyExtension {
 
   /// @notice Get the number of remaining tokens for sale this period
   function getNumAvailable() public view returns (uint256) {
-    return maxPerPeriod -
-      ((activePeriod == getCurrentPeriod()) ? activeSold : 0);
+    return min(
+      tokensToSell,
+      sub(maxPerPeriod, ((activePeriod == getCurrentPeriod()) ? activeSold : 0))
+    );
   }
 
   // Internal
