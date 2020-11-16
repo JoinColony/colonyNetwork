@@ -394,8 +394,25 @@ contract("ColonyPermissions", (accounts) => {
       userRoles = await colony.getUserRoles(USER2, 3);
       expect(userRoles).to.equal(rolesArch);
 
+      // Events are only emitted for roles that change...
+      let tx = await colony.setUserRoles(1, 1, USER2, 3, rolesArch, { from: USER1 });
+      expect(tx.logs.length).to.equal(0);
+
       // Can also remove roles
-      await colony.setUserRoles(1, 1, USER2, 3, "0x0", { from: USER1 });
+      tx = await colony.setUserRoles(1, 1, USER2, 3, "0x0", { from: USER1 });
+
+      expect(tx.logs.length).to.equal(2);
+
+      expect(tx.logs[0].event).to.equal("ColonyRoleSet");
+      expect(tx.logs[0].args.setTo).to.equal(false);
+      expect(tx.logs[0].args.role.toNumber()).to.equal(ARBITRATION_ROLE);
+      expect(tx.logs[0].args.user).to.equal(USER2);
+
+      expect(tx.logs[1].event).to.equal("ColonyRoleSet");
+      expect(tx.logs[1].args.setTo).to.equal(false);
+      expect(tx.logs[1].args.role.toNumber()).to.equal(FUNDING_ROLE);
+      expect(tx.logs[1].args.user).to.equal(USER2);
+
       userRoles = await colony.getUserRoles(USER2, 3);
       expect(userRoles).to.equal(ethers.constants.HashZero);
     });

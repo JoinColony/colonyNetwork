@@ -92,17 +92,23 @@ contract ColonyRoles is ColonyStorage {
     // This is not strictly necessary, since these roles are never used in subdomains
     require(_roles & ROOT_ROLES == 0 || _domainId == 1, "colony-bad-domain-for-role");
 
-    bytes32 roles = _roles;
     bool setTo;
+    bytes32 existingRoles = ColonyAuthority(address(authority)).getUserRoles(_user, _domainId);
+    bytes32 rolesChanged = _roles ^ existingRoles;
+    bytes32 roles = _roles;
 
     for (uint8 roleId; roleId < uint8(ColonyRole.NUMBER_OF_ROLES); roleId += 1) {
-      setTo = uint256(roles) % 2 == 1;
+      bool changed = uint256(rolesChanged) % 2 == 1;
+      if (changed) {
+        setTo = uint256(roles) % 2 == 1;
 
-      ColonyAuthority(address(authority)).setUserRole(_user, _domainId, roleId, setTo);
+        ColonyAuthority(address(authority)).setUserRole(_user, _domainId, roleId, setTo);
 
-      emit ColonyRoleSet(_user, _domainId, roleId, setTo);
+        emit ColonyRoleSet(_user, _domainId, roleId, setTo);
 
+      }
       roles >>= 1;
+      rolesChanged >>= 1;
     }
   }
 
