@@ -4,7 +4,7 @@ require("@babel/register")({
 require("@babel/polyfill");
 
 const path = require("path");
-const { argv } = require("yargs");
+const { argv } = require("yargs").option('privateKey', {string:true}).option('colonyNetworkAddress', {string:true});
 const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
