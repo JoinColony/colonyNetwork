@@ -70,6 +70,13 @@ contract("Colony Recovery", (accounts) => {
       await expectEvent(colony.removeRecoveryRole(accounts[1]), "RecoveryRoleSet");
     });
 
+    it("should emit events when moving through the recovery procress", async () => {
+      await expectEvent(colony.enterRecoveryMode(), "RecoveryModeEntered");
+      await expectEvent(colony.setStorageSlotRecovery("0xdeadbeef", "0xdeadbeef"), "RecoveryStorageSlotSet");
+      await expectEvent(colony.approveExitRecovery(), "RecoveryModeExitApproved");
+      await expectEvent(colony.exitRecoveryMode(), "RecoveryModeExited");
+    });
+
     it("should not error when adding recovery roles for existing recovery users", async () => {
       let numRecoveryRoles;
 

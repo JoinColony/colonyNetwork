@@ -23,4 +23,10 @@ interface ContractRecoveryDataTypes {
   /// @param user The address being modified
   /// @param setTo The boolean indicating whether the role is being granted or revoked
   event RecoveryRoleSet(address indexed user, bool setTo);
+
+  event RecoveryModeEntered();
+  event RecoveryModeExited();
+  event RecoveryStorageSlotSet(uint256 slot, bytes32 value);
+  event RecoveryModeExitApproved(address user);
+
 }
