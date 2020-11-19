@@ -44,7 +44,9 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
     // Make recovery edit
     uint x = _slot;
     bytes32 y = _value;
+    bytes32 oldValue;
     assembly {
+      oldValue := sload(x)
       sstore(x, y) // ignore-swc-124
     }
 
@@ -56,7 +58,7 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
     recoveryApprovalCount = 0;
     recoveryEditedTimestamp = block.timestamp;
 
-    emit RecoveryStorageSlotSet(_slot, _value);
+    emit RecoveryStorageSlotSet(_slot, oldValue, _value);
   }
 
   function isInRecoveryMode() public view returns (bool) {
@@ -68,7 +70,7 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
     recoveryApprovalCount = 0;
     recoveryEditedTimestamp = block.timestamp;
 
-    emit RecoveryModeEntered();
+    emit RecoveryModeEntered(msg.sender);
   }
 
   function approveExitRecovery() public recovery auth {
@@ -88,7 +90,7 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
     uint numRequired = totalAuthorized / 2 + 1;
     require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
     recoveryMode = false;
-    emit RecoveryModeExited();
+    emit RecoveryModeExited(msg.sender);
   }
 
   // Can only be called by the root role.

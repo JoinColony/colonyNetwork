@@ -251,9 +251,21 @@ export async function getBlockTime(blockNumber) {
   return p;
 }
 
-export async function expectEvent(tx, eventName) {
+function hexlifyAndPad(input) {
+  let i = input;
+  if (i.toString) {
+    i = i.toString();
+  }
+  i = ethers.BigNumber.from(i);
+  return ethers.utils.hexZeroPad(ethers.utils.hexlify(i), 32);
+}
+
+export async function expectEvent(tx, eventName, args) {
   const { logs } = await tx;
   const event = logs.find((e) => e.event === eventName);
+  for (let i = 0; i < args.length; i += 1) {
+    expect(hexlifyAndPad(args[i])).to.equal(hexlifyAndPad(event.args[i]));
+  }
   return expect(event).to.exist;
 }
 

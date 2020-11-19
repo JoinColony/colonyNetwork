@@ -354,7 +354,7 @@ contract("Colony Task Work Rating", (accounts) => {
       );
     });
 
-    it("should log a TaskWorkRatingRevealed event", async () => {
+    it.only("should log a TaskWorkRatingRevealed event", async () => {
       let dueDate = await currentBlockTime();
       dueDate += SECONDS_PER_DAY * 8;
 
@@ -365,7 +365,8 @@ contract("Colony Task Work Rating", (accounts) => {
 
       await expectEvent(
         colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
-        "TaskWorkRatingRevealed"
+        "TaskWorkRatingRevealed",
+        [taskId, WORKER_ROLE, WORKER_RATING]
       );
     });
   });
