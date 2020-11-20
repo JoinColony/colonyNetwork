@@ -312,7 +312,7 @@ contract("Voting Reputation", (accounts) => {
       voting = await VotingReputation.new();
       await voting.install(colony.address);
 
-      await expectEvent(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "ExtensionInitialised");
+      await expectEvent(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "ExtensionInitialised", []);
     });
 
     it("can query for initialisation values", async () => {
