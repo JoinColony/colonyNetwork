@@ -90,6 +90,7 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
     uint numRequired = totalAuthorized / 2 + 1;
     require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
     recoveryMode = false;
+
     emit RecoveryModeExited(msg.sender);
   }
 
