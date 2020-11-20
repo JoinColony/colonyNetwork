@@ -21,10 +21,14 @@
     "no-await-in-loop": "off",
     "no-trailing-spaces": "error",
     "no-multi-spaces": ["error", {"ignoreEOLComments": true}],
+    "no-only-tests/no-only-tests": ["error", {"block": ["contract", "it"], "focus": ["only"]}],
     "eslint-comments/disable-enable-pair": ["error", {"allowWholeFile": true}],
     "space-infix-ops": ["error"]
   },
   "parserOptions": {
     "ecmaVersion": 2018
-  }
+  },
+  "plugins": [
+    "no-only-tests"
+  ]
 }

@@ -354,7 +354,7 @@ contract("Colony Task Work Rating", (accounts) => {
       );
     });
 
-    it.only("should log a TaskWorkRatingRevealed event", async () => {
+    it("should log a TaskWorkRatingRevealed event", async () => {
       let dueDate = await currentBlockTime();
       dueDate += SECONDS_PER_DAY * 8;
 
