@@ -1098,7 +1098,8 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
-        "TaskBriefSet"
+        "TaskBriefSet",
+        [taskId, SPECIFICATION_HASH_UPDATED]
       );
     });
 
@@ -1115,7 +1116,8 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, dueDate],
         }),
-        "TaskDueDateSet"
+        "TaskDueDateSet",
+        [taskId, dueDate]
       );
     });
 
@@ -1134,7 +1136,8 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, skillCount],
         }),
-        "TaskSkillSet"
+        "TaskSkillSet",
+        [taskId, skillCount]
       );
     });
 
@@ -1151,7 +1154,8 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, WORKER],
         }),
-        "TaskRoleUserSet"
+        "TaskRoleUserSet",
+        [taskId, WORKER_ROLE, WORKER]
       );
     });
 
@@ -1271,7 +1275,10 @@ contract("ColonyTask", (accounts) => {
       dueDate += SECONDS_PER_DAY * 4;
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
-      await expectEvent(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER }), "TaskDeliverableSubmitted");
+      await expectEvent(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER }), "TaskDeliverableSubmitted", [
+        taskId,
+        DELIVERABLE_HASH,
+      ]);
     });
   });
 
@@ -1320,7 +1327,7 @@ contract("ColonyTask", (accounts) => {
     it("should log a TaskFinalized event", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized");
+      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [taskId]);
     });
   });
 
@@ -1454,7 +1461,8 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId],
         }),
-        "TaskCanceled"
+        "TaskCanceled",
+        [taskId]
       );
     });
   });
@@ -1641,7 +1649,8 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, ethers.constants.AddressZero, 98000],
         }),
-        "TaskPayoutSet"
+        "TaskPayoutSet",
+        [taskId, WORKER_ROLE, ethers.constants.AddressZero, 98000]
       );
     });
 
@@ -1905,7 +1914,7 @@ contract("ColonyTask", (accounts) => {
       for (let i = 0; i < 42; i += 1) {
         await taskSkillEditingColony.addTaskSkill(taskId, GLOBAL_SKILL_ID);
       }
-      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized");
+      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [taskId]);
     });
 
     it("an empty element shouldn't affect finalization of the task", async () => {
@@ -1916,7 +1925,7 @@ contract("ColonyTask", (accounts) => {
       await taskSkillEditingColony.addTaskSkill(taskId, 3);
       await taskSkillEditingColony.addTaskSkill(taskId, 3);
       await taskSkillEditingColony.removeTaskSkill(taskId, 2);
-      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized");
+      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [taskId]);
     });
   });
 });

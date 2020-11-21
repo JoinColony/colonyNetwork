@@ -23,4 +23,24 @@ interface ContractRecoveryDataTypes {
   /// @param user The address being modified
   /// @param setTo The boolean indicating whether the role is being granted or revoked
   event RecoveryRoleSet(address indexed user, bool setTo);
+
+  /// @notice Event logged when recovery mode is triggered.
+  /// @param user The address that triggered recovery mode
+  event RecoveryModeEntered(address user);
+
+  /// @notice Event logged when recovery mode is left
+  /// @param user The address that left recovery mode
+  event RecoveryModeExited(address user);
+
+  /// @notice Event logged when in recovery mode a storage slot is set
+  /// @param slot The storage slot being modified
+  /// @param fromValue The value the storage slot had before this transaction
+  /// @param toValue The value the storage slot has after this transaction
+  event RecoveryStorageSlotSet(uint256 slot, bytes32 fromValue, bytes32 toValue);
+
+  /// @notice Event logged when someone with recovery mode signals they are happy with the state
+  /// and wish to leave recovery mode
+  /// @param user The address signalling they are happy with the state
+  event RecoveryModeExitApproved(address user);
+
 }

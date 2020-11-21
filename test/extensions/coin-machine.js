@@ -106,7 +106,7 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can initialise", async () => {
-      await expectEvent(coinMachine.initialise(purchaseToken.address, 60, 511, 10, 10, 0), "ExtensionInitialised");
+      await expectEvent(coinMachine.initialise(purchaseToken.address, 60, 511, 10, 10, 0), "ExtensionInitialised", []);
     });
 
     it("can handle a large windowSize", async () => {

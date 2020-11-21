@@ -66,8 +66,28 @@ contract("Colony Recovery", (accounts) => {
     });
 
     it("should emit events when changing recovery roles", async () => {
-      await expectEvent(colony.setRecoveryRole(accounts[1]), "RecoveryRoleSet");
-      await expectEvent(colony.removeRecoveryRole(accounts[1]), "RecoveryRoleSet");
+      await expectEvent(colony.setRecoveryRole(accounts[1]), "RecoveryRoleSet", [accounts[1]]);
+      await expectEvent(colony.removeRecoveryRole(accounts[1]), "RecoveryRoleSet", [accounts[1]]);
+    });
+
+    it("should emit events when moving through the recovery procress", async () => {
+      await expectEvent(colony.enterRecoveryMode(), "RecoveryModeEntered", [accounts[0]]);
+      await expectEvent(
+        colony.setStorageSlotRecovery("0xdead", "0xbeef00000000000000000000000000000000000000000000000000000000beef"),
+        "RecoveryStorageSlotSet",
+        ["0xdead", "0x00", "0xbeef00000000000000000000000000000000000000000000000000000000beef"]
+      );
+      await expectEvent(
+        colony.setStorageSlotRecovery("0xdead", "0xbadbeef00000000000000000000000000000000000000000000000000badbeef"),
+        "RecoveryStorageSlotSet",
+        [
+          "0xdead",
+          "0xbeef00000000000000000000000000000000000000000000000000000000beef",
+          "0xbadbeef00000000000000000000000000000000000000000000000000badbeef",
+        ]
+      );
+      await expectEvent(colony.approveExitRecovery(), "RecoveryModeExitApproved", [accounts[0]]);
+      await expectEvent(colony.exitRecoveryMode(), "RecoveryModeExited", [accounts[0]]);
     });
 
     it("should not error when adding recovery roles for existing recovery users", async () => {

@@ -119,5 +119,7 @@
   "workspaces": [
     "packages/*"
   ],
-  "dependencies": {}
+  "dependencies": {
+    "eslint-plugin-no-only-tests": "^2.4.0"
+  }
 }

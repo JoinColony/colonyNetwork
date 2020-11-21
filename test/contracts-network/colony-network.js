@@ -291,7 +291,10 @@ contract("Colony Network", (accounts) => {
 
     it("should log a ColonyAdded event", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      await expectEvent(colonyNetwork.createColony(token.address, 0, ""), "ColonyAdded");
+      const tx = await colonyNetwork.createColony(token.address, 0, "");
+      const colonyCount = await colonyNetwork.getColonyCount();
+      const colonyAddress = await colonyNetwork.getColony(colonyCount);
+      await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
     });
   });
 
