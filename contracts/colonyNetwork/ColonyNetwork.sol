@@ -307,6 +307,18 @@ contract ColonyNetwork is ColonyNetworkStorage {
     emit NetworkFeeInverseSet(_feeInverse);
   }
 
+  function getPayoutWhitelist(address _token) public view returns (bool) {
+    return payoutWhitelist[_token];
+  }
+
+  function setPayoutWhitelist(address _token, bool _status) public stoppable
+  calledByMetaColony
+  {
+    payoutWhitelist[_token] = _status;
+
+    emit TokenWhitelisted(_token, _status);
+  }
+
   function issueMetaColonyStipend() public stoppable {
     // Can be called by anyone
     require(lastMetaColonyStipendIssued > 0, "colony-network-metacolony-stipend-not-set");

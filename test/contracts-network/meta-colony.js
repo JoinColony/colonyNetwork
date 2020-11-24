@@ -539,6 +539,26 @@ contract("Meta Colony", (accounts) => {
     });
   });
 
+  describe("when managing the payout whitelist", () => {
+    it("should allow a meta colony root user to update the whitelist", async () => {
+      let status = await colonyNetwork.getPayoutWhitelist(clnyToken.address);
+      expect(status).to.be.false;
+
+      await metaColony.setPayoutWhitelist(clnyToken.address, true);
+
+      status = await colonyNetwork.getPayoutWhitelist(clnyToken.address);
+      expect(status).to.be.true;
+    });
+
+    it("should not allow anyone else but a meta colony root user to update the whitelist", async () => {
+      await checkErrorRevert(metaColony.setPayoutWhitelist(clnyToken.address, true, { from: accounts[1] }), "ds-auth-unauthorized");
+    });
+
+    it("should not allow another account, than the meta colony, to update the whitelist", async () => {
+      await checkErrorRevert(colonyNetwork.setPayoutWhitelist(clnyToken.address, true), "colony-caller-must-be-meta-colony");
+    });
+  });
+
   describe("when minting tokens for the Network", () => {
     it("should NOT allow anyone but the Network to call mintTokensForColonyNetwork", async () => {
       await checkErrorRevert(metaColony.mintTokensForColonyNetwork(100), "colony-access-denied-only-network-allowed");
