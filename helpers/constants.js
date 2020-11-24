@@ -8,7 +8,7 @@ const INT256_MAX = new BN(0).notn(255);
 const INT128_MAX = new BN(2).pow(new BN(127)).sub(new BN(1));
 const INT128_MIN = new BN(2).pow(new BN(127)).mul(new BN(-1));
 
-const CURR_VERSION = 4;
+const CURR_VERSION = 5;
 
 const RECOVERY_ROLE = 0;
 const ROOT_ROLE = 1;

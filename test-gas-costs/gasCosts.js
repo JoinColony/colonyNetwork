@@ -5,6 +5,7 @@ import TruffleLoader from "../packages/reputation-miner/TruffleLoader";
 
 import {
   UINT256_MAX,
+  CURR_VERSION,
   WAD,
   MANAGER_ROLE,
   WORKER_ROLE,
@@ -95,7 +96,7 @@ contract("All", function (accounts) {
       const tokenArgs = getTokenArgs();
       const colonyToken = await Token.new(...tokenArgs);
       await colonyToken.unlock();
-      await colonyNetwork.createColony(colonyToken.address, 0, "", "", false);
+      await colonyNetwork.createColony(colonyToken.address, CURR_VERSION, "");
     });
 
     it("when working with the Meta Colony", async function () {
