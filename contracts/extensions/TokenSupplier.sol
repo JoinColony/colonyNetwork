@@ -159,11 +159,11 @@ contract TokenSupplier is ColonyExtension {
     uint256 tokenSupply = ERC20Extended(token).totalSupply();
 
     uint256 newSupply = min(
-      sub(tokenSupplyCeiling, tokenSupply),
+      (tokenSupplyCeiling > tokenSupply) ? sub(tokenSupplyCeiling, tokenSupply) : 0,
       wmul(tokenIssuanceRate, wdiv((block.timestamp - lastIssue), ISSUANCE_PERIOD))
     );
 
-    assert(add(tokenSupply, newSupply) <= tokenSupplyCeiling);
+    assert(newSupply == 0 || add(tokenSupply, newSupply) <= tokenSupplyCeiling);
 
     // Don't update lastIssue if we aren't actually issuing tokens
     if (newSupply > 0) {

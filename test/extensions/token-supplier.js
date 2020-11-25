@@ -287,5 +287,18 @@ contract("Token Supplier", (accounts) => {
       const tokenSupply = await token.totalSupply();
       expect(tokenSupply).to.eq.BN(SUPPLY_CEILING);
     });
+
+    it("can claim no tokens if the supply is larger than the ceiling", async () => {
+      token.mint(SUPPLY_CEILING.addn(1));
+
+      const balancePre = await token.balanceOf(colony.address);
+
+      await forwardTime(SECONDS_PER_DAY, this);
+
+      await tokenSupplier.issueTokens();
+
+      const balancePost = await token.balanceOf(colony.address);
+      expect(balancePost.sub(balancePre)).to.be.zero;
+    });
   });
 });
