@@ -18,13 +18,12 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../../lib/dappsys/math.sol";
 import "./ColonyExtension.sol";
 
 // ignore-file-swc-108
 
 
-contract OneTxPayment is ColonyExtension, DSMath {
+contract OneTxPayment is ColonyExtension {
   uint256 constant UINT256_MAX = 2**256 - 1;
   ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
   ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;

@@ -18,16 +18,13 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../../lib/dappsys/math.sol";
-import "./../colony/ColonyDataTypes.sol";
-import "./../colony/IColony.sol";
 import "./../common/ERC20Extended.sol";
 import "./ColonyExtension.sol";
 
 // ignore-file-swc-108
 
 
-contract CoinMachine is DSMath, ColonyExtension {
+contract CoinMachine is ColonyExtension {
 
   // Events
 
@@ -52,6 +49,13 @@ contract CoinMachine is DSMath, ColonyExtension {
   uint256 activeIntake; // Payment received in the active period
 
   uint256 emaIntake; // Averaged payment intake
+
+  // Modifiers
+
+  modifier onlyRoot() {
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "coin-machine-caller-not-root");
+    _;
+  }
 
   // Public
 
@@ -102,8 +106,8 @@ contract CoinMachine is DSMath, ColonyExtension {
     uint256 _startingPrice
   )
     public
+    onlyRoot
   {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "coin-machine-not-root");
     require(activePeriod == 0, "coin-machine-already-initialised");
 
     require(_periodLength > 0, "coin-machine-period-too-small");

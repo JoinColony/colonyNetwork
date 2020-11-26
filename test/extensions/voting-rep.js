@@ -291,7 +291,7 @@ contract("Voting Reputation", (accounts) => {
 
     it("cannot initialise twice or if not root", async () => {
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-rep-already-initialised");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR, { from: USER2 }), "voting-rep-user-not-root");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR, { from: USER2 }), "voting-rep-caller-not-root");
     });
 
     it("cannot initialise with invalid values", async () => {

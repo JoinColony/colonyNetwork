@@ -18,19 +18,14 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../../lib/dappsys/math.sol";
-import "./../../lib/dappsys/roles.sol";
-import "./../colony/ColonyDataTypes.sol";
-import "./../colony/IColony.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../common/ERC20Extended.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
-
 import "./ColonyExtension.sol";
 
 
-contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
+contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
@@ -92,6 +87,15 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
   uint256 revealPeriod; // Length of time for revealing votes
   uint256 escalationPeriod; // Length of time for escalating after a vote
 
+  // Modifiers
+
+  modifier onlyRoot() {
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-caller-not-root");
+    _;
+  }
+
+  // Public
+
   /// @notice Returns the identifier of the extension
   function identifier() public override pure returns (bytes32) {
     return keccak256("VotingReputation");
@@ -134,12 +138,8 @@ contract VotingReputation is ColonyExtension, DSMath, PatriciaTreeProofs {
     uint256 _escalationPeriod
   )
     public
+    onlyRoot
   {
-    require(
-      colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root),
-      "voting-rep-user-not-root"
-    );
-
     require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
 
     require(_totalStakeFraction <= WAD / 2, "voting-rep-greater-than-half-wad");

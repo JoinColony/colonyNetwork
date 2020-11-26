@@ -22,10 +22,6 @@ import "../extensions/ColonyExtension.sol";
 
 
 abstract contract TestExtension is ColonyExtension {
-  function identifier() public override pure returns (bytes32) {
-    return keccak256("TestExtension");
-  }
-
   function install(address _colony) public override auth {
     require(address(colony) == address(0x0), "extension-already-installed");
 
@@ -45,11 +41,13 @@ abstract contract TestExtension is ColonyExtension {
 
 
 contract TestExtension0 is TestExtension {
+  function identifier() public override pure returns (bytes32) { return keccak256("TestExtension"); }
   function version() public override pure returns (uint256) { return 0; }
 }
 
 
 contract TestExtension1 is TestExtension {
+  function identifier() public override pure returns (bytes32) { return keccak256("TestExtension"); }
   function version() public pure override returns (uint256) { return 1; }
   function receiveEther() external payable {} // solhint-disable-line no-empty-blocks
   function foo() public notDeprecated {} // solhint-disable-line no-empty-blocks
@@ -57,10 +55,32 @@ contract TestExtension1 is TestExtension {
 
 
 contract TestExtension2 is TestExtension {
+  function identifier() public override pure returns (bytes32) { return keccak256("TestExtension"); }
   function version() public pure override returns (uint256) { return 2; }
 }
 
 
 contract TestExtension3 is TestExtension {
+  function identifier() public override pure returns (bytes32) { return keccak256("TestExtension"); }
   function version() public pure override returns (uint256) { return 3; }
+}
+
+contract TestVotingReputation is TestExtension {
+  function identifier() public pure override returns (bytes32) { return keccak256("VotingReputation"); }
+  function version() public pure override returns (uint256) { return 1; }
+  function executeCall(address target, bytes memory action) public {
+    bool success;
+    assembly { success := call(gas(), target, 0, add(action, 0x20), mload(action), 0, 0) }
+    require(success, "transaction-failed");
+  }
+}
+
+contract TestVotingHybrid is TestExtension {
+  function identifier() public pure override returns (bytes32) { return keccak256("VotingHybrid"); }
+  function version() public pure override returns (uint256) { return 1; }
+  function executeCall(address target, bytes memory action) public {
+    bool success;
+    assembly { success := call(gas(), target, 0, add(action, 0x20), mload(action), 0, 0) }
+    require(success, "transaction-failed");
+  }
 }

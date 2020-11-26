@@ -132,7 +132,7 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("cannot initialise if not root", async () => {
-      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 511, 10, 10, 0, { from: USER1 }), "coin-machine-not-root");
+      await checkErrorRevert(coinMachine.initialise(purchaseToken.address, 60, 511, 10, 10, 0, { from: USER1 }), "coin-machine-caller-not-root");
     });
   });
 
