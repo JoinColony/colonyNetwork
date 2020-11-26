@@ -24,6 +24,8 @@ import "./ColonyExtension.sol";
 
 
 contract OneTxPayment is ColonyExtension {
+  event OneTxPaymentMade();
+  
   uint256 constant UINT256_MAX = 2**256 - 1;
   ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
   ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
@@ -131,6 +133,8 @@ contract OneTxPayment is ColonyExtension {
       finalizeAndClaim(expenditureId, _workers, _tokens);
 
     }
+
+    emit OneTxPaymentMade();
   }
 
   /// @notice Completes a colony payment in a single transaction
@@ -212,6 +216,8 @@ contract OneTxPayment is ColonyExtension {
       finalizeAndClaim(expenditureId, _workers, _tokens);
 
     }
+
+    emit OneTxPaymentMade();
   }
 
   function calculateUniqueAmounts(

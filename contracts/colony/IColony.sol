@@ -189,6 +189,11 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _token Address of the colony ERC20 Token
   function initialiseColony(address _colonyNetworkAddress, address _token) external;
 
+  /// @notice Called to change the metadat associated with a colony. Expected to be a IPFS hash of a
+  /// JSON blob, but not enforced to any degree by the contracts
+  /// @param _metadata IPFS hash of the metadata
+  function editColony(string memory _metadata) external;
+
   /// @notice Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to `_users`.
   /// This reputation is assigned in the colony-wide domain. Secured function to authorised members.
   /// @dev Only allowed to be called when `taskCount` is `0` by authorized addresses.
@@ -241,7 +246,25 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
   /// @param _parentDomainId Id of the domain under which the new one will be added
   /// @dev Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: `1`.
+  /// @dev This signature is now deprecated and will be removed at a later date.
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) external;
+
+  /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`.
+  /// New funding pot is created and associated with the domain here.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _parentDomainId Id of the domain under which the new one will be added
+  /// @param _metadata Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
+  /// @dev Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: `1`.
+  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId, string memory _metadata) external;
+
+  /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`.
+  /// New funding pot is created and associated with the domain here.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _domainId Id of the domain being edited
+  /// @param _metadata Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
+  function editDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, string memory _metadata) external;
 
   /// @notice Get a domain by id.
   /// @param _id Id of the domain which details to get
