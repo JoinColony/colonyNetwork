@@ -263,8 +263,13 @@ function hexlifyAndPad(input) {
 export async function expectEvent(tx, eventName, args) {
   const { logs } = await tx;
   const event = logs.find((e) => e.event === eventName);
+  expect(event).to.exist;
   for (let i = 0; i < args.length; i += 1) {
-    expect(hexlifyAndPad(args[i])).to.equal(hexlifyAndPad(event.args[i]));
+    if (ethers.utils.isHexString(event.args[i])) {
+      expect(hexlifyAndPad(args[i])).to.equal(hexlifyAndPad(event.args[i]));
+    } else {
+      expect(args[i]).to.equal(event.args[i]);
+    }
   }
   return expect(event).to.exist;
 }

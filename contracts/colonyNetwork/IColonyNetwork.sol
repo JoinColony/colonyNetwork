@@ -150,6 +150,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
   /// @param _version The version of colony to deploy (pass 0 for the current version)
   /// @param _colonyName The label to register (if null, no label is registered)
+  /// @param _metadata The metadata associated with the new colony
   /// @return colonyAddress Address of the newly created colony
   function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _metadata)
     external returns (address colonyAddress);

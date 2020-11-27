@@ -17,8 +17,9 @@
 
 pragma solidity 0.7.3;
 
+import "./../colony/ColonyDataTypes.sol"; // TODO: Is there a better solution to this?
 
-interface ColonyNetworkDataTypes {
+interface ColonyNetworkDataTypes is ColonyDataTypes {
   /// @notice Event logged when the colony network is intialised. This is only ever emitted once in a network's lifetime
   /// @param resolver The Resolver contract address used by the Colony version 1
   event ColonyNetworkInitialised(address resolver);

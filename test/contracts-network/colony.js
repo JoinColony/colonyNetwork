@@ -15,7 +15,7 @@ import {
   RATING_2_SECRET,
   WAD,
 } from "../../helpers/constants";
-import { getTokenArgs, web3GetBalance, checkErrorRevert, encodeTxData, expectAllEvents } from "../../helpers/test-helper";
+import { getTokenArgs, web3GetBalance, checkErrorRevert, encodeTxData, expectAllEvents, expectEvent } from "../../helpers/test-helper";
 import { makeTask, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -88,6 +88,15 @@ contract("Colony", (accounts) => {
       await otherToken.unlock();
 
       await expectAllEvents(otherToken.methods["mint(uint256)"](100), ["Mint"]);
+    });
+
+    it("should emit correct Mint event when minting tokens through the colony", async () => {
+      const tokenArgs = getTokenArgs();
+      const otherToken = await Token.new(...tokenArgs);
+      await otherToken.unlock();
+
+      await expectEvent(colony.mintTokens(100), "TokensMinted", [colony.address, 100]);
+      await expectEvent(colony.mintTokensFor(accounts[0], 100), "TokensMinted", [accounts[0], 100]);
     });
 
     it("should fail if a non-admin tries to mint tokens", async () => {

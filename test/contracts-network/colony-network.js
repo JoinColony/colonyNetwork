@@ -4,7 +4,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent, getColonyEditable } from "../../helpers/test-helper";
-import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE } from "../../helpers/constants";
+import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
@@ -169,6 +169,7 @@ contract("Colony Network", (accounts) => {
       await copyWiring(wiredResolver, r, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
       await copyWiring(wiredResolver, r, "setFundingRole(uint256,uint256,address,uint256,bool)");
       await copyWiring(wiredResolver, r, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
+      await copyWiring(wiredResolver, r, "editColony(string)");
 
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const oldVersion = currentColonyVersion.subn(1);
@@ -181,7 +182,7 @@ contract("Colony Network", (accounts) => {
 
       const token = await Token.new(...getTokenArgs());
       await token.unlock();
-      await colonyNetwork.createColony(token.address, oldVersion, "");
+      await colonyNetwork.createColony(token.address, oldVersion, "", IPFS_HASH);
 
       const colonyAddress = await colonyNetwork.getColony(2);
 
@@ -218,6 +219,13 @@ contract("Colony Network", (accounts) => {
       const colonyCount = await colonyNetwork.getColonyCount();
       expect(colony.address).to.not.equal(ethers.constants.AddressZero);
       expect(colonyCount).to.eq.BN(2);
+    });
+
+    it("metadata should be emitted on colony creation", async () => {
+      const token = await Token.new(...getTokenArgs());
+      await token.unlock();
+      const tx = await colonyNetwork.createColony(token.address, 0, "", IPFS_HASH);
+      expectEvent(tx, "ColonyMetadata", [IPFS_HASH]);
     });
 
     it("should maintain correct count of colonies", async () => {
