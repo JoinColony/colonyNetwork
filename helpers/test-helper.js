@@ -265,10 +265,10 @@ export async function expectEvent(tx, eventName, args) {
   const event = logs.find((e) => e.event === eventName);
   expect(event).to.exist;
   for (let i = 0; i < args.length; i += 1) {
-    if (ethers.utils.isHexString(event.args[i])) {
-      expect(hexlifyAndPad(args[i])).to.equal(hexlifyAndPad(event.args[i]));
-    } else {
+    if (typeof event.args[i] === "string") {
       expect(args[i]).to.equal(event.args[i]);
+    } else {
+      expect(hexlifyAndPad(args[i])).to.equal(hexlifyAndPad(event.args[i]));
     }
   }
   return expect(event).to.exist;

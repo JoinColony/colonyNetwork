@@ -385,7 +385,7 @@ export async function setupRandomColony(colonyNetwork) {
 
 export async function setupColony(colonyNetwork, tokenAddress) {
   const { logs } = await colonyNetwork.createColony(tokenAddress, 0, "", "");
-  const { colonyAddress } = logs[0].args;
+  const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
   const colony = await IColony.at(colonyAddress);
   return colony;
 }

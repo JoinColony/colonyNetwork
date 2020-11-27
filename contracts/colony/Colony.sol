@@ -278,6 +278,13 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
   {
+    addDomain(_permissionDomainId, _childSkillIndex, _parentDomainId, "");
+  }
+
+  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId, string memory _metadata) public
+  stoppable
+  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
+  {
     // Note: Remove when we want to allow more domain hierarchy levels
     require(_parentDomainId == 1, "colony-parent-domain-not-root");
 
@@ -289,13 +296,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     // Add domain to local mapping
     initialiseDomain(newLocalSkill);
-  }
 
-  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId, string memory _metadata) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
-  {
-    addDomain(_permissionDomainId, _childSkillIndex, _parentDomainId);
     emit DomainMetadata(domainCount, _metadata);
   }
 
