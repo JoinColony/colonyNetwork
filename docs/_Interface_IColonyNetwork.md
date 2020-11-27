@@ -159,6 +159,7 @@ Creates a new colony in the network, with an optional ENS name
 |_tokenAddress|address|Address of an ERC20 token to serve as the colony token
 |_version|uint256|The version of colony to deploy (pass 0 for the current version)
 |_colonyName|string|The label to register (if null, no label is registered)
+|_metadata|string|
 
 **Return Parameters**
 

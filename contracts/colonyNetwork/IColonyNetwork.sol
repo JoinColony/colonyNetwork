@@ -151,7 +151,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _version The version of colony to deploy (pass 0 for the current version)
   /// @param _colonyName The label to register (if null, no label is registered)
   /// @return colonyAddress Address of the newly created colony
-  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName)
+  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _metadata)
     external returns (address colonyAddress);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
