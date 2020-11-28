@@ -6,6 +6,7 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import {
+  IPFS_HASH,
   UINT256_MAX,
   MANAGER_RATING,
   WORKER_RATING,
@@ -212,8 +213,28 @@ contract("Colony", (accounts) => {
   });
 
   describe("when adding domains", () => {
-    it("should log DomainAdded and FundingPotAdded events", async () => {
-      await expectAllEvents(colony.addDomain(1, UINT256_MAX, 1), ["DomainAdded", "FundingPotAdded"]);
+    it("should log DomainAdded and FundingPotAdded and DomainMetadata events", async () => {
+      let tx = await colony.addDomain(1, UINT256_MAX, 1);
+      let domainCount = await colony.getDomainCount();
+      await expectEvent(tx, "DomainAdded", [domainCount]);
+      let fundingPotCount = await colony.getFundingPotCount();
+      await expectEvent(tx, "FundingPotAdded", [fundingPotCount]);
+      await expectEvent(tx, "DomainMetadata", [domainCount, ""]);
+
+      tx = await colony.addDomain(1, UINT256_MAX, 1, IPFS_HASH);
+      domainCount = await colony.getDomainCount();
+      await expectEvent(tx, "DomainAdded", [domainCount]);
+      fundingPotCount = await colony.getFundingPotCount();
+      await expectEvent(tx, "FundingPotAdded", [fundingPotCount]);
+      await expectEvent(tx, "DomainMetadata", [domainCount, IPFS_HASH]);
+    });
+  });
+
+  describe("when editing domains", () => {
+    it("should log the DomainMetadata event", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const domainCount = await colony.getDomainCount();
+      await expectEvent(colony.editDomain(1, 0, 2, IPFS_HASH), "DomainMetadata", [domainCount, IPFS_HASH]);
     });
   });
 
