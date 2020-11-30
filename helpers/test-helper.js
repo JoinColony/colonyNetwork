@@ -274,6 +274,23 @@ export async function expectEvent(tx, eventName, args) {
   return expect(event).to.exist;
 }
 
+export async function expectRawEvent(tx, sig, args) {
+  const { rawLogs } = await tx.receipt;
+  const topic = web3.utils.soliditySha3(sig);
+  const event = rawLogs.find((e) => e.topics[0] === topic);
+  const re = /\((.*)\)/;
+  const types = sig.match(re)[1].split(",");
+  const decodedArgs = web3.eth.abi.decodeParameters(types, event.data);
+  for (let i = 0; i < args.length; i += 1) {
+    if (typeof decodedArgs[i] === "string" && !ethers.utils.isHexString(decodedArgs[i])) {
+      expect(decodedArgs[i]).to.equal(args[i]);
+    } else {
+      expect(hexlifyAndPad(decodedArgs[i])).to.equal(hexlifyAndPad(args[i]));
+    }
+  }
+  return expect(event).to.exist;
+}
+
 export async function expectAllEvents(tx, eventNames) {
   const { logs } = await tx;
   const events = eventNames.every((eventName) => logs.find((e) => e.event === eventName));
