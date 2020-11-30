@@ -24,7 +24,7 @@ contract("Colony Token Integration", (addresses) => {
     // Instantiate an openzeppelin ERC20Mintable token instance
     erc20Mintable = await ERC20PresetMinterPauser.new("Test", "TEST");
     const { logs } = await colonyNetwork.createColony(erc20Mintable.address, 0, "", "");
-    const { colonyAddress } = logs[0].args;
+    const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
     colony = await IColony.at(colonyAddress);
     await colony.setRewardInverse(100);
   });
