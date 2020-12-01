@@ -225,7 +225,7 @@ contract("Colony Network", (accounts) => {
       const token = await Token.new(...getTokenArgs());
       await token.unlock();
       const tx = await colonyNetwork.createColony(token.address, 0, "", IPFS_HASH);
-      expectEvent(tx, "ColonyMetadata", [IPFS_HASH]);
+      await expectEvent(tx, "ColonyMetadata(string)", [IPFS_HASH]);
     });
 
     it("should maintain correct count of colonies", async () => {

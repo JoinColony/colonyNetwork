@@ -260,10 +260,22 @@ function hexlifyAndPad(input) {
   return ethers.utils.hexZeroPad(ethers.utils.hexlify(i), 32);
 }
 
-export async function expectEvent(tx, eventName, args) {
-  const { logs } = await tx;
-  const event = logs.find((e) => e.event === eventName);
-  expect(event).to.exist;
+export async function expectEvent(tx, nameOrSig, args) {
+  const re = /\((.*)\)/;
+  let event;
+  if (nameOrSig.match(re)) {
+    // i.e. if the passed nameOrSig has () in it, we assume it's a signature
+    const { rawLogs } = await tx.receipt;
+    const topic = web3.utils.soliditySha3(nameOrSig);
+    const types = nameOrSig.match(re)[1].split(",");
+    event = rawLogs.find((e) => e.topics[0] === topic);
+    expect(event).to.exist;
+    event.args = web3.eth.abi.decodeParameters(types, event.data);
+  } else {
+    const { logs } = await tx;
+    event = logs.find((e) => e.event === nameOrSig);
+    expect(event).to.exist;
+  }
   for (let i = 0; i < args.length; i += 1) {
     if (typeof event.args[i] === "string" && !ethers.utils.isHexString(event.args[i])) {
       expect(args[i]).to.equal(event.args[i]);
@@ -271,24 +283,6 @@ export async function expectEvent(tx, eventName, args) {
       expect(hexlifyAndPad(args[i])).to.equal(hexlifyAndPad(event.args[i]));
     }
   }
-  return expect(event).to.exist;
-}
-
-export async function expectRawEvent(tx, sig, args) {
-  const { rawLogs } = await tx.receipt;
-  const topic = web3.utils.soliditySha3(sig);
-  const event = rawLogs.find((e) => e.topics[0] === topic);
-  const re = /\((.*)\)/;
-  const types = sig.match(re)[1].split(",");
-  const decodedArgs = web3.eth.abi.decodeParameters(types, event.data);
-  for (let i = 0; i < args.length; i += 1) {
-    if (typeof decodedArgs[i] === "string" && !ethers.utils.isHexString(decodedArgs[i])) {
-      expect(decodedArgs[i]).to.equal(args[i]);
-    } else {
-      expect(hexlifyAndPad(decodedArgs[i])).to.equal(hexlifyAndPad(args[i]));
-    }
-  }
-  return expect(event).to.exist;
 }
 
 export async function expectAllEvents(tx, eventNames) {
