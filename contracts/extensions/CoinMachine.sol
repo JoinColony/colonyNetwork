@@ -42,10 +42,12 @@ contract CoinMachine is ColonyExtension {
   uint256 targetPerPeriod; // Target number of tokens to sell in a period
   uint256 maxPerPeriod; // Maximum number of tokens sellable in a period
 
+  uint256 tokensToSell; // Number of tokens left to sell
+
   uint256 activePeriod; // The active sale period
   uint256 activePrice; // The active sale price (a WAD ratio of averageIntake / targetPerPeriod)
 
-  uint256 tokensSold; // Tokens sold in the active period
+  uint256 activeSold; // Tokens sold in the active period
   uint256 activeIntake; // Payment received in the active period
 
   uint256 emaIntake; // Averaged payment intake
@@ -103,6 +105,7 @@ contract CoinMachine is ColonyExtension {
     uint256 _windowSize,
     uint256 _targetPerPeriod,
     uint256 _maxPerPeriod,
+    uint256 _tokensToSell,
     uint256 _startingPrice
   )
     public
@@ -126,6 +129,7 @@ contract CoinMachine is ColonyExtension {
 
     targetPerPeriod = _targetPerPeriod;
     maxPerPeriod = _maxPerPeriod;
+    tokensToSell = _tokensToSell;
 
     activePrice = _startingPrice;
     activePeriod = getCurrentPeriod();
@@ -140,13 +144,14 @@ contract CoinMachine is ColonyExtension {
   function buyTokens(uint256 _numTokens) public payable notDeprecated {
     updatePeriod();
 
-    uint256 numTokens = min(_numTokens, maxPerPeriod - tokensSold);
+    uint256 numTokens = min(min(_numTokens, maxPerPeriod - activeSold), tokensToSell);
     uint256 totalCost = wmul(numTokens, activePrice);
 
-    activeIntake += totalCost;
-    tokensSold += numTokens;
+    activeIntake = add(activeIntake, totalCost);
+    activeSold = add(activeSold, numTokens);
+    tokensToSell = sub(tokensToSell, numTokens);
 
-    assert(tokensSold <= maxPerPeriod);
+    assert(activeSold <= maxPerPeriod);
 
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
@@ -171,7 +176,7 @@ contract CoinMachine is ColonyExtension {
       emaIntake = wmul((WAD - alpha), emaIntake) + wmul(alpha, activeIntake); // wmul(wad, int) => int
       activeIntake = 0;
 
-      tokensSold = 0;
+      activeSold = 0;
 
       // Handle any additional missed periods
       uint256 periodGap = currentPeriod - activePeriod - 1;
@@ -208,6 +213,11 @@ contract CoinMachine is ColonyExtension {
     return maxPerPeriod;
   }
 
+  /// @notice Get the total number of tokens remaining for sale
+  function getTokensToSell() public view returns (uint256) {
+    return tokensToSell;
+  }
+
   /// @notice Get the current price per token
   function getCurrentPrice() public view returns (uint256) {
     uint256 currentPeriod = getCurrentPeriod();
@@ -234,8 +244,10 @@ contract CoinMachine is ColonyExtension {
 
   /// @notice Get the number of remaining tokens for sale this period
   function getNumAvailable() public view returns (uint256) {
-    return maxPerPeriod -
-      ((activePeriod == getCurrentPeriod()) ? tokensSold : 0);
+    return min(
+      tokensToSell,
+      sub(maxPerPeriod, ((activePeriod == getCurrentPeriod()) ? activeSold : 0))
+    );
   }
 
   // Internal
