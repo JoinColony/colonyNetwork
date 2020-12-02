@@ -159,6 +159,26 @@ Creates a new colony in the network, with an optional ENS name
 |_tokenAddress|address|Address of an ERC20 token to serve as the colony token
 |_version|uint256|The version of colony to deploy (pass 0 for the current version)
 |_colonyName|string|The label to register (if null, no label is registered)
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
+Creates a new colony in the network, with an optional ENS name
+
+*Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
 |_metadata|string|The metadata associated with the new colony
 
 **Return Parameters**

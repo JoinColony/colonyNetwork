@@ -285,6 +285,23 @@ export async function expectEvent(tx, nameOrSig, args) {
   }
 }
 
+export async function expectNoEvent(tx, nameOrSig) {
+  const re = /\((.*)\)/;
+  let event;
+
+  if (nameOrSig.match(re)) {
+    // i.e. if the passed nameOrSig has () in it, we assume it's a signature
+    const { rawLogs } = await tx.receipt;
+    const topic = web3.utils.soliditySha3(nameOrSig);
+    event = rawLogs.find((e) => e.topics[0] === topic);
+    expect(event).to.not.exist;
+  } else {
+    const { logs } = await tx;
+    event = logs.find((e) => e.event === nameOrSig);
+    expect(event).to.not.exist;
+  }
+}
+
 export async function expectAllEvents(tx, eventNames) {
   const { logs } = await tx;
   const events = eventNames.every((eventName) => logs.find((e) => e.event === eventName));

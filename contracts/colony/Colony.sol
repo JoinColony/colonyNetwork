@@ -297,7 +297,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Add domain to local mapping
     initialiseDomain(newLocalSkill);
 
-    emit DomainMetadata(domainCount, _metadata);
+    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
+      emit DomainMetadata(domainCount, _metadata);
+    }
   }
 
   function editDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, string memory _metadata) public

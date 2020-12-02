@@ -16,7 +16,7 @@ import {
   RATING_2_SECRET,
   WAD,
 } from "../../helpers/constants";
-import { getTokenArgs, web3GetBalance, checkErrorRevert, encodeTxData, expectAllEvents, expectEvent } from "../../helpers/test-helper";
+import { getTokenArgs, web3GetBalance, checkErrorRevert, encodeTxData, expectNoEvent, expectAllEvents, expectEvent } from "../../helpers/test-helper";
 import { makeTask, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -219,7 +219,7 @@ contract("Colony", (accounts) => {
       await expectEvent(tx, "DomainAdded", [domainCount]);
       let fundingPotCount = await colony.getFundingPotCount();
       await expectEvent(tx, "FundingPotAdded", [fundingPotCount]);
-      await expectEvent(tx, "DomainMetadata", [domainCount, ""]);
+      await expectNoEvent(tx, "DomainMetadata");
 
       tx = await colony.addDomain(1, UINT256_MAX, 1, IPFS_HASH);
       domainCount = await colony.getDomainCount();

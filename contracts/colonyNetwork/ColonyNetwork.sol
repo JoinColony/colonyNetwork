@@ -153,6 +153,15 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function createColony(
     address _tokenAddress,
     uint256 _version,
+    string memory _colonyName
+  ) public stoppable returns (address)
+  {
+    return createColony(_tokenAddress, _version, _colonyName, "");
+  }
+
+  function createColony(
+    address _tokenAddress,
+    uint256 _version,
     string memory _colonyName,
     string memory _metadata
   ) public stoppable returns (address)
@@ -164,7 +173,9 @@ contract ColonyNetwork is ColonyNetworkStorage {
       IColony(colonyAddress).registerColonyLabel(_colonyName, "");
     }
 
-    IColony(colonyAddress).editColony(_metadata);
+    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
+      IColony(colonyAddress).editColony(_metadata);
+    }
 
     setFounderPermissions(colonyAddress);
 
