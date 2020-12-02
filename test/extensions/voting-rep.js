@@ -87,8 +87,8 @@ contract("Voting Reputation", (accounts) => {
   const USER2 = accounts[2];
   const MINER = accounts[5];
 
-  const SALT = soliditySha3(shortid.generate());
-  const FAKE = soliditySha3(shortid.generate());
+  const SALT = soliditySha3({ type: "string", value: shortid.generate() });
+  const FAKE = soliditySha3({ type: "string", value: shortid.generate() });
 
   const NAY = 0;
   const YAY = 1;

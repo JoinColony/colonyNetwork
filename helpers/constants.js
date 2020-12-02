@@ -44,8 +44,8 @@ const MANAGER_RATING = 2;
 const WORKER_RATING = 2;
 const RATING_MULTIPLIER = { 1: -1, 2: 1, 3: 1.5 };
 
-const RATING_1_SALT = soliditySha3(shortid.generate());
-const RATING_2_SALT = soliditySha3(shortid.generate());
+const RATING_1_SALT = soliditySha3({ type: "string", value: shortid.generate() });
+const RATING_2_SALT = soliditySha3({ type: "string", value: shortid.generate() });
 const RATING_1_SECRET = soliditySha3(RATING_1_SALT, MANAGER_RATING);
 const RATING_2_SECRET = soliditySha3(RATING_2_SALT, WORKER_RATING);
 
