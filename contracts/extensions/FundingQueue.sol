@@ -283,25 +283,45 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
 
     assert(proposal.totalPaid <= proposal.totalRequested);
 
-    if (proposal.totalPaid == proposal.totalRequested) {
-      proposal.state = ProposalState.Completed;
+    try
+      colony.moveFundsBetweenPots(
+        proposal.domainId,
+        proposal.fromChildSkillIndex,
+        proposal.toChildSkillIndex,
+        proposal.fromPot,
+        proposal.toPot,
+        actualFundingToTransfer,
+        proposal.token
+      )
+    {
+      if (proposal.totalPaid == proposal.totalRequested) {
+        proposal.state = ProposalState.Completed;
 
-      queue[HEAD] = queue[_id];
-      delete queue[_id];
+        queue[HEAD] = queue[_id];
+        delete queue[_id];
 
-      //  May be the null proposal, but that's ok
-      proposals[queue[HEAD]].lastUpdated = updateTime;
+        //  May be the null proposal, but that's ok
+        proposals[queue[HEAD]].lastUpdated = updateTime;
+      }
+    } catch Error(string memory reason) {
+      bytes32 reasonHash = keccak256(abi.encodePacked(reason));
+      if (
+        reasonHash == keccak256(abi.encodePacked("ds-auth-permission-domain-does-not-exist")) ||
+        reasonHash == keccak256(abi.encodePacked("ds-auth-child-domain-does-not-exist")) ||
+        reasonHash == keccak256(abi.encodePacked("ds-auth-unauthorized")) ||
+        reasonHash == keccak256(abi.encodePacked("ds-auth-invalid-domain-inheritence"))
+      ) {
+        // Then the domain inheritance is no longer valid. We cancel the proposal
+        cancelProposal(_id, HEAD);
+        emit ProposalPinged(_id, actualFundingToTransfer);
+        return;
+      } else {
+        require(false, reason);
+      }
+    } catch { // If no message is thrown, this'll throw here instead
+      require(false, "funding-queue-transfer-failed-no-error-msg");
     }
 
-    colony.moveFundsBetweenPots(
-      proposal.domainId,
-      proposal.fromChildSkillIndex,
-      proposal.toChildSkillIndex,
-      proposal.fromPot,
-      proposal.toPot,
-      actualFundingToTransfer,
-      proposal.token
-    );
 
     emit ProposalPinged(_id, actualFundingToTransfer);
   }
