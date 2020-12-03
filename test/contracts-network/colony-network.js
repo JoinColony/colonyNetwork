@@ -3,7 +3,15 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
-import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent, getColonyEditable } from "../../helpers/test-helper";
+import {
+  getTokenArgs,
+  web3GetNetwork,
+  web3GetBalance,
+  checkErrorRevert,
+  expectEvent,
+  expectNoEvent,
+  getColonyEditable,
+} from "../../helpers/test-helper";
 import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
@@ -211,6 +219,12 @@ contract("Colony Network", (accounts) => {
 
       await colonyNetwork.createColony(token.address);
     });
+
+    it("should allow use of the deprecated five-parameter createColony", async () => {
+      const token = await Token.new(...getTokenArgs());
+
+      await colonyNetwork.createColony(token.address, 4, "", "", "");
+    });
   });
 
   describe("when creating new colonies", () => {
@@ -221,11 +235,18 @@ contract("Colony Network", (accounts) => {
       expect(colonyCount).to.eq.BN(2);
     });
 
-    it("metadata should be emitted on colony creation", async () => {
+    it("metadata should be emitted on colony creation if supplied", async () => {
       const token = await Token.new(...getTokenArgs());
       await token.unlock();
       const tx = await colonyNetwork.createColony(token.address, 0, "", IPFS_HASH);
       await expectEvent(tx, "ColonyMetadata(string)", [IPFS_HASH]);
+    });
+
+    it("metadata should not be emitted on colony creation if not supplied", async () => {
+      const token = await Token.new(...getTokenArgs());
+      await token.unlock();
+      const tx = await colonyNetwork.createColony(token.address, 0, "");
+      await expectNoEvent(tx, "ColonyMetadata(string)");
     });
 
     it("should maintain correct count of colonies", async () => {
