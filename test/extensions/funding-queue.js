@@ -871,6 +871,9 @@ contract("Funding Queues", (accounts) => {
 
     it("cannot transfer funds from higher up than it has permissions", async () => {
       await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
+
+      const balanceBefore = await colony.getFundingPotBalance(2, token.address);
+
       proposalId = await fundingQueue.getProposalCount();
       await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
 
@@ -881,10 +884,17 @@ contract("Funding Queues", (accounts) => {
       // Advance one week
       await forwardTime(SECONDS_PER_DAY * 7, this);
 
-      await checkErrorRevert(fundingQueue.pingProposal(proposalId), "ds-auth-unauthorized");
+      await fundingQueue.pingProposal(proposalId);
 
-      // Currently, this blocks any other funding proposals with lower backing. It shouldn't do that!
-      assert(false, "Should not block other funding proposals");
+      // Proposal is cancelled
+      const proposal = await fundingQueue.getProposal(proposalId);
+      expect(proposal.state).to.eq.BN(STATE_CANCELLED);
+
+      // No tokens transferred
+      const balanceAfter = await colony.getFundingPotBalance(2, token.address);
+      const amountTransferred = balanceBefore.sub(balanceAfter);
+      const expectedTransferred = new BN("0");
+      expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
   });
 });
