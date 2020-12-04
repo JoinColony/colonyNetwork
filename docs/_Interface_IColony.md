@@ -237,7 +237,7 @@ Set the deprecation of an extension in a colony. Secured function to authorised 
 
 ### `editColony`
 
-Called to change the metadat associated with a colony. Expected to be a IPFS hash of a JSON blob, but not enforced to any degree by the contracts
+Called to change the metadata associated with a colony. Expected to be a IPFS hash of a JSON blob, but not enforced to any degree by the contracts
 
 
 **Parameters**

@@ -128,6 +128,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function initialiseColony(address _colonyNetworkAddress, address _token, string memory _metadata) public stoppable {
     initialiseColony(_colonyNetworkAddress, _token);
+
     emit ColonyMetadata(_metadata);
   }
 

@@ -189,7 +189,7 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _token Address of the colony ERC20 Token
   function initialiseColony(address _colonyNetworkAddress, address _token) external;
 
-  /// @notice Called to change the metadat associated with a colony. Expected to be a IPFS hash of a
+  /// @notice Called to change the metadata associated with a colony. Expected to be a IPFS hash of a
   /// JSON blob, but not enforced to any degree by the contracts
   /// @param _metadata IPFS hash of the metadata
   function editColony(string memory _metadata) external;
