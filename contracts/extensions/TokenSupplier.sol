@@ -105,6 +105,8 @@ contract TokenSupplier is ColonyExtension {
     tokenIssuanceRate = _tokenIssuanceRate;
     lastIssue = block.timestamp;
     lastRateUpdate = block.timestamp;
+
+    emit ExtensionInitialised();
   }
 
   /// @notice Update the tokenSupplyCeiling, cannot set below current tokenSupply
