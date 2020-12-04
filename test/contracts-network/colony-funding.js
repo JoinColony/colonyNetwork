@@ -15,15 +15,16 @@ import {
   INITIAL_FUNDING,
 } from "../../helpers/constants";
 
+import { fundColonyWithTokens, setupFinalizedTask, setupRandomColony, makeTask } from "../../helpers/test-data-generator";
 import { getTokenArgs, checkErrorRevert, web3GetBalance } from "../../helpers/test-helper";
 import { executeSignedTaskChange, executeSignedRoleAssignment } from "../../helpers/task-review-signing";
-import { fundColonyWithTokens, setupFinalizedTask, makeTask, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 
 contract("Colony Funding", (accounts) => {
@@ -34,10 +35,14 @@ contract("Colony Funding", (accounts) => {
   let token;
   let otherToken;
   let colonyNetwork;
+  let metaColony;
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
   });
 
   beforeEach(async () => {
@@ -519,6 +524,26 @@ contract("Colony Funding", (accounts) => {
 
       const potBalance = await colony.getFundingPotBalance(task.fundingPotId, token.address);
       expect(potBalance).to.be.zero;
+    });
+
+    it("should correctly send whitelisted tokens to the Metacolony", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+
+      await metaColony.setNetworkFeeInverse(1); // 100% to fees
+
+      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token });
+
+      const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
+      await colony.claimTaskPayout(taskId, MANAGER_ROLE, token.address);
+      const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
+      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(MANAGER_PAYOUT);
+
+      await metaColony.setPayoutWhitelist(token.address, true);
+
+      const metaColonyBalanceBefore = await token.balanceOf(metaColony.address);
+      await colony.claimTaskPayout(taskId, WORKER_ROLE, token.address);
+      const metaColonyBalanceAfter = await token.balanceOf(metaColony.address);
+      expect(metaColonyBalanceAfter.sub(metaColonyBalanceBefore)).to.eq.BN(WORKER_PAYOUT);
     });
   });
 

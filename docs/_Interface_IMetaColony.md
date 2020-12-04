@@ -99,6 +99,19 @@ Set the Colony Network fee inverse amount.
 |_feeInverse|uint256|Nonzero amount for the fee inverse
 
 
+### `setPayoutWhitelist`
+
+Set a token's status in the payout whitelist on the Colony Network
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|The token being set
+|_status|bool|The whitelist status
+
+
 ### `setReputationMiningCycleReward`
 
 Called to set the total per-cycle reputation reward, which will be split between all miners.

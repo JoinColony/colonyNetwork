@@ -341,6 +341,15 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _feeInverse The inverse of the network fee to set
   function setFeeInverse(uint256 _feeInverse) external;
 
+  /// @notice Get a token's status in the payout whitelist
+  /// @param _token The token being queried
+  function getPayoutWhitelist(address _token) external view returns (bool status);
+
+  /// @notice Set a token's status in the payout whitelist
+  /// @param _token The token being set
+  /// @param _status The whitelist status
+  function setPayoutWhitelist(address _token, bool _status) external;
+
   /// @notice Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
   /// @dev While external, it can only be called successfully by the current ReputationMiningCycle.
   /// @param _stakers Array of the addresses of stakers to punish

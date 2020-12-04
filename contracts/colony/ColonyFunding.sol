@@ -557,20 +557,25 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     uint remainder = sub(_payout, fee);
     fundingPots[_fundingPotId].payouts[_token] = sub(fundingPots[_fundingPotId].payouts[_token], _payout);
 
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
+
     if (_token == address(0x0)) {
       // Payout ether
-      _user.transfer(remainder);
       // Fee goes directly to Meta Colony
-      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-      address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
+      _user.transfer(remainder);
       metaColonyAddress.transfer(fee);
     } else {
       // Payout token
-      // TODO: (post CCv1) If it's a whitelisted token, it goes straight to the metaColony
+      // If it's a whitelisted token, it goes straight to the metaColony
       // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
       ERC20Extended payoutToken = ERC20Extended(_token);
       assert(payoutToken.transfer(_user, remainder));
-      assert(payoutToken.transfer(colonyNetworkAddress, fee));
+      if (colonyNetworkContract.getPayoutWhitelist(_token)) {
+        assert(payoutToken.transfer(metaColonyAddress, fee));
+      } else {
+        assert(payoutToken.transfer(colonyNetworkAddress, fee));
+      }
     }
 
     emit PayoutClaimed(_fundingPotId, _token, remainder);

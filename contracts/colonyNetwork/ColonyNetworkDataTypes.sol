@@ -35,6 +35,11 @@ interface ColonyNetworkDataTypes {
   /// @param feeInverse The network fee inverse value
   event NetworkFeeInverseSet(uint256 feeInverse);
 
+  /// @notice Event logged when the payout whitelist is updated
+  /// @param token The token being set
+  /// @param status The whitelist status
+  event TokenWhitelisted(address token, bool status);
+
   /// @notice Event logged when a new colony contract version is set
   /// @param version The new int colony version, e.g. 2, 3, 4, etc
   /// @param resolver The new colony contract resolver contract instance

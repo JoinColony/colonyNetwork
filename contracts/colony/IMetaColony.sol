@@ -44,6 +44,11 @@ interface IMetaColony is IColony {
   /// @param _feeInverse Nonzero amount for the fee inverse
   function setNetworkFeeInverse(uint256 _feeInverse) external;
 
+  /// @notice Set a token's status in the payout whitelist on the Colony Network
+  /// @param _token The token being set
+  /// @param _status The whitelist status
+  function setPayoutWhitelist(address _token, bool _status) external;
+
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
   /// @dev Calls `IColonyNetwork.addColonyVersion`.
   /// @param _version The new Colony contract version

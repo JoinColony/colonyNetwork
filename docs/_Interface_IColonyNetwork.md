@@ -432,6 +432,23 @@ Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_
 |---|---|---|
 |skillId|uint256|Skill Id of the requested parent skill
 
+### `getPayoutWhitelist`
+
+Get a token's status in the payout whitelist
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|The token being queried
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|status|bool|
+
 ### `getProfileDBAddress`
 
 Retrieve the orbitdb address corresponding to a registered account.
@@ -768,6 +785,19 @@ Set the resolver to be used by new instances of ReputationMiningCycle.
 |Name|Type|Description|
 |---|---|---|
 |miningResolverAddress|address|The address of the Resolver contract with the functions correctly wired.
+
+
+### `setPayoutWhitelist`
+
+Set a token's status in the payout whitelist
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|The token being set
+|_status|bool|The whitelist status
 
 
 ### `setReplacementReputationUpdateLogEntry`

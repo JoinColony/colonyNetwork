@@ -182,48 +182,49 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   auth
   returns (uint256)
   {
-    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.addSkill(0); // ignore-swc-107
+    return IColonyNetwork(colonyNetworkAddress).addSkill(0); // ignore-swc-107
   }
 
   function deprecateGlobalSkill(uint256 _skillId) public
   stoppable
   auth
   {
-    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.deprecateSkill(_skillId);
+    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_skillId);
   }
 
   function setNetworkFeeInverse(uint256 _feeInverse) public
   stoppable
   auth
   {
-    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.setFeeInverse(_feeInverse); // ignore-swc-107
+    IColonyNetwork(colonyNetworkAddress).setFeeInverse(_feeInverse); // ignore-swc-107
+  }
+
+  function setPayoutWhitelist(address _token, bool _status) public
+  stoppable
+  auth
+  {
+    IColonyNetwork(colonyNetworkAddress).setPayoutWhitelist(_token, _status); // ignore-swc-107
   }
 
   function setAnnualMetaColonyStipend(uint256 _amount) public
   stoppable
   auth
   {
-    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.setAnnualMetaColonyStipend(_amount); // ignore-swc-107
+    IColonyNetwork(colonyNetworkAddress).setAnnualMetaColonyStipend(_amount); // ignore-swc-107
   }
 
   function setReputationMiningCycleReward(uint256 _amount) public
   stoppable
   auth
   {
-    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.setReputationMiningCycleReward(_amount); // ignore-swc-107
+    IColonyNetwork(colonyNetworkAddress).setReputationMiningCycleReward(_amount);
   }
 
   function addNetworkColonyVersion(uint256 _version, address _resolver) public
   stoppable
   auth
   {
-    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.addColonyVersion(_version, _resolver);
+    IColonyNetwork(colonyNetworkAddress).addColonyVersion(_version, _resolver);
   }
 
   function addExtensionToNetwork(bytes32 _extensionId, address _resolver)
@@ -375,6 +376,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     // Add arbitrary tx functionality
     sig = bytes4(keccak256("makeArbitraryTransaction(address,bytes)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    // Add payout whitelist functionality
+    sig = bytes4(keccak256("setPayoutWhitelist(address,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
