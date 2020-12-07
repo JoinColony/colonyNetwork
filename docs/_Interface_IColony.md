@@ -22,6 +22,22 @@ Add a colony domain, and its respective local skill under skill with id `_parent
 |_parentDomainId|uint256|Id of the domain under which the new one will be added
 
 
+### `addDomain`
+
+Add a colony domain, and its respective local skill under skill with id `_parentSkillId`. New funding pot is created and associated with the domain here.
+
+*Note: Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: `1`.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_parentDomainId|uint256|Id of the domain under which the new one will be added
+|_metadata|string|Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
+
+
 ### `addPayment`
 
 Add a new payment in the colony. Secured function to authorised members.
@@ -217,6 +233,33 @@ Set the deprecation of an extension in a colony. Secured function to authorised 
 |---|---|---|
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |deprecated|bool|Whether to deprecate the extension or not
+
+
+### `editColony`
+
+Called to change the metadata associated with a colony. Expected to be a IPFS hash of a JSON blob, but not enforced to any degree by the contracts
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_metadata|string|IPFS hash of the metadata
+
+
+### `editDomain`
+
+Add a colony domain, and its respective local skill under skill with id `_parentSkillId`. New funding pot is created and associated with the domain here.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_domainId|uint256|Id of the domain being edited
+|_metadata|string|Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
 
 
 ### `emitDomainReputationPenalty`

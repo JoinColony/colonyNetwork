@@ -126,6 +126,18 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit ColonyInitialised(_colonyNetworkAddress, _token);
   }
 
+  function initialiseColony(address _colonyNetworkAddress, address _token, string memory _metadata) public stoppable {
+    initialiseColony(_colonyNetworkAddress, _token);
+
+    emit ColonyMetadata(_metadata);
+  }
+
+  function editColony(string memory _metadata) public
+  stoppable
+  auth {
+    emit ColonyMetadata(_metadata);
+  }
+
   function bootstrapColony(address[] memory _users, int[] memory _amounts) public
   stoppable
   auth
@@ -151,6 +163,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   auth
   {
     ERC20Extended(token).mint(address(this), _wad); // ignore-swc-107
+
+    emit TokensMinted(address(this), _wad);
   }
 
   function mintTokensFor(address _guy, uint _wad) public
@@ -158,6 +172,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   auth
   {
     ERC20Extended(token).mint(_guy, _wad); // ignore-swc-107
+
+    emit TokensMinted(_guy, _wad);
   }
 
   function mintTokensForColonyNetwork(uint _wad) public stoppable {
@@ -167,6 +183,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
     ERC20Extended(token).mint(_wad);
     assert(ERC20Extended(token).transfer(colonyNetworkAddress, _wad));
+
+    emit TokensMinted(colonyNetworkAddress, _wad);
   }
 
   function registerColonyLabel(string memory colonyName, string memory orbitdb) public stoppable auth {
@@ -261,6 +279,13 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
   {
+    addDomain(_permissionDomainId, _childSkillIndex, _parentDomainId, "");
+  }
+
+  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId, string memory _metadata) public
+  stoppable
+  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
+  {
     // Note: Remove when we want to allow more domain hierarchy levels
     require(_parentDomainId == 1, "colony-parent-domain-not-root");
 
@@ -272,6 +297,19 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     // Add domain to local mapping
     initialiseDomain(newLocalSkill);
+
+    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
+      emit DomainMetadata(domainCount, _metadata);
+    }
+  }
+
+  function editDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, string memory _metadata) public
+  stoppable
+  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
+      emit DomainMetadata(_domainId, _metadata);
+    }
   }
 
   function getDomain(uint256 _id) public view returns (Domain memory domain) {
@@ -380,6 +418,14 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     // Add payout whitelist functionality
     sig = bytes4(keccak256("setPayoutWhitelist(address,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    // Add metadata functions
+    sig = bytes4(keccak256("addDomain(uint256,uint256,uint256,string)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
+    sig = bytes4(keccak256("editDomain(uint256,uint256,uint256,string)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
+    sig = bytes4(keccak256("editColony(string)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 

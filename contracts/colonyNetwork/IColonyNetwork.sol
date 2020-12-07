@@ -154,6 +154,17 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   function createColony(address _tokenAddress, uint256 _version, string memory _colonyName)
     external returns (address colonyAddress);
 
+  /// @notice Creates a new colony in the network, with an optional ENS name
+  /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
+  /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
+  /// @param _version The version of colony to deploy (pass 0 for the current version)
+  /// @param _colonyName The label to register (if null, no label is registered)
+  /// @param _metadata The metadata associated with the new colony
+  /// @return colonyAddress Address of the newly created colony
+  /// @dev We expect this function to only be used by the dapp
+  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _metadata)
+    external returns (address colonyAddress);
+
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
   /// Allowed to be called by the Meta Colony only.
   /// @param _version The new Colony contract version

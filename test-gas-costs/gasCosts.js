@@ -96,7 +96,7 @@ contract("All", function (accounts) {
       const tokenArgs = getTokenArgs();
       const colonyToken = await Token.new(...tokenArgs);
       await colonyToken.unlock();
-      await colonyNetwork.createColony(colonyToken.address, CURR_VERSION, "");
+      await colonyNetwork.createColony(colonyToken.address, CURR_VERSION, "", "");
     });
 
     it("when working with the Meta Colony", async function () {

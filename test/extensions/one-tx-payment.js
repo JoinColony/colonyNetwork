@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID, FUNDING_ROLE, ADMINISTRATION_ROLE } from "../../helpers/constants";
-import { checkErrorRevert, web3GetCode, rolesToBytes32 } from "../../helpers/test-helper";
+import { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
@@ -94,10 +94,12 @@ contract("One transaction payments", (accounts) => {
       const balanceBefore = await token.balanceOf(USER1);
       expect(balanceBefore).to.be.zero;
 
-      await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID);
+      const tx = await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID);
 
       const balanceAfter = await token.balanceOf(USER1);
       expect(balanceAfter).to.eq.BN(9);
+
+      await expectEvent(tx, "OneTxPaymentMade", []);
     });
 
     it("should allow a single-transaction payment of ETH to occur", async () => {

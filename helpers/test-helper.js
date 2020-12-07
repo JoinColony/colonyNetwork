@@ -260,13 +260,46 @@ function hexlifyAndPad(input) {
   return ethers.utils.hexZeroPad(ethers.utils.hexlify(i), 32);
 }
 
-export async function expectEvent(tx, eventName, args) {
-  const { logs } = await tx;
-  const event = logs.find((e) => e.event === eventName);
-  for (let i = 0; i < args.length; i += 1) {
-    expect(hexlifyAndPad(args[i])).to.equal(hexlifyAndPad(event.args[i]));
+export async function expectEvent(tx, nameOrSig, args) {
+  const re = /\((.*)\)/;
+  let event;
+  if (nameOrSig.match(re)) {
+    // i.e. if the passed nameOrSig has () in it, we assume it's a signature
+    const { rawLogs } = await tx.receipt;
+    const topic = web3.utils.soliditySha3(nameOrSig);
+    const types = nameOrSig.match(re)[1].split(",");
+    event = rawLogs.find((e) => e.topics[0] === topic);
+    expect(event).to.exist;
+    event.args = web3.eth.abi.decodeParameters(types, event.data);
+  } else {
+    const { logs } = await tx;
+    event = logs.find((e) => e.event === nameOrSig);
+    expect(event).to.exist;
   }
-  return expect(event).to.exist;
+  for (let i = 0; i < args.length; i += 1) {
+    if (typeof event.args[i] === "string" && !ethers.utils.isHexString(event.args[i])) {
+      expect(args[i]).to.equal(event.args[i]);
+    } else {
+      expect(hexlifyAndPad(args[i])).to.equal(hexlifyAndPad(event.args[i]));
+    }
+  }
+}
+
+export async function expectNoEvent(tx, nameOrSig) {
+  const re = /\((.*)\)/;
+  let event;
+
+  if (nameOrSig.match(re)) {
+    // i.e. if the passed nameOrSig has () in it, we assume it's a signature
+    const { rawLogs } = await tx.receipt;
+    const topic = web3.utils.soliditySha3(nameOrSig);
+    event = rawLogs.find((e) => e.topics[0] === topic);
+    expect(event).to.not.exist;
+  } else {
+    const { logs } = await tx;
+    event = logs.find((e) => e.event === nameOrSig);
+    expect(event).to.not.exist;
+  }
 }
 
 export async function expectAllEvents(tx, eventNames) {

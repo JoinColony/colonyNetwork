@@ -122,7 +122,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   {
     require(metaColony == address(0x0), "colony-meta-colony-exists-already");
 
-    metaColony = createColony(_tokenAddress, currentColonyVersion, "");
+    metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
 
     // Add the special mining skill
     reputationMiningSkillId = this.addSkill(skillCount);
@@ -135,7 +135,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   stoppable
   returns (address)
   {
-    return createColony(_tokenAddress, 3, "");
+    return createColony(_tokenAddress, 3, "", "");
   }
 
   // DEPRECATED, only deploys version 4 colonies.
@@ -147,13 +147,23 @@ contract ColonyNetwork is ColonyNetworkStorage {
     bool _useExtensionManager // solhint-disable-line no-unused-vars
   ) public stoppable returns (address)
   {
-    return createColony(_tokenAddress, 4, _colonyName);
+    return createColony(_tokenAddress, 4, _colonyName, "");
   }
 
   function createColony(
     address _tokenAddress,
     uint256 _version,
     string memory _colonyName
+  ) public stoppable returns (address)
+  {
+    return createColony(_tokenAddress, _version, _colonyName, "");
+  }
+
+  function createColony(
+    address _tokenAddress,
+    uint256 _version,
+    string memory _colonyName,
+    string memory _metadata
   ) public stoppable returns (address)
   {
     uint256 version = (_version == 0) ? currentColonyVersion : _version;
@@ -163,7 +173,12 @@ contract ColonyNetwork is ColonyNetworkStorage {
       IColony(colonyAddress).registerColonyLabel(_colonyName, "");
     }
 
+    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
+      IColony(colonyAddress).editColony(_metadata);
+    }
+
     setFounderPermissions(colonyAddress);
+
     return colonyAddress;
   }
 

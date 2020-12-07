@@ -636,12 +636,12 @@ contract("Colony Reward Payouts", (accounts) => {
       const newToken = await Token.new(...tokenArgs);
       await newToken.unlock();
 
-      let { logs } = await colonyNetwork.createColony(newToken.address, 0, "");
-      let { colonyAddress } = logs[0].args;
+      let { logs } = await colonyNetwork.createColony(newToken.address, 0, "", "");
+      let { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
       const colony1 = await IColony.at(colonyAddress);
 
-      ({ logs } = await colonyNetwork.createColony(newToken.address, 0, ""));
-      ({ colonyAddress } = logs[0].args);
+      ({ logs } = await colonyNetwork.createColony(newToken.address, 0, "", ""));
+      ({ colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args);
       const colony2 = await IColony.at(colonyAddress);
 
       // Giving both colonies the capability to call `mint` function
@@ -735,12 +735,12 @@ contract("Colony Reward Payouts", (accounts) => {
       const newToken = await Token.new(...tokenArgs);
       await newToken.unlock();
 
-      let { logs } = await colonyNetwork.createColony(newToken.address, 0, "");
-      let { colonyAddress } = logs[0].args;
+      let { logs } = await colonyNetwork.createColony(newToken.address, 0, "", "");
+      let { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
       const colony1 = await IColony.at(colonyAddress);
 
-      ({ logs } = await colonyNetwork.createColony(newToken.address, 0, ""));
-      ({ colonyAddress } = logs[0].args);
+      ({ logs } = await colonyNetwork.createColony(newToken.address, 0, "", ""));
+      ({ colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args);
       const colony2 = await IColony.at(colonyAddress);
 
       // Giving both colonies the capability to call `mint` function

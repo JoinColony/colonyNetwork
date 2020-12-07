@@ -23,8 +23,8 @@ contract("Colony Token Integration", (addresses) => {
   beforeEach(async () => {
     // Instantiate an openzeppelin ERC20Mintable token instance
     erc20Mintable = await ERC20PresetMinterPauser.new("Test", "TEST");
-    const { logs } = await colonyNetwork.createColony(erc20Mintable.address, 0, "");
-    const { colonyAddress } = logs[0].args;
+    const { logs } = await colonyNetwork.createColony(erc20Mintable.address, 0, "", "");
+    const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
     colony = await IColony.at(colonyAddress);
     await colony.setRewardInverse(100);
   });

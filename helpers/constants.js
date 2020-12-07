@@ -29,6 +29,8 @@ const SPECIFICATION_HASH_UPDATED = "0x017dfd85d4f6cb4dcd715a88101f7b1f06cd1e009b
 // The base58 decoded, bytes32 converted hex value of a test task ipfsHash "qmv8ndh7ageh9b24zngaextmuhj7aiuw3scc8hkczvjkww"
 const DELIVERABLE_HASH = "0xfb027a4d64f29d83e27769cb05d945e67ef7396fa1bd73ef53f065311fd3313e";
 
+const IPFS_HASH = "QmTfCejgo2wTwqnDJs8Lu1pCNeCrCDuE4GAwkna93zdd7d";
+
 const WAD = new BN(10).pow(new BN(18));
 const MIN_STAKE = WAD.muln(2000);
 const DEFAULT_STAKE = MIN_STAKE.muln(1000);
@@ -108,4 +110,5 @@ module.exports = {
   MINING_CYCLE_TIMEOUT,
   DECAY_RATE,
   GLOBAL_SKILL_ID,
+  IPFS_HASH,
 };

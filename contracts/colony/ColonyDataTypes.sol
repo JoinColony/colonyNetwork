@@ -167,6 +167,11 @@ interface ColonyDataTypes {
   /// @param taskId Id of the finalized task
   event TaskFinalized(uint256 indexed taskId);
 
+  /// @notice Event logged when tokens are minted
+  /// @param who The address being awarded the tokens
+  /// @param amount The amount of tokens being awarded
+  event TokensMinted(address who, uint256 amount);
+
   /// @notice Event logged when a payout is claimed, either from a Task or Payment
   /// @param fundingPotId Id of the funding pot where payout comes from
   /// @param token Token of the payout claim
@@ -180,6 +185,14 @@ interface ColonyDataTypes {
   /// @notice Event logged when a new Domain is added
   /// @param domainId Id of the newly-created Domain
   event DomainAdded(uint256 domainId);
+
+  /// @notice Event logged when domain metadata is updated
+  /// @param domainId Id of the newly-created Domain
+  event DomainMetadata(uint256 indexed domainId, string metadata);
+
+  /// @notice Event logged when Colony metadata is updated
+  /// @param metadata IPFS hash of the metadata
+  event ColonyMetadata(string metadata);
 
   /// @notice Event logged when a new FundingPot is added
   /// @param fundingPotId Id of the newly-created FundingPot
