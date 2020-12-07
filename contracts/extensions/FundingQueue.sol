@@ -23,9 +23,9 @@ import "./../common/ERC20Extended.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyExtension.sol";
+import "./../colony/ColonyDataTypes.sol";
 
-
-contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
+contract FundingQueue is ColonyExtension, PatriciaTreeProofs, ColonyDataTypes {
 
   // Events
   event ProposalCreated(uint256 id, uint256 indexed fromPot, uint256 indexed toPot, address indexed token, uint256 amount);
@@ -41,6 +41,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
   uint256 constant UINT256_MAX = (2 ** 256) - 1;
   uint256 constant STAKE_FRACTION = WAD / 1000; // 0.1%
   uint256 constant COOLDOWN_PERIOD = 14 days;
+  uint8 constant FUNDING_ROLE = 5;
 
   // Initialization data
   IColonyNetwork colonyNetwork;
@@ -282,9 +283,27 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     proposal.lastUpdated = updateTime;
 
     assert(proposal.totalPaid <= proposal.totalRequested);
+    address colonyAuthority = colony.authority();
 
-    try
-      colony.moveFundsBetweenPots(
+    // Check if the extension has the permissions to do this
+    // If not, cancel the proposal so others aren't blocked
+    if (!colony.hasUserRole(address(this), proposal.domainId, ColonyRole.Funding)) {
+        emit ProposalPinged(_id, 0);
+        cancelProposal(_id, HEAD);
+        return;
+    }
+
+    if (proposal.totalPaid == proposal.totalRequested) {
+      proposal.state = ProposalState.Completed;
+
+      queue[HEAD] = queue[_id];
+      delete queue[_id];
+
+      //  May be the null proposal, but that's ok
+      proposals[queue[HEAD]].lastUpdated = updateTime;
+    }
+
+    colony.moveFundsBetweenPots(
         proposal.domainId,
         proposal.fromChildSkillIndex,
         proposal.toChildSkillIndex,
@@ -292,36 +311,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
         proposal.toPot,
         actualFundingToTransfer,
         proposal.token
-      )
-    {
-      if (proposal.totalPaid == proposal.totalRequested) {
-        proposal.state = ProposalState.Completed;
-
-        queue[HEAD] = queue[_id];
-        delete queue[_id];
-
-        //  May be the null proposal, but that's ok
-        proposals[queue[HEAD]].lastUpdated = updateTime;
-      }
-    } catch Error(string memory reason) {
-      bytes32 reasonHash = keccak256(abi.encodePacked(reason));
-      if (
-        reasonHash == keccak256(abi.encodePacked("ds-auth-permission-domain-does-not-exist")) ||
-        reasonHash == keccak256(abi.encodePacked("ds-auth-child-domain-does-not-exist")) ||
-        reasonHash == keccak256(abi.encodePacked("ds-auth-unauthorized")) ||
-        reasonHash == keccak256(abi.encodePacked("ds-auth-invalid-domain-inheritence"))
-      ) {
-        // Then the domain inheritance is no longer valid. We cancel the proposal
-        cancelProposal(_id, HEAD);
-        emit ProposalPinged(_id, actualFundingToTransfer);
-        return;
-      } else {
-        require(false, reason);
-      }
-    } catch { // If no message is thrown, this'll throw here instead
-      require(false, "funding-queue-transfer-failed-no-error-msg");
-    }
-
+    );
 
     emit ProposalPinged(_id, actualFundingToTransfer);
   }
