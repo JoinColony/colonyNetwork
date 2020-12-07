@@ -236,6 +236,11 @@ contract("Colony", (accounts) => {
       const domainCount = await colony.getDomainCount();
       await expectEvent(colony.editDomain(1, 0, 2, IPFS_HASH), "DomainMetadata", [domainCount, IPFS_HASH]);
     });
+
+    it("should not log the DomainMetadata event if empty string passed", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await expectNoEvent(colony.editDomain(1, 0, 2, ""), "DomainMetadata");
+    });
   });
 
   describe("when bootstrapping the colony", () => {

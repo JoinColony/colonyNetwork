@@ -307,7 +307,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   {
-    emit DomainMetadata(_domainId, _metadata);
+    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
+      emit DomainMetadata(_domainId, _metadata);
+    }
   }
 
   function getDomain(uint256 _id) public view returns (Domain memory domain) {
