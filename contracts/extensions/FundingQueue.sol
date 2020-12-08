@@ -25,7 +25,7 @@ import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyExtension.sol";
 import "./../colony/ColonyDataTypes.sol";
 
-contract FundingQueue is ColonyExtension, PatriciaTreeProofs, ColonyDataTypes {
+contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
 
   // Events
   event ProposalCreated(uint256 id, uint256 indexed fromPot, uint256 indexed toPot, address indexed token, uint256 amount);
@@ -41,7 +41,6 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, ColonyDataTypes {
   uint256 constant UINT256_MAX = (2 ** 256) - 1;
   uint256 constant STAKE_FRACTION = WAD / 1000; // 0.1%
   uint256 constant COOLDOWN_PERIOD = 14 days;
-  uint8 constant FUNDING_ROLE = 5;
 
   // Initialization data
   IColonyNetwork colonyNetwork;
@@ -283,11 +282,10 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, ColonyDataTypes {
     proposal.lastUpdated = updateTime;
 
     assert(proposal.totalPaid <= proposal.totalRequested);
-    address colonyAuthority = colony.authority();
 
     // Check if the extension has the permissions to do this
     // If not, cancel the proposal so others aren't blocked
-    if (!colony.hasUserRole(address(this), proposal.domainId, ColonyRole.Funding)) {
+    if (!colony.hasUserRole(address(this), proposal.domainId, ColonyDataTypes.ColonyRole.Funding)) {
         emit ProposalPinged(_id, 0);
         cancelProposal(_id, HEAD);
         return;

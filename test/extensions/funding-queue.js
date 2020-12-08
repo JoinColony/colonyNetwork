@@ -893,8 +893,7 @@ contract("Funding Queues", (accounts) => {
       // No tokens transferred
       const balanceAfter = await colony.getFundingPotBalance(2, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("0");
-      expect(amountTransferred).to.eq.BN(expectedTransferred);
+      expect(amountTransferred).to.be.zero;
     });
   });
 });
