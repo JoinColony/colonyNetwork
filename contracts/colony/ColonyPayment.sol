@@ -60,7 +60,7 @@ contract ColonyPayment is ColonyStorage {
 
     if (_skillId > 0) {
       setPaymentSkill(_permissionDomainId, _childSkillIndex, paymentCount, _skillId);
-      
+
       emit PaymentSkillSet(paymentCount, _skillId);
     }
 
