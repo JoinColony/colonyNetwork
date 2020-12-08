@@ -55,12 +55,16 @@ contract ColonyPayment is ColonyStorage {
 
     payments[paymentCount] = payment;
 
-    if (_skillId > 0) {
-      setPaymentSkill(_permissionDomainId, _childSkillIndex, paymentCount, _skillId);
-    }
-
     emit FundingPotAdded(fundingPotCount);
     emit PaymentAdded(paymentCount);
+
+    if (_skillId > 0) {
+      setPaymentSkill(_permissionDomainId, _childSkillIndex, paymentCount, _skillId);
+      emit PaymentSkillSet(paymentCount, _skillId);
+    }
+
+    emit PaymentRecipientSet(paymentCount, _recipient);
+    emit PaymentPayoutSet(paymentCount, _token, _amount);
 
     return paymentCount;
   }
@@ -84,6 +88,8 @@ contract ColonyPayment is ColonyStorage {
       // This may change in future to allow multiple skills to be set on both Tasks and Payments
       colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), payment.skills[0]);
     }
+
+    emit PaymentFinalized(_id);
   }
 
   function setPaymentRecipient(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address payable _recipient) public
@@ -93,6 +99,8 @@ contract ColonyPayment is ColonyStorage {
   {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
     payments[_id].recipient = _recipient;
+
+    emit PaymentRecipientSet(_id, _recipient);
   }
 
   function setPaymentSkill(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _skillId) public
@@ -103,6 +111,8 @@ contract ColonyPayment is ColonyStorage {
   validGlobalSkill(_skillId)
   {
     payments[_id].skills[0] = _skillId;
+
+    emit PaymentSkillSet(_id, _skillId);
   }
 
   function getPayment(uint256 _id) public view returns (Payment memory) {
