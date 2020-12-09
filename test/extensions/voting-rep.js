@@ -289,7 +289,7 @@ contract("Voting Reputation", (accounts) => {
       expect(deprecated).to.equal(true);
     });
 
-    it("cannot initialise twice or if not root", async () => {
+    it("cannot initialise twice or more if not root", async () => {
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-rep-already-initialised");
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR, { from: USER2 }), "voting-rep-caller-not-root");
     });
@@ -1042,6 +1042,21 @@ contract("Voting Reputation", (accounts) => {
 
     it("cannot execute a non-existent motion", async () => {
       await checkErrorRevert(voting.finalizeMotion(0), "voting-rep-motion-not-finalizable");
+    });
+
+    it("motion has no effect if extension does not have permissions", async () => {
+      await colony.setAdministrationRole(1, UINT256_MAX, voting.address, 1, false);
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+      const tasksBefore = await colony.getTaskCount();
+
+      const { logs } = await voting.finalizeMotion(motionId);
+      expect(logs[0].args.executed).to.be.false;
+
+      const tasksAfter = await colony.getTaskCount();
+      expect(tasksAfter).to.eq.BN(tasksBefore);
+      await colony.setAdministrationRole(1, UINT256_MAX, voting.address, 1, true);
     });
 
     it("cannot take an action if there is insufficient support", async () => {

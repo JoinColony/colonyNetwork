@@ -23,7 +23,7 @@ import "./../common/ERC20Extended.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyExtension.sol";
-
+import "./../colony/ColonyDataTypes.sol";
 
 contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
 
@@ -283,6 +283,14 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
 
     assert(proposal.totalPaid <= proposal.totalRequested);
 
+    // Check if the extension has the permissions to do this
+    // If not, cancel the proposal so others aren't blocked
+    if (!colony.hasUserRole(address(this), proposal.domainId, ColonyDataTypes.ColonyRole.Funding)) {
+        emit ProposalPinged(_id, 0);
+        cancelProposal(_id, HEAD);
+        return;
+    }
+
     if (proposal.totalPaid == proposal.totalRequested) {
       proposal.state = ProposalState.Completed;
 
@@ -294,13 +302,13 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     }
 
     colony.moveFundsBetweenPots(
-      proposal.domainId,
-      proposal.fromChildSkillIndex,
-      proposal.toChildSkillIndex,
-      proposal.fromPot,
-      proposal.toPot,
-      actualFundingToTransfer,
-      proposal.token
+        proposal.domainId,
+        proposal.fromChildSkillIndex,
+        proposal.toChildSkillIndex,
+        proposal.fromPot,
+        proposal.toPot,
+        actualFundingToTransfer,
+        proposal.token
     );
 
     emit ProposalPinged(_id, actualFundingToTransfer);

@@ -428,4 +428,42 @@ contract("One transaction payments", (accounts) => {
       );
     });
   });
+
+  describe("using the extension when only installed in a subdomain", async () => {
+    beforeEach(async () => {
+      await colony.setUserRoles(1, UINT256_MAX, oneTxPayment.address, 1, rolesToBytes32([]));
+      await colony.setUserRoles(1, 0, oneTxPayment.address, 2, ROLES);
+    });
+
+    it("should not allow a payment to occur in root if it only has subdomain permissions", async () => {
+      const balanceBefore = await token.balanceOf(USER1);
+      expect(balanceBefore).to.be.zero;
+
+      await checkErrorRevert(
+        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID),
+        "ds-auth-unauthorized"
+      );
+    });
+
+    it("should allow a payment to occur in subdomain if it only has subdomain permissions", async () => {
+      const balanceBefore = await token.balanceOf(USER1);
+      expect(balanceBefore).to.be.zero;
+
+      const d1 = await colony.getDomain(1);
+      const d2 = await colony.getDomain(2);
+
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, d1.fundingPotId, d2.fundingPotId, WAD, token.address);
+
+      await oneTxPayment.makePaymentFundedFromDomain(2, UINT256_MAX, 1, 0, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID);
+
+      const balanceAfter = await token.balanceOf(USER1);
+      expect(balanceAfter).to.eq.BN(9);
+    });
+
+    it("cannot payout with funds from root if the extension only has subdomain permissions", async () => {
+      const balanceBefore = await token.balanceOf(USER1);
+      expect(balanceBefore).to.be.zero;
+      await checkErrorRevert(oneTxPayment.makePayment(2, 0, 1, 0, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID), "ds-auth-unauthorized");
+    });
+  });
 });
