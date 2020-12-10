@@ -72,6 +72,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return executeCall(_to, 0, _action);
   }
 
+  function annotateTransaction(bytes32 _txHash, string memory _metadata) public stoppable {
+    emit Annotation(_txHash, msg.sender, _metadata);
+  }
+
   function emitDomainReputationPenalty(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,

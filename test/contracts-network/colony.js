@@ -349,4 +349,12 @@ contract("Colony", (accounts) => {
       await checkErrorRevert(colony.setRewardInverse(0), "colony-reward-inverse-cannot-be-zero");
     });
   });
+
+  describe("when annotating transactions", () => {
+    it("should be able to emit transaction annotations", async () => {
+      const tx1 = await colony.addDomain(1, UINT256_MAX, 1);
+      const tx2 = await colony.annotateTransaction(tx1.tx, "annotation");
+      await expectEvent(tx2, "Annotation", [tx1.tx, USER0, "annotation"]);
+    });
+  });
 });
