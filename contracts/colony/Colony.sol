@@ -133,19 +133,19 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
     rewardInverse = 2**256 - 1;
 
-    emit ColonyInitialised(_colonyNetworkAddress, _token);
+    emit ColonyInitialised(msg.sender, _colonyNetworkAddress, _token);
   }
 
   function initialiseColony(address _colonyNetworkAddress, address _token, string memory _metadata) public stoppable {
     initialiseColony(_colonyNetworkAddress, _token);
 
-    emit ColonyMetadata(_metadata);
+    emit ColonyMetadata(msg.sender, _metadata);
   }
 
   function editColony(string memory _metadata) public
   stoppable
   auth {
-    emit ColonyMetadata(_metadata);
+    emit ColonyMetadata(msg.sender, _metadata);
   }
 
   function bootstrapColony(address[] memory _users, int[] memory _amounts) public
@@ -165,7 +165,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
     }
 
-    emit ColonyBootstrapped(_users, _amounts);
+    emit ColonyBootstrapped(msg.sender, _users, _amounts);
   }
 
   function mintTokens(uint _wad) public
@@ -174,7 +174,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   {
     ERC20Extended(token).mint(address(this), _wad); // ignore-swc-107
 
-    emit TokensMinted(address(this), _wad);
+    emit TokensMinted(msg.sender, address(this), _wad);
   }
 
   function mintTokensFor(address _guy, uint _wad) public
@@ -183,7 +183,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   {
     ERC20Extended(token).mint(_guy, _wad); // ignore-swc-107
 
-    emit TokensMinted(_guy, _wad);
+    emit TokensMinted(msg.sender, _guy, _wad);
   }
 
   function mintTokensForColonyNetwork(uint _wad) public stoppable {
@@ -194,7 +194,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     ERC20Extended(token).mint(_wad);
     assert(ERC20Extended(token).transfer(colonyNetworkAddress, _wad));
 
-    emit TokensMinted(colonyNetworkAddress, _wad);
+    emit TokensMinted(msg.sender, colonyNetworkAddress, _wad);
   }
 
   function registerColonyLabel(string memory colonyName, string memory orbitdb) public stoppable auth {
@@ -309,7 +309,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     initialiseDomain(newLocalSkill);
 
     if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
-      emit DomainMetadata(domainCount, _metadata);
+      emit DomainMetadata(msg.sender, domainCount, _metadata);
     }
   }
 
@@ -318,7 +318,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   {
     if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
-      emit DomainMetadata(_domainId, _metadata);
+      emit DomainMetadata(msg.sender, _domainId, _metadata);
     }
   }
 
@@ -374,7 +374,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Because it's called after setResolver, it'll do the new finishUpgrade, which will be populated with what we know
     // we need to do once we know what's in it!
     this.finishUpgrade();
-    emit ColonyUpgraded(currentVersion, _newVersion);
+    emit ColonyUpgraded(msg.sender, currentVersion, _newVersion);
   }
 
   // v4 to v5
@@ -509,7 +509,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
       fundingPotId: fundingPotCount
     });
 
-    emit DomainAdded(domainCount);
+    emit DomainAdded(msg.sender, domainCount);
     emit FundingPotAdded(fundingPotCount);
   }
 

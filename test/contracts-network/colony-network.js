@@ -239,7 +239,7 @@ contract("Colony Network", (accounts) => {
       const token = await Token.new(...getTokenArgs());
       await token.unlock();
       const tx = await colonyNetwork.createColony(token.address, 0, "", IPFS_HASH);
-      await expectEvent(tx, "ColonyMetadata(string)", [IPFS_HASH]);
+      await expectEvent(tx, "ColonyMetadata(address,string)", [colonyNetwork.address, IPFS_HASH]);
     });
 
     it("metadata should not be emitted on colony creation if not supplied", async () => {

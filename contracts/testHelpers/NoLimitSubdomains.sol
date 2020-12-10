@@ -49,7 +49,7 @@ contract NoLimitSubdomains is ColonyStorage {
       fundingPotId: fundingPotCount
     });
 
-    emit DomainAdded(domainCount);
+    emit DomainAdded(msg.sender, domainCount);
     emit FundingPotAdded(fundingPotCount);
   }
 

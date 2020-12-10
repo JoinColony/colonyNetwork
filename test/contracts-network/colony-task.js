@@ -1089,36 +1089,33 @@ contract("ColonyTask", (accounts) => {
     it("should log a TaskBriefSet event, if the task brief gets changed", async () => {
       const taskId = await makeTask({ colony });
 
-      await expectEvent(
-        executeSignedTaskChange({
-          colony,
-          taskId,
-          functionName: "setTaskBrief",
-          signers: [MANAGER],
-          sigTypes: [0],
-          args: [taskId, SPECIFICATION_HASH_UPDATED],
-        }),
-        "TaskBriefSet",
-        [taskId, SPECIFICATION_HASH_UPDATED]
-      );
+      const tx = executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "setTaskBrief",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, SPECIFICATION_HASH_UPDATED],
+      });
+      await expectEvent(tx, "TaskBriefSet", [taskId, SPECIFICATION_HASH_UPDATED]);
+      await expectEvent(tx, "TaskChangedViaSignatures", [[MANAGER]]);
     });
 
     it("should log a TaskDueDateSet event, if the task due date gets changed", async () => {
       const taskId = await makeTask({ colony });
 
       const dueDate = await currentBlockTime();
-      await expectEvent(
-        executeSignedTaskChange({
-          colony,
-          taskId,
-          functionName: "setTaskDueDate",
-          signers: [MANAGER],
-          sigTypes: [0],
-          args: [taskId, dueDate],
-        }),
-        "TaskDueDateSet",
-        [taskId, dueDate]
-      );
+      const tx = executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "setTaskDueDate",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, dueDate],
+      });
+
+      await expectEvent(tx, "TaskDueDateSet", [taskId, dueDate]);
+      await expectEvent(tx, "TaskChangedViaSignatures", [[MANAGER]]);
     });
 
     it("should log a TaskSkillSet event, if the task skill gets changed", async () => {
@@ -1127,36 +1124,33 @@ contract("ColonyTask", (accounts) => {
 
       const skillCount = await colonyNetwork.getSkillCount();
 
-      await expectEvent(
-        executeSignedTaskChange({
-          colony,
-          taskId,
-          functionName: "setTaskSkill",
-          signers: [MANAGER],
-          sigTypes: [0],
-          args: [taskId, skillCount],
-        }),
-        "TaskSkillSet",
-        [taskId, skillCount]
-      );
+      const tx = executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "setTaskSkill",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, skillCount],
+      });
+      await expectEvent(tx, "TaskSkillSet", [taskId, skillCount]);
+      await expectEvent(tx, "TaskChangedViaSignatures", [[MANAGER]]);
     });
 
     it("should log a TaskRoleUserSet event, if a task role's user gets changed", async () => {
       const taskId = await makeTask({ colony });
 
       // Change the task role's user
-      await expectEvent(
-        await executeSignedRoleAssignment({
-          colony,
-          taskId,
-          functionName: "setTaskWorkerRole",
-          signers: [MANAGER, WORKER],
-          sigTypes: [0, 0],
-          args: [taskId, WORKER],
-        }),
-        "TaskRoleUserSet",
-        [taskId, WORKER_ROLE, WORKER]
-      );
+      const tx = await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, WORKER],
+      });
+
+      // await expectEvent(tx, "TaskRoleUserSet", [taskId, WORKER_ROLE, WORKER]);
+      await expectEvent(tx, "TaskChangedViaSignatures", [[MANAGER, WORKER]]);
     });
 
     it("should fail to execute task change with a non zero value", async () => {
@@ -1276,6 +1270,7 @@ contract("ColonyTask", (accounts) => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
       await expectEvent(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER }), "TaskDeliverableSubmitted", [
+        WORKER,
         taskId,
         DELIVERABLE_HASH,
       ]);
@@ -1327,7 +1322,7 @@ contract("ColonyTask", (accounts) => {
     it("should log a TaskFinalized event", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [taskId]);
+      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [MANAGER, taskId]);
     });
   });
 
@@ -1452,18 +1447,17 @@ contract("ColonyTask", (accounts) => {
     it("should log a TaskCanceled event", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony, token });
-      await expectEvent(
-        executeSignedTaskChange({
-          colony,
-          taskId,
-          functionName: "cancelTask",
-          signers: [MANAGER, WORKER],
-          sigTypes: [0, 0],
-          args: [taskId],
-        }),
-        "TaskCanceled",
-        [taskId]
-      );
+      const tx = executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "cancelTask",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId],
+      });
+
+      await expectEvent(tx, "TaskCanceled", [taskId]);
+      await expectEvent(tx, "TaskChangedViaSignatures", [[MANAGER, WORKER]]);
     });
   });
 
@@ -1640,18 +1634,16 @@ contract("ColonyTask", (accounts) => {
       await colony.mintTokens(100);
 
       // Set the worker payout as 98000 wei
-      await expectEvent(
-        executeSignedTaskChange({
-          colony,
-          taskId,
-          functionName: "setTaskWorkerPayout",
-          signers: [MANAGER, WORKER],
-          sigTypes: [0, 0],
-          args: [taskId, ethers.constants.AddressZero, 98000],
-        }),
-        "TaskPayoutSet",
-        [taskId, WORKER_ROLE, ethers.constants.AddressZero, 98000]
-      );
+      const tx = executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerPayout",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, ethers.constants.AddressZero, 98000],
+      });
+      await expectEvent(tx, "TaskPayoutSet", [taskId, WORKER_ROLE, ethers.constants.AddressZero, 98000]);
+      await expectEvent(tx, "TaskChangedViaSignatures", [[MANAGER, WORKER]]);
     });
 
     it("should correctly return the current total payout", async () => {
@@ -1925,7 +1917,7 @@ contract("ColonyTask", (accounts) => {
       await taskSkillEditingColony.addTaskSkill(taskId, 3);
       await taskSkillEditingColony.addTaskSkill(taskId, 3);
       await taskSkillEditingColony.removeTaskSkill(taskId, 2);
-      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [taskId]);
+      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [MANAGER, taskId]);
     });
   });
 });

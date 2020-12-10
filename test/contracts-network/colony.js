@@ -96,8 +96,8 @@ contract("Colony", (accounts) => {
       const otherToken = await Token.new(...tokenArgs);
       await otherToken.unlock();
 
-      await expectEvent(colony.mintTokens(100), "TokensMinted", [colony.address, 100]);
-      await expectEvent(colony.mintTokensFor(accounts[0], 100), "TokensMinted", [accounts[0], 100]);
+      await expectEvent(colony.mintTokens(100), "TokensMinted", [accounts[0], colony.address, 100]);
+      await expectEvent(colony.mintTokensFor(accounts[1], 100), "TokensMinted", [accounts[0], accounts[1], 100]);
     });
 
     it("should fail if a non-admin tries to mint tokens", async () => {
@@ -222,17 +222,17 @@ contract("Colony", (accounts) => {
     it("should log DomainAdded and FundingPotAdded and DomainMetadata events", async () => {
       let tx = await colony.addDomain(1, UINT256_MAX, 1);
       let domainCount = await colony.getDomainCount();
-      await expectEvent(tx, "DomainAdded", [domainCount]);
+      await expectEvent(tx, "DomainAdded", [accounts[0], domainCount]);
       let fundingPotCount = await colony.getFundingPotCount();
       await expectEvent(tx, "FundingPotAdded", [fundingPotCount]);
       await expectNoEvent(tx, "DomainMetadata");
 
       tx = await colony.addDomain(1, UINT256_MAX, 1, IPFS_HASH);
       domainCount = await colony.getDomainCount();
-      await expectEvent(tx, "DomainAdded", [domainCount]);
+      await expectEvent(tx, "DomainAdded", [accounts[0], domainCount]);
       fundingPotCount = await colony.getFundingPotCount();
       await expectEvent(tx, "FundingPotAdded", [fundingPotCount]);
-      await expectEvent(tx, "DomainMetadata", [domainCount, IPFS_HASH]);
+      await expectEvent(tx, "DomainMetadata", [accounts[0], domainCount, IPFS_HASH]);
     });
   });
 
@@ -240,7 +240,7 @@ contract("Colony", (accounts) => {
     it("should log the DomainMetadata event", async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
       const domainCount = await colony.getDomainCount();
-      await expectEvent(colony.editDomain(1, 0, 2, IPFS_HASH), "DomainMetadata", [domainCount, IPFS_HASH]);
+      await expectEvent(colony.editDomain(1, 0, 2, IPFS_HASH), "DomainMetadata", [accounts[0], domainCount, IPFS_HASH]);
     });
 
     it("should not log the DomainMetadata event if empty string passed", async () => {
