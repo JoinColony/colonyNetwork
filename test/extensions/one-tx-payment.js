@@ -99,7 +99,7 @@ contract("One transaction payments", (accounts) => {
       const balanceAfter = await token.balanceOf(USER1);
       expect(balanceAfter).to.eq.BN(9);
 
-      await expectEvent(tx, "OneTxPaymentMade", []);
+      await expectEvent(tx, "OneTxPaymentMade", [accounts[0], 1, 1]);
     });
 
     it("should allow a single-transaction payment of ETH to occur", async () => {

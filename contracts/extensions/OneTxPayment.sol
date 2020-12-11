@@ -24,8 +24,8 @@ import "./ColonyExtension.sol";
 
 
 contract OneTxPayment is ColonyExtension {
-  event OneTxPaymentMade();
-  
+  event OneTxPaymentMade(address agent, uint256 paymentId, uint256 nTransactions);
+
   uint256 constant UINT256_MAX = 2**256 - 1;
   ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
   ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
@@ -91,6 +91,7 @@ contract OneTxPayment is ColonyExtension {
       "one-tx-payment-not-authorized"
     );
 
+
     if (_workers.length == 1) {
 
       uint256 paymentId = colony.addPayment(1, _childSkillIndex, _workers[0], _tokens[0], _amounts[0], _domainId, _skillId);
@@ -101,6 +102,7 @@ contract OneTxPayment is ColonyExtension {
       colony.finalizePayment(1, _childSkillIndex, paymentId);
       colony.claimPayment(paymentId, _tokens[0]);
 
+      emit OneTxPaymentMade(msg.sender, paymentId, _workers.length);
     } else {
 
       uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
@@ -132,9 +134,8 @@ contract OneTxPayment is ColonyExtension {
 
       finalizeAndClaim(expenditureId, _workers, _tokens);
 
+      emit OneTxPaymentMade(msg.sender, expenditureId, _workers.length);
     }
-
-    emit OneTxPaymentMade();
   }
 
   /// @notice Completes a colony payment in a single transaction
@@ -183,6 +184,7 @@ contract OneTxPayment is ColonyExtension {
       colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
       colony.claimPayment(paymentId, _tokens[0]);
 
+      emit OneTxPaymentMade(msg.sender, paymentId, _workers.length);
     } else {
 
       uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
@@ -215,9 +217,8 @@ contract OneTxPayment is ColonyExtension {
 
       finalizeAndClaim(expenditureId, _workers, _tokens);
 
+      emit OneTxPaymentMade(msg.sender, expenditureId, _workers.length);
     }
-
-    emit OneTxPaymentMade();
   }
 
   function calculateUniqueAmounts(
