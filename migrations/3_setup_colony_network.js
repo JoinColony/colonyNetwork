@@ -1,4 +1,6 @@
 /* globals artifacts */
+const { writeFileSync } = require("fs");
+const path = require("path");
 const { setupUpgradableColonyNetwork } = require("../helpers/upgradable-contracts");
 
 const ColonyNetworkAuthority = artifacts.require("./ColonyNetworkAuthority");
@@ -36,6 +38,10 @@ module.exports = async function (deployer) {
   const authorityNetwork = await ColonyNetworkAuthority.new(etherRouter.address);
   await authorityNetwork.setOwner(etherRouter.address);
   await etherRouter.setAuthority(authorityNetwork.address);
+
+  writeFileSync(path.resolve(__dirname, "..", "etherrouter-address.json"), JSON.stringify({ etherRouterAddress: etherRouter.address }), {
+    encoding: "utf8",
+  });
 
   console.log(
     "### Colony Network setup with Resolver",
