@@ -354,7 +354,7 @@ contract("Colony", (accounts) => {
     it("should be able to emit transaction annotations", async () => {
       const tx1 = await colony.addDomain(1, UINT256_MAX, 1);
       const tx2 = await colony.annotateTransaction(tx1.tx, "annotation");
-      await expectEvent(tx2, "Annotation", [tx1.tx, USER0, "annotation"]);
+      await expectEvent(tx2, "Annotation", [USER0, tx1.tx, "annotation"]);
     });
   });
 });

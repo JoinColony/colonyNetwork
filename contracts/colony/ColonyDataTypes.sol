@@ -199,10 +199,10 @@ interface ColonyDataTypes {
   event FundingPotAdded(uint256 fundingPotId);
 
   /// @notice Emit a metadata string for a transaction
+  /// @param agent Agent emitting the annotation
   /// @param txHash Hash of transaction being annotated (0x0 for current tx)
-  /// @param user User emitting the annotation
   /// @param metadata String of metadata for tx
-  event Annotation(bytes32 indexed txHash, address indexed user, string metadata);
+  event Annotation(address indexed agent, bytes32 indexed txHash, string metadata);
 
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
