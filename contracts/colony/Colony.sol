@@ -40,6 +40,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   bytes4 constant APPROVE_SIG = bytes4(keccak256("approve(address,uint256)"));
   bytes4 constant TRANSFER_SIG = bytes4(keccak256("transfer(address,uint256)"));
+  bytes4 constant TRANSFER_FROM_SIG = bytes4(keccak256("transferFrom(address,address,uint256)"));
+  bytes4 constant BURN_SIG = bytes4(keccak256("burn(uint256)"));
+  bytes4 constant BURN_GUY_SIG = bytes4(keccak256("burn(address,uint256)"));
 
   function makeArbitraryTransaction(address _to, bytes memory _action)
   public stoppable auth
@@ -60,6 +63,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     require(sig != APPROVE_SIG, "colony-cannot-call-erc20-approve");
     require(sig != TRANSFER_SIG, "colony-cannot-call-erc20-transfer");
+    require(sig != TRANSFER_FROM_SIG, "colony-cannot-call-erc20-transfer-from");
+    require(sig != BURN_SIG, "colony-cannot-call-burn");
+    require(sig != BURN_GUY_SIG, "colony-cannot-call-burn-guy");
 
     // Prevent transactions to network-managed extensions installed in this colony
     try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
