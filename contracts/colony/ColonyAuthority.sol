@@ -105,6 +105,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ARCHITECTURE_ROLE, "addDomain(uint256,uint256,uint256,string)");
     addRoleCapability(ARCHITECTURE_ROLE, "editDomain(uint256,uint256,uint256,string)");
     addRoleCapability(ROOT_ROLE, "editColony(string)");
+    addRoleCapability(ROOT_ROLE, "burnTokens(address,uint256)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

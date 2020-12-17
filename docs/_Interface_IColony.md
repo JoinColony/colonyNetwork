@@ -114,6 +114,19 @@ Allows the colony to bootstrap itself by having initial reputation and token `_a
 |_amount|int[]|Amount of reputation/tokens for every address
 
 
+### `burnTokens`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|token|address|
+|amount|uint256|
+
+
 ### `cancelExpenditure`
 
 Cancels the expenditure and prevents further editing. Can only be called by expenditure owner.

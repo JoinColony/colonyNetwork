@@ -363,4 +363,34 @@ contract("Colony", (accounts) => {
       await expectEvent(tx2, "Annotation", [USER0, tx1.tx, "annotation"]);
     });
   });
+
+  describe("when burning tokens", async () => {
+    beforeEach(async () => {
+      await colony.mintTokens(WAD);
+      await colony.claimColonyFunds(token.address);
+    });
+
+    it("should allow root user to burn", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      const tx = await colony.burnTokens(token.address, amount);
+      await expectEvent(tx, "TokensBurned", [token.address, amount]);
+    });
+
+    it("should not allow anyone else but a root user to burn", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      await checkErrorRevert(colony.burnTokens(token.address, amount, { from: accounts[1] }), "ds-auth-unauthorized");
+    });
+
+    it("cannot burn more tokens than it has", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      await checkErrorRevert(colony.burnTokens(token.address, amount.muln(2)), "colony-not-enough-tokens");
+    });
+
+    it("cannot burn more tokens than are in the root funding pot", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, amount.divn(2), token.address);
+
+      await checkErrorRevert(colony.burnTokens(token.address, amount), "colony-not-enough-tokens");
+    });
+  });
 });
