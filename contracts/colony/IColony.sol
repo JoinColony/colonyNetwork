@@ -921,6 +921,6 @@ interface IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Burn tokens held by the colony. Can only burn tokens held in the root funding pot.
   /// @param token The address of the token to burn
-  /// @return amount The amount of tokens to burn
+  /// @param amount The amount of tokens to burn
   function burnTokens(address token, uint256 amount) external;
 }
