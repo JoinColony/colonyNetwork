@@ -61,6 +61,19 @@ Add a new payment in the colony. Secured function to authorised members.
 |---|---|---|
 |paymentId|uint256|Identifier of the newly created payment
 
+### `annotateTransaction`
+
+Emit a metadata string for a transaction
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_txHash|bytes32|Hash of transaction being annotated (0x0 for current tx)
+|_metadata|string|String of metadata for tx
+
+
 ### `approveStake`
 
 Allow the _approvee to obligate some amount of tokens as a stake.

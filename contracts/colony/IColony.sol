@@ -66,6 +66,11 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @return success Boolean indicating whether the transaction succeeded
   function makeArbitraryTransaction(address _to, bytes memory _action) external returns (bool success);
 
+  /// @notice Emit a metadata string for a transaction
+  /// @param _txHash Hash of transaction being annotated (0x0 for current tx)
+  /// @param _metadata String of metadata for tx
+  function annotateTransaction(bytes32 _txHash, string memory _metadata) external;
+
   /// @notice Set new colony root role.
   /// Can be called by root role only.
   /// @param _user User we want to give an root role to

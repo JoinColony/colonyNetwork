@@ -922,8 +922,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
               // call(g,   a,  v, in,                insize,        out, outsize)
       success := call(gas(), to, 0, add(action, 0x20), mload(action), 0, 0)
     }
-
-    return success;
   }
 
   function getSig(bytes memory action) internal returns (bytes4 sig) {
