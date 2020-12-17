@@ -919,5 +919,8 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @return domainId Id of the corresponding domain
   function getDomainFromFundingPot(uint256 _fundingPotId) external view returns (uint256 domainId);
 
+  /// @notice Burn tokens held by the colony. Can only burn tokens held in the root funding pot.
+  /// @param token The address of the token to burn
+  /// @return amount The amount of tokens to burn
   function burnTokens(address token, uint256 amount) external;
 }

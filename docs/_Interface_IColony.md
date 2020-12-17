@@ -116,14 +116,14 @@ Allows the colony to bootstrap itself by having initial reputation and token `_a
 
 ### `burnTokens`
 
-
+Burn tokens held by the colony. Can only burn tokens held in the root funding pot.
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|token|address|
+|token|address|The address of the token to burn
 |amount|uint256|
 
 
