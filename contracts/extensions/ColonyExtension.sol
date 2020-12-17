@@ -49,4 +49,8 @@ abstract contract ColonyExtension is DSAuth, DSMath {
     return deprecated;
   }
 
+  function getColony() public view returns(address) {
+    return address(colony);
+  }
+
 }

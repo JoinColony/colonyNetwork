@@ -171,6 +171,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     fundingPot.payouts[_token] = _amount;
 
     updatePayoutsWeCannotMakeAfterBudgetChange(payment.fundingPotId, _token, currentTotalAmount);
+
+    emit PaymentPayoutSet(_id, _token, _amount);
   }
 
   function getFundingPotCount() public view returns (uint256 count) {

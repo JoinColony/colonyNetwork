@@ -22,3 +22,4 @@ reputations.json
 reputationStates.sqlite
 truffle-security-output.json
 .coverage_contracts
+etherrouter-address.json
