@@ -124,7 +124,7 @@ Burn tokens held by the colony. Can only burn tokens held in the root funding po
 |Name|Type|Description|
 |---|---|---|
 |token|address|The address of the token to burn
-|amount|uint256|
+|amount|uint256|The amount of tokens to burn
 
 
 ### `cancelExpenditure`
