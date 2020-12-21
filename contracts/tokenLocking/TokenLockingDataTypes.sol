@@ -35,7 +35,7 @@ interface TokenLockingDataTypes {
     uint256 balance;
     // Weighted average of deposit timestamps (no longer used)
     uint256 DEPRECATED_timestamp; // solhint-disable-line var-name-mixedcase
-    // Pending balance, can claim once unlocked
-    uint256 pendingBalance;
+    // Pending balance, can claim once unlocked (no longer used)
+    uint256 DEPRECATED_pendingBalance;
   }
 }

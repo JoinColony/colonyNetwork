@@ -54,8 +54,8 @@ contract("Colony Staking", (accounts) => {
     await token.approve(tokenLockingAddress, DEPOSIT, { from: USER1 });
 
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-    await tokenLocking.deposit(token.address, DEPOSIT, { from: USER0 });
-    await tokenLocking.deposit(token.address, DEPOSIT, { from: USER1 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, DEPOSIT, true, { from: USER0 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, DEPOSIT, true, { from: USER1 });
   });
 
   describe("when managing stakes", () => {
@@ -219,8 +219,8 @@ contract("Colony Staking", (accounts) => {
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
       await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, USER2, { from: USER2 });
 
-      const deposit = await tokenLocking.getUserLock(token.address, USER2);
-      expect(deposit.balance).to.eq.BN(WAD);
+      const balance = await token.balanceOf(USER2);
+      expect(balance).to.eq.BN(WAD);
     });
   });
 });

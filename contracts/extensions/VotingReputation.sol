@@ -315,7 +315,9 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     colony.obligateStake(msg.sender, motion.domainId, amount);
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, motion.domainId, amount, address(this));
-    tokenLocking.claim(token, true);
+
+    ERC20Extended(token).approve(address(tokenLocking), amount);
+    tokenLocking.deposit(token, amount, true);
 
     // Update the stake
     motion.stakes[_vote] = add(motion.stakes[_vote], amount);
@@ -445,6 +447,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
       emit MotionEventSet(_motionId, REVEAL_END);
     }
+
     tokenLocking.transfer(token, voterReward, msg.sender, true);
   }
 

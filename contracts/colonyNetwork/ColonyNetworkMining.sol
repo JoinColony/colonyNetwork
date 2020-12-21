@@ -217,7 +217,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     address clnyToken = IMetaColony(metaColony).getToken();
     uint256 amount = pendingMiningRewards[_recipient];
     pendingMiningRewards[_recipient] = 0;
-    ITokenLocking(tokenLocking).transfer(clnyToken, amount, _recipient, true);
+    ERC20Extended(clnyToken).approve(tokenLocking, amount);
+    ITokenLocking(tokenLocking).depositFor(clnyToken, amount, _recipient);
   }
 
   function stakeForMining(uint256 _amount) public stoppable {
@@ -244,8 +245,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
   }
 
   function burnUnneededRewards(uint256 _amount) public stoppable onlyReputationMiningCycle() {
-    ITokenLocking(tokenLocking).claim(IMetaColony(metaColony).getToken(), true);
-    ITokenLocking(tokenLocking).burn(_amount);
+    address clnyToken = IMetaColony(metaColony).getToken();
+    ERC20Extended(clnyToken).burn(_amount);
   }
 
   function setReputationMiningCycleReward(uint256 _amount) public stoppable

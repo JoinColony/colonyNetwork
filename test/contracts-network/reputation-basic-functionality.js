@@ -68,7 +68,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
     it("should allow miners to stake CLNY", async () => {
       await giveUserCLNYTokens(colonyNetwork, MINER2, 9000);
       await clnyToken.approve(tokenLocking.address, 5000, { from: MINER2 });
-      await tokenLocking.deposit(clnyToken.address, 5000, { from: MINER2 });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, 5000, true, { from: MINER2 });
 
       const userBalance = await clnyToken.balanceOf(MINER2);
       expect(userBalance).to.eq.BN(4000);
@@ -93,7 +93,10 @@ contract("Reputation mining - basic functionality", (accounts) => {
       await giveUserCLNYTokens(colonyNetwork, MINER2, 9000);
       await clnyToken.approve(tokenLocking.address, 10000, { from: MINER2 });
 
-      await checkErrorRevert(tokenLocking.deposit(clnyToken.address, 10000, { from: MINER2 }), "ds-token-insufficient-balance");
+      await checkErrorRevert(
+        tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, 10000, true, { from: MINER2 }),
+        "ds-token-insufficient-balance"
+      );
 
       const userBalance = await clnyToken.balanceOf(MINER2);
       expect(userBalance).to.eq.BN(9000);
@@ -136,7 +139,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
       const quarter = Math.floor(usersTokens / 4);
 
       let tx;
-      await tokenLocking.deposit(clnyToken.address, quarter * 3, { from: MINER2 });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, quarter * 3, true, { from: MINER2 });
       tx = await colonyNetwork.stakeForMining(quarter * 3, { from: MINER2 });
       const time1 = await getBlockTime(tx.receipt.blockNumber);
       const [stakedAmount, stakedTimestamp] = await colonyNetwork.getMiningStake(MINER2);
@@ -146,7 +149,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
 
       await forwardTime(3600);
 
-      await tokenLocking.deposit(clnyToken.address, quarter, { from: MINER2 });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, quarter, true, { from: MINER2 });
       tx = await colonyNetwork.stakeForMining(quarter, { from: MINER2 });
       const time2 = await getBlockTime(tx.receipt.blockNumber);
 

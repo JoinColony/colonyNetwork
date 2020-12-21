@@ -312,7 +312,7 @@ contract("All", function (accounts) {
       const userReputationProof = [key, value, branchMask, siblings];
 
       await newToken.approve(tokenLocking.address, workerReputation, { from: WORKER });
-      await tokenLocking.deposit(newToken.address, workerReputation, { from: WORKER });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](newToken.address, workerReputation, true, { from: WORKER });
       await forwardTime(1, this);
 
       await fundColonyWithTokens(newColony, otherToken, 300);

@@ -261,7 +261,7 @@ export async function giveUserCLNYTokensAndStake(colonyNetwork, user, _amount) {
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   await clnyToken.approve(tokenLocking.address, amount, { from: user });
-  await tokenLocking.deposit(clnyToken.address, amount, { from: user });
+  await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, amount, true, { from: user });
   await colonyNetwork.stakeForMining(amount, { from: user });
 }
 

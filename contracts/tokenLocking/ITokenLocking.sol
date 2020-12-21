@@ -49,22 +49,24 @@ interface ITokenLocking is TokenLockingDataTypes {
   /// @param _lockId Id of the lock user wants to increment to
   function incrementLockCounterTo(address _token, uint256 _lockId) external;
 
-  /// @notice Deposit `_amount` of colony tokens. Goes into pendingBalance if token is locked.
+  /// @notice DEPRECATED Deposit `_amount` of deposited tokens. Can only be called if user tokens are not locked.
   /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
   /// @param _token Address of the token to deposit
   /// @param _amount Amount to deposit
   function deposit(address _token, uint256 _amount) external;
+
+  /// @notice Deposit `_amount` of colony tokens.
+  /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
+  /// @param _token Address of the token to deposit
+  /// @param _amount Amount to deposit
+  /// @param _force Pass true to forcibly unlock the token
+  function deposit(address _token, uint256 _amount, bool _force) external;
 
   /// @notice Deposit `_amount` of colony tokens in the recipient's account. Goes into pendingBalance if token is locked.
   /// @param _token Address of the token to deposit
   /// @param _amount Amount to deposit
   /// @param _recipient User to receive the tokens
   function depositFor(address _token, uint256 _amount, address _recipient) external;
-
-  /// @notice Claim any pending tokens. Can only be called if user tokens are not locked.
-  /// @param _token Address of the token to withdraw from
-  /// @param _force Pass true to forcibly unlock the token
-  function claim(address _token, bool _force) external;
 
   /// @notice Transfer tokens to a recipient's pending balance. Can only be called if user tokens are not locked.
   /// @param _token Address of the token to transfer
@@ -89,11 +91,6 @@ interface ITokenLocking is TokenLockingDataTypes {
   /// @param _amount The amount to reward
   /// @dev It's a NOOP. You don't need to call this, and if you write a contract that does it will break in the future.
   function reward(address _recipient, uint256 _amount) external;
-
-  /// @notice Function called to burn CLNY tokens held by TokenLocking.
-  /// @dev While external, it can only be called successfully by colonyNetwork and is only used for reputation mining.
-  /// @param _amount Amount of CLNY to burn
-  function burn(uint256 _amount) external;
 
   /// @notice Allow the colony to obligate some amount of tokens as a stake.
   /// @dev Can only be called by a colony or colonyNetwork
