@@ -19,9 +19,8 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./VotingBase.sol";
-import "./../patriciaTree/PatriciaTreeProofs.sol";
 
 
-contract VotingReputation is VotingBase, PatriciaTreeProofs {
+contract VotingToken is VotingBase {
 
 }
