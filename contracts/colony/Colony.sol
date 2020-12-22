@@ -480,10 +480,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     ITokenLocking(tokenLockingAddress).transferStake(_user, _amount, token, _beneficiary);
   }
 
-  function burnTokens(
-    address _token,
-    uint256 _amount
-  ) public stoppable auth {
+  function burnTokens(address _token, uint256 _amount) public stoppable auth {
     // Check the root funding pot has enought
     require(fundingPots[1].balance[_token] >= _amount, "colony-not-enough-tokens");
     ERC20Extended(_token).burn(_amount);
