@@ -18,11 +18,11 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
+import "./../common/ERC20Extended.sol";
 import "./../common/IEtherRouter.sol";
 import "./../extensions/ColonyExtension.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
-
 
 contract Colony is ColonyStorage, PatriciaTreeProofs {
 
@@ -40,6 +40,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   bytes4 constant APPROVE_SIG = bytes4(keccak256("approve(address,uint256)"));
   bytes4 constant TRANSFER_SIG = bytes4(keccak256("transfer(address,uint256)"));
+  bytes4 constant TRANSFER_FROM_SIG = bytes4(keccak256("transferFrom(address,address,uint256)"));
+  bytes4 constant BURN_SIG = bytes4(keccak256("burn(uint256)"));
+  bytes4 constant BURN_GUY_SIG = bytes4(keccak256("burn(address,uint256)"));
 
   function makeArbitraryTransaction(address _to, bytes memory _action)
   public stoppable auth
@@ -60,6 +63,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     require(sig != APPROVE_SIG, "colony-cannot-call-erc20-approve");
     require(sig != TRANSFER_SIG, "colony-cannot-call-erc20-transfer");
+    require(sig != TRANSFER_FROM_SIG, "colony-cannot-call-erc20-transfer-from");
+    require(sig != BURN_SIG, "colony-cannot-call-burn");
+    require(sig != BURN_GUY_SIG, "colony-cannot-call-burn-guy");
 
     // Prevent transactions to network-managed extensions installed in this colony
     try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
@@ -431,6 +437,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
     sig = bytes4(keccak256("editColony(string)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("burnTokens(address,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
@@ -469,6 +478,14 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     obligations[_user][_obligator][_domainId] = sub(obligations[_user][_obligator][_domainId], _amount);
 
     ITokenLocking(tokenLockingAddress).transferStake(_user, _amount, token, _beneficiary);
+  }
+
+  function burnTokens(address _token, uint256 _amount) public stoppable auth {
+    // Check the root funding pot has enought
+    require(fundingPots[1].balance[_token] >= _amount, "colony-not-enough-tokens");
+    ERC20Extended(_token).burn(_amount);
+    fundingPots[1].balance[_token] -= _amount;
+    emit TokensBurned(_token, _amount);
   }
 
   function getApproval(address _user, address _obligator, uint256 _domainId) public view returns (uint256) {

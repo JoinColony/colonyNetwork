@@ -167,9 +167,15 @@ contract("Colony", (accounts) => {
     it("should not be able to make arbitrary transactions to transfer tokens", async () => {
       const action1 = await encodeTxData(token, "approve", [USER0, WAD]);
       const action2 = await encodeTxData(token, "transfer", [USER0, WAD]);
+      const action3 = await encodeTxData(token, "transferFrom", [USER0, USER0, WAD]);
+      const action4 = await encodeTxData(token, "burn", [WAD]);
+      const action5 = await encodeTxData(token, "burn(address,uint256)", [USER0, WAD]);
 
       await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action1), "colony-cannot-call-erc20-approve");
       await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action2), "colony-cannot-call-erc20-transfer");
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action3), "colony-cannot-call-erc20-transfer-from");
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action4), "colony-cannot-call-burn");
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action5), "colony-cannot-call-burn-guy");
     });
 
     it("should not be able to make arbitrary transactions to the colony's own extensions", async () => {
@@ -355,6 +361,36 @@ contract("Colony", (accounts) => {
       const tx1 = await colony.addDomain(1, UINT256_MAX, 1);
       const tx2 = await colony.annotateTransaction(tx1.tx, "annotation");
       await expectEvent(tx2, "Annotation", [USER0, tx1.tx, "annotation"]);
+    });
+  });
+
+  describe("when burning tokens", async () => {
+    beforeEach(async () => {
+      await colony.mintTokens(WAD);
+      await colony.claimColonyFunds(token.address);
+    });
+
+    it("should allow root user to burn", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      const tx = await colony.burnTokens(token.address, amount);
+      await expectEvent(tx, "TokensBurned", [token.address, amount]);
+    });
+
+    it("should not allow anyone else but a root user to burn", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      await checkErrorRevert(colony.burnTokens(token.address, amount, { from: accounts[1] }), "ds-auth-unauthorized");
+    });
+
+    it("cannot burn more tokens than it has", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      await checkErrorRevert(colony.burnTokens(token.address, amount.muln(2)), "colony-not-enough-tokens");
+    });
+
+    it("cannot burn more tokens than are in the root funding pot", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, amount.divn(2), token.address);
+
+      await checkErrorRevert(colony.burnTokens(token.address, amount), "colony-not-enough-tokens");
     });
   });
 });

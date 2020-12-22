@@ -224,6 +224,11 @@ interface ColonyDataTypes {
   /// @param paymentId Id of the payment
   event PaymentFinalized(uint256 indexed paymentId);
 
+  /// @notice Event logged when the colony burns tokens
+  /// @param token the address of the token being burned
+  /// @param token the amount of the token being burned
+  event TokensBurned(address token, uint256 amount);
+
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
     bytes32 reputationState;

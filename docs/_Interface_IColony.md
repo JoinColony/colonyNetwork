@@ -114,6 +114,19 @@ Allows the colony to bootstrap itself by having initial reputation and token `_a
 |_amount|int[]|Amount of reputation/tokens for every address
 
 
+### `burnTokens`
+
+Burn tokens held by the colony. Can only burn tokens held in the root funding pot.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|token|address|The address of the token to burn
+|amount|uint256|The amount of tokens to burn
+
+
 ### `cancelExpenditure`
 
 Cancels the expenditure and prevents further editing. Can only be called by expenditure owner.
