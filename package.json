@@ -18,7 +18,7 @@
     "generate:test:contracts": "bash ./scripts/generate-test-contracts.sh",
     "clean:test:contracts": "rimraf ./contracts/*Updated*.*",
     "clean:contracts": "rimraf ./build/contracts/*",
-    "clean:ganache": "rimraf ./ganache-chain-db/",
+    "clean:ganache": "rimraf ./ganache-chain-db/; rm ganache-accounts.json",
     "provision:token:contracts": "truffle compile && truffle compile --contracts_directory 'lib/dappsys/[!note][!stop][!proxy][!thing][!token]*.sol' && bash ./scripts/provision-token-contracts.sh",
     "start:blockchain:client": "bash ./scripts/start-blockchain-client.sh",
     "stop:blockchain:client": "bash ./scripts/stop-blockchain-client.sh",

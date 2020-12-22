@@ -91,7 +91,9 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   uint256 submitPeriod; // Length of time for submitting votes
   uint256 revealPeriod; // Length of time for revealing votes
   uint256 escalationPeriod; // Length of time for escalating after a vote
+
   mapping(address => uint256) metatransactionNonces;
+
   function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
     return metatransactionNonces[userAddress];
   }

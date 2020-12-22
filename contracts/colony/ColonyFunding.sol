@@ -277,8 +277,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
   public stoppable auth
   {
-    ITokenLocking tokenLocking = ITokenLocking(tokenLockingAddress);
-    uint256 totalLockCount = tokenLocking.lockToken(token);
+    uint256 totalLockCount = ITokenLocking(tokenLockingAddress).lockToken(token);
     uint256 thisPayoutAmount = sub(fundingPots[0].balance[_token], pendingRewardPayments[_token]);
     require(thisPayoutAmount > 0, "colony-reward-payout-no-rewards");
     pendingRewardPayments[_token] = add(pendingRewardPayments[_token], thisPayoutAmount);
@@ -444,7 +443,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     require(mul(squareRoots[4], squareRoots[4]) <= numerator, "colony-reward-payout-invalid-parameter-numerator");
     require(mul(squareRoots[5], squareRoots[5]) >= denominator, "colony-reward-payout-invalid-parameter-denominator");
-
     uint256 reward = (mul(squareRoots[4], squareRoots[6]) / squareRoots[5]) ** 2;
 
     return (payout.tokenAddress, reward);
