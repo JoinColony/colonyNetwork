@@ -78,10 +78,10 @@ module.exports = async function (deployer, network, accounts) {
   await metaColony.addNetworkColonyVersion(3, resolver3.address);
 
   const resolver4 = await Resolver.new();
-  await setupColonyVersionResolver(colony, colonyExpenditure, colonyTask, colonyPayment, colonyFunding, colonyRoles, contractRecovery, resolver3);
+  await setupColonyVersionResolver(colony, colonyExpenditure, colonyTask, colonyPayment, colonyFunding, colonyRoles, contractRecovery, resolver4);
   const v4responder = await Version4.new();
   await resolver4.register("version()", v4responder.address);
-  await metaColony.addNetworkColonyVersion(4, resolver3.address);
+  await metaColony.addNetworkColonyVersion(4, resolver4.address);
 
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
