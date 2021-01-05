@@ -490,13 +490,15 @@ contract("Voting Reputation", (accounts) => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
     });
 
     it("can stake on a motion", async () => {
       const half = REQUIRED_STAKE.divn(2);
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, half, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, half, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, half, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, half, { from: USER1 });
 
       const motion = await voting.getMotion(motionId);
       expect(motion.stakes[0]).to.be.zero;
@@ -512,11 +514,11 @@ contract("Voting Reputation", (accounts) => {
       let motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(STAKING);
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(STAKING);
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(SUBMIT);
     });
@@ -527,49 +529,37 @@ contract("Voting Reputation", (accounts) => {
       await colony.claimColonyFunds(token.address);
       await colony.startNextRewardPayout(token.address, domain1Key, domain1Value, domain1Mask, domain1Siblings);
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
 
       const lock = await tokenLocking.getUserLock(token.address, voting.address);
       expect(lock.balance).to.eq.BN(REQUIRED_STAKE.muln(2));
     });
 
     it("cannot stake on a non-existent motion", async () => {
-      await checkErrorRevert(
-        voting.stakeMotion(0, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-motion-not-staking"
-      );
+      await checkErrorRevert(voting.stakeMotion(0, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 }), "voting-base-motion-not-staking");
     });
 
     it("cannot stake 0", async () => {
-      await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, 0, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-bad-amount"
-      );
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, 0, { from: USER0 }), "voting-base-bad-amount");
     });
 
     it("cannot stake a nonexistent side", async () => {
-      await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, 2, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-bad-vote"
-      );
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, 2, REQUIRED_STAKE, { from: USER0 }), "voting-base-bad-vote");
     });
 
     it("cannot stake less than the minStake, unless there is less than minStake to go", async () => {
       const minStake = REQUIRED_STAKE.divn(10);
 
-      await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake.subn(1), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-insufficient-stake"
-      );
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake.subn(1), { from: USER0 }), "voting-base-insufficient-stake");
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake, { from: USER0 });
 
       // Unless there's less than the minStake to go!
 
       const stake = REQUIRED_STAKE.sub(minStake.muln(2)).addn(1);
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, stake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake.subn(1), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, stake, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake.subn(1), { from: USER0 });
     });
 
     it("can update the expenditure globalClaimDelay if voting on expenditure state", async () => {
@@ -583,6 +573,9 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
       let expenditureMotionCount;
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
       expect(expenditureMotionCount).to.be.zero;
@@ -591,7 +584,7 @@ contract("Voting Reputation", (accounts) => {
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.globalClaimDelay).to.be.zero;
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
       expect(expenditureMotionCount).to.eq.BN(1);
@@ -622,7 +615,9 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       const expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
       expect(expenditureMotionCount).to.be.zero;
@@ -650,6 +645,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
       let expenditureMotionCount;
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
       expect(expenditureMotionCount).to.be.zero;
@@ -658,7 +655,7 @@ contract("Voting Reputation", (accounts) => {
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.be.zero;
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
       expect(expenditureMotionCount).to.eq.BN(1);
@@ -688,6 +685,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
       let expenditureMotionCount;
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
       expect(expenditureMotionCount).to.be.zero;
@@ -696,7 +695,7 @@ contract("Voting Reputation", (accounts) => {
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.be.zero;
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
       expect(expenditureMotionCount).to.eq.BN(1);
@@ -720,7 +719,8 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       // Motion 2
       // Set payoutModifier to 1 for expenditure slot 0
@@ -736,7 +736,8 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       // Motion 2
       // Set payout to WAD for expenditure slot 0, internal token
@@ -752,7 +753,8 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       const expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.globalClaimDelay).to.eq.BN(UINT256_MAX.divn(3));
@@ -770,8 +772,10 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
       await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 }),
         "voting-base-expenditure-lock-failed"
       );
     });
@@ -809,6 +813,9 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
 
+      await voting.setInfluence(motionId1, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId2, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
       let expenditureMotionCount;
       expenditureMotionCount = await voting.getExpenditureMotionCount(expenditureHash);
       expect(expenditureMotionCount).to.be.zero;
@@ -817,8 +824,8 @@ contract("Voting Reputation", (accounts) => {
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.be.zero;
 
-      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       expenditureMotionCount = await voting.getExpenditureMotionCount(expenditureHash);
       expect(expenditureMotionCount).to.eq.BN(2);
@@ -846,7 +853,7 @@ contract("Voting Reputation", (accounts) => {
 
     it("cannot stake with someone else's reputation", async () => {
       await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER1 }),
+        voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER1 }),
         "voting-base-invalid-user-address"
       );
     });
@@ -856,24 +863,15 @@ contract("Voting Reputation", (accounts) => {
       const user2Value = makeReputationValue(REQUIRED_STAKE.subn(1), 8);
       const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
 
-      await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 }),
-        "voting-base-insufficient-rep"
-      );
+      await voting.setInfluence(motionId, user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 });
+
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER2 }), "voting-base-insufficient-rep");
     });
 
     it("cannot stake once time runs out", async () => {
       await forwardTime(STAKE_PERIOD, this);
 
-      await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-motion-not-staking"
-      );
-
-      await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
-        "voting-base-motion-not-staking"
-      );
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 }), "voting-base-motion-not-staking");
     });
   });
 
@@ -885,18 +883,21 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
     });
 
     it("can rate and reveal for a motion", async () => {
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
 
       const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
 
-      await voting.revealVote(motionId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
 
       const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
 
@@ -906,11 +907,11 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can tally votes from two users", async () => {
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, YAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER1 });
 
       // See final counts
       const { votes } = await voting.getMotion(motionId);
@@ -960,61 +961,52 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can update votes, but just the last one counts", async () => {
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
 
       // Revealing first vote fails
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-secret-no-match"
-      );
+      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, { from: USER0 }), "voting-base-secret-no-match");
 
       // Revealing second succeeds
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
     });
 
     it("can update votes, but the total reputation does not change", async () => {
       let motion = await voting.getMotion(motionId);
       expect(motion.totalVotes).to.be.zero;
 
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
 
       motion = await voting.getMotion(motionId);
       expect(motion.totalVotes).to.eq.BN(WAD);
 
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
 
       motion = await voting.getMotion(motionId);
       expect(motion.totalVotes).to.eq.BN(WAD);
     });
 
     it("cannot reveal an invalid vote", async () => {
-      await voting.submitVote(motionId, soliditySha3(SALT, 2), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, 2), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, 2, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-bad-vote"
-      );
+      await checkErrorRevert(voting.revealVote(motionId, SALT, 2, { from: USER0 }), "voting-base-bad-vote");
     });
 
     it("cannot reveal a vote twice, and so cannot vote twice", async () => {
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
 
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-secret-no-match"
-      );
+      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, { from: USER0 }), "voting-base-secret-no-match");
     });
 
     it("can vote in two motions with two reputation states, with different proofs", async () => {
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
 
       const oldRootHash = await reputationTree.getRootHash();
 
@@ -1041,104 +1033,61 @@ contract("Voting Reputation", (accounts) => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask2, domain1Siblings2);
       const motionId2 = await voting.getMotionCount();
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask2, user1Siblings2, { from: USER1 });
 
-      await voting.submitVote(motionId2, soliditySha3(SALT, NAY), user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await voting.setInfluence(motionId2, user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await voting.setInfluence(motionId2, user1Key, user1Value, user1Mask2, user1Siblings2, { from: USER1 });
+
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
+
+      await voting.submitVote(motionId2, soliditySha3(SALT, NAY), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId2, SALT, NAY, user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
+      await voting.revealVote(motionId2, SALT, NAY, { from: USER0 });
     });
 
     it("cannot submit a vote on a non-existent motion", async () => {
-      await checkErrorRevert(
-        voting.submitVote(0, "0x0", user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-motion-not-open"
-      );
+      await checkErrorRevert(voting.submitVote(0, "0x0", { from: USER0 }), "voting-base-motion-not-open");
     });
 
     it("cannot submit a null vote", async () => {
-      await checkErrorRevert(
-        voting.submitVote(motionId, "0x0", user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-invalid-secret"
-      );
+      await checkErrorRevert(voting.submitVote(motionId, "0x0", { from: USER0 }), "voting-base-invalid-secret");
     });
 
     it("cannot submit a vote if voting is closed", async () => {
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await checkErrorRevert(
-        voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-motion-not-open"
-      );
+      await checkErrorRevert(voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 }), "voting-base-motion-not-open");
     });
 
     it("cannot reveal a vote on a non-existent motion", async () => {
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await checkErrorRevert(
-        voting.revealVote(0, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-motion-not-reveal"
-      );
+      await checkErrorRevert(voting.revealVote(0, SALT, YAY, { from: USER0 }), "voting-base-motion-not-reveal");
     });
 
     it("cannot reveal a vote during the submit period", async () => {
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, FAKE, FAKE, 0, [], { from: USER0 }), "voting-base-motion-not-reveal");
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
+      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, { from: USER0 }), "voting-base-motion-not-reveal");
     });
 
     it("cannot reveal a vote after the reveal period ends", async () => {
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
       await forwardTime(REVEAL_PERIOD, this);
 
-      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, FAKE, FAKE, 0, [], { from: USER0 }), "voting-base-motion-not-reveal");
+      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, { from: USER0 }), "voting-base-motion-not-reveal");
     });
 
     it("cannot reveal a vote with a bad secret", async () => {
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-base-secret-no-match"
-      );
-    });
-
-    it("cannot reveal a vote with a bad proof", async () => {
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      await forwardTime(SUBMIT_PERIOD, this);
-
-      // Invalid proof (wrong root hash)
-      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, FAKE, FAKE, 0, [], { from: USER0 }), "voting-base-invalid-root-hash");
-
-      // Invalid colony address
-      let key, value, mask, siblings; // eslint-disable-line one-var
-      key = makeReputationKey(metaColony.address, domain1.skillId, USER0);
-      value = makeReputationValue(WAD, 3);
-      [mask, siblings] = await reputationTree.getProof(key);
-
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, NAY, key, value, mask, siblings, { from: USER0 }),
-        "voting-base-invalid-colony-address"
-      );
-
-      // Invalid skill id
-      key = makeReputationKey(colony.address, 1234, USER0);
-      value = makeReputationValue(WAD, 4);
-      [mask, siblings] = await reputationTree.getProof(key);
-      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, key, value, mask, siblings, { from: USER0 }), "voting-base-invalid-skill-id");
-
-      // Invalid user address
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER0 }),
-        "voting-base-invalid-user-address"
-      );
+      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, { from: USER0 }), "voting-base-secret-no-match");
     });
   });
 
@@ -1149,6 +1098,9 @@ contract("Voting Reputation", (accounts) => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
+
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
     });
 
     it("cannot execute a non-existent motion", async () => {
@@ -1156,8 +1108,9 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("motion has no effect if extension does not have permissions", async () => {
-      await colony.setRootRole(voting.address, false);
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await colony.setAdministrationRole(1, UINT256_MAX, voting.address, 1, false);
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
       const tasksBefore = await colony.getTaskCount();
@@ -1167,13 +1120,13 @@ contract("Voting Reputation", (accounts) => {
 
       const tasksAfter = await colony.getTaskCount();
       expect(tasksAfter).to.eq.BN(tasksBefore);
-      await colony.setRootRole(voting.address, true);
+
+      // Cleanup
+      await colony.setAdministrationRole(1, UINT256_MAX, voting.address, 1, true);
     });
 
     it("cannot take an action if there is insufficient support", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.subn(1), user0Key, user0Value, user0Mask, user0Siblings, {
-        from: USER0,
-      });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.subn(1), { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1181,10 +1134,8 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can take an action if there is insufficient opposition", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.subn(1), user1Key, user1Value, user1Mask, user1Siblings, {
-        from: USER1,
-      });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.subn(1), { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1198,7 +1149,9 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1214,7 +1167,9 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1232,7 +1187,9 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1242,13 +1199,13 @@ contract("Voting Reputation", (accounts) => {
 
     it("cannot take an action during staking or voting", async () => {
       let motionState;
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(STAKING);
       await checkErrorRevert(voting.finalizeMotion(motionId), "voting-base-motion-not-finalizable");
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
 
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(SUBMIT);
@@ -1256,7 +1213,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot take an action twice", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1267,14 +1224,14 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can take an action if the motion passes", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
 
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
 
       // Don't need to wait for the reveal period, since 100% of the secret is revealed
 
@@ -1285,14 +1242,14 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot take an action if the motion fails", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
 
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(STAKE_PERIOD, this);
@@ -1310,14 +1267,17 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId1 = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId1, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.setInfluence(motionId1, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId1, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.submitVote(motionId1, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId1, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
+
+      await voting.submitVote(motionId1, soliditySha3(SALT, YAY), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId1, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId1, SALT, YAY, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(STAKE_PERIOD, this);
@@ -1330,14 +1290,17 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.setInfluence(motionId2, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId2, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.submitVote(motionId2, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
+
+      await voting.submitVote(motionId2, soliditySha3(SALT, YAY), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId2, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId2, SALT, YAY, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(STAKE_PERIOD, this);
@@ -1355,14 +1318,17 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
+
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(ESCALATION_PERIOD, this);
@@ -1387,8 +1353,11 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId1, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId2, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1411,7 +1380,9 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1429,6 +1400,9 @@ contract("Voting Reputation", (accounts) => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
+
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
     });
 
     it("cannot claim rewards from a non-existent motion", async () => {
@@ -1451,8 +1425,8 @@ contract("Voting Reputation", (accounts) => {
       const numEntriesPrev = await repCycle.getReputationUpdateLogLength();
 
       const nayStake = REQUIRED_STAKE.divn(2);
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1488,14 +1462,14 @@ contract("Voting Reputation", (accounts) => {
       const repCycle = await IReputationMiningCycle.at(addr);
       const numEntriesPrev = await repCycle.getReputationUpdateLogLength();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
 
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER1 });
 
       await forwardTime(ESCALATION_PERIOD, this);
 
@@ -1535,19 +1509,17 @@ contract("Voting Reputation", (accounts) => {
       const user2Value = makeReputationValue(REQUIRED_STAKE.subn(1), 8);
       const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.divn(3).muln(2), user1Key, user1Value, user1Mask, user1Siblings, {
-        from: USER1,
-      });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.divn(3), user2Key, user2Value, user2Mask, user2Siblings, {
-        from: USER2,
-      });
+      await voting.setInfluence(motionId, user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 });
 
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.divn(3).muln(2), { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.divn(3), { from: USER2 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER1 });
+
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER1 });
 
       await forwardTime(ESCALATION_PERIOD, this);
 
@@ -1584,19 +1556,17 @@ contract("Voting Reputation", (accounts) => {
       const user2Value = makeReputationValue(REQUIRED_STAKE.subn(1), 8);
       const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(3).muln(2), user0Key, user0Value, user0Mask, user0Siblings, {
-        from: USER0,
-      });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(3), user2Key, user2Value, user2Mask, user2Siblings, {
-        from: USER2,
-      });
+      await voting.setInfluence(motionId, user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 });
 
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(3).muln(2), { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(3), { from: USER2 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER1 });
+
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER1 });
 
       await forwardTime(ESCALATION_PERIOD, this);
 
@@ -1694,8 +1664,8 @@ contract("Voting Reputation", (accounts) => {
       const numEntriesPrev = await repCycle.getReputationUpdateLogLength();
 
       const half = REQUIRED_STAKE.divn(2);
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, half, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, half, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, half, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, half, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1716,14 +1686,14 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot claim rewards twice", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
 
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(ESCALATION_PERIOD, this);
@@ -1761,6 +1731,9 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
       motionId = await voting.getMotionCount();
 
+      await voting.setInfluence(motionId, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await voting.setInfluence(motionId, user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
+
       await colony.approveStake(voting.address, 2, WAD, { from: USER0 });
       await colony.approveStake(voting.address, 2, WAD, { from: USER1 });
 
@@ -1768,8 +1741,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.stakeMotion(motionId, 1, 0, YAY, REQUIRED_STAKE_DOMAIN_2, user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
 
       // Note that this is a passing vote
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER1 });
 
       await voting.revealVote(motionId, SALT, NAY, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
       await voting.revealVote(motionId, SALT, YAY, user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
@@ -1809,9 +1782,13 @@ contract("Voting Reputation", (accounts) => {
       await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
       const yayStake = REQUIRED_STAKE.sub(REQUIRED_STAKE_DOMAIN_2);
+
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
       const nayStake = yayStake.add(REQUIRED_STAKE.divn(10));
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, yayStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, yayStake, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, { from: USER1 });
 
       const motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(SUBMIT);
@@ -1821,6 +1798,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
       const yayStake = REQUIRED_STAKE.sub(REQUIRED_STAKE_DOMAIN_2);
+
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, yayStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
@@ -1832,7 +1810,9 @@ contract("Voting Reputation", (accounts) => {
     it("cannot execute after internally escalating a domain motion, if there is insufficient support", async () => {
       await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.setInfluence(motionId, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1855,6 +1835,7 @@ contract("Voting Reputation", (accounts) => {
 
       const yayStake = REQUIRED_STAKE.sub(REQUIRED_STAKE_DOMAIN_2);
       const nayStake = yayStake.add(votingPayout);
+
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
@@ -1883,15 +1864,16 @@ contract("Voting Reputation", (accounts) => {
 
       const yayStake = REQUIRED_STAKE.sub(REQUIRED_STAKE_DOMAIN_2);
       const nayStake = yayStake.add(votingPayout);
+
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, yayStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       // Vote fails
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER1 });
 
       await forwardTime(ESCALATION_PERIOD, this);
 
@@ -1993,14 +1975,17 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER1 });
+
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER1 });
 
       const state = await voting.getMotionState(motionId);
       expect(state).to.eq.BN(EXECUTABLE);
@@ -2039,18 +2024,21 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(3, UINT256_MAX, ADDRESS_ZERO, action, domain3Key, domain3Value, domain3Mask, domain3Siblings);
       motionId = await voting.getMotionCount();
 
+      await voting.setInfluence(motionId, user0Key3, user0Value3, user0Mask3, user0Siblings3, { from: USER0 });
+      await voting.setInfluence(motionId, user1Key3, user1Value3, user1Mask3, user1Siblings3, { from: USER1 });
+
       await colony.approveStake(voting.address, 3, WAD, { from: USER0 });
       await colony.approveStake(voting.address, 3, WAD, { from: USER1 });
 
-      await voting.stakeMotion(motionId, 1, 1, NAY, REQUIRED_STAKE, user0Key3, user0Value3, user0Mask3, user0Siblings3, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, 1, YAY, REQUIRED_STAKE, user1Key3, user1Value3, user1Mask3, user1Siblings3, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, 1, NAY, REQUIRED_STAKE, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, 1, YAY, REQUIRED_STAKE, { from: USER1 });
 
       // Note that this is a passing vote
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key3, user0Value3, user0Mask3, user0Siblings3, { from: USER0 });
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user1Key3, user1Value3, user1Mask3, user1Siblings3, { from: USER1 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, NAY, user0Key3, user0Value3, user0Mask3, user0Siblings3, { from: USER0 });
-      await voting.revealVote(motionId, SALT, YAY, user1Key3, user1Value3, user1Mask3, user1Siblings3, { from: USER1 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER1 });
 
       // Now escalate, should go directly into submit phase
       await voting.escalateMotion(motionId, 1, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
