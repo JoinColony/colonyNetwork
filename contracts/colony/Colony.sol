@@ -363,7 +363,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function upgrade(uint256 _newVersion) public always auth {
     // Upgrades can only go up in version, one at a time
-    uint256 currentVersion = version();
+    uint256 currentVersion = this.version();
     require(_newVersion == currentVersion + 1, "colony-version-must-be-one-newer");
     // Requested version has to be registered
     address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
