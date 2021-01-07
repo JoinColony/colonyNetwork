@@ -3,7 +3,7 @@
 # Exit script as soon as a command fails.
 set -o errexit
 
-CHAIN_ID=${CHAIN_ID:-$(date +%s)}
+CHAIN_ID=${CHAIN_ID:-2656691}
 
 # Get the choice of client: ganache-cli is default
 if [ "$1" == "parity" ]; then
