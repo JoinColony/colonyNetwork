@@ -18,7 +18,8 @@ module.exports = {
       'patriciaTree',
       'testHelpers/ContractEditing.sol', // only used in setting up colony-network-recovery.js tests, never in production
       'testHelpers/NoLimitSubdomains.sol',
-      'testHelpers/TaskSkillEditing.sol'
+      'testHelpers/TaskSkillEditing.sol',
+      'testHelpers/PreviousVersion.sol'
     ],
     providerOptions: {
       port: 8555,
