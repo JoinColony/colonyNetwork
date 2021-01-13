@@ -373,7 +373,7 @@ contract("Colony", (accounts) => {
     it("should allow root user to burn", async () => {
       const amount = await colony.getFundingPotBalance(1, token.address);
       const tx = await colony.burnTokens(token.address, amount);
-      await expectEvent(tx, "TokensBurned", [token.address, amount]);
+      await expectEvent(tx, "TokensBurned", [accounts[0], token.address, amount]);
     });
 
     it("should not allow anyone else but a root user to burn", async () => {
