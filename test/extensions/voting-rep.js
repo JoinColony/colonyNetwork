@@ -1160,11 +1160,12 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can take an action with an arbitrary target", async () => {
-      const { colony: otherColony } = await setupRandomColony(colonyNetwork);
-      await token.mint(otherColony.address, WAD, { from: USER0 });
+      const { colony: otherColony, token: otherToken } = await setupRandomColony(colonyNetwork);
+      await otherToken.mint(otherColony.address, WAD);
 
-      const action = await encodeTxData(colony, "claimColonyFunds", [token.address]);
+      const action = await encodeTxData(colony, "claimColonyFunds", [otherToken.address]);
       await voting.createMotion(1, UINT256_MAX, otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+
       motionId = await voting.getMotionCount();
 
       await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1173,12 +1174,12 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const balanceBefore = await otherColony.getFundingPotBalance(1, token.address);
+      const balanceBefore = await otherColony.getFundingPotBalance(1, otherToken.address);
       expect(balanceBefore).to.be.zero;
 
       await voting.finalizeMotion(motionId);
 
-      const balanceAfter = await otherColony.getFundingPotBalance(1, token.address);
+      const balanceAfter = await otherColony.getFundingPotBalance(1, otherToken.address);
       expect(balanceAfter).to.eq.BN(WAD);
     });
 

@@ -138,6 +138,9 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     return influences[motion.rootHash][motion.skillId][_user];
   }
 
+  function postReveal(uint256 _motionId, address _user) internal override {}
+  function postClaim(uint256 _motionId, address _user) internal override {}
+
   /// @notice Create a motion in the root domain
   /// @param _altTarget The contract to which we send the action (0x0 for the colony)
   /// @param _action A bytes array encoding a function call

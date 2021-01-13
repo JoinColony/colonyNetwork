@@ -38,9 +38,18 @@ contract VotingToken is VotingBase {
   // [motionId][user] => tokenBalance
   mapping (uint256 => mapping (address => uint256)) influences;
 
+  // [motionId] => lockId
+  mapping (uint256 => uint256) locks;
+
   // Public
 
   function setInfluence(uint256 _motionId) public {
+    require(
+      getMotionState(_motionId) == MotionState.Staking ||
+      getMotionState(_motionId) == MotionState.Submit,
+      "voting-token-cannot-set-influence"
+    );
+
     uint256 balance = tokenLocking.getUserLock(token, msg.sender).balance;
     influences[_motionId][msg.sender] = balance;
   }
@@ -48,6 +57,19 @@ contract VotingToken is VotingBase {
   /// @param _motionId The id of the motion
   function getInfluence(uint256 _motionId, address _user) public view override returns (uint256) {
     return influences[_motionId][_user];
+  }
+
+  function postReveal(uint256 _motionId, address _user) internal override {
+    colony.unlockTokenForUser(_user, locks[_motionId]);
+  }
+
+  function postClaim(uint256 _motionId, address _user) internal override {
+    uint256 lockCount = tokenLocking.getUserLock(token, _user).lockCount;
+
+    // Lock may have already been released during reveal
+    if (lockCount < locks[_motionId]) {
+      colony.unlockTokenForUser(_user, locks[_motionId]);
+    }
   }
 
   /// @notice Create a motion in the root domain
@@ -58,6 +80,11 @@ contract VotingToken is VotingBase {
   {
     createMotion(_altTarget, _action, 1);
     motions[motionCount].maxVotes = ERC20Extended(token).totalSupply();
+    locks[motionCount] = colony.lockToken();
+  }
+
+  function getLock(uint256 _motionId) public view returns (uint256) {
+    return locks[_motionId];
   }
 
 }
