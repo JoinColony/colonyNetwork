@@ -1906,7 +1906,7 @@ contract("ColonyTask", (accounts) => {
       for (let i = 0; i < 42; i += 1) {
         await taskSkillEditingColony.addTaskSkill(taskId, GLOBAL_SKILL_ID);
       }
-      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [taskId]);
+      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [MANAGER, taskId]);
     });
 
     it("an empty element shouldn't affect finalization of the task", async () => {

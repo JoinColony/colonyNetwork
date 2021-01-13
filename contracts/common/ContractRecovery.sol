@@ -58,7 +58,7 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
     recoveryApprovalCount = 0;
     recoveryEditedTimestamp = block.timestamp;
 
-    emit RecoveryStorageSlotSet(_slot, oldValue, _value);
+    emit RecoveryStorageSlotSet(msg.sender, _slot, oldValue, _value);
   }
 
   function isInRecoveryMode() public view returns (bool) {
