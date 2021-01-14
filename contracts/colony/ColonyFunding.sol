@@ -172,7 +172,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     updatePayoutsWeCannotMakeAfterBudgetChange(payment.fundingPotId, _token, currentTotalAmount);
 
-    emit PaymentPayoutSet(_id, _token, _amount);
+    emit PaymentPayoutSet(msg.sender, _id, _token, _amount);
   }
 
   function getFundingPotCount() public view returns (uint256 count) {
@@ -255,7 +255,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _amount);
     }
 
-    emit ColonyFundsMovedBetweenFundingPots(_fromPot, _toPot, _amount, _token);
+    emit ColonyFundsMovedBetweenFundingPots(msg.sender, _fromPot, _toPot, _amount, _token);
   }
 
   function claimColonyFunds(address _token) public stoppable {
@@ -280,7 +280,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     fundingPots[1].balance[_token] = add(fundingPots[1].balance[_token], remainder);
     fundingPots[0].balance[_token] = add(fundingPots[0].balance[_token], feeToPay);
 
-    emit ColonyFundsClaimed(_token, feeToPay, remainder);
+    emit ColonyFundsClaimed(msg.sender, _token, feeToPay, remainder);
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {
@@ -322,7 +322,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       false
     );
 
-    emit RewardPayoutCycleStarted(totalLockCount);
+    emit RewardPayoutCycleStarted(msg.sender, totalLockCount);
   }
 
   function claimRewardPayout(
@@ -373,7 +373,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     rewardPayoutCycles[_payoutId].finalized = true;
     pendingRewardPayments[payout.tokenAddress] = sub(pendingRewardPayments[payout.tokenAddress], payout.amountRemaining);
 
-    emit RewardPayoutCycleEnded(_payoutId);
+    emit RewardPayoutCycleEnded(msg.sender, _payoutId);
   }
 
   function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle memory rewardPayoutCycle) {
@@ -387,7 +387,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     require(_rewardInverse > 0, "colony-reward-inverse-cannot-be-zero");
     rewardInverse = _rewardInverse;
 
-    emit ColonyRewardInverseSet(_rewardInverse);
+    emit ColonyRewardInverseSet(msg.sender, _rewardInverse);
   }
 
   function getRewardInverse() public view returns (uint256) {
@@ -530,7 +530,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     updatePayoutsWeCannotMakeAfterBudgetChange(expenditures[_id].fundingPotId, _token, currentTotal);
 
-    emit ExpenditurePayoutSet(_id, _slot, _token, _amount);
+    emit ExpenditurePayoutSet(msg.sender, _id, _slot, _token, _amount);
   }
 
   function setTaskPayout(uint256 _id, TaskRole _role, address _token, uint256 _amount) private
@@ -580,7 +580,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       }
     }
 
-    emit PayoutClaimed(_fundingPotId, _token, remainder);
+    emit PayoutClaimed(msg.sender, _fundingPotId, _token, remainder);
   }
 
   function calculateNetworkFeeForPayout(uint256 _payout) private view returns (uint256 fee) {

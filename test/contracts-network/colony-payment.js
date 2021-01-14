@@ -48,9 +48,10 @@ contract("Colony Payment", (accounts) => {
       const tx = await colony.addPayment(1, UINT256_MAX, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
 
       const paymentsCountAfter = await colony.getPaymentCount();
-      await expectEvent(tx, "PaymentAdded", [paymentsCountAfter]);
-      await expectEvent(tx, "PaymentRecipientSet", [paymentsCountAfter, RECIPIENT]);
-      await expectEvent(tx, "PaymentPayoutSet", [paymentsCountAfter, token.address, WAD]);
+      await expectEvent(tx, "PaymentAdded", [COLONY_ADMIN, paymentsCountAfter]);
+      await expectEvent(tx, "PaymentRecipientSet", [COLONY_ADMIN, paymentsCountAfter, RECIPIENT]);
+      // console.log(JSON.stringify(tx))
+      await expectEvent(tx, "PaymentPayoutSet", [COLONY_ADMIN, paymentsCountAfter, token.address, WAD]);
       expect(paymentsCountAfter.sub(paymentsCountBefore)).to.eq.BN(1);
 
       const fundingPotId = await colony.getFundingPotCount();
@@ -143,7 +144,7 @@ contract("Colony Payment", (accounts) => {
       const tx = await colony.setPaymentSkill(1, UINT256_MAX, paymentId, 3, { from: COLONY_ADMIN });
       payment = await colony.getPayment(paymentId);
       expect(payment.skills[0]).to.eq.BN(3);
-      await expectEvent(tx, "PaymentSkillSet", [paymentId, 3]);
+      await expectEvent(tx, "PaymentSkillSet", [COLONY_ADMIN, paymentId, 3]);
     });
 
     it("should not allow admins to update payment with deprecated global skill", async () => {
@@ -174,7 +175,7 @@ contract("Colony Payment", (accounts) => {
       const fundingPotPayoutForOtherToken = await colony.getFundingPotPayout(payment.fundingPotId, otherToken.address);
       expect(fundingPotPayoutForToken).to.eq.BN(WAD);
       expect(fundingPotPayoutForOtherToken).to.eq.BN(100);
-      await expectEvent(tx, "PaymentPayoutSet", [paymentId, otherToken.address, 100]);
+      await expectEvent(tx, "PaymentPayoutSet", [accounts[0], paymentId, otherToken.address, 100]);
     });
 
     it("should allow admins to fund a payment", async () => {
@@ -223,7 +224,7 @@ contract("Colony Payment", (accounts) => {
 
       payment = await colony.getPayment(paymentId);
       expect(payment.finalized).to.be.true;
-      await expectEvent(tx, "PaymentFinalized", [paymentId]);
+      await expectEvent(tx, "PaymentFinalized", [accounts[0], paymentId]);
     });
 
     it("cannnot finalize payment if it is NOT fully funded", async () => {

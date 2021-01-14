@@ -49,7 +49,7 @@ contract ColonyExpenditure is ColonyStorage {
     });
 
     emit FundingPotAdded(fundingPotCount);
-    emit ExpenditureAdded(expenditureCount);
+    emit ExpenditureAdded(msg.sender, expenditureCount);
 
     return expenditureCount;
   }
@@ -63,7 +63,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditures[_id].owner = _newOwner;
 
-    emit ExpenditureTransferred(_id, _newOwner);
+    emit ExpenditureTransferred(msg.sender, _id, _newOwner);
   }
 
   // Deprecated
@@ -81,7 +81,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditures[_id].owner = _newOwner;
 
-    emit ExpenditureTransferred(_id, _newOwner);
+    emit ExpenditureTransferred(msg.sender, _id, _newOwner);
   }
 
   function cancelExpenditure(uint256 _id)
@@ -93,7 +93,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditures[_id].status = ExpenditureStatus.Cancelled;
 
-    emit ExpenditureCancelled(_id);
+    emit ExpenditureCancelled(msg.sender, _id);
   }
 
   function finalizeExpenditure(uint256 _id)
@@ -109,7 +109,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditures[_id].status = ExpenditureStatus.Finalized;
     expenditures[_id].finalizedTimestamp = block.timestamp;
 
-    emit ExpenditureFinalized(_id);
+    emit ExpenditureFinalized(msg.sender, _id);
   }
 
   function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient)
@@ -121,7 +121,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditureSlots[_id][_slot].recipient = _recipient;
 
-    emit ExpenditureRecipientSet(_id, _slot, _recipient);
+    emit ExpenditureRecipientSet(msg.sender, _id, _slot, _recipient);
   }
 
   function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId)
@@ -139,7 +139,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureSlots[_id][_slot].skills = new uint256[](1);
     expenditureSlots[_id][_slot].skills[0] = _skillId;
 
-    emit ExpenditureSkillSet(_id, _slot, _skillId);
+    emit ExpenditureSkillSet(msg.sender, _id, _slot, _skillId);
   }
 
   // Deprecated

@@ -126,7 +126,7 @@ contract ColonyTask is ColonyStorage {
     this.setTaskDueDate(taskCount, dueDate);
 
     emit FundingPotAdded(fundingPotCount);
-    emit TaskAdded(taskCount);
+    emit TaskAdded(msg.sender, taskCount);
   }
 
   function getTaskCount() public view returns (uint256) {
@@ -196,6 +196,8 @@ contract ColonyTask is ColonyStorage {
 
     taskChangeNonces[taskId]++;
     require(executeCall(address(this), _value, _data), "colony-task-change-execution-failed");
+
+    emit TaskChangedViaSignatures(reviewerAddresses);
   }
 
   function executeTaskRoleAssignment(
@@ -256,6 +258,8 @@ contract ColonyTask is ColonyStorage {
 
     taskChangeNonces[taskId]++;
     require(executeCall(address(this), _value, _data), "colony-task-role-assignment-execution-failed");
+
+    emit TaskChangedViaSignatures(reviewerAddresses);
   }
 
   function submitTaskWorkRating(uint256 _id, TaskRole _role, bytes32 _ratingSecret) public
@@ -284,7 +288,7 @@ contract ColonyTask is ColonyStorage {
     require(rating != TaskRatings.None, "colony-task-rating-missing");
     tasks[_id].roles[uint8(_role)].rating = rating;
 
-    emit TaskWorkRatingRevealed(_id, _role, _rating);
+    emit TaskWorkRatingRevealed(msg.sender, _id, _role, _rating);
   }
 
   function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32) {
@@ -375,7 +379,7 @@ contract ColonyTask is ColonyStorage {
   {
     tasks[_id].deliverableHash = _deliverableHash;
     markTaskCompleted(_id);
-    emit TaskDeliverableSubmitted(_id, _deliverableHash);
+    emit TaskDeliverableSubmitted(msg.sender, _id, _deliverableHash);
   }
 
   function submitTaskDeliverableAndRating(uint256 _id, bytes32 _deliverableHash, bytes32 _ratingSecret) public
@@ -417,7 +421,7 @@ contract ColonyTask is ColonyStorage {
       updateReputation(TaskRole(roleId), task);
     }
 
-    emit TaskFinalized(_id);
+    emit TaskFinalized(msg.sender, _id);
   }
 
   function cancelTask(uint256 _id) public
@@ -460,7 +464,7 @@ contract ColonyTask is ColonyStorage {
 
   function markTaskCompleted(uint256 _id) internal {
     tasks[_id].completionTimestamp = block.timestamp;
-    emit TaskCompleted(_id);
+    emit TaskCompleted(msg.sender, _id);
   }
 
   function updateReputation(TaskRole taskRole, Task storage task) internal {

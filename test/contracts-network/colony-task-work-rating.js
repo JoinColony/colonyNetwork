@@ -366,7 +366,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await expectEvent(
         colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
         "TaskWorkRatingRevealed",
-        [taskId, WORKER_ROLE, WORKER_RATING]
+        [EVALUATOR, taskId, WORKER_ROLE, WORKER_RATING]
       );
     });
   });

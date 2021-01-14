@@ -75,12 +75,13 @@ contract("Colony Recovery", (accounts) => {
       await expectEvent(
         colony.setStorageSlotRecovery("0xdead", "0xbeef00000000000000000000000000000000000000000000000000000000beef"),
         "RecoveryStorageSlotSet",
-        ["0xdead", "0x00", "0xbeef00000000000000000000000000000000000000000000000000000000beef"]
+        [accounts[0], "0xdead", "0x00", "0xbeef00000000000000000000000000000000000000000000000000000000beef"]
       );
       await expectEvent(
         colony.setStorageSlotRecovery("0xdead", "0xbadbeef00000000000000000000000000000000000000000000000000badbeef"),
         "RecoveryStorageSlotSet",
         [
+          accounts[0],
           "0xdead",
           "0xbeef00000000000000000000000000000000000000000000000000000000beef",
           "0xbadbeef00000000000000000000000000000000000000000000000000badbeef",

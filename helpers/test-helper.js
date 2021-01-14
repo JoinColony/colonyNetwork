@@ -277,10 +277,18 @@ export async function expectEvent(tx, nameOrSig, args) {
     expect(event).to.exist;
   }
   for (let i = 0; i < args.length; i += 1) {
-    if (typeof event.args[i] === "string" && !ethers.utils.isHexString(event.args[i])) {
-      expect(args[i]).to.equal(event.args[i]);
+    let arg = args[i];
+    if (arg.constructor.name === "BN" || event.args[i].constructor.name === "BN") {
+      if (ethers.utils.isHexString(arg)) {
+        arg = ethers.BigNumber.from(arg).toString();
+      }
+      expect(arg.toString()).to.equal(event.args[i].toString());
+    } else if (typeof arg === "object") {
+      expect(arg).to.deep.equal(event.args[i]);
+    } else if (typeof arg === "string" && !ethers.utils.isHexString(event.args[i])) {
+      expect(arg).to.equal(event.args[i]);
     } else {
-      expect(hexlifyAndPad(args[i])).to.equal(hexlifyAndPad(event.args[i]));
+      expect(hexlifyAndPad(arg)).to.equal(hexlifyAndPad(event.args[i]));
     }
   }
 }
