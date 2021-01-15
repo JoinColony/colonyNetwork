@@ -219,7 +219,7 @@ contract("Colony Staking", (accounts) => {
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
       await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, USER2, { from: USER2 });
 
-      const balance = await token.balanceOf(USER2);
+      const { balance } = await tokenLocking.getUserLock(token.address, USER2);
       expect(balance).to.eq.BN(WAD);
     });
   });

@@ -178,7 +178,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     Lock storage userLock = userLocks[_token][_user];
     userLock.balance = sub(userLock.balance, _amount);
 
-    require(ERC20Extended(_token).transfer(_recipient, _amount), "colony-token-locking-transfer-failed");
+    makeConditionalDeposit(_token, _amount, _recipient);
   }
 
   function reward(address _recipient, uint256 _amount) public pure { // solhint-disable-line no-empty-blocks

@@ -313,11 +313,9 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       "voting-rep-insufficient-stake"
     );
 
+    tokenLocking.deposit(token, 0, true); // Faux deposit to clear any locks
     colony.obligateStake(msg.sender, motion.domainId, amount);
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, motion.domainId, amount, address(this));
-
-    ERC20Extended(token).approve(address(tokenLocking), amount);
-    tokenLocking.deposit(token, amount, true);
 
     // Update the stake
     motion.stakes[_vote] = add(motion.stakes[_vote], amount);
