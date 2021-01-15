@@ -17,7 +17,7 @@ const IMetaColony = artifacts.require("./IMetaColony");
 
 module.exports = async () => {
   // While debugging, always checkout currenthash
-  await exec("git checkout 2690fba3d3002fd72912cd74f1fbf4932c734e94 && git submodule update");
+  // await exec("git checkout 2690fba3d3002fd72912cd74f1fbf4932c734e94 && git submodule update");
   let res = await exec("git log -1 --format='%H'");
   const currentHash = res.stdout.trim();
   let v3ResolverAddress;
@@ -42,15 +42,13 @@ module.exports = async () => {
     index = res.stdout.indexOf("Colony version 4 set to Resolver");
     v4ResolverAddress = res.stdout.substring(index + 33, index + 33 + 42);
     await metaColony.addNetworkColonyVersion(3, v4ResolverAddress);
-
-    // put things back how they were.
-    await exec(`git checkout ${currentHash}`);
-    await exec("git submodule update");
-    await exec("yarn run truffle compile");
   } catch (err) {
     console.log(err);
   }
   console.log(v3ResolverAddress);
   console.log(v4ResolverAddress);
-  // await exec("git checkout " + currentHash)
+  // put things back how they were.
+  await exec(`git checkout ${currentHash}`);
+  await exec("git submodule update");
+  await exec("yarn run truffle compile");
 };
