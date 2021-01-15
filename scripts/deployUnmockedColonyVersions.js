@@ -44,7 +44,7 @@ module.exports = async () => {
     res = await exec("yarn run truffle migrate --reset");
     index = res.indexOf("Colony version 4 set to Resolver");
     v4ResolverAddress = res.substring(index + 33, index + 33 + 42);
-    await metaColony.addNetworkColonyVersion(3, v4ResolverAddress);
+    await metaColony.addNetworkColonyVersion(4, v4ResolverAddress);
   } catch (err) {
     console.log(err);
   }
