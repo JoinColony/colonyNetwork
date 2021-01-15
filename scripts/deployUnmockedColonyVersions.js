@@ -18,29 +18,34 @@ const IMetaColony = artifacts.require("./IMetaColony");
 module.exports = async () => {
   // While debugging, always checkout currenthash
   // await exec("git checkout 2690fba3d3002fd72912cd74f1fbf4932c734e94 && git submodule update");
-  let res = await exec("git log -1 --format='%H'");
-  const currentHash = res.stdout.trim();
+  console.log('last chance')
+  let currentHash = await exec("git log -1 --format='%H'");
+  // const currentHash = res.stdout.trim();
+  console.log(currentHash, 'hash')
   let v3ResolverAddress;
   let v4ResolverAddress;
+  console.log('maybe here?')
   const colonyNetwork = await IColonyNetwork.at(cnAddress);
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
-
+  console.log('here')
   try {
-    res = await exec("yarn run truffle migrate --reset");
+    console.log('in try')
+    let res = await exec("yarn run truffle migrate --reset");
+    console.log('truffle migrate')
     await exec("git checkout ad5569de24567517aa12624e29600c9136fb594d && git submodule update");
 
     res = await exec("yarn run truffle migrate --reset");
-    let index = res.stdout.indexOf("Colony version 3 set to Resolver");
-    v3ResolverAddress = res.stdout.substring(index + 33, index + 33 + 42);
+    let index = res.indexOf("Colony version 3 set to Resolver");
+    v3ResolverAddress = res.substring(index + 33, index + 33 + 42);
     console.log("v3 address:", v3ResolverAddress);
     await exec("git checkout burgundy-glider && git submodule update");
 
     await metaColony.addNetworkColonyVersion(3, v3ResolverAddress);
 
     res = await exec("yarn run truffle migrate --reset");
-    index = res.stdout.indexOf("Colony version 4 set to Resolver");
-    v4ResolverAddress = res.stdout.substring(index + 33, index + 33 + 42);
+    index = res.indexOf("Colony version 4 set to Resolver");
+    v4ResolverAddress = res.substring(index + 33, index + 33 + 42);
     await metaColony.addNetworkColonyVersion(3, v4ResolverAddress);
   } catch (err) {
     console.log(err);
