@@ -26,16 +26,14 @@ module.exports = async () => {
   let v4ResolverAddress;
   console.log('maybe here?')
   const colonyNetwork = await IColonyNetwork.at(cnAddress);
+  console.log(cnAddress, 'cnAddress');
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
   console.log('here')
   try {
-    console.log('in try')
-    let res = await exec("yarn run truffle migrate --reset");
-    console.log('truffle migrate')
     await exec("git checkout ad5569de24567517aa12624e29600c9136fb594d && git submodule update");
 
-    res = await exec("yarn run truffle migrate --reset");
+    let res = await exec("yarn run truffle migrate --reset");
     let index = res.indexOf("Colony version 3 set to Resolver");
     v3ResolverAddress = res.substring(index + 33, index + 33 + 42);
     console.log("v3 address:", v3ResolverAddress);
