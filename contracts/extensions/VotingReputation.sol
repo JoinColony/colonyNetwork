@@ -201,6 +201,77 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     motions[motionCount].maxVotes = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
   }
 
+  /// @notice Stake on a motion
+  /// @param _motionId The id of the motion
+  /// @param _permissionDomainId The domain where the extension has the arbitration permission
+  /// @param _childSkillIndex For the domain in which the motion is occurring
+  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
+  /// @param _amount The amount of tokens being staked
+  /// @param _key Reputation tree key for the staker/domain
+  /// @param _value Reputation tree value for the staker/domain
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
+  function stakeMotion(
+    uint256 _motionId,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _vote,
+    uint256 _amount,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    public
+  {
+    setInfluence(_motionId, _key, _value, _branchMask, _siblings);
+    stakeMotion(_motionId, _permissionDomainId, _childSkillIndex, _vote, _amount);
+  }
+
+  /// @notice Submit a vote secret for a motion
+  /// @param _motionId The id of the motion
+  /// @param _voteSecret The hashed vote secret
+  /// @param _key Reputation tree key for the staker/domain
+  /// @param _value Reputation tree value for the staker/domain
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
+  function submitVote(
+    uint256 _motionId,
+    bytes32 _voteSecret,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    public
+  {
+    setInfluence(_motionId, _key, _value, _branchMask, _siblings);
+    submitVote(_motionId, _voteSecret);
+  }
+
+  /// @notice Reveal a vote secret for a motion
+  /// @param _motionId The id of the motion
+  /// @param _salt The salt used to hash the vote
+  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
+  /// @param _key Reputation tree key for the staker/domain
+  /// @param _value Reputation tree value for the staker/domain
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
+  function revealVote(
+    uint256 _motionId,
+    bytes32 _salt,
+    uint256 _vote,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    public
+  {
+    setInfluence(_motionId, _key, _value, _branchMask, _siblings);
+    revealVote(_motionId, _salt, _vote);
+  }
+
   /// @notice Escalate a motion to a higher domain
   /// @param _motionId The id of the motion
   /// @param _newDomainId The desired domain of escalation
