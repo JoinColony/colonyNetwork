@@ -31,6 +31,8 @@ module.exports = async () => {
     // Comment out uneeded parts of file
     await exec("sed -i'' '26,27 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
     await exec("sed -i'' '31 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
+    await exec("sed -i'' 's|await ContractRecovery.deployed()|await ContractRecovery.new()");
+    await exec("rm -r ./build");
     let res = await exec("yarn run truffle migrate --reset -f 4 --to 4");
     if (res.stdout) {
       // How this response looks changes node 10->12
@@ -46,6 +48,8 @@ module.exports = async () => {
     // Comment out uneeded parts of file
     await exec("sed -i'' '27,28 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
     await exec("sed -i'' '32 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
+    await exec("sed -i'' 's|await ContractRecovery.deployed()|await ContractRecovery.new()");
+    await exec("rm -r ./build");
     res = await exec("yarn run truffle migrate --reset -f 4 --to 4");
     if (res.stdout) {
       // How this response looks changes node 10->12
