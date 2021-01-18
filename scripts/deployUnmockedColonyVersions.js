@@ -32,7 +32,7 @@ module.exports = async () => {
     await exec("sed -i'' '26,27 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
     await exec("sed -i'' '31 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
     await exec("sed -i'' 's|await ContractRecovery.deployed()|await ContractRecovery.new()|' ./migrations/4_setup_colony_version_resolver.js");
-    await exec("rm -r ./build");
+    await exec("rm -rf ./build");
     let res = await exec("yarn run truffle migrate --reset -f 4 --to 4");
     if (res.stdout) {
       // How this response looks changes node 10->12
@@ -49,7 +49,7 @@ module.exports = async () => {
     await exec("sed -i'' '27,28 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
     await exec("sed -i'' '32 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
     await exec("sed -i'' 's|await ContractRecovery.deployed()|await ContractRecovery.new()|' ./migrations/4_setup_colony_version_resolver.js");
-    await exec("rm -r ./build");
+    await exec("rm -rf ./build");
     res = await exec("yarn run truffle migrate --reset -f 4 --to 4");
     if (res.stdout) {
       // How this response looks changes node 10->12
