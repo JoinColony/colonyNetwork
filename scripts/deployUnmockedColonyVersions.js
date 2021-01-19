@@ -29,9 +29,9 @@ module.exports = async () => {
     await exec("git checkout ad5569de24567517aa12624e29600c9136fb594d && git submodule update");
 
     // Comment out uneeded parts of file
-    await exec("sed -i'' '26,27 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
-    await exec("sed -i'' '31 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
-    await exec("sed -i'' 's|await ContractRecovery.deployed()|await ContractRecovery.new()|' ./migrations/4_setup_colony_version_resolver.js");
+    await exec("sed -i'' -e '26,27 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
+    await exec("sed -i'' -e '31 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
+    await exec("sed -i'' -e 's|await ContractRecovery.deployed()|await ContractRecovery.new()|' ./migrations/4_setup_colony_version_resolver.js");
     await exec("rm -rf ./build");
     let res = await exec("yarn run truffle migrate --reset -f 4 --to 4");
     if (res.stdout) {
@@ -46,9 +46,9 @@ module.exports = async () => {
     await exec("git checkout -f burgundy-glider && git submodule update");
 
     // Comment out uneeded parts of file
-    await exec("sed -i'' '27,28 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
-    await exec("sed -i'' '32 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
-    await exec("sed -i'' 's|await ContractRecovery.deployed()|await ContractRecovery.new()|' ./migrations/4_setup_colony_version_resolver.js");
+    await exec("sed -i'' -e '27,28 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
+    await exec("sed -i'' -e '32 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
+    await exec("sed -i'' -e 's|await ContractRecovery.deployed()|await ContractRecovery.new()|' ./migrations/4_setup_colony_version_resolver.js");
     await exec("rm -rf ./build");
     res = await exec("yarn run truffle migrate --reset -f 4 --to 4");
     if (res.stdout) {
