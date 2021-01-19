@@ -67,5 +67,6 @@ module.exports = async () => {
   // put things back how they were.
   await exec(`git checkout -f ${currentHash}`);
   await exec("git submodule update");
+  await exec("rm -rf ./build");
   await exec("mv ./buildBackup ./build");
 };
