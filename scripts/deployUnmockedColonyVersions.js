@@ -26,6 +26,7 @@ module.exports = async () => {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
   try {
+    await exec("mv ./build ./buildBackup");
     await exec("git checkout ad5569de24567517aa12624e29600c9136fb594d && git submodule update");
 
     // Comment out uneeded parts of file
@@ -66,5 +67,5 @@ module.exports = async () => {
   // put things back how they were.
   await exec(`git checkout -f ${currentHash}`);
   await exec("git submodule update");
-  await exec("yarn run truffle compile");
+  await exec("mv ./buildBackup ./build");
 };
