@@ -10,7 +10,7 @@
 // Point v4 on network to that resolver
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
-const cnAddress = require("../etherrouter-address.json").etherRouterAddress;
+const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
 
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const IMetaColony = artifacts.require("./IMetaColony");
