@@ -1152,7 +1152,7 @@ contract("Voting Token", (accounts) => {
       const motion = await voting.getMotion(motionId);
       const loserStake = requiredStake.sub(new BN(motion.paidVoterComp));
       const expectedReward0 = loserStake.divn(3).muln(2).addn(1); // (stake * .8) * (winPct = 1/3 * 2) + dust
-      const expectedReward1 = requiredStake.add(loserStake.divn(3)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
+      const expectedReward1 = requiredStake.add(loserStake.divn(3)).addn(1); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2)) + dust
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);

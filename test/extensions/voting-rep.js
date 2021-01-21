@@ -1592,12 +1592,12 @@ contract("Voting Reputation", (accounts) => {
       const loserStake = REQUIRED_STAKE.sub(votingPayout); // Take out voter comp
       // User 0 staked 2/3rds of the losing side. 1/3 of the total stake of that side has been
       // removed due to that side only receiving a third of the vote
-      const expectedReward0 = loserStake.muln(2).divn(3).muln(2).divn(3);
+      const expectedReward0 = loserStake.muln(2).divn(3).muln(2).divn(3); // (stake * .8) * (winPct = 1/3 * 2)
       // User 1 staked all of the winning side, so gets that back plus a third of what is left
       // on the losing side as a reward (as the winning side got 2/3rds of the vote)
-      const expectedReward1 = REQUIRED_STAKE.add(loserStake.muln(1).divn(3));
+      const expectedReward1 = REQUIRED_STAKE.add(loserStake.muln(1).divn(3)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
       // Same as user 0, but they only staked 1/3 of the losing side.
-      const expectedReward2 = loserStake.muln(2).divn(3).divn(3);
+      const expectedReward2 = loserStake.muln(2).divn(3).divn(3); // (stake * .8) * (winPct = 1/3 * 2)
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);

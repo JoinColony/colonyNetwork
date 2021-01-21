@@ -37,6 +37,8 @@ contract VotingToken is VotingBase {
 
   // [motionId][user] => tokenBalance
   mapping (uint256 => mapping (address => uint256)) influences;
+  // [motionId] => tokenBalance
+  mapping (uint256 => uint256) totalInfluences;
 
   // [motionId] => lockId
   mapping (uint256 => uint256) locks;
@@ -51,12 +53,23 @@ contract VotingToken is VotingBase {
     );
 
     uint256 balance = tokenLocking.getUserLock(token, msg.sender).balance;
+
+    if (influences[_motionId][msg.sender] == 0) {
+      totalInfluences[_motionId] = add(totalInfluences[_motionId], balance);
+    }
+
     influences[_motionId][msg.sender] = balance;
   }
 
   /// @param _motionId The id of the motion
+  /// @param _user The user in question
   function getInfluence(uint256 _motionId, address _user) public view override returns (uint256) {
     return influences[_motionId][_user];
+  }
+
+  /// @param _motionId The id of the motion
+  function getTotalInfluence(uint256 _motionId) public view override returns (uint256) {
+    return totalInfluences[_motionId];
   }
 
   function postReveal(uint256 _motionId, address _user) internal override {

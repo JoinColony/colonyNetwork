@@ -206,6 +206,8 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
 
   function getInfluence(uint256 _motionId, address _user) public view virtual returns (uint256);
 
+  function getTotalInfluence(uint256 _motionId) public view virtual returns (uint256);
+
   function postReveal(uint256 _motionId, address _user) internal virtual;
 
   function postClaim(uint256 _motionId, address _user) internal virtual;
@@ -596,13 +598,14 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
   /// NB This function will only return a meaningful value if in the reveal state.
   /// Prior to the reveal state, getVoterRewardRange should be used.
   /// @param _motionId The id of the motion
-  /// @param _voterRep The reputation the voter has in the domain
+  /// @param _voterInfluence The influence the voter has in the domain
   /// @return The voter reward
-  function getVoterReward(uint256 _motionId, uint256 _voterRep) public view returns (uint256) {
+  function getVoterReward(uint256 _motionId, uint256 _voterInfluence) public view returns (uint256) {
     Motion storage motion = motions[_motionId];
-    uint256 fractionUserReputation = wdiv(_voterRep, motion.totalVotes);
+    uint256 totalInfluence = getTotalInfluence(_motionId);
+    uint256 fractionUserInfluence = wdiv(_voterInfluence, totalInfluence);
     uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
-    return wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
+    return wmul(wmul(fractionUserInfluence, totalStake), voterRewardFraction);
   }
 
   /// @notice Get the range of potential rewards for a voter on a specific motion, intended to be
