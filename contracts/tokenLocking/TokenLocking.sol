@@ -208,11 +208,18 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   // Internal functions
 
   function makeConditionalDeposit(address _token, uint256 _amount, address _user) internal {
+    Lock storage userLock = userLocks[_token][_user];
     if (isTokenUnlocked(_token, _user)) {
-      Lock storage userLock = userLocks[_token][_user];
       userLock.balance = add(userLock.balance, _amount);
     } else {
-      require(ERC20Extended(_token).transfer(_user, _amount), "colony-token-locking-transfer-failed");
+      // If the transfer fails (for any reason), add tokens to pendingBalance
+      try ERC20Extended(_token).transfer(_user, _amount) returns (bool success) {
+        if (!success) {
+          userLock.pendingBalance = add(userLock.pendingBalance, _amount);
+        }
+      } catch {
+        userLock.pendingBalance = add(userLock.pendingBalance, _amount);
+      }
     }
   }
 
