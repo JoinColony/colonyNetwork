@@ -138,6 +138,17 @@ contract("Token Locking", (addresses) => {
       expect(info.balance).to.eq.BN(usersTokens);
     });
 
+    it("should not be able to deposit tokens while they are locked", async () => {
+      await fundColonyWithTokens(colony, token);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, token.address);
+      await colony.startNextRewardPayout(token.address, ...colonyWideReputationProof);
+
+      await checkErrorRevert(
+        tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, false, { from: userAddress }),
+        "colony-token-locking-token-locked"
+      );
+    });
+
     it("should be able to deposit tokens for another user", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.depositFor(token.address, usersTokens, otherUserAddress, { from: userAddress });
