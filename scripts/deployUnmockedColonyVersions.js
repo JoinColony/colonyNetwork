@@ -40,7 +40,7 @@ module.exports = async () => {
       res = res.stdout;
     }
     let index = res.indexOf("Colony version 3 set to Resolver");
-    v3ResolverAddress = res.substring(index + 33, index + 33 + 42);
+    v3ResolverAddress = res.substring(index + RESOLVER_LOG_OFFSET, index + RESOLVER_LOG_OFFSET + ADDRESS_LENGTH);
     console.log("v3 address:", v3ResolverAddress);
     await metaColony.addNetworkColonyVersion(3, v3ResolverAddress);
 
