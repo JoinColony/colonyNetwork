@@ -14,12 +14,12 @@ const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // 
 
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const IMetaColony = artifacts.require("./IMetaColony");
+const ADDRESS_LENGTH = 42;
+const RESOLVER_LOG_OFFSET = 33;
 
 module.exports = async () => {
-  // While debugging, always checkout currenthash
-  // await exec("git checkout 2690fba3d3002fd72912cd74f1fbf4932c734e94 && git submodule update");
+  // While debugging, add a line to checkout currenthash
   const currentHash = await exec("git log -1 --format='%H'");
-  // const currentHash = res.stdout.trim();
   let v3ResolverAddress;
   let v4ResolverAddress;
   const colonyNetwork = await IColonyNetwork.at(cnAddress);
@@ -27,7 +27,7 @@ module.exports = async () => {
   const metaColony = await IMetaColony.at(metaColonyAddress);
   try {
     await exec("mv ./build ./buildBackup");
-    await exec("git checkout ad5569de24567517aa12624e29600c9136fb594d && git submodule update");
+    await exec("git checkout auburn-glider && git submodule update");
 
     // Comment out uneeded parts of file
     await exec("sed -i'' -e '26,27 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
@@ -52,12 +52,13 @@ module.exports = async () => {
     await exec("sed -i'' -e 's|await ContractRecovery.deployed()|await ContractRecovery.new()|' ./migrations/4_setup_colony_version_resolver.js");
     await exec("rm -rf ./build");
     res = await exec("yarn run truffle migrate --reset -f 4 --to 4");
+
     if (res.stdout) {
       // How this response looks changes node 10->12
       res = res.stdout;
     }
     index = res.indexOf("Colony version 4 set to Resolver");
-    v4ResolverAddress = res.substring(index + 33, index + 33 + 42);
+    v4ResolverAddress = res.substring(index + RESOLVER_LOG_OFFSET, index + RESOLVER_LOG_OFFSET + ADDRESS_LENGTH);
     await metaColony.addNetworkColonyVersion(4, v4ResolverAddress);
   } catch (err) {
     console.log(err);
