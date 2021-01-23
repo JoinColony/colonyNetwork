@@ -116,30 +116,6 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
   }
 
   /// @param _motionId The id of the motion
-  /// @param _key Reputation tree key for the user/domain
-  /// @param _value Reputation tree value for the user/domain
-  /// @param _branchMask The branchmask of the proof
-  /// @param _siblings The siblings of the proof
-  function setInfluence(
-    uint256 _motionId,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  )
-    public
-  {
-    Motion storage motion = motions[_motionId];
-    uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
-
-    if (influences[motion.rootHash][motion.skillId][msg.sender] == 0) {
-      totalInfluences[motion.rootHash][motion.skillId] = add(totalInfluences[motion.rootHash][motion.skillId], userRep);
-    }
-
-    influences[motion.rootHash][motion.skillId][msg.sender] = userRep;
-  }
-
-  /// @param _motionId The id of the motion
   /// @param _user The user in question
   function getInfluence(uint256 _motionId, address _user) public view override returns (uint256) {
     Motion storage motion = motions[_motionId];
@@ -239,7 +215,7 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     public
   {
     setInfluence(_motionId, _key, _value, _branchMask, _siblings);
-    stakeMotion(_motionId, _permissionDomainId, _childSkillIndex, _vote, _amount);
+    internalStakeMotion(_motionId, _permissionDomainId, _childSkillIndex, _vote, _amount);
   }
 
   /// @notice Submit a vote secret for a motion
@@ -260,30 +236,7 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     public
   {
     setInfluence(_motionId, _key, _value, _branchMask, _siblings);
-    submitVote(_motionId, _voteSecret);
-  }
-
-  /// @notice Reveal a vote secret for a motion
-  /// @param _motionId The id of the motion
-  /// @param _salt The salt used to hash the vote
-  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
-  /// @param _key Reputation tree key for the staker/domain
-  /// @param _value Reputation tree value for the staker/domain
-  /// @param _branchMask The branchmask of the proof
-  /// @param _siblings The siblings of the proof
-  function revealVote(
-    uint256 _motionId,
-    bytes32 _salt,
-    uint256 _vote,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  )
-    public
-  {
-    setInfluence(_motionId, _key, _value, _branchMask, _siblings);
-    revealVote(_motionId, _salt, _vote);
+    internalSubmitVote(_motionId, _voteSecret);
   }
 
   /// @notice Escalate a motion to a higher domain
@@ -339,6 +292,25 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
   }
 
   // Internal
+
+  function setInfluence(
+    uint256 _motionId,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    internal
+  {
+    Motion storage motion = motions[_motionId];
+    uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
+
+    if (influences[motion.rootHash][motion.skillId][msg.sender] == 0) {
+      totalInfluences[motion.rootHash][motion.skillId] = add(totalInfluences[motion.rootHash][motion.skillId], userRep);
+    }
+
+    influences[motion.rootHash][motion.skillId][msg.sender] = userRep;
+  }
 
   function getReputationFromProof(
     uint256 _motionId,

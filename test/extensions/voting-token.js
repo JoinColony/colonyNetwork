@@ -264,8 +264,6 @@ contract("Voting Token", (accounts) => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
-      await voting.setInfluence(motionId, { from: USER0 });
-      await voting.setInfluence(motionId, { from: USER1 });
     });
 
     it("can stake on a motion", async () => {
@@ -334,9 +332,6 @@ contract("Voting Token", (accounts) => {
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
-      await voting.setInfluence(motionId, { from: USER0 });
-      await voting.setInfluence(motionId, { from: USER1 });
-
       let expenditureMotionCount;
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
       expect(expenditureMotionCount).to.be.zero;
@@ -376,8 +371,6 @@ contract("Voting Token", (accounts) => {
       await voting.createRootMotion(otherColony.address, action);
       motionId = await voting.getMotionCount();
 
-      await voting.setInfluence(motionId, { from: USER0 });
-
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
       const expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
@@ -405,8 +398,6 @@ contract("Voting Token", (accounts) => {
 
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
-
-      await voting.setInfluence(motionId, { from: USER0 });
 
       let expenditureMotionCount;
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
@@ -446,8 +437,6 @@ contract("Voting Token", (accounts) => {
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
-      await voting.setInfluence(motionId, { from: USER0 });
-
       let expenditureMotionCount;
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
       expect(expenditureMotionCount).to.be.zero;
@@ -480,7 +469,6 @@ contract("Voting Token", (accounts) => {
 
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
-      await voting.setInfluence(motionId, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
       // Motion 2
@@ -497,7 +485,6 @@ contract("Voting Token", (accounts) => {
 
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
-      await voting.setInfluence(motionId, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
       // Motion 2
@@ -514,7 +501,6 @@ contract("Voting Token", (accounts) => {
 
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
-      await voting.setInfluence(motionId, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
       const expenditure = await colony.getExpenditure(expenditureId);
@@ -532,8 +518,6 @@ contract("Voting Token", (accounts) => {
 
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
-
-      await voting.setInfluence(motionId, { from: USER0 });
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 }),
@@ -571,12 +555,8 @@ contract("Voting Token", (accounts) => {
       await voting.createRootMotion(ADDRESS_ZERO, action1);
       const motionId1 = await voting.getMotionCount();
 
-      await voting.setInfluence(motionId1, { from: USER0 });
-
       await voting.createRootMotion(ADDRESS_ZERO, action2);
       const motionId2 = await voting.getMotionCount();
-
-      await voting.setInfluence(motionId2, { from: USER0 });
 
       let expenditureMotionCount;
       expenditureMotionCount = await voting.getExpenditureMotionCount(expenditureHash);
@@ -631,9 +611,6 @@ contract("Voting Token", (accounts) => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
-
-      await voting.setInfluence(motionId, { from: USER0 });
-      await voting.setInfluence(motionId, { from: USER1 });
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, { from: USER1 });
@@ -712,9 +689,6 @@ contract("Voting Token", (accounts) => {
       await voting.createRootMotion(ADDRESS_ZERO, FAKE);
       const motionId2 = await voting.getMotionCount();
 
-      await voting.setInfluence(motionId2, { from: USER0 });
-      await voting.setInfluence(motionId2, { from: USER1 });
-
       await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
       await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, requiredStake, { from: USER1 });
 
@@ -776,9 +750,6 @@ contract("Voting Token", (accounts) => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
-
-      await voting.setInfluence(motionId, { from: USER0 });
-      await voting.setInfluence(motionId, { from: USER1 });
     });
 
     it("cannot execute a non-existent motion", async () => {
@@ -824,8 +795,6 @@ contract("Voting Token", (accounts) => {
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
-      await voting.setInfluence(motionId, { from: USER0 });
-
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
@@ -841,8 +810,6 @@ contract("Voting Token", (accounts) => {
       const action = await encodeTxData(colony, "claimColonyFunds", [otherToken.address]);
       await voting.createRootMotion(otherColony.address, action);
       motionId = await voting.getMotionCount();
-
-      await voting.setInfluence(motionId, { from: USER0 });
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
@@ -861,8 +828,6 @@ contract("Voting Token", (accounts) => {
       const action = soliditySha3("foo");
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
-
-      await voting.setInfluence(motionId, { from: USER0 });
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
@@ -942,9 +907,6 @@ contract("Voting Token", (accounts) => {
       await voting.createRootMotion(ADDRESS_ZERO, action);
       const motionId1 = await voting.getMotionCount();
 
-      await voting.setInfluence(motionId1, { from: USER0 });
-      await voting.setInfluence(motionId1, { from: USER1 });
-
       await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
       await voting.stakeMotion(motionId1, 1, UINT256_MAX, NAY, requiredStake, { from: USER1 });
 
@@ -964,9 +926,6 @@ contract("Voting Token", (accounts) => {
       // Create another motion for the same variable
       await voting.createRootMotion(ADDRESS_ZERO, action);
       const motionId2 = await voting.getMotionCount();
-
-      await voting.setInfluence(motionId2, { from: USER0 });
-      await voting.setInfluence(motionId2, { from: USER1 });
 
       await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
       await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, requiredStake, { from: USER1 });
@@ -992,9 +951,6 @@ contract("Voting Token", (accounts) => {
 
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
-
-      await voting.setInfluence(motionId, { from: USER0 });
-      await voting.setInfluence(motionId, { from: USER1 });
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, { from: USER1 });
@@ -1028,9 +984,6 @@ contract("Voting Token", (accounts) => {
       await voting.createRootMotion(ADDRESS_ZERO, action2);
       const motionId2 = await voting.getMotionCount();
 
-      await voting.setInfluence(motionId1, { from: USER0 });
-      await voting.setInfluence(motionId2, { from: USER0 });
-
       await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
       await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
@@ -1055,8 +1008,6 @@ contract("Voting Token", (accounts) => {
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
-      await voting.setInfluence(motionId, { from: USER0 });
-
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
@@ -1075,9 +1026,6 @@ contract("Voting Token", (accounts) => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await voting.createRootMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
-
-      await voting.setInfluence(motionId, { from: USER0 });
-      await voting.setInfluence(motionId, { from: USER1 });
     });
 
     it("cannot claim rewards from a non-existent motion", async () => {
@@ -1167,8 +1115,6 @@ contract("Voting Token", (accounts) => {
     });
 
     it("can let stakers claim rewards, based on the vote outcome, with multiple losing stakers", async () => {
-      await voting.setInfluence(motionId, { from: USER2 });
-
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake.divn(3).muln(2), { from: USER1 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake.divn(3).addn(1), { from: USER2 });
@@ -1207,8 +1153,6 @@ contract("Voting Token", (accounts) => {
     });
 
     it("can let stakers claim rewards, based on the vote outcome, with multiple winning stakers", async () => {
-      await voting.setInfluence(motionId, { from: USER2 });
-
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake.divn(3).muln(2), { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, { from: USER1 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake.divn(3).addn(1), { from: USER2 });

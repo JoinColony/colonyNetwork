@@ -19,11 +19,12 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../colonyNetwork/IColonyNetwork.sol";
+import "./ColonyExtension.sol";
 import "./VotingReputation.sol";
 import "./VotingToken.sol";
 
 
-contract VotingHybrid {
+contract VotingHybrid is ColonyExtension {
 
   /// @notice Returns the identifier of the extension
   function identifier() public override pure returns (bytes32) {

@@ -45,22 +45,6 @@ contract VotingToken is VotingBase {
 
   // Public
 
-  function setInfluence(uint256 _motionId) public {
-    require(
-      getMotionState(_motionId) == MotionState.Staking ||
-      getMotionState(_motionId) == MotionState.Submit,
-      "voting-token-cannot-set-influence"
-    );
-
-    uint256 balance = tokenLocking.getUserLock(token, msg.sender).balance;
-
-    if (influences[_motionId][msg.sender] == 0) {
-      totalInfluences[_motionId] = add(totalInfluences[_motionId], balance);
-    }
-
-    influences[_motionId][msg.sender] = balance;
-  }
-
   /// @param _motionId The id of the motion
   /// @param _user The user in question
   function getInfluence(uint256 _motionId, address _user) public view override returns (uint256) {
@@ -96,8 +80,47 @@ contract VotingToken is VotingBase {
     locks[motionCount] = colony.lockToken();
   }
 
+  /// @notice Stake on a motion
+  /// @param _motionId The id of the motion
+  /// @param _permissionDomainId The domain where the extension has the arbitration permission
+  /// @param _childSkillIndex For the domain in which the motion is occurring
+  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
+  /// @param _amount The amount of tokens being staked
+  function stakeMotion(
+    uint256 _motionId,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _vote,
+    uint256 _amount
+  )
+    public
+  {
+    setInfluence(_motionId);
+    internalStakeMotion(_motionId, _permissionDomainId, _childSkillIndex, _vote, _amount);
+  }
+
+  /// @notice Submit a vote secret for a motion
+  /// @param _motionId The id of the motion
+  /// @param _voteSecret The hashed vote secret
+  function submitVote(uint256 _motionId, bytes32 _voteSecret)
+    public
+  {
+    setInfluence(_motionId);
+    internalSubmitVote(_motionId, _voteSecret);
+  }
+
   function getLock(uint256 _motionId) public view returns (uint256) {
     return locks[_motionId];
+  }
+
+  // Internal functions
+
+  function setInfluence(uint256 _motionId) internal {
+    if (influences[_motionId][msg.sender] == 0) {
+      uint256 balance = tokenLocking.getUserLock(token, msg.sender).balance;
+      totalInfluences[_motionId] = add(totalInfluences[_motionId], balance);
+      influences[_motionId][msg.sender] = balance;
+    }
   }
 
 }

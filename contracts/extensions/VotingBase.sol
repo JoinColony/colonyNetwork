@@ -23,7 +23,7 @@ import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyExtension.sol";
 
 
-abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
+abstract contract VotingBase is ColonyExtension {
 
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
@@ -213,92 +213,6 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
   function postClaim(uint256 _motionId, address _user) internal virtual;
 
   // Public functions (interface)
-
-  /// @notice Stake on a motion
-  /// @param _motionId The id of the motion
-  /// @param _permissionDomainId The domain where the extension has the arbitration permission
-  /// @param _childSkillIndex For the domain in which the motion is occurring
-  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
-  /// @param _amount The amount of tokens being staked
-  function stakeMotion(
-    uint256 _motionId,
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _vote,
-    uint256 _amount
-  )
-    public
-  {
-    Motion storage motion = motions[_motionId];
-    require(_vote <= 1, "voting-base-bad-vote");
-    require(getMotionState(_motionId) == MotionState.Staking, "voting-base-motion-not-staking");
-
-    uint256 requiredStake = getRequiredStake(_motionId);
-    uint256 amount = min(_amount, sub(requiredStake, motion.stakes[_vote]));
-    require(amount > 0, "voting-base-bad-amount");
-
-    uint256 stakerTotalAmount = add(stakes[_motionId][msg.sender][_vote], amount);
-
-    require(
-      stakerTotalAmount <= getInfluence(_motionId, msg.sender),
-      "voting-base-insufficient-rep"
-    );
-    require(
-      stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction) ||
-      add(motion.stakes[_vote], amount) == requiredStake, // To prevent a residual stake from being un-stakable
-      "voting-base-insufficient-stake"
-    );
-
-    // Update the stake
-    motion.stakes[_vote] = add(motion.stakes[_vote], amount);
-    stakes[_motionId][msg.sender][_vote] = stakerTotalAmount;
-
-    // Increment counter & extend claim delay if staking for an expenditure state change
-    if (
-      _vote == YAY &&
-      !motion.escalated &&
-      motion.stakes[YAY] == requiredStake &&
-      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
-      motion.altTarget == address(0x0)
-    ) {
-      bytes32 structHash = hashExpenditureActionStruct(motion.action);
-      expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
-      // Set to UINT256_MAX / 3 to avoid overflow (finalizedTimestamp + globalClaimDelay + claimDelay)
-      bytes memory claimDelayAction = createClaimDelayAction(motion.action, UINT256_MAX / 3);
-      require(executeCall(_motionId, claimDelayAction), "voting-base-expenditure-lock-failed");
-    }
-
-    emit MotionStaked(_motionId, msg.sender, _vote, amount);
-
-    // Move to vote submission once both sides are fully staked
-    if (motion.stakes[NAY] == requiredStake && motion.stakes[YAY] == requiredStake) {
-      motion.events[STAKE_END] = uint64(block.timestamp);
-      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
-
-      emit MotionEventSet(_motionId, STAKE_END);
-
-    // Move to second staking window once one side is fully staked
-    } else if (
-      (_vote == NAY && motion.stakes[NAY] == requiredStake) ||
-      (_vote == YAY && motion.stakes[YAY] == requiredStake)
-    ) {
-      motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
-      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
-
-      // New stake supersedes prior votes
-      delete motion.votes;
-      delete motion.totalVotes;
-
-      emit MotionEventSet(_motionId, STAKE_END);
-    }
-
-    // Do the external bookkeeping
-    tokenLocking.deposit(token, 0, true); // Faux deposit to clear any locks
-    colony.obligateStake(msg.sender, motion.domainId, amount);
-    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, motion.domainId, amount, address(this));
-  }
 
   /// @notice Submit a vote secret for a motion
   /// @param _motionId The id of the motion
@@ -770,6 +684,119 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
     motion.action = _action;
 
     emit MotionCreated(motionCount, msg.sender, _domainId);
+  }
+
+  /// @notice Stake on a motion
+  /// @param _motionId The id of the motion
+  /// @param _permissionDomainId The domain where the extension has the arbitration permission
+  /// @param _childSkillIndex For the domain in which the motion is occurring
+  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
+  /// @param _amount The amount of tokens being staked
+  function internalStakeMotion(
+    uint256 _motionId,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _vote,
+    uint256 _amount
+  )
+    public
+  {
+    Motion storage motion = motions[_motionId];
+    require(_vote <= 1, "voting-base-bad-vote");
+    require(getMotionState(_motionId) == MotionState.Staking, "voting-base-motion-not-staking");
+
+    uint256 requiredStake = getRequiredStake(_motionId);
+    uint256 amount = min(_amount, sub(requiredStake, motion.stakes[_vote]));
+    require(amount > 0, "voting-base-bad-amount");
+
+    uint256 stakerTotalAmount = add(stakes[_motionId][msg.sender][_vote], amount);
+
+    require(
+      stakerTotalAmount <= getInfluence(_motionId, msg.sender),
+      "voting-base-insufficient-rep"
+    );
+    require(
+      stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction) ||
+      add(motion.stakes[_vote], amount) == requiredStake, // To prevent a residual stake from being un-stakable
+      "voting-base-insufficient-stake"
+    );
+
+    // Update the stake
+    motion.stakes[_vote] = add(motion.stakes[_vote], amount);
+    stakes[_motionId][msg.sender][_vote] = stakerTotalAmount;
+
+    // Increment counter & extend claim delay if staking for an expenditure state change
+    if (
+      _vote == YAY &&
+      !motion.escalated &&
+      motion.stakes[YAY] == requiredStake &&
+      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
+      motion.altTarget == address(0x0)
+    ) {
+      bytes32 structHash = hashExpenditureActionStruct(motion.action);
+      expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
+      // Set to UINT256_MAX / 3 to avoid overflow (finalizedTimestamp + globalClaimDelay + claimDelay)
+      bytes memory claimDelayAction = createClaimDelayAction(motion.action, UINT256_MAX / 3);
+      require(executeCall(_motionId, claimDelayAction), "voting-base-expenditure-lock-failed");
+    }
+
+    emit MotionStaked(_motionId, msg.sender, _vote, amount);
+
+    // Move to vote submission once both sides are fully staked
+    if (motion.stakes[NAY] == requiredStake && motion.stakes[YAY] == requiredStake) {
+      motion.events[STAKE_END] = uint64(block.timestamp);
+      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
+
+      emit MotionEventSet(_motionId, STAKE_END);
+
+    // Move to second staking window once one side is fully staked
+    } else if (
+      (_vote == NAY && motion.stakes[NAY] == requiredStake) ||
+      (_vote == YAY && motion.stakes[YAY] == requiredStake)
+    ) {
+      motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
+      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
+
+      // New stake supersedes prior votes
+      delete motion.votes;
+      delete motion.totalVotes;
+
+      emit MotionEventSet(_motionId, STAKE_END);
+    }
+
+    // Do the external bookkeeping
+    tokenLocking.deposit(token, 0, true); // Faux deposit to clear any locks
+    colony.obligateStake(msg.sender, motion.domainId, amount);
+    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, motion.domainId, amount, address(this));
+  }
+
+  /// @notice Submit a vote secret for a motion
+  /// @param _motionId The id of the motion
+  /// @param _voteSecret The hashed vote secret
+  function internalSubmitVote(uint256 _motionId, bytes32 _voteSecret) public {
+    Motion storage motion = motions[_motionId];
+    require(getMotionState(_motionId) == MotionState.Submit, "voting-base-motion-not-open");
+    require(_voteSecret != bytes32(0), "voting-base-invalid-secret");
+
+    uint256 influence = getInfluence(_motionId, msg.sender);
+
+    // Count reputation if first submission
+    if (voteSecrets[_motionId][msg.sender] == bytes32(0)) {
+      motion.totalVotes = add(motion.totalVotes, influence);
+    }
+
+    voteSecrets[_motionId][msg.sender] = _voteSecret;
+
+    emit MotionVoteSubmitted(_motionId, msg.sender);
+
+    if (motion.totalVotes >= wmul(motion.maxVotes, maxVoteFraction)) {
+      motion.events[SUBMIT_END] = uint64(block.timestamp);
+      motion.events[REVEAL_END] = uint64(block.timestamp + revealPeriod);
+
+      emit MotionEventSet(_motionId, SUBMIT_END);
+    }
   }
 
   function getVoteSecret(bytes32 _salt, uint256 _vote) internal pure returns (bytes32) {
