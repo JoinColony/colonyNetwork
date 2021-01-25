@@ -593,8 +593,19 @@ contract("Voting Token", (accounts) => {
       expect(expenditureSlot.claimDelay).to.be.zero;
     });
 
-    it("cannot stake with insufficient reputation", async () => {
-      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER2 }), "voting-base-insufficient-rep");
+    it("cannot stake with insufficient token balance", async () => {
+      const user3 = accounts[3];
+      const user3influence = WAD.divn(1000);
+
+      await token.mint(user3, user3influence);
+      await token.approve(tokenLocking.address, user3influence, { from: user3 });
+      await tokenLocking.deposit(token.address, user3influence, { from: user3 });
+      await colony.approveStake(voting.address, 1, user3influence, { from: user3 });
+
+      const totalSupply = await token.totalSupply();
+      requiredStake = totalSupply.divn(1000);
+
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: user3 }), "voting-base-insufficient-influence");
     });
 
     it("cannot stake once time runs out", async () => {

@@ -713,7 +713,7 @@ abstract contract VotingBase is ColonyExtension {
 
     require(
       stakerTotalAmount <= getInfluence(_motionId, msg.sender),
-      "voting-base-insufficient-rep"
+      "voting-base-insufficient-influence"
     );
     require(
       stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction) ||

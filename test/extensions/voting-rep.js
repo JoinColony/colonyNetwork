@@ -858,7 +858,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 }),
-        "voting-base-insufficient-rep"
+        "voting-base-insufficient-influence"
       );
     });
 
