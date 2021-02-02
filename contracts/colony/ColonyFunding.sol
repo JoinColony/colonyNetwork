@@ -23,6 +23,14 @@ import "./ColonyStorage.sol";
 
 
 contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
+  function lockToken() public stoppable extension returns (uint256) {
+    return ITokenLocking(tokenLockingAddress).lockToken(token);
+  }
+
+  function unlockTokenForUser(address _user, uint256 _lockId) public stoppable extension {
+    ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, _user, _lockId);
+  }
+
   function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, TaskRole.Manager, _token, _amount);
     emit TaskPayoutSet(_id, TaskRole.Manager, _token, _amount);

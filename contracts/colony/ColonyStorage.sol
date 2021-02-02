@@ -22,6 +22,7 @@ import "./../../lib/dappsys/math.sol";
 import "./../common/CommonStorage.sol";
 import "./../common/ERC20Extended.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../extensions/ColonyExtension.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./ColonyAuthority.sol";
 import "./ColonyDataTypes.sol";
@@ -208,6 +209,25 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
 
   modifier self() {
     require(address(this) == msg.sender, "colony-not-self");
+    _;
+  }
+
+  modifier extension() {
+    // Ensure msg.sender is a contract
+    uint256 size;
+    address msgSender = msg.sender;
+    assembly { size := extcodesize(msgSender) }
+    require(size > 0, "colony-must-be-extension");
+
+    // Ensure msg.sender is an extension
+    try ColonyExtension(msg.sender).identifier() returns (bytes32 extensionId) {
+      require(
+        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == msg.sender,
+        "colony-must-be-extension"
+      );
+    } catch {
+      require(false, "colony-must-be-extension");
+    }
     _;
   }
 

@@ -75,6 +75,17 @@ contract TestVotingReputation is TestExtension {
   }
 }
 
+contract TestVotingToken is TestExtension {
+  function identifier() public pure override returns (bytes32) { return keccak256("VotingToken"); }
+  function version() public pure override returns (uint256) { return 1; }
+  function lockToken() public returns (uint256) {
+    return colony.lockToken();
+  }
+  function unlockTokenForUser(address _user, uint256 _lockId) public {
+    colony.unlockTokenForUser(_user, _lockId);
+  }
+}
+
 contract TestVotingHybrid is TestExtension {
   function identifier() public pure override returns (bytes32) { return keccak256("VotingHybrid"); }
   function version() public pure override returns (uint256) { return 1; }

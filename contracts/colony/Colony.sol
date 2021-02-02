@@ -20,7 +20,6 @@ pragma experimental ABIEncoderV2;
 
 import "./../common/ERC20Extended.sol";
 import "./../common/IEtherRouter.sol";
-import "./../extensions/ColonyExtension.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 

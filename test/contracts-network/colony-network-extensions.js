@@ -19,13 +19,16 @@ const TestExtension0 = artifacts.require("TestExtension0");
 const TestExtension1 = artifacts.require("TestExtension1");
 const TestExtension2 = artifacts.require("TestExtension2");
 const TestExtension3 = artifacts.require("TestExtension3");
+const TestVotingToken = artifacts.require("TestVotingToken");
 const Resolver = artifacts.require("Resolver");
 const IMetaColony = artifacts.require("IMetaColony");
+const ITokenLocking = artifacts.require("ITokenLocking");
 
 contract("Colony Network Extensions", (accounts) => {
   let colonyNetwork;
   let metaColony;
   let colony;
+  let token;
 
   let resolver0;
   let resolver1;
@@ -67,7 +70,7 @@ contract("Colony Network Extensions", (accounts) => {
     colonyNetwork = await setupColonyNetwork();
     ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
-    ({ colony } = await setupRandomColony(colonyNetwork));
+    ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.addDomain(1, UINT256_MAX, 1); // Domain 2
 
     await colony.setArchitectureRole(1, UINT256_MAX, ARCHITECT, 1, true);
@@ -79,6 +82,10 @@ contract("Colony Network Extensions", (accounts) => {
 
       // Can install directly
       await extension.install(colony.address);
+
+      // Can get the colony
+      const colonyAddress = await extension.getColony();
+      expect(colonyAddress).to.equal(colony.address);
 
       // Can only install once
       await checkErrorRevert(extension.install(colony.address), "extension-already-installed");
@@ -276,6 +283,45 @@ contract("Colony Network Extensions", (accounts) => {
 
     it("does not allow root users to uninstall an extension which is not installed", async () => {
       await checkErrorRevert(colony.uninstallExtension(TEST_EXTENSION, { from: ROOT }), "colony-network-extension-not-installed");
+    });
+  });
+
+  describe("using extensions", () => {
+    it("allows network-managed extensions to lock and unlock tokens", async () => {
+      const TEST_VOTING_TOKEN = soliditySha3("VotingToken");
+
+      const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+      const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+
+      const testVotingToken = await TestVotingToken.new();
+      const resolver = await Resolver.new();
+      await setupEtherRouter("TestVotingToken", { TestVotingToken: testVotingToken.address }, resolver);
+      await metaColony.addExtensionToNetwork(TEST_VOTING_TOKEN, resolver.address);
+
+      await colony.installExtension(TEST_VOTING_TOKEN, 1, { from: ROOT });
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
+      const extension = await TestVotingToken.at(extensionAddress);
+
+      const lockCountPre = await tokenLocking.getTotalLockCount(token.address);
+
+      await extension.lockToken();
+
+      const lockCountPost = await tokenLocking.getTotalLockCount(token.address);
+      expect(lockCountPost.sub(lockCountPre)).to.eq.BN(1);
+
+      await extension.unlockTokenForUser(ROOT, lockCountPost);
+
+      const userLock = await tokenLocking.getUserLock(token.address, ROOT);
+      expect(userLock.lockCount).to.eq.BN(lockCountPost);
+
+      // Non-network-managed extension cannot lock tokens
+      await testVotingToken.install(colony.address);
+      await checkErrorRevert(testVotingToken.lockToken(), "colony-must-be-extension");
+      await checkErrorRevert(testVotingToken.unlockTokenForUser(ROOT, lockCountPost), "colony-must-be-extension");
+
+      // Users cannot lock tokens
+      await checkErrorRevert(colony.lockToken(), "colony-must-be-extension");
+      await checkErrorRevert(colony.unlockTokenForUser(ROOT, lockCountPost), "colony-must-be-extension");
     });
   });
 });
