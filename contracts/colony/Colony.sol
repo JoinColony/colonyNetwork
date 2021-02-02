@@ -20,10 +20,11 @@ pragma experimental ABIEncoderV2;
 
 import "./../common/ERC20Extended.sol";
 import "./../common/IEtherRouter.sol";
+import "./../common/GetChainId.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
-contract Colony is ColonyStorage, PatriciaTreeProofs {
+contract Colony is ColonyStorage, PatriciaTreeProofs, GetChainId {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
@@ -202,6 +203,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
     // Function only valid on the Meta Colony
     require(address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
+    // Only callable on mainnet
+    uint256 chainId = getChainId();
+    if (chainId != 1 && chainId != 2656691) {
+      require(false, "colony-network-only-on-mainnet");
+    }
+
     ERC20Extended(token).mint(_wad);
     assert(ERC20Extended(token).transfer(colonyNetworkAddress, _wad));
 

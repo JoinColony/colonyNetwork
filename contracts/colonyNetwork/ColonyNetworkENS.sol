@@ -19,12 +19,13 @@ pragma solidity 0.7.3;
 
 import "./../ens/ENS.sol";
 import "./ColonyNetworkStorage.sol";
+import "./../common/GetChainId.sol";
 
 
 /// @title First-In-First-Served ENS Registrar
 /// @notice A registrar that allocates subdomains to the first person to claim them.
 /// @notice Source modified from https://github.com/ensdomains/ens/blob/master/contracts/FIFSRegistrar.sol
-contract ColonyNetworkENS is ColonyNetworkStorage {
+contract ColonyNetworkENS is ColonyNetworkStorage, GetChainId {
 
   bytes32 constant USER_HASH = keccak256("user");
   bytes32 constant COLONY_HASH = keccak256("colony");
@@ -145,13 +146,5 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
       return "joincolony.colonyxdai";
     }
     require(false, "colony-network-unsupported-network");
-  }
-
-  function getChainId() internal view returns (uint256) {
-    uint256 id;
-    assembly {
-        id := chainid()
-    }
-    return id;
   }
 }

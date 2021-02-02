@@ -20,12 +20,13 @@ pragma experimental "ABIEncoderV2";
 
 import "./../common/ERC20Extended.sol";
 import "./../common/EtherRouter.sol";
+import "./../common/GetChainId.sol";
 import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyNetworkStorage.sol";
 
 
-contract ColonyNetworkMining is ColonyNetworkStorage {
+contract ColonyNetworkMining is ColonyNetworkStorage, GetChainId {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {
@@ -173,7 +174,11 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     }
 
     // II. Disburse reputation and tokens
-    IMetaColony(metaColony).mintTokensForColonyNetwork(realReward);
+    uint256 chainId = getChainId();
+    // On Xdai, we can only use bridged tokens, so no minting
+    if (chainId != 100 && chainId != 265669100) {
+      IMetaColony(metaColony).mintTokensForColonyNetwork(realReward);
+    }
 
     ERC20Extended(clnyToken).approve(tokenLocking, realReward);
 
