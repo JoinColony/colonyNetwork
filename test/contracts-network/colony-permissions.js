@@ -296,6 +296,20 @@ contract("ColonyPermissions", (accounts) => {
       await colony.setAdministrationRole(1, 1, USER2, 3, true, { from: USER1 });
     });
 
+    it("should allow users with root permission to emit positive reputation rewards", async () => {
+      // Domain penalties
+      await colony.emitDomainReputationReward(3, USER2, 100, { from: FOUNDER });
+      await checkErrorRevert(colony.emitDomainReputationReward(3, USER2, -100, { from: FOUNDER }), "colony-reward-must-be-positive");
+      await checkErrorRevert(colony.emitDomainReputationReward(0, USER2, 100, { from: FOUNDER }), "colony-domain-does-not-exist");
+      await checkErrorRevert(colony.emitDomainReputationReward(3, USER2, 100, { from: USER1 }), "ds-auth-unauthorized");
+
+      // Skill penalties
+      await colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, 100, { from: FOUNDER });
+      await checkErrorRevert(colony.emitSkillReputationReward(0, USER2, 100, { from: FOUNDER }), "colony-not-global-skill");
+      await checkErrorRevert(colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, -100, { from: FOUNDER }), "colony-reward-must-be-positive");
+      await checkErrorRevert(colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "ds-auth-unauthorized");
+    });
+
     it("should allow users with arbitration permission to emit negative reputation penalties", async () => {
       await colony.setArbitrationRole(1, UINT256_MAX, USER1, 1, true);
       await colony.setArbitrationRole(1, 0, USER2, 2, true);
@@ -306,6 +320,7 @@ contract("ColonyPermissions", (accounts) => {
 
       // Skill penalties (root domain only)
       await colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, -100, { from: USER1 });
+      await checkErrorRevert(colony.emitSkillReputationPenalty(0, USER2, 100, { from: USER1 }), "colony-not-global-skill");
       await checkErrorRevert(colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");
       await checkErrorRevert(colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, -100, { from: USER2 }), "ds-auth-unauthorized");
     });

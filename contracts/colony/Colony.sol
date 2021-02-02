@@ -82,6 +82,21 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit Annotation(msg.sender, _txHash, _metadata);
   }
 
+  function emitDomainReputationReward(uint256 _domainId, address _user, int256 _amount)
+  public stoppable auth
+  {
+    require(_amount > 0, "colony-reward-must-be-positive");
+    require(domainExists(_domainId), "colony-domain-does-not-exist");
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
+  }
+
+  function emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount)
+  public stoppable auth validGlobalSkill(_skillId)
+  {
+    require(_amount > 0, "colony-reward-must-be-positive");
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
+  }
+
   function emitDomainReputationPenalty(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,

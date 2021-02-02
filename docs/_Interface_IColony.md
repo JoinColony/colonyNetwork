@@ -304,6 +304,20 @@ Emit a negative domain reputation update. Available only to Arbitration role hol
 |_amount|int256|The (negative) amount of reputation to lose
 
 
+### `emitDomainReputationReward`
+
+Emit a positive domain reputation update. Available only to Root role holders
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_domainId|uint256|The domain where the user will gain reputation
+|_user|address|The user who will gain reputation
+|_amount|int256|The (positive) amount of reputation to gain
+
+
 ### `emitSkillReputationPenalty`
 
 Emit a negative skill reputation update. Available only to Arbitration role holders in the root domain
@@ -316,6 +330,20 @@ Emit a negative skill reputation update. Available only to Arbitration role hold
 |_skillId|uint256|The skill where the user will lose reputation
 |_user|address|The user who will lose reputation
 |_amount|int256|The (negative) amount of reputation to lose
+
+
+### `emitSkillReputationReward`
+
+Emit a positive skill reputation update. Available only to Root role holders
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill where the user will gain reputation
+|_user|address|The user who will gain reputation
+|_amount|int256|The (positive) amount of reputation to gain
 
 
 ### `executeTaskChange`
