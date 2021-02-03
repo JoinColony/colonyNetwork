@@ -88,7 +88,6 @@ contract ColonyAuthority is CommonAuthority {
     // Added in colony v5 (cerulean-lwss)
     addRoleCapability(ROOT_ROLE, "setPayoutWhitelist(address,bool)");
     addRoleCapability(ROOT_ROLE, "mintTokensFor(address,uint256)");
-    addRoleCapability(ROOT_ROLE, "setAnnualMetaColonyStipend(uint256)");
     addRoleCapability(ROOT_ROLE, "setReputationMiningCycleReward(uint256)");
     addRoleCapability(ROOT_ROLE, "addExtensionToNetwork(bytes32,address)");
     addRoleCapability(ROOT_ROLE, "setUserRoles(uint256,uint256,address,uint256,bytes32)");

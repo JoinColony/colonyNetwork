@@ -396,16 +396,6 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _recipient The user whose rewards to claim
   function claimMiningReward(address _recipient) external;
 
-  /// @notice Called to set the metaColony stipend. This value will be the total amount of CLNY created for the metacolony in a single year. The
-  /// corresponding `issueMetaColonyStipend` function can be called at any interval.
-  /// @param _amount The amount of CLNY to issue to the metacolony every year
-  /// @dev Can only be called by the MetaColony.
-  function setAnnualMetaColonyStipend(uint256 _amount) external;
-
-  /// @notice Called to issue the metaColony stipend. This external function can be called by anyone at any interval, and an appropriate amount of CLNY will
-  /// be minted based on the time since the last time it was called.
-  function issueMetaColonyStipend() external;
-
   /// @notice Called to set the total per-cycle reputation reward, which will be split between all miners.
   /// @dev Can only be called by the MetaColony.
   function setReputationMiningCycleReward(uint256 _amount) external;
@@ -413,8 +403,4 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Called to get the total per-cycle reputation mining reward.
   /// @return The CLNY awarded per mining cycle to the miners.
   function getReputationMiningCycleReward() external view returns (uint256);
-
-  /// @notice Called to get the total per-cycle reputation mining reward.
-  /// @return The CLNY awarded per year to the metacolony.
-  function getAnnualMetaColonyStipend() external view returns (uint256);
 }
