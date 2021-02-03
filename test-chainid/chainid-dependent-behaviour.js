@@ -39,7 +39,7 @@ contract("Contract Storage", (accounts) => {
     await colonyNetwork.startNextCycle();
   });
 
-  describe("Should respond differently to ENS queries based on the network deployed", () => {
+  describe("Should behave differently based on the network deployed to", () => {
     it("should be able to get the domain name", async () => {
       await metaColony.registerColonyLabel("meta", "", { from: accounts[0] });
       console.log(chainId);
@@ -79,16 +79,14 @@ contract("Contract Storage", (accounts) => {
       const networkBalanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
       await repCycle.confirmNewHash(0);
 
-      if (chainId === 1 || chainId === 2656691 || chainId === 5 || chainId === 2656695) {
-        // tokens should be newly minted, so balance of network doesn't change.
-        const networkBalanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
-        expect(networkBalanceBefore).to.eq.BN(networkBalanceAfter);
-      } else if (chainId === 100 || chainId === 265669100) {
-        // tokens should be paid from a pool in network
+      if (chainId === 100 || chainId === 265669100) {
+        // tokens should be paid from the network balance
         const networkBalanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
         expect(networkBalanceBefore.sub(networkBalanceAfter)).to.eq.BN(100);
       } else {
-        await checkErrorRevert(colonyNetwork.lookupRegisteredENSDomain.sendTransaction(metaColony.address), "colony-network-unsupported-network");
+        // tokens should be newly minted, so balance of network doesn't change.
+        const networkBalanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
+        expect(networkBalanceBefore).to.eq.BN(networkBalanceAfter);
       }
     });
   });

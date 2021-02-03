@@ -203,10 +203,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, GetChainId {
     require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
     // Function only valid on the Meta Colony
     require(address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
-    // Only callable on mainnet
+    // Not callable on Xdai
     uint256 chainId = getChainId();
-    if (chainId != 1 && chainId != 2656691) {
-      require(false, "colony-network-only-on-mainnet");
+    if (chainId == 100 || chainId == 265669100) {
+      require(false, "colony-network-forbidden-on-xdai");
     }
 
     ERC20Extended(token).mint(_wad);
