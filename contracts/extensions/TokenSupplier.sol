@@ -18,7 +18,6 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../common/ERC20Extended.sol";
 import "./ColonyExtension.sol";
 
@@ -26,8 +25,6 @@ import "./ColonyExtension.sol";
 contract TokenSupplier is ColonyExtension {
 
   uint256 constant ISSUANCE_PERIOD = 1 days;
-  bytes32 constant VOTING_REPUTATION = keccak256("VotingReputation");
-  bytes32 constant VOTING_HYBRID = keccak256("VotingHybrid");
 
   // Events
 
@@ -47,19 +44,6 @@ contract TokenSupplier is ColonyExtension {
 
   modifier initialised() {
     require(lastIssue > 0, "token-supplier-not-initialised");
-    _;
-  }
-
-  modifier onlyRoot() {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "token-supplier-caller-not-root");
-    _;
-  }
-
-  modifier onlyContract() {
-    uint256 size;
-    address msgSender = msg.sender;
-    assembly { size := extcodesize(msgSender) }
-    require(size > 0, "token-supplier-caller-must-be-contract");
     _;
   }
 
@@ -98,7 +82,8 @@ contract TokenSupplier is ColonyExtension {
   /// @notice Initialise the extension, must be called before any tokens can be issued
   /// @param _tokenSupplyCeiling Total amount of tokens to issue
   /// @param _tokenIssuanceRate Number of tokens to issue per day
-  function initialise(uint256 _tokenSupplyCeiling, uint256 _tokenIssuanceRate) public onlyRoot {
+  function initialise(uint256 _tokenSupplyCeiling, uint256 _tokenIssuanceRate) public {
+    require(isRoot(), "token-supplier-caller-not-root");
     require(lastIssue == 0, "token-supplier-already-initialised");
 
     tokenSupplyCeiling = _tokenSupplyCeiling;
@@ -111,15 +96,8 @@ contract TokenSupplier is ColonyExtension {
 
   /// @notice Update the tokenSupplyCeiling, cannot set below current tokenSupply
   /// @param _tokenSupplyCeiling Total amount of tokens to issue
-  function setTokenSupplyCeiling(uint256 _tokenSupplyCeiling) public initialised onlyRoot onlyContract {
-    try ColonyExtension(msg.sender).identifier() returns (bytes32 extensionId) {
-      IColonyNetwork colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
-      address installation = colonyNetwork.getExtensionInstallation(extensionId, address(colony));
-      require(installation == msg.sender, "token-supplier-not-managed-extension");
-      require(extensionId == VOTING_HYBRID, "token-supplier-cannot-set-value");
-    } catch {
-      require(false, "token-supplier-no-identifier");
-    }
+  function setTokenSupplyCeiling(uint256 _tokenSupplyCeiling) public initialised {
+    require(isRoot(), "token-supplier-caller-not-root");
 
     tokenSupplyCeiling = _tokenSupplyCeiling;
 
@@ -128,23 +106,15 @@ contract TokenSupplier is ColonyExtension {
 
   /// @notice Update the tokenIssuanceRate
   /// @param _tokenIssuanceRate Number of tokens to issue per day
-  function setTokenIssuanceRate(uint256 _tokenIssuanceRate) public initialised onlyRoot onlyContract {
-    try ColonyExtension(msg.sender).identifier() returns (bytes32 extensionId) {
-      IColonyNetwork colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
-      address installation = colonyNetwork.getExtensionInstallation(extensionId, address(colony));
-      require(installation == msg.sender, "token-supplier-not-managed-extension");
-      require(
-        extensionId == VOTING_HYBRID || (
-          extensionId == VOTING_REPUTATION &&
-          block.timestamp - lastRateUpdate >= 4 weeks &&
-          _tokenIssuanceRate <= add(tokenIssuanceRate, tokenIssuanceRate / 10) &&
-          _tokenIssuanceRate >= sub(tokenIssuanceRate, tokenIssuanceRate / 10)
-        ),
-        "token-supplier-cannot-set-value"
-      );
-    } catch {
-      require(false, "token-supplier-no-identifier");
-    }
+  function setTokenIssuanceRate(uint256 _tokenIssuanceRate) public initialised  {
+    require(
+      isRoot() || (
+        isRootFunding() &&
+        block.timestamp - lastRateUpdate >= 4 weeks &&
+        _tokenIssuanceRate <= add(tokenIssuanceRate, tokenIssuanceRate / 10) &&
+        _tokenIssuanceRate >= sub(tokenIssuanceRate, tokenIssuanceRate / 10)
+      ), "token-supplier-caller-not-authorized"
+    );
 
     // Issue any outstanding tokens under the previous rate and update timestamp
     issueTokens();
@@ -190,6 +160,16 @@ contract TokenSupplier is ColonyExtension {
 
   function getLastRateUpdate() public view returns (uint256) {
     return lastRateUpdate;
+  }
+
+  // Internal functions
+
+  function isRoot() internal view returns (bool) {
+    return colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root);
+  }
+
+  function isRootFunding() internal view returns (bool) {
+    return colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Funding);
   }
 
 }
