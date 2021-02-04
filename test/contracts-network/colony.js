@@ -216,6 +216,19 @@ contract("Colony", (accounts) => {
       expect(rewardPotInfo.associatedTypeId).to.be.zero;
       expect(rewardPotInfo.payoutsWeCannotMake).to.be.zero;
     });
+
+    it("should allow the token to be unlocked by a root user only", async () => {
+      ({ colony, token } = await setupRandomColony(colonyNetwork, true));
+      await token.setOwner(colony.address);
+      let locked = await token.locked();
+      expect(locked).to.be.equal(true);
+
+      await checkErrorRevert(colony.unlockToken({ from: accounts[1] }), "ds-auth-unauthorized");
+
+      await expectEvent(colony.unlockToken({ from: accounts[0] }), "TokenUnlocked", []);
+      locked = await token.locked();
+      expect(locked).to.be.equal(false);
+    });
   });
 
   describe("when adding domains", () => {

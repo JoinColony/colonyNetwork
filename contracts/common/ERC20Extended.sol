@@ -31,4 +31,6 @@ abstract contract ERC20Extended is ERC20 {
   function burn(uint wad) public virtual;
 
   function burn(address guy, uint wad) public virtual;
+
+  function unlock() public virtual;
 }
