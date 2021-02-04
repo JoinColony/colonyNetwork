@@ -212,12 +212,9 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     _;
   }
 
-  modifier extension() {
+  modifier onlyExtension() {
     // Ensure msg.sender is a contract
-    uint256 size;
-    address msgSender = msg.sender;
-    assembly { size := extcodesize(msgSender) }
-    require(size > 0, "colony-must-be-extension");
+    require(isContract(msg.sender), "colony-sender-must-be-contract");
 
     // Ensure msg.sender is an extension
     try ColonyExtension(msg.sender).identifier() returns (bytes32 extensionId) {
@@ -268,6 +265,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
 
   function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
     return (src == owner) || DomainRoles(address(authority)).canCall(src, domainId, address(this), sig);
+  }
+
+  function isContract(address addr) internal returns (bool) {
+    uint256 size;
+    assembly { size := extcodesize(addr) }
+    return size > 0;
   }
 
   function domainExists(uint256 domainId) internal view returns (bool) {

@@ -309,19 +309,29 @@ contract("Colony Network Extensions", (accounts) => {
       const lockCountPost = await tokenLocking.getTotalLockCount(token.address);
       expect(lockCountPost.sub(lockCountPre)).to.eq.BN(1);
 
+      // Check that you can't unlock too far ahead
+      await extension.lockToken();
+      await checkErrorRevert(extension.unlockTokenForUser(ROOT, lockCountPost.addn(1)), "colony-token-locking-has-previous-active-locks");
+
       await extension.unlockTokenForUser(ROOT, lockCountPost);
 
       const userLock = await tokenLocking.getUserLock(token.address, ROOT);
       expect(userLock.lockCount).to.eq.BN(lockCountPost);
 
-      // Non-network-managed extension cannot lock tokens
+      // Check that you can't unlock twice
+      await checkErrorRevert(extension.unlockTokenForUser(ROOT, lockCountPost), "colony-token-locking-already-unlocked");
+    });
+
+    it("does not allow non network-managed extensions to lock and unlock tokens", async () => {
+      const testVotingToken = await TestVotingToken.new();
       await testVotingToken.install(colony.address);
       await checkErrorRevert(testVotingToken.lockToken(), "colony-must-be-extension");
-      await checkErrorRevert(testVotingToken.unlockTokenForUser(ROOT, lockCountPost), "colony-must-be-extension");
+      await checkErrorRevert(testVotingToken.unlockTokenForUser(ROOT, 0), "colony-must-be-extension");
+    });
 
-      // Users cannot lock tokens
-      await checkErrorRevert(colony.lockToken(), "colony-must-be-extension");
-      await checkErrorRevert(colony.unlockTokenForUser(ROOT, lockCountPost), "colony-must-be-extension");
+    it("does not allow users to lock and unlock tokens", async () => {
+      await checkErrorRevert(colony.lockToken(), "colony-sender-must-be-contract");
+      await checkErrorRevert(colony.unlockTokenForUser(ROOT, 0), "colony-sender-must-be-contract");
     });
   });
 });

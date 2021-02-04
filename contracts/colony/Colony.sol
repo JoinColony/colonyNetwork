@@ -47,12 +47,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   public stoppable auth
   returns (bool)
   {
-    // Ensure _to is a contract
-    uint256 size;
-    assembly { size := extcodesize(_to) }
-    require(size > 0, "colony-to-must-be-contract");
-
     // Prevent transactions to network contracts
+    require(_to != address(this), "colony-cannot-target-self");
     require(_to != colonyNetworkAddress, "colony-cannot-target-network");
     require(_to != tokenLockingAddress, "colony-cannot-target-token-locking");
 
@@ -67,6 +63,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(sig != BURN_GUY_SIG, "colony-cannot-call-burn-guy");
 
     // Prevent transactions to network-managed extensions installed in this colony
+    require(isContract(_to), "colony-to-must-be-contract");
     try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
       require(
         IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) != _to,

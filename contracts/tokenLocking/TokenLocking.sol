@@ -79,7 +79,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
 
     // These checks should happen in this order, as the second is stricter than the first
     uint256 lockCountDelta = sub(_lockId, userLocks[_token][_user].lockCount);
-    require(lockCountDelta != 0, "colony-token-already-unlocked");
+    require(lockCountDelta != 0, "colony-token-locking-already-unlocked");
     require(lockCountDelta == 1, "colony-token-locking-has-previous-active-locks");
 
     userLocks[_token][_user].lockCount = _lockId; // Basically just a ++
