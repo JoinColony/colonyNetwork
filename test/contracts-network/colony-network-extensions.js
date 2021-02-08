@@ -309,6 +309,9 @@ contract("Colony Network Extensions", (accounts) => {
       const lockCountPost = await tokenLocking.getTotalLockCount(token.address);
       expect(lockCountPost.sub(lockCountPre)).to.eq.BN(1);
 
+      // Check that you can't unlock a lock you haven't set
+      await checkErrorRevert(extension.unlockTokenForUser(ROOT, lockCountPost.addn(1)), "colony-bad-lock-id");
+
       // Check that you can't unlock too far ahead
       await extension.lockToken();
       await checkErrorRevert(extension.unlockTokenForUser(ROOT, lockCountPost.addn(1)), "colony-token-locking-has-previous-active-locks");
