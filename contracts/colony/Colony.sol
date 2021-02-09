@@ -489,30 +489,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     ITokenLocking(tokenLockingAddress).deobligateStake(_user, _amount, token);
   }
 
-  function transferStake(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    address _obligator,
-    address _user,
-    uint256 _domainId,
-    uint256 _amount,
-    address _beneficiary
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
-    obligations[_user][_obligator][_domainId] = sub(obligations[_user][_obligator][_domainId], _amount);
-
-    ITokenLocking(tokenLockingAddress).transferStake(_user, _amount, token, _beneficiary);
-  }
-
-  function burnTokens(address _token, uint256 _amount) public stoppable auth {
-    // Check the root funding pot has enought
-    require(fundingPots[1].balance[_token] >= _amount, "colony-not-enough-tokens");
-    ERC20Extended(_token).burn(_amount);
-    fundingPots[1].balance[_token] -= _amount;
-
-    emit TokensBurned(msg.sender, _token, _amount);
-  }
-
   function getApproval(address _user, address _obligator, uint256 _domainId) public view returns (uint256) {
     return approvals[_user][_obligator][_domainId];
   }
