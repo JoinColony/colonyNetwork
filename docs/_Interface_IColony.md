@@ -1701,6 +1701,13 @@ Uninstall an extension from a colony. Secured function to authorised members.
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 
 
+### `unlockToken`
+
+unlock the native colony token, if possible
+
+
+
+
 ### `unlockTokenForUser`
 
 Unlock the colony's token for a user. Can only be called by a network-managed extension.

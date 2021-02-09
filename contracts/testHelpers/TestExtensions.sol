@@ -76,7 +76,7 @@ contract TestVotingReputation is TestExtension {
 }
 
 contract TestVotingToken is TestExtension {
-  function identifier() public pure override returns (bytes32) { return keccak256("VotingToken"); }
+  function identifier() public pure override returns (bytes32) { return keccak256("TestVotingToken"); }
   function version() public pure override returns (uint256) { return 1; }
   function lockToken() public returns (uint256) {
     return colony.lockToken();
@@ -87,7 +87,7 @@ contract TestVotingToken is TestExtension {
 }
 
 contract TestVotingHybrid is TestExtension {
-  function identifier() public pure override returns (bytes32) { return keccak256("VotingHybrid"); }
+  function identifier() public pure override returns (bytes32) { return keccak256("TestVotingHybrid"); }
   function version() public pure override returns (uint256) { return 1; }
   function executeCall(address target, bytes memory action) public {
     bool success;

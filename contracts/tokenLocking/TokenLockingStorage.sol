@@ -43,4 +43,7 @@ contract TokenLockingStorage is TokenLockingDataTypes, DSAuth {
   mapping (address => mapping (address => mapping (address => uint256))) approvals;
   mapping (address => mapping (address => mapping (address => uint256))) obligations;
   mapping (address => mapping (address => uint256)) totalObligations;
+
+  // Keep track of which colony is placing which lock ([token][lockId] => colony)
+  mapping (address => mapping (uint256 => address)) lockers;
 }
