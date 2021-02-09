@@ -89,14 +89,16 @@ contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   mapping (address => uint256) pendingMiningRewards; // Storage slot 34
 
   uint256 totalMinerRewardPerCycle; // Storage slot 35
+  uint256 DEPRECATED_annualMetaColonyStipend; // Storage slot 36
+  uint256 DEPRECATED_lastMetaColonyStipendIssued; // Storage slot 37
 
   // [_extensionId][version] => resolver
-  mapping(bytes32 => mapping(uint256 => address)) resolvers; // Storage slot 36
+  mapping(bytes32 => mapping(uint256 => address)) resolvers; // Storage slot 38
   // [_extensionId][colony] => address
-  mapping(bytes32 => mapping(address => address payable)) installations; // Storage slot 37
+  mapping(bytes32 => mapping(address => address payable)) installations; // Storage slot 39
 
   // Used for whitelisting payout tokens
-  mapping (address => bool) payoutWhitelist; // Storage slot 38
+  mapping (address => bool) payoutWhitelist; // Storage slot 40
 
   modifier calledByColony() {
     require(_isColony[msg.sender], "colony-caller-must-be-colony");

@@ -87,6 +87,12 @@ contract("Token Supplier", (accounts) => {
       await checkErrorRevert(tokenSupplier.initialise(SUPPLY_CEILING, WAD, { from: USER1 }), "token-supplier-caller-not-root");
     });
 
+    it("cannot initialise with ceiling smaller than totalSupply", async () => {
+      token.mint(SUPPLY_CEILING.addn(1));
+
+      await checkErrorRevert(tokenSupplier.initialise(SUPPLY_CEILING, WAD), "token-supplier-ceiling-too-low");
+    });
+
     it("cannot issues tokens if not initialised", async () => {
       await checkErrorRevert(tokenSupplier.issueTokens(), "token-supplier-not-initialised");
     });
@@ -100,6 +106,14 @@ contract("Token Supplier", (accounts) => {
       expect(tokenSupplyCeiling).to.eq.BN(SUPPLY_CEILING.muln(2));
 
       await checkErrorRevert(tokenSupplier.setTokenSupplyCeiling(SUPPLY_CEILING, { from: USER1 }), "token-supplier-caller-not-root");
+    });
+
+    it("cannot update the tokenSupplyCeiling if less than totalSupply", async () => {
+      await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
+
+      token.mint(SUPPLY_CEILING.muln(3));
+
+      await checkErrorRevert(tokenSupplier.setTokenSupplyCeiling(SUPPLY_CEILING.muln(2)), "token-supplier-ceiling-too-low");
     });
 
     it("can update the tokenIssuanceRate if root", async () => {

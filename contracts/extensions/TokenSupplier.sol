@@ -85,6 +85,7 @@ contract TokenSupplier is ColonyExtension {
   function initialise(uint256 _tokenSupplyCeiling, uint256 _tokenIssuanceRate) public {
     require(isRoot(), "token-supplier-caller-not-root");
     require(lastIssue == 0, "token-supplier-already-initialised");
+    require(_tokenSupplyCeiling > ERC20Extended(token).totalSupply(), "token-supplier-ceiling-too-low");
 
     tokenSupplyCeiling = _tokenSupplyCeiling;
     tokenIssuanceRate = _tokenIssuanceRate;
@@ -98,6 +99,7 @@ contract TokenSupplier is ColonyExtension {
   /// @param _tokenSupplyCeiling Total amount of tokens to issue
   function setTokenSupplyCeiling(uint256 _tokenSupplyCeiling) public initialised {
     require(isRoot(), "token-supplier-caller-not-root");
+    require(_tokenSupplyCeiling > ERC20Extended(token).totalSupply(), "token-supplier-ceiling-too-low");
 
     tokenSupplyCeiling = _tokenSupplyCeiling;
 
