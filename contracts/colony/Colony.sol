@@ -459,6 +459,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     sig = bytes4(keccak256("unlockToken()"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("emitDomainReputationReward(uint256,address,int256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("emitSkillReputationReward(uint256,address,int256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
