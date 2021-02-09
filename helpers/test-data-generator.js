@@ -364,15 +364,17 @@ export async function setupColonyNetwork() {
   return colonyNetwork;
 }
 
-export async function setupRandomToken() {
+export async function setupRandomToken(lockedToken) {
   const tokenArgs = getTokenArgs();
   const token = await Token.new(...tokenArgs);
-  await token.unlock();
+  if (!lockedToken) {
+    await token.unlock();
+  }
   return token;
 }
 
-export async function setupRandomColony(colonyNetwork) {
-  const token = await setupRandomToken();
+export async function setupRandomColony(colonyNetwork, lockedToken = false) {
+  const token = await setupRandomToken(lockedToken);
 
   const colony = await setupColony(colonyNetwork, token.address);
 

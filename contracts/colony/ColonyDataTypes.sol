@@ -266,6 +266,10 @@ interface ColonyDataTypes {
   /// @param token the amount of the token being burned
   event TokensBurned(address agent, address token, uint256 amount);
 
+  /// @notice Event emitted when the colony unlocks its native token through the
+  /// provided function
+  event TokenUnlocked();
+
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
     bytes32 reputationState;

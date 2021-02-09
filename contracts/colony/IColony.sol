@@ -923,4 +923,7 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param token The address of the token to burn
   /// @param amount The amount of tokens to burn
   function burnTokens(address token, uint256 amount) external;
+
+  /// @notice unlock the native colony token, if possible
+  function unlockToken() external;
 }
