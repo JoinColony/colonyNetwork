@@ -82,6 +82,21 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit Annotation(msg.sender, _txHash, _metadata);
   }
 
+  function emitDomainReputationReward(uint256 _domainId, address _user, int256 _amount)
+  public stoppable auth
+  {
+    require(_amount > 0, "colony-reward-must-be-positive");
+    require(domainExists(_domainId), "colony-domain-does-not-exist");
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
+  }
+
+  function emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount)
+  public stoppable auth validGlobalSkill(_skillId)
+  {
+    require(_amount > 0, "colony-reward-must-be-positive");
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
+  }
+
   function emitDomainReputationPenalty(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -444,6 +459,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     sig = bytes4(keccak256("unlockToken()"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("emitDomainReputationReward(uint256,address,int256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("emitSkillReputationReward(uint256,address,int256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
@@ -482,15 +502,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     obligations[_user][_obligator][_domainId] = sub(obligations[_user][_obligator][_domainId], _amount);
 
     ITokenLocking(tokenLockingAddress).transferStake(_user, _amount, token, _beneficiary);
-  }
-
-  function burnTokens(address _token, uint256 _amount) public stoppable auth {
-    // Check the root funding pot has enought
-    require(fundingPots[1].balance[_token] >= _amount, "colony-not-enough-tokens");
-    ERC20Extended(_token).burn(_amount);
-    fundingPots[1].balance[_token] -= _amount;
-
-    emit TokensBurned(msg.sender, _token, _amount);
   }
 
   function getApproval(address _user, address _obligator, uint256 _domainId) public view returns (uint256) {

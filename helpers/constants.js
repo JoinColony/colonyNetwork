@@ -5,6 +5,7 @@ import shortid from "shortid";
 const UINT256_MAX = new BN(0).notn(256);
 const UINT128_MAX = new BN(0).notn(128);
 const INT256_MAX = new BN(0).notn(255);
+const INT256_MIN = new BN(2).pow(new BN(255)).mul(new BN(-1));
 const INT128_MAX = new BN(2).pow(new BN(127)).sub(new BN(1));
 const INT128_MIN = new BN(2).pow(new BN(127)).mul(new BN(-1));
 
@@ -69,6 +70,7 @@ const GLOBAL_SKILL_ID = new BN("3"); // Not a root global skill ID or anything, 
 
 module.exports = {
   UINT256_MAX,
+  INT256_MIN,
   INT256_MAX,
   INT128_MAX,
   INT128_MIN,

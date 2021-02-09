@@ -4,6 +4,10 @@ import bnChai from "bn-chai";
 
 import {
   UINT256_MAX,
+  INT256_MIN,
+  INT256_MAX,
+  INT128_MAX,
+  INT128_MIN,
   WAD,
   ROOT_ROLE,
   ARBITRATION_ROLE,
@@ -26,6 +30,7 @@ chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 contract("ColonyPermissions", (accounts) => {
   const FOUNDER = accounts[0];
@@ -296,6 +301,20 @@ contract("ColonyPermissions", (accounts) => {
       await colony.setAdministrationRole(1, 1, USER2, 3, true, { from: USER1 });
     });
 
+    it("should allow users with root permission to emit positive reputation rewards", async () => {
+      // Domain rewards
+      await colony.emitDomainReputationReward(3, USER2, 100, { from: FOUNDER });
+      await checkErrorRevert(colony.emitDomainReputationReward(3, USER2, -100, { from: FOUNDER }), "colony-reward-must-be-positive");
+      await checkErrorRevert(colony.emitDomainReputationReward(0, USER2, 100, { from: FOUNDER }), "colony-domain-does-not-exist");
+      await checkErrorRevert(colony.emitDomainReputationReward(3, USER2, 100, { from: USER1 }), "ds-auth-unauthorized");
+
+      // Skill rewards
+      await colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, 100, { from: FOUNDER });
+      await checkErrorRevert(colony.emitSkillReputationReward(0, USER2, 100, { from: FOUNDER }), "colony-not-global-skill");
+      await checkErrorRevert(colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, -100, { from: FOUNDER }), "colony-reward-must-be-positive");
+      await checkErrorRevert(colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "ds-auth-unauthorized");
+    });
+
     it("should allow users with arbitration permission to emit negative reputation penalties", async () => {
       await colony.setArbitrationRole(1, UINT256_MAX, USER1, 1, true);
       await colony.setArbitrationRole(1, 0, USER2, 2, true);
@@ -306,8 +325,24 @@ contract("ColonyPermissions", (accounts) => {
 
       // Skill penalties (root domain only)
       await colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, -100, { from: USER1 });
+      await checkErrorRevert(colony.emitSkillReputationPenalty(0, USER2, 100, { from: USER1 }), "colony-not-global-skill");
       await checkErrorRevert(colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");
       await checkErrorRevert(colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, -100, { from: USER2 }), "ds-auth-unauthorized");
+    });
+
+    it("reputation update log should respect caps on emitted rewards and penalties", async () => {
+      await colony.emitDomainReputationReward(3, USER2, INT256_MAX, { from: FOUNDER });
+      await colony.emitDomainReputationPenalty(1, 1, 3, USER2, INT256_MIN, { from: FOUNDER });
+
+      const repCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycle = await IReputationMiningCycle.at(repCycleAddress);
+      const nLogs = await reputationMiningCycle.getReputationUpdateLogLength();
+
+      const lastLog = await reputationMiningCycle.getReputationUpdateLogEntry(nLogs.subn(1));
+      const penultimateLog = await reputationMiningCycle.getReputationUpdateLogEntry(nLogs.subn(2));
+
+      expect(penultimateLog.amount).to.eq.BN(INT128_MAX);
+      expect(lastLog.amount).to.eq.BN(INT128_MIN);
     });
 
     it("should allow permissions to propagate to subdomains", async () => {

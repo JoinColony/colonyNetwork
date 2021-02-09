@@ -593,4 +593,14 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       fee = _payout/feeInverse + 1;
     }
   }
+
+  function burnTokens(address _token, uint256 _amount) public stoppable auth {
+    // Check the root funding pot has enought
+    require(fundingPots[1].balance[_token] >= _amount, "colony-not-enough-tokens");
+    ERC20Extended(_token).burn(_amount);
+    fundingPots[1].balance[_token] -= _amount;
+
+    emit TokensBurned(msg.sender, _token, _amount);
+  }
+
 }

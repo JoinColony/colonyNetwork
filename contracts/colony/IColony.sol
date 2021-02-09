@@ -168,6 +168,18 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @return roles bytes32 representation of the authorized roles
   function getCapabilityRoles(bytes4 _sig) external view returns (bytes32 roles);
 
+  /// @notice Emit a positive domain reputation update. Available only to Root role holders
+  /// @param _domainId The domain where the user will gain reputation
+  /// @param _user The user who will gain reputation
+  /// @param _amount The (positive) amount of reputation to gain
+  function emitDomainReputationReward(uint256 _domainId, address _user, int256 _amount) external;
+
+  /// @notice Emit a positive skill reputation update. Available only to Root role holders
+  /// @param _skillId The skill where the user will gain reputation
+  /// @param _user The user who will gain reputation
+  /// @param _amount The (positive) amount of reputation to gain
+  function emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount) external;
+
   /// @notice Emit a negative domain reputation update. Available only to Arbitration role holders
   /// @param _permissionDomainId The domainId in which I hold the Arbitration role
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`

@@ -97,6 +97,8 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "deprecateExtension(bytes32,bool)");
     addRoleCapability(ROOT_ROLE, "uninstallExtension(bytes32)");
     addRoleCapability(ROOT_ROLE, "makeArbitraryTransaction(address,bytes)");
+    addRoleCapability(ROOT_ROLE, "emitDomainReputationReward(uint256,address,int256)");
+    addRoleCapability(ROOT_ROLE, "emitSkillReputationReward(uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "transferStake(uint256,uint256,address,address,uint256,uint256,address)");
     addRoleCapability(ARBITRATION_ROLE, "emitDomainReputationPenalty(uint256,uint256,uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "emitSkillReputationPenalty(uint256,address,int256)");
