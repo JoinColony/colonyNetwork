@@ -36,6 +36,7 @@ contract("Colony", (accounts) => {
   let colonyNetwork;
 
   const USER0 = accounts[0];
+  const USER1 = USER1;
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
@@ -97,7 +98,7 @@ contract("Colony", (accounts) => {
       await otherToken.unlock();
 
       await expectEvent(colony.mintTokens(100), "TokensMinted", [accounts[0], colony.address, 100]);
-      await expectEvent(colony.mintTokensFor(accounts[1], 100), "TokensMinted", [accounts[0], accounts[1], 100]);
+      await expectEvent(colony.mintTokensFor(USER1, 100), "TokensMinted", [accounts[0], USER1, 100]);
     });
 
     it("should fail if a non-admin tries to mint tokens", async () => {
@@ -146,7 +147,7 @@ contract("Colony", (accounts) => {
     it("should not be able to make arbitrary transactions if not root", async () => {
       const action = await encodeTxData(token, "mint", [WAD]);
 
-      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action, { from: accounts[1] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action, { from: USER1 }), "ds-auth-unauthorized");
     });
 
     it("should not be able to make arbitrary transactions to a user address", async () => {
@@ -223,7 +224,7 @@ contract("Colony", (accounts) => {
       let locked = await token.locked();
       expect(locked).to.be.equal(true);
 
-      await checkErrorRevert(colony.unlockToken({ from: accounts[1] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.unlockToken({ from: USER1 }), "ds-auth-unauthorized");
 
       await expectEvent(colony.unlockToken({ from: accounts[0] }), "TokenUnlocked", []);
       locked = await token.locked();
@@ -332,7 +333,7 @@ contract("Colony", (accounts) => {
       await colony.mintTokens(WAD.muln(14));
       await checkErrorRevert(
         colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS, {
-          from: accounts[1],
+          from: USER1,
         }),
         "ds-auth-unauthorized"
       );
@@ -359,7 +360,7 @@ contract("Colony", (accounts) => {
 
     it("should not allow anyone else but a root user to set it", async () => {
       await colony.setRewardInverse(100);
-      await checkErrorRevert(colony.setRewardInverse(234, { from: accounts[1] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setRewardInverse(234, { from: USER1 }), "ds-auth-unauthorized");
       const defaultRewardInverse = await colony.getRewardInverse();
       expect(defaultRewardInverse).to.eq.BN(100);
     });
@@ -391,7 +392,7 @@ contract("Colony", (accounts) => {
 
     it("should not allow anyone else but a root user to burn", async () => {
       const amount = await colony.getFundingPotBalance(1, token.address);
-      await checkErrorRevert(colony.burnTokens(token.address, amount, { from: accounts[1] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.burnTokens(token.address, amount, { from: USER1 }), "ds-auth-unauthorized");
     });
 
     it("cannot burn more tokens than it has", async () => {

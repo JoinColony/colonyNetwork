@@ -374,6 +374,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Because it's called after setResolver, it'll do the new finishUpgrade, which will be populated with what we know
     // we need to do once we know what's in it!
     this.finishUpgrade();
+
     emit ColonyUpgraded(msg.sender, currentVersion, _newVersion);
   }
 
@@ -488,6 +489,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(fundingPots[1].balance[_token] >= _amount, "colony-not-enough-tokens");
     ERC20Extended(_token).burn(_amount);
     fundingPots[1].balance[_token] -= _amount;
+
     emit TokensBurned(msg.sender, _token, _amount);
   }
 
@@ -501,6 +503,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function unlockToken() public stoppable auth {
     ERC20Extended(token).unlock();
+
     emit TokenUnlocked();
   }
 
