@@ -36,7 +36,7 @@ contract("Colony", (accounts) => {
   let colonyNetwork;
 
   const USER0 = accounts[0];
-  const USER1 = USER1;
+  const USER1 = accounts[1];
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
