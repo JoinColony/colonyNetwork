@@ -125,19 +125,19 @@ contract("Token Supplier", (accounts) => {
       // Cannot set if not a network-managed extension
       const unofficialVotingHybrid = await VotingHybrid.new(colony.address);
       await colony.setRootRole(unofficialVotingHybrid.address, true);
-      await checkErrorRevert(unofficialVotingHybrid.executeCall(tokenSupplier.address, action), "transaction-failed");
+      await checkErrorRevert(unofficialVotingHybrid.executeCall(tokenSupplier.address, action), "token-supplier-not-managed-extension");
 
       // Cannot set if the caller does not implement `identifier()`
       const requireExecuteCall = await RequireExecuteCall.new();
       await colony.setRootRole(requireExecuteCall.address, true);
-      await checkErrorRevert(requireExecuteCall.executeCall(tokenSupplier.address, action), "transaction-failed");
+      await checkErrorRevert(requireExecuteCall.executeCall(tokenSupplier.address, action), "token-supplier-no-identifier");
 
       // Cannot set if not VotingHybrid
       await colony.installExtension(VOTING_REPUTATION, 1);
       const votingReputationAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
       const votingReputation = await VotingHybrid.at(votingReputationAddress);
       await colony.setRootRole(votingReputation.address, true);
-      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action), "transaction-failed");
+      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action), "token-supplier-cannot-set-value");
     });
 
     it("can update the tokenIssuanceRate via a hybrid vote", async () => {
@@ -160,12 +160,12 @@ contract("Token Supplier", (accounts) => {
       // Cannot set if not a network-managed extension
       const unofficialVotingHybrid = await VotingHybrid.new(colony.address);
       await colony.setRootRole(unofficialVotingHybrid.address, true);
-      await checkErrorRevert(unofficialVotingHybrid.executeCall(tokenSupplier.address, action), "transaction-failed");
+      await checkErrorRevert(unofficialVotingHybrid.executeCall(tokenSupplier.address, action), "token-supplier-not-managed-extension");
 
       // Cannot set if the caller does not implement `identifier()`
       const requireExecuteCall = await RequireExecuteCall.new();
       await colony.setRootRole(requireExecuteCall.address, true);
-      await checkErrorRevert(requireExecuteCall.executeCall(tokenSupplier.address, action), "transaction-failed");
+      await checkErrorRevert(requireExecuteCall.executeCall(tokenSupplier.address, action), "token-supplier-no-identifier");
     });
 
     it("can update the tokenIssuanceRate via a reputation vote, by <=10% once every 4 weeks", async () => {
@@ -182,12 +182,12 @@ contract("Token Supplier", (accounts) => {
       const action2 = await encodeTxData(tokenSupplier, "setTokenIssuanceRate", [WAD.add(WAD.divn(9))]);
 
       // Cannot change more than once in 4 weeks
-      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action1), "transaction-failed");
+      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action1), "token-supplier-cannot-set-value");
 
       await forwardTime(SECONDS_PER_DAY * 28, this);
 
       // Cannot change more than 10%
-      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action2), "transaction-failed");
+      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action2), "token-supplier-cannot-set-value");
 
       await votingReputation.executeCall(tokenSupplier.address, action1);
 
@@ -195,7 +195,7 @@ contract("Token Supplier", (accounts) => {
       expect(tokenIssuanceRate).to.eq.BN(WAD.add(WAD.divn(10)));
 
       // Cannot change more than once in 4 weeks
-      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action2), "transaction-failed");
+      await checkErrorRevert(votingReputation.executeCall(tokenSupplier.address, action2), "token-supplier-cannot-set-value");
 
       await forwardTime(SECONDS_PER_DAY * 28, this);
 

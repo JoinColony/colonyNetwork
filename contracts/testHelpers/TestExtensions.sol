@@ -19,6 +19,7 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "../extensions/ColonyExtension.sol";
+import "./RequireExecuteCall.sol";
 
 
 abstract contract TestExtension is ColonyExtension {
@@ -65,18 +66,13 @@ contract TestExtension3 is TestExtension {
   function version() public pure override returns (uint256) { return 3; }
 }
 
-contract TestVotingReputation is TestExtension {
+contract TestVotingReputation is TestExtension, RequireExecuteCall {
   function identifier() public pure override returns (bytes32) { return keccak256("VotingReputation"); }
   function version() public pure override returns (uint256) { return 1; }
-  function executeCall(address target, bytes memory action) public {
-    bool success;
-    assembly { success := call(gas(), target, 0, add(action, 0x20), mload(action), 0, 0) }
-    require(success, "transaction-failed");
-  }
 }
 
 contract TestVotingToken is TestExtension {
-  function identifier() public pure override returns (bytes32) { return keccak256("TestVotingToken"); }
+  function identifier() public pure override returns (bytes32) { return keccak256("VotingToken"); }
   function version() public pure override returns (uint256) { return 1; }
   function lockToken() public returns (uint256) {
     return colony.lockToken();
@@ -86,12 +82,9 @@ contract TestVotingToken is TestExtension {
   }
 }
 
-contract TestVotingHybrid is TestExtension {
-  function identifier() public pure override returns (bytes32) { return keccak256("TestVotingHybrid"); }
+contract TestVotingHybrid is TestExtension, RequireExecuteCall {
+  function identifier() public pure override returns (bytes32) { return keccak256("VotingHybrid"); }
   function version() public pure override returns (uint256) { return 1; }
-  function executeCall(address target, bytes memory action) public {
-    bool success;
-    assembly { success := call(gas(), target, 0, add(action, 0x20), mload(action), 0, 0) }
-    require(success, "transaction-failed");
-  }
 }
+
+

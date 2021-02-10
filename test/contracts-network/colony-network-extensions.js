@@ -43,7 +43,7 @@ contract("Colony Network Extensions", (accounts) => {
   const USER = accounts[2];
 
   const TEST_EXTENSION = soliditySha3("TestExtension");
-  const TEST_VOTING_TOKEN = soliditySha3("TestVotingToken");
+  const TEST_VOTING_TOKEN = soliditySha3("VotingToken");
 
   before(async () => {
     testExtension0Resolver = await Resolver.new();
@@ -367,7 +367,7 @@ contract("Colony Network Extensions", (accounts) => {
       const otherColonyExecuteCall = await RequireExecuteCall.at(otherColony.address);
 
       const action = await encodeTxData(tokenLocking, "unlockTokenForUser", [token.address, USER, lockId]);
-      await checkErrorRevert(otherColonyExecuteCall.executeCall(tokenLocking.address, action), "transaction-failed");
+      await checkErrorRevert(otherColonyExecuteCall.executeCall(tokenLocking.address, action), "colony-token-locking-not-locker");
     });
   });
 });
