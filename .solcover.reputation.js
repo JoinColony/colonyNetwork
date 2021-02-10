@@ -19,7 +19,8 @@ module.exports = {
       'testHelpers/ContractEditing.sol', // only used in setting up colony-network-recovery.js tests, never in production
       'testHelpers/NoLimitSubdomains.sol',
       'testHelpers/TaskSkillEditing.sol',
-      'testHelpers/PreviousVersion.sol'
+      'testHelpers/PreviousVersion.sol',
+      'testHelpers/RequireExecuteCall.sol',
     ],
     providerOptions: {
       port: 8555,
