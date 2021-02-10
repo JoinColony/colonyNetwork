@@ -14,6 +14,13 @@ const ChainId = artifacts.require("ChainId");
 
 chai.use(bnChai(web3.utils.BN));
 
+const MAINNET = 1;
+const FORKED_MAINNET = 2656691;
+const GOERLI = 5;
+const FORKED_GOERLI = 2656695;
+const XDAI = 100;
+const FORKED_XDAI = 265669100;
+
 contract("Contract Storage", (accounts) => {
   const MINER1 = accounts[5];
 
@@ -42,14 +49,13 @@ contract("Contract Storage", (accounts) => {
   describe("Should behave differently based on the network deployed to", () => {
     it("should be able to get the domain name", async () => {
       await metaColony.registerColonyLabel("meta", "", { from: accounts[0] });
-      console.log(chainId);
-      if (chainId === 1 || chainId === 2656691) {
+      if (chainId === MAINNET || chainId === FORKED_MAINNET) {
         const name = await colonyNetwork.lookupRegisteredENSDomain(metaColony.address);
         expect(name).to.equal("meta.colony.joincolony.eth");
-      } else if (chainId === 5 || chainId === 2656695) {
+      } else if (chainId === GOERLI || chainId === FORKED_GOERLI) {
         const name = await colonyNetwork.lookupRegisteredENSDomain(metaColony.address);
         expect(name).to.equal("meta.colony.joincolony.test");
-      } else if (chainId === 100 || chainId === 265669100) {
+      } else if (chainId === XDAI || chainId === FORKED_XDAI) {
         const name = await colonyNetwork.lookupRegisteredENSDomain(metaColony.address);
         expect(name).to.equal("meta.colony.joincolony.colonyxdai");
       } else {
@@ -79,7 +85,7 @@ contract("Contract Storage", (accounts) => {
       const networkBalanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
       await repCycle.confirmNewHash(0);
 
-      if (chainId === 100 || chainId === 265669100) {
+      if (chainId === XDAI || chainId === FORKED_XDAI) {
         // tokens should be paid from the network balance
         const networkBalanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
         expect(networkBalanceBefore.sub(networkBalanceAfter)).to.eq.BN(100);
