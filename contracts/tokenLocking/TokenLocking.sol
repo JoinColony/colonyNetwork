@@ -67,7 +67,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     totalLockCount[_token] += 1;
     lockers[_token][totalLockCount[_token]] = msg.sender;
 
-    emit TokenLocked(_token, totalLockCount[_token]);
+    emit TokenLocked(_token, msg.sender, totalLockCount[_token]);
 
     return totalLockCount[_token];
   }

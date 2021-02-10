@@ -266,11 +266,16 @@ export async function expectEvent(tx, nameOrSig, args) {
   if (nameOrSig.match(re)) {
     // i.e. if the passed nameOrSig has () in it, we assume it's a signature
     const { rawLogs } = await tx.receipt;
-    const topic = web3.utils.soliditySha3(nameOrSig);
-    const types = nameOrSig.match(re)[1].split(",");
+    const canonicalSig = nameOrSig.replace(/ indexed/g, "");
+    const topic = web3.utils.soliditySha3(canonicalSig);
     event = rawLogs.find((e) => e.topics[0] === topic);
     expect(event).to.exist;
-    event.args = web3.eth.abi.decodeParameters(types, event.data);
+
+    // Set up an abi so we decode correctly, including indexed topics
+    const abi = [`event ${nameOrSig}`];
+    const iface = new ethers.utils.Interface(abi);
+
+    event.args = iface.parseLog(event).args;
   } else {
     const { logs } = await tx;
     event = logs.find((e) => e.event === nameOrSig);
