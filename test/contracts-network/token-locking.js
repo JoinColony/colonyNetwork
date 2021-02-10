@@ -3,11 +3,13 @@ import path from "path";
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 
 import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import { getTokenArgs, checkErrorRevert, makeReputationKey, advanceMiningCycleNoContest, expectEvent } from "../../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupColony, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import { UINT256_MAX, DEFAULT_STAKE } from "../../helpers/constants";
+import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
@@ -16,10 +18,13 @@ chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const TokenAuthority = artifacts.require("TokenAuthority");
 const ToggleableToken = artifacts.require("ToggleableToken");
+const TestVotingToken = artifacts.require("TestVotingToken");
+const Resolver = artifacts.require("Resolver");
 
 const contractLoader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
@@ -276,102 +281,6 @@ contract("Token Locking", (addresses) => {
       expect(balance).to.eq.BN(usersTokens);
     });
 
-    it("should be able to transfer tokens to user's pendingBalance, when recipient is locked and we cannot token.transfer()", async () => {
-      ({ colony, token } = await setupRandomColony(colonyNetwork, true));
-      await colony.mintTokens(Math.ceil(((usersTokens + otherUserTokens) * 100) / 99));
-      await colony.claimColonyFunds(token.address);
-      await colony.bootstrapColony([userAddress], [usersTokens]);
-
-      await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
-      const client = new ReputationMinerTestWrapper({
-        loader: contractLoader,
-        minerAddress: addresses[4],
-        realProviderPort: REAL_PROVIDER_PORT,
-        useJsTree: true,
-      });
-      await client.initialise(colonyNetwork.address);
-
-      // Enable the client to start mining.
-      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-      // Load the reputation state and run another cycle.
-      await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
-
-      const result = await colony.getDomain(1);
-      const rootDomainSkill = result.skillId;
-      const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
-      const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
-      colonyWideReputationProof = [key, value, branchMask, siblings];
-
-      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
-      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress });
-
-      const tokenAuthority = await TokenAuthority.new(token.address, colony.address, []);
-      await token.setAuthority(tokenAuthority.address);
-
-      await fundColonyWithTokens(colony, token);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, token.address);
-      await colony.startNextRewardPayout(token.address, ...colonyWideReputationProof);
-      await tokenLocking.transfer(token.address, usersTokens, otherUserAddress, true, { from: userAddress });
-
-      const balance = await token.balanceOf(otherUserAddress);
-      expect(balance).to.eq.BN(0);
-
-      const info = await tokenLocking.getUserLock(token.address, otherUserAddress);
-      expect(info.pendingBalance).to.eq.BN(usersTokens);
-    });
-
-    it("should be able to transfer tokens to user's pendingBalance, when recipient is locked and token.transfer() returns false", async () => {
-      token = await ToggleableToken.new(100);
-
-      colony = await setupColony(colonyNetwork, token.address);
-
-      await colony.mintTokens(Math.ceil(((usersTokens + otherUserTokens) * 100) / 99));
-      await colony.claimColonyFunds(token.address);
-      await colony.bootstrapColony([userAddress], [usersTokens]);
-
-      await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
-      const client = new ReputationMinerTestWrapper({
-        loader: contractLoader,
-        minerAddress: addresses[4],
-        realProviderPort: REAL_PROVIDER_PORT,
-        useJsTree: true,
-      });
-      await client.initialise(colonyNetwork.address);
-
-      // Enable the client to start mining.
-      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-      // Load the reputation state and run another cycle.
-      await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
-
-      const result = await colony.getDomain(1);
-      const rootDomainSkill = result.skillId;
-      const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
-      const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
-      colonyWideReputationProof = [key, value, branchMask, siblings];
-
-      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
-      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress });
-
-      const tokenAuthority = await TokenAuthority.new(token.address, colony.address, []);
-      await token.setAuthority(tokenAuthority.address);
-
-      await fundColonyWithTokens(colony, token);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, token.address);
-      await colony.startNextRewardPayout(token.address, ...colonyWideReputationProof);
-
-      await token.toggleLock();
-
-      await tokenLocking.transfer(token.address, usersTokens, otherUserAddress, true, { from: userAddress });
-
-      const balance = await token.balanceOf(otherUserAddress);
-      expect(balance).to.eq.BN(0);
-
-      const info = await tokenLocking.getUserLock(token.address, otherUserAddress);
-      expect(info.pendingBalance).to.eq.BN(usersTokens);
-    });
-
     it("should not be able to transfer tokens while they are locked", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress });
@@ -398,6 +307,80 @@ contract("Token Locking", (addresses) => {
 
       const balance = await token.balanceOf(otherUserAddress);
       expect(balance).to.eq.BN(usersTokens);
+    });
+  });
+
+  describe("when transferring tokens that are locked", async () => {
+    let TEST_VOTING_TOKEN;
+
+    before(async () => {
+      // Make an extension available on the network that is able to lock tokens.
+      const testVotingTokenResolver = await Resolver.new();
+      const testVotingToken = await TestVotingToken.new();
+      await setupEtherRouter("TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
+      TEST_VOTING_TOKEN = soliditySha3("VotingToken");
+      const metaColonyAddress = await colonyNetwork.getMetaColony();
+      const metaColony = await IMetaColony.at(metaColonyAddress);
+
+      await metaColony.addExtensionToNetwork(TEST_VOTING_TOKEN, testVotingTokenResolver.address);
+    });
+
+    it("should be able to transfer tokens to user's pendingBalance, when recipient is locked and token.transfer() reverts", async () => {
+      ({ colony, token } = await setupRandomColony(colonyNetwork, true));
+      await colony.mintTokens(Math.ceil(((usersTokens + otherUserTokens) * 100) / 99));
+      await colony.claimColonyFunds(token.address);
+      await colony.bootstrapColony([userAddress], [usersTokens]);
+      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress });
+
+      await colony.installExtension(TEST_VOTING_TOKEN, 1);
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
+      const votingToken = await TestVotingToken.at(extensionAddress);
+
+      await votingToken.lockToken();
+
+      const tokenAuthority = await TokenAuthority.new(token.address, colony.address, []);
+      await token.setAuthority(tokenAuthority.address);
+
+      await tokenLocking.transfer(token.address, usersTokens, otherUserAddress, true, { from: userAddress });
+
+      const balance = await token.balanceOf(otherUserAddress);
+      expect(balance).to.eq.BN(0);
+
+      const info = await tokenLocking.getUserLock(token.address, otherUserAddress);
+      expect(info.pendingBalance).to.eq.BN(usersTokens);
+    });
+
+    it("should be able to transfer tokens to user's pendingBalance, when recipient is locked and token.transfer() returns false", async () => {
+      token = await ToggleableToken.new(100);
+
+      colony = await setupColony(colonyNetwork, token.address);
+
+      await colony.mintTokens(Math.ceil(((usersTokens + otherUserTokens) * 100) / 99));
+      await colony.claimColonyFunds(token.address);
+      await colony.bootstrapColony([userAddress], [usersTokens]);
+
+      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress });
+
+      await colony.installExtension(TEST_VOTING_TOKEN, 1);
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
+      const votingToken = await TestVotingToken.at(extensionAddress);
+
+      await votingToken.lockToken();
+
+      const tokenAuthority = await TokenAuthority.new(token.address, colony.address, []);
+      await token.setAuthority(tokenAuthority.address);
+
+      await token.toggleLock();
+
+      await tokenLocking.transfer(token.address, usersTokens, otherUserAddress, true, { from: userAddress });
+
+      const balance = await token.balanceOf(otherUserAddress);
+      expect(balance).to.eq.BN(0);
+
+      const info = await tokenLocking.getUserLock(token.address, otherUserAddress);
+      expect(info.pendingBalance).to.eq.BN(usersTokens);
     });
   });
 
