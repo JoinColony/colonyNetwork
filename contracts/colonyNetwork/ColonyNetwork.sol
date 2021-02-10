@@ -20,7 +20,7 @@ pragma experimental "ABIEncoderV2";
 
 import "./../common/EtherRouter.sol";
 import "./../common/ERC20Extended.sol";
-import "./../common/GetChainId.sol";
+import "./../common/MultiChain.sol";
 import "./../colony/ColonyAuthority.sol";
 import "./../colony/IColony.sol";
 import "./../colony/IMetaColony.sol";
@@ -28,7 +28,7 @@ import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
 
 
-contract ColonyNetwork is ColonyNetworkStorage, GetChainId {
+contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
   // Meta Colony allowed to manage Global skills
   // All colonies are able to manage their Local (domain associated) skills
   modifier allowedToAddSkill(bool globalSkill) {

@@ -19,12 +19,30 @@ pragma solidity 0.7.3;
 
 
 
-contract GetChainId {
-  function getChainId() internal view returns (uint256) {
+contract MultiChain {
+  function chainId() internal view returns (uint256) {
     uint256 id;
     assembly {
         id := chainid()
     }
     return id;
+  }
+
+  // Prefixes of 265669 indicate a private forked version of the network
+  // used for testing
+
+  function isXdai() internal view returns (bool) {
+    uint256 chainId = chainId();
+    return (chainId == 100 || chainId == 265669100);
+  }
+
+  function isMainnet() internal view returns (bool) {
+    uint256 chainId = chainId();
+    return (chainId == 1 || chainId == 2656691);
+  }
+
+  function isGoerli() internal view returns (bool) {
+    uint256 chainId = chainId();
+    return (chainId == 5 || chainId == 2656695);
   }
 }
