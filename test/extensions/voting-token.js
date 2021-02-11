@@ -126,9 +126,9 @@ contract("Voting Token", (accounts) => {
     await token.approve(tokenLocking.address, user0influence, { from: USER0 });
     await token.approve(tokenLocking.address, user1influence, { from: USER1 });
     await token.approve(tokenLocking.address, user2influence, { from: USER2 });
-    await tokenLocking.deposit(token.address, user0influence, { from: USER0 });
-    await tokenLocking.deposit(token.address, user1influence, { from: USER1 });
-    await tokenLocking.deposit(token.address, user2influence, { from: USER2 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, user0influence, true, { from: USER0 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, user1influence, true, { from: USER1 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, user2influence, true, { from: USER2 });
     await colony.approveStake(voting.address, 1, user0influence, { from: USER0 });
     await colony.approveStake(voting.address, 1, user1influence, { from: USER1 });
     await colony.approveStake(voting.address, 1, user2influence, { from: USER2 });
@@ -599,7 +599,7 @@ contract("Voting Token", (accounts) => {
 
       await token.mint(user3, user3influence);
       await token.approve(tokenLocking.address, user3influence, { from: user3 });
-      await tokenLocking.deposit(token.address, user3influence, { from: user3 });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, user3influence, true, { from: user3 });
       await colony.approveStake(voting.address, 1, user3influence, { from: user3 });
 
       const totalSupply = await token.totalSupply();

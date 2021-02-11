@@ -18,13 +18,15 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../colonyNetwork/IColonyNetwork.sol";
 import "./ColonyExtension.sol";
 import "./VotingReputation.sol";
 import "./VotingToken.sol";
 
 
 contract VotingHybrid is ColonyExtension {
+
+  uint256 constant REPUTATION = 0;
+  uint256 constant TOKEN = 1;
 
   /// @notice Returns the identifier of the extension
   function identifier() public override pure returns (bytes32) {
@@ -43,9 +45,18 @@ contract VotingHybrid is ColonyExtension {
     require(address(colony) == address(0x0), "extension-already-installed");
 
     colony = IColony(_colony);
-    IColonyNetwork colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
-    votingReputationAddress = colonyNetwork.getExtensionInstallation(keccak256("VotingReputation"), _colony);
-    votingTokenAddress = colonyNetwork.getExtensionInstallation(keccak256("VotingToken"), _colony);
+  }
+
+
+  /// @notice Initialise the extension
+  /// @param _votingReputation Address of the VotingReputation extension
+  /// @param _votingToken Address of the VotingToken extension
+  function initialise(address _votingReputation, address _votingToken) public {
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-hybrid-caller-not-root");
+    require(votingReputation == address(0x0) && votingToken == address(0x0), "voting-hybrid-already-initialised");
+
+    votingReputation = _votingReputation;
+    votingToken = _votingToken;
   }
 
   /// @notice Called when upgrading the extension
@@ -63,15 +74,14 @@ contract VotingHybrid is ColonyExtension {
 
   // Storage
 
-  address votingReputationAddress;
-  address votingTokenAddress;
+  address votingReputation;
+  address votingToken;
 
   uint256 motionCount;
   mapping (uint256 => Motion) motions;
 
   struct Motion {
-    bool reputationApproved;
-    bool tokenApproved;
+    bool[2] approvals; // [reputation, token]
     bool finalized;
     address altTarget;
     bytes action;
@@ -95,6 +105,7 @@ contract VotingHybrid is ColonyExtension {
     bytes32[] memory _siblings
   )
     public
+    notDeprecated
   {
     motionCount += 1;
     motions[motionCount].altTarget = _altTarget;
@@ -102,23 +113,38 @@ contract VotingHybrid is ColonyExtension {
 
     bytes memory approvalAction = createApprovalAction(motionCount);
 
-    VotingReputation(votingReputationAddress).createRootMotion(address(this), approvalAction, _key, _value, _branchMask, _siblings);
-    VotingToken(votingTokenAddress).createRootMotion(address(this), approvalAction);
+    VotingReputation(votingReputation).createRootMotion(address(this), approvalAction, _key, _value, _branchMask, _siblings);
+    VotingToken(votingToken).createRootMotion(address(this), approvalAction);
   }
 
   function approveMotion(uint256 _motionId) public {
     Motion storage motion = motions[_motionId];
 
-    if (msg.sender == votingReputationAddress) {
-      motion.reputationApproved = true;
-    } else if (msg.sender == votingTokenAddress) {
-      motion.tokenApproved = true;
+    if (msg.sender == votingReputation) {
+      motion.approvals[REPUTATION] = true;
+    } else if (msg.sender == votingToken) {
+      motion.approvals[TOKEN] = true;
     }
 
-    if (motion.reputationApproved && motion.tokenApproved && !motion.finalized) {
+    if (motion.approvals[REPUTATION] && motion.approvals[TOKEN] && !motion.finalized) {
       motion.finalized = true;
       executeCall(_motionId, motion.action);
     }
+  }
+
+  // View functions
+
+  /// @notice Get the total motion count
+  /// @return The total motion count
+  function getMotionCount() public view returns (uint256) {
+    return motionCount;
+  }
+
+  /// @notice Get the data for a single motion
+  /// @param _motionId The id of the motion
+  /// @return motion The motion struct
+  function getMotion(uint256 _motionId) public view returns (Motion memory motion) {
+    motion = motions[_motionId];
   }
 
   // Internal functions
@@ -141,13 +167,9 @@ contract VotingHybrid is ColonyExtension {
     public
     returns (bytes memory)
   {
+    // 0x[length][sig][args...]
     // See https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
     //  for documentation on how the action `bytes` is encoded
-    // In brief, the first byte32 is the length of the array. Then we have
-    //   4 bytes of function signature, following by an arbitrary number of
-    //   additional byte32 arguments. 32 in hex is 0x20, so every increment
-    //   of 0x20 represents advancing one byte, 4 is the function signature.
-    // So: 0x[length][sig][args...]
 
     bytes memory approvalAction = new bytes(4 + 32); // 36 bytes
     bytes4 functionSignature = bytes4(keccak256("approveMotion(uint256)"));
