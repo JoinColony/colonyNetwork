@@ -11,6 +11,7 @@ coverageEnv
 coverage-contracts
 coverage-merged
 coverage-reputation
+coverage-chainid-*
 coverage.json
 .nyc_output
 coverage-miner

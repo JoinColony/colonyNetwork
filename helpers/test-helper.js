@@ -102,6 +102,22 @@ export function web3GetAccounts() {
   });
 }
 
+export function web3GetChainId() {
+  const packet = {
+    jsonrpc: "2.0",
+    method: "eth_chainId",
+    params: [],
+    id: new Date().getTime(),
+  };
+
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(packet, (err, res) => {
+      if (err !== null) return reject(err);
+      return resolve(parseInt(res.result, 16));
+    });
+  });
+}
+
 export function web3GetRawCall(params) {
   const packet = {
     jsonrpc: "2.0",

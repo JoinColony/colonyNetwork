@@ -19,12 +19,13 @@ pragma solidity 0.7.3;
 
 import "./../ens/ENS.sol";
 import "./ColonyNetworkStorage.sol";
+import "./../common/MultiChain.sol";
 
 
 /// @title First-In-First-Served ENS Registrar
 /// @notice A registrar that allocates subdomains to the first person to claim them.
 /// @notice Source modified from https://github.com/ensdomains/ens/blob/master/contracts/FIFSRegistrar.sol
-contract ColonyNetworkENS is ColonyNetworkStorage {
+contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
 
   bytes32 constant USER_HASH = keccak256("user");
   bytes32 constant COLONY_HASH = keccak256("colony");
@@ -118,9 +119,9 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
 
   function lookupRegisteredENSDomain(address addr) public view returns(string memory domain) {
     if (bytes(userLabels[addr]).length != 0) {
-      return string(abi.encodePacked(userLabels[addr], ".user.joincolony.eth"));
+      return string(abi.encodePacked(userLabels[addr], ".user.", getGlobalENSDomain()));
     } else if (bytes(colonyLabels[addr]).length != 0) {
-      return string(abi.encodePacked(colonyLabels[addr], ".colony.joincolony.eth"));
+      return string(abi.encodePacked(colonyLabels[addr], ".colony.", getGlobalENSDomain()));
     } else {
       return "";
     }
@@ -132,5 +133,16 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
 
   function getENSRegistrar() public view returns (address) {
     return ens;
+  }
+
+  function getGlobalENSDomain() internal view returns (string memory) {
+    if (isMainnet()) {
+      return "joincolony.eth";
+    } else if (isGoerli()) {
+      return "joincolony.test";
+    } else if (isXdai()) {
+      return "joincolony.colonyxdai";
+    }
+    require(false, "colony-network-unsupported-network");
   }
 }
