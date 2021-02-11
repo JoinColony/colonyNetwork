@@ -334,30 +334,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     emit TokenWhitelisted(_token, _status);
   }
 
-  function issueMetaColonyStipend() public stoppable {
-    // Can be called by anyone
-    require(lastMetaColonyStipendIssued > 0, "colony-network-metacolony-stipend-not-set");
-    // How much in total should have been issued since then
-    uint256 amountToIssue = mul(annualMetaColonyStipend, sub(block.timestamp, lastMetaColonyStipendIssued)) / (365 days);
-    lastMetaColonyStipendIssued = block.timestamp;
-
-    // mintTokensFor is coming in #835, use that instead of this.
-    IMetaColony(metaColony).mintTokensForColonyNetwork(amountToIssue);
-    ERC20Extended clnyToken = ERC20Extended(IColony(metaColony).getToken());
-    clnyToken.transfer(metaColony, amountToIssue);
-  }
-
-  function setAnnualMetaColonyStipend(uint256 amount) public stoppable
-  calledByMetaColony
-  {
-    if (lastMetaColonyStipendIssued == 0) { lastMetaColonyStipendIssued = block.timestamp; }
-    annualMetaColonyStipend = amount;
-  }
-
-  function getAnnualMetaColonyStipend() public view returns (uint256) {
-    return annualMetaColonyStipend;
-  }
-
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {
     require(_tokenAddress != address(0x0), "colony-token-invalid-address");
     require(colonyVersionResolver[_version] != address(0x00), "colony-network-invalid-version");

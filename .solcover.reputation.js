@@ -20,7 +20,6 @@ module.exports = {
       'testHelpers/NoLimitSubdomains.sol',
       'testHelpers/TaskSkillEditing.sol',
       'testHelpers/PreviousVersion.sol',
-      'testHelpers/RequireExecuteCall.sol',
     ],
     providerOptions: {
       port: 8555,

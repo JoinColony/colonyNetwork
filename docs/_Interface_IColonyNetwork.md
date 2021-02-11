@@ -246,18 +246,6 @@ Mark a global skill as deprecated which stops new tasks and payments from using 
 |_skillId|uint256|Id of the skill
 
 
-### `getAnnualMetaColonyStipend`
-
-Called to get the total per-cycle reputation mining reward.
-
-
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|uint256|uint256|
-
 ### `getChildSkillId`
 
 Get the id of the child skill at index `_childSkillIndex` for skill with Id `_skillId`.
@@ -693,13 +681,6 @@ Check if specific address is a colony created on colony network.
 |---|---|---|
 |addressIsColony|bool|true if specified address is a colony, otherwise false
 
-### `issueMetaColonyStipend`
-
-Called to issue the metaColony stipend. This external function can be called by anyone at any interval, and an appropriate amount of CLNY will be minted based on the time since the last time it was called.
-
-
-
-
 ### `lookupRegisteredENSDomain`
 
 Reverse lookup a username from an address.
@@ -769,19 +750,6 @@ Used to track that a user is eligible to claim a reward
 |---|---|---|
 |_recipient|address|The address receiving the award
 |_amount|uint256|The amount of CLNY to be awarded
-
-
-### `setAnnualMetaColonyStipend`
-
-Called to set the metaColony stipend. This value will be the total amount of CLNY created for the metacolony in a single year. The corresponding `issueMetaColonyStipend` function can be called at any interval.
-
-*Note: Can only be called by the MetaColony.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_amount|uint256|The amount of CLNY to issue to the metacolony every year
 
 
 ### `setFeeInverse`

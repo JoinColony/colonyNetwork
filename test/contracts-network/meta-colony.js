@@ -2,11 +2,10 @@
 
 import chai from "chai";
 import bnChai from "bn-chai";
-import BN from "bn.js";
 
 import { soliditySha3 } from "web3-utils";
-import { UINT256_MAX, INITIAL_FUNDING, SPECIFICATION_HASH, GLOBAL_SKILL_ID, WAD, SECONDS_PER_DAY } from "../../helpers/constants";
-import { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit, makeTxAtTimestamp, currentBlockTime } from "../../helpers/test-helper";
+import { UINT256_MAX, INITIAL_FUNDING, SPECIFICATION_HASH, GLOBAL_SKILL_ID, WAD } from "../../helpers/constants";
+import { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit } from "../../helpers/test-helper";
 import { executeSignedTaskChange } from "../../helpers/task-review-signing";
 
 import {
@@ -562,48 +561,6 @@ contract("Meta Colony", (accounts) => {
   describe("when minting tokens for the Network", () => {
     it("should NOT allow anyone but the Network to call mintTokensForColonyNetwork", async () => {
       await checkErrorRevert(metaColony.mintTokensForColonyNetwork(100), "colony-access-denied-only-network-allowed");
-    });
-  });
-
-  describe("when setting the metaColony stipend", () => {
-    it("should allow the metacolony stipend to be set", async () => {
-      const stipendBefore = await colonyNetwork.getAnnualMetaColonyStipend();
-      expect(stipendBefore).to.be.zero;
-      await metaColony.setAnnualMetaColonyStipend(WAD);
-      const stipendAfter = await colonyNetwork.getAnnualMetaColonyStipend();
-      expect(stipendAfter).to.eq.BN(WAD);
-    });
-
-    it("setting the metacolony stipend should be a permissioned function", async () => {
-      await checkErrorRevert(metaColony.setAnnualMetaColonyStipend(0, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
-    });
-
-    it("a non-meta colony should not be able to set the stipend", async () => {
-      ({ colony } = await setupRandomColony(colonyNetwork));
-      const colonyAsMetaColony = await IMetaColony.at(colony.address);
-      await checkErrorRevert(colonyAsMetaColony.setAnnualMetaColonyStipend(0), "colony-caller-must-be-meta-colony");
-    });
-
-    it("should allow the metacolony stipend to be claimed, and the amount minted changes based on when it is last claimed", async () => {
-      await metaColony.setAnnualMetaColonyStipend(WAD);
-      // In a year, we should get the full reward
-      let time = await currentBlockTime();
-      time = new BN(time).addn(SECONDS_PER_DAY * 365);
-      await makeTxAtTimestamp(colonyNetwork.issueMetaColonyStipend, [], time.toNumber(), this);
-      let potBefore = await metaColony.getFundingPotBalance(1, clnyToken.address);
-      await metaColony.claimColonyFunds(clnyToken.address);
-      let potAfter = await metaColony.getFundingPotBalance(1, clnyToken.address);
-      expect(potAfter.sub(potBefore)).to.eq.BN(WAD);
-      // If we claim again a minute later...
-      potBefore = potAfter;
-      await makeTxAtTimestamp(colonyNetwork.issueMetaColonyStipend, [], time.addn(60).toNumber(), this);
-      await metaColony.claimColonyFunds(clnyToken.address);
-      potAfter = await metaColony.getFundingPotBalance(1, clnyToken.address);
-      expect(potAfter.sub(potBefore)).to.eq.BN(WAD.divn(365 * 24 * 60));
-    });
-
-    it("the metacolony stipend cannot be claimed before it is set", async () => {
-      await checkErrorRevert(colonyNetwork.issueMetaColonyStipend(), "colony-network-metacolony-stipend-not-set");
     });
   });
 

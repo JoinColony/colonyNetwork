@@ -89,8 +89,8 @@ contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   mapping (address => uint256) pendingMiningRewards; // Storage slot 34
 
   uint256 totalMinerRewardPerCycle; // Storage slot 35
-  uint256 annualMetaColonyStipend; // Storage slot 36
-  uint256 lastMetaColonyStipendIssued; // Storage slot 37
+  uint256 DEPRECATED_annualMetaColonyStipend; // Storage slot 36
+  uint256 DEPRECATED_lastMetaColonyStipendIssued; // Storage slot 37
 
   // [_extensionId][version] => resolver
   mapping(bytes32 => mapping(uint256 => address)) resolvers; // Storage slot 38

@@ -19,7 +19,6 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "../extensions/ColonyExtension.sol";
-import "./RequireExecuteCall.sol";
 
 
 abstract contract TestExtension is ColonyExtension {
@@ -66,11 +65,6 @@ contract TestExtension3 is TestExtension {
   function version() public pure override returns (uint256) { return 3; }
 }
 
-contract TestVotingReputation is TestExtension, RequireExecuteCall {
-  function identifier() public pure override returns (bytes32) { return keccak256("VotingReputation"); }
-  function version() public pure override returns (uint256) { return 1; }
-}
-
 contract TestVotingToken is TestExtension {
   function identifier() public pure override returns (bytes32) { return keccak256("VotingToken"); }
   function version() public pure override returns (uint256) { return 1; }
@@ -81,10 +75,3 @@ contract TestVotingToken is TestExtension {
     colony.unlockTokenForUser(_user, _lockId);
   }
 }
-
-contract TestVotingHybrid is TestExtension, RequireExecuteCall {
-  function identifier() public pure override returns (bytes32) { return keccak256("VotingHybrid"); }
-  function version() public pure override returns (uint256) { return 1; }
-}
-
-
