@@ -65,8 +65,9 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
 
   function lockToken(address _token) public calledByColonyOrNetwork returns (uint256) {
     totalLockCount[_token] += 1;
+    lockers[_token][totalLockCount[_token]] = msg.sender;
 
-    emit TokenLocked(_token, totalLockCount[_token]);
+    emit TokenLocked(_token, msg.sender, totalLockCount[_token]);
 
     return totalLockCount[_token];
   }
@@ -74,12 +75,14 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   function unlockTokenForUser(address _token, address _user, uint256 _lockId) public
   calledByColonyOrNetwork
   {
+    require(lockers[_token][_lockId] == msg.sender, "colony-token-locking-not-locker");
+
     // If we want to unlock tokens at id greater than total lock count, we are doing something wrong
     require(_lockId <= totalLockCount[_token], "colony-token-invalid-lockid");
 
     // These checks should happen in this order, as the second is stricter than the first
     uint256 lockCountDelta = sub(_lockId, userLocks[_token][_user].lockCount);
-    require(lockCountDelta != 0, "colony-token-already-unlocked");
+    require(lockCountDelta != 0, "colony-token-locking-already-unlocked");
     require(lockCountDelta == 1, "colony-token-locking-has-previous-active-locks");
 
     userLocks[_token][_user].lockCount = _lockId; // Basically just a ++

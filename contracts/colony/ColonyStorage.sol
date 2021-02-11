@@ -22,6 +22,7 @@ import "./../../lib/dappsys/math.sol";
 import "./../common/CommonStorage.sol";
 import "./../common/ERC20Extended.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../extensions/ColonyExtension.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./ColonyAuthority.sol";
 import "./ColonyDataTypes.sol";
@@ -92,6 +93,8 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   mapping (address => mapping (address => mapping (uint256 => uint256))) obligations; // Storage slot 29
 
   address tokenLockingAddress; // Storage slot 30
+
+  mapping (address => mapping (uint256 => bool)) tokenLocks; // Storage slot 31
 
   // Constants
   uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs
@@ -211,6 +214,22 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     _;
   }
 
+  modifier onlyExtension() {
+    // Ensure msg.sender is a contract
+    require(isContract(msg.sender), "colony-sender-must-be-contract");
+
+    // Ensure msg.sender is an extension
+    try ColonyExtension(msg.sender).identifier() returns (bytes32 extensionId) {
+      require(
+        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == msg.sender,
+        "colony-must-be-extension"
+      );
+    } catch {
+      require(false, "colony-must-be-extension");
+    }
+    _;
+  }
+
   modifier auth override {
     require(isAuthorized(msg.sender, 1, msg.sig), "ds-auth-unauthorized");
     _;
@@ -248,6 +267,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
 
   function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
     return (src == owner) || DomainRoles(address(authority)).canCall(src, domainId, address(this), sig);
+  }
+
+  function isContract(address addr) internal returns (bool) {
+    uint256 size;
+    assembly { size := extcodesize(addr) }
+    return size > 0;
   }
 
   function domainExists(uint256 domainId) internal view returns (bool) {

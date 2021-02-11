@@ -1004,6 +1004,18 @@ Install an extension to the colony. Secured function to authorised members.
 |version|uint256|The new extension version to install
 
 
+### `lockToken`
+
+Lock the colony's token. Can only be called by a network-managed extension.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
+
 ### `makeArbitraryTransaction`
 
 Execute arbitrary transaction on behalf of the Colony
@@ -1687,6 +1699,26 @@ Uninstall an extension from a colony. Secured function to authorised members.
 |Name|Type|Description|
 |---|---|---|
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+
+
+### `unlockToken`
+
+unlock the native colony token, if possible
+
+
+
+
+### `unlockTokenForUser`
+
+Unlock the colony's token for a user. Can only be called by a network-managed extension.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|user|address|The user to unlock
+|lockId|uint256|The specific lock to unlock
 
 
 ### `updateColonyOrbitDB`

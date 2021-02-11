@@ -5,7 +5,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
-import { getTokenArgs, checkErrorRevert, makeReputationKey, advanceMiningCycleNoContest } from "../../helpers/test-helper";
+import { getTokenArgs, checkErrorRevert, makeReputationKey, advanceMiningCycleNoContest, expectEvent } from "../../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import { UINT256_MAX, DEFAULT_STAKE } from "../../helpers/constants";
 
@@ -324,6 +324,15 @@ contract("Token Locking", (addresses) => {
   });
 
   describe("locking behavior", async () => {
+    it("should correctly emit the TokenLocked event", async () => {
+      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
+      await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
+      await fundColonyWithTokens(colony, otherToken);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
+      const tx = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      await expectEvent(tx, "TokenLocked(address indexed,address indexed,uint256)", [token.address, colony.address, 1]);
+    });
+
     it("should correctly increment total lock count", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });

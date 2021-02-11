@@ -227,6 +227,14 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _wad Amount to mint
   function mintTokensFor(address _guy, uint256 _wad) external;
 
+  /// @notice Lock the colony's token. Can only be called by a network-managed extension.
+  function lockToken() external returns (uint256);
+
+  /// @notice Unlock the colony's token for a user. Can only be called by a network-managed extension.
+  /// @param user The user to unlock
+  /// @param lockId The specific lock to unlock
+  function unlockTokenForUser(address user, uint256 lockId) external;
+
   /// @notice Register colony's ENS label.
   /// @param colonyName The label to register.
   /// @param orbitdb The path of the orbitDB database associated with the colony name
