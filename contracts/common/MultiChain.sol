@@ -20,7 +20,7 @@ pragma solidity 0.7.3;
 
 
 contract MultiChain {
-  function chainId() internal view returns (uint256) {
+  function getChainId() public view returns (uint256) {
     uint256 id;
     assembly {
         id := chainid()
@@ -32,17 +32,17 @@ contract MultiChain {
   // used for testing
 
   function isXdai() internal view returns (bool) {
-    uint256 chainId = chainId();
+    uint256 chainId = getChainId();
     return (chainId == 100 || chainId == 265669100);
   }
 
   function isMainnet() internal view returns (bool) {
-    uint256 chainId = chainId();
+    uint256 chainId = getChainId();
     return (chainId == 1 || chainId == 2656691);
   }
 
   function isGoerli() internal view returns (bool) {
-    uint256 chainId = chainId();
+    uint256 chainId = getChainId();
     return (chainId == 5 || chainId == 2656695);
   }
 }

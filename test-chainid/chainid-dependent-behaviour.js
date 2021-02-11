@@ -10,7 +10,7 @@ import { MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW } from "../
 
 const { expect } = chai;
 const ENSRegistry = artifacts.require("ENSRegistry");
-const ChainId = artifacts.require("ChainId");
+const MultiChain = artifacts.require("MultiChain");
 
 chai.use(bnChai(web3.utils.BN));
 
@@ -30,8 +30,8 @@ contract("Contract Storage", (accounts) => {
   let chainId;
 
   before(async () => {
-    const cid = await ChainId.new();
-    chainId = await cid.getChainId();
+    const multiChain = await MultiChain.new();
+    chainId = await multiChain.getChainId();
     chainId = chainId.toNumber();
   });
 
