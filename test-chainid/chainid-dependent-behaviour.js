@@ -4,7 +4,14 @@ import bnChai from "bn-chai";
 
 import { setupENSRegistrar } from "../helpers/upgradable-contracts";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
-import { forwardTime, getActiveRepCycle, advanceMiningCycleNoContest, getValidEntryNumber, checkErrorRevert, expectEvent } from "../helpers/test-helper";
+import {
+  forwardTime,
+  getActiveRepCycle,
+  advanceMiningCycleNoContest,
+  getValidEntryNumber,
+  checkErrorRevert,
+  expectEvent,
+} from "../helpers/test-helper";
 
 import { MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW } from "../helpers/constants";
 
