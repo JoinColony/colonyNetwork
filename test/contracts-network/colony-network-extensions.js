@@ -171,8 +171,10 @@ contract("Colony Network Extensions", (accounts) => {
 
       const identifier = await extension.identifier();
       const version = await extension.version();
+      const colonyAddress = await extension.getColony();
       expect(identifier).to.equal(TEST_EXTENSION);
       expect(version).to.eq.BN(2);
+      expect(colonyAddress).to.equal(colony.address);
 
       // Only colonyNetwork can install the extension
       await checkErrorRevert(extension.install(colony.address), "ds-auth-unauthorized");

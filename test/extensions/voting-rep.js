@@ -159,9 +159,9 @@ contract("Voting Reputation", (accounts) => {
     await token.approve(tokenLocking.address, WAD, { from: USER0 });
     await token.approve(tokenLocking.address, WAD, { from: USER1 });
     await token.approve(tokenLocking.address, WAD, { from: USER2 });
-    await tokenLocking.deposit(token.address, WAD, { from: USER0 });
-    await tokenLocking.deposit(token.address, WAD, { from: USER1 });
-    await tokenLocking.deposit(token.address, WAD, { from: USER2 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, WAD, true, { from: USER0 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, WAD, true, { from: USER1 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, WAD, true, { from: USER2 });
     await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
     await colony.approveStake(voting.address, 1, WAD, { from: USER1 });
     await colony.approveStake(voting.address, 1, WAD, { from: USER2 });

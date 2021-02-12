@@ -116,7 +116,7 @@ contract("Funding Queues", (accounts) => {
 
     await token.mint(USER0, WAD);
     await token.approve(tokenLocking.address, WAD, { from: USER0 });
-    await tokenLocking.deposit(token.address, WAD, { from: USER0 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, WAD, true, { from: USER0 });
     await colony.approveStake(fundingQueue.address, 1, WAD, { from: USER0 });
 
     reputationTree = new PatriciaTree();
