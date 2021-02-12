@@ -278,40 +278,59 @@ function hexlifyAndPad(input) {
 
 export async function expectEvent(tx, nameOrSig, args) {
   const re = /\((.*)\)/;
-  let event;
+  let eventMatch;
   if (nameOrSig.match(re)) {
     // i.e. if the passed nameOrSig has () in it, we assume it's a signature
     const { rawLogs } = await tx.receipt;
     const canonicalSig = nameOrSig.replace(/ indexed/g, "");
     const topic = web3.utils.soliditySha3(canonicalSig);
-    event = rawLogs.find((e) => e.topics[0] === topic);
-    expect(event).to.exist;
+    const events = rawLogs.filter((e) => e.topics[0] === topic);
+    expect(events.length).to.be.at.least(1);
+    eventMatch = await Promise.all(
+      events.map((e) => {
+        // Set up an abi so we decode correctly, including indexed topics
+        const event = e;
+        const abi = [`event ${nameOrSig}`];
+        const iface = new ethers.utils.Interface(abi);
 
-    // Set up an abi so we decode correctly, including indexed topics
-    const abi = [`event ${nameOrSig}`];
-    const iface = new ethers.utils.Interface(abi);
-
-    event.args = iface.parseLog(event).args;
+        event.args = iface.parseLog(event).args;
+        return eventMatchArgs(event, args);
+      })
+    );
   } else {
     const { logs } = await tx;
-    event = logs.find((e) => e.event === nameOrSig);
-    expect(event).to.exist;
+    const events = logs.filter((e) => e.event === nameOrSig);
+    expect(events.length).to.be.at.least(1);
+    eventMatch = await Promise.all(events.map((e) => eventMatchArgs(e, args)));
   }
+  if (eventMatch.indexOf(true) === -1) {
+    throw Error(`No matching event was found for ${nameOrSig} with args ${args}`);
+  }
+}
+
+async function eventMatchArgs(event, args) {
   for (let i = 0; i < args.length; i += 1) {
     let arg = args[i];
     if (arg.constructor.name === "BN" || event.args[i].constructor.name === "BN") {
       if (ethers.utils.isHexString(arg)) {
         arg = ethers.BigNumber.from(arg).toString();
       }
-      expect(arg.toString()).to.equal(event.args[i].toString());
+      if (arg.toString() !== event.args[i].toString()) {
+        return false;
+      }
     } else if (typeof arg === "object") {
-      expect(arg).to.deep.equal(event.args[i]);
+      if (JSON.stringify(arg) !== JSON.stringify(event.args[i])) {
+        return false;
+      }
     } else if (typeof arg === "string" && !ethers.utils.isHexString(event.args[i])) {
-      expect(arg).to.equal(event.args[i]);
-    } else {
-      expect(hexlifyAndPad(arg)).to.equal(hexlifyAndPad(event.args[i]));
+      if (arg !== event.args[i]) {
+        return false;
+      }
+    } else if (hexlifyAndPad(arg) !== hexlifyAndPad(event.args[i])) {
+      return false;
     }
   }
+  return true;
 }
 
 export async function expectNoEvent(tx, nameOrSig) {

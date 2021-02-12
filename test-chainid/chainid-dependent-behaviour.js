@@ -4,7 +4,7 @@ import bnChai from "bn-chai";
 
 import { setupENSRegistrar } from "../helpers/upgradable-contracts";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
-import { forwardTime, getActiveRepCycle, advanceMiningCycleNoContest, getValidEntryNumber, checkErrorRevert } from "../helpers/test-helper";
+import { forwardTime, getActiveRepCycle, advanceMiningCycleNoContest, getValidEntryNumber, checkErrorRevert, expectEvent } from "../helpers/test-helper";
 
 import { MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW } from "../helpers/constants";
 
@@ -83,7 +83,7 @@ contract("Contract Storage", (accounts) => {
       await forwardTime(MINING_CYCLE_DURATION / 2 + SUBMITTER_ONLY_WINDOW + 1, this);
 
       const networkBalanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
-      await repCycle.confirmNewHash(0);
+      const tx = await repCycle.confirmNewHash(0);
 
       if (chainId === XDAI || chainId === FORKED_XDAI) {
         // tokens should be paid from the network balance
@@ -93,6 +93,16 @@ contract("Contract Storage", (accounts) => {
         // tokens should be newly minted, so balance of network doesn't change.
         const networkBalanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
         expect(networkBalanceBefore).to.eq.BN(networkBalanceAfter);
+      }
+
+      // Unneeded rewards should be dealt with differently as well.
+
+      if (chainId === XDAI || chainId === FORKED_XDAI) {
+        // tokens should be transferred to metacolony
+        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, 0]);
+      } else {
+        // tokens should be burned.
+        await expectEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, 0]);
       }
     });
   });
