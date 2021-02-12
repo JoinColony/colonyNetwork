@@ -248,7 +248,13 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
   function burnUnneededRewards(uint256 _amount) public stoppable onlyReputationMiningCycle() {
     address clnyToken = IMetaColony(metaColony).getToken();
     ITokenLocking(tokenLocking).withdraw(clnyToken, _amount, true);
-    ERC20Extended(clnyToken).burn(_amount);
+    if (isXdai()){
+      // On Xdai, I'm burning bridged tokens is certainly not what we want. So let's
+      // send them to the metacolony for now.
+      ERC20Extended(clnyToken).transfer(metaColony, _amount);
+    } else {
+      ERC20Extended(clnyToken).burn(_amount);
+    }
   }
 
   function setReputationMiningCycleReward(uint256 _amount) public stoppable
