@@ -387,7 +387,7 @@ contract("Token Locking", (addresses) => {
   describe("locking behavior", async () => {
     it("should correctly emit the TokenLocked event", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
-      await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress });
       await fundColonyWithTokens(colony, otherToken);
       await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
       const tx = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
