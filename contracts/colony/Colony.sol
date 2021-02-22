@@ -75,7 +75,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     return executeCall(_to, 0, _action);
   }
 
-  function annotateTransaction(bytes32 _txHash, string memory _metadata) public stoppable {
+  function annotateTransaction(bytes32 _txHash, string memory _metadata) public always {
     emit Annotation(msg.sender, _txHash, _metadata);
   }
 
