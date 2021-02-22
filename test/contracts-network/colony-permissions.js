@@ -398,20 +398,27 @@ contract("ColonyPermissions", (accounts) => {
     });
 
     it("should be able to set many roles at once", async () => {
+      let recoveryRolesCount = await colony.numRecoveryRoles();
+      expect(recoveryRolesCount).to.eq.BN(1);
+
+      const roleRecovery = ethers.BigNumber.from(2 ** 0).toHexString();
       const roleRoot = ethers.BigNumber.from(2 ** 1).toHexString();
       const roleArbitration = ethers.BigNumber.from(2 ** 2).toHexString();
       const roleFunding = ethers.BigNumber.from(2 ** 5).toHexString();
 
-      const rolesRoot = ethers.utils.hexZeroPad(ethers.BigNumber.from(roleRoot | roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
+      const rolesRoot = ethers.utils.hexZeroPad(ethers.BigNumber.from(roleRecovery | roleRoot | roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
       const rolesArch = ethers.utils.hexZeroPad(ethers.BigNumber.from(roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
 
       let userRoles;
       await colony.setArchitectureRole(1, UINT256_MAX, USER1, 1, true);
-
       // Root can set root roles
       await colony.setUserRoles(1, UINT256_MAX, USER2, 1, rolesRoot, { from: FOUNDER });
       userRoles = await colony.getUserRoles(USER2, 1);
       expect(userRoles).to.equal(rolesRoot);
+
+      // And the recovery roles count is updated
+      recoveryRolesCount = await colony.numRecoveryRoles();
+      expect(recoveryRolesCount).to.eq.BN(2);
 
       // But not in subdomains!
       await checkErrorRevert(colony.setUserRoles(1, 0, USER2, 2, rolesRoot, { from: FOUNDER }), "colony-bad-domain-for-role");
@@ -450,6 +457,12 @@ contract("ColonyPermissions", (accounts) => {
 
       userRoles = await colony.getUserRoles(USER2, 3);
       expect(userRoles).to.equal(ethers.constants.HashZero);
+
+      // And the recovery roles count is updated when recovery is removed
+      await colony.setUserRoles(1, UINT256_MAX, USER2, 1, "0x0", { from: FOUNDER });
+
+      recoveryRolesCount = await colony.numRecoveryRoles();
+      expect(recoveryRolesCount).to.eq.BN(1);
     });
 
     it("should not allow a role to be set that doesn't exist", async () => {
