@@ -420,6 +420,11 @@ contract("ColonyPermissions", (accounts) => {
       recoveryRolesCount = await colony.numRecoveryRoles();
       expect(recoveryRolesCount).to.eq.BN(2);
 
+      // Setting the roles again doesn't increment the count of recovery roles
+      await colony.setUserRoles(1, UINT256_MAX, USER2, 1, rolesRoot, { from: FOUNDER });
+      recoveryRolesCount = await colony.numRecoveryRoles();
+      expect(recoveryRolesCount).to.eq.BN(2);
+
       // But not in subdomains!
       await checkErrorRevert(colony.setUserRoles(1, 0, USER2, 2, rolesRoot, { from: FOUNDER }), "colony-bad-domain-for-role");
 
@@ -459,6 +464,12 @@ contract("ColonyPermissions", (accounts) => {
       expect(userRoles).to.equal(ethers.constants.HashZero);
 
       // And the recovery roles count is updated when recovery is removed
+      await colony.setUserRoles(1, UINT256_MAX, USER2, 1, "0x0", { from: FOUNDER });
+
+      recoveryRolesCount = await colony.numRecoveryRoles();
+      expect(recoveryRolesCount).to.eq.BN(1);
+
+      // But not when they're 'removed' again
       await colony.setUserRoles(1, UINT256_MAX, USER2, 1, "0x0", { from: FOUNDER });
 
       recoveryRolesCount = await colony.numRecoveryRoles();

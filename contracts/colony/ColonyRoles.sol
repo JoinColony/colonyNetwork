@@ -104,7 +104,7 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
         setTo = uint256(roles) % 2 == 1;
 
         ColonyAuthority(address(authority)).setUserRole(_user, _domainId, roleId, setTo);
-        if (roleId == 0){
+        if (roleId == uint8(ColonyRole.Recovery)) {
           if (setTo){
             recoveryRolesCount++;
           } else {

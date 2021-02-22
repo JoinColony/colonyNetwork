@@ -26,6 +26,7 @@ import "./ColonyStorage.sol";
 
 contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
 
+  // V6: Cerulean Lightweight Spaceship
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256 colonyVersion) { return 6; }
