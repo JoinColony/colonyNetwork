@@ -386,74 +386,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     emit ColonyUpgraded(msg.sender, currentVersion, _newVersion);
   }
 
-  // v4 to v5
+  // v5 to v6
   function finishUpgrade() public always {
-    tokenLockingAddress = IColonyNetwork(colonyNetworkAddress).getTokenLocking();
-
-    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
-    bytes4 sig;
-
-    // Add stake management functionality (colonyNetwork#757)
-    sig = bytes4(keccak256("transferStake(uint256,uint256,address,address,uint256,uint256,address)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
-
-    // Add reputation penalty functionality (colonyNetwork#845)
-    sig = bytes4(keccak256("emitDomainReputationPenalty(uint256,uint256,uint256,address,int256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
-    sig = bytes4(keccak256("emitSkillReputationPenalty(uint256,address,int256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
-
-    // Add CLNY issuance functionality
-    sig = bytes4(keccak256("setReputationMiningCycleReward(uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    // Add expenditure state change support
-    sig = bytes4(keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
-
-    // Add coin machine support
-    sig = bytes4(keccak256("mintTokensFor(address,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    // Add extension manager functionality
-    sig = bytes4(keccak256("addExtensionToNetwork(bytes32,address)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-    sig = bytes4(keccak256("installExtension(bytes32,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-    sig = bytes4(keccak256("upgradeExtension(bytes32,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-    sig = bytes4(keccak256("deprecateExtension(bytes32,bool)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-    sig = bytes4(keccak256("uninstallExtension(bytes32)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
     sig = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
-
-    // Add arbitrary tx functionality
-    sig = bytes4(keccak256("makeArbitraryTransaction(address,bytes)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    // Add payout whitelist functionality
-    sig = bytes4(keccak256("setPayoutWhitelist(address,bool)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    // Add metadata functions
-    sig = bytes4(keccak256("addDomain(uint256,uint256,uint256,string)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
-    sig = bytes4(keccak256("editDomain(uint256,uint256,uint256,string)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
-    sig = bytes4(keccak256("editColony(string)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("burnTokens(address,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("unlockToken()"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("emitDomainReputationReward(uint256,address,int256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-    sig = bytes4(keccak256("emitSkillReputationReward(uint256,address,int256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
