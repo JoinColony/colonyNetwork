@@ -182,6 +182,9 @@ contract("Colony Network", (accounts) => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const oldVersion = currentColonyVersion.subn(1);
       await metaColony.addNetworkColonyVersion(oldVersion, newResolverAddress);
+
+      // v4 specifically is needed for the deprecated five-parameter test
+      await metaColony.addNetworkColonyVersion(4, newResolverAddress);
     });
 
     it("should allow users to create a new colony at a specific older version", async () => {
@@ -223,7 +226,7 @@ contract("Colony Network", (accounts) => {
     it("should allow use of the deprecated five-parameter createColony", async () => {
       const token = await Token.new(...getTokenArgs());
 
-      await colonyNetwork.createColony(token.address, 4, "", "", "");
+      await colonyNetwork.createColony(token.address, 5, "", "", "");
     });
   });
 
