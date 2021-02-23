@@ -120,6 +120,9 @@ contract("Contract Storage", (accounts) => {
 
       await editableNetwork.setStorageSlot(slot, "0x0000000000000000000000000000000000000000000000000000000000000000");
 
+      // Also zero out the slot containing the current colony version
+      await editableNetwork.setStorageSlot(7, "0x0000000000000000000000000000000000000000000000000000000000000000");
+
       const colonyNetworkStateHash = await getAddressStateHash(colonyNetwork.address);
       const colonyNetworkAccount = new Account(colonyNetworkStateHash);
 
@@ -146,13 +149,12 @@ contract("Contract Storage", (accounts) => {
 
       const tokenLockingStateHash = await getAddressStateHash(tokenLockingAddress);
       const tokenLockingAccount = new Account(tokenLockingStateHash);
-
       console.log("colonyNetworkStateHash:", colonyNetworkAccount.stateRoot.toString("hex"));
       console.log("colonyStateHash:", colonyAccount.stateRoot.toString("hex"));
       console.log("metaColonyStateHash:", metaColonyAccount.stateRoot.toString("hex"));
       console.log("miningCycleStateHash:", miningCycleAccount.stateRoot.toString("hex"));
       console.log("tokenLockingStateHash:", tokenLockingAccount.stateRoot.toString("hex"));
-      expect(colonyNetworkAccount.stateRoot.toString("hex")).to.equal("bab7de481917cc3420ec4f596281d62ac340b3fc5c904496a6dbcfc1326d2b3b");
+      expect(colonyNetworkAccount.stateRoot.toString("hex")).to.equal("88075c360145ff7453f5b3dab1ef62acebdbfc31f234b0a016e6392ec97b16d2");
       expect(colonyAccount.stateRoot.toString("hex")).to.equal("f33c405a1e7064905b600a6a87dc20de3dbac37be6935588bb57ea62ee6c7539");
       expect(metaColonyAccount.stateRoot.toString("hex")).to.equal("ce60ed2e314b5ae83e9d78f4518330496cdf8a2dab275798822bb7277cc304c2");
       expect(miningCycleAccount.stateRoot.toString("hex")).to.equal("1cbcf4998ef6be25f00b4a704ddfccc162c2395396f055f3660f099deb20c11f");
