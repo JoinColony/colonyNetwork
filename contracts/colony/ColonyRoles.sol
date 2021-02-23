@@ -19,9 +19,10 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyStorage.sol";
+import "./../common/ContractRecoveryDataTypes.sol";
 
 
-contract ColonyRoles is ColonyStorage {
+contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
 
   function setRootRole(address _user, bool _setTo) public stoppable auth {
     ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
@@ -103,7 +104,14 @@ contract ColonyRoles is ColonyStorage {
         setTo = uint256(roles) % 2 == 1;
 
         ColonyAuthority(address(authority)).setUserRole(_user, _domainId, roleId, setTo);
-
+        if (roleId == uint8(ColonyRole.Recovery)) {
+          if (setTo){
+            recoveryRolesCount++;
+          } else {
+            recoveryRolesCount--;
+          }
+          emit RecoveryRoleSet(_user, setTo);
+        }
         emit ColonyRoleSet(msg.sender, _user, _domainId, roleId, setTo);
 
       }
