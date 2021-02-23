@@ -225,10 +225,18 @@ class ReputationMinerClient {
     // Set up the listener to take actions on each block
     this.lockedForBlockProcessing = false;
     this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
+
+    const network = await this._miner.realProvider.getNetwork();
+    this.chainId = network.chainId;
+
     this._adapter.log("🏁 Initialised");
   }
 
   async updateGasEstimate(type) {
+    if (this.chainId === 100){
+      this._miner.gasPrice = ethers.utils.hexlify(1000000000);
+      return;
+    }
     // Get latest from ethGasStation
     const options = {
       uri: 'https://ethgasstation.info/json/ethgasAPI.json',
