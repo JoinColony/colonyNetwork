@@ -313,10 +313,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       "voting-rep-insufficient-stake"
     );
 
-    tokenLocking.deposit(token, 0, true); // Faux deposit to clear any locks
-    colony.obligateStake(msg.sender, motion.domainId, amount);
-    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, motion.domainId, amount, address(this));
-
     // Update the stake
     motion.stakes[_vote] = add(motion.stakes[_vote], amount);
     stakes[_motionId][msg.sender][_vote] = stakerTotalAmount;
@@ -362,6 +358,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       emit MotionEventSet(_motionId, STAKE_END);
     }
 
+    // Do the external bookkeeping
+    tokenLocking.deposit(token, 0, true); // Faux deposit to clear any locks
+    colony.obligateStake(msg.sender, motion.domainId, amount);
+    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, motion.domainId, amount, address(this));
   }
 
   /// @notice Submit a vote secret for a motion
@@ -496,7 +496,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     emit MotionEscalated(_motionId, msg.sender, domainId, _newDomainId);
 
-    if (motion.events[STAKE_END] == uint64(block.timestamp)) {
+    if (motion.events[STAKE_END] <= uint64(block.timestamp)) {
       emit MotionEventSet(_motionId, STAKE_END);
     }
   }
@@ -534,9 +534,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
       if (expenditurePastVotes[actionHash] < votePower) {
         expenditurePastVotes[actionHash] = votePower;
-        canExecute = canExecute && true;
       } else {
-        canExecute = canExecute && false;
+        canExecute = false;
       }
     }
 
@@ -993,48 +992,48 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     // If we are editing the main expenditure struct
     if (storageSlot == 25) {
 
-      bytes memory claimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
+      bytes memory mainClaimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
       assembly {
-          mstore(add(claimDelayAction, 0x20), functionSignature)
-          mstore(add(claimDelayAction, 0x24), permissionDomainId)
-          mstore(add(claimDelayAction, 0x44), childSkillIndex)
-          mstore(add(claimDelayAction, 0x64), expenditureId)
-          mstore(add(claimDelayAction, 0x84), 25)     // expenditure storage slot
-          mstore(add(claimDelayAction, 0xa4), 0xe0)   // mask location
-          mstore(add(claimDelayAction, 0xc4), 0x120)  // keys location
-          mstore(add(claimDelayAction, 0xe4), value)
-          mstore(add(claimDelayAction, 0x104), 1)     // mask length
-          mstore(add(claimDelayAction, 0x124), 1)     // offset
-          mstore(add(claimDelayAction, 0x144), 1)     // keys length
-          mstore(add(claimDelayAction, 0x164), 4)     // globalClaimDelay offset
+          mstore(add(mainClaimDelayAction, 0x20), functionSignature)
+          mstore(add(mainClaimDelayAction, 0x24), permissionDomainId)
+          mstore(add(mainClaimDelayAction, 0x44), childSkillIndex)
+          mstore(add(mainClaimDelayAction, 0x64), expenditureId)
+          mstore(add(mainClaimDelayAction, 0x84), 25)     // expenditure storage slot
+          mstore(add(mainClaimDelayAction, 0xa4), 0xe0)   // mask location
+          mstore(add(mainClaimDelayAction, 0xc4), 0x120)  // keys location
+          mstore(add(mainClaimDelayAction, 0xe4), value)
+          mstore(add(mainClaimDelayAction, 0x104), 1)     // mask length
+          mstore(add(mainClaimDelayAction, 0x124), 1)     // offset
+          mstore(add(mainClaimDelayAction, 0x144), 1)     // keys length
+          mstore(add(mainClaimDelayAction, 0x164), 4)     // globalClaimDelay offset
       }
-      return claimDelayAction;
+      return mainClaimDelayAction;
 
     // If we are editing an expenditure slot
     } else {
 
-      bytes memory claimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
+      bytes memory slotClaimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
       uint256 expenditureSlot;
 
       assembly {
           expenditureSlot := mload(add(action, 0x184))
 
-          mstore(add(claimDelayAction, 0x20), functionSignature)
-          mstore(add(claimDelayAction, 0x24), permissionDomainId)
-          mstore(add(claimDelayAction, 0x44), childSkillIndex)
-          mstore(add(claimDelayAction, 0x64), expenditureId)
-          mstore(add(claimDelayAction, 0x84), 26)     // expenditureSlot storage slot
-          mstore(add(claimDelayAction, 0xa4), 0xe0)   // mask location
-          mstore(add(claimDelayAction, 0xc4), 0x140)  // keys location
-          mstore(add(claimDelayAction, 0xe4), value)
-          mstore(add(claimDelayAction, 0x104), 2)     // mask length
-          mstore(add(claimDelayAction, 0x124), 0)     // mapping
-          mstore(add(claimDelayAction, 0x144), 1)     // offset
-          mstore(add(claimDelayAction, 0x164), 2)     // keys length
-          mstore(add(claimDelayAction, 0x184), expenditureSlot)
-          mstore(add(claimDelayAction, 0x1a4), 1)     // claimDelay offset
+          mstore(add(slotClaimDelayAction, 0x20), functionSignature)
+          mstore(add(slotClaimDelayAction, 0x24), permissionDomainId)
+          mstore(add(slotClaimDelayAction, 0x44), childSkillIndex)
+          mstore(add(slotClaimDelayAction, 0x64), expenditureId)
+          mstore(add(slotClaimDelayAction, 0x84), 26)     // expenditureSlot storage slot
+          mstore(add(slotClaimDelayAction, 0xa4), 0xe0)   // mask location
+          mstore(add(slotClaimDelayAction, 0xc4), 0x140)  // keys location
+          mstore(add(slotClaimDelayAction, 0xe4), value)
+          mstore(add(slotClaimDelayAction, 0x104), 2)     // mask length
+          mstore(add(slotClaimDelayAction, 0x124), 0)     // mapping
+          mstore(add(slotClaimDelayAction, 0x144), 1)     // offset
+          mstore(add(slotClaimDelayAction, 0x164), 2)     // keys length
+          mstore(add(slotClaimDelayAction, 0x184), expenditureSlot)
+          mstore(add(slotClaimDelayAction, 0x1a4), 1)     // claimDelay offset
       }
-      return claimDelayAction;
+      return slotClaimDelayAction;
 
     }
   }

@@ -108,6 +108,7 @@ contract TokenSupplier is ColonyExtension {
 
   /// @notice Update the tokenIssuanceRate
   /// @param _tokenIssuanceRate Number of tokens to issue per day
+  // slither-disable-next-line reentrancy-no-eth
   function setTokenIssuanceRate(uint256 _tokenIssuanceRate) public initialised  {
     require(
       isRoot() || (
@@ -141,8 +142,8 @@ contract TokenSupplier is ColonyExtension {
 
     // Don't update lastIssue if we aren't actually issuing tokens
     if (newSupply > 0) {
-      colony.mintTokens(newSupply);
       lastIssue = block.timestamp;
+      colony.mintTokens(newSupply);
 
       emit TokensIssued(newSupply);
     }
