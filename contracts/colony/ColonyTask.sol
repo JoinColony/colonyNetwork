@@ -39,6 +39,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   modifier ratingSecretDoesNotExist(uint256 _id, TaskRole _role) {
+    // slither-disable-next-line incorrect-equality
     require(taskWorkRatings[_id].secret[uint8(_role)] == "", "colony-task-rating-secret-already-exists");
     _;
   }

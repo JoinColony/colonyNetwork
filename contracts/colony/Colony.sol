@@ -66,6 +66,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
 
     // Prevent transactions to network-managed extensions installed in this colony
     require(isContract(_to), "colony-to-must-be-contract");
+    // slither-disable-next-line unused-return
     try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
       require(
         IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) != _to,
@@ -115,6 +116,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   }
 
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
+    require(_colonyNetworkAddress != address(0x0), "colony-network-cannot-be-zero");
+    require(_token != address(0x0), "colony-token-cannot-be-zero");
+
     require(colonyNetworkAddress == address(0x0), "colony-already-initialised-network");
     require(token == address(0x0), "colony-already-initialised-token");
 
@@ -312,6 +316,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
 
     // Setup new local skill
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    // slither-disable-next-line reentrancy-no-eth
     uint256 newLocalSkill = colonyNetwork.addSkill(parentSkillId);
 
     // Add domain to local mapping

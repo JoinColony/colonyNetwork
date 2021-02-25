@@ -31,6 +31,8 @@ contract ColonyAuthority is CommonAuthority {
   address internal colony;
 
   constructor(address _colony) public CommonAuthority(_colony) {
+    require(_colony  != address(0x0), "colony-authority-colony-cannot-be-zero");
+
     colony = _colony;
 
     // Add permissions for the Administration role

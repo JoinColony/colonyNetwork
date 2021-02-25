@@ -105,11 +105,13 @@ contract("Colony", (accounts) => {
       await checkErrorRevert(colony.mintTokens(100, { from: accounts[3] }), "ds-auth-unauthorized");
     });
 
+    it("should not allow initialisation with null token or network addresses", async () => {
+      await checkErrorRevert(colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero), "colony-network-cannot-be-zero");
+      await checkErrorRevert(colony.initialiseColony(colonyNetwork.address, ethers.constants.AddressZero), "colony-token-cannot-be-zero");
+    });
+
     it("should not allow reinitialisation", async () => {
-      await checkErrorRevert(
-        colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero),
-        "colony-already-initialised-network"
-      );
+      await checkErrorRevert(colony.initialiseColony(colonyNetwork.address, token.address), "colony-already-initialised-network");
     });
 
     it("should correctly generate a rating secret", async () => {
