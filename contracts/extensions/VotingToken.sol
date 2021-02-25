@@ -41,7 +41,7 @@ contract VotingToken is VotingBase {
   mapping (uint256 => uint256) totalInfluences;
 
   // [motionId] => lockId
-  mapping (uint256 => uint256) locks;
+  mapping (uint256 => uint256) lockIds;
 
   // Public
 
@@ -57,15 +57,15 @@ contract VotingToken is VotingBase {
   }
 
   function postReveal(uint256 _motionId, address _user) internal override {
-    colony.unlockTokenForUser(_user, locks[_motionId]);
+    colony.unlockTokenForUser(_user, lockIds[_motionId]);
   }
 
   function postClaim(uint256 _motionId, address _user) internal override {
     uint256 lockCount = tokenLocking.getUserLock(token, _user).lockCount;
 
     // Lock may have already been released during reveal
-    if (lockCount < locks[_motionId]) {
-      colony.unlockTokenForUser(_user, locks[_motionId]);
+    if (lockCount < lockIds[_motionId]) {
+      colony.unlockTokenForUser(_user, lockIds[_motionId]);
     }
   }
 
@@ -77,7 +77,7 @@ contract VotingToken is VotingBase {
   {
     createMotion(_altTarget, _action, 1);
     motions[motionCount].maxVotes = ERC20Extended(token).totalSupply();
-    locks[motionCount] = colony.lockToken();
+    lockIds[motionCount] = colony.lockToken();
   }
 
   /// @notice Stake on a motion
@@ -109,8 +109,8 @@ contract VotingToken is VotingBase {
     internalSubmitVote(_motionId, _voteSecret);
   }
 
-  function getLock(uint256 _motionId) public view returns (uint256) {
-    return locks[_motionId];
+  function getLockId(uint256 _motionId) public view returns (uint256) {
+    return lockIds[_motionId];
   }
 
   // Internal functions

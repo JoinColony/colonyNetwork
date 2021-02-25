@@ -245,6 +245,15 @@ contract("Voting Token", (accounts) => {
       expect(motion.skillId).to.eq.BN(domain1.skillId);
     });
 
+    it("can lock the token when a motion is created", async () => {
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createRootMotion(ADDRESS_ZERO, action);
+      const motionId = await voting.getMotionCount();
+
+      const lockId = await voting.getLockId(motionId);
+      expect(lockId).to.not.be.zero;
+    });
+
     it("can create a motion with an alternative target", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
       await voting.createRootMotion(voting.address, action);
@@ -635,6 +644,18 @@ contract("Voting Token", (accounts) => {
       await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
     });
 
+    it("can unlock the token once revealed", async () => {
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
+
+      const lockId = await voting.getLockId(motionId);
+      const { lockCount } = await tokenLocking.getUserLock(token.address, USER0);
+      expect(lockCount).to.eq.BN(lockId);
+    });
+
     it("can tally votes from two users", async () => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER1 });
@@ -910,6 +931,10 @@ contract("Voting Token", (accounts) => {
     });
 
     it("cannot take an action if there is insufficient voting power (state change actions)", async () => {
+      // Clear the locks
+      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, 0, true, { from: USER0 });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, 0, true, { from: USER1 });
+
       // Set globalClaimDelay to WAD
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
@@ -955,6 +980,10 @@ contract("Voting Token", (accounts) => {
     });
 
     it("can set vote power correctly after a vote", async () => {
+      // Clear the locks
+      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, 0, true, { from: USER0 });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, 0, true, { from: USER1 });
+
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
 
