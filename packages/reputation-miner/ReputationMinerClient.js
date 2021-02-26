@@ -225,10 +225,18 @@ class ReputationMinerClient {
     // Set up the listener to take actions on each block
     this.lockedForBlockProcessing = false;
     this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
+
+    const network = await this._miner.realProvider.getNetwork();
+    this.chainId = network.chainId;
+
     this._adapter.log("🏁 Initialised");
   }
 
   async updateGasEstimate(type) {
+    if (this.chainId === 100){
+      this._miner.gasPrice = ethers.utils.hexlify(1000000000);
+      return;
+    }
     // Get latest from ethGasStation
     const options = {
       uri: 'https://ethgasstation.info/json/ethgasAPI.json',
@@ -583,13 +591,7 @@ class ReputationMinerClient {
     // Confirm hash
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
-      let gasEstimate;
-      if (this._miner.isGanacheClient) {
-        gasEstimate = ethers.BigNumber.from(2500000);
-      } else {
-        gasEstimate = await repCycle.estimate.confirmNewHash(round);
-      }
-      gasEstimate = this._miner.padGasEstimateIfGanache(gasEstimate);
+      const gasEstimate = await repCycle.estimateGas.confirmNewHash(round);
 
       const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: gasEstimate, gasPrice: this._miner.gasPrice });
       this._adapter.log(`⛏️ Transaction waiting to be mined ${confirmNewHashTx.hash}`);
