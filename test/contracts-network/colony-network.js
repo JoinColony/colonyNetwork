@@ -94,8 +94,9 @@ contract("Colony Network", (accounts) => {
       expect(updatedColonyVersion).to.eq.BN(currentColonyVersion);
     });
 
-    it("should not be able to set the token locking contract twice", async () => {
-      await checkErrorRevert(colonyNetwork.setTokenLocking(ethers.constants.AddressZero), "colony-token-locking-address-already-set");
+    it("should not be able to set the token locking to null or set twice", async () => {
+      await checkErrorRevert(colonyNetwork.setTokenLocking(ethers.constants.AddressZero), "colony-token-locking-cannot-be-zero");
+      await checkErrorRevert(colonyNetwork.setTokenLocking(metaColony.address), "colony-token-locking-address-already-set");
     });
 
     it("should not be able to initialise network twice", async () => {
@@ -127,6 +128,10 @@ contract("Colony Network", (accounts) => {
     it("should not allow reinitialisation of reputation mining process", async () => {
       await colonyNetwork.initialiseReputationMining();
       await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-already-initialised");
+    });
+
+    it("should not allow setting the mining resolver to null", async () => {
+      await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.constants.AddressZero), "colony-mining-resolver-cannot-be-zero");
     });
 
     it("should not allow initialisation if the clny token is 0", async () => {
@@ -430,6 +435,10 @@ contract("Colony Network", (accounts) => {
     beforeEach(async () => {
       ensRegistry = await ENSRegistry.new();
       await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
+    });
+
+    it("should not be able to set the ENS reigstrar to null", async () => {
+      await checkErrorRevert(colonyNetwork.setupRegistrar(ethers.constants.AddressZero, "0x0"), "colony-ens-cannot-be-zero");
     });
 
     it("should be able to get the ENSRegistrar", async () => {

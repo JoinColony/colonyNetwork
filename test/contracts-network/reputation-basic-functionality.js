@@ -218,6 +218,17 @@ contract("Reputation mining - basic functionality", (accounts) => {
       );
     });
 
+    it("should not allow the ReputationMiningCycle to be initialised with null values", async () => {
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
+      await checkErrorRevert(
+        repCycle.initialise(ethers.constants.AddressZero, ethers.constants.AddressZero),
+        "colony-reputation-token-locking-cannot-be-zero"
+      );
+      await checkErrorRevert(repCycle.initialise(tokenLocking.address, ethers.constants.AddressZero), "colony-reputation-clny-token-cannot-be-zero");
+      await checkErrorRevert(repCycle.initialise(tokenLocking.address, clnyToken.address), "colony-reputation-mining-cycle-already-initialised");
+    });
+
     it('should not allow "initialise" to be called on either the active or inactive ReputationMiningCycle', async () => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await checkErrorRevert(repCycle.initialise(MINER1, MINER2), "colony-reputation-mining-cycle-already-initialised");

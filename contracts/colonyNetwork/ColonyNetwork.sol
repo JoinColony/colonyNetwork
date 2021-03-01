@@ -93,8 +93,11 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
   stoppable
   auth
   {
+    require(_tokenLocking != address(0x0), "colony-token-locking-cannot-be-zero");
+
     // Token locking address can't be changed
     require(tokenLocking == address(0x0), "colony-token-locking-address-already-set");
+
     tokenLocking = _tokenLocking;
 
     emit TokenLockingAddressSet(_tokenLocking);
@@ -108,6 +111,8 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
   stoppable
   auth
   {
+    require(_miningResolver != address(0x0), "colony-mining-resolver-cannot-be-zero");
+
     miningCycleResolver = _miningResolver;
 
     emit MiningCycleResolverSet(_miningResolver);
@@ -244,6 +249,7 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
         // When we are at an integer power of two steps away from the newly added skill (leaf) node,
         // add the current parent skill to the new skill's parents array
         if (treeWalkingCounter == powerOfTwo) {
+          // slither-disable-next-line controlled-array-length
           skills[skillCount].parents.push(parentSkillId);
           powerOfTwo = powerOfTwo*2;
         }

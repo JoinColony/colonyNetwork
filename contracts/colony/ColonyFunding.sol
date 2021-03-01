@@ -135,7 +135,15 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     uint256 tokenPayout = min(initialPayout, repPayout);
     uint256 tokenSurplus = sub(initialPayout, tokenPayout);
 
-    // Process reputation updates if own token
+    // Send any surplus back to the domain (for payoutScalars < 1)
+    if (tokenSurplus > 0) {
+      fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], tokenSurplus);
+      fundingPot.balance[_token] = sub(fundingPot.balance[_token], tokenSurplus);
+      FundingPot storage domainFundingPot = fundingPots[domains[expenditure.domainId].fundingPotId];
+      domainFundingPot.balance[_token] = add(domainFundingPot.balance[_token], tokenSurplus);
+    }
+
+    // Process reputation updates if internal token
     if (_token == token) {
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), domains[expenditure.domainId].skillId);
@@ -143,14 +151,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
         // Currently we support at most one skill per Expenditure, but this will likely change in the future.
         colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), slot.skills[0]);
       }
-    }
-
-    // Send any surplus back to the domain (for payoutScalars < 1)
-    if (tokenSurplus > 0) {
-      fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], tokenSurplus);
-      fundingPot.balance[_token] = sub(fundingPot.balance[_token], tokenSurplus);
-      FundingPot storage domainFundingPot = fundingPots[domains[expenditure.domainId].fundingPotId];
-      domainFundingPot.balance[_token] = add(domainFundingPot.balance[_token], tokenSurplus);
     }
 
     // Finish the payout
@@ -336,6 +336,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     emit RewardPayoutCycleStarted(msg.sender, totalLockCount);
   }
 
+  // slither-disable-next-line reentrancy-no-eth
   function claimRewardPayout(
     uint256 _payoutId,
     uint256[7] memory _squareRoots,
@@ -358,6 +359,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     address tokenAddress;
     uint256 reward;
     (tokenAddress, reward) = calculateRewardForUser(_payoutId, _squareRoots, userReputation);
+
+    ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, msg.sender, _payoutId);
 
     uint fee = calculateNetworkFeeForPayout(reward);
     uint remainder = sub(reward, fee);
@@ -443,9 +446,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     // Checking if payout is active
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
 
-    ITokenLocking tokenLocking = ITokenLocking(tokenLockingAddress);
-    uint256 userTokens = tokenLocking.getUserLock(token, msg.sender).balance;
-
+    uint256 userTokens = ITokenLocking(tokenLockingAddress).getUserLock(token, msg.sender).balance;
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
     require(userReputation > 0, "colony-reward-payout-invalid-user-reputation");
 
@@ -469,8 +470,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     require(mul(squareRoots[5], squareRoots[5]) >= denominator, "colony-reward-payout-invalid-parameter-denominator");
 
     uint256 reward = (mul(squareRoots[4], squareRoots[6]) / squareRoots[5]) ** 2;
-
-    tokenLocking.unlockTokenForUser(token, msg.sender, payoutId);
 
     return (payout.tokenAddress, reward);
   }
@@ -598,6 +597,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     uint256 feeInverse = colonyNetworkContract.getFeeInverse();
 
+    // slither-disable-next-line incorrect-equality
     if (_payout == 0 || feeInverse == 1) {
       fee = _payout;
     } else {
@@ -608,8 +608,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   function burnTokens(address _token, uint256 _amount) public stoppable auth {
     // Check the root funding pot has enought
     require(fundingPots[1].balance[_token] >= _amount, "colony-not-enough-tokens");
-    ERC20Extended(_token).burn(_amount);
     fundingPots[1].balance[_token] -= _amount;
+
+    ERC20Extended(_token).burn(_amount);
 
     emit TokensBurned(msg.sender, _token, _amount);
   }

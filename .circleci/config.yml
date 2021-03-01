@@ -42,6 +42,9 @@ step_setup_slither: &step_setup_slither
         chmod +x solc-static-linux
         sudo mv solc-static-linux /usr/local/bin/solc
         sudo pip install slither-analyzer
+        sudo pip install solc-select
+        sudo solc-select install 0.7.3
+        sudo solc-select use 0.7.3
 
 jobs:
   reputation-test:
@@ -241,11 +244,9 @@ jobs:
       - <<: *step_setup_slither
       - run:
           name: "Slither analysis"
-          command: yarn run test:security:slither
-      - run:
-          name: "MythX security analysis"
-          command: yarn run test:security:mythril
-          no_output_timeout: 60m
+          command: |
+            rm build/contracts/*
+            yarn run test:security:slither
   end-to-end-tests:
     <<: *job_common
     steps:
@@ -264,6 +265,8 @@ workflows:
   commit:
     jobs:
       - lint-and-unit-test:
+          context: dockerhub-credentials
+      - security-analysis:
           context: dockerhub-credentials
       - reputation-test:
           context: dockerhub-credentials
@@ -288,8 +291,4 @@ workflows:
               only:
                 - develop
     jobs:
-      - security-analysis:
-          context:
-            - colony-network-context
-            - dockerhub-credentials
       - end-to-end-tests

@@ -95,8 +95,12 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   /// @notice Initialise this reputation mining cycle.
   /// @dev This will only be called once, by ColonyNetwork, in the same transaction that deploys this contract
   function initialise(address _tokenLockingAddress, address _clnyTokenAddress) public {
+    require(_tokenLockingAddress != address(0x0), "colony-reputation-token-locking-cannot-be-zero");
+    require(_clnyTokenAddress != address(0x0), "colony-reputation-clny-token-cannot-be-zero");
+
     // Prevent this being called multiple times
     require(colonyNetworkAddress == address(0x0), "colony-reputation-mining-cycle-already-initialised");
+
     colonyNetworkAddress = msg.sender;
     tokenLockingAddress = _tokenLockingAddress;
     clnyTokenAddress = _clnyTokenAddress;
@@ -163,6 +167,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       nUniqueSubmittedHashes += 1;
       // And add it to the first disputeRound
       // NB if no other hash is submitted, no dispute resolution will be required.
+      // slither-disable-next-line controlled-array-length
       disputeRounds[0].push(DisputedEntry({
         firstSubmitter: msg.sender,
         lastResponseTimestamp: reputationMiningWindowOpenTimestamp + MINING_WINDOW_SIZE,
@@ -187,6 +192,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     }
 
     // And add the miner to the array list of submissions here
+    // slither-disable-next-line controlled-array-length
     submittedHashes[_newHash][_nLeaves][_jrh].push(msg.sender);
     // Note that they submitted it.
     submittedEntries[msg.sender][_entryIndex] = true;
@@ -194,6 +200,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     emit ReputationRootHashSubmitted(msg.sender, _newHash, _nLeaves, _jrh, _entryIndex);
   }
 
+  // slither-disable-next-line suicidal
   function confirmNewHash(uint256 _roundNumber) public
   finalDisputeRoundCompleted(_roundNumber)
   {
@@ -218,9 +225,11 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       submission.nLeaves,
       submittedHashes[submission.proposedNewRootHash][submission.nLeaves][submission.jrh]
     );
+
     selfdestruct(colonyNetworkAddress);
   }
 
+  // slither-disable-next-line reentrancy-no-eth
   function invalidateHash(uint256 _round, uint256 _idx) public {
     // What we do depends on our opponent, so work out which index it was at in disputeRounds[round]
     uint256 opponentIdx = getOpponentIdx(_idx);
@@ -282,11 +291,17 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 
+      // Punish the people who proposed the hash that was rejected
+      stakeLost += submittedHashes[submission.proposedNewRootHash][submission.nLeaves][submission.jrh].length * MIN_STAKE;
+      IColonyNetwork(colonyNetworkAddress).punishStakers(
+        submittedHashes[submission.proposedNewRootHash][submission.nLeaves][submission.jrh],
+        MIN_STAKE
+      );
+
       // Work out whether we are invalidating just the supplied idx or its opponent too.
-      bool eliminateOpponent = false;
-      if (disputeRounds[_round][opponentIdx].challengeStepCompleted == disputeRounds[_round][_idx].challengeStepCompleted) {
-        eliminateOpponent = true;
-      }
+      bool eliminateOpponent = (
+        disputeRounds[_round][opponentIdx].challengeStepCompleted == disputeRounds[_round][_idx].challengeStepCompleted
+      );
 
       if (!eliminateOpponent) {
         // If here, then the opponent completed one more challenge round than the submission being invalidated or
@@ -302,24 +317,17 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
         nInvalidatedHashes += 2;
 
         // Punish the people who proposed our opponent
+        stakeLost += submittedHashes[opponentSubmission.proposedNewRootHash][opponentSubmission.nLeaves][opponentSubmission.jrh].length * MIN_STAKE;
         IColonyNetwork(colonyNetworkAddress).punishStakers(
           submittedHashes[opponentSubmission.proposedNewRootHash][opponentSubmission.nLeaves][opponentSubmission.jrh],
           MIN_STAKE
         );
-        stakeLost += submittedHashes[opponentSubmission.proposedNewRootHash][opponentSubmission.nLeaves][opponentSubmission.jrh].length * MIN_STAKE;
 
         emit HashInvalidated(opponentSubmission.proposedNewRootHash, opponentSubmission.nLeaves, opponentSubmission.jrh);
       }
 
       // Note that two hashes have completed this challenge round (either one accepted for now and one rejected, or two rejected)
       nHashesCompletedChallengeRound[_round] += 2;
-
-      // Punish the people who proposed the hash that was rejected
-      IColonyNetwork(colonyNetworkAddress).punishStakers(
-        submittedHashes[submission.proposedNewRootHash][submission.nLeaves][submission.jrh],
-        MIN_STAKE
-      );
-      stakeLost += submittedHashes[submission.proposedNewRootHash][submission.nLeaves][submission.jrh].length * MIN_STAKE;
 
       emit HashInvalidated(submission.proposedNewRootHash, submission.nLeaves, submission.jrh);
     }
@@ -410,6 +418,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       amount = MIN_INT128;
     }
 
+    // slither-disable-next-line controlled-array-length
     reputationUpdateLog.push(ReputationLogEntry(
       _user,
       amount, // Potentially adjusted amount to int128 scoe

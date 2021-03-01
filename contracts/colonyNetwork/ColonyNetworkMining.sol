@@ -89,6 +89,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     emit ReputationRootHashSet(newHash, newNLeaves, stakers, totalMinerRewardPerCycle);
   }
 
+  // slither-disable-next-line reentrancy-no-eth
   function initialiseReputationMining() public stoppable {
     require(inactiveReputationMiningCycle == address(0x0), "colony-reputation-mining-already-initialised");
     address clnyToken = IMetaColony(metaColony).getToken();
@@ -102,6 +103,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     emit ReputationMiningInitialised(inactiveReputationMiningCycle);
   }
 
+  // slither-disable-next-line reentrancy-no-eth
   function startNextCycle() public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
     require(clnyToken != address(0x0), "colony-reputation-mining-clny-token-invalid-address");
@@ -179,6 +181,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
       IMetaColony(metaColony).mintTokensForColonyNetwork(realReward);
     }
 
+    // slither-disable-next-line unused-return
     ERC20Extended(clnyToken).approve(tokenLocking, realReward);
 
     for (i = 0; i < stakers.length; i++) {
@@ -249,18 +252,18 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     address clnyToken = IMetaColony(metaColony).getToken();
     ITokenLocking(tokenLocking).withdraw(clnyToken, _amount, true);
     if (isXdai()){
-      // On Xdai, I'm burning bridged tokens is certainly not what we want. So let's
-      // send them to the metacolony for now.
-      ERC20Extended(clnyToken).transfer(metaColony, _amount);
+      // On Xdai, I'm burning bridged tokens is certainly not what we want.
+      //   So let's send them to the metacolony for now.
+      require(ERC20Extended(clnyToken).transfer(metaColony, _amount), "colony-network-transfer-failed");
     } else {
       ERC20Extended(clnyToken).burn(_amount);
     }
   }
 
-  function setReputationMiningCycleReward(uint256 _amount) public stoppable
-  calledByMetaColony
-  {
+  function setReputationMiningCycleReward(uint256 _amount) public stoppable calledByMetaColony {
     totalMinerRewardPerCycle = _amount;
+
+    emit ReputationMiningRewardSet(_amount);
   }
 
   function getReputationMiningCycleReward() public view returns (uint256) {

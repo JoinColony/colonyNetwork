@@ -85,12 +85,10 @@ contract("Token Locking", (addresses) => {
 
   describe("when depositing tokens", async () => {
     it("should correctly set colony network address", async () => {
-      await tokenLocking.setColonyNetwork(ethers.constants.AddressZero);
-      let colonyNetworkAddress = await tokenLocking.getColonyNetwork();
-      expect(colonyNetworkAddress).to.equal(ethers.constants.AddressZero);
+      await checkErrorRevert(tokenLocking.setColonyNetwork(ethers.constants.AddressZero), "colony-token-locking-network-cannot-be-zero");
 
       await tokenLocking.setColonyNetwork(colonyNetwork.address);
-      colonyNetworkAddress = await tokenLocking.getColonyNetwork();
+      const colonyNetworkAddress = await tokenLocking.getColonyNetwork();
       expect(colonyNetworkAddress).to.equal(colonyNetwork.address);
     });
 

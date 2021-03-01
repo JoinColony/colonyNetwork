@@ -76,6 +76,10 @@ interface ColonyNetworkDataTypes {
   /// @param inactiveReputationMiningCycle Address of the newly created ReputationMiningCycle used in logging reputation changes
   event ReputationMiningInitialised(address inactiveReputationMiningCycle);
 
+  /// @notice Event logged when the mining reward is set
+  /// @param amount Amount of the reward
+  event ReputationMiningRewardSet(uint256 amount);
+
   /// @notice Event logged when a reputation mining cycle completes
   /// @param hash The root hash of the newly accepted reputation state
   /// @param nLeaves The number of leaves in the reputation state
@@ -87,6 +91,11 @@ interface ColonyNetworkDataTypes {
   /// @param stakers Array of users who submitted or backed the hash accepted
   /// @param reward Amount of CLNY distributed as reward to miners
   event ReputationRootHashSet(bytes32 newHash, uint256 newNLeaves, address[] stakers, uint256 reward);
+
+  /// @notice Event logged when the ENS registrar is initialised
+  /// @param ens Address of ENS registrar
+  /// @param rootNode Namehash of the root node for the domain
+  event RegistrarInitialised(address ens, bytes32 rootNode);
 
   /// @notice Event logged when a "user.joincolony.eth" label is registered
   /// @param user The user address registered

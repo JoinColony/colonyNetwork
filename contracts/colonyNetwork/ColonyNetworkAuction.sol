@@ -77,6 +77,7 @@ contract DutchAuction is DSMath {
   mapping (address => uint256) public bids;
 
   modifier auctionNotStarted {
+    // slither-disable-next-line incorrect-equality
     require(startTime == 0, "colony-auction-already-started");
     require(!started, "colony-auction-already-started");
     _;
@@ -115,6 +116,8 @@ contract DutchAuction is DSMath {
   event AuctionFinalized(uint256 _finalPrice);
 
   constructor(address _clnyToken, address _token, address _metaColonyAddress) public {
+    require(_metaColonyAddress != address(0x0), "colony-auction-metacolony-cannot-be-zero");
+
     colonyNetwork = msg.sender;
     metaColonyAddress = _metaColonyAddress;
     clnyToken = ERC20Extended(_clnyToken);
