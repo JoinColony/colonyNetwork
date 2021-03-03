@@ -57,6 +57,12 @@ contract VotingToken is VotingBase {
   }
 
   function postReveal(uint256 _motionId, address _user) internal override {
+    if (lockIds[_motionId] == 0) {
+      // This is the first reveal that has taken place in this motion.
+      // We lock the token for everyone to avoid double-counting,
+      lockIds[_motionId] = colony.lockToken();
+    }
+
     colony.unlockTokenForUser(_user, lockIds[_motionId]);
   }
 
@@ -77,7 +83,6 @@ contract VotingToken is VotingBase {
   {
     createMotion(_altTarget, _action, 1);
     motions[motionCount].maxVotes = ERC20Extended(token).totalSupply();
-    lockIds[motionCount] = colony.lockToken();
   }
 
   /// @notice Stake on a motion

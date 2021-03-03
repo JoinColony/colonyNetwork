@@ -245,13 +245,13 @@ contract("Voting Token", (accounts) => {
       expect(motion.skillId).to.eq.BN(domain1.skillId);
     });
 
-    it("can lock the token when a motion is created", async () => {
+    it("does not lock the token when a motion is created", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await voting.createRootMotion(ADDRESS_ZERO, action);
       const motionId = await voting.getMotionCount();
 
       const lockId = await voting.getLockId(motionId);
-      expect(lockId).to.not.be.zero;
+      expect(lockId).to.be.zero;
     });
 
     it("can create a motion with an alternative target", async () => {
@@ -642,6 +642,20 @@ contract("Voting Token", (accounts) => {
       await forwardTime(SUBMIT_PERIOD, this);
 
       await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
+    });
+
+    it("locks the token when the first reveal is made", async () => {
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      let lockId = await voting.getLockId(motionId);
+      expect(lockId).to.be.zero;
+
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
+
+      lockId = await voting.getLockId(motionId);
+      expect(lockId).to.not.be.zero;
     });
 
     it("can unlock the token once revealed", async () => {
