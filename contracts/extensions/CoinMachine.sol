@@ -18,7 +18,7 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../common/ERC20Extended.sol";
+import "./../../lib/dappsys/erc20.sol";
 import "./ColonyExtension.sol";
 
 // ignore-file-swc-108
@@ -42,7 +42,7 @@ contract CoinMachine is ColonyExtension {
   uint256 targetPerPeriod; // Target number of tokens to sell in a period
   uint256 maxPerPeriod; // Maximum number of tokens sellable in a period
 
-  uint256 tokensToSell; // Number of tokens left to sell
+  uint256 tokensToSell_DEPRECATED; // deprecated, replaced by ERC20(token).balanceOf(address(this))
 
   uint256 activePeriod; // The active sale period
   uint256 activePrice; // The active sale price (a WAD ratio of averageIntake / targetPerPeriod)
@@ -51,6 +51,8 @@ contract CoinMachine is ColonyExtension {
   uint256 activeIntake; // Payment received in the active period
 
   uint256 emaIntake; // Averaged payment intake
+
+  address token; // The token we are selling
 
   // Modifiers
 
@@ -77,10 +79,13 @@ contract CoinMachine is ColonyExtension {
     require(address(colony) == address(0x0), "extension-already-installed");
 
     colony = IColony(_colony);
+    token = colony.getToken();
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
+  function finishUpgrade() public override auth {
+    token = colony.getToken();
+  }
 
   /// @notice Called when deprecating (or undeprecating) the extension
   function deprecate(bool _deprecated) public override auth {
@@ -89,6 +94,9 @@ contract CoinMachine is ColonyExtension {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
+    uint256 unsoldTokens = ERC20(token).balanceOf(address(this));
+    if (unsoldTokens > 0) ERC20(token).transfer(address(colony), unsoldTokens);
+
     selfdestruct(address(uint160(address(colony))));
   }
 
@@ -100,12 +108,12 @@ contract CoinMachine is ColonyExtension {
   /// @param _maxPerPeriod The maximum number of tokens that can be sold per period
   /// @param _startingPrice The sale price to start at, expressed in units of _purchaseToken per token being sold, as a WAD
   function initialise(
+    address _token,
     address _purchaseToken,
     uint256 _periodLength,
     uint256 _windowSize,
     uint256 _targetPerPeriod,
     uint256 _maxPerPeriod,
-    uint256 _tokensToSell,
     uint256 _startingPrice
   )
     public
@@ -119,6 +127,8 @@ contract CoinMachine is ColonyExtension {
     require(_targetPerPeriod > 0, "coin-machine-target-too-small");
     require(_maxPerPeriod >= _targetPerPeriod, "coin-machine-max-too-small");
 
+    token = _token;
+
     // A value of address(0x0) denotes Ether
     purchaseToken = _purchaseToken;
 
@@ -130,7 +140,6 @@ contract CoinMachine is ColonyExtension {
 
     targetPerPeriod = _targetPerPeriod;
     maxPerPeriod = _maxPerPeriod;
-    tokensToSell = _tokensToSell;
 
     activePrice = _startingPrice;
     activePeriod = getCurrentPeriod();
@@ -145,12 +154,12 @@ contract CoinMachine is ColonyExtension {
   function buyTokens(uint256 _numTokens) public payable notDeprecated {
     updatePeriod();
 
-    uint256 numTokens = min(min(_numTokens, maxPerPeriod - activeSold), tokensToSell);
+    uint256 tokenBalance = ERC20(token).balanceOf(address(this));
+    uint256 numTokens = min(min(_numTokens, maxPerPeriod - activeSold), tokenBalance);
     uint256 totalCost = wmul(numTokens, activePrice);
 
     activeIntake = add(activeIntake, totalCost);
     activeSold = add(activeSold, numTokens);
-    tokensToSell = sub(tokensToSell, numTokens);
 
     assert(activeSold <= maxPerPeriod);
 
@@ -161,9 +170,9 @@ contract CoinMachine is ColonyExtension {
       require(ERC20Extended(purchaseToken).transferFrom(msg.sender, address(this), totalCost), "coin-machine-transfer-failed");
     }
 
-    colony.mintTokensFor(msg.sender, numTokens);
+    ERC20(token).transfer(msg.sender, numTokens);
 
-    emit TokensBought(msg.sender, _numTokens, totalCost);
+    emit TokensBought(msg.sender, numTokens, totalCost);
   }
 
   /// @notice Bring the token accounting current
@@ -214,11 +223,6 @@ contract CoinMachine is ColonyExtension {
     return maxPerPeriod;
   }
 
-  /// @notice Get the total number of tokens remaining for sale
-  function getTokensToSell() public view returns (uint256) {
-    return tokensToSell;
-  }
-
   /// @notice Get the current price per token
   function getCurrentPrice() public view returns (uint256) {
     uint256 currentPeriod = getCurrentPeriod();
@@ -246,7 +250,7 @@ contract CoinMachine is ColonyExtension {
   /// @notice Get the number of remaining tokens for sale this period
   function getNumAvailable() public view returns (uint256) {
     return min(
-      tokensToSell,
+      ERC20(token).balanceOf(address(this)),
       sub(maxPerPeriod, ((activePeriod >= getCurrentPeriod()) ? activeSold : 0))
     );
   }
