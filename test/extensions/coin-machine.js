@@ -378,6 +378,44 @@ contract("Coin Machine", (accounts) => {
       expect(currentPrice).to.eq.BN(expectedPrice);
     });
 
+    it("cannot adjust prices while the token balance is zero", async () => {
+      const periodLength = await coinMachine.getPeriodLength();
+      const maxPerPeriod = await coinMachine.getMaxPerPeriod();
+      const windowSize = await coinMachine.getWindowSize();
+      const alphaAsWad = new BN(2).mul(WAD).divRound(windowSize.addn(1));
+
+      let currentPrice;
+
+      await token.mint(coinMachine.address, maxPerPeriod);
+
+      await purchaseToken.mint(USER0, maxPerPeriod.muln(10), { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, maxPerPeriod.muln(10), { from: USER0 });
+
+      currentPrice = await coinMachine.getCurrentPrice();
+      expect(currentPrice).to.eq.BN(WAD);
+
+      await coinMachine.buyTokens(maxPerPeriod, { from: USER0 });
+
+      // Next period, but no price update because we are out of tokens
+      await forwardTime(periodLength.toNumber(), this);
+      await coinMachine.updatePeriod();
+
+      currentPrice = await coinMachine.getCurrentPrice();
+      expect(currentPrice).to.eq.BN(WAD);
+
+      // Now we reload the token balance and advance one more period
+      await token.mint(coinMachine.address, WAD);
+
+      await forwardTime(periodLength.toNumber(), this);
+      await coinMachine.updatePeriod();
+
+      // Price changes
+      const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
+      const expectedPrice = emaIntake.divRound(WAD.muln(100));
+      currentPrice = await coinMachine.getCurrentPrice();
+      expect(currentPrice).to.eq.BN(expectedPrice);
+    });
+
     it("it monotonically adjusts prices according to demand", async () => {
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
@@ -411,6 +449,8 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can handle long periods of inactivity", async () => {
+      await token.mint(coinMachine.address, UINT256_MAX);
+
       const windowSize = await coinMachine.getWindowSize();
       const periodLength = await coinMachine.getPeriodLength();
 

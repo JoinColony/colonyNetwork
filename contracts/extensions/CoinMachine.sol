@@ -178,10 +178,15 @@ contract CoinMachine is ColonyExtension {
   /// @notice Bring the token accounting current
   function updatePeriod() public {
     uint256 currentPeriod = getCurrentPeriod();
-    uint256 initialActivePeriod = activePeriod;
+
+    // If we're out of tokens, don't update
+    if (ERC20(token).balanceOf(address(this)) == 0) {
+      activePeriod = currentPeriod;
+    }
 
     // We need to update the price if the active period is not the current one.
     if (activePeriod < currentPeriod) {
+      uint256 initialActivePeriod = activePeriod;
 
       emaIntake = wmul((WAD - alpha), emaIntake) + wmul(alpha, activeIntake); // wmul(wad, int) => int
       activeIntake = 0;
@@ -198,9 +203,9 @@ contract CoinMachine is ColonyExtension {
 
       // Update the price
       activePrice = wdiv(emaIntake, targetPerPeriod);
-    }
 
-    emit PeriodUpdated(initialActivePeriod, currentPeriod);
+      emit PeriodUpdated(initialActivePeriod, currentPeriod);
+    }
   }
 
   /// @notice Get the length of the sale period
@@ -227,7 +232,7 @@ contract CoinMachine is ColonyExtension {
   function getCurrentPrice() public view returns (uint256) {
     uint256 currentPeriod = getCurrentPeriod();
 
-    if (activePeriod >= currentPeriod) {
+    if (activePeriod >= currentPeriod || ERC20(token).balanceOf(address(this)) == 0) {
       return activePrice;
 
     // Otherwise, infer the new price
