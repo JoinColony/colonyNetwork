@@ -96,6 +96,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
 
   mapping (address => mapping (uint256 => bool)) tokenLocks; // Storage slot 31
 
+  // Mapping of token address -> address approved -> amount approved
+  mapping (address => mapping (address => uint256 )) tokenApprovals; // Storage slot 32
+
+  // Mapping of token address -> total amount approved
+  mapping (address => uint256 ) tokenApprovalTotals; // Storage slot 33
+
   // Constants
   uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs
   bytes32 constant ROOT_ROLES = bytes32(uint256(1)) << uint8(ColonyRole.Recovery) | bytes32(uint256(1)) << uint8(ColonyRole.Root);

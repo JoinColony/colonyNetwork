@@ -946,4 +946,10 @@ interface IColony is ColonyDataTypes, IRecovery {
 
   /// @notice unlock the native colony token, if possible
   function unlockToken() external;
+
+  function updateApprovalAmount(address _token, address _spender) external;
+  function getTokenApproval(address _token, address _spender) external view returns (uint256 amount);
+
+  function getTotalTokenApproval(address _token) external view returns (uint256 amount);
+
 }
