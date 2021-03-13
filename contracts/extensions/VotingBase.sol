@@ -19,11 +19,12 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyExtension.sol";
 
 
-abstract contract VotingBase is ColonyExtension {
+abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
 
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
@@ -181,12 +182,12 @@ abstract contract VotingBase is ColonyExtension {
     bytes32 rootHash;
     uint256 domainId;
     uint256 skillId;
-    uint256 maxVotes;
-    uint256 totalVotes;
     uint256 paidVoterComp;
     uint256[2] pastVoterComp; // [nay, yay]
     uint256[2] stakes; // [nay, yay]
-    uint256[2] votes; // [nay, yay]
+    uint256[2][] votes; // [nay, yay]
+    uint256[] totalVotes;
+    uint256[] maxVotes;
     bool escalated;
     bool finalized;
     address altTarget;
@@ -204,12 +205,9 @@ abstract contract VotingBase is ColonyExtension {
 
   // Virtual functions
 
-  function getInfluence(uint256 _motionId, address _user) public view virtual returns (uint256);
-
-  function getTotalInfluence(uint256 _motionId) public view virtual returns (uint256);
-
+  function getInfluence(uint256 _motionId, address _user) public view virtual returns (uint256[] memory);
+  function getTotalInfluence(uint256 _motionId) public view virtual returns (uint256[] memory);
   function postReveal(uint256 _motionId, address _user) internal virtual;
-
   function postClaim(uint256 _motionId, address _user) internal virtual;
 
   // Public functions (interface)
@@ -247,23 +245,33 @@ abstract contract VotingBase is ColonyExtension {
   /// @param _vote The side being supported (0 = NAY, 1 = YAY)
   function revealVote(uint256 _motionId, bytes32 _salt, uint256 _vote) public {
     Motion storage motion = motions[_motionId];
+
     require(getMotionState(_motionId) == MotionState.Reveal, "voting-base-motion-not-reveal");
     require(_vote <= 1, "voting-base-bad-vote");
 
-    uint256 influence = getInfluence(_motionId, msg.sender);
-    motion.votes[_vote] = add(motion.votes[_vote], influence);
+    uint256[] memory influence = getInfluence(_motionId, msg.sender);
+    for (uint256 i; i < influence.length; i++) {
+      motion.votes[i][_vote] = add(motion.votes[i][_vote], influence[i]);
+    }
 
     bytes32 voteSecret = voteSecrets[_motionId][msg.sender];
     require(voteSecret == getVoteSecret(_salt, _vote), "voting-base-secret-no-match");
     delete voteSecrets[_motionId][msg.sender];
 
-    uint256 voterReward = getVoterReward(_motionId, influence);
+    uint256 voterReward = getVoterReward(_motionId, msg.sender);
     motion.paidVoterComp = add(motion.paidVoterComp, voterReward);
 
     emit MotionVoteRevealed(_motionId, msg.sender, _vote);
 
     // See if reputation revealed matches reputation submitted
-    if (add(motion.votes[NAY], motion.votes[YAY]) == motion.totalVotes) {
+    bool fullyRevealed = true;
+
+    for (uint256 j; j < influence.length; j++) {
+      fullyRevealed = fullyRevealed &&
+        add(motion.votes[j][NAY], motion.votes[j][YAY]) == motion.totalVotes[j];
+    }
+
+    if (fullyRevealed) {
       motion.events[REVEAL_END] = uint64(block.timestamp);
 
       emit MotionEventSet(_motionId, REVEAL_END);
@@ -276,20 +284,30 @@ abstract contract VotingBase is ColonyExtension {
 
   function finalizeMotion(uint256 _motionId) public {
     Motion storage motion = motions[_motionId];
-    require(getMotionState(_motionId) == MotionState.Finalizable, "voting-base-motion-not-finalizable");
 
-    assert(
-      motion.stakes[YAY] == getRequiredStake(_motionId) ||
-      add(motion.votes[NAY], motion.votes[YAY]) > 0
-    );
+    require(getMotionState(_motionId) == MotionState.Finalizable, "voting-base-motion-not-finalizable");
 
     motion.finalized = true;
 
-    bool canExecute = (
-      motion.stakes[NAY] < motion.stakes[YAY] ||
-      motion.votes[NAY] < motion.votes[YAY]
-    );
+    uint256 sumVotes;
+    uint256 yayVotes;
 
+    for (uint256 i; i < motion.votes.length; i++) {
+      sumVotes = add(sumVotes, add(motion.votes[i][NAY], motion.votes[i][YAY]));
+      yayVotes = add(yayVotes, motion.votes[i][YAY]);
+    }
+
+    // Either we're fully staked YAY or we've gone to a vote
+    assert(motion.stakes[YAY] == getRequiredStake(_motionId) || sumVotes > 0);
+
+    bool canExecute = true;
+
+    // Check if every sub-vote passed
+    for (uint256 j; j < motion.votes.length; j++) {
+      canExecute = canExecute && motion.votes[j][NAY] < motion.votes[j][YAY];
+    }
+
+    // Handle expenditure-related bookkeeping (claim delays, repeated vote checks)
     if (
       getSig(motion.action) == CHANGE_FUNCTION_SIG &&
       getTarget(motion.altTarget) == address(colony)
@@ -305,8 +323,7 @@ abstract contract VotingBase is ColonyExtension {
       }
 
       bytes32 actionHash = hashExpenditureAction(motion.action);
-      uint256 votePower = (add(motion.votes[NAY], motion.votes[YAY]) > 0) ?
-        motion.votes[YAY] : motion.stakes[YAY];
+      uint256 votePower = (sumVotes > 0) ? yayVotes : motion.stakes[YAY];
 
       if (expenditurePastVotes[actionHash] < votePower) {
         expenditurePastVotes[actionHash] = votePower;
@@ -341,6 +358,7 @@ abstract contract VotingBase is ColonyExtension {
     public
   {
     Motion storage motion = motions[_motionId];
+
     require(
       getMotionState(_motionId) == MotionState.Finalized ||
       getMotionState(_motionId) == MotionState.Failed,
@@ -459,6 +477,7 @@ abstract contract VotingBase is ColonyExtension {
   /// @return The current motion state
   function getMotionState(uint256 _motionId) public view returns (MotionState) {
     Motion storage motion = motions[_motionId];
+
     uint256 requiredStake = getRequiredStake(_motionId);
 
     // Check for valid motion Id
@@ -472,10 +491,7 @@ abstract contract VotingBase is ColonyExtension {
       return MotionState.Finalized;
 
     // Not fully staked
-    } else if (
-      motion.stakes[YAY] < requiredStake ||
-      motion.stakes[NAY] < requiredStake
-    ) {
+    } else if (motion.stakes[YAY] < requiredStake || motion.stakes[NAY] < requiredStake) {
 
       // Are we still staking?
       if (block.timestamp < motion.events[STAKE_END]) {
@@ -483,8 +499,11 @@ abstract contract VotingBase is ColonyExtension {
       // If not, did the YAY side stake?
       } else if (motion.stakes[YAY] == requiredStake) {
         return MotionState.Finalizable;
-      // If not, was there a prior vote we can fall back on?
-      } else if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
+      // If not, was there a prior (reputation) vote we can fall back on?
+      } else if (
+        identifier() == keccak256("VotingReputation") &&
+        add(motion.votes[0][NAY], motion.votes[0][YAY]) > 0
+      ) {
         return MotionState.Finalizable;
       // Otherwise, the motion failed
       } else {
@@ -499,8 +518,8 @@ abstract contract VotingBase is ColonyExtension {
       } else if (block.timestamp < motion.events[REVEAL_END]) {
         return MotionState.Reveal;
       } else if (
-        block.timestamp < motion.events[REVEAL_END] + escalationPeriod &&
-        motion.domainId > 1
+        motion.domainId > 1 &&
+        block.timestamp < motion.events[REVEAL_END] + escalationPeriod
       ) {
         return MotionState.Closed;
       } else {
@@ -514,12 +533,25 @@ abstract contract VotingBase is ColonyExtension {
   /// NB This function will only return a meaningful value if in the reveal state.
   /// Prior to the reveal state, getVoterRewardRange should be used.
   /// @param _motionId The id of the motion
-  /// @param _voterInfluence The influence the voter has in the domain
+  /// @param _user The address of the the voter
   /// @return The voter reward
-  function getVoterReward(uint256 _motionId, uint256 _voterInfluence) public view returns (uint256) {
+  function getVoterReward(uint256 _motionId, address _user) public view returns (uint256) {
     Motion storage motion = motions[_motionId];
-    uint256 totalInfluence = getTotalInfluence(_motionId);
-    uint256 fractionUserInfluence = wdiv(_voterInfluence, totalInfluence);
+
+    uint256[] memory influence = getInfluence(_motionId, _user);
+    uint256[] memory totalInfluence = getTotalInfluence(_motionId);
+    assert(influence.length == totalInfluence.length);
+
+    // Get the average per-influence fraction
+    uint256 fractionUserInfluence;
+
+    for (uint256 i; i < influence.length; i++) {
+      // TODO: Divide-by-zero ?
+      fractionUserInfluence = add(fractionUserInfluence, wdiv(influence[i], totalInfluence[i]));
+    }
+
+    fractionUserInfluence = fractionUserInfluence / influence.length;
+
     uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
     return wmul(wmul(fractionUserInfluence, totalStake), voterRewardFraction);
   }
@@ -571,11 +603,18 @@ abstract contract VotingBase is ColonyExtension {
     uint256 stakerReward;
     uint256 repPenalty;
 
+    uint256 sumVotes;
+
+    for (uint256 i; i < motion.votes.length; i++) {
+      sumVotes = add(sumVotes, motion.totalVotes[i]);
+    }
+
     // Went to a vote, use vote to determine reward or penalty
-    if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
+    if (sumVotes > 0) {
 
       uint256 loserStake;
       uint256 winnerStake;
+
       if (motion.votes[YAY] > motion.votes[NAY]){
         loserStake = motion.stakes[NAY];
         winnerStake = motion.stakes[YAY];
@@ -585,9 +624,18 @@ abstract contract VotingBase is ColonyExtension {
       }
 
       loserStake = sub(loserStake, motion.paidVoterComp);
-      uint256 totalVotes = add(motion.votes[NAY], motion.votes[YAY]);
-      uint256 winFraction = wdiv(motion.votes[_vote], totalVotes);
+
+      uint256 winFraction;
+
+      for (uint256 j; j < motion.votes.length; j++) {
+        // TODO: divide-by-zero ??
+        winFraction = add(winFraction, wdiv(motion.votes[j][_vote], motion.totalVotes[j]));
+      }
+
+      winFraction = winFraction / motion.votes.length;
+
       uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
+      uint256 loserStake = sub(requiredStake, motion.paidVoterComp);
 
       if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
         stakerReward = wmul(stakeFraction, add(winnerStake, wmul(loserStake, winShare - WAD)));
@@ -639,7 +687,8 @@ abstract contract VotingBase is ColonyExtension {
     uint256 _domainId,
     uint256 _childSkillIndex,
     address _altTarget,
-    bytes memory _action
+    bytes memory _action,
+    uint256 _numInfluences
   )
     internal
   {
@@ -685,6 +734,10 @@ abstract contract VotingBase is ColonyExtension {
     motion.altTarget = _altTarget;
     motion.action = _action;
 
+    motion.votes = new uint256[2][](_numInfluences);
+    motion.totalVotes = new uint256[](_numInfluences);
+    motion.maxVotes = new uint256[](_numInfluences);
+
     emit MotionCreated(motionCount, msg.sender, _domainId);
   }
 
@@ -704,6 +757,7 @@ abstract contract VotingBase is ColonyExtension {
     public
   {
     Motion storage motion = motions[_motionId];
+
     require(_vote <= 1, "voting-base-bad-vote");
     require(getMotionState(_motionId) == MotionState.Staking, "voting-base-motion-not-staking");
 
@@ -712,9 +766,15 @@ abstract contract VotingBase is ColonyExtension {
     require(amount > 0, "voting-base-bad-amount");
 
     uint256 stakerTotalAmount = add(stakes[_motionId][msg.sender][_vote], amount);
+    uint256[] memory influence = getInfluence(_motionId, msg.sender);
+
+    uint256 sumInfluence;
+    for (uint256 i; i < influence.length; i++) {
+      sumInfluence = add(sumInfluence, influence[i]);
+    }
 
     require(
-      stakerTotalAmount <= getInfluence(_motionId, msg.sender),
+      stakerTotalAmount <= sumInfluence,
       "voting-base-insufficient-influence"
     );
     require(
@@ -762,8 +822,10 @@ abstract contract VotingBase is ColonyExtension {
       motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
       // New stake supersedes prior votes
-      delete motion.votes;
-      delete motion.totalVotes;
+      for (uint256 j; j < motion.votes.length; j++) {
+        delete motion.votes[j];
+        delete motion.totalVotes[j];
+      }
 
       emit MotionEventSet(_motionId, STAKE_END);
     }
@@ -779,21 +841,30 @@ abstract contract VotingBase is ColonyExtension {
   /// @param _voteSecret The hashed vote secret
   function internalSubmitVote(uint256 _motionId, bytes32 _voteSecret) public {
     Motion storage motion = motions[_motionId];
+
     require(getMotionState(_motionId) == MotionState.Submit, "voting-base-motion-not-open");
     require(_voteSecret != bytes32(0), "voting-base-invalid-secret");
 
-    uint256 influence = getInfluence(_motionId, msg.sender);
-
-    // Count reputation if first submission
+    // Add influence to totals if first submission
     if (voteSecrets[_motionId][msg.sender] == bytes32(0)) {
-      motion.totalVotes = add(motion.totalVotes, influence);
+      uint256[] memory influence = getInfluence(_motionId, msg.sender);
+      for (uint256 i; i < influence.length; i++) {
+        motion.totalVotes[i] = add(motion.totalVotes[i], influence[i]);
+      }
     }
 
     voteSecrets[_motionId][msg.sender] = _voteSecret;
 
     emit MotionVoteSubmitted(_motionId, msg.sender);
 
-    if (motion.totalVotes >= wmul(motion.maxVotes, maxVoteFraction)) {
+    bool submissionsComplete = true;
+
+    for (uint256 i; i < motion.votes.length; i++) {
+      submissionsComplete = submissionsComplete &&
+        motion.totalVotes[i] >= wmul(motion.maxVotes[i], maxVoteFraction);
+    }
+
+    if (submissionsComplete) {
       motion.events[SUBMIT_END] = uint64(block.timestamp);
       motion.events[REVEAL_END] = uint64(block.timestamp + revealPeriod);
 
@@ -806,7 +877,14 @@ abstract contract VotingBase is ColonyExtension {
   }
 
   function getRequiredStake(uint256 _motionId) public view returns (uint256) {
-    return wmul(motions[_motionId].maxVotes, totalStakeFraction);
+    Motion storage motion = motions[_motionId];
+
+    uint256 sumMaxVotes;
+    for (uint256 i; i < motion.maxVotes.length; i++) {
+      sumMaxVotes = add(sumMaxVotes, motion.maxVotes[i]);
+    }
+
+    return wmul(sumMaxVotes, totalStakeFraction);
   }
 
   function getTarget(address _target) internal view returns (address) {
@@ -956,4 +1034,37 @@ abstract contract VotingBase is ColonyExtension {
 
     }
   }
+
+  function getReputationFromProof(
+    uint256 _motionId,
+    address _who,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    internal view returns (uint256)
+  {
+    bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
+    require(motions[_motionId].rootHash == impliedRoot, "voting-base-invalid-root-hash");
+
+    uint256 reputationValue;
+    address keyColonyAddress;
+    uint256 keySkill;
+    address keyUserAddress;
+
+    assembly {
+      reputationValue := mload(add(_value, 32))
+      keyColonyAddress := mload(add(_key, 20))
+      keySkill := mload(add(_key, 52))
+      keyUserAddress := mload(add(_key, 72))
+    }
+
+    require(keyColonyAddress == address(colony), "voting-base-invalid-colony-address");
+    require(keySkill == motions[_motionId].skillId, "voting-base-invalid-skill-id");
+    require(keyUserAddress == _who, "voting-base-invalid-user-address");
+
+    return reputationValue;
+  }
+
 }

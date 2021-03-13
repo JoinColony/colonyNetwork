@@ -19,10 +19,11 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./VotingBase.sol";
-import "./../patriciaTree/PatriciaTreeProofs.sol";
 
 
-contract VotingReputation is VotingBase, PatriciaTreeProofs {
+contract VotingReputation is VotingBase {
+
+  uint256 constant NUM_INFLUENCES = 1;
 
   /// @notice Returns the identifier of the extension
   function identifier() public override pure returns (bytes32) {
@@ -35,10 +36,10 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     return 1;
   }
 
-  // [rootHash][skillId][user] => reputationBalance
-  mapping (bytes32 => mapping (uint256 => mapping (address => uint256))) influences;
-  // [rootHash][skillId] => reputationBalance
-  mapping (bytes32 => mapping (uint256 => uint256)) totalInfluences;
+  // [motionId][skillId][user] => reputationBalance
+  mapping (uint256 => mapping (uint256 => mapping (address => uint256[]))) influences;
+  // [motionId][skillId] => reputationBalance
+  mapping (uint256 => mapping (uint256 => uint256[])) totalInfluences;
 
   // Public
 
@@ -65,6 +66,7 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     notDeprecated
   {
     createMotionInternal(_domainId, _childSkillIndex, _altTarget, _action);
+    motions[motionCount].maxVotes = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
   }
 
   /// @notice Deprecated
@@ -86,8 +88,11 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     public
     notDeprecated
   {
-    createMotionInternal(1, UINT256_MAX, _altTarget, _action);
-    motions[motionCount].maxVotes = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
+    createMotionInternal(1, UINT256_MAX, _altTarget, _action, NUM_INFLUENCES);
+    Motion storage motion = motions[motionCount];
+
+    totalInfluences[motionCount][motion.skillId] = new uint256[](NUM_INFLUENCES);
+    motion.maxVotes[0] = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
   }
 
   /// @notice Deprecated
@@ -111,47 +116,38 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     public
     notDeprecated
   {
-    createMotionInternal(_domainId, _childSkillIndex, address(0x0), _action);
-    motions[motionCount].maxVotes = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
+    createMotionInternal(_domainId, _childSkillIndex, address(0x0), _action, NUM_INFLUENCES);
+    Motion storage motion = motions[motionCount];
+
+    totalInfluences[motionCount][motion.skillId] = new uint256[](NUM_INFLUENCES);
+    motion.maxVotes[0] = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
   }
 
+  /// @notice Get the user influence in the motion
   /// @param _motionId The id of the motion
   /// @param _user The user in question
-  function getInfluence(uint256 _motionId, address _user) public view override returns (uint256) {
-    Motion storage motion = motions[_motionId];
-    return influences[motion.rootHash][motion.skillId][_user];
+  function getInfluence(uint256 _motionId, address _user)
+    public
+    view
+    override
+    returns (uint256[] memory influence)
+  {
+    influence = influences[_motionId][motions[_motionId].skillId][_user];
   }
 
+  /// @notice Get the total influence in the motion
   /// @param _motionId The id of the motion
-  function getTotalInfluence(uint256 _motionId) public view override returns (uint256) {
-    Motion storage motion = motions[_motionId];
-    return totalInfluences[motion.rootHash][motion.skillId];
+  function getTotalInfluence(uint256 _motionId)
+    public
+    view
+    override
+    returns (uint256[] memory influence)
+  {
+    influence = totalInfluences[_motionId][motions[_motionId].skillId];
   }
 
   function postReveal(uint256 _motionId, address _user) internal override {}
   function postClaim(uint256 _motionId, address _user) internal override {}
-
-  /// @notice Create a motion in the root domain
-  /// @param _altTarget The contract to which we send the action (0x0 for the colony)
-  /// @param _action A bytes array encoding a function call
-  /// @param _key Reputation tree key for the root domain
-  /// @param _value Reputation tree value for the root domain
-  /// @param _branchMask The branchmask of the proof
-  /// @param _siblings The siblings of the proof
-  function createRootMotion(
-    address _altTarget,
-    bytes memory _action,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  )
-    public
-    notDeprecated
-  {
-    createMotion(_altTarget, _action, 1);
-    motions[motionCount].maxVotes = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
-  }
 
   /// @notice Create a motion in any domain
   /// @param _domainId The domain where we vote on the motion
@@ -187,8 +183,11 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
       require(childSkillId == actionDomainSkillId, "voting-base-invalid-domain-id");
     }
 
-    createMotion(address(0x0), _action, _domainId);
-    motions[motionCount].maxVotes = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
+    createMotion(address(0x0), _action, _domainId, NUM_INFLUENCES);
+    Motion storage motion = motions[motionCount];
+
+    totalInfluences[motionCount][motion.skillId] = new uint256[](NUM_INFLUENCES);
+    motion.maxVotes[0] = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
   }
 
   /// @notice Stake on a motion
@@ -259,6 +258,7 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     public
   {
     Motion storage motion = motions[_motionId];
+
     require(getMotionState(_motionId) == MotionState.Closed, "voting-base-motion-not-closed");
 
     uint256 newDomainSkillId = colony.getDomain(_newDomainId).skillId;
@@ -268,9 +268,11 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
     uint256 domainId = motion.domainId;
     motion.domainId = _newDomainId;
     motion.skillId = newDomainSkillId;
-    motion.maxVotes = getReputationFromProof(_motionId, address(0x0), _key, _value, _branchMask, _siblings);
 
-    uint256 loser = (motion.votes[NAY] < motion.votes[YAY]) ? NAY : YAY;
+    totalInfluences[_motionId][motion.skillId] = new uint256[](NUM_INFLUENCES);
+    motion.maxVotes[0] = getReputationFromProof(_motionId, address(0x0), _key, _value, _branchMask, _siblings);
+
+    uint256 loser = (motion.votes[0][NAY] < motion.votes[0][YAY]) ? NAY : YAY;
     motion.stakes[loser] = sub(motion.stakes[loser], motion.paidVoterComp);
     motion.pastVoterComp[loser] = add(motion.pastVoterComp[loser], motion.paidVoterComp);
     delete motion.paidVoterComp;
@@ -302,14 +304,16 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
   )
     internal
   {
-    Motion storage motion = motions[_motionId];
-    uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
+    uint256 skillId = motions[_motionId].skillId;
+    require(totalInfluences[_motionId][skillId].length > 0, "voting-reputation-invalid-motion");
 
-    if (influences[motion.rootHash][motion.skillId][msg.sender] == 0) {
-      totalInfluences[motion.rootHash][motion.skillId] = add(totalInfluences[motion.rootHash][motion.skillId], userRep);
+    if (influences[_motionId][skillId][msg.sender].length == 0) {
+      influences[_motionId][skillId][msg.sender] = new uint256[](NUM_INFLUENCES);
+      uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
+
+      influences[_motionId][skillId][msg.sender][0] = userRep;
+      totalInfluences[_motionId][skillId][0] = add(totalInfluences[_motionId][skillId][0], userRep);
     }
-
-    influences[motion.rootHash][motion.skillId][msg.sender] = userRep;
   }
 
   function getReputationFromProof(
@@ -343,5 +347,4 @@ contract VotingReputation is VotingBase, PatriciaTreeProofs {
 
     return reputationValue;
   }
-
 }

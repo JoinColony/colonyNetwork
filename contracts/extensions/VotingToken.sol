@@ -24,6 +24,8 @@ import "./VotingBase.sol";
 
 contract VotingToken is VotingBase {
 
+  uint256 constant NUM_INFLUENCES = 1;
+
   /// @notice Returns the identifier of the extension
   function identifier() public override pure returns (bytes32) {
     return keccak256("VotingToken");
@@ -36,24 +38,50 @@ contract VotingToken is VotingBase {
   }
 
   // [motionId][user] => tokenBalance
-  mapping (uint256 => mapping (address => uint256)) influences;
+  mapping (uint256 => mapping (address => uint256[])) influences;
   // [motionId] => tokenBalance
-  mapping (uint256 => uint256) totalInfluences;
+  mapping (uint256 => uint256[]) totalInfluences;
 
   // [motionId] => lockId
   mapping (uint256 => uint256) lockIds;
 
   // Public
 
+  /// @notice Set influence for a motion
   /// @param _motionId The id of the motion
-  /// @param _user The user in question
-  function getInfluence(uint256 _motionId, address _user) public view override returns (uint256) {
-    return influences[_motionId][_user];
+  function setInfluence(uint256 _motionId) public {
+    require(totalInfluences[_motionId].length > 0, "voting-token-invalid-motion");
+
+    if (influences[_motionId][msg.sender].length == 0) {
+      influences[_motionId][msg.sender] = new uint256[](NUM_INFLUENCES);
+      uint256 balance = tokenLocking.getUserLock(token, msg.sender).balance;
+
+      influences[_motionId][msg.sender][0] = balance;
+      totalInfluences[_motionId][0] = add(totalInfluences[_motionId][0], balance);
+    }
   }
 
+  /// @notice Get the user influence in the motion
   /// @param _motionId The id of the motion
-  function getTotalInfluence(uint256 _motionId) public view override returns (uint256) {
-    return totalInfluences[_motionId];
+  /// @param _user The user in question
+  function getInfluence(uint256 _motionId, address _user)
+    public
+    view
+    override
+    returns (uint256[] memory influence)
+  {
+    influence = influences[_motionId][_user];
+  }
+
+  /// @notice Get the total influence in the motion
+  /// @param _motionId The id of the motion
+  function getTotalInfluence(uint256 _motionId)
+    public
+    view
+    override
+    returns (uint256[] memory influence)
+  {
+    influence = totalInfluences[_motionId];
   }
 
   function postReveal(uint256 _motionId, address _user) internal override {
@@ -81,8 +109,10 @@ contract VotingToken is VotingBase {
   function createRootMotion(address _altTarget, bytes memory _action)
     public
   {
-    createMotion(_altTarget, _action, 1);
-    motions[motionCount].maxVotes = ERC20Extended(token).totalSupply();
+    createMotion(_altTarget, _action, 1, NUM_INFLUENCES);
+
+    totalInfluences[motionCount] = new uint256[](NUM_INFLUENCES);
+    motions[motionCount].maxVotes[0] = ERC20Extended(token).totalSupply();
   }
 
   /// @notice Stake on a motion
@@ -116,16 +146,6 @@ contract VotingToken is VotingBase {
 
   function getLockId(uint256 _motionId) public view returns (uint256) {
     return lockIds[_motionId];
-  }
-
-  // Internal functions
-
-  function setInfluence(uint256 _motionId) internal {
-    if (influences[_motionId][msg.sender] == 0) {
-      uint256 balance = tokenLocking.getUserLock(token, msg.sender).balance;
-      totalInfluences[_motionId] = add(totalInfluences[_motionId], balance);
-      influences[_motionId][msg.sender] = balance;
-    }
   }
 
 }
