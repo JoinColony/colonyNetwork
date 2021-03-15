@@ -131,16 +131,6 @@ contract("Colony Network Extensions", (accounts) => {
       );
     });
 
-    it("does not allow the meta colony to add versions out of order", async () => {
-      await checkErrorRevert(
-        metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address),
-        "colony-network-extension-bad-version"
-      );
-
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address);
-    });
-
     it("does not allow the meta colony to add a null resolver", async () => {
       await checkErrorRevert(metaColony.addExtensionToNetwork(TEST_EXTENSION, ethers.constants.AddressZero), "colony-network-extension-bad-resolver");
     });
