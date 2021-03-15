@@ -91,7 +91,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     return res;
   }
 
-  function updateApprovalAmount(address _token, address _spender) public {
+  function updateApprovalAmount(address _token, address _spender) stoppable public {
     updateApprovalAmountInternal(_token, _spender, false);
   }
 
@@ -491,11 +491,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     emit TokenUnlocked();
   }
 
-  function getTokenApproval(address _token, address _spender) public returns (uint256 amount) {
+  function getTokenApproval(address _token, address _spender) public view returns (uint256 amount) {
     return tokenApprovals[_token][_spender];
   }
 
-  function getTotalTokenApproval(address _token) public returns (uint256 amount) {
+  function getTotalTokenApproval(address _token) public view returns (uint256 amount) {
     return tokenApprovalTotals[_token];
   }
 
