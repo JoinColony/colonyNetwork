@@ -56,7 +56,7 @@ contract TokenSupplier is ColonyExtension {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 1;
+    return 2;
   }
 
   /// @notice Configures the extension
