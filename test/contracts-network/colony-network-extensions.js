@@ -105,12 +105,6 @@ contract("Colony Network Extensions", (accounts) => {
 
   describe("adding extensions", () => {
     it("allows the meta colony to add new extensions", async () => {
-      // Versions start at 1
-      await checkErrorRevert(
-        metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension0Resolver.address),
-        "colony-network-extension-bad-version"
-      );
-
       await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
       await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address);
 
