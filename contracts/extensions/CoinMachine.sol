@@ -20,6 +20,7 @@ pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/erc20.sol";
 import "./ColonyExtension.sol";
+import "./Whitelist.sol";
 
 // ignore-file-swc-108
 
@@ -53,6 +54,8 @@ contract CoinMachine is ColonyExtension {
   uint256 emaIntake; // Averaged payment intake
 
   address token; // The token we are selling
+
+  address whitelist; // Address of an optional whitelist
 
   // Modifiers
 
@@ -110,6 +113,7 @@ contract CoinMachine is ColonyExtension {
   function initialise(
     address _token,
     address _purchaseToken,
+    address _whitelist,
     uint256 _periodLength,
     uint256 _windowSize,
     uint256 _targetPerPeriod,
@@ -132,6 +136,8 @@ contract CoinMachine is ColonyExtension {
     // A value of address(0x0) denotes Ether
     purchaseToken = _purchaseToken;
 
+    whitelist = _whitelist;
+
     periodLength = _periodLength;
     alpha = wdiv(2, _windowSize + 1); // Two ints enter, 1 WAD leaves
     // In the long-term, 86% of the weighting will be in this window size. This is a 'standard' conversion
@@ -153,6 +159,11 @@ contract CoinMachine is ColonyExtension {
   /// @param _numTokens The number of tokens to purchase
   function buyTokens(uint256 _numTokens) public payable notDeprecated {
     updatePeriod();
+
+    require(
+      whitelist == address(0x0) || Whitelist(whitelist).approved(msg.sender),
+      "coin-machine-unauthorised"
+    );
 
     uint256 tokenBalance = ERC20(token).balanceOf(address(this));
     uint256 numTokens = min(min(_numTokens, maxPerPeriod - activeSold), tokenBalance);
