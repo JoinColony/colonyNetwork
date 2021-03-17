@@ -60,10 +60,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
 
     address spender;
     if (sig == APPROVE_SIG){
-      address approvalAmount;
       assembly {
         spender := mload(add(_action, 0x24))
-        approvalAmount := mload(add(_action, 0x44))
       }
       updateApprovalAmountInternal(_to, spender, false);
     }
@@ -95,21 +93,21 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     updateApprovalAmountInternal(_token, _spender, false);
   }
 
-  function updateApprovalAmountInternal(address _token, address _spender, bool postApproval) internal {
+  function updateApprovalAmountInternal(address _token, address _spender, bool _postApproval) internal {
     uint256 recordedApproval = tokenApprovals[_token][_spender];
     uint256 actualApproval = ERC20Extended(_token).allowance(address(this), _spender);
     if (recordedApproval == actualApproval) {
       return;
     }
 
-    if (recordedApproval > actualApproval && !postApproval){
+    if (recordedApproval > actualApproval && !_postApproval){
       // They've spend some tokens out of root. Adjust balances accordingly
       // If we are post approval, then they have not spent tokens
       fundingPots[1].balance[_token] = add(sub(fundingPots[1].balance[_token], recordedApproval), actualApproval);
     }
 
     tokenApprovalTotals[_token] = add(sub(tokenApprovalTotals[_token], recordedApproval), actualApproval);
-    require(fundingPots[1].balance[_token] >= tokenApprovalTotals[_token], "colony-too-many-approvals");
+    require(fundingPots[1].balance[_token] >= tokenApprovalTotals[_token], "colony-approval-exceeds-balance");
 
     tokenApprovals[_token][_spender] = actualApproval;
 
