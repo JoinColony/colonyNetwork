@@ -64,12 +64,30 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
         spender := mload(add(_action, 0x24))
       }
       updateApprovalAmountInternal(_to, spender, false);
-    }
+    } else if (sig == BURN_SIG ) {
+      uint256 amount;
+      assembly {
+        amount := mload(add(_action, 0x24))
+      }
+      fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
+      require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
 
-    require(sig != TRANSFER_SIG, "colony-cannot-call-erc20-transfer");
-    require(sig != TRANSFER_FROM_SIG, "colony-cannot-call-erc20-transfer-from");
-    require(sig != BURN_SIG, "colony-cannot-call-burn");
-    require(sig != BURN_GUY_SIG, "colony-cannot-call-burn-guy");
+    } else if (sig == TRANSFER_SIG ) {
+      uint256 amount;
+      address recipient;
+      assembly {
+        amount := mload(add(_action, 0x44))
+      }
+      fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
+      require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
+
+    } else if (sig == BURN_GUY_SIG || sig == TRANSFER_FROM_SIG){
+      address spender;
+      assembly {
+        spender := mload(add(_action, 0x24))
+      }
+      require(spender != address(this), "colony-cannot-spend-own-allowance");
+    }
 
     // Prevent transactions to network-managed extensions installed in this colony
     require(isContract(_to), "colony-to-must-be-contract");
