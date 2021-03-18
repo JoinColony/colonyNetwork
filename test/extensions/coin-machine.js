@@ -652,6 +652,7 @@ contract("Coin Machine", (accounts) => {
     beforeEach(async () => {
       whitelist = await Whitelist.new();
       await whitelist.install(colony.address);
+      await whitelist.initialise(true, "0x0");
 
       await coinMachine.initialise(token.address, purchaseToken.address, whitelist.address, 60 * 60, 10, WAD, WAD, WAD);
 
@@ -672,9 +673,6 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("cannot buy tokens if not on the whitelist", async () => {
-      await purchaseToken.mint(USER0, WAD, { from: USER0 });
-      await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
-
       await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "coin-machine-unauthorised");
     });
   });

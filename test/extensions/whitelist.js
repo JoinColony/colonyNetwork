@@ -4,7 +4,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { soliditySha3 } from "web3-utils";
 
-import { UINT256_MAX } from "../../helpers/constants";
+import { UINT256_MAX, IPFS_HASH } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { checkErrorRevert, web3GetCode } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupRandomColony, setupMetaColonyWithLockedCLNYToken } from "../../helpers/test-data-generator";
@@ -79,7 +79,9 @@ contract("Whitelist", (accounts) => {
   });
 
   describe("using the whitelist", async () => {
-    it("can approve users if a root administrator", async () => {
+    it("can make users join a whitelist", async () => {
+      await whitelist.initialise(true, "0x0");
+
       let status;
 
       status = await whitelist.approved(USER1);
@@ -92,7 +94,47 @@ contract("Whitelist", (accounts) => {
     });
 
     it("cannot approve users if not a root administrator", async () => {
+      await whitelist.initialise(true, "0x0");
+
       await checkErrorRevert(whitelist.approveUser(USER0, true, { from: USER1 }), "whitelist-unauthorised");
+    });
+
+    it("can make users sign an agreement", async () => {
+      await whitelist.initialise(false, soliditySha3(IPFS_HASH));
+
+      let status;
+
+      status = await whitelist.approved(USER1);
+      expect(status).to.be.false;
+
+      await whitelist.signAgreement({ from: USER1 });
+
+      status = await whitelist.approved(USER1);
+      expect(status).to.be.true;
+    });
+
+    it("can require both a whitelist and an agreement", async () => {
+      await whitelist.initialise(true, soliditySha3(IPFS_HASH));
+
+      let status;
+
+      status = await whitelist.approved(USER1);
+      expect(status).to.be.false;
+
+      await whitelist.approveUser(USER1, true, { from: USER0 });
+
+      status = await whitelist.approved(USER1);
+      expect(status).to.be.false;
+
+      await whitelist.signAgreement({ from: USER1 });
+
+      status = await whitelist.approved(USER1);
+      expect(status).to.be.true;
+    });
+
+    it("cannot accept input until initialised", async () => {
+      await checkErrorRevert(whitelist.approveUser(USER1, true, { from: USER0 }), "whitelist-not-initialised");
+      await checkErrorRevert(whitelist.signAgreement({ from: USER0 }), "whitelist-not-initialised");
     });
   });
 });

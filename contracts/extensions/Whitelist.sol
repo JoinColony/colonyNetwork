@@ -28,10 +28,22 @@ contract Whitelist is ColonyExtension {
   //  Events
 
   event UserApproved(address _user, bool _status);
+  event AgreementSigned(address _user);
 
   // Storage
 
+  bool useApprovals;
+  bytes32 agreementHash;
+
   mapping (address => bool) approvals;
+  mapping (address => bool) signatures;
+
+  // Modifiers
+
+  modifier initialised() {
+    require(useApprovals || agreementHash != bytes32(0), "whitelist-not-initialised");
+    _;
+  }
 
   // Public
 
@@ -66,10 +78,21 @@ contract Whitelist is ColonyExtension {
     selfdestruct(address(uint160(address(colony))));
   }
 
+  /// @notice Initialise the extension
+  /// @param _useApprovals Whether or not to require administrative approval
+  /// @param _agreementHash The keccak256 hash of an agreement (full text or URI)
+  function initialise(bool _useApprovals, bytes32 _agreementHash) public {
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "whitelist-unauthorised");
+    require(!useApprovals && agreementHash == bytes32(0), "whitelist-already-initialised");
+
+    useApprovals = _useApprovals;
+    agreementHash = _agreementHash;
+  }
+
   /// @notice Sets a users status in the whitelist
   /// @param _user The address of the user
   /// @param _status The whitelist status to set
-  function approveUser(address _user, bool _status) public notDeprecated {
+  function approveUser(address _user, bool _status) public initialised notDeprecated {
     require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Administration), "whitelist-unauthorised");
 
     approvals[_user] = _status;
@@ -77,9 +100,19 @@ contract Whitelist is ColonyExtension {
     emit UserApproved(_user, _status);
   }
 
+  /// @notice The user's signature on the agreement
+  function signAgreement() public initialised notDeprecated {
+    signatures[msg.sender] = true;
+
+    emit AgreementSigned(msg.sender);
+  }
+
   /// @notice Fetch the user's whitelist status
   /// @param _user The address of the user
   function approved(address _user) public view returns (bool) {
-    return approvals[_user];
+    return (
+      (!useApprovals || approvals[_user]) &&
+      (agreementHash == bytes32(0) || signatures[_user])
+    );
   }
 }
