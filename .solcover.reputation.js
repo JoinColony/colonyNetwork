@@ -16,11 +16,7 @@ module.exports = {
       'Migrations.sol',
       'common/EtherRouter.sol',
       'patriciaTree',
-      'testHelpers/ContractEditing.sol', // only used in setting up colony-network-recovery.js tests, never in production
-      'testHelpers/NoLimitSubdomains.sol',
-      'testHelpers/TaskSkillEditing.sol',
-      'testHelpers/PreviousVersion.sol',
-      'testHelpers/ToggleableToken.sol',
+      'testHelpers',
     ],
     providerOptions: {
       port: 8555,

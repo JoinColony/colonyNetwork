@@ -105,12 +105,6 @@ contract("Colony Network Extensions", (accounts) => {
 
   describe("adding extensions", () => {
     it("allows the meta colony to add new extensions", async () => {
-      // Versions start at 1
-      await checkErrorRevert(
-        metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension0Resolver.address),
-        "colony-network-extension-bad-version"
-      );
-
       await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
       await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address);
 
@@ -129,16 +123,6 @@ contract("Colony Network Extensions", (accounts) => {
         metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address),
         "colony-network-extension-already-set"
       );
-    });
-
-    it("does not allow the meta colony to add versions out of order", async () => {
-      await checkErrorRevert(
-        metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address),
-        "colony-network-extension-bad-version"
-      );
-
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address);
     });
 
     it("does not allow the meta colony to add a null resolver", async () => {
