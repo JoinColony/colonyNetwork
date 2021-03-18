@@ -4,7 +4,10 @@ require("@babel/register")({
 require("@babel/polyfill");
 
 const path = require("path");
-const { argv } = require("yargs").option('privateKey', {string:true}).option('colonyNetworkAddress', {string:true});
+const { argv } = require("yargs")
+  .option('privateKey', {string:true})
+  .option('colonyNetworkAddress', {string:true})
+  .option('minerAddress', {string:true});
 const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
@@ -32,7 +35,7 @@ if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
 }
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(process.cwd(), "build", "contracts")
+  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts")
 });
 
 let provider;

@@ -1140,6 +1140,19 @@ class ReputationMiner {
     for (let i = 0; i < events.length; i += 1) {
       console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
       const event = events[i];
+      if (i === 0) {
+        // If we are syncing from the very start of the reputation history, the block
+        // before the very first 'ReputationMiningCycleComplete' does not have an
+        // active reputation cycle. So we skip it if 'fromBlock' has not been judiciously
+        // chosen here. This is fine, as with no reputation cycle, there was no reputation,
+        // so nothing needs to be processed.
+        try {
+          await this.getActiveRepCycle(event.blockNumber - 1);
+        } catch(err){
+          // Honestly, this seems the cleanest way to implement this. Open to alternatives that ESLint likes though!
+          continue; // eslint-disable-line no-continue
+        }
+      }
       const hash = event.data.slice(0, 66);
       if (applyLogs) {
         const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);

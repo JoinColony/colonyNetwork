@@ -1,4 +1,4 @@
- const ConsoleAdapter = {
+const ConsoleAdapter = {
   async log(output) {
     console.log(output);
   },
