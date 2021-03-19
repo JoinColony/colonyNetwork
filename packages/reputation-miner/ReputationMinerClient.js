@@ -37,7 +37,7 @@ class ReputationMinerClient {
    * @param {bool}   exitOnError             Whether to exit when an error is hit or not.
    * @param {Object} adapter                 An object with .log and .error that controls where the output from the miner ends up.
    */
-  constructor({ minerAddress, loader, realProviderPort, oraclePort = 3000, privateKey, provider, useJsTree, dbPath, auto, oracle, exitOnError, adapter }) { // eslint-disable-line max-len
+  constructor({ minerAddress, loader, realProviderPort, oraclePort = 3000, privateKey, provider, useJsTree, dbPath, auto, oracle, exitOnError, adapter, processingDelay }) { // eslint-disable-line max-len
     this._loader = loader;
     this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, useJsTree, dbPath });
     this._auto = auto;
@@ -48,6 +48,11 @@ class ReputationMinerClient {
     this.best12Submissions = [];
     this.lockedForBlockProcessing;
     this._adapter = adapter;
+    this._processingDelay = processingDelay;
+
+    if (typeof this._processingDelay === "undefined") {
+      this._processingDelay = 10;
+    }
 
     if (typeof this._auto === "undefined") {
       this._auto = true;
@@ -291,10 +296,12 @@ class ReputationMinerClient {
         // If we don't see this next cycle completed in the next day and ten minutes, then report it
         this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (DAY_IN_SECONDS + 10 * MINUTE_IN_SECONDS) * 1000);
 
-        // Let's process the reputation log if it's been ten blocks
-        if (this.blocksSinceCycleCompleted < 10) {
+        // Let's process the reputation log if it's been this._processingDelay blocks
+        if (this.blocksSinceCycleCompleted < this._processingDelay) {
           this.blocksSinceCycleCompleted += 1;
-		      if (this.blocksSinceCycleCompleted === 1) { this._adapter.log("⏰ Waiting for ten blocks before processing next log") };
+		      if (this.blocksSinceCycleCompleted === 1) {
+            this._adapter.log(`⏰ Waiting for ${this._processingDelay} blocks before processing next log`)
+          };
           this.endDoBlockChecks();
           return;
         }
@@ -307,8 +314,6 @@ class ReputationMinerClient {
 
         this.miningCycleAddress = addr;
         this.blocksSinceCycleCompleted = 0;
-
-
       }
 
       // If we're not auto-mining, then we don't need to do anything else.

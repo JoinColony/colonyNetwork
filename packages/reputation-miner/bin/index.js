@@ -27,7 +27,8 @@ const {
   oracle,
   exitOnError,
   adapter,
-  oraclePort
+  oraclePort,
+  processingDelay
 } = argv;
 
 if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
@@ -60,7 +61,18 @@ if (adapter === 'slack') {
   adapterObject = require('../adapters/console').default; // eslint-disable-line global-require
 }
 
-const client = new ReputationMinerClient(
-  { loader, minerAddress, privateKey, provider, useJsTree: true, dbPath, auto, oracle, exitOnError, adapter:adapterObject, oraclePort }
-);
+const client = new ReputationMinerClient({
+  loader,
+  minerAddress,
+  privateKey,
+  provider,
+  useJsTree: true,
+  dbPath,
+  auto,
+  oracle,
+  exitOnError,
+  adapter: adapterObject,
+  oraclePort,
+  processingDelay
+});
 client.initialise(colonyNetworkAddress, syncFrom);
