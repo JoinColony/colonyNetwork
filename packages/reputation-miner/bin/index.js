@@ -27,7 +27,8 @@ const {
   oracle,
   exitOnError,
   adapter,
-  oraclePort
+  oraclePort,
+  processingDelay
 } = argv;
 
 if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
@@ -61,6 +62,19 @@ if (adapter === 'slack') {
 }
 
 const client = new ReputationMinerClient(
-  { loader, minerAddress, privateKey, provider, useJsTree: true, dbPath, auto, oracle, exitOnError, adapter:adapterObject, oraclePort }
+  {
+    loader,
+    minerAddress,
+    privateKey,
+    provider,
+    useJsTree: true,
+    dbPath,
+    auto,
+    oracle,
+    exitOnError,
+    adapter:adapterObject,
+    oraclePort,
+    processingDelay
+  }
 );
 client.initialise(colonyNetworkAddress, syncFrom);
