@@ -1,0 +1,29 @@
+{
+  "name": "@colony/kyc-oracle",
+  "version": "0.1.0",
+  "description": "Oracle for putting KYC approvals on-chain",
+  "main": "KycOracle.js",
+  "directories": {
+    "test": "test"
+  },
+  "bin": "bin/index",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "ethers": "^5.0.19",
+    "express": "^4.16.3",
+    "jsonfile": "^6.0.1",
+    "yargs": "^16.0.0"
+  },
+  "devDependencies": {
+    "@babel/polyfill": "^7.8.3",
+    "@babel/preset-env": "^7.8.2",
+    "@babel/register": "^7.8.3",
+    "babel-plugin-istanbul": "^6.0.0"
+  }
+}

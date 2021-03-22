@@ -50,7 +50,8 @@
     "posttest:contracts:gasCosts": "npm run stop:blockchain:client",
     "posttest:contracts:patricia": "npm run stop:blockchain:client",
     "posttest:contracts:watch": "npm run stop:blockchain:client",
-    "viz:bootstrap": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle exec --network development scripts/viz-bootstrap.js"
+    "viz:bootstrap": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle exec --network development scripts/viz-bootstrap.js",
+    "kyc:bootstrap": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle exec --network development scripts/kyc-bootstrap.js"
   },
   "husky": {
     "hooks": {
