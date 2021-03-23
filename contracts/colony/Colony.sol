@@ -58,36 +58,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     bytes4 sig;
     assembly { sig := mload(add(_action, 0x20)) }
 
-    address spender;
-    if (sig == APPROVE_SIG){
-      assembly {
-        spender := mload(add(_action, 0x24))
-      }
-      updateApprovalAmountInternal(_to, spender, false);
-    } else if (sig == BURN_SIG ) {
-      uint256 amount;
-      assembly {
-        amount := mload(add(_action, 0x24))
-      }
-      fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
-      require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
-
-    } else if (sig == TRANSFER_SIG ) {
-      uint256 amount;
-      address recipient;
-      assembly {
-        amount := mload(add(_action, 0x44))
-      }
-      fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
-      require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
-
-    } else if (sig == BURN_GUY_SIG || sig == TRANSFER_FROM_SIG){
-      address spender;
-      assembly {
-        spender := mload(add(_action, 0x24))
-      }
-      require(spender != address(this), "colony-cannot-spend-own-allowance");
-    }
+    if (sig == APPROVE_SIG){ approveTransactionPreparation(_to, _action); } 
+    else if (sig == BURN_SIG ) { burnTransactionPreparation(_to, _action); }
+    else if (sig == TRANSFER_SIG ) { transferTransactionPreparation(_to, _action); }
+    else if (sig == BURN_GUY_SIG || sig == TRANSFER_FROM_SIG){ burnFromOrTransferFromTransactionPreparation(_to, _action); }
 
     // Prevent transactions to network-managed extensions installed in this colony
     require(isContract(_to), "colony-to-must-be-contract");
@@ -100,11 +74,52 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     } catch {}
 
     bool res = executeCall(_to, 0, _action);
-    if (sig == APPROVE_SIG){
-      updateApprovalAmountInternal(_to, spender, true);
-    }
+    if (sig == APPROVE_SIG){ approveTransactionCleanup(_to, _action); }
 
     return res;
+  }
+
+  function approveTransactionPreparation(address _to, bytes memory _action) internal {
+    address spender;
+    assembly {
+      spender := mload(add(_action, 0x24))
+    }
+    updateApprovalAmountInternal(_to, spender, false);
+  }
+
+  function approveTransactionCleanup(address _to, bytes memory _action) internal {
+    address spender;
+    assembly {
+      spender := mload(add(_action, 0x24))
+    }
+    updateApprovalAmountInternal(_to, spender, true);
+  }
+
+  function burnTransactionPreparation(address _to, bytes memory _action) internal {
+    uint256 amount;
+    assembly {
+      amount := mload(add(_action, 0x24))
+    }
+    fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
+    require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
+  }
+
+  function transferTransactionPreparation(address _to, bytes memory _action) internal {
+    uint256 amount;
+    address recipient;
+    assembly {
+      amount := mload(add(_action, 0x44))
+    }
+    fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
+    require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
+  }
+
+  function burnFromOrTransferFromTransactionPreparation(address _to, bytes memory _action) internal {
+    address spender;
+    assembly {
+      spender := mload(add(_action, 0x24))
+    }
+    require(spender != address(this), "colony-cannot-spend-own-allowance");
   }
 
   function updateApprovalAmount(address _token, address _spender) stoppable public {
