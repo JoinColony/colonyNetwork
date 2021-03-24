@@ -198,7 +198,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   }
 
   modifier isInBootstrapPhase() {
-    require(taskCount == 0, "colony-not-in-bootstrap-mode");
+    require(taskCount == 0 && expenditureCount == 0 && paymentCount == 0, "colony-not-in-bootstrap-mode");
     _;
   }
 
