@@ -299,7 +299,6 @@ async function eventMatches(tx, nameOrSig, args) {
     const canonicalSig = nameOrSig.replace(/ indexed/g, "");
     const topic = web3.utils.soliditySha3(canonicalSig);
     const events = rawLogs.filter((e) => e.topics[0] === topic);
-    expect(events.length).to.be.at.least(1);
     eventMatch = await Promise.all(
       events.map((e) => {
         // Set up an abi so we decode correctly, including indexed topics
@@ -314,7 +313,6 @@ async function eventMatches(tx, nameOrSig, args) {
   } else {
     const { logs } = await tx;
     const events = logs.filter((e) => e.event === nameOrSig);
-    expect(events.length).to.be.at.least(1);
     eventMatch = await Promise.all(events.map((e) => eventMatchArgs(e, args)));
   }
   return eventMatch;
