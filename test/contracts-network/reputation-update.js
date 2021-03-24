@@ -3,6 +3,7 @@ import { BN } from "bn.js";
 import { soliditySha3 } from "web3-utils";
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import {
   fundColonyWithTokens,
@@ -45,6 +46,8 @@ import {
   removeSubdomainLimit,
   addTaskSkillEditingFunctions,
 } from "../../helpers/test-helper";
+
+const ADDRESS_ZERO = ethers.constants.AddressZero;
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -344,6 +347,33 @@ contract("Reputation Updates", (accounts) => {
       // Entries for manager and evaluator only + 1 for miner reward
       const numUpdates = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       expect(numUpdates).to.eq.BN(3);
+    });
+
+    it("should not make reputation updates to the zero address", async () => {
+      // Entry for miner reward only
+      let numUpdates = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
+      expect(numUpdates).to.eq.BN(1);
+
+      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
+      const RECIPIENT = ADDRESS_ZERO;
+      await metaColony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await metaColony.getExpenditureCount();
+
+      const SLOT0 = 0;
+
+      await metaColony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT);
+      await metaColony.setExpenditurePayout(expenditureId, SLOT0, clnyToken.address, WAD);
+
+      const domain1 = await metaColony.getDomain(1);
+
+      const expenditure = await metaColony.getExpenditure(expenditureId);
+      await metaColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, clnyToken.address);
+      await metaColony.finalizeExpenditure(expenditureId);
+      await metaColony.claimExpenditurePayout(expenditureId, SLOT0, clnyToken.address);
+
+      // Entry for miner reward only still
+      numUpdates = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
+      expect(numUpdates).to.eq.BN(1);
     });
 
     it("should set the correct domain and skill reputation change amount in log for payments", async () => {

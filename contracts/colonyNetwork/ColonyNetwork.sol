@@ -296,7 +296,11 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
   calledByColony
   skillExists(_skillId)
   {
-    if (_amount == 0) {
+    if (_amount == 0 || _user == address(0x0)) {
+      // We short-circut amount=0 as it has no effect to save gas, and we ignore Address Zero because it will
+      // mess up the tracking of the total amount of reputation in a colony, as that's the key that it's
+      // stored under in the patricia/merkle tree. Colonies can still pay tokens out to it if they want,
+      // it just won't earn reputation.
       return;
     }
 
