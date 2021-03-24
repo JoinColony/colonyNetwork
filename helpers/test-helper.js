@@ -277,6 +277,20 @@ function hexlifyAndPad(input) {
 }
 
 export async function expectEvent(tx, nameOrSig, args) {
+  const matches = await eventMatches(tx, nameOrSig, args);
+  if (matches.indexOf(true) === -1) {
+    throw Error(`No matching event was found for ${nameOrSig} with args ${args}`);
+  }
+}
+
+export async function expectNoEvent(tx, nameOrSig, args) {
+  const matches = await eventMatches(tx, nameOrSig, args);
+  if (matches.indexOf(true) !== -1) {
+    throw Error(`A matching event was found for ${nameOrSig} with args ${args}`);
+  }
+}
+
+async function eventMatches(tx, nameOrSig, args) {
   const re = /\((.*)\)/;
   let eventMatch;
   if (nameOrSig.match(re)) {
@@ -303,9 +317,7 @@ export async function expectEvent(tx, nameOrSig, args) {
     expect(events.length).to.be.at.least(1);
     eventMatch = await Promise.all(events.map((e) => eventMatchArgs(e, args)));
   }
-  if (eventMatch.indexOf(true) === -1) {
-    throw Error(`No matching event was found for ${nameOrSig} with args ${args}`);
-  }
+  return eventMatch;
 }
 
 async function eventMatchArgs(event, args) {
@@ -331,23 +343,6 @@ async function eventMatchArgs(event, args) {
     }
   }
   return true;
-}
-
-export async function expectNoEvent(tx, nameOrSig) {
-  const re = /\((.*)\)/;
-  let event;
-
-  if (nameOrSig.match(re)) {
-    // i.e. if the passed nameOrSig has () in it, we assume it's a signature
-    const { rawLogs } = await tx.receipt;
-    const topic = web3.utils.soliditySha3(nameOrSig);
-    event = rawLogs.find((e) => e.topics[0] === topic);
-    expect(event).to.not.exist;
-  } else {
-    const { logs } = await tx;
-    event = logs.find((e) => e.event === nameOrSig);
-    expect(event).to.not.exist;
-  }
 }
 
 export async function expectAllEvents(tx, eventNames) {

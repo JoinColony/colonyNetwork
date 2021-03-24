@@ -11,9 +11,10 @@ import {
   getValidEntryNumber,
   checkErrorRevert,
   expectEvent,
+  expectNoEvent,
 } from "../helpers/test-helper";
 
-import { MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW } from "../helpers/constants";
+import { MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW, MIN_STAKE } from "../helpers/constants";
 
 const { expect } = chai;
 const ENSRegistry = artifacts.require("ENSRegistry");
@@ -111,6 +112,21 @@ contract("Contract Storage", (accounts) => {
         // tokens should be burned.
         await expectEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, 0]);
       }
+    });
+
+    it("should not make 0-value transfers to 'burn' unneeded rewards on xdai", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, MIN_STAKE);
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+
+      await repCycle.getNSubmissionsForHash("0x12345678", 10, "0x00");
+      await repCycle.submitRootHash("0x12345678", 10, "0x00", 1, { from: MINER1 });
+
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
+      const tx = await repCycle.confirmNewHash(0);
+      await expectNoEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, 0]);
     });
   });
 });
