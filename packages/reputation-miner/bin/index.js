@@ -4,7 +4,10 @@ require("@babel/register")({
 require("@babel/polyfill");
 
 const path = require("path");
-const { argv } = require("yargs").option('privateKey', {string:true}).option('colonyNetworkAddress', {string:true});
+const { argv } = require("yargs")
+  .option('privateKey', {string:true})
+  .option('colonyNetworkAddress', {string:true})
+  .option('minerAddress', {string:true});
 const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
@@ -23,7 +26,9 @@ const {
   auto,
   oracle,
   exitOnError,
-  adapter
+  adapter,
+  oraclePort,
+  processingDelay
 } = argv;
 
 if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
@@ -32,7 +37,7 @@ if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
 }
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(process.cwd(), "build", "contracts")
+  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts")
 });
 
 let provider;
@@ -56,7 +61,18 @@ if (adapter === 'slack') {
   adapterObject = require('../adapters/console').default; // eslint-disable-line global-require
 }
 
-const client = new ReputationMinerClient(
-  { loader, minerAddress, privateKey, provider, useJsTree: true, dbPath, auto, oracle, exitOnError, adapter:adapterObject }
-);
+const client = new ReputationMinerClient({
+  loader,
+  minerAddress,
+  privateKey,
+  provider,
+  useJsTree: true,
+  dbPath,
+  auto,
+  oracle,
+  exitOnError,
+  adapter: adapterObject,
+  oraclePort,
+  processingDelay
+});
 client.initialise(colonyNetworkAddress, syncFrom);
