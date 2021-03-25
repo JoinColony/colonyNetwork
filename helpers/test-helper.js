@@ -321,6 +321,9 @@ async function eventMatches(tx, nameOrSig, args) {
 async function eventMatchArgs(event, args) {
   for (let i = 0; i < args.length; i += 1) {
     let arg = args[i];
+    if (arg === null) {
+      continue; // eslint-disable-line no-continue
+    }
     if (arg.constructor.name === "BN" || event.args[i].constructor.name === "BN") {
       if (ethers.utils.isHexString(arg)) {
         arg = ethers.BigNumber.from(arg).toString();
