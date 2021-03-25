@@ -106,11 +106,11 @@ contract("Contract Storage", (accounts) => {
       // Unneeded rewards should be dealt with differently as well.
 
       if (chainId === XDAI || chainId === FORKED_XDAI) {
-        // tokens should be transferred to metacolony
-        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, 0]);
+        // tokens should be transferred to metacolony (but not this time because value == 0)
+        await expectNoEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, 0]);
       } else {
-        // tokens should be burned.
-        await expectEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, 0]);
+        // tokens should be burned (but not this time because value == 0)
+        await expectNoEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, 0]);
       }
     });
 
