@@ -117,7 +117,7 @@ contract Whitelist is ColonyExtension {
 
   /// @notice Fetch the user's whitelist status
   /// @param _user The address of the user
-  function approved(address _user) public initialised view returns (bool) {
+  function isApproved(address _user) public initialised view returns (bool) {
     return (
       (!useApprovals || approvals[_user]) &&
       (bytes(agreementHash).length == 0 || signatures[_user])

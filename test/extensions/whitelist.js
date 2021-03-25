@@ -84,12 +84,12 @@ contract("Whitelist", (accounts) => {
 
       let status;
 
-      status = await whitelist.approved(USER1);
+      status = await whitelist.isApproved(USER1);
       expect(status).to.be.false;
 
       await whitelist.approveUser(USER1, true);
 
-      status = await whitelist.approved(USER1);
+      status = await whitelist.isApproved(USER1);
       expect(status).to.be.true;
     });
 
@@ -104,12 +104,12 @@ contract("Whitelist", (accounts) => {
 
       let status;
 
-      status = await whitelist.approved(USER1);
+      status = await whitelist.isApproved(USER1);
       expect(status).to.be.false;
 
       await whitelist.signAgreement(IPFS_HASH, { from: USER1 });
 
-      status = await whitelist.approved(USER1);
+      status = await whitelist.isApproved(USER1);
       expect(status).to.be.true;
     });
 
@@ -118,17 +118,17 @@ contract("Whitelist", (accounts) => {
 
       let status;
 
-      status = await whitelist.approved(USER1);
+      status = await whitelist.isApproved(USER1);
       expect(status).to.be.false;
 
       await whitelist.approveUser(USER1, true, { from: USER0 });
 
-      status = await whitelist.approved(USER1);
+      status = await whitelist.isApproved(USER1);
       expect(status).to.be.false;
 
       await whitelist.signAgreement(IPFS_HASH, { from: USER1 });
 
-      status = await whitelist.approved(USER1);
+      status = await whitelist.isApproved(USER1);
       expect(status).to.be.true;
     });
 

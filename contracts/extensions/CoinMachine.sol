@@ -167,7 +167,7 @@ contract CoinMachine is ColonyExtension {
     updatePeriod();
 
     require(
-      whitelist == address(0x0) || Whitelist(whitelist).approved(msg.sender),
+      whitelist == address(0x0) || Whitelist(whitelist).isApproved(msg.sender),
       "coin-machine-unauthorised"
     );
 
