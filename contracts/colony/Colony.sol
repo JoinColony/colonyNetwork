@@ -58,10 +58,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     bytes4 sig;
     assembly { sig := mload(add(_action, 0x20)) }
 
-    if (sig == APPROVE_SIG){ approveTransactionPreparation(_to, _action); } 
-    else if (sig == BURN_SIG ) { burnTransactionPreparation(_to, _action); }
-    else if (sig == TRANSFER_SIG ) { transferTransactionPreparation(_to, _action); }
-    else if (sig == BURN_GUY_SIG || sig == TRANSFER_FROM_SIG){ burnFromOrTransferFromTransactionPreparation(_to, _action); }
+    if (sig == APPROVE_SIG) { approveTransactionPreparation(_to, _action); }
+    else if (sig == BURN_SIG) { burnTransactionPreparation(_to, _action); }
+    else if (sig == TRANSFER_SIG) { transferTransactionPreparation(_to, _action); }
+    else if (sig == BURN_GUY_SIG || sig == TRANSFER_FROM_SIG) { burnGuyOrTransferFromTransactionPreparation(_action); }
 
     // Prevent transactions to network-managed extensions installed in this colony
     require(isContract(_to), "colony-to-must-be-contract");
@@ -74,7 +74,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     } catch {}
 
     bool res = executeCall(_to, 0, _action);
-    if (sig == APPROVE_SIG){ approveTransactionCleanup(_to, _action); }
+
+    if (sig == APPROVE_SIG) { approveTransactionCleanup(_to, _action); }
 
     return res;
   }
@@ -106,7 +107,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
 
   function transferTransactionPreparation(address _to, bytes memory _action) internal {
     uint256 amount;
-    address recipient;
     assembly {
       amount := mload(add(_action, 0x44))
     }
@@ -114,7 +114,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
   }
 
-  function burnFromOrTransferFromTransactionPreparation(address _to, bytes memory _action) internal {
+  function burnGuyOrTransferFromTransactionPreparation(bytes memory _action) internal {
     address spender;
     assembly {
       spender := mload(add(_action, 0x24))
@@ -143,7 +143,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     require(fundingPots[1].balance[_token] >= tokenApprovalTotals[_token], "colony-approval-exceeds-balance");
 
     tokenApprovals[_token][_spender] = actualApproval;
-
   }
 
   function annotateTransaction(bytes32 _txHash, string memory _metadata) public always {
@@ -522,11 +521,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     emit TokenUnlocked();
   }
 
-  function getTokenApproval(address _token, address _spender) public view returns (uint256 amount) {
+  function getTokenApproval(address _token, address _spender) public view returns (uint256) {
     return tokenApprovals[_token][_spender];
   }
 
-  function getTotalTokenApproval(address _token) public view returns (uint256 amount) {
+  function getTotalTokenApproval(address _token) public view returns (uint256) {
     return tokenApprovalTotals[_token];
   }
 
