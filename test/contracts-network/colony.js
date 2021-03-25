@@ -345,9 +345,21 @@ contract("Colony", (accounts) => {
       );
     });
 
-    it("should not allow bootstrapping if colony is not in bootstrap state", async () => {
+    it("should not allow bootstrapping if tasks have been made", async () => {
       await colony.mintTokens(WAD.muln(14));
       await makeTask({ colony });
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
+    });
+
+    it("should not allow bootstrapping if payments have been made", async () => {
+      await colony.mintTokens(WAD.muln(14));
+      await colony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, 0);
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
+    });
+
+    it("should not allow bootstrapping if expenditures have been made", async () => {
+      await colony.mintTokens(WAD.muln(14));
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
       await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
     });
   });

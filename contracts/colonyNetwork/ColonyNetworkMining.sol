@@ -249,6 +249,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
   }
 
   function burnUnneededRewards(uint256 _amount) public stoppable onlyReputationMiningCycle() {
+    // If there are no rewards to burn, no need to do anything
+    if (_amount == 0){ return; }
+
     address clnyToken = IMetaColony(metaColony).getToken();
     ITokenLocking(tokenLocking).withdraw(clnyToken, _amount, true);
     if (isXdai()){
