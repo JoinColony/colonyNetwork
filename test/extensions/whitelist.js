@@ -80,7 +80,7 @@ contract("Whitelist", (accounts) => {
 
   describe("using the whitelist", async () => {
     it("can make users join a whitelist", async () => {
-      await whitelist.initialise(true, "0x0");
+      await whitelist.initialise(true, "");
 
       let status;
 
@@ -94,27 +94,27 @@ contract("Whitelist", (accounts) => {
     });
 
     it("cannot approve users if not a root administrator", async () => {
-      await whitelist.initialise(true, "0x0");
+      await whitelist.initialise(true, "");
 
       await checkErrorRevert(whitelist.approveUser(USER0, true, { from: USER1 }), "whitelist-unauthorised");
     });
 
     it("can make users sign an agreement", async () => {
-      await whitelist.initialise(false, soliditySha3(IPFS_HASH));
+      await whitelist.initialise(false, IPFS_HASH);
 
       let status;
 
       status = await whitelist.approved(USER1);
       expect(status).to.be.false;
 
-      await whitelist.signAgreement({ from: USER1 });
+      await whitelist.signAgreement(soliditySha3(IPFS_HASH), { from: USER1 });
 
       status = await whitelist.approved(USER1);
       expect(status).to.be.true;
     });
 
     it("can require both a whitelist and an agreement", async () => {
-      await whitelist.initialise(true, soliditySha3(IPFS_HASH));
+      await whitelist.initialise(true, IPFS_HASH);
 
       let status;
 
@@ -126,7 +126,7 @@ contract("Whitelist", (accounts) => {
       status = await whitelist.approved(USER1);
       expect(status).to.be.false;
 
-      await whitelist.signAgreement({ from: USER1 });
+      await whitelist.signAgreement(soliditySha3(IPFS_HASH), { from: USER1 });
 
       status = await whitelist.approved(USER1);
       expect(status).to.be.true;
@@ -134,7 +134,19 @@ contract("Whitelist", (accounts) => {
 
     it("cannot accept input until initialised", async () => {
       await checkErrorRevert(whitelist.approveUser(USER1, true, { from: USER0 }), "whitelist-not-initialised");
-      await checkErrorRevert(whitelist.signAgreement({ from: USER0 }), "whitelist-not-initialised");
+      await checkErrorRevert(whitelist.signAgreement(soliditySha3(IPFS_HASH), { from: USER0 }), "whitelist-not-initialised");
+    });
+
+    it("cannot accept administrator approval if not configured to do so", async () => {
+      await whitelist.initialise(false, IPFS_HASH);
+
+      await checkErrorRevert(whitelist.approveUser(USER1, true, { from: USER0 }), "whitelist-no-approvals");
+    });
+
+    it("cannot accept an agreement signature if not configured to do so", async () => {
+      await whitelist.initialise(true, "");
+
+      await checkErrorRevert(whitelist.signAgreement(soliditySha3(""), { from: USER0 }), "whitelist-no-agreement");
     });
   });
 });

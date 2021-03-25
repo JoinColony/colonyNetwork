@@ -33,7 +33,7 @@ contract Whitelist is ColonyExtension {
   // Storage
 
   bool useApprovals;
-  bytes32 agreementHash;
+  string agreement;
 
   mapping (address => bool) approvals;
   mapping (address => bool) signatures;
@@ -41,7 +41,7 @@ contract Whitelist is ColonyExtension {
   // Modifiers
 
   modifier initialised() {
-    require(useApprovals || agreementHash != bytes32(0), "whitelist-not-initialised");
+    require(useApprovals || bytes(agreement).length > 0, "whitelist-not-initialised");
     _;
   }
 
@@ -80,19 +80,20 @@ contract Whitelist is ColonyExtension {
 
   /// @notice Initialise the extension
   /// @param _useApprovals Whether or not to require administrative approval
-  /// @param _agreementHash The keccak256 hash of an agreement (full text or URI)
-  function initialise(bool _useApprovals, bytes32 _agreementHash) public {
+  /// @param _agreement An agreement (full text or IPFS URI)
+  function initialise(bool _useApprovals, string memory _agreement) public {
     require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "whitelist-unauthorised");
-    require(!useApprovals && agreementHash == bytes32(0), "whitelist-already-initialised");
+    require(!useApprovals && bytes(agreement).length == 0, "whitelist-already-initialised");
 
     useApprovals = _useApprovals;
-    agreementHash = _agreementHash;
+    agreement = _agreement;
   }
 
   /// @notice Sets a users status in the whitelist
   /// @param _user The address of the user
   /// @param _status The whitelist status to set
   function approveUser(address _user, bool _status) public initialised notDeprecated {
+    require(useApprovals, "whitelist-no-approvals");
     require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Administration), "whitelist-unauthorised");
 
     approvals[_user] = _status;
@@ -101,7 +102,10 @@ contract Whitelist is ColonyExtension {
   }
 
   /// @notice The user's signature on the agreement
-  function signAgreement() public initialised notDeprecated {
+  function signAgreement(bytes32 _agreementHash) public initialised notDeprecated {
+    require(bytes(agreement).length > 0, "whitelist-no-agreement");
+    require(keccak256(abi.encodePacked(agreement)) == _agreementHash, "whitelist-bad-signature");
+
     signatures[msg.sender] = true;
 
     emit AgreementSigned(msg.sender);
@@ -109,10 +113,10 @@ contract Whitelist is ColonyExtension {
 
   /// @notice Fetch the user's whitelist status
   /// @param _user The address of the user
-  function approved(address _user) public view returns (bool) {
+  function approved(address _user) public initialised view returns (bool) {
     return (
       (!useApprovals || approvals[_user]) &&
-      (agreementHash == bytes32(0) || signatures[_user])
+      (bytes(agreement).length == 0 || signatures[_user])
     );
   }
 }

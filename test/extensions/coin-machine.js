@@ -201,8 +201,10 @@ contract("Coin Machine", (accounts) => {
 
       await coinMachine.buyTokens(WAD, { from: USER0 });
 
-      const balance = await token.balanceOf(USER0);
-      expect(balance).to.eq.BN(WAD);
+      const userBalance = await token.balanceOf(USER0);
+      expect(userBalance).to.eq.BN(WAD);
+      const colonyBalance = await purchaseToken.balanceOf(colony.address);
+      expect(colonyBalance).to.eq.BN(WAD);
 
       // But not with insufficient funds
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
@@ -334,16 +336,18 @@ contract("Coin Machine", (accounts) => {
       // Check purchase functionality
       await coinMachine.buyTokens(WAD, { from: USER0, value: currentPrice });
 
-      const balance = await token.balanceOf(USER0);
-      expect(balance).to.eq.BN(WAD);
+      const userBalance = await token.balanceOf(USER0);
+      expect(userBalance).to.eq.BN(WAD);
+      const colonyBalance = await web3GetBalance(colony.address);
+      expect(colonyBalance).to.eq.BN(WAD);
 
       // But not with insufficient funds
       await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0, value: currentPrice.subn(1) }), "coin-machine-insufficient-funds");
 
       // Check refund functionality
-      const balanceBefore = await web3GetBalance(coinMachine.address);
+      const balanceBefore = await web3GetBalance(colony.address);
       await coinMachine.buyTokens(WAD, { from: USER0, value: currentPrice.muln(2) });
-      const balanceAfter = await web3GetBalance(coinMachine.address);
+      const balanceAfter = await web3GetBalance(colony.address);
       expect(new BN((balanceAfter - balanceBefore).toString())).to.eq.BN(currentPrice);
     });
 
@@ -652,7 +656,7 @@ contract("Coin Machine", (accounts) => {
     beforeEach(async () => {
       whitelist = await Whitelist.new();
       await whitelist.install(colony.address);
-      await whitelist.initialise(true, "0x0");
+      await whitelist.initialise(true, "");
 
       await coinMachine.initialise(token.address, purchaseToken.address, whitelist.address, 60 * 60, 10, WAD, WAD, WAD);
 

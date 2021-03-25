@@ -176,7 +176,8 @@ contract CoinMachine is ColonyExtension {
 
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
-      if (msg.value > totalCost) { msg.sender.transfer(msg.value - totalCost); }
+      if (msg.value > totalCost) { msg.sender.transfer(msg.value - totalCost); } // Refund any balance
+      payable(address(colony)).transfer(totalCost);
     } else {
       require(ERC20(purchaseToken).transferFrom(msg.sender, address(this), totalCost), "coin-machine-transfer-failed");
     }
@@ -189,6 +190,11 @@ contract CoinMachine is ColonyExtension {
   /// @notice Bring the token accounting current
   function updatePeriod() public {
     uint256 currentPeriod = getCurrentPeriod();
+    uint256 initialActivePeriod = activePeriod;
+
+    if (initialActivePeriod == currentPeriod) {
+      return;
+    }
 
     // If we're out of tokens, don't update
     if (ERC20(token).balanceOf(address(this)) == 0) {
@@ -197,7 +203,6 @@ contract CoinMachine is ColonyExtension {
 
     // We need to update the price if the active period is not the current one.
     if (activePeriod < currentPeriod) {
-      uint256 initialActivePeriod = activePeriod;
 
       emaIntake = wmul((WAD - alpha), emaIntake) + wmul(alpha, activeIntake); // wmul(wad, int) => int
       activeIntake = 0;
@@ -215,8 +220,9 @@ contract CoinMachine is ColonyExtension {
       // Update the price
       activePrice = wdiv(emaIntake, targetPerPeriod);
 
-      emit PeriodUpdated(initialActivePeriod, currentPeriod);
     }
+
+    emit PeriodUpdated(initialActivePeriod, currentPeriod);
   }
 
   /// @notice Get the length of the sale period
