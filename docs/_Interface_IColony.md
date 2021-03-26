@@ -919,6 +919,41 @@ Get the colony token.
 |---|---|---|
 |tokenAddress|address|Address of the token contract
 
+### `getTokenApproval`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|
+|_spender|address|
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|amount|uint256|
+
+### `getTotalTokenApproval`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|amount|uint256|
+
 ### `getUserRoles`
 
 Gets the bytes32 representation of the roles for a user in a given domain
@@ -1719,6 +1754,19 @@ Unlock the colony's token for a user. Can only be called by a network-managed ex
 |---|---|---|
 |user|address|The user to unlock
 |lockId|uint256|The specific lock to unlock
+
+
+### `updateApprovalAmount`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|
+|_spender|address|
 
 
 ### `updateColonyOrbitDB`

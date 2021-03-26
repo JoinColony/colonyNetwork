@@ -946,4 +946,18 @@ interface IColony is ColonyDataTypes, IRecovery {
 
   /// @notice unlock the native colony token, if possible
   function unlockToken() external;
+
+  /// @notice Update the internal bookkeeping around external ERC20 approvals
+  /// @param token The address of the token which was approved
+  /// @param spender The account we have approved
+  function updateApprovalAmount(address token, address spender) external;
+
+  /// @notice Get the current approval amount
+  /// @param token The address of the token which was approved
+  /// @param spender The account we have approved
+  function getTokenApproval(address token, address spender) external view returns (uint256 amount);
+
+  /// @notice Get the current total approval amount across all spenders
+  /// @param token The address of the token which was approved
+  function getTotalTokenApproval(address token) external view returns (uint256 amount);
 }

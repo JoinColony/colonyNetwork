@@ -58,11 +58,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     bytes4 sig;
     assembly { sig := mload(add(_action, 0x20)) }
 
-    require(sig != APPROVE_SIG, "colony-cannot-call-erc20-approve");
-    require(sig != TRANSFER_SIG, "colony-cannot-call-erc20-transfer");
-    require(sig != TRANSFER_FROM_SIG, "colony-cannot-call-erc20-transfer-from");
-    require(sig != BURN_SIG, "colony-cannot-call-burn");
-    require(sig != BURN_GUY_SIG, "colony-cannot-call-burn-guy");
+    if (sig == APPROVE_SIG) { approveTransactionPreparation(_to, _action); }
+    else if (sig == BURN_SIG) { burnTransactionPreparation(_to, _action); }
+    else if (sig == TRANSFER_SIG) { transferTransactionPreparation(_to, _action); }
+    else if (sig == BURN_GUY_SIG || sig == TRANSFER_FROM_SIG) { burnGuyOrTransferFromTransactionPreparation(_action); }
 
     // Prevent transactions to network-managed extensions installed in this colony
     require(isContract(_to), "colony-to-must-be-contract");
@@ -74,7 +73,76 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
       );
     } catch {}
 
-    return executeCall(_to, 0, _action);
+    bool res = executeCall(_to, 0, _action);
+
+    if (sig == APPROVE_SIG) { approveTransactionCleanup(_to, _action); }
+
+    return res;
+  }
+
+  function approveTransactionPreparation(address _to, bytes memory _action) internal {
+    address spender;
+    assembly {
+      spender := mload(add(_action, 0x24))
+    }
+    updateApprovalAmountInternal(_to, spender, false);
+  }
+
+  function approveTransactionCleanup(address _to, bytes memory _action) internal {
+    address spender;
+    assembly {
+      spender := mload(add(_action, 0x24))
+    }
+    updateApprovalAmountInternal(_to, spender, true);
+  }
+
+  function burnTransactionPreparation(address _to, bytes memory _action) internal {
+    uint256 amount;
+    assembly {
+      amount := mload(add(_action, 0x24))
+    }
+    fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
+    require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
+  }
+
+  function transferTransactionPreparation(address _to, bytes memory _action) internal {
+    uint256 amount;
+    assembly {
+      amount := mload(add(_action, 0x44))
+    }
+    fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
+    require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
+  }
+
+  function burnGuyOrTransferFromTransactionPreparation(bytes memory _action) internal {
+    address spender;
+    assembly {
+      spender := mload(add(_action, 0x24))
+    }
+    require(spender != address(this), "colony-cannot-spend-own-allowance");
+  }
+
+  function updateApprovalAmount(address _token, address _spender) stoppable public {
+    updateApprovalAmountInternal(_token, _spender, false);
+  }
+
+  function updateApprovalAmountInternal(address _token, address _spender, bool _postApproval) internal {
+    uint256 recordedApproval = tokenApprovals[_token][_spender];
+    uint256 actualApproval = ERC20Extended(_token).allowance(address(this), _spender);
+    if (recordedApproval == actualApproval) {
+      return;
+    }
+
+    if (recordedApproval > actualApproval && !_postApproval){
+      // They've spend some tokens out of root. Adjust balances accordingly
+      // If we are post approval, then they have not spent tokens
+      fundingPots[1].balance[_token] = add(sub(fundingPots[1].balance[_token], recordedApproval), actualApproval);
+    }
+
+    tokenApprovalTotals[_token] = add(sub(tokenApprovalTotals[_token], recordedApproval), actualApproval);
+    require(fundingPots[1].balance[_token] >= tokenApprovalTotals[_token], "colony-approval-exceeds-balance");
+
+    tokenApprovals[_token][_spender] = actualApproval;
   }
 
   function annotateTransaction(bytes32 _txHash, string memory _metadata) public always {
@@ -453,6 +521,14 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     emit TokenUnlocked();
   }
 
+  function getTokenApproval(address _token, address _spender) public view returns (uint256) {
+    return tokenApprovals[_token][_spender];
+  }
+
+  function getTotalTokenApproval(address _token) public view returns (uint256) {
+    return tokenApprovalTotals[_token];
+  }
+
   function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {
     domainCount += 1;
     // Create a new funding pot
@@ -479,4 +555,5 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   function setRoleAssignmentFunction(bytes4 _sig) private {
     roleAssignmentSigs[_sig] = true;
   }
+
 }

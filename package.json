@@ -96,7 +96,7 @@
     "find-in-files": "^0.5.0",
     "ganache-cli": "^6.10.1",
     "ganache-core": "^2.11.2",
-    "husky": "^4.2.5",
+    "husky": "^4.3.8",
     "istanbul": "^0.4.5",
     "istanbul-combine": "^0.3.0",
     "mocha": "^8.0.0",

@@ -226,6 +226,12 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     fromPot.balance[_token] = sub(fromPot.balance[_token], _amount);
     toPot.balance[_token] = add(toPot.balance[_token], _amount);
 
+    if (_fromPot == 1){
+      // If we're moving from the root pot, then check we haven't dropped below what we need
+      // to cover any approvals that we've made.
+      require(fromPot.balance[_token] >= tokenApprovalTotals[_token], "colony-funding-too-many-approvals");
+    }
+
     // If this pot is associated with a Task or Expenditure, prevent money
     // being taken from the pot if the remaining balance is less than
     // the amount needed for payouts, unless the task was cancelled.
