@@ -14,16 +14,16 @@ const { argv } = require("yargs")
 const KycOracle = require("../KycOracle");
 const TruffleLoader = require("../TruffleLoader").default;
 
-const { userAddress, privateKey, whitelistAddress, apiKey, network, providerPort, providerAddress } = argv;
+const { adminAddress, privateKey, whitelistAddress, apiKey, network, providerPort, providerAddress, dbPath } = argv;
 const supportedInfuraNetworks = ["mainnet"];
 
-if ((!userAddress && !privateKey) || !whitelistAddress) {
-  console.log("❗️ Must specify all of ( --userAddress or --privateKey ) and --whitelistAddress and --apiKey on the command line!");
+if ((!adminAddress && !privateKey) || !whitelistAddress) {
+  console.log("❗️ Must specify all of ( --adminAddress or --privateKey ) and --whitelistAddress and --apiKey on the command line!");
   process.exit();
 }
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts"),
 });
 
 let provider;
@@ -37,5 +37,5 @@ if (network) {
   provider = new ethers.providers.JsonRpcProvider(`http://${providerAddress || "localhost"}:${providerPort || "8545"}`);
 }
 
-const client = new KycOracle({ privateKey, userAddress, apiKey, loader, provider });
+const client = new KycOracle({ privateKey, adminAddress, apiKey, loader, provider, dbPath });
 client.initialise(whitelistAddress);

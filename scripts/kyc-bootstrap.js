@@ -27,7 +27,7 @@ module.exports = async function (callback) {
     await whitelist.initialise(true, "");
 
     console.log("LAUNCH KYC ORACLE:");
-    console.log(`node ./packages/kyc-oracle/bin/index.js --userAddress=${USER0} --whitelistAddress=${whitelistAddress} --apiKey=`);
+    console.log(`node ./packages/kyc-oracle/bin/index.js --adminAddress=${USER0} --whitelistAddress=${whitelistAddress} --apiKey=`);
 
     callback();
   } catch (err) {
