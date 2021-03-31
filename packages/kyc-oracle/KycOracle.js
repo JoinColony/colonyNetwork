@@ -43,8 +43,12 @@ class KycOracle {
     this.app = express();
 
     this.app.use(function (req, res, next) {
-      // TODO: Echo origin back, if allowed. Basically, *.colony.io
-      res.header("Access-Control-Allow-Origin", "*");
+      const regex = /(.*colony\.io)/;
+      const origin = req.get("origin");
+      const matches = regex.exec(origin);
+      if (matches) {
+        res.header("Access-Control-Allow-Origin", matches[1]);
+      }
       next();
     });
 
