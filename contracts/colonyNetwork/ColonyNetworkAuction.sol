@@ -43,9 +43,11 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     }
 
     DutchAuction auction = new DutchAuction(clny, _token, metaColony);
-    assert(ERC20Extended(_token).transfer(address(auction), availableTokens));
     auction.start();
     recentAuctions[_token] = block.timestamp;
+
+    assert(ERC20Extended(_token).transfer(address(auction), availableTokens));
+
     emit AuctionCreated(address(auction), _token, availableTokens);
   }
 }
@@ -86,6 +88,7 @@ contract DutchAuction is DSMath {
   modifier auctionStartedAndOpen {
     require(started, "colony-auction-not-started");
     require(startTime > 0, "colony-auction-not-started");
+    // slither-disable-next-line incorrect-inequality
     require(endTime == 0, "colony-auction-closed");
     _;
   }
@@ -202,9 +205,10 @@ contract DutchAuction is DSMath {
       bidCount += 1;
     }
 
-    require(clnyToken.transferFrom(msg.sender, address(this), amount), "colony-auction-bid-transfer-failed");
     bids[msg.sender] = add(bids[msg.sender], amount);
     receivedTotal = add(receivedTotal, amount);
+
+    require(clnyToken.transferFrom(msg.sender, address(this), amount), "colony-auction-bid-transfer-failed");
 
     emit AuctionBid(msg.sender, amount, sub(_remainingToEndAuction, amount));
   }
@@ -215,12 +219,12 @@ contract DutchAuction is DSMath {
   auctionNotFinalized
   {
     // Burn all CLNY received
-    clnyToken.burn(receivedTotal);
     finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity;
     finalPrice = finalPrice <= minPrice ? minPrice : finalPrice;
     assert(finalPrice != 0);
 
     finalized = true;
+    clnyToken.burn(receivedTotal);
     emit AuctionFinalized(finalPrice);
   }
 
