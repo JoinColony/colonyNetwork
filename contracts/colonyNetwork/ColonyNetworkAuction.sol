@@ -259,6 +259,7 @@ contract DutchAuction is DSMath {
     return true;
   }
 
+  // slither-disable-next-line suicidal
   function destruct() public
   auctionFinalized
   allBidsClaimed
