@@ -43,10 +43,10 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     }
 
     DutchAuction auction = new DutchAuction(clny, _token, metaColony);
-    auction.start();
     recentAuctions[_token] = block.timestamp;
 
     assert(ERC20Extended(_token).transfer(address(auction), availableTokens));
+    auction.start();
 
     emit AuctionCreated(address(auction), _token, availableTokens);
   }
@@ -88,7 +88,7 @@ contract DutchAuction is DSMath {
   modifier auctionStartedAndOpen {
     require(started, "colony-auction-not-started");
     require(startTime > 0, "colony-auction-not-started");
-    // slither-disable-next-line incorrect-inequality
+    // slither-disable-next-line incorrect-equality
     require(endTime == 0, "colony-auction-closed");
     _;
   }
@@ -251,6 +251,7 @@ contract DutchAuction is DSMath {
     bids[recipient] = 0;
     uint beforeClaimBalance = token.balanceOf(recipient);
     assert(token.transfer(recipient, tokens));
+    // slither-disable-next-line incorrect-equality
     assert(token.balanceOf(recipient) == add(beforeClaimBalance, tokens));
     assert(bids[recipient] == 0);
 
@@ -269,7 +270,9 @@ contract DutchAuction is DSMath {
     uint auctionClnyBalance = clnyToken.balanceOf(address(this));
     assert(clnyToken.transfer(metaColonyAddress, auctionClnyBalance));
     // Check this contract balances in the working tokens is 0 before we kill it
+    // slither-disable-next-line incorrect-equality
     assert(clnyToken.balanceOf(address(this)) == 0);
+    // slither-disable-next-line incorrect-equality
     assert(token.balanceOf(address(this)) == 0);
     selfdestruct(colonyNetwork);
   }
