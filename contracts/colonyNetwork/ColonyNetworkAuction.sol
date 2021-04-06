@@ -18,7 +18,7 @@
 pragma solidity 0.7.3;
 
 import "./ColonyNetworkStorage.sol";
-
+import "./../common/MultiChain.sol";
 
 contract ColonyNetworkAuction is ColonyNetworkStorage {
   function startTokenAuction(address _token) public
@@ -53,7 +53,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
 }
 
 
-contract DutchAuction is DSMath {
+contract DutchAuction is DSMath, MultiChain {
   address payable public colonyNetwork;
   address public metaColonyAddress;
   ERC20Extended public clnyToken;
@@ -218,13 +218,20 @@ contract DutchAuction is DSMath {
   auctionClosed
   auctionNotFinalized
   {
-    // Burn all CLNY received
     finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity;
     finalPrice = finalPrice <= minPrice ? minPrice : finalPrice;
     assert(finalPrice != 0);
 
     finalized = true;
-    clnyToken.burn(receivedTotal);
+
+    // Burn all CLNY received
+    if (isXdai()){
+      // On Xdai, we can't burn bridged tokens
+      // so let's send them to the metacolony for now.
+      require(clnyToken.transfer(metaColonyAddress, receivedTotal), "colony-network-transfer-failed");
+    } else {
+      clnyToken.burn(receivedTotal);
+    }
     emit AuctionFinalized(finalPrice);
   }
 
