@@ -82,7 +82,6 @@ contract CoinMachine is ColonyExtension {
     require(address(colony) == address(0x0), "extension-already-installed");
 
     colony = IColony(_colony);
-    token = colony.getToken();
   }
 
   /// @notice Called when upgrading the extension
@@ -97,8 +96,15 @@ contract CoinMachine is ColonyExtension {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
-    uint256 unsoldTokens = ERC20(token).balanceOf(address(this));
-    if (unsoldTokens > 0) ERC20(token).transfer(address(colony), unsoldTokens);
+    if (token != address(0x0)) {
+      uint256 unsoldTokens = ERC20(token).balanceOf(address(this));
+      if (unsoldTokens > 0) {
+        require(
+          ERC20(token).transfer(address(colony), unsoldTokens),
+          "coin-machine-transfer-failed"
+        );
+      }
+    }
 
     selfdestruct(address(uint160(address(colony))));
   }

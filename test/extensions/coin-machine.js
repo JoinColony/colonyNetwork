@@ -117,6 +117,8 @@ contract("Coin Machine", (accounts) => {
     it("can send unsold tokens back to the colony", async () => {
       await token.mint(coinMachine.address, WAD, { from: USER0 });
 
+      await coinMachine.initialise(token.address, ethers.constants.AddressZero, ethers.constants.AddressZero, 60 * 60, 10, WAD, WAD, WAD);
+
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
 
       const balance = await token.balanceOf(colony.address);
