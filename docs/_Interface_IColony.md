@@ -921,15 +921,15 @@ Get the colony token.
 
 ### `getTokenApproval`
 
-
+Get the current approval amount
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_token|address|
-|_spender|address|
+|token|address|The address of the token which was approved
+|spender|address|The account we have approved
 
 **Return Parameters**
 
@@ -939,14 +939,14 @@ Get the colony token.
 
 ### `getTotalTokenApproval`
 
-
+Get the current total approval amount across all spenders
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_token|address|
+|token|address|The address of the token which was approved
 
 **Return Parameters**
 
@@ -1758,15 +1758,15 @@ Unlock the colony's token for a user. Can only be called by a network-managed ex
 
 ### `updateApprovalAmount`
 
-
+Update the internal bookkeeping around external ERC20 approvals
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_token|address|
-|_spender|address|
+|token|address|The address of the token which was approved
+|spender|address|The account we have approved
 
 
 ### `updateColonyOrbitDB`

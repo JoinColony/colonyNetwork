@@ -83,8 +83,9 @@ contract("Colony Network Auction", (accounts) => {
     });
 
     it("should burn tokens if auction is initialised for the CLNY token", async () => {
-      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, WAD);
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD);
       const supplyBefore = await clnyToken.totalSupply();
+      expect(supplyBefore).to.eq.BN(WAD);
       const balanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
 
       await colonyNetwork.startTokenAuction(clnyToken.address);

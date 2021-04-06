@@ -18,9 +18,9 @@
 pragma solidity 0.7.3;
 
 import "./ColonyNetworkStorage.sol";
+import "./../common/MultiChain.sol";
 
-
-contract ColonyNetworkAuction is ColonyNetworkStorage {
+contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
   function startTokenAuction(address _token) public
   stoppable
   auth
@@ -38,20 +38,28 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     if (_token==clny) {
       // We don't auction CLNY. We just burn it instead.
       // Note we can do this more often than every 30 days.
-      ERC20Extended(clny).burn(availableTokens);
+      if (isXdai()){
+        // On Xdai, we can't burn bridged tokens
+        // so let's send them to the metacolony for now.
+        require(ERC20Extended(clny).transfer(metaColony, availableTokens), "colony-network-transfer-failed");
+      } else {
+        ERC20Extended(clny).burn(availableTokens);
+      }
       return;
     }
 
     DutchAuction auction = new DutchAuction(clny, _token, metaColony);
+    recentAuctions[_token] = block.timestamp;
+
     assert(ERC20Extended(_token).transfer(address(auction), availableTokens));
     auction.start();
-    recentAuctions[_token] = block.timestamp;
+
     emit AuctionCreated(address(auction), _token, availableTokens);
   }
 }
 
 
-contract DutchAuction is DSMath {
+contract DutchAuction is DSMath, MultiChain {
   address payable public colonyNetwork;
   address public metaColonyAddress;
   ERC20Extended public clnyToken;
@@ -86,6 +94,7 @@ contract DutchAuction is DSMath {
   modifier auctionStartedAndOpen {
     require(started, "colony-auction-not-started");
     require(startTime > 0, "colony-auction-not-started");
+    // slither-disable-next-line incorrect-equality
     require(endTime == 0, "colony-auction-closed");
     _;
   }
@@ -202,9 +211,10 @@ contract DutchAuction is DSMath {
       bidCount += 1;
     }
 
-    require(clnyToken.transferFrom(msg.sender, address(this), amount), "colony-auction-bid-transfer-failed");
     bids[msg.sender] = add(bids[msg.sender], amount);
     receivedTotal = add(receivedTotal, amount);
+
+    require(clnyToken.transferFrom(msg.sender, address(this), amount), "colony-auction-bid-transfer-failed");
 
     emit AuctionBid(msg.sender, amount, sub(_remainingToEndAuction, amount));
   }
@@ -214,13 +224,20 @@ contract DutchAuction is DSMath {
   auctionClosed
   auctionNotFinalized
   {
-    // Burn all CLNY received
-    clnyToken.burn(receivedTotal);
     finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity;
     finalPrice = finalPrice <= minPrice ? minPrice : finalPrice;
     assert(finalPrice != 0);
 
     finalized = true;
+
+    // Burn all CLNY received
+    if (isXdai()){
+      // On Xdai, we can't burn bridged tokens
+      // so let's send them to the metacolony for now.
+      require(clnyToken.transfer(metaColonyAddress, receivedTotal), "colony-network-transfer-failed");
+    } else {
+      clnyToken.burn(receivedTotal);
+    }
     emit AuctionFinalized(finalPrice);
   }
 
@@ -247,6 +264,7 @@ contract DutchAuction is DSMath {
     bids[recipient] = 0;
     uint beforeClaimBalance = token.balanceOf(recipient);
     assert(token.transfer(recipient, tokens));
+    // slither-disable-next-line incorrect-equality
     assert(token.balanceOf(recipient) == add(beforeClaimBalance, tokens));
     assert(bids[recipient] == 0);
 
@@ -254,6 +272,7 @@ contract DutchAuction is DSMath {
     return true;
   }
 
+  // slither-disable-next-line suicidal
   function destruct() public
   auctionFinalized
   allBidsClaimed
@@ -265,7 +284,9 @@ contract DutchAuction is DSMath {
     uint auctionClnyBalance = clnyToken.balanceOf(address(this));
     assert(clnyToken.transfer(metaColonyAddress, auctionClnyBalance));
     // Check this contract balances in the working tokens is 0 before we kill it
+    // slither-disable-next-line incorrect-equality
     assert(clnyToken.balanceOf(address(this)) == 0);
+    // slither-disable-next-line incorrect-equality
     assert(token.balanceOf(address(this)) == 0);
     selfdestruct(colonyNetwork);
   }

@@ -1,9 +1,16 @@
 /* globals artifacts */
 import chai from "chai";
 import bnChai from "bn-chai";
+import BN from "bn.js";
 
 import { setupENSRegistrar } from "../helpers/upgradable-contracts";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
+import {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  giveUserCLNYTokens,
+  giveUserCLNYTokensAndStake,
+  unlockCLNYToken,
+} from "../helpers/test-data-generator";
 import {
   forwardTime,
   getActiveRepCycle,
@@ -12,12 +19,15 @@ import {
   checkErrorRevert,
   expectEvent,
   expectNoEvent,
+  getTokenArgs,
 } from "../helpers/test-helper";
-import { MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW, MIN_STAKE, MINING_CYCLE_TIMEOUT } from "../helpers/constants";
+import { MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW, MIN_STAKE, MINING_CYCLE_TIMEOUT, WAD } from "../helpers/constants";
 
 const { expect } = chai;
 const ENSRegistry = artifacts.require("ENSRegistry");
 const MultiChain = artifacts.require("MultiChain");
+const DutchAuction = artifacts.require("DutchAuction");
+const Token = artifacts.require("Token");
 
 chai.use(bnChai(web3.utils.BN));
 
@@ -148,6 +158,65 @@ contract("Contract Storage", (accounts) => {
       const tx = await repCycle.confirmNewHash(0);
       await expectNoEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, 0]);
       await expectNoEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, 0]);
+    });
+
+    it("should handle tokens appropriately if auction is initialised for the CLNY token", async () => {
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD);
+      const supplyBefore = await clnyToken.totalSupply();
+      const balanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
+      const tx = await colonyNetwork.startTokenAuction(clnyToken.address);
+
+      const supplyAfter = await clnyToken.totalSupply();
+      const balanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
+
+      if (chainId === XDAI || chainId === FORKED_XDAI) {
+        // tokens should be transferred to metacolony
+        expect(supplyBefore).to.eq.BN(supplyAfter);
+        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, WAD]);
+      } else {
+        // tokens should be burned.
+        expect(supplyBefore.sub(supplyAfter)).to.eq.BN(balanceBefore);
+        await expectEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, WAD]);
+        expect(balanceAfter).to.be.zero;
+        expect(supplyBefore.sub(balanceBefore)).to.eq.BN(supplyAfter);
+      }
+    });
+
+    it("CLNY raised from auctions is dealt with appropriately", async () => {
+      const quantity = new BN(10).pow(new BN(18)).muln(3);
+      const clnyNeededForMaxPriceAuctionSellout = new BN(10).pow(new BN(36)).muln(3); // eslint-disable-line prettier/prettier
+      const args = getTokenArgs();
+
+      const token = await Token.new(...args);
+      await token.unlock();
+      await unlockCLNYToken(metaColony);
+      await token.mint(colonyNetwork.address, quantity);
+      const { logs } = await colonyNetwork.startTokenAuction(token.address);
+      const auctionAddress = logs[0].args.auction;
+      const tokenAuction = await DutchAuction.at(auctionAddress);
+
+      await giveUserCLNYTokens(colonyNetwork, accounts[1], clnyNeededForMaxPriceAuctionSellout);
+      await clnyToken.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout, { from: accounts[1] });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: accounts[1] });
+
+      const balanceBefore = await clnyToken.balanceOf(tokenAuction.address);
+      const supplyBefore = await clnyToken.totalSupply();
+      const receivedTotal = await tokenAuction.receivedTotal();
+      expect(receivedTotal).to.not.be.zero;
+      const tx = await tokenAuction.finalize();
+
+      const balanceAfter = await clnyToken.balanceOf(tokenAuction.address);
+      expect(balanceAfter).to.be.zero;
+      const supplyAfter = await clnyToken.totalSupply();
+      if (chainId === XDAI || chainId === FORKED_XDAI) {
+        // tokens should be transferred to metacolony
+        expect(supplyBefore).to.eq.BN(supplyAfter);
+        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [tokenAuction.address, metaColony.address, receivedTotal]);
+      } else {
+        // tokens should be burned.
+        expect(supplyBefore.sub(supplyAfter)).to.eq.BN(balanceBefore);
+        await expectEvent(tx, "Burn(address indexed,uint256)", [tokenAuction.address, receivedTotal]);
+      }
     });
   });
 });
