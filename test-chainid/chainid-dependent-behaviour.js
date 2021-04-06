@@ -21,7 +21,7 @@ import {
   expectNoEvent,
   getTokenArgs,
 } from "../helpers/test-helper";
-import { MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW, MIN_STAKE, MINING_CYCLE_TIMEOUT } from "../helpers/constants";
+import { MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW, MIN_STAKE, MINING_CYCLE_TIMEOUT, WAD } from "../helpers/constants";
 
 const { expect } = chai;
 const ENSRegistry = artifacts.require("ENSRegistry");
@@ -158,6 +158,28 @@ contract("Contract Storage", (accounts) => {
       const tx = await repCycle.confirmNewHash(0);
       await expectNoEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, 0]);
       await expectNoEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, 0]);
+    });
+
+    it("should handle tokens appropriately if auction is initialised for the CLNY token", async () => {
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD);
+      const supplyBefore = await clnyToken.totalSupply();
+      const balanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
+      const tx = await colonyNetwork.startTokenAuction(clnyToken.address);
+
+      const supplyAfter = await clnyToken.totalSupply();
+      const balanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
+
+      if (chainId === XDAI || chainId === FORKED_XDAI) {
+        // tokens should be transferred to metacolony
+        expect(supplyBefore).to.eq.BN(supplyAfter);
+        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, WAD]);
+      } else {
+        // tokens should be burned.
+        expect(supplyBefore.sub(supplyAfter)).to.eq.BN(balanceBefore);
+        await expectEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, WAD]);
+        expect(balanceAfter).to.be.zero;
+        expect(supplyBefore.sub(balanceBefore)).to.eq.BN(supplyAfter);
+      }
     });
 
     it("CLNY raised from auctions is dealt with appropriately", async () => {
