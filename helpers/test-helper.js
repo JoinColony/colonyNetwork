@@ -621,7 +621,7 @@ export async function advanceMiningCycleNoContest({ colonyNetwork, client, miner
     const accounts = await web3GetAccounts();
     minerAddress = minerAddress || accounts[5]; // eslint-disable-line no-param-reassign
     try {
-      await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: minerAddress });
+      await repCycle.submitRootHash("0x00", 0, "0x00", 1, { from: minerAddress });
     } catch (err) {
       console.log("advanceMiningCycleNoContest error thrown by .submitRootHash", err);
     }
