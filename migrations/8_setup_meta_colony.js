@@ -15,7 +15,7 @@ const Version3 = artifacts.require("./Version3");
 const Version4 = artifacts.require("./Version4");
 const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
 
-const DEFAULT_STAKE = "2000000000000000000000000"; // 1000 * MIN_STAKE
+const DEFAULT_STAKE = "2000000000000000000000"; // MIN_STAKE
 
 // eslint-disable-next-line no-unused-vars
 module.exports = async function (deployer, network, accounts) {
