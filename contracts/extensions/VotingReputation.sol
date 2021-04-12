@@ -756,7 +756,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     uint256 stakeFraction = wdiv(stakes[_motionId][_staker][_vote], totalSideStake);
 
     uint256 realStake = wmul(stakeFraction, motion.stakes[_vote]);
-    uint256 requiredStake = getRequiredStake(_motionId);
 
     uint256 stakerReward;
     uint256 repPenalty;
@@ -764,13 +763,23 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     // Went to a vote, use vote to determine reward or penalty
     if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
 
-      uint256 loserStake = sub(requiredStake, motion.paidVoterComp);
+      uint256 loserStake;
+      uint256 winnerStake;
+      if (motion.votes[YAY] > motion.votes[NAY]){
+        loserStake = motion.stakes[NAY];
+        winnerStake = motion.stakes[YAY];
+      } else {
+        loserStake = motion.stakes[YAY];
+        winnerStake = motion.stakes[NAY];
+      }
+
+      loserStake = sub(loserStake, motion.paidVoterComp);
       uint256 totalVotes = add(motion.votes[NAY], motion.votes[YAY]);
       uint256 winFraction = wdiv(motion.votes[_vote], totalVotes);
       uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
 
       if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
-        stakerReward = wmul(stakeFraction, add(requiredStake, wmul(loserStake, winShare - WAD)));
+        stakerReward = wmul(stakeFraction, add(winnerStake, wmul(loserStake, winShare - WAD)));
       } else {
         stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));
         repPenalty = sub(realStake, stakerReward);
@@ -779,6 +788,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     // Determine rewards based on stakes alone
     } else {
       assert(motion.paidVoterComp == 0);
+      uint256 requiredStake = getRequiredStake(_motionId);
 
       // Your side fully staked, receive 10% (proportional) of loser's stake
       if (
