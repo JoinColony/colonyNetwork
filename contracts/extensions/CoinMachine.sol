@@ -31,6 +31,7 @@ contract CoinMachine is ColonyExtension {
 
   event TokensBought(address buyer, uint256 numTokens, uint256 totalCost);
   event PeriodUpdated(uint256 activePeriod, uint256 currentPeriod);
+  event WhitelistSet(address whitelist);
 
   // Storage
 
@@ -56,6 +57,8 @@ contract CoinMachine is ColonyExtension {
   address token; // The token we are selling
 
   address whitelist; // Address of an optional whitelist
+
+  bool soldOut; // If we've sold out of tokens
 
   // Modifiers
 
@@ -97,10 +100,10 @@ contract CoinMachine is ColonyExtension {
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
     if (token != address(0x0)) {
-      uint256 unsoldTokens = ERC20(token).balanceOf(address(this));
-      if (unsoldTokens > 0) {
+      uint256 tokenBalance = getTokenBalance();
+      if (tokenBalance > 0) {
         require(
-          ERC20(token).transfer(address(colony), unsoldTokens),
+          ERC20(token).transfer(address(colony), tokenBalance),
           "coin-machine-transfer-failed"
         );
       }
@@ -119,7 +122,6 @@ contract CoinMachine is ColonyExtension {
   function initialise(
     address _token,
     address _purchaseToken,
-    address _whitelist,
     uint256 _periodLength,
     uint256 _windowSize,
     uint256 _targetPerPeriod,
@@ -142,8 +144,6 @@ contract CoinMachine is ColonyExtension {
     // A value of address(0x0) denotes Ether
     purchaseToken = _purchaseToken;
 
-    whitelist = _whitelist;
-
     periodLength = _periodLength;
     alpha = wdiv(2, _windowSize + 1); // Two ints enter, 1 WAD leaves
     // In the long-term, 86% of the weighting will be in this window size. This is a 'standard' conversion
@@ -161,6 +161,12 @@ contract CoinMachine is ColonyExtension {
     emit ExtensionInitialised();
   }
 
+  function setWhitelist(address _whitelist) public onlyRoot notDeprecated {
+    whitelist = _whitelist;
+
+    emit WhitelistSet(_whitelist);
+  }
+
   /// @notice Purchase tokens from Coin Machine.
   /// @param _numTokens The number of tokens to purchase
   function buyTokens(uint256 _numTokens) public payable notDeprecated {
@@ -171,7 +177,7 @@ contract CoinMachine is ColonyExtension {
       "coin-machine-unauthorised"
     );
 
-    uint256 tokenBalance = ERC20(token).balanceOf(address(this));
+    uint256 tokenBalance = getTokenBalance();
     uint256 numTokens = min(min(_numTokens, maxPerPeriod - activeSold), tokenBalance);
     uint256 totalCost = wmul(numTokens, activePrice);
 
@@ -186,6 +192,11 @@ contract CoinMachine is ColonyExtension {
       payable(address(colony)).transfer(totalCost);
     } else {
       require(ERC20(purchaseToken).transferFrom(msg.sender, address(this), totalCost), "coin-machine-transfer-failed");
+    }
+
+    // Check if we've sold out
+    if (numTokens == tokenBalance) {
+      soldOut = true;
     }
 
     ERC20(token).transfer(msg.sender, numTokens);
@@ -203,16 +214,19 @@ contract CoinMachine is ColonyExtension {
     }
 
     // If we're out of tokens, don't update
-    if (ERC20(token).balanceOf(address(this)) == 0) {
+    if (soldOut) {
       activePeriod = currentPeriod;
+
+      // Are we still sold out?
+      if (getTokenBalance() > 0) {
+        soldOut = false;
+      }
     }
 
     // We need to update the price if the active period is not the current one.
     if (activePeriod < currentPeriod) {
-
       emaIntake = wmul((WAD - alpha), emaIntake) + wmul(alpha, activeIntake); // wmul(wad, int) => int
       activeIntake = 0;
-
       activeSold = 0;
 
       // Handle any additional missed periods
@@ -225,10 +239,14 @@ contract CoinMachine is ColonyExtension {
 
       // Update the price
       activePrice = wdiv(emaIntake, targetPerPeriod);
-
     }
 
     emit PeriodUpdated(initialActivePeriod, currentPeriod);
+  }
+
+  /// @notice Get the remaining balance of tokens
+  function getTokenBalance() public view returns (uint256) {
+    return ERC20(token).balanceOf(address(this));
   }
 
   /// @notice Get the length of the sale period
@@ -255,7 +273,7 @@ contract CoinMachine is ColonyExtension {
   function getCurrentPrice() public view returns (uint256) {
     uint256 currentPeriod = getCurrentPeriod();
 
-    if (activePeriod >= currentPeriod || ERC20(token).balanceOf(address(this)) == 0) {
+    if (activePeriod >= currentPeriod || soldOut) {
       return activePrice;
 
     // Otherwise, infer the new price

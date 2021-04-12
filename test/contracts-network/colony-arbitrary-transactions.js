@@ -156,7 +156,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
     const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
     const coinMachine = await CoinMachine.at(coinMachineAddress);
-    await coinMachine.initialise(token.address, ethers.constants.AddressZero, ethers.constants.AddressZero, 60 * 60, 10, WAD, WAD, WAD);
+    await coinMachine.initialise(token.address, ethers.constants.AddressZero, 60 * 60, 10, WAD, WAD, WAD);
     await token.mint(coinMachine.address, WAD);
 
     const action = await encodeTxData(coinMachine, "buyTokens", [WAD]);
