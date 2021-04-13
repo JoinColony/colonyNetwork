@@ -1,8 +1,8 @@
 // Input:
 /* globals artifacts */
 
-const util = require("util");
-const exec = util.promisify(require("child_process").exec);
+const Promise = require("bluebird");
+const exec = Promise.promisify(require("child_process").exec);
 const { soliditySha3 } = require("web3-utils");
 const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
 

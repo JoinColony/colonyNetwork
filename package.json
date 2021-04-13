@@ -78,6 +78,7 @@
     "async-request": "^1.2.0",
     "babel-plugin-istanbul": "^6.0.0",
     "bignumber.js": "^9.0.0",
+    "bluebird": "^3.7.2",
     "bn-chai": "^1.0.1",
     "bn.js": "^5.0.0",
     "chai": "^4.2.0",

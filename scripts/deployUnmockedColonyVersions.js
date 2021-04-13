@@ -8,8 +8,8 @@
 // Checkout out v4
 // Deploy v4 resolver
 // Point v4 on network to that resolver
-const util = require("util");
-const exec = util.promisify(require("child_process").exec);
+const Promise = require("bluebird");
+const exec = Promise.promisify(require("child_process").exec);
 const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
 
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
