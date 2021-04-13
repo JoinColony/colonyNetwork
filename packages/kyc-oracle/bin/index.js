@@ -17,7 +17,7 @@ const TruffleLoader = require("../TruffleLoader").default;
 const { adminAddress, privateKey, whitelistAddress, apiKey, network, providerPort, providerAddress, dbPath } = argv;
 const supportedInfuraNetworks = ["mainnet"];
 
-if ((!adminAddress && !privateKey) || !whitelistAddress) {
+if ((!adminAddress && !privateKey) || !whitelistAddress || !apiKey) {
   console.log("❗️ Must specify all of ( --adminAddress or --privateKey ) and --whitelistAddress and --apiKey on the command line!");
   process.exit();
 }

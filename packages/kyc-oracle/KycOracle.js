@@ -3,8 +3,7 @@ const ethers = require("ethers");
 const express = require("express");
 const etherpass = require("etherpass");
 
-const { getChallenge } = etherpass;
-const { verifyEthSignature } = etherpass;
+const { getChallenge, verifyEthSignature } = etherpass;
 const sqlite3 = require("sqlite3");
 const sqlite = require("sqlite");
 const bodyParser = require("body-parser");
@@ -43,11 +42,12 @@ class KycOracle {
     this.app = express();
 
     this.app.use(function (req, res, next) {
-      const regex = /(.*colony\.io)/;
+      const regex = /.*colony\.io/;
       const origin = req.get("origin");
       const matches = regex.exec(origin);
+
       if (matches) {
-        res.header("Access-Control-Allow-Origin", matches[1]);
+        res.header("Access-Control-Allow-Origin", matches[0]);
       }
       next();
     });
@@ -183,7 +183,7 @@ class KycOracle {
 
   async createDB() {
     const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
-    await db.run("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE, session_id text NOT NULL  )");
+    await db.run("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE, session_id text NOT NULL )");
     await db.close();
   }
 
@@ -207,7 +207,7 @@ class KycOracle {
     console.log(address, session);
     const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
     await db.run(
-      `INSERT INTO users (address, session_id) VALUES ('${address}', '${session}') ON CONFLICT(address) DO UPDATE SET session_id = '${session}'`
+      `INSERT INTO users (address, session_id) VALUES ("${address}", "${session}") ON CONFLICT(address) DO UPDATE SET session_id = "${session}"`
     );
     await db.close();
   }
@@ -222,7 +222,7 @@ class KycOracle {
     await db.close();
     const addresses = res.map((x) => x.address);
     if (addresses.length > 1) {
-      throw new Error("More than one matching session");
+      throw new Error("More than one matching address");
     }
     return addresses[0];
   }
