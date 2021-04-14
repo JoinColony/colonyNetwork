@@ -5,7 +5,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
-import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
+import { DEFAULT_STAKE, MIN_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
 import { forwardTime, currentBlock, advanceMiningCycleNoContest, getActiveRepCycle } from "../../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -59,7 +59,7 @@ process.env.SOLIDITY_COVERAGE
         await reputationMiner1.initialise(colonyNetwork.address);
 
         const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-        expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
+        expect(lock.balance).to.eq.BN(MIN_STAKE);
 
         // Advance two cycles to clear active and inactive state.
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
