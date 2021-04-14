@@ -240,6 +240,8 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     // Insert into the right location
     uint256 nextId = queue[_newPrevId];
     if (queue[HEAD] == nextId && nextId != 0) {
+      // Only calls the colony, so can disable this safely
+      // slither-disable-next-line reentrancy-no-eth
       pingProposal(nextId);
     }
     // Does this proposal have less than or equal support to the previous proposal?
@@ -368,6 +370,9 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
       return getDecayRateFromBin(10);
     }
 
+    // The code here is deliberately expecting the rounding down,
+    // so this disabling is fine.
+    // slither-disable-next-line divide-before-multiply
     uint256 lowerBin = backingPercent / (10 ** 17);
     uint256 lowerPct = (backingPercent - (lowerBin * 10 ** 17)) * 10;
 
@@ -408,6 +413,8 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     }
   }
 
+  // See inside function for justification of this disable
+  // slither-disable-next-line dangerous-strict-equalities
   function checkReputation(
     uint256 _id,
     address _who,
@@ -434,6 +441,9 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     }
 
     require(keyColonyAddress == address(colony), "funding-queue-invalid-colony-address");
+    // This is the 'dangerous' strict equality.
+    // This equality is numerical, but does have to be exact. It is therefore necessary to be disabled.
+    // slither-disable-next-line incorrect-equality
     require(keySkill == colony.getDomain(proposals[_id].domainId).skillId, "funding-queue-invalid-skill-id");
     require(keyUserAddress == _who, "funding-queue-invalid-user-address");
 
