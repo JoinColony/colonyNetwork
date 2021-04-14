@@ -188,6 +188,14 @@ contract("Voting Token", (accounts) => {
       expect(deprecated).to.equal(true);
     });
 
+    it("cannot make a motion before initialised", async () => {
+      voting = await VotingToken.new();
+      await voting.install(colony.address);
+
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await checkErrorRevert(voting.createRootMotion(ADDRESS_ZERO, action), "voting-base-not-active");
+    });
+
     it("cannot initialise twice or more if not root", async () => {
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-base-already-initialised");
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR, { from: USER2 }), "voting-base-caller-not-root");
@@ -1289,6 +1297,35 @@ contract("Voting Token", (accounts) => {
 
     it("cannot claim rewards before a motion is finalized", async () => {
       await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-base-motion-not-claimable");
+    });
+
+    it("can unlock the token after claiming", async () => {
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, { from: USER1 });
+
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER2 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER2 });
+
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(ESCALATION_PERIOD, this);
+
+      await voting.finalizeMotion(motionId);
+
+      let lockCount;
+      const lockId = await voting.getLockId(motionId);
+
+      ({ lockCount } = await tokenLocking.getUserLock(token.address, USER1));
+      expect(lockCount).to.be.zero;
+
+      await voting.claimReward(motionId, 1, UINT256_MAX, USER1, NAY);
+
+      ({ lockCount } = await tokenLocking.getUserLock(token.address, USER1));
+      expect(lockCount).to.eq.BN(lockId);
     });
   });
 });

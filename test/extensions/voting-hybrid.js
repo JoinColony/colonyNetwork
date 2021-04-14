@@ -257,6 +257,17 @@ contract("Voting Hybrid", (accounts) => {
       expect(deprecated).to.equal(true);
     });
 
+    it("cannot make a motion before initialised", async () => {
+      voting = await VotingHybrid.new();
+      await voting.install(colony.address);
+
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await checkErrorRevert(
+        voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        "voting-base-not-active"
+      );
+    });
+
     it("cannot initialise twice or more if not root", async () => {
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-base-already-initialised");
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR, { from: USER2 }), "voting-base-caller-not-root");
@@ -312,6 +323,15 @@ contract("Voting Hybrid", (accounts) => {
       const motionId = await voting.getMotionCount();
       const motion = await voting.getMotion(motionId);
       expect(motion.skillId).to.eq.BN(domain1.skillId);
+    });
+
+    it("does not lock the token when a motion is created", async () => {
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      const lockId = await voting.getLockId(motionId);
+      expect(lockId).to.be.zero;
     });
 
     it("can create a motion with an alternative target", async () => {
@@ -740,6 +760,32 @@ contract("Voting Hybrid", (accounts) => {
       await forwardTime(SUBMIT_PERIOD, this);
 
       await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
+    });
+
+    it("locks the token when the first reveal is made", async () => {
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      let lockId = await voting.getLockId(motionId);
+      expect(lockId).to.be.zero;
+
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
+
+      lockId = await voting.getLockId(motionId);
+      expect(lockId).to.not.be.zero;
+    });
+
+    it("can unlock the token once revealed", async () => {
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
+
+      const lockId = await voting.getLockId(motionId);
+      const { lockCount } = await tokenLocking.getUserLock(token.address, USER0);
+      expect(lockCount).to.eq.BN(lockId);
     });
 
     it("can tally votes from two users", async () => {

@@ -304,6 +304,24 @@ contract("Voting Reputation", (accounts) => {
       expect(deprecated).to.equal(true);
     });
 
+    it("can initialise with valid values and emit expected event", async () => {
+      voting = await VotingReputation.new();
+      await voting.install(colony.address);
+
+      await expectEvent(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "ExtensionInitialised", []);
+    });
+
+    it("cannot make a motion before initialised", async () => {
+      voting = await VotingReputation.new();
+      await voting.install(colony.address);
+
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await checkErrorRevert(
+        voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        "voting-base-not-active"
+      );
+    });
+
     it("cannot initialise twice or more if not root", async () => {
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-base-already-initialised");
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR, { from: USER2 }), "voting-base-caller-not-root");
@@ -321,13 +339,6 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR + 1, YEAR, YEAR), "voting-base-period-too-long");
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR + 1, YEAR), "voting-base-period-too-long");
       await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR + 1), "voting-base-period-too-long");
-    });
-
-    it("can initialised with valid values and emit expected event", async () => {
-      voting = await VotingReputation.new();
-      await voting.install(colony.address);
-
-      await expectEvent(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "ExtensionInitialised", []);
     });
 
     it("can query for initialisation values", async () => {
