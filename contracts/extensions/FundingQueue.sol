@@ -413,8 +413,6 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     }
   }
 
-  // See inside function for justification of this disable
-  // slither-disable-next-line dangerous-strict-equalities
   function checkReputation(
     uint256 _id,
     address _who,
