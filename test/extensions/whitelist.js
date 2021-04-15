@@ -79,16 +79,24 @@ contract("Whitelist", (accounts) => {
   });
 
   describe("using the whitelist", async () => {
-    it("can make users join a whitelist", async () => {
+    it("cannot initialise with null arguments", async () => {
+      await checkErrorRevert(whitelist.initialise(false, ""), "whitelist-bad-initialisation");
+    });
+
+    it("can approve users on the whitelist", async () => {
       await whitelist.initialise(true, "");
 
       let status;
 
+      status = await whitelist.isApproved(USER0);
+      expect(status).to.be.false;
       status = await whitelist.isApproved(USER1);
       expect(status).to.be.false;
 
-      await whitelist.approveUser(USER1, true);
+      await whitelist.approveUsers([USER0, USER1], true);
 
+      status = await whitelist.isApproved(USER0);
+      expect(status).to.be.true;
       status = await whitelist.isApproved(USER1);
       expect(status).to.be.true;
     });
@@ -96,7 +104,7 @@ contract("Whitelist", (accounts) => {
     it("cannot approve users if not a root administrator", async () => {
       await whitelist.initialise(true, "");
 
-      await checkErrorRevert(whitelist.approveUser(USER0, true, { from: USER1 }), "whitelist-unauthorised");
+      await checkErrorRevert(whitelist.approveUsers([USER0], true, { from: USER1 }), "whitelist-unauthorised");
     });
 
     it("can make users sign an agreement", async () => {
@@ -121,7 +129,7 @@ contract("Whitelist", (accounts) => {
       status = await whitelist.isApproved(USER1);
       expect(status).to.be.false;
 
-      await whitelist.approveUser(USER1, true, { from: USER0 });
+      await whitelist.approveUsers([USER1], true, { from: USER0 });
 
       status = await whitelist.isApproved(USER1);
       expect(status).to.be.false;
@@ -133,14 +141,14 @@ contract("Whitelist", (accounts) => {
     });
 
     it("cannot accept input until initialised", async () => {
-      await checkErrorRevert(whitelist.approveUser(USER1, true, { from: USER0 }), "whitelist-not-initialised");
+      await checkErrorRevert(whitelist.approveUsers([USER1], true, { from: USER0 }), "whitelist-not-initialised");
       await checkErrorRevert(whitelist.signAgreement(IPFS_HASH, { from: USER0 }), "whitelist-not-initialised");
     });
 
     it("cannot accept administrator approval if not configured to do so", async () => {
       await whitelist.initialise(false, IPFS_HASH);
 
-      await checkErrorRevert(whitelist.approveUser(USER1, true, { from: USER0 }), "whitelist-no-approvals");
+      await checkErrorRevert(whitelist.approveUsers([USER1], true, { from: USER0 }), "whitelist-no-approvals");
     });
 
     it("cannot accept an agreement signature if not configured to do so", async () => {

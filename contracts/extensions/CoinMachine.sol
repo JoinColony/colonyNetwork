@@ -191,7 +191,7 @@ contract CoinMachine is ColonyExtension {
       if (msg.value > totalCost) { msg.sender.transfer(msg.value - totalCost); } // Refund any balance
       payable(address(colony)).transfer(totalCost);
     } else {
-      require(ERC20(purchaseToken).transferFrom(msg.sender, address(this), totalCost), "coin-machine-transfer-failed");
+      require(ERC20(purchaseToken).transferFrom(msg.sender, address(colony), totalCost), "coin-machine-transfer-failed");
     }
 
     // Check if we've sold out
@@ -199,7 +199,7 @@ contract CoinMachine is ColonyExtension {
       soldOut = true;
     }
 
-    ERC20(token).transfer(msg.sender, numTokens);
+    require(ERC20(token).transfer(msg.sender, numTokens), "coin-machine-transfer-failed");
 
     emit TokensBought(msg.sender, numTokens, totalCost);
   }

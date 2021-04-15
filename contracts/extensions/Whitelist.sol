@@ -84,21 +84,26 @@ contract Whitelist is ColonyExtension {
   function initialise(bool _useApprovals, string memory _agreementHash) public {
     require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "whitelist-unauthorised");
     require(!useApprovals && bytes(agreementHash).length == 0, "whitelist-already-initialised");
+    require(_useApprovals || bytes(_agreementHash).length > 0, "whitelist-bad-initialisation");
 
     useApprovals = _useApprovals;
     agreementHash = _agreementHash;
+
+    emit ExtensionInitialised();
   }
 
-  /// @notice Sets a users status in the whitelist
-  /// @param _user The address of the user
+  /// @notice Sets user statuses in the whitelist
+  /// @param _users An array of user addresses
   /// @param _status The whitelist status to set
-  function approveUser(address _user, bool _status) public initialised notDeprecated {
+  function approveUsers(address[] memory _users, bool _status) public initialised notDeprecated {
     require(useApprovals, "whitelist-no-approvals");
     require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Administration), "whitelist-unauthorised");
 
-    approvals[_user] = _status;
+    for (uint256 i; i < _users.length; i++) {
+      approvals[_users[i]] = _status;
 
-    emit UserApproved(_user, _status);
+      emit UserApproved(_users[i], _status);
+    }
   }
 
   /// @notice The user's signature on the agreement

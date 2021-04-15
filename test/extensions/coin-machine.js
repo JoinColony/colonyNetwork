@@ -236,18 +236,14 @@ contract("Coin Machine", (accounts) => {
       expect(locked).to.equal(true);
 
       colony = await setupColony(colonyNetwork, token.address);
-
-      const tokenAuthority = await TokenAuthority.new(token.address, colony.address, []);
-      await token.setAuthority(tokenAuthority.address);
-
       await colony.installExtension(COIN_MACHINE, coinMachineVersion);
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
-      await token.mint(coinMachine.address, WAD.muln(1000));
-
       const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [coinMachine.address]);
       await token.setAuthority(tokenAuthority.address);
+
+      await token.mint(coinMachine.address, WAD.muln(1000));
 
       await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
 
@@ -629,7 +625,7 @@ contract("Coin Machine", (accounts) => {
       await purchaseToken.mint(USER0, WAD, { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
 
-      await whitelist.approveUser(USER0, true, { from: USER1 });
+      await whitelist.approveUsers([USER0], true, { from: USER1 });
 
       await coinMachine.buyTokens(WAD, { from: USER0 });
 
