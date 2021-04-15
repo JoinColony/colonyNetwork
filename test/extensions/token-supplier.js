@@ -14,6 +14,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const TokenSupplier = artifacts.require("TokenSupplier");
+const ColonyExtension = artifacts.require("ColonyExtension");
 const Resolver = artifacts.require("Resolver");
 
 const TOKEN_SUPPLIER = soliditySha3("TokenSupplier");
@@ -24,6 +25,7 @@ contract("Token Supplier", (accounts) => {
   let colonyNetwork;
 
   let tokenSupplier;
+  let tokenSupplierVersion;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
@@ -39,11 +41,15 @@ contract("Token Supplier", (accounts) => {
     const resolver = await Resolver.new();
     await setupEtherRouter("TokenSupplier", { TokenSupplier: tokenSupplierImplementation.address }, resolver);
     await metaColony.addExtensionToNetwork(TOKEN_SUPPLIER, resolver.address);
+    const versionSig = await resolver.stringToSig("version()");
+    const target = await resolver.lookup(versionSig);
+    const extensionImplementation = await ColonyExtension.at(target);
+    tokenSupplierVersion = await extensionImplementation.version();
   });
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
-    await colony.installExtension(TOKEN_SUPPLIER, 1);
+    await colony.installExtension(TOKEN_SUPPLIER, tokenSupplierVersion);
     await colony.addDomain(1, UINT256_MAX, 1);
 
     const tokenSupplierAddress = await colonyNetwork.getExtensionInstallation(TOKEN_SUPPLIER, colony.address);
@@ -66,9 +72,12 @@ contract("Token Supplier", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(TOKEN_SUPPLIER, 1, { from: USER0 });
+      await colony.installExtension(TOKEN_SUPPLIER, tokenSupplierVersion, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(TOKEN_SUPPLIER, 1, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(
+        colony.installExtension(TOKEN_SUPPLIER, tokenSupplierVersion, { from: USER0 }),
+        "colony-network-extension-already-installed"
+      );
       await checkErrorRevert(colony.uninstallExtension(TOKEN_SUPPLIER, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(TOKEN_SUPPLIER, { from: USER0 });

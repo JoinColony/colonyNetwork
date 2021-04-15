@@ -8,8 +8,8 @@
 // Checkout out v4
 // Deploy v4 resolver
 // Point v4 on network to that resolver
-const util = require("util");
-const exec = util.promisify(require("child_process").exec);
+const Promise = require("bluebird");
+const exec = Promise.promisify(require("child_process").exec);
 const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
 
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
@@ -17,7 +17,7 @@ const IMetaColony = artifacts.require("./IMetaColony");
 const ADDRESS_LENGTH = 42;
 const RESOLVER_LOG_OFFSET = 33;
 
-module.exports = async () => {
+module.exports = async (callback) => {
   // While debugging, add a line to checkout currenthash
   const currentHash = await exec("git log -1 --format='%H'");
   let v3ResolverAddress;
@@ -106,4 +106,5 @@ module.exports = async () => {
   await exec("git submodule update");
   await exec("rm -rf ./build");
   await exec("mv ./buildBackup ./build");
+  callback();
 };

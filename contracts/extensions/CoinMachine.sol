@@ -68,7 +68,7 @@ contract CoinMachine is ColonyExtension {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 1;
+    return 2;
   }
 
   /// @notice Configures the extension
@@ -119,6 +119,7 @@ contract CoinMachine is ColonyExtension {
     require(_targetPerPeriod > 0, "coin-machine-target-too-small");
     require(_maxPerPeriod >= _targetPerPeriod, "coin-machine-max-too-small");
 
+    // A value of address(0x0) denotes Ether
     purchaseToken = _purchaseToken;
 
     periodLength = _periodLength;
@@ -157,7 +158,7 @@ contract CoinMachine is ColonyExtension {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
       if (msg.value > totalCost) { msg.sender.transfer(msg.value - totalCost); }
     } else {
-      ERC20Extended(purchaseToken).transferFrom(msg.sender, address(this), totalCost);
+      require(ERC20Extended(purchaseToken).transferFrom(msg.sender, address(this), totalCost), "coin-machine-transfer-failed");
     }
 
     colony.mintTokensFor(msg.sender, numTokens);
@@ -222,7 +223,7 @@ contract CoinMachine is ColonyExtension {
   function getCurrentPrice() public view returns (uint256) {
     uint256 currentPeriod = getCurrentPeriod();
 
-    if (activePeriod == currentPeriod) {
+    if (activePeriod >= currentPeriod) {
       return activePrice;
 
     // Otherwise, infer the new price
@@ -246,7 +247,7 @@ contract CoinMachine is ColonyExtension {
   function getNumAvailable() public view returns (uint256) {
     return min(
       tokensToSell,
-      sub(maxPerPeriod, ((activePeriod == getCurrentPeriod()) ? activeSold : 0))
+      sub(maxPerPeriod, ((activePeriod >= getCurrentPeriod()) ? activeSold : 0))
     );
   }
 
