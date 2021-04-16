@@ -186,17 +186,17 @@ contract CoinMachine is ColonyExtension {
 
     assert(activeSold <= maxPerPeriod);
 
+    // Check if we've sold out
+    if (numTokens >= tokenBalance) {
+      soldOut = true;
+    }
+
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
       if (msg.value > totalCost) { msg.sender.transfer(msg.value - totalCost); } // Refund any balance
       payable(address(colony)).transfer(totalCost);
     } else {
       require(ERC20(purchaseToken).transferFrom(msg.sender, address(colony), totalCost), "coin-machine-transfer-failed");
-    }
-
-    // Check if we've sold out
-    if (numTokens == tokenBalance) {
-      soldOut = true;
     }
 
     require(ERC20(token).transfer(msg.sender, numTokens), "coin-machine-transfer-failed");
@@ -209,7 +209,7 @@ contract CoinMachine is ColonyExtension {
     uint256 currentPeriod = getCurrentPeriod();
     uint256 initialActivePeriod = activePeriod;
 
-    if (initialActivePeriod == currentPeriod) {
+    if (initialActivePeriod >= currentPeriod) {
       return;
     }
 
