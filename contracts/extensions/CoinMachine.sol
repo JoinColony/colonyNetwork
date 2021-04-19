@@ -58,7 +58,7 @@ contract CoinMachine is ColonyExtension {
 
   address whitelist; // Address of an optional whitelist
 
-  bool soldOut; // If we've sold out of tokens
+  bool evolvePrice; // If we should evolve the price or not
 
   // Modifiers
 
@@ -95,6 +95,8 @@ contract CoinMachine is ColonyExtension {
   /// @notice Called when deprecating (or undeprecating) the extension
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
+
+    if (_deprecated) { evolvePrice = false; }
   }
 
   /// @notice Called when uninstalling the extension
@@ -158,6 +160,8 @@ contract CoinMachine is ColonyExtension {
 
     emaIntake = wmul(targetPerPeriod, _startingPrice);
 
+    evolvePrice = true;
+
     emit ExtensionInitialised();
   }
 
@@ -188,7 +192,7 @@ contract CoinMachine is ColonyExtension {
 
     // Check if we've sold out
     if (numTokens >= tokenBalance) {
-      soldOut = true;
+      evolvePrice = false;
     }
 
     if (purchaseToken == address(0x0)) {
@@ -196,7 +200,7 @@ contract CoinMachine is ColonyExtension {
       if (msg.value > totalCost) { msg.sender.transfer(msg.value - totalCost); } // Refund any balance
       payable(address(colony)).transfer(totalCost);
     } else {
-      require(ERC20(purchaseToken).transferFrom(msg.sender, address(colony), totalCost), "coin-machine-transfer-failed");
+      require(ERC20(purchaseToken).transferFrom(msg.sender, address(colony), totalCost), "coin-machine-purchase-failed");
     }
 
     require(ERC20(token).transfer(msg.sender, numTokens), "coin-machine-transfer-failed");
@@ -213,13 +217,13 @@ contract CoinMachine is ColonyExtension {
       return;
     }
 
-    // If we're out of tokens, don't update
-    if (soldOut) {
+    // If we're out of tokens or deprecated, don't update
+    if (!evolvePrice) {
       activePeriod = currentPeriod;
 
       // Are we still sold out?
-      if (getTokenBalance() > 0) {
-        soldOut = false;
+      if (getTokenBalance() > 0 && !deprecated) {
+        evolvePrice = true;
       }
     }
 
@@ -273,7 +277,7 @@ contract CoinMachine is ColonyExtension {
   function getCurrentPrice() public view returns (uint256) {
     uint256 currentPeriod = getCurrentPeriod();
 
-    if (activePeriod >= currentPeriod || soldOut) {
+    if (activePeriod >= currentPeriod || !evolvePrice) {
       return activePrice;
 
     // Otherwise, infer the new price
@@ -299,6 +303,11 @@ contract CoinMachine is ColonyExtension {
       ERC20(token).balanceOf(address(this)),
       sub(maxPerPeriod, ((activePeriod >= getCurrentPeriod()) ? activeSold : 0))
     );
+  }
+
+  /// @notice Get the address of the whitelist (if exists)
+  function getWhitelist() public view returns (address) {
+    return whitelist;
   }
 
   // Internal

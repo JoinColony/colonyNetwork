@@ -79,8 +79,18 @@ contract("Whitelist", (accounts) => {
   });
 
   describe("using the whitelist", async () => {
+    it("cannot initialise if not root", async () => {
+      await checkErrorRevert(whitelist.initialise(true, IPFS_HASH, { from: USER1 }), "whitelist-unauthorised");
+    });
+
     it("cannot initialise with null arguments", async () => {
       await checkErrorRevert(whitelist.initialise(false, ""), "whitelist-bad-initialisation");
+    });
+
+    it("cannot initialise twice", async () => {
+      await whitelist.initialise(true, IPFS_HASH);
+
+      await checkErrorRevert(whitelist.initialise(true, IPFS_HASH), "whitelist-already-initialised");
     });
 
     it("can approve users on the whitelist", async () => {
@@ -121,6 +131,12 @@ contract("Whitelist", (accounts) => {
       expect(status).to.be.true;
     });
 
+    it("cannot accept a bad agreement", async () => {
+      await whitelist.initialise(false, IPFS_HASH);
+
+      await checkErrorRevert(whitelist.signAgreement("0xdeadbeef", { from: USER1 }), "whitelist-bad-signature");
+    });
+
     it("can require both a whitelist and an agreement", async () => {
       await whitelist.initialise(true, IPFS_HASH);
 
@@ -155,6 +171,22 @@ contract("Whitelist", (accounts) => {
       await whitelist.initialise(true, "");
 
       await checkErrorRevert(whitelist.signAgreement("", { from: USER0 }), "whitelist-no-agreement");
+    });
+
+    it("cannot return true if deprecated", async () => {
+      await whitelist.initialise(true, "");
+
+      await whitelist.approveUsers([USER1], true, { from: USER0 });
+
+      let status;
+
+      status = await whitelist.isApproved(USER1);
+      expect(status).to.be.true;
+
+      await colony.deprecateExtension(WHITELIST, true, { from: USER0 });
+
+      status = await whitelist.isApproved(USER1);
+      expect(status).to.be.false;
     });
   });
 });

@@ -124,6 +124,7 @@ contract Whitelist is ColonyExtension {
   /// @param _user The address of the user
   function isApproved(address _user) public initialised view returns (bool) {
     return (
+      !deprecated &&
       (!useApprovals || approvals[_user]) &&
       (bytes(agreementHash).length == 0 || signatures[_user])
     );
