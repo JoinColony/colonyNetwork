@@ -79,6 +79,16 @@ contract("Whitelist", (accounts) => {
   });
 
   describe("using the whitelist", async () => {
+    it("can initialise", async () => {
+      await whitelist.initialise(true, IPFS_HASH, { from: USER0 });
+
+      const useApprovals = await whitelist.getUseApprovals();
+      const agreementHash = await whitelist.getAgreementHash();
+
+      expect(useApprovals).to.be.true;
+      expect(agreementHash).to.equal(IPFS_HASH);
+    });
+
     it("cannot initialise if not root", async () => {
       await checkErrorRevert(whitelist.initialise(true, IPFS_HASH, { from: USER1 }), "whitelist-unauthorised");
     });
@@ -97,6 +107,12 @@ contract("Whitelist", (accounts) => {
       await whitelist.initialise(true, "");
 
       let status;
+      let approval;
+
+      approval = await whitelist.getApproval(USER0);
+      expect(approval).to.be.false;
+      approval = await whitelist.getApproval(USER1);
+      expect(approval).to.be.false;
 
       status = await whitelist.isApproved(USER0);
       expect(status).to.be.false;
@@ -104,6 +120,11 @@ contract("Whitelist", (accounts) => {
       expect(status).to.be.false;
 
       await whitelist.approveUsers([USER0, USER1], true);
+
+      approval = await whitelist.getApproval(USER0);
+      expect(approval).to.be.true;
+      approval = await whitelist.getApproval(USER1);
+      expect(approval).to.be.true;
 
       status = await whitelist.isApproved(USER0);
       expect(status).to.be.true;
@@ -121,11 +142,18 @@ contract("Whitelist", (accounts) => {
       await whitelist.initialise(false, IPFS_HASH);
 
       let status;
+      let signature;
+
+      signature = await whitelist.getSignature(USER1);
+      expect(signature).to.be.false;
 
       status = await whitelist.isApproved(USER1);
       expect(status).to.be.false;
 
       await whitelist.signAgreement(IPFS_HASH, { from: USER1 });
+
+      signature = await whitelist.getSignature(USER1);
+      expect(signature).to.be.true;
 
       status = await whitelist.isApproved(USER1);
       expect(status).to.be.true;

@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { UINT256_MAX, WAD } from "../../helpers/constants";
+import { UINT256_MAX, UINT128_MAX, WAD } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
 import {
@@ -162,6 +162,8 @@ contract("Coin Machine", (accounts) => {
 
   describe("buying tokens", async () => {
     beforeEach(async () => {
+      await token.mint(coinMachine.address, UINT128_MAX);
+
       await coinMachine.initialise(
         token.address, // sale token
         purchaseToken.address, // purchase token
@@ -174,8 +176,6 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can buy tokens", async () => {
-      await token.mint(coinMachine.address, UINT256_MAX);
-
       await purchaseToken.mint(USER0, WAD, { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
 
@@ -200,9 +200,9 @@ contract("Coin Machine", (accounts) => {
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
-      await coinMachine.initialise(otherToken.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
+      await otherToken.mint(coinMachine.address, UINT128_MAX);
 
-      await otherToken.mint(coinMachine.address, UINT256_MAX);
+      await coinMachine.initialise(otherToken.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
 
       await purchaseToken.mint(USER0, WAD, { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
@@ -214,7 +214,14 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("cannot buy more than the balance of tokens", async () => {
+      await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, 2, { from: USER0 });
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      coinMachine = await CoinMachine.at(coinMachineAddress);
+
       await token.mint(coinMachine.address, WAD);
+
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
 
       await purchaseToken.mint(USER0, WAD.muln(2), { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD.muln(2), { from: USER0 });
@@ -276,11 +283,11 @@ contract("Coin Machine", (accounts) => {
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
+      await token.mint(coinMachine.address, UINT128_MAX);
+
       await coinMachine.initialise(token.address, ethers.constants.AddressZero, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
 
       const currentPrice = await coinMachine.getCurrentPrice();
-
-      await token.mint(coinMachine.address, UINT256_MAX);
 
       // Check purchase functionality
       await coinMachine.buyTokens(WAD, { from: USER0, value: currentPrice });
@@ -301,8 +308,6 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can buy up to the maximum amount of tokens per period", async () => {
-      await token.mint(coinMachine.address, UINT256_MAX);
-
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
       const tokensToBuy = maxPerPeriod.add(WAD);
 
@@ -316,8 +321,6 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can buy tokens over multiple periods", async () => {
-      await token.mint(coinMachine.address, UINT256_MAX);
-
       const windowSize = await coinMachine.getWindowSize();
       const periodLength = await coinMachine.getPeriodLength();
       const targetPerPeriod = await coinMachine.getTargetPerPeriod();
@@ -339,8 +342,6 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can adjust prices according to demand", async () => {
-      await token.mint(coinMachine.address, UINT256_MAX);
-
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
       const windowSize = await coinMachine.getWindowSize();
@@ -384,14 +385,23 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("cannot adjust prices while the token balance is zero", async () => {
+      await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, 2, { from: USER0 });
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      coinMachine = await CoinMachine.at(coinMachineAddress);
+
+      await token.mint(coinMachine.address, WAD.muln(200));
+
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
+
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
       const windowSize = await coinMachine.getWindowSize();
       const alphaAsWad = new BN(2).mul(WAD).divRound(windowSize.addn(1));
 
       let currentPrice;
-
-      await token.mint(coinMachine.address, maxPerPeriod);
+      let evolvePrice;
+      let tx;
 
       await purchaseToken.mint(USER0, maxPerPeriod.muln(10), { from: USER0 });
       await purchaseToken.approve(coinMachine.address, maxPerPeriod.muln(10), { from: USER0 });
@@ -399,7 +409,11 @@ contract("Coin Machine", (accounts) => {
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(WAD);
 
-      await coinMachine.buyTokens(maxPerPeriod, { from: USER0 });
+      tx = await coinMachine.buyTokens(maxPerPeriod, { from: USER0 });
+      await expectEvent(tx, "PriceEvolutionSet", [false]);
+
+      evolvePrice = await coinMachine.getEvolvePrice();
+      expect(evolvePrice).to.be.false;
 
       // Next period, but no price update because we are out of tokens
       await forwardTime(periodLength.toNumber(), this);
@@ -413,7 +427,11 @@ contract("Coin Machine", (accounts) => {
       await token.mint(coinMachine.address, WAD);
 
       await forwardTime(periodLength.toNumber(), this);
-      await coinMachine.updatePeriod();
+      tx = await coinMachine.updatePeriod();
+      await expectEvent(tx, "PriceEvolutionSet", [true]);
+
+      evolvePrice = await coinMachine.getEvolvePrice();
+      expect(evolvePrice).to.be.true;
 
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(WAD);
@@ -435,8 +453,8 @@ contract("Coin Machine", (accounts) => {
       const alphaAsWad = new BN(2).mul(WAD).divRound(windowSize.addn(1));
 
       let currentPrice;
-
-      await token.mint(coinMachine.address, UINT256_MAX);
+      let evolvePrice;
+      let tx;
 
       await purchaseToken.mint(USER0, maxPerPeriod.muln(10), { from: USER0 });
       await purchaseToken.approve(coinMachine.address, maxPerPeriod.muln(10), { from: USER0 });
@@ -444,8 +462,12 @@ contract("Coin Machine", (accounts) => {
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(WAD);
 
-      await coinMachine.buyTokens(maxPerPeriod, { from: USER0 });
+      tx = await coinMachine.buyTokens(maxPerPeriod, { from: USER0 });
+      // No event, because we route the deprecation through the colony
       await colony.deprecateExtension(COIN_MACHINE, true, { from: USER0 });
+
+      evolvePrice = await coinMachine.getEvolvePrice();
+      expect(evolvePrice).to.be.false;
 
       // Next period, but no price update because we are out of tokens
       await forwardTime(periodLength.toNumber(), this);
@@ -459,7 +481,11 @@ contract("Coin Machine", (accounts) => {
       await colony.deprecateExtension(COIN_MACHINE, false, { from: USER0 });
 
       await forwardTime(periodLength.toNumber(), this);
-      await coinMachine.updatePeriod();
+      tx = await coinMachine.updatePeriod();
+      await expectEvent(tx, "PriceEvolutionSet", [true]);
+
+      evolvePrice = await coinMachine.getEvolvePrice();
+      expect(evolvePrice).to.be.true;
 
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(WAD);
@@ -507,8 +533,6 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can handle long periods of inactivity", async () => {
-      await token.mint(coinMachine.address, UINT256_MAX);
-
       const windowSize = await coinMachine.getWindowSize();
       const periodLength = await coinMachine.getPeriodLength();
 
@@ -529,8 +553,6 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can virtually update counters", async () => {
-      await token.mint(coinMachine.address, UINT256_MAX);
-
       const periodLength = await coinMachine.getPeriodLength();
       const targetPerPeriod = await coinMachine.getTargetPerPeriod();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
@@ -616,9 +638,9 @@ contract("Coin Machine", (accounts) => {
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
-      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD);
+      await token.mint(coinMachine.address, UINT128_MAX);
 
-      await token.mint(coinMachine.address, UINT256_MAX);
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD);
 
       await purchaseToken.mint(USER0, WAD, { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
@@ -638,9 +660,9 @@ contract("Coin Machine", (accounts) => {
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
-      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD);
+      await token.mint(coinMachine.address, UINT128_MAX);
 
-      await token.mint(coinMachine.address, UINT256_MAX);
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD);
 
       await purchaseToken.mint(USER0, WAD, { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
@@ -660,10 +682,11 @@ contract("Coin Machine", (accounts) => {
       await whitelist.install(colony.address);
       await whitelist.initialise(true, "");
 
+      await token.mint(coinMachine.address, UINT128_MAX);
+
       await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD);
       await coinMachine.setWhitelist(whitelist.address);
 
-      await token.mint(coinMachine.address, UINT256_MAX);
       await colony.setAdministrationRole(1, UINT256_MAX, USER1, 1, true);
     });
 

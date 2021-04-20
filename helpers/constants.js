@@ -70,6 +70,7 @@ const GLOBAL_SKILL_ID = new BN("3"); // Not a root global skill ID or anything, 
 
 module.exports = {
   UINT256_MAX,
+  UINT128_MAX,
   INT256_MIN,
   INT256_MAX,
   INT128_MAX,

@@ -339,6 +339,10 @@ async function eventMatchArgs(event, args) {
       if (arg !== event.args[i]) {
         return false;
       }
+    } else if (typeof arg === "boolean") {
+      if (arg !== event.args[i]) {
+        return false;
+      }
     } else if (hexlifyAndPad(arg) !== hexlifyAndPad(event.args[i])) {
       return false;
     }

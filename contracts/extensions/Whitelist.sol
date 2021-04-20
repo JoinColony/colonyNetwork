@@ -120,7 +120,7 @@ contract Whitelist is ColonyExtension {
     emit AgreementSigned(msg.sender);
   }
 
-  /// @notice Fetch the user's whitelist status
+  /// @notice Get the user's overall whitelist status
   /// @param _user The address of the user
   function isApproved(address _user) public initialised view returns (bool) {
     return (
@@ -128,5 +128,27 @@ contract Whitelist is ColonyExtension {
       (!useApprovals || approvals[_user]) &&
       (bytes(agreementHash).length == 0 || signatures[_user])
     );
+  }
+
+  /// @notice Get the useApprovals boolean
+  function getUseApprovals() public view returns (bool) {
+    return useApprovals;
+  }
+
+  /// @notice Get the agreementHash
+  function getAgreementHash() public view returns (string memory) {
+    return agreementHash;
+  }
+
+  /// @notice Get the user's approval status
+  /// @param _user The address of the user
+  function getApproval(address _user) public view returns (bool) {
+    return approvals[_user];
+  }
+
+  /// @notice Get the user's signature status
+  /// @param _user The address of the user
+  function getSignature(address _user) public view returns (bool) {
+    return signatures[_user];
   }
 }

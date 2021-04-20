@@ -31,6 +31,7 @@ contract CoinMachine is ColonyExtension {
 
   event TokensBought(address buyer, uint256 numTokens, uint256 totalCost);
   event PeriodUpdated(uint256 activePeriod, uint256 currentPeriod);
+  event PriceEvolutionSet(bool evolvePrice);
   event WhitelistSet(address whitelist);
 
   // Storage
@@ -90,13 +91,15 @@ contract CoinMachine is ColonyExtension {
   /// @notice Called when upgrading the extension
   function finishUpgrade() public override auth {
     token = colony.getToken();
+
+    setPriceEvolution(getTokenBalance() > 0);
   }
 
   /// @notice Called when deprecating (or undeprecating) the extension
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
 
-    if (_deprecated) { evolvePrice = false; }
+    if (_deprecated) { setPriceEvolution(false); }
   }
 
   /// @notice Called when uninstalling the extension
@@ -160,7 +163,7 @@ contract CoinMachine is ColonyExtension {
 
     emaIntake = wmul(targetPerPeriod, _startingPrice);
 
-    evolvePrice = true;
+    setPriceEvolution(getTokenBalance() > 0);
 
     emit ExtensionInitialised();
   }
@@ -191,9 +194,7 @@ contract CoinMachine is ColonyExtension {
     assert(activeSold <= maxPerPeriod);
 
     // Check if we've sold out
-    if (numTokens >= tokenBalance) {
-      evolvePrice = false;
-    }
+    if (numTokens >= tokenBalance) { setPriceEvolution(false); }
 
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
@@ -222,10 +223,9 @@ contract CoinMachine is ColonyExtension {
       activePeriod = currentPeriod;
 
       // Are we still sold out?
-      if (getTokenBalance() > 0 && !deprecated) {
-        evolvePrice = true;
-      }
+      setPriceEvolution(getTokenBalance() > 0 && !deprecated);
     }
+
 
     // We need to update the price if the active period is not the current one.
     if (activePeriod < currentPeriod) {
@@ -310,7 +310,20 @@ contract CoinMachine is ColonyExtension {
     return whitelist;
   }
 
+  /// @notice Get the evolvePrice boolean
+  function getEvolvePrice() public view returns (bool) {
+    return evolvePrice;
+  }
+
   // Internal
+
+  function setPriceEvolution(bool status) internal {
+    if (status != evolvePrice) {
+      evolvePrice = status;
+
+      emit PriceEvolutionSet(status);
+    }
+  }
 
   function getCurrentPeriod() internal view returns (uint256) {
     return block.timestamp / periodLength;
