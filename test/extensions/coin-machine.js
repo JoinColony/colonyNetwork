@@ -40,7 +40,7 @@ const ColonyExtension = artifacts.require("ColonyExtension");
 
 const COIN_MACHINE = soliditySha3("CoinMachine");
 
-contract.only("Coin Machine", (accounts) => {
+contract("Coin Machine", (accounts) => {
   let colony;
   let token;
   let purchaseToken;
@@ -560,7 +560,7 @@ contract.only("Coin Machine", (accounts) => {
       expect(currentPrice).to.eq.BN(expectedPrice);
     });
 
-    it.only("it monotonically adjusts prices according to demand", async () => {
+    it("it monotonically adjusts prices according to demand", async () => {
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
 
@@ -570,16 +570,11 @@ contract.only("Coin Machine", (accounts) => {
       await purchaseToken.approve(coinMachine.address, maxPerPeriod.muln(10000), { from: USER0 });
 
       let previousPrice = maxPerPeriod.muln(10000); // A very large number.
-      let steadyState = false;
       for (let i = 0; i < 100; i += 1) {
+        // There used to be a check for a 'steady state' price here, but
+        // that only worked by chance.
         currentPrice = await coinMachine.getCurrentPrice();
         expect(currentPrice).to.be.lte.BN(previousPrice);
-        if (steadyState) {
-          expect(currentPrice).to.eq.BN(previousPrice);
-        } else if (currentPrice.eq(previousPrice)) {
-          // This is the first time it's happened, so on future loops check it's still the case
-          steadyState = true;
-        }
         previousPrice = currentPrice;
         const currentBlockTimestamp = await currentBlockTime();
 

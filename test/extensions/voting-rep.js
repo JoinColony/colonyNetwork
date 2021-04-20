@@ -42,7 +42,7 @@ const Resolver = artifacts.require("Resolver");
 
 const VOTING_REPUTATION = soliditySha3("VotingReputation");
 
-contract.only("Voting Reputation", (accounts) => {
+contract("Voting Reputation", (accounts) => {
   let colony;
   let token;
   let domain1;
@@ -266,7 +266,7 @@ contract.only("Voting Reputation", (accounts) => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(VOTING_REPUTATION, 2, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(VOTING_REPUTATION, 1, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.installExtension(VOTING_REPUTATION, 2, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(VOTING_REPUTATION, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(VOTING_REPUTATION, { from: USER0 });
@@ -1526,7 +1526,9 @@ contract.only("Voting Reputation", (accounts) => {
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(3).muln(2), user0Key, user0Value, user0Mask, user0Siblings, {
         from: USER0,
       });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(6), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(6), user1Key, user1Value, user1Mask, user1Siblings, {
+        from: USER1,
+      });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(6), user2Key, user2Value, user2Mask, user2Siblings, {
         from: USER2,
@@ -1570,7 +1572,6 @@ contract.only("Voting Reputation", (accounts) => {
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1.add(expectedReward1B));
       expect(new BN(user2LockPost.balance).sub(new BN(user2LockPre.balance))).to.eq.BN(expectedReward2);
     });
-
 
     it("can let stakers claim their original stake if neither side fully staked", async () => {
       const addr = await colonyNetwork.getReputationMiningCycle(false);
@@ -1738,11 +1739,11 @@ contract.only("Voting Reputation", (accounts) => {
       expect(logs[0].args.executed).to.be.true;
     });
 
-    it.only("can use the result of a new stake after internally escalating a domain motion", async () => {
+    it("can use the result of a new stake after internally escalating a domain motion", async () => {
       await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
       const yayStake = REQUIRED_STAKE.sub(REQUIRED_STAKE_DOMAIN_2);
-      const nayStake = yayStake.add(REQUIRED_STAKE.divn(10));
+      const nayStake = yayStake.add(votingPayout);
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
@@ -1758,15 +1759,20 @@ contract.only("Voting Reputation", (accounts) => {
 
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
 
-      const expectedReward1 = (REQUIRED_STAKE.add(WAD.divn(1000 * 10))).muln(22).divn(32); // eslint-disable-line prettier/prettier
+      // const expectedReward1 = (REQUIRED_STAKE.add(WAD.divn(1000 * 10))).muln(22).divn(32); // eslint-disable-line prettier/prettier
+      // REQUIRED_STAKE.div(REQUIRED_STAKE.add(votingPayout)) is the fraction of this side they staked
+      // REQUIRED_STAKE.add(REQUIRED_STAKE_DOMAIN_2).muln(2).divn(3) is what's being awarded to the whole of this side.
+      // The product tells us their expected reward.
+
+      const expectedReward1 = nayStake.mul(REQUIRED_STAKE.add(REQUIRED_STAKE_DOMAIN_2.divn(10))).div(REQUIRED_STAKE.add(votingPayout));
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
     });
 
-    it.only("can use the result of a new vote after internally escalating a domain motion", async () => {
+    it("can use the result of a new vote after internally escalating a domain motion", async () => {
       await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
-      const yayStake = REQUIRED_STAKE.sub(WAD.divn(1000));
-      const nayStake = yayStake.add(REQUIRED_STAKE.divn(10));
+      const yayStake = REQUIRED_STAKE.sub(REQUIRED_STAKE_DOMAIN_2);
+      const nayStake = yayStake.add(votingPayout);
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, yayStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
@@ -1795,24 +1801,22 @@ contract.only("Voting Reputation", (accounts) => {
 
       let votingPayout2 = await voting.getVoterReward(motionId, new BN(user0Value.slice(2, 66), 16));
       const voter1reward2 = await voting.getVoterReward(motionId, new BN(user1Value.slice(2, 66), 16));
-      votingPayout2 = votingPayout.add(voter1reward2);
+      votingPayout2 = votingPayout2.add(voter1reward2);
 
-      const loserStake = REQUIRED_STAKE.sub(votingPayout); // Take out voter comp
+      const loserStake = REQUIRED_STAKE.sub(votingPayout2); // Take out voter comp
 
       // (stake * .8) * (winPct = 1/3 * 2) * 2/3 (since 1/3 of stake is from other user!)
-      const expectedReward0 = loserStake.muln(2).divn(3).muln(2).divn(3);
+      // const expectedReward0 = loserStake.muln(2).divn(3).muln(2).divn(3);
       // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2)) * 22/32) (since 10/32 of stake is from other user!)
-      const expectedReward1 = REQUIRED_STAKE.add(loserStake.divn(3)).muln(22).divn(32);
+      // const expectedReward1 = REQUIRED_STAKE.add(loserStake.divn(3)).muln(22).divn(32);
+      const expectedReward0 = loserStake.muln(2).divn(3).mul(yayStake).div(REQUIRED_STAKE);
+      const expectedReward1 = nayStake.mul(REQUIRED_STAKE.add(loserStake.divn(3))).div(REQUIRED_STAKE.add(votingPayout));
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
     });
 
-    it.only("can still claim rewards after a motion has been escalated but failed to stake", async () => {
-      let votingPayout = await voting.getVoterReward(motionId, new BN(user0Value.slice(2, 66), 16));
-      const voter1reward = await voting.getVoterReward(motionId, new BN(user1Value.slice(2, 66), 16));
-      votingPayout = votingPayout.add(voter1reward);
-
+    it("can still claim rewards after a motion has been escalated but failed to stake", async () => {
       await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
@@ -1831,9 +1835,14 @@ contract.only("Voting Reputation", (accounts) => {
       const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
 
+      const user0Domain2Rep = WAD.divn(3);
+      const user1Domain2Rep = WAD.divn(3).muln(2);
       const loserStake = REQUIRED_STAKE_DOMAIN_2.sub(votingPayout); // Take out voter comp
-      const expectedReward0 = loserStake.muln(2).divn(3); // (stake * .8) * (winPct = 1/3 * 2)
-      const expectedReward1 = REQUIRED_STAKE_DOMAIN_2.add(loserStake.divn(3)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
+
+      const winFraction = user0Domain2Rep.mul(WAD).div(user0Domain2Rep.add(user1Domain2Rep));
+
+      const expectedReward0 = loserStake.muln(2).mul(winFraction).div(WAD);
+      const expectedReward1 = REQUIRED_STAKE_DOMAIN_2.add(loserStake.mul(winFraction).div(WAD)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
