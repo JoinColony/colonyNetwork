@@ -248,6 +248,36 @@ contract CoinMachine is ColonyExtension {
     emit PeriodUpdated(initialActivePeriod, currentPeriod);
   }
 
+  /// @notice Get the address of the token being used to make purchases
+  function getPurchaseToken() public view returns (address) {
+    return purchaseToken;
+  }
+
+  /// @notice Get the address of the token being sold
+  function getToken() public view returns (address) {
+    return token;
+  }
+
+  /// @notice Get the period that the price was last updated for or a purchase was made
+  function getActivePeriod() public view returns (uint256) {
+    return activePeriod;
+  }
+
+  /// @notice Get the number of tokens sold in the period that the price was last updated for or a purchase was made
+  function getActiveSold() public view returns (uint256) {
+    return activeSold;
+  }
+
+  /// @notice Get the number of tokens received in the period that the price was last updated for or a purchase was made
+  function getActiveIntake() public view returns (uint256) {
+    return activeIntake;
+  }
+
+  /// @notice Get the EMA of the number of tokens received each period
+  function getEMAIntake() public view returns (uint256) {
+    return emaIntake;
+  }
+
   /// @notice Get the remaining balance of tokens
   function getTokenBalance() public view returns (uint256) {
     return ERC20(token).balanceOf(address(this));

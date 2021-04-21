@@ -191,6 +191,39 @@ contract("Coin Machine", (accounts) => {
       await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "ds-token-insufficient-balance");
     });
 
+    it("responds to getter functions correctly while running", async () => {
+      await purchaseToken.mint(USER0, WAD, { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
+
+      await coinMachine.buyTokens(WAD, { from: USER0 });
+
+      const reportedPurchaseToken = await coinMachine.getPurchaseToken();
+      expect(reportedPurchaseToken).to.equal(purchaseToken.address);
+      const tokenAddress = await coinMachine.getToken();
+      expect(tokenAddress).to.equal(token.address);
+      const activePeriod = await coinMachine.getActivePeriod();
+      const activeSold = await coinMachine.getActiveSold();
+      expect(activeSold).to.eq.BN(WAD);
+      const activeIntake = await coinMachine.getActiveIntake();
+      expect(activeIntake).to.eq.BN(WAD);
+
+      const emaIntake = await coinMachine.getEMAIntake();
+      expect(emaIntake).to.eq.BN(WAD.muln(100));
+
+      const periodLength = await coinMachine.getPeriodLength();
+      await forwardTime(periodLength.toNumber(), this);
+
+      const activePeriod2 = await coinMachine.getActivePeriod();
+      expect(activePeriod).to.eq.BN(activePeriod2);
+      await coinMachine.updatePeriod();
+
+      const activePeriod3 = await coinMachine.getActivePeriod();
+      expect(activePeriod.addn(1)).to.eq.BN(activePeriod3);
+
+      const emaIntake2 = await coinMachine.getEMAIntake();
+      expect(emaIntake2).to.eq.BN(new BN("82000000000000000018"));
+    });
+
     it("can buy tokens that are not the colony's internal token", async () => {
       const otherToken = await Token.new("", "", 18);
       await otherToken.unlock();
