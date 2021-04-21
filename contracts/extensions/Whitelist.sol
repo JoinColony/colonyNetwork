@@ -27,8 +27,8 @@ contract Whitelist is ColonyExtension {
 
   //  Events
 
-  event UserApproved(address _user, bool _status);
-  event AgreementSigned(address _user);
+  event UserApproved(address indexed _user, bool _status);
+  event AgreementSigned(address indexed _user);
 
   // Storage
 
@@ -107,6 +107,7 @@ contract Whitelist is ColonyExtension {
   }
 
   /// @notice The user's signature on the agreement
+  /// @param _agreementHash The agreement hash being signed
   function signAgreement(string memory _agreementHash) public initialised notDeprecated {
     require(bytes(agreementHash).length > 0, "whitelist-no-agreement");
     require(

@@ -118,6 +118,7 @@ contract CoinMachine is ColonyExtension {
   }
 
   /// @notice Must be called before any sales can be made
+  /// @param _token The token we are selling. Cannot be ether
   /// @param _purchaseToken The token to receive payments in. Use 0x0 for ether
   /// @param _periodLength How long in seconds each period of the sale should last
   /// @param _windowSize Characteristic number of periods that should be used for the moving average. In the long-term, 86% of the weighting will be in this window size. The higher the number, the slower the price will be to adjust
@@ -138,6 +139,7 @@ contract CoinMachine is ColonyExtension {
   {
     require(activePeriod == 0, "coin-machine-already-initialised");
 
+    require(_token != address(0x0), "coin-machine-invalid-token");
     require(_periodLength > 0, "coin-machine-period-too-small");
     require(_windowSize > 0, "coin-machine-window-too-small");
     require(_windowSize <= 511, "coin-machine-window-too-large");
@@ -145,8 +147,6 @@ contract CoinMachine is ColonyExtension {
     require(_maxPerPeriod >= _targetPerPeriod, "coin-machine-max-too-small");
 
     token = _token;
-
-    // A value of address(0x0) denotes Ether
     purchaseToken = _purchaseToken;
 
     periodLength = _periodLength;
@@ -168,6 +168,8 @@ contract CoinMachine is ColonyExtension {
     emit ExtensionInitialised();
   }
 
+  /// @notice Set the address for an (optional) whitelist
+  /// @param _whitelist The address of the whitelist
   function setWhitelist(address _whitelist) public onlyRoot notDeprecated {
     whitelist = _whitelist;
 

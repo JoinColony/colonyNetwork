@@ -46,10 +46,12 @@ contract("Coin Machine", (accounts) => {
   let purchaseToken;
   let colonyNetwork;
   let coinMachine;
+  let coinMachineVersion;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
-  let coinMachineVersion;
+
+  const ADDRESS_ZERO = ethers.constants.AddressZero;
 
   before(async () => {
     colonyNetwork = await setupColonyNetwork();
@@ -59,6 +61,7 @@ contract("Coin Machine", (accounts) => {
     const resolver = await Resolver.new();
     await setupEtherRouter("CoinMachine", { CoinMachine: coinMachineImplementation.address }, resolver);
     await metaColony.addExtensionToNetwork(COIN_MACHINE, resolver.address);
+
     const versionSig = await resolver.stringToSig("version()");
     const target = await resolver.lookup(versionSig);
     const extensionImplementation = await ColonyExtension.at(target);
@@ -117,7 +120,7 @@ contract("Coin Machine", (accounts) => {
     it("can send unsold tokens back to the colony", async () => {
       await token.mint(coinMachine.address, WAD, { from: USER0 });
 
-      await coinMachine.initialise(token.address, ethers.constants.AddressZero, 60 * 60, 10, WAD, WAD, WAD);
+      await coinMachine.initialise(token.address, ADDRESS_ZERO, 60 * 60, 10, WAD, WAD, WAD);
 
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
 
@@ -139,6 +142,7 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("cannot initialise with bad arguments", async () => {
+      await checkErrorRevert(coinMachine.initialise(ADDRESS_ZERO, purchaseToken.address, 60, 511, 10, 10, 0), "coin-machine-invalid-token");
       await checkErrorRevert(coinMachine.initialise(token.address, purchaseToken.address, 0, 511, 10, 10, 0), "coin-machine-period-too-small");
       await checkErrorRevert(coinMachine.initialise(token.address, purchaseToken.address, 60, 0, 10, 10, 0), "coin-machine-window-too-small");
       await checkErrorRevert(coinMachine.initialise(token.address, purchaseToken.address, 60, 512, 10, 10, 0), "coin-machine-window-too-large");
@@ -229,7 +233,7 @@ contract("Coin Machine", (accounts) => {
       await otherToken.unlock();
 
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, 2, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -248,7 +252,7 @@ contract("Coin Machine", (accounts) => {
 
     it("cannot buy more than the balance of tokens", async () => {
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, 2, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -318,7 +322,7 @@ contract("Coin Machine", (accounts) => {
 
       await token.mint(coinMachine.address, UINT128_MAX);
 
-      await coinMachine.initialise(token.address, ethers.constants.AddressZero, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
+      await coinMachine.initialise(token.address, ADDRESS_ZERO, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
 
       const currentPrice = await coinMachine.getCurrentPrice();
 
@@ -419,7 +423,7 @@ contract("Coin Machine", (accounts) => {
 
     it("cannot adjust prices while the token balance is zero", async () => {
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, 2, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -495,9 +499,10 @@ contract("Coin Machine", (accounts) => {
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(WAD);
 
-      tx = await coinMachine.buyTokens(maxPerPeriod, { from: USER0 });
-      // No event, because we route the deprecation through the colony
-      await colony.deprecateExtension(COIN_MACHINE, true, { from: USER0 });
+      await coinMachine.buyTokens(maxPerPeriod, { from: USER0 });
+      tx = await colony.deprecateExtension(COIN_MACHINE, true, { from: USER0 });
+      // Full event signature because we bounce the call through the colony
+      await expectEvent(tx, "PriceEvolutionSet(bool)", [false]);
 
       evolvePrice = await coinMachine.getEvolvePrice();
       expect(evolvePrice).to.be.false;

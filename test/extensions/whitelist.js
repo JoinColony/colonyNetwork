@@ -14,6 +14,7 @@ chai.use(bnChai(web3.utils.BN));
 
 const Whitelist = artifacts.require("Whitelist");
 const Resolver = artifacts.require("Resolver");
+const ColonyExtension = artifacts.require("ColonyExtension");
 
 const WHITELIST = soliditySha3("Whitelist");
 
@@ -21,6 +22,7 @@ contract("Whitelist", (accounts) => {
   let colonyNetwork;
   let colony;
   let whitelist;
+  let whitelistVersion;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
@@ -32,14 +34,18 @@ contract("Whitelist", (accounts) => {
     const whitelistImplementation = await Whitelist.new();
     const resolver = await Resolver.new();
     await setupEtherRouter("Whitelist", { Whitelist: whitelistImplementation.address }, resolver);
-
     await metaColony.addExtensionToNetwork(WHITELIST, resolver.address);
+
+    const versionSig = await resolver.stringToSig("version()");
+    const target = await resolver.lookup(versionSig);
+    const extensionImplementation = await ColonyExtension.at(target);
+    whitelistVersion = await extensionImplementation.version();
   });
 
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
 
-    await colony.installExtension(WHITELIST, 1);
+    await colony.installExtension(WHITELIST, whitelistVersion);
 
     const whitelistAddress = await colonyNetwork.getExtensionInstallation(WHITELIST, colony.address);
     whitelist = await Whitelist.at(whitelistAddress);
@@ -57,7 +63,7 @@ contract("Whitelist", (accounts) => {
       const identifier = await whitelist.identifier();
       const version = await whitelist.version();
       expect(identifier).to.equal(WHITELIST);
-      expect(version).to.eq.BN(1);
+      expect(version).to.eq.BN(whitelistVersion);
 
       await whitelist.finishUpgrade();
       await whitelist.deprecate(true);
@@ -69,9 +75,9 @@ contract("Whitelist", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(WHITELIST, 1, { from: USER0 });
+      await colony.installExtension(WHITELIST, whitelistVersion, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(WHITELIST, 1, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.installExtension(WHITELIST, whitelistVersion, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(WHITELIST, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(WHITELIST, { from: USER0 });
