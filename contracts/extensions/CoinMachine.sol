@@ -92,7 +92,7 @@ contract CoinMachine is ColonyExtension {
   function finishUpgrade() public override auth {
     token = colony.getToken();
 
-    setPriceEvolution(getTokenBalance() > 0);
+    setPriceEvolution(getTokenBalance() > 0 && !deprecated);
   }
 
   /// @notice Called when deprecating (or undeprecating) the extension
@@ -165,11 +165,9 @@ contract CoinMachine is ColonyExtension {
 
     emaIntake = wmul(targetPerPeriod, _startingPrice);
 
-    if (_whitelist != address(0x0)){
-      setWhitelist(_whitelist);
-    }
+    if (_whitelist != address(0x0)) { setWhitelist(_whitelist); }
 
-    setPriceEvolution(getTokenBalance() > 0);
+    setPriceEvolution(getTokenBalance() > 0 && !deprecated);
 
     emit ExtensionInitialised();
   }
