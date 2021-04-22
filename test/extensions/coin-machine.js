@@ -120,7 +120,7 @@ contract("Coin Machine", (accounts) => {
     it("can send unsold tokens back to the colony", async () => {
       await token.mint(coinMachine.address, WAD, { from: USER0 });
 
-      await coinMachine.initialise(token.address, ADDRESS_ZERO, 60 * 60, 10, WAD, WAD, WAD);
+      await coinMachine.initialise(token.address, ADDRESS_ZERO, 60 * 60, 10, WAD, WAD, WAD, ADDRESS_ZERO);
 
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
 
@@ -129,11 +129,11 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("can initialise", async () => {
-      await expectEvent(coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0), "ExtensionInitialised", []);
+      await expectEvent(coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0, ADDRESS_ZERO), "ExtensionInitialised", []);
     });
 
     it("can handle a large windowSize", async () => {
-      await coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0);
+      await coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0, ADDRESS_ZERO);
 
       // Advance an entire window
       await forwardTime(60 * 511 + 1, this);
@@ -142,23 +142,44 @@ contract("Coin Machine", (accounts) => {
     });
 
     it("cannot initialise with bad arguments", async () => {
-      await checkErrorRevert(coinMachine.initialise(ADDRESS_ZERO, purchaseToken.address, 60, 511, 10, 10, 0), "coin-machine-invalid-token");
-      await checkErrorRevert(coinMachine.initialise(token.address, purchaseToken.address, 0, 511, 10, 10, 0), "coin-machine-period-too-small");
-      await checkErrorRevert(coinMachine.initialise(token.address, purchaseToken.address, 60, 0, 10, 10, 0), "coin-machine-window-too-small");
-      await checkErrorRevert(coinMachine.initialise(token.address, purchaseToken.address, 60, 512, 10, 10, 0), "coin-machine-window-too-large");
-      await checkErrorRevert(coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 0, 10, 0), "coin-machine-target-too-small");
-      await checkErrorRevert(coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 9, 0), "coin-machine-max-too-small");
+      await checkErrorRevert(
+        coinMachine.initialise(ADDRESS_ZERO, purchaseToken.address, 60, 511, 10, 10, 0, ADDRESS_ZERO),
+        "coin-machine-invalid-token"
+      );
+      await checkErrorRevert(
+        coinMachine.initialise(token.address, purchaseToken.address, 0, 511, 10, 10, 0, ADDRESS_ZERO),
+        "coin-machine-period-too-small"
+      );
+      await checkErrorRevert(
+        coinMachine.initialise(token.address, purchaseToken.address, 60, 0, 10, 10, 0, ADDRESS_ZERO),
+        "coin-machine-window-too-small"
+      );
+      await checkErrorRevert(
+        coinMachine.initialise(token.address, purchaseToken.address, 60, 512, 10, 10, 0, ADDRESS_ZERO),
+        "coin-machine-window-too-large"
+      );
+      await checkErrorRevert(
+        coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 0, 10, 0, ADDRESS_ZERO),
+        "coin-machine-target-too-small"
+      );
+      await checkErrorRevert(
+        coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 9, 0, ADDRESS_ZERO),
+        "coin-machine-max-too-small"
+      );
     });
 
     it("cannot initialise twice", async () => {
-      await coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0);
+      await coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0, ADDRESS_ZERO);
 
-      await checkErrorRevert(coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0), "coin-machine-already-initialised");
+      await checkErrorRevert(
+        coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0, ADDRESS_ZERO),
+        "coin-machine-already-initialised"
+      );
     });
 
     it("cannot initialise if not root", async () => {
       await checkErrorRevert(
-        coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0, { from: USER1 }),
+        coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0, ADDRESS_ZERO, { from: USER1 }),
         "coin-machine-caller-not-root"
       );
     });
@@ -175,7 +196,8 @@ contract("Coin Machine", (accounts) => {
         10, // number of periods for averaging
         WAD.muln(100), // tokens per period
         WAD.muln(200), // max per period
-        WAD // starting price
+        WAD, // starting price
+        ADDRESS_ZERO // whitelist address
       );
     });
 
@@ -239,7 +261,7 @@ contract("Coin Machine", (accounts) => {
 
       await otherToken.mint(coinMachine.address, UINT128_MAX);
 
-      await coinMachine.initialise(otherToken.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
+      await coinMachine.initialise(otherToken.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD, ADDRESS_ZERO);
 
       await purchaseToken.mint(USER0, WAD, { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
@@ -258,7 +280,7 @@ contract("Coin Machine", (accounts) => {
 
       await token.mint(coinMachine.address, WAD);
 
-      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD, ADDRESS_ZERO);
 
       await purchaseToken.mint(USER0, WAD.muln(2), { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD.muln(2), { from: USER0 });
@@ -289,7 +311,7 @@ contract("Coin Machine", (accounts) => {
 
       await token.mint(coinMachine.address, WAD.muln(1000));
 
-      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD, ADDRESS_ZERO);
 
       await purchaseToken.mint(USER1, WAD, { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER1 });
@@ -322,7 +344,7 @@ contract("Coin Machine", (accounts) => {
 
       await token.mint(coinMachine.address, UINT128_MAX);
 
-      await coinMachine.initialise(token.address, ADDRESS_ZERO, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
+      await coinMachine.initialise(token.address, ADDRESS_ZERO, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD, ADDRESS_ZERO);
 
       const currentPrice = await coinMachine.getCurrentPrice();
 
@@ -429,7 +451,7 @@ contract("Coin Machine", (accounts) => {
 
       await token.mint(coinMachine.address, WAD.muln(200));
 
-      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD);
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD, ADDRESS_ZERO);
 
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
@@ -678,7 +700,7 @@ contract("Coin Machine", (accounts) => {
 
       await token.mint(coinMachine.address, UINT128_MAX);
 
-      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD);
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD, ADDRESS_ZERO);
 
       await purchaseToken.mint(USER0, WAD, { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
@@ -700,7 +722,7 @@ contract("Coin Machine", (accounts) => {
 
       await token.mint(coinMachine.address, UINT128_MAX);
 
-      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD);
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD, ADDRESS_ZERO);
 
       await purchaseToken.mint(USER0, WAD, { from: USER0 });
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
@@ -722,8 +744,7 @@ contract("Coin Machine", (accounts) => {
 
       await token.mint(coinMachine.address, UINT128_MAX);
 
-      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD);
-      await coinMachine.setWhitelist(whitelist.address);
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD, whitelist.address);
 
       await colony.setAdministrationRole(1, UINT256_MAX, USER1, 1, true);
     });
@@ -748,6 +769,19 @@ contract("Coin Machine", (accounts) => {
 
     it("cannot buy tokens if not on the whitelist", async () => {
       await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "coin-machine-unauthorised");
+    });
+
+    it("cannot buy tokens if not on the whitelist", async () => {
+      await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "coin-machine-unauthorised");
+    });
+
+    it("can use setWhitelist to set the whitelist", async () => {
+      let recordedAddress = await coinMachine.getWhitelist();
+      expect(recordedAddress).to.equal(whitelist.address);
+      const tx = await coinMachine.setWhitelist(ADDRESS_ZERO);
+      await expectEvent(tx, "WhitelistSet", [ADDRESS_ZERO]);
+      recordedAddress = await coinMachine.getWhitelist();
+      expect(recordedAddress).to.equal(ADDRESS_ZERO);
     });
   });
 });

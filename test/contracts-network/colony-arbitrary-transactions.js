@@ -11,6 +11,7 @@ import { setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
+const ADDRESS_ZERO = ethers.constants.AddressZero;
 
 const CoinMachine = artifacts.require("CoinMachine");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -156,7 +157,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
     const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
     const coinMachine = await CoinMachine.at(coinMachineAddress);
-    await coinMachine.initialise(token.address, ethers.constants.AddressZero, 60 * 60, 10, WAD, WAD, WAD);
+    await coinMachine.initialise(token.address, ethers.constants.AddressZero, 60 * 60, 10, WAD, WAD, WAD, ADDRESS_ZERO);
     await token.mint(coinMachine.address, WAD);
 
     const action = await encodeTxData(coinMachine, "buyTokens", [WAD]);

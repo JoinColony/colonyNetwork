@@ -125,6 +125,7 @@ contract CoinMachine is ColonyExtension {
   /// @param _targetPerPeriod The number of tokens to aim to sell per period
   /// @param _maxPerPeriod The maximum number of tokens that can be sold per period
   /// @param _startingPrice The sale price to start at, expressed in units of _purchaseToken per token being sold, as a WAD
+  /// @param _whitelist Optionally an address of a whitelist contract to use can be provided. Pass 0x0 if no whitelist being used
   function initialise(
     address _token,
     address _purchaseToken,
@@ -132,7 +133,8 @@ contract CoinMachine is ColonyExtension {
     uint256 _windowSize,
     uint256 _targetPerPeriod,
     uint256 _maxPerPeriod,
-    uint256 _startingPrice
+    uint256 _startingPrice,
+    address _whitelist
   )
     public
     onlyRoot
@@ -162,6 +164,10 @@ contract CoinMachine is ColonyExtension {
     activePeriod = getCurrentPeriod();
 
     emaIntake = wmul(targetPerPeriod, _startingPrice);
+
+    if (_whitelist != address(0x0)){
+      setWhitelist(_whitelist);
+    }
 
     setPriceEvolution(getTokenBalance() > 0);
 
