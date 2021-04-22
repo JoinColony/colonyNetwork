@@ -9,6 +9,7 @@ const FundingQueue = artifacts.require("./FundingQueue");
 const OneTxPayment = artifacts.require("./OneTxPayment");
 const VotingReputation = artifacts.require("./VotingReputation");
 const TokenSupplier = artifacts.require("./TokenSupplier");
+const Whitelist = artifacts.require("./Whitelist");
 
 const Resolver = artifacts.require("./Resolver");
 const EtherRouter = artifacts.require("./EtherRouter");
@@ -38,4 +39,5 @@ module.exports = async function (deployer, network, accounts) {
   await addExtension(colonyNetwork, "OneTxPayment", OneTxPayment);
   await addExtension(colonyNetwork, "VotingReputation", VotingReputation);
   await addExtension(colonyNetwork, "TokenSupplier", TokenSupplier);
+  await addExtension(colonyNetwork, "Whitelist", Whitelist);
 };

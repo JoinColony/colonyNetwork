@@ -18,8 +18,9 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../common/ERC20Extended.sol";
+import "./../../lib/dappsys/erc20.sol";
 import "./ColonyExtension.sol";
+import "./Whitelist.sol";
 
 // ignore-file-swc-108
 
@@ -30,6 +31,8 @@ contract CoinMachine is ColonyExtension {
 
   event TokensBought(address buyer, uint256 numTokens, uint256 totalCost);
   event PeriodUpdated(uint256 activePeriod, uint256 currentPeriod);
+  event PriceEvolutionSet(bool evolvePrice);
+  event WhitelistSet(address whitelist);
 
   // Storage
 
@@ -42,7 +45,7 @@ contract CoinMachine is ColonyExtension {
   uint256 targetPerPeriod; // Target number of tokens to sell in a period
   uint256 maxPerPeriod; // Maximum number of tokens sellable in a period
 
-  uint256 tokensToSell; // Number of tokens left to sell
+  uint256 tokensToSell_DEPRECATED; // deprecated, replaced by ERC20(token).balanceOf(address(this))
 
   uint256 activePeriod; // The active sale period
   uint256 activePrice; // The active sale price (a WAD ratio of averageIntake / targetPerPeriod)
@@ -51,6 +54,12 @@ contract CoinMachine is ColonyExtension {
   uint256 activeIntake; // Payment received in the active period
 
   uint256 emaIntake; // Averaged payment intake
+
+  address token; // The token we are selling
+
+  address whitelist; // Address of an optional whitelist
+
+  bool evolvePrice; // If we should evolve the price or not
 
   // Modifiers
 
@@ -80,46 +89,66 @@ contract CoinMachine is ColonyExtension {
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
+  function finishUpgrade() public override auth {
+    token = colony.getToken();
+
+    setPriceEvolution(getTokenBalance() > 0 && !deprecated);
+  }
 
   /// @notice Called when deprecating (or undeprecating) the extension
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
+
+    if (_deprecated) { setPriceEvolution(false); }
   }
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
+    if (token != address(0x0)) {
+      uint256 tokenBalance = getTokenBalance();
+      if (tokenBalance > 0) {
+        require(
+          ERC20(token).transfer(address(colony), tokenBalance),
+          "coin-machine-transfer-failed"
+        );
+      }
+    }
+
     selfdestruct(address(uint160(address(colony))));
   }
 
   /// @notice Must be called before any sales can be made
+  /// @param _token The token we are selling. Cannot be ether
   /// @param _purchaseToken The token to receive payments in. Use 0x0 for ether
   /// @param _periodLength How long in seconds each period of the sale should last
   /// @param _windowSize Characteristic number of periods that should be used for the moving average. In the long-term, 86% of the weighting will be in this window size. The higher the number, the slower the price will be to adjust
   /// @param _targetPerPeriod The number of tokens to aim to sell per period
   /// @param _maxPerPeriod The maximum number of tokens that can be sold per period
   /// @param _startingPrice The sale price to start at, expressed in units of _purchaseToken per token being sold, as a WAD
+  /// @param _whitelist Optionally an address of a whitelist contract to use can be provided. Pass 0x0 if no whitelist being used
   function initialise(
+    address _token,
     address _purchaseToken,
     uint256 _periodLength,
     uint256 _windowSize,
     uint256 _targetPerPeriod,
     uint256 _maxPerPeriod,
-    uint256 _tokensToSell,
-    uint256 _startingPrice
+    uint256 _startingPrice,
+    address _whitelist
   )
     public
     onlyRoot
   {
     require(activePeriod == 0, "coin-machine-already-initialised");
 
+    require(_token != address(0x0), "coin-machine-invalid-token");
     require(_periodLength > 0, "coin-machine-period-too-small");
     require(_windowSize > 0, "coin-machine-window-too-small");
     require(_windowSize <= 511, "coin-machine-window-too-large");
     require(_targetPerPeriod > 0, "coin-machine-target-too-small");
     require(_maxPerPeriod >= _targetPerPeriod, "coin-machine-max-too-small");
 
-    // A value of address(0x0) denotes Ether
+    token = _token;
     purchaseToken = _purchaseToken;
 
     periodLength = _periodLength;
@@ -130,14 +159,25 @@ contract CoinMachine is ColonyExtension {
 
     targetPerPeriod = _targetPerPeriod;
     maxPerPeriod = _maxPerPeriod;
-    tokensToSell = _tokensToSell;
 
     activePrice = _startingPrice;
     activePeriod = getCurrentPeriod();
 
     emaIntake = wmul(targetPerPeriod, _startingPrice);
 
+    if (_whitelist != address(0x0)) { setWhitelist(_whitelist); }
+
+    setPriceEvolution(getTokenBalance() > 0 && !deprecated);
+
     emit ExtensionInitialised();
+  }
+
+  /// @notice Set the address for an (optional) whitelist
+  /// @param _whitelist The address of the whitelist
+  function setWhitelist(address _whitelist) public onlyRoot notDeprecated {
+    whitelist = _whitelist;
+
+    emit WhitelistSet(_whitelist);
   }
 
   /// @notice Purchase tokens from Coin Machine.
@@ -145,25 +185,34 @@ contract CoinMachine is ColonyExtension {
   function buyTokens(uint256 _numTokens) public payable notDeprecated {
     updatePeriod();
 
-    uint256 numTokens = min(min(_numTokens, maxPerPeriod - activeSold), tokensToSell);
+    require(
+      whitelist == address(0x0) || Whitelist(whitelist).isApproved(msg.sender),
+      "coin-machine-unauthorised"
+    );
+
+    uint256 tokenBalance = getTokenBalance();
+    uint256 numTokens = min(min(_numTokens, maxPerPeriod - activeSold), tokenBalance);
     uint256 totalCost = wmul(numTokens, activePrice);
 
     activeIntake = add(activeIntake, totalCost);
     activeSold = add(activeSold, numTokens);
-    tokensToSell = sub(tokensToSell, numTokens);
 
     assert(activeSold <= maxPerPeriod);
 
+    // Check if we've sold out
+    if (numTokens >= tokenBalance) { setPriceEvolution(false); }
+
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
-      if (msg.value > totalCost) { msg.sender.transfer(msg.value - totalCost); }
+      if (msg.value > totalCost) { msg.sender.transfer(msg.value - totalCost); } // Refund any balance
+      payable(address(colony)).transfer(totalCost);
     } else {
-      require(ERC20Extended(purchaseToken).transferFrom(msg.sender, address(this), totalCost), "coin-machine-transfer-failed");
+      require(ERC20(purchaseToken).transferFrom(msg.sender, address(colony), totalCost), "coin-machine-purchase-failed");
     }
 
-    colony.mintTokensFor(msg.sender, numTokens);
+    require(ERC20(token).transfer(msg.sender, numTokens), "coin-machine-transfer-failed");
 
-    emit TokensBought(msg.sender, _numTokens, totalCost);
+    emit TokensBought(msg.sender, numTokens, totalCost);
   }
 
   /// @notice Bring the token accounting current
@@ -171,12 +220,23 @@ contract CoinMachine is ColonyExtension {
     uint256 currentPeriod = getCurrentPeriod();
     uint256 initialActivePeriod = activePeriod;
 
+    if (initialActivePeriod >= currentPeriod) {
+      return;
+    }
+
+    // If we're out of tokens or deprecated, don't update
+    if (!evolvePrice) {
+      activePeriod = currentPeriod;
+
+      // Are we still sold out?
+      setPriceEvolution(getTokenBalance() > 0 && !deprecated);
+    }
+
+
     // We need to update the price if the active period is not the current one.
     if (activePeriod < currentPeriod) {
-
       emaIntake = wmul((WAD - alpha), emaIntake) + wmul(alpha, activeIntake); // wmul(wad, int) => int
       activeIntake = 0;
-
       activeSold = 0;
 
       // Handle any additional missed periods
@@ -192,6 +252,41 @@ contract CoinMachine is ColonyExtension {
     }
 
     emit PeriodUpdated(initialActivePeriod, currentPeriod);
+  }
+
+  /// @notice Get the address of the token being used to make purchases
+  function getPurchaseToken() public view returns (address) {
+    return purchaseToken;
+  }
+
+  /// @notice Get the address of the token being sold
+  function getToken() public view returns (address) {
+    return token;
+  }
+
+  /// @notice Get the period that the price was last updated for or a purchase was made
+  function getActivePeriod() public view returns (uint256) {
+    return activePeriod;
+  }
+
+  /// @notice Get the number of tokens sold in the period that the price was last updated for or a purchase was made
+  function getActiveSold() public view returns (uint256) {
+    return activeSold;
+  }
+
+  /// @notice Get the number of tokens received in the period that the price was last updated for or a purchase was made
+  function getActiveIntake() public view returns (uint256) {
+    return activeIntake;
+  }
+
+  /// @notice Get the EMA of the number of tokens received each period
+  function getEMAIntake() public view returns (uint256) {
+    return emaIntake;
+  }
+
+  /// @notice Get the remaining balance of tokens
+  function getTokenBalance() public view returns (uint256) {
+    return ERC20(token).balanceOf(address(this));
   }
 
   /// @notice Get the length of the sale period
@@ -214,16 +309,11 @@ contract CoinMachine is ColonyExtension {
     return maxPerPeriod;
   }
 
-  /// @notice Get the total number of tokens remaining for sale
-  function getTokensToSell() public view returns (uint256) {
-    return tokensToSell;
-  }
-
   /// @notice Get the current price per token
   function getCurrentPrice() public view returns (uint256) {
     uint256 currentPeriod = getCurrentPeriod();
 
-    if (activePeriod >= currentPeriod) {
+    if (activePeriod >= currentPeriod || !evolvePrice) {
       return activePrice;
 
     // Otherwise, infer the new price
@@ -246,12 +336,30 @@ contract CoinMachine is ColonyExtension {
   /// @notice Get the number of remaining tokens for sale this period
   function getNumAvailable() public view returns (uint256) {
     return min(
-      tokensToSell,
+      ERC20(token).balanceOf(address(this)),
       sub(maxPerPeriod, ((activePeriod >= getCurrentPeriod()) ? activeSold : 0))
     );
   }
 
+  /// @notice Get the address of the whitelist (if exists)
+  function getWhitelist() public view returns (address) {
+    return whitelist;
+  }
+
+  /// @notice Get the evolvePrice boolean
+  function getEvolvePrice() public view returns (bool) {
+    return evolvePrice;
+  }
+
   // Internal
+
+  function setPriceEvolution(bool status) internal {
+    if (status != evolvePrice) {
+      evolvePrice = status;
+
+      emit PriceEvolutionSet(status);
+    }
+  }
 
   function getCurrentPeriod() internal view returns (uint256) {
     return block.timestamp / periodLength;
