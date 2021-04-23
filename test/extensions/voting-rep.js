@@ -39,6 +39,7 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TokenLocking = artifacts.require("TokenLocking");
 const VotingReputation = artifacts.require("VotingReputation");
 const Resolver = artifacts.require("Resolver");
+const ColonyExtension = artifacts.require("ColonyExtension");
 
 const VOTING_REPUTATION = soliditySha3("VotingReputation");
 
@@ -51,6 +52,7 @@ contract("Voting Reputation", (accounts) => {
   let metaColony;
   let colonyNetwork;
   let tokenLocking;
+  let reputationVotingVersion;
 
   let voting;
 
@@ -124,6 +126,10 @@ contract("Voting Reputation", (accounts) => {
     const resolver = await Resolver.new();
     await setupEtherRouter("VotingReputation", { VotingReputation: votingImplementation.address }, resolver);
     await metaColony.addExtensionToNetwork(VOTING_REPUTATION, resolver.address);
+    const versionSig = await resolver.stringToSig("version()");
+    const target = await resolver.lookup(versionSig);
+    const extensionImplementation = await ColonyExtension.at(target);
+    reputationVotingVersion = await extensionImplementation.version();
   });
 
   beforeEach(async () => {
@@ -136,7 +142,7 @@ contract("Voting Reputation", (accounts) => {
     domain2 = await colony.getDomain(2);
     domain3 = await colony.getDomain(3);
 
-    await colony.installExtension(VOTING_REPUTATION, 2);
+    await colony.installExtension(VOTING_REPUTATION, reputationVotingVersion);
     const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
     voting = await VotingReputation.at(votingAddress);
 
@@ -264,9 +270,12 @@ contract("Voting Reputation", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(VOTING_REPUTATION, 2, { from: USER0 });
+      await colony.installExtension(VOTING_REPUTATION, reputationVotingVersion, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(VOTING_REPUTATION, 2, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(
+        colony.installExtension(VOTING_REPUTATION, reputationVotingVersion, { from: USER0 }),
+        "colony-network-extension-already-installed"
+      );
       await checkErrorRevert(colony.uninstallExtension(VOTING_REPUTATION, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(VOTING_REPUTATION, { from: USER0 });
@@ -1759,7 +1768,6 @@ contract("Voting Reputation", (accounts) => {
 
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
 
-      // const expectedReward1 = (REQUIRED_STAKE.add(WAD.divn(1000 * 10))).muln(22).divn(32); // eslint-disable-line prettier/prettier
       // REQUIRED_STAKE.div(REQUIRED_STAKE.add(votingPayout)) is the fraction of this side they staked
       // REQUIRED_STAKE.add(REQUIRED_STAKE_DOMAIN_2).muln(2).divn(3) is what's being awarded to the whole of this side.
       // The product tells us their expected reward.
@@ -1805,10 +1813,6 @@ contract("Voting Reputation", (accounts) => {
 
       const loserStake = REQUIRED_STAKE.sub(votingPayout2); // Take out voter comp
 
-      // (stake * .8) * (winPct = 1/3 * 2) * 2/3 (since 1/3 of stake is from other user!)
-      // const expectedReward0 = loserStake.muln(2).divn(3).muln(2).divn(3);
-      // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2)) * 22/32) (since 10/32 of stake is from other user!)
-      // const expectedReward1 = REQUIRED_STAKE.add(loserStake.divn(3)).muln(22).divn(32);
       const expectedReward0 = loserStake.muln(2).divn(3).mul(yayStake).div(REQUIRED_STAKE);
       const expectedReward1 = nayStake.mul(REQUIRED_STAKE.add(loserStake.divn(3))).div(REQUIRED_STAKE.add(votingPayout));
 
