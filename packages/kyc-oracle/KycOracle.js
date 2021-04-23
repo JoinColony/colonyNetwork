@@ -12,9 +12,9 @@ class KycOracle {
   /**
    * Constructor for KycOracle
    * @param {string} privateKey              The private key of the address that has the administration permission.
-   *                                           If used, `adminAddress` is not needed and will be derived.
-   * @param {string} adminAddress             The address that has the administration permission to edit the whitelist.
-   * @param {string} whitelistAddress        The address the whitelist.
+   *                                         If used, `adminAddress` is not needed and will be derived.
+   * @param {string} adminAddress            The address that has the administration permission to edit the whitelist.
+   * @param {string} whitelistAddress        The address of the whitelist.
    * @param {Object} loader                  The loader for loading the contract interfaces. Usually a TruffleLoader.
    * @param {Object} provider                Ethers provider that allows access to an ethereum node.
    * @param {Number} [port]                  The port the oracle will serve on
@@ -183,7 +183,12 @@ class KycOracle {
 
   async createDB() {
     const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
-    await db.run("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE, session_id text NOT NULL )");
+    await db.run(
+      `CREATE TABLE IF NOT EXISTS users (
+        address text NOT NULL UNIQUE,
+        session_id text NOT NULL
+      )`
+    );
     await db.close();
   }
 
@@ -207,7 +212,10 @@ class KycOracle {
     console.log(address, session);
     const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
     await db.run(
-      `INSERT INTO users (address, session_id) VALUES ("${address}", "${session}") ON CONFLICT(address) DO UPDATE SET session_id = "${session}"`
+      `INSERT INTO users (address, session_id)
+       VALUES ("${address}", "${session}")
+       ON CONFLICT(address) DO
+       UPDATE SET session_id = "${session}"`
     );
     await db.close();
   }
