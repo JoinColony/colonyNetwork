@@ -456,7 +456,7 @@ contract("Coin Machine", (accounts) => {
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
       const windowSize = await coinMachine.getWindowSize();
-      const alphaAsWad = new BN(2).mul(WAD).divRound(windowSize.addn(1));
+      const alphaAsWad = new BN(2).mul(WAD).div(windowSize.addn(1));
 
       let currentPrice;
       let evolvePrice;
@@ -500,7 +500,7 @@ contract("Coin Machine", (accounts) => {
       await coinMachine.updatePeriod();
 
       const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
-      const expectedPrice = emaIntake.divRound(WAD.muln(100));
+      const expectedPrice = emaIntake.div(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(expectedPrice);
     });
@@ -509,7 +509,7 @@ contract("Coin Machine", (accounts) => {
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
       const windowSize = await coinMachine.getWindowSize();
-      const alphaAsWad = new BN(2).mul(WAD).divRound(windowSize.addn(1));
+      const alphaAsWad = new BN(2).mul(WAD).div(windowSize.addn(1));
 
       let currentPrice;
       let evolvePrice;
@@ -555,7 +555,7 @@ contract("Coin Machine", (accounts) => {
       await coinMachine.updatePeriod();
 
       const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
-      const expectedPrice = emaIntake.divRound(WAD.muln(100));
+      const expectedPrice = emaIntake.div(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(expectedPrice);
     });
