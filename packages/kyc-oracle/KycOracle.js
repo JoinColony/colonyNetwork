@@ -93,6 +93,9 @@ class KycOracle {
             }
           );
           sessionId = data.session_id;
+          if (!/^[0-9a-f\-]+$/.test(sessionId)) {
+            return res.status(500).send("Synaps session ID obtained was invalid");
+          }
 
           // And save to db
           await this.setSessionForAddress(address, sessionId);
@@ -100,18 +103,22 @@ class KycOracle {
 
         return res.json({ sessionId });
       } catch (err) {
-        console.log;
         return res.status(500).send(err);
       }
     });
 
     // Query for KYC status and update the whitelist
-    this.app.get("/status/:sessionId", async (req, res) => {
+    this.app.get("/status/session/info", async (req, res) => {
       try {
+        const synapsSessionId = req.header("Synaps-Session-Id");
+        if (!/^[0-9a-f\-]+$/.test(synapsSessionId)) {
+          return res.status(400).send("Synaps session ID should only contain 0-9, a-f and -");
+        }
+
         const { data } = await axios.get("https://workflow-api.synaps.io/v2/session/info", {
           headers: {
             "Api-Key": this.apiKey,
-            "Session-Id": req.params.sessionId,
+            "Session-Id": synapsSessionId,
           },
         });
 
@@ -129,7 +136,26 @@ class KycOracle {
 
         return res.status(200).send(data);
       } catch (err) {
-        console.log(err);
+        return res.status(500).send(err);
+      }
+    });
+
+    // Query for KYC details and update the whitelist
+    this.app.get("/status/session/details", async (req, res) => {
+      try {
+        const synapsSessionId = req.header("Synaps-Session-Id");
+        if (!/^[0-9a-f\-]+$/.test(synapsSessionId)) {
+          return res.status(400).send("Synaps session ID should only contain 0-9, a-f and -");
+        }
+        const { data } = await axios.get("https://workflow-api.synaps.io/v2/workflow/progress", {
+          headers: {
+            "Api-Key": this.apiKey,
+            "Session-Id": synapsSessionId,
+          },
+        });
+
+        return res.status(200).send(data);
+      } catch (err) {
         return res.status(500).send(err);
       }
     });
@@ -201,7 +227,6 @@ class KycOracle {
     );
     await db.close();
     const sessionIds = res.map((x) => x.session_id);
-    console.log(sessionIds);
     if (sessionIds.length > 1) {
       throw new Error("More than one matching address");
     }
@@ -209,7 +234,6 @@ class KycOracle {
   }
 
   async setSessionForAddress(address, session) {
-    console.log(address, session);
     const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
     await db.run(
       `INSERT INTO users (address, session_id)

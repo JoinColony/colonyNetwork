@@ -9,7 +9,8 @@ const path = require("path");
 const { argv } = require("yargs")
   .option("privateKey", { string: true })
   .option("whitelistAddress", { string: true })
-  .option("apiKey", { string: true });
+  .option("apiKey", { string: true })
+  .option("adminAddress", { string: true });
 
 const KycOracle = require("../KycOracle");
 const TruffleLoader = require("../TruffleLoader").default;
