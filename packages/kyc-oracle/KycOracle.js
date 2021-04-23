@@ -93,7 +93,7 @@ class KycOracle {
             }
           );
           sessionId = data.session_id;
-          if (!/^[0-9a-f\-]+$/.test(sessionId)) {
+          if (!/^[0-9a-f-]+$/.test(sessionId)) {
             return res.status(500).send("Synaps session ID obtained was invalid");
           }
 
@@ -108,10 +108,11 @@ class KycOracle {
     });
 
     // Query for KYC status and update the whitelist
+    // See https://docs.synaps.io/know-your-customer/sessions for return values
     this.app.get("/status/session/info", async (req, res) => {
       try {
         const synapsSessionId = req.header("Synaps-Session-Id");
-        if (!/^[0-9a-f\-]+$/.test(synapsSessionId)) {
+        if (!/^[0-9a-f-]+$/.test(synapsSessionId)) {
           return res.status(400).send("Synaps session ID should only contain 0-9, a-f and -");
         }
 
@@ -140,11 +141,13 @@ class KycOracle {
       }
     });
 
-    // Query for KYC details and update the whitelist
+    // Query for KYC details
+    // See https://docs.synaps.io/know-your-customer/verification-progress for information on
+    // return values
     this.app.get("/status/session/details", async (req, res) => {
       try {
         const synapsSessionId = req.header("Synaps-Session-Id");
-        if (!/^[0-9a-f\-]+$/.test(synapsSessionId)) {
+        if (!/^[0-9a-f-]+$/.test(synapsSessionId)) {
           return res.status(400).send("Synaps session ID should only contain 0-9, a-f and -");
         }
         const { data } = await axios.get("https://workflow-api.synaps.io/v2/workflow/progress", {
