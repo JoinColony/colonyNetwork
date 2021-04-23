@@ -1518,7 +1518,7 @@ contract("Voting Reputation", (accounts) => {
       expect(new BN(user2LockPost.balance).sub(new BN(user2LockPre.balance))).to.eq.BN(expectedReward2);
     });
 
-    it("can let stakers claim rewards, based on the vote outcome, with multiple winning stakers", async () => {
+    it("can let all stakers claim rewards, based on the vote outcome, with multiple winning stakers", async () => {
       const user2Key = makeReputationKey(colony.address, domain1.skillId, USER2);
       const user2Value = makeReputationValue(REQUIRED_STAKE.subn(1), 8);
       const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
