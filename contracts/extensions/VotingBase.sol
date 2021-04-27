@@ -899,6 +899,7 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
     uint256 permissionDomainId;
     uint256 childSkillIndex;
 
+    // By convention, these are the first two arguments to the function
     assembly {
       permissionDomainId := mload(add(_action, 0x24))
       childSkillIndex := mload(add(_action, 0x44))
