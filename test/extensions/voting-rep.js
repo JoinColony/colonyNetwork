@@ -1333,6 +1333,16 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(voting.claimReward(0, 1, UINT256_MAX, USER0, YAY), "voting-rep-motion-not-claimable");
     });
 
+    it("returns 0 for staker rewards if no-one staked on a side of a motion", async () => {
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      const yayStakerReward = await voting.getStakerReward(motionId, USER0, YAY);
+      const nayStakerReward = await voting.getStakerReward(motionId, USER0, NAY);
+
+      expect(yayStakerReward[0]).to.eq.BN(REQUIRED_STAKE);
+      expect(nayStakerReward[0]).to.eq.BN(new BN(0));
+    });
+
     it("can let stakers claim rewards, based on the stake outcome", async () => {
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const repCycle = await IReputationMiningCycle.at(addr);

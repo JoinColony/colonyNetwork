@@ -750,10 +750,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256, uint256) {
     Motion storage motion = motions[_motionId];
 
-    uint256 stakeFraction = wdiv(
-      stakes[_motionId][_staker][_vote],
-      add(motion.stakes[_vote], motion.pastVoterComp[_vote])
-    );
+    uint256 totalSideStake = add(motion.stakes[_vote], motion.pastVoterComp[_vote]);
+    if (totalSideStake == 0) { return (0, 0); }
+
+    uint256 stakeFraction = wdiv(stakes[_motionId][_staker][_vote], totalSideStake);
 
     uint256 realStake = wmul(stakeFraction, motion.stakes[_vote]);
     uint256 requiredStake = getRequiredStake(_motionId);
