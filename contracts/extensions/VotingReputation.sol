@@ -18,6 +18,7 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
+import "./../colony/ColonyRoles.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../common/ERC20Extended.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
@@ -244,6 +245,46 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   /// @notice Create a motion in any domain
   /// @param _domainId The domain where we vote on the motion
   /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
+  /// @param _altTarget The contract to which we send the action (0x0 for the colony)
+  /// @param _action A bytes array encoding a function call
+  /// @param _key Reputation tree key for the domain
+  /// @param _value Reputation tree value for the domain
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
+  function createDomainMotion(
+    uint256 _domainId,
+    uint256 _childSkillIndex,
+    address _altTarget,
+    bytes memory _action,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    public
+  {
+
+    // Check the function requires a non-root permission (and thus a domain proof)
+    address target = _altTarget == address(0x0) ? address(colony) : _altTarget;
+    require(
+      ColonyRoles(target).getCapabilityRoles(getSig(_action)) | ROOT_ROLES != ROOT_ROLES,
+      "voting-rep-invalid-function"
+    );
+
+    uint256 domainSkillId = colony.getDomain(_domainId).skillId;
+    uint256 actionDomainSkillId = getActionDomainSkillId(_action);
+
+    if (domainSkillId != actionDomainSkillId) {
+      uint256 childSkillId = colonyNetwork.getChildSkillId(domainSkillId, _childSkillIndex);
+      require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
+    }
+
+    createMotion(_altTarget, _action, _domainId, domainSkillId, _key, _value, _branchMask, _siblings);
+  }
+
+  /// @notice Create a motion in any domain (DEPRECATED)
+  /// @param _domainId The domain where we vote on the motion
+  /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
   /// @param _action A bytes array encoding a function call
   /// @param _key Reputation tree key for the domain
   /// @param _value Reputation tree value for the domain
@@ -260,21 +301,16 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   )
     public
   {
-    // Check the function requires a non-root permission (and thus a domain proof)
-    require(
-      colony.getCapabilityRoles(getSig(_action)) | ROOT_ROLES != ROOT_ROLES,
-      "voting-rep-invalid-function"
+    createDomainMotion(
+      _domainId,
+      _childSkillIndex,
+      address(0x0),
+      _action,
+      _key,
+      _value,
+      _branchMask,
+      _siblings
     );
-
-    uint256 domainSkillId = colony.getDomain(_domainId).skillId;
-    uint256 actionDomainSkillId = getActionDomainSkillId(_action);
-
-    if (domainSkillId != actionDomainSkillId) {
-      uint256 childSkillId = colonyNetwork.getChildSkillId(domainSkillId, _childSkillIndex);
-      require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
-    }
-
-    createMotion(address(0x0), _action, _domainId, domainSkillId, _key, _value, _branchMask, _siblings);
   }
 
   /// @notice Stake on a motion
