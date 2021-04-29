@@ -182,6 +182,13 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     selfdestruct(address(uint160(address(colony))));
   }
 
+  /// @notice Return the permissions required for each function
+  /// @param _sig The function signature
+  /// @return The byte32 of permissions
+  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32) {
+    return bytes32(0);
+  }
+
   // Data structures
   enum MotionState { Null, Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
 

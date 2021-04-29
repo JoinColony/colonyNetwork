@@ -79,6 +79,13 @@ contract TokenSupplier is ColonyExtension {
     selfdestruct(address(uint160(address(colony))));
   }
 
+  /// @notice Return the permissions required for each function
+  /// @param _sig The function signature
+  /// @return The byte32 of permissions
+  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32) {
+    return bytes32(0);
+  }
+
   /// @notice Initialise the extension, must be called before any tokens can be issued
   /// @param _tokenSupplyCeiling Total amount of tokens to issue
   /// @param _tokenIssuanceRate Number of tokens to issue per day
