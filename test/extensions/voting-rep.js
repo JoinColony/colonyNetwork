@@ -434,6 +434,38 @@ contract("Voting Reputation", (accounts) => {
       );
     });
 
+    it("cannot create a domain motion with an action in a higher domain", async () => {
+      const key = makeReputationKey(colony.address, domain2.skillId);
+      const value = makeReputationValue(WAD, 6);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      // Action in domain 1, motion in domain 2
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+
+      await checkErrorRevert(
+        voting.createDomainMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings),
+        "voting-rep-invalid-domain-id"
+      );
+    });
+
+    it("cannot create a domain motion with an alternative target with an action in a higher domain", async () => {
+      const key = makeReputationKey(colony.address, domain2.skillId);
+      const value = makeReputationValue(WAD, 6);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      const oneTxPayment = await OneTxPayment.new();
+      await oneTxPayment.install(colony.address);
+
+      // Action in domain 1, motion in domain 2
+      const args = [1, UINT256_MAX, 1, UINT256_MAX, [USER0], [token.address], [10], 1, 0];
+      const action = await encodeTxData(oneTxPayment, "makePaymentFundedFromDomain", args);
+
+      await checkErrorRevert(
+        voting.createDomainMotion(2, UINT256_MAX, oneTxPayment.address, action, key, value, mask, siblings),
+        "voting-rep-invalid-domain-id"
+      );
+    });
+
     it("cannot externally escalate a domain motion with an invalid domain proof", async () => {
       const key = makeReputationKey(colony.address, domain3.skillId);
       const value = makeReputationValue(WAD.muln(3), 7);

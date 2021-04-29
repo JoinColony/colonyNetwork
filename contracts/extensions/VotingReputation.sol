@@ -955,12 +955,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     }
 
     uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
-
-    if (childSkillIndex == UINT256_MAX) {
-      return permissionSkillId;
-    } else {
-      return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
-    }
+    return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
   }
 
   function executeCall(uint256 motionId, bytes memory action) internal returns (bool success) {
