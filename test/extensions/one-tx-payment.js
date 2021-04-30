@@ -212,7 +212,7 @@ contract("One transaction payments", (accounts) => {
 
     it("should not allow an admin to specify a non-existent domain", async () => {
       await checkErrorRevert(
-        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 99, GLOBAL_SKILL_ID),
+        oneTxPayment.makePaymentFundedFromDomain(1, 98, 1, 98, [USER1], [token.address], [10], 99, GLOBAL_SKILL_ID),
         "colony-network-out-of-range-child-skill-index"
       );
     });

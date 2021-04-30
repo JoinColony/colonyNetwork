@@ -238,6 +238,13 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   )
     public
   {
+    // Check the function requires a root permission, if any
+    require(
+      ColonyRoles(getTarget(_altTarget))
+        .getCapabilityRoles(getSig(_action)) | ROOT_ROLES == ROOT_ROLES,
+      "voting-rep-invalid-function"
+    );
+
     uint256 rootSkillId = colony.getDomain(1).skillId;
     createMotion(_altTarget, _action, 1, rootSkillId, _key, _value, _branchMask, _siblings);
   }
@@ -265,9 +272,9 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   {
 
     // Check the function requires a non-root permission (and thus a domain proof)
-    address target = _altTarget == address(0x0) ? address(colony) : _altTarget;
     require(
-      ColonyRoles(target).getCapabilityRoles(getSig(_action)) | ROOT_ROLES != ROOT_ROLES,
+      ColonyRoles(getTarget(_altTarget))
+        .getCapabilityRoles(getSig(_action)) | ROOT_ROLES != ROOT_ROLES,
       "voting-rep-invalid-function"
     );
 
@@ -560,7 +567,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       motion.votes[NAY] < motion.votes[YAY]
     );
 
-    if (getSig(motion.action) == CHANGE_FUNCTION && motion.altTarget == address(0x0)) {
+    if (
+      getSig(motion.action) == CHANGE_FUNCTION &&
+      getTarget(motion.altTarget) == address(colony)
+    ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
       expenditureMotionCounts[structHash] = sub(expenditureMotionCounts[structHash], 1);
 
@@ -909,6 +919,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     return wmul(motions[_motionId].skillRep, totalStakeFraction);
   }
 
+  function getTarget(address _target) internal view returns (address) {
+    return (_target == address(0x0)) ? address(colony) : _target;
+  }
+
   function flip(uint256 _vote) internal pure returns (uint256) {
     return sub(1, _vote);
   }
@@ -959,8 +973,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   }
 
   function executeCall(uint256 motionId, bytes memory action) internal returns (bool success) {
-    address altTarget = motions[motionId].altTarget;
-    address to = (altTarget == address(0x0)) ? address(colony) : altTarget;
+    address to = getTarget(motions[motionId].altTarget);
 
     assembly {
               // call contract at address a with input mem[in…(in+insize))
