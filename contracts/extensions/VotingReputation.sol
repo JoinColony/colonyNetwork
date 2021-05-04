@@ -183,13 +183,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     selfdestruct(address(uint160(address(colony))));
   }
 
-  /// @notice Return the permissions required for each function
-  /// @param _sig The function signature
-  /// @return The byte32 of permissions
-  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32) {
-    return bytes32(0);
-  }
-
   // Data structures
   enum MotionState { Null, Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
 
@@ -221,7 +214,66 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
   // Public functions (interface)
 
-  /// @notice Create a motion in the root domain
+ function createMotion(
+    uint256 _domainId,
+    uint256 _childSkillIndex,
+    address _altTarget,
+    bytes memory _action,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    public
+    notDeprecated
+  {
+    require(state == ExtensionState.Active, "voting-rep-not-active");
+    require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");
+
+    address target = getTarget(_altTarget);
+    bytes4 action = getSig(_action);
+
+    uint256 skillId;
+
+    if (ColonyRoles(target).getCapabilityRoles(action) | ROOT_ROLES == ROOT_ROLES) {
+
+      // A root or unpermissioned function
+      require(_domainId == 1 && _childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");
+      skillId = colony.getDomain(1).skillId;
+
+    } else {
+
+      // A domain permissioned function
+      skillId = colony.getDomain(_domainId).skillId;
+      uint256 actionDomainSkillId = getActionDomainSkillId(_action);
+
+      if (skillId != actionDomainSkillId) {
+        uint256 childSkillId = colonyNetwork.getChildSkillId(skillId, _childSkillIndex);
+        require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
+      }
+
+    }
+
+    motionCount += 1;
+    Motion storage motion = motions[motionCount];
+
+    motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
+    motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+    motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
+
+    motion.rootHash = colonyNetwork.getReputationRootHash();
+    motion.domainId = _domainId;
+    motion.skillId = skillId;
+
+    motion.skillRep = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
+    motion.altTarget = _altTarget;
+    motion.action = _action;
+
+    emit MotionCreated(motionCount, msg.sender, _domainId);
+  }
+
+
+  /// @notice Create a motion in the root domain (DEPRECATED)
   /// @param _altTarget The contract to which we send the action (0x0 for the colony)
   /// @param _action A bytes array encoding a function call
   /// @param _key Reputation tree key for the root domain
@@ -238,18 +290,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   )
     public
   {
-    // Check the function requires a root permission, if any
-    require(
-      ColonyRoles(getTarget(_altTarget))
-        .getCapabilityRoles(getSig(_action)) | ROOT_ROLES == ROOT_ROLES,
-      "voting-rep-invalid-function"
-    );
-
-    uint256 rootSkillId = colony.getDomain(1).skillId;
-    createMotion(_altTarget, _action, 1, rootSkillId, _key, _value, _branchMask, _siblings);
+    createMotion(1, UINT256_MAX, _altTarget, _action, _key, _value, _branchMask, _siblings);
   }
 
-  /// @notice Create a motion in any domain
+  /// @notice Create a motion in any domain (DEPRECATED)
   /// @param _domainId The domain where we vote on the motion
   /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
   /// @param _altTarget The contract to which we send the action (0x0 for the colony)
@@ -270,23 +314,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   )
     public
   {
-
-    // Check the function requires a non-root permission (and thus a domain proof)
-    require(
-      ColonyRoles(getTarget(_altTarget))
-        .getCapabilityRoles(getSig(_action)) | ROOT_ROLES != ROOT_ROLES,
-      "voting-rep-invalid-function"
-    );
-
-    uint256 domainSkillId = colony.getDomain(_domainId).skillId;
-    uint256 actionDomainSkillId = getActionDomainSkillId(_action);
-
-    if (domainSkillId != actionDomainSkillId) {
-      uint256 childSkillId = colonyNetwork.getChildSkillId(domainSkillId, _childSkillIndex);
-      require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
-    }
-
-    createMotion(_altTarget, _action, _domainId, domainSkillId, _key, _value, _branchMask, _siblings);
+    createMotion(_domainId, _childSkillIndex, _altTarget, _action, _key, _value, _branchMask, _siblings);
   }
 
   /// @notice Create a motion in any domain (DEPRECATED)
@@ -876,40 +904,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   }
 
   // Internal functions
-
-  function createMotion(
-    address _altTarget,
-    bytes memory _action,
-    uint256 _domainId,
-    uint256 _skillId,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  )
-    internal
-    notDeprecated
-  {
-    require(state == ExtensionState.Active, "voting-rep-not-active");
-    require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");
-
-    motionCount += 1;
-    Motion storage motion = motions[motionCount];
-
-    motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
-    motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-    motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
-
-    motion.rootHash = colonyNetwork.getReputationRootHash();
-    motion.domainId = _domainId;
-    motion.skillId = _skillId;
-
-    motion.skillRep = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
-    motion.altTarget = _altTarget;
-    motion.action = _action;
-
-    emit MotionCreated(motionCount, msg.sender, _domainId);
-  }
 
   function getVoteSecret(bytes32 _salt, uint256 _vote) internal pure returns (bytes32) {
     return keccak256(abi.encodePacked(_salt, _vote));

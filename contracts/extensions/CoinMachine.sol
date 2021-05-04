@@ -117,13 +117,6 @@ contract CoinMachine is ColonyExtension {
     selfdestruct(address(uint160(address(colony))));
   }
 
-  /// @notice Return the permissions required for each function
-  /// @param _sig The function signature
-  /// @return The byte32 of permissions
-  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32) {
-    return bytes32(0);
-  }
-
   /// @notice Must be called before any sales can be made
   /// @param _token The token we are selling. Cannot be ether
   /// @param _purchaseToken The token to receive payments in. Use 0x0 for ether

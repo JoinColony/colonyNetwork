@@ -78,13 +78,6 @@ contract Whitelist is ColonyExtension {
     selfdestruct(address(uint160(address(colony))));
   }
 
-  /// @notice Return the permissions required for each function
-  /// @param _sig The function signature
-  /// @return The byte32 of permissions
-  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32) {
-    return bytes32(0);
-  }
-
   /// @notice Initialise the extension
   /// @param _useApprovals Whether or not to require administrative approval
   /// @param _agreementHash An agreement hash (such as an IPFS URI)

@@ -37,10 +37,6 @@ abstract contract TestExtension is ColonyExtension {
   function uninstall() public override auth {
     selfdestruct(address(uint160(address(colony))));
   }
-
-  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32) {
-    return bytes32(0);
-  }
 }
 
 
