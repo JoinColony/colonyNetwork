@@ -258,7 +258,7 @@ contract("Voting Reputation", (accounts) => {
       const identifier = await voting.identifier();
       const version = await voting.version();
       expect(identifier).to.equal(VOTING_REPUTATION);
-      expect(version).to.eq.BN(2);
+      expect(version).to.eq.BN(reputationVotingVersion);
 
       await voting.finishUpgrade();
       await voting.deprecate(true);
@@ -1406,8 +1406,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY);
       await voting.claimReward(motionId, 1, UINT256_MAX, USER1, NAY);
 
-      let votingPayout = await voting.getVoterReward(motionId, new BN(user0Value.slice(2, 66), 16));
-      const voter1reward = await voting.getVoterReward(motionId, new BN(user1Value.slice(2, 66), 16));
+      let votingPayout = await voting.getVoterReward(motionId, WAD);
+      const voter1reward = await voting.getVoterReward(motionId, WAD.muln(2));
       votingPayout = votingPayout.add(voter1reward);
 
       const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
@@ -1518,8 +1518,13 @@ contract("Voting Reputation", (accounts) => {
       votingPayout = votingPayout.add(voter1reward);
 
       const loserStake = REQUIRED_STAKE.sub(votingPayout); // Take out voter comp
+      // User 0 staked 2/3rds of the losing side. 1/3 of the total stake of that side has been
+      // removed due to that side only receiving a third of the vote
       const expectedReward0 = loserStake.muln(2).divn(3).muln(2).divn(3);
+      // User 1 staked all of the winning side, so gets that back plus a third of what is left
+      // on the losing side as a reward (as the winning side got 2/3rds of the vote)
       const expectedReward1 = REQUIRED_STAKE.add(loserStake.muln(1).divn(3));
+      // Same as user 0, but they only staked 1/3 of the losing side.
       const expectedReward2 = loserStake.muln(2).divn(3).divn(3);
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);

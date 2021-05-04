@@ -35,6 +35,7 @@ chai.use(bnChai(web3.utils.BN));
 const TokenLocking = artifacts.require("TokenLocking");
 const FundingQueue = artifacts.require("FundingQueue");
 const Resolver = artifacts.require("Resolver");
+const ColonyExtension = artifacts.require("ColonyExtension");
 
 const FUNDING_QUEUE = soliditySha3("FundingQueue");
 
@@ -47,6 +48,7 @@ contract("Funding Queues", (accounts) => {
   let colonyNetwork;
   let tokenLocking;
   let fundingQueue;
+  let fundingQueueVersion;
 
   let reputationTree;
 
@@ -93,6 +95,11 @@ contract("Funding Queues", (accounts) => {
     await setupEtherRouter("FundingQueue", { FundingQueue: fundingQueueImplementation.address }, resolver);
     await metaColony.addExtensionToNetwork(FUNDING_QUEUE, resolver.address);
     await removeSubdomainLimit(colonyNetwork);
+
+    const versionSig = await resolver.stringToSig("version()");
+    const target = await resolver.lookup(versionSig);
+    const extensionImplementation = await ColonyExtension.at(target);
+    fundingQueueVersion = await extensionImplementation.version();
   });
 
   beforeEach(async () => {
@@ -104,7 +111,7 @@ contract("Funding Queues", (accounts) => {
     await colony.addDomain(1, 0, 2);
     domain1 = await colony.getDomain(1);
     domain2 = await colony.getDomain(2);
-    await colony.installExtension(FUNDING_QUEUE, 1);
+    await colony.installExtension(FUNDING_QUEUE, fundingQueueVersion);
 
     const fundingQueueAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
     fundingQueue = await FundingQueue.at(fundingQueueAddress);
@@ -183,7 +190,7 @@ contract("Funding Queues", (accounts) => {
       const identifier = await fundingQueue.identifier();
       const version = await fundingQueue.version();
       expect(identifier).to.equal(FUNDING_QUEUE);
-      expect(version).to.eq.BN(1);
+      expect(version).to.eq.BN(fundingQueueVersion);
 
       await fundingQueue.finishUpgrade();
       await fundingQueue.deprecate(true);
@@ -195,9 +202,12 @@ contract("Funding Queues", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(FUNDING_QUEUE, 1, { from: USER0 });
+      await colony.installExtension(FUNDING_QUEUE, fundingQueueVersion, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(FUNDING_QUEUE, 1, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(
+        colony.installExtension(FUNDING_QUEUE, fundingQueueVersion, { from: USER0 }),
+        "colony-network-extension-already-installed"
+      );
       await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });
