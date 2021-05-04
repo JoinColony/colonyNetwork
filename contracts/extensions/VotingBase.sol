@@ -327,9 +327,11 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
 
       if (expenditurePastVotes[actionHash] < votePower) {
         expenditurePastVotes[actionHash] = votePower;
+        // slither-disable-next-line boolean-cst
         canExecute = canExecute && true;
       } else {
-        canExecute = false;
+        // slither-disable-next-line boolean-cst
+        canExecute = canExecute && false;
       }
     }
 
