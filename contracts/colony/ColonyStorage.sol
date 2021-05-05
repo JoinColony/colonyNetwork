@@ -102,12 +102,16 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   // Mapping of token address -> total amount approved
   mapping (address => uint256 ) tokenApprovalTotals; // Storage slot 33
 
+  uint256 globalClaimDelay; // Storage slot 34
+
   // Constants
+
   uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs
   bytes32 constant ROOT_ROLES = bytes32(uint256(1)) << uint8(ColonyRole.Recovery) | bytes32(uint256(1)) << uint8(ColonyRole.Root);
   bytes32 constant BYTES32_1 = bytes32(uint256(1));
 
   // Modifiers
+
   modifier validPayoutAmount(uint256 _amount) {
     require(_amount <= MAX_PAYOUT, "colony-payout-too-large");
     _;

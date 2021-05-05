@@ -27,6 +27,16 @@ contract ColonyExpenditure is ColonyStorage {
 
   // Public functions
 
+  function setGlobalClaimDelay(uint256 _globalClaimDelay)
+    public
+    stoppable
+    auth
+  {
+    globalClaimDelay = _globalClaimDelay;
+
+    emit ExpenditureGlobalClaimDelaySet(msg.sender, _globalClaimDelay);
+  }
+
   function makeExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId)
     public
     stoppable
@@ -45,7 +55,7 @@ contract ColonyExpenditure is ColonyStorage {
       fundingPotId: fundingPotCount,
       domainId: _domainId,
       finalizedTimestamp: 0,
-      globalClaimDelay: 0
+      globalClaimDelay: globalClaimDelay
     });
 
     emit FundingPotAdded(fundingPotCount);

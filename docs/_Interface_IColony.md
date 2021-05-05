@@ -1462,6 +1462,18 @@ Set new colony funding role. Can be called by root role or architecture role.
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
+### `setGlobalClaimDelay`
+
+Update the default global claim delay for expenditures
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_globalClaimDelay|uint256|The new default global claim delay
+
+
 ### `setPaymentPayout`
 
 Sets the payout for a given token on an existing payment. Secured function to authorised members.
