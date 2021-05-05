@@ -35,6 +35,7 @@ chai.use(bnChai(web3.utils.BN));
 const TokenLocking = artifacts.require("TokenLocking");
 const FundingQueue = artifacts.require("FundingQueue");
 const Resolver = artifacts.require("Resolver");
+const ColonyExtension = artifacts.require("ColonyExtension");
 
 const FUNDING_QUEUE = soliditySha3("FundingQueue");
 
@@ -47,6 +48,7 @@ contract("Funding Queues", (accounts) => {
   let colonyNetwork;
   let tokenLocking;
   let fundingQueue;
+  let fundingQueueVersion;
 
   let reputationTree;
 
@@ -93,6 +95,11 @@ contract("Funding Queues", (accounts) => {
     await setupEtherRouter("FundingQueue", { FundingQueue: fundingQueueImplementation.address }, resolver);
     await metaColony.addExtensionToNetwork(FUNDING_QUEUE, resolver.address);
     await removeSubdomainLimit(colonyNetwork);
+
+    const versionSig = await resolver.stringToSig("version()");
+    const target = await resolver.lookup(versionSig);
+    const extensionImplementation = await ColonyExtension.at(target);
+    fundingQueueVersion = await extensionImplementation.version();
   });
 
   beforeEach(async () => {
@@ -104,7 +111,7 @@ contract("Funding Queues", (accounts) => {
     await colony.addDomain(1, 0, 2);
     domain1 = await colony.getDomain(1);
     domain2 = await colony.getDomain(2);
-    await colony.installExtension(FUNDING_QUEUE, 1);
+    await colony.installExtension(FUNDING_QUEUE, fundingQueueVersion);
 
     const fundingQueueAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
     fundingQueue = await FundingQueue.at(fundingQueueAddress);
@@ -183,7 +190,7 @@ contract("Funding Queues", (accounts) => {
       const identifier = await fundingQueue.identifier();
       const version = await fundingQueue.version();
       expect(identifier).to.equal(FUNDING_QUEUE);
-      expect(version).to.eq.BN(1);
+      expect(version).to.eq.BN(fundingQueueVersion);
 
       await fundingQueue.finishUpgrade();
       await fundingQueue.deprecate(true);
@@ -195,9 +202,12 @@ contract("Funding Queues", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(FUNDING_QUEUE, 1, { from: USER0 });
+      await colony.installExtension(FUNDING_QUEUE, fundingQueueVersion, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(FUNDING_QUEUE, 1, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(
+        colony.installExtension(FUNDING_QUEUE, fundingQueueVersion, { from: USER0 }),
+        "colony-network-extension-already-installed"
+      );
       await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });
@@ -558,7 +568,7 @@ contract("Funding Queues", (accounts) => {
       // So 1 - (1 - 1/2 * 2/3) = 1/3 (33.3%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("333743300899454444");
+      const expectedTransferred = new BN("333743300899535035");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
@@ -574,7 +584,7 @@ contract("Funding Queues", (accounts) => {
       // So 1 - (1 - 1/2 * 1/3) = 1/6 (16.6%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("167004575824999562");
+      const expectedTransferred = new BN("167004575825049942");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
@@ -607,7 +617,7 @@ contract("Funding Queues", (accounts) => {
       // So 1 - (1 - 1/2 * 2/3) ** 2) = 5/9 (55.5%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("556102010903645098");
+      const expectedTransferred = new BN("556102010903752487");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
@@ -623,7 +633,7 @@ contract("Funding Queues", (accounts) => {
       // So 1 - (1 - 1/2 * 1/3) ** 2) = 11/36 (30.5%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("306118623303511095");
+      const expectedTransferred = new BN("306118623303595028");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
@@ -664,7 +674,7 @@ contract("Funding Queues", (accounts) => {
       // So 1 - (1 - 1/2 * 2/3) ** 2) = 5/9 (55.5%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("556102010903645099");
+      const expectedTransferred = new BN("556102010903752488");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
@@ -684,7 +694,7 @@ contract("Funding Queues", (accounts) => {
       // So 1 - (1 - 1/2 * 1/3) ** 2) = 11/36 (30.5%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("306118623303511096");
+      const expectedTransferred = new BN("306118623303595029");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
@@ -754,7 +764,7 @@ contract("Funding Queues", (accounts) => {
       // So 1 - (1 - 1/2 * 2/3) = 1/3 (33.3%) of the balance should be transferred
       const balanceAfter = await colony.getFundingPotBalance(1, token.address);
       const amountTransferred = balanceBefore.sub(balanceAfter);
-      const expectedTransferred = new BN("333743300899454444");
+      const expectedTransferred = new BN("333743300899535035");
       expect(amountTransferred).to.eq.BN(expectedTransferred);
     });
 
@@ -781,14 +791,14 @@ contract("Funding Queues", (accounts) => {
     });
 
     [
-      { backingRate: 5, expectedTransferred: "25320560220306561" },
-      { backingRate: 15, expectedTransferred: "75337893969140761" },
-      { backingRate: 25, expectedTransferred: "125357209866916609" },
+      { backingRate: 5, expectedTransferred: "25320560220365509" },
+      { backingRate: 15, expectedTransferred: "75337893969252608" },
+      { backingRate: 25, expectedTransferred: "125357209866969508" },
       { backingRate: 35, expectedTransferred: "175378868612616049" },
       { backingRate: 45, expectedTransferred: "225403324090651555" },
-      { backingRate: 55, expectedTransferred: "275431155562114697" },
-      { backingRate: 65, expectedTransferred: "325463114181377392" },
-      { backingRate: 75, expectedTransferred: "375500191889488736" },
+      { backingRate: 55, expectedTransferred: "275431155562158519" },
+      { backingRate: 65, expectedTransferred: "325463114181458985" },
+      { backingRate: 75, expectedTransferred: "375500191889526506" },
       { backingRate: 85, expectedTransferred: "425543726357213310" },
       { backingRate: 95, expectedTransferred: "475595566069256363" },
     ].forEach(async (prop) => {

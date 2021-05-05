@@ -241,12 +241,12 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const mw2 = await colonyNetwork.calculateMinerWeight(blockTime - stake.timestamp, 1);
 
       const r1 = await WAD.muln(10)
-        .mul(mw1.mul(WAD).divRound(mw1.add(mw2)))
-        .divRound(WAD);
+        .mul(mw1.mul(WAD).div(mw1.add(mw2)))
+        .div(WAD);
 
       const r2 = await WAD.muln(10)
-        .mul(mw2.mul(WAD).divRound(mw1.add(mw2)))
-        .divRound(WAD);
+        .mul(mw2.mul(WAD).div(mw1.add(mw2)))
+        .div(WAD);
 
       // Check they've been awarded the tokens
       const m1Reward = new BN(lockedFor1Updated.balance).sub(new BN(lockedFor1.balance));
@@ -709,12 +709,12 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const mw2 = await colonyNetwork.calculateMinerWeight(blockTime - stake2.timestamp, 1);
 
       const r1 = await WAD.muln(10)
-        .mul(mw1.mul(WAD).divRound(mw1.add(mw2)))
-        .divRound(WAD);
+        .mul(mw1.mul(WAD).div(mw1.add(mw2)))
+        .div(WAD);
 
       const r2 = await WAD.muln(10)
-        .mul(mw2.mul(WAD).divRound(mw1.add(mw2)))
-        .divRound(WAD);
+        .mul(mw2.mul(WAD).div(mw1.add(mw2)))
+        .div(WAD);
 
       // Check that they have had their balance increase
       const lockedFor1Updated = await tokenLocking.getUserLock(clnyToken.address, MINER1);
@@ -725,9 +725,10 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       // Less than half of the reward
       const m2Reward = new BN(lockedFor2Updated.balance).sub(new BN(lockedFor2.balance));
       expect(m2Reward).to.eq.BN(r2);
-      // Sum is total reward within `stakers.length` wei of precision error
       expect(m1Reward.add(m2Reward)).to.be.lte.BN(WAD.muln(10));
-      expect(WAD.muln(10).sub(m1Reward).sub(m2Reward).abs()).to.be.lte.BN(new BN(2));
+      // The first 18 significant figures should be correct, and they are 19 significant
+      // figures long. The biggest possible error in the sum is therefore 18 wei.
+      expect(WAD.muln(10).sub(m1Reward).sub(m2Reward).abs()).to.be.lte.BN(new BN(18));
 
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveRepCycle = await IReputationMiningCycle.at(addr);
@@ -804,11 +805,11 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       // Large weight (staked for UINT256_MAX, first submission)
       weight = await colonyNetwork.calculateMinerWeight(UINT256_MAX, 0);
-      expect(weight).to.eq.BN("999999964585636861");
+      expect(weight).to.eq.BN("999999964585636862");
 
       // Large weight (staked for UINT32_MAX, first submission)
       weight = await colonyNetwork.calculateMinerWeight(UINT32_MAX, 0);
-      expect(weight).to.eq.BN("999999964585636861");
+      expect(weight).to.eq.BN("999999964585636862");
 
       // Middle weight (staked for UINT32_MAX, last submission)
       weight = await colonyNetwork.calculateMinerWeight(UINT32_MAX, 11);
@@ -820,7 +821,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       // Middle weight II (staked for T, last submission)
       weight = await colonyNetwork.calculateMinerWeight(T, 11);
-      expect(weight).to.eq.BN("338541666666666667");
+      expect(weight).to.eq.BN("338541666666666666");
 
       // Smallest weight (staked for 0, last submission)
       weight = await colonyNetwork.calculateMinerWeight(0, 11);

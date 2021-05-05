@@ -404,7 +404,7 @@ contract("Coin Machine", (accounts) => {
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
       const windowSize = await coinMachine.getWindowSize();
-      const alphaAsWad = new BN(2).mul(WAD).divRound(windowSize.addn(1));
+      const alphaAsWad = new BN(2).mul(WAD).div(windowSize.addn(1));
 
       let currentPrice;
 
@@ -420,7 +420,7 @@ contract("Coin Machine", (accounts) => {
 
       let emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
 
-      let expectedPrice = emaIntake.divRound(WAD.muln(100));
+      let expectedPrice = emaIntake.div(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(expectedPrice);
 
@@ -428,8 +428,8 @@ contract("Coin Machine", (accounts) => {
       await forwardTime(periodLength.toNumber(), this);
       await coinMachine.updatePeriod();
 
-      emaIntake = emaIntake.mul(WAD.sub(alphaAsWad)).divRound(WAD);
-      expectedPrice = emaIntake.divRound(WAD.muln(100));
+      emaIntake = emaIntake.mul(WAD.sub(alphaAsWad)).div(WAD);
+      expectedPrice = emaIntake.div(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(expectedPrice);
 
@@ -437,8 +437,8 @@ contract("Coin Machine", (accounts) => {
       await forwardTime(periodLength.toNumber(), this);
       await coinMachine.updatePeriod();
 
-      emaIntake = emaIntake.mul(WAD.sub(alphaAsWad)).divRound(WAD);
-      expectedPrice = emaIntake.divRound(WAD.muln(100));
+      emaIntake = emaIntake.mul(WAD.sub(alphaAsWad)).div(WAD);
+      expectedPrice = emaIntake.div(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(expectedPrice);
     });
@@ -456,7 +456,7 @@ contract("Coin Machine", (accounts) => {
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
       const windowSize = await coinMachine.getWindowSize();
-      const alphaAsWad = new BN(2).mul(WAD).divRound(windowSize.addn(1));
+      const alphaAsWad = new BN(2).mul(WAD).div(windowSize.addn(1));
 
       let currentPrice;
       let evolvePrice;
@@ -500,7 +500,7 @@ contract("Coin Machine", (accounts) => {
       await coinMachine.updatePeriod();
 
       const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
-      const expectedPrice = emaIntake.divRound(WAD.muln(100));
+      const expectedPrice = emaIntake.div(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(expectedPrice);
     });
@@ -509,7 +509,7 @@ contract("Coin Machine", (accounts) => {
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
       const windowSize = await coinMachine.getWindowSize();
-      const alphaAsWad = new BN(2).mul(WAD).divRound(windowSize.addn(1));
+      const alphaAsWad = new BN(2).mul(WAD).div(windowSize.addn(1));
 
       let currentPrice;
       let evolvePrice;
@@ -555,7 +555,7 @@ contract("Coin Machine", (accounts) => {
       await coinMachine.updatePeriod();
 
       const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
-      const expectedPrice = emaIntake.divRound(WAD.muln(100));
+      const expectedPrice = emaIntake.div(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(expectedPrice);
     });
@@ -570,22 +570,17 @@ contract("Coin Machine", (accounts) => {
       await purchaseToken.approve(coinMachine.address, maxPerPeriod.muln(10000), { from: USER0 });
 
       let previousPrice = maxPerPeriod.muln(10000); // A very large number.
-      let steadyState = false;
       for (let i = 0; i < 100; i += 1) {
+        // There used to be a check for a 'steady state' price here, but
+        // that only worked by chance.
         currentPrice = await coinMachine.getCurrentPrice();
         expect(currentPrice).to.be.lte.BN(previousPrice);
-        if (steadyState) {
-          expect(currentPrice).to.eq.BN(previousPrice);
-        } else if (currentPrice.eq(previousPrice)) {
-          // This is the first time it's happened, so on future loops check it's still the case
-          steadyState = true;
-        }
         previousPrice = currentPrice;
         const currentBlockTimestamp = await currentBlockTime();
 
         await makeTxAtTimestamp(
           coinMachine.buyTokens,
-          [WAD.divRound(currentPrice).mul(WAD), { from: USER0 }],
+          [WAD.div(currentPrice).mul(WAD), { from: USER0 }],
           currentBlockTimestamp + periodLength.toNumber(),
           this
         );
@@ -617,7 +612,7 @@ contract("Coin Machine", (accounts) => {
       const targetPerPeriod = await coinMachine.getTargetPerPeriod();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
       const windowSize = await coinMachine.getWindowSize();
-      const alphaAsWad = new BN(2).mul(WAD).divRound(windowSize.addn(1));
+      const alphaAsWad = new BN(2).mul(WAD).div(windowSize.addn(1));
 
       let currentPrice = await coinMachine.getCurrentPrice();
       let numAvailable = await coinMachine.getNumAvailable();
@@ -660,7 +655,7 @@ contract("Coin Machine", (accounts) => {
       numAvailable = await coinMachine.getNumAvailable();
 
       let emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
-      let expectedPrice = emaIntake.divRound(WAD.muln(100));
+      let expectedPrice = emaIntake.div(WAD.muln(100));
 
       // Bought maxPerPeriod tokens so price should be up
       expect(currentPrice).to.eq.BN(expectedPrice);
@@ -672,8 +667,8 @@ contract("Coin Machine", (accounts) => {
 
       currentPrice = await coinMachine.getCurrentPrice();
       numAvailable = await coinMachine.getNumAvailable();
-      emaIntake = emaIntake.mul(WAD.sub(alphaAsWad)).divRound(WAD);
-      expectedPrice = emaIntake.divRound(WAD.muln(100));
+      emaIntake = emaIntake.mul(WAD.sub(alphaAsWad)).div(WAD);
+      expectedPrice = emaIntake.div(WAD.muln(100));
 
       expect(currentPrice).to.eq.BN(expectedPrice);
       expect(numAvailable).to.eq.BN(maxPerPeriod);
