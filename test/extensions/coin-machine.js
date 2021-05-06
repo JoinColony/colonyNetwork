@@ -95,6 +95,9 @@ contract("Coin Machine", (accounts) => {
       expect(identifier).to.equal(COIN_MACHINE);
       expect(version).to.eq.BN(coinMachineVersion);
 
+      const capabilityRoles = await coinMachine.getCapabilityRoles("0x0");
+      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+
       await coinMachine.finishUpgrade();
       await coinMachine.deprecate(true);
       await coinMachine.uninstall();

@@ -3,6 +3,7 @@
 import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE, SECONDS_PER_DAY, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
@@ -191,6 +192,9 @@ contract("Funding Queues", (accounts) => {
       const version = await fundingQueue.version();
       expect(identifier).to.equal(FUNDING_QUEUE);
       expect(version).to.eq.BN(fundingQueueVersion);
+
+      const capabilityRoles = await fundingQueue.getCapabilityRoles("0x0");
+      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
 
       await fundingQueue.finishUpgrade();
       await fundingQueue.deprecate(true);

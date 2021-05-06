@@ -3,6 +3,7 @@
 import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, SECONDS_PER_DAY } from "../../helpers/constants";
@@ -64,6 +65,9 @@ contract("Token Supplier", (accounts) => {
       await tokenSupplier.install(colony.address);
 
       await checkErrorRevert(tokenSupplier.install(colony.address), "extension-already-installed");
+
+      const capabilityRoles = await tokenSupplier.getCapabilityRoles("0x0");
+      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
 
       await tokenSupplier.finishUpgrade();
       await tokenSupplier.deprecate(true);

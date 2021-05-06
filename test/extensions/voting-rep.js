@@ -262,6 +262,9 @@ contract("Voting Reputation", (accounts) => {
       expect(identifier).to.equal(VOTING_REPUTATION);
       expect(version).to.eq.BN(reputationVotingVersion);
 
+      const capabilityRoles = await voting.getCapabilityRoles("0x0");
+      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+
       await voting.finishUpgrade();
       await voting.deprecate(true);
       await voting.uninstall();
@@ -457,6 +460,15 @@ contract("Voting Reputation", (accounts) => {
       // Provide proof for (3) instead of (2)
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
       await checkErrorRevert(voting.createMotion(1, 1, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
+    });
+
+    it("can create a motion using the deprecated interfaces", async () => {
+      const rootAction = await encodeTxData(colony, "mintTokens", [WAD]);
+      const domainAction = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+
+      await voting.createRootMotion(ADDRESS_ZERO, rootAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainMotion(1, UINT256_MAX, ADDRESS_ZERO, domainAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createDomainMotion(1, UINT256_MAX, domainAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
     });
   });
 

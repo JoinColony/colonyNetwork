@@ -336,16 +336,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   )
     public
   {
-    createDomainMotion(
-      _domainId,
-      _childSkillIndex,
-      address(0x0),
-      _action,
-      _key,
-      _value,
-      _branchMask,
-      _siblings
-    );
+    createDomainMotion(_domainId, _childSkillIndex, address(0x0), _action, _key, _value, _branchMask, _siblings);
   }
 
   /// @notice Stake on a motion

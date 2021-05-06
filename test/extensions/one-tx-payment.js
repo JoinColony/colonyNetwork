@@ -70,6 +70,9 @@ contract("One transaction payments", (accounts) => {
       expect(identifier).to.equal(ONE_TX_PAYMENT);
       expect(version).to.eq.BN(1);
 
+      const capabilityRoles = await oneTxPayment.getCapabilityRoles("0x0");
+      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+
       await oneTxPayment.finishUpgrade();
       await oneTxPayment.deprecate(true);
       await oneTxPayment.uninstall();
