@@ -205,6 +205,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     return (fundingPot.associatedType, fundingPot.associatedTypeId, fundingPot.payoutsWeCannotMake);
   }
 
+  // Deprecated
   function moveFundsBetweenPots(
     uint256 _permissionDomainId,
     uint256 _fromChildSkillIndex,
@@ -214,11 +215,25 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     uint256 _amount,
     address _token
   )
+    public
+  {
+    moveFundsBetweenPots(_permissionDomainId, _fromChildSkillIndex, _fromPot, _toPot, _amount, _token);
+  }
+
+  function moveFundsBetweenPots(
+    uint256 _permissionDomainId,
+    uint256 _fromChildSkillIndex,
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256 _amount,
+    address _token
+  )
   public
   stoppable
-  authDomain(_permissionDomainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot))
-  authDomain(_permissionDomainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot))
+  fundingPotExists(_fromPot)
+  fundingPotExists(_toPot)
   validFundingTransfer(_fromPot, _toPot)
+  authDomain(_permissionDomainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot))
   {
     FundingPot storage fromPot = fundingPots[_fromPot];
     FundingPot storage toPot = fundingPots[_toPot];
@@ -509,7 +524,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   }
 
   function getDomainFromFundingPot(uint256 _fundingPotId) public view returns (uint256 domainId) {
-    require(_fundingPotId <= fundingPotCount, "colony-funding-nonexistent-pot");
     FundingPot storage fundingPot = fundingPots[_fundingPotId];
 
     if (fundingPot.associatedType == FundingPotAssociatedType.Domain) {

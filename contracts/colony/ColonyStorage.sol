@@ -108,6 +108,11 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   bytes32 constant BYTES32_1 = bytes32(uint256(1));
 
   // Modifiers
+  modifier fundingPotExists(uint256 _fundingPotId) {
+    require(_fundingPotId <= fundingPotCount, "colony-funding-nonexistent-pot");
+    _;
+  }
+
   modifier validPayoutAmount(uint256 _amount) {
     require(_amount <= MAX_PAYOUT, "colony-payout-too-large");
     _;

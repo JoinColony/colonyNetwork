@@ -1141,6 +1141,23 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
 |_fromChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_fromPotId`
+|_fromPot|uint256|
+|_toPot|uint256|
+|_amount|uint256|
+|_token|address|
+
+
+### `moveFundsBetweenPots`
+
+Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_fromChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_fromPotId`
 |_toChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_toPotId`
 |_fromPot|uint256|Funding pot id providing the funds
 |_toPot|uint256|Funding pot id receiving the funds
