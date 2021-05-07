@@ -59,7 +59,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     uint256 fromPot;
     uint256 toPot;
     uint256 fromChildSkillIndex;
-    uint256 toChildSkillIndex;
+    uint256 toChildSkillIndex; // Deprecated
     uint256 totalRequested;
     uint256 totalPaid;
     uint256 lastUpdated;
@@ -82,7 +82,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 2;
+    return 3;
   }
 
   /// @notice Configures the extension
@@ -114,7 +114,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
   function createProposal(
     uint256 _domainId,
     uint256 _fromChildSkillIndex,
-    uint256 _toChildSkillIndex,
+    uint256 _toChildSkillIndex, // TODO: Remove
     uint256 _fromPot,
     uint256 _toPot,
     uint256 _totalRequested,
@@ -135,11 +135,6 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
       fromSkillId == colonyNetwork.getChildSkillId(domainSkillId, _fromChildSkillIndex),
       "funding-queue-bad-inheritence-from"
     );
-    require(
-      (domainSkillId == toSkillId && _toChildSkillIndex == UINT256_MAX) ||
-      toSkillId == colonyNetwork.getChildSkillId(domainSkillId, _toChildSkillIndex),
-      "funding-queue-bad-inheritence-to"
-    );
 
     proposalCount++;
     proposals[proposalCount] = Proposal(
@@ -151,7 +146,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
       _fromPot,
       _toPot,
       _fromChildSkillIndex,
-      _toChildSkillIndex,
+      0, // Deprecated _toChildSkillIndex
       _totalRequested,
       0,
       block.timestamp,
@@ -306,7 +301,6 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     colony.moveFundsBetweenPots(
         proposal.domainId,
         proposal.fromChildSkillIndex,
-        proposal.toChildSkillIndex,
         proposal.fromPot,
         proposal.toPot,
         actualFundingToTransfer,

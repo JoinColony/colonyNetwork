@@ -37,7 +37,7 @@ contract OneTxPayment is ColonyExtension {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 1;
+    return 2;
   }
 
   /// @notice Configures the extension
@@ -97,7 +97,7 @@ contract OneTxPayment is ColonyExtension {
       uint256 paymentId = colony.addPayment(1, _childSkillIndex, _workers[0], _tokens[0], _amounts[0], _domainId, _skillId);
       uint256 fundingPotId = colony.getPayment(paymentId).fundingPotId;
 
-      colony.moveFundsBetweenPots(1, UINT256_MAX, _childSkillIndex, 1, fundingPotId, _amounts[0], _tokens[0]);
+      colony.moveFundsBetweenPots(1, UINT256_MAX, 1, fundingPotId, _amounts[0], _tokens[0]);
 
       colony.finalizePayment(1, _childSkillIndex, paymentId);
       colony.claimPayment(paymentId, _tokens[0]);
@@ -108,7 +108,7 @@ contract OneTxPayment is ColonyExtension {
       uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
       uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
-      prepareFunding(_childSkillIndex, fundingPotId, _tokens, _amounts);
+      prepareFunding(fundingPotId, _tokens, _amounts);
 
       uint256 idx;
       uint256 slot;
@@ -258,11 +258,12 @@ contract OneTxPayment is ColonyExtension {
   }
 
   function prepareFunding(
-    uint256 _childSkillIndex,
     uint256 _fundingPotId,
     address[] memory _tokens,
     uint256[] memory _amounts
-  ) internal {
+  )
+    internal
+  {
     (
       uint256 uniqueTokensIdx,
       address[] memory uniqueTokens,
@@ -273,7 +274,6 @@ contract OneTxPayment is ColonyExtension {
       colony.moveFundsBetweenPots(
         1,
         UINT256_MAX,
-        _childSkillIndex,
         1,
         _fundingPotId,
         uniqueAmounts[i],
@@ -289,7 +289,9 @@ contract OneTxPayment is ColonyExtension {
     uint256 _fundingPotId,
     address[] memory _tokens,
     uint256[] memory _amounts
-  ) internal {
+  )
+    internal
+  {
     (
       uint256 uniqueTokensIdx,
       address[] memory uniqueTokens,
@@ -299,7 +301,6 @@ contract OneTxPayment is ColonyExtension {
     for (uint256 i; i < uniqueTokensIdx; i++) {
       colony.moveFundsBetweenPots(
         _permissionDomainId,
-        _childSkillIndex,
         _childSkillIndex,
         _domainPotId,
         _fundingPotId,
@@ -319,7 +320,7 @@ contract OneTxPayment is ColonyExtension {
   )
     internal
   {
-    colony.moveFundsBetweenPots(_permissionDomainId, _childSkillIndex, _childSkillIndex, _domainPotId, _fundingPotId, _amount, _token);
+    colony.moveFundsBetweenPots(_permissionDomainId, _childSkillIndex, _domainPotId, _fundingPotId, _amount, _token);
   }
 
   function finalizeAndClaim(uint256 _expenditureId, address payable[] memory  _workers, address[] memory _tokens) internal {
