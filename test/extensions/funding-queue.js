@@ -241,7 +241,6 @@ contract("Funding Queues", (accounts) => {
 
     it("cannot create a basic proposal with bad inheritence", async () => {
       await checkErrorRevert(fundingQueue.createProposal(1, 0, 1, 1, 3, WAD, token.address, { from: USER0 }), "funding-queue-bad-inheritence-from");
-      await checkErrorRevert(fundingQueue.createProposal(1, 1, 0, 3, 1, WAD, token.address, { from: USER0 }), "funding-queue-bad-inheritence-to");
     });
 
     it("can stake a proposal", async () => {
@@ -851,7 +850,7 @@ contract("Funding Queues", (accounts) => {
       await colony.setFundingRole(1, 0, fundingQueue.address, 2, true);
       await colony.addDomain(1, 0, 2);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, 1, 2, WAD, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, 2, WAD, token.address);
 
       await fundingQueue.createProposal(2, UINT256_MAX, 0, 2, 4, WAD, token.address, { from: USER0 });
       proposalId = await fundingQueue.getProposalCount();
