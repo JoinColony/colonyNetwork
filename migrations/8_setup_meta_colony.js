@@ -61,7 +61,8 @@ module.exports = async function (deployer, network, accounts) {
   const ColonyRoles = artifacts.require("./ColonyRoles");
   const ColonyTask = artifacts.require("./ColonyTask");
   const ColonyPayment = artifacts.require("./ColonyPayment");
-  const ContractRecovery = artifacts.require("./ContractRecovery");
+  const ColonyRecovery = artifacts.require("./ColonyRecovery");
+  const ColonyArbitraryTransaction = artifacts.require("./ColonyArbitraryTransaction");
 
   const colony = await Colony.new();
   const colonyFunding = await ColonyFunding.new();
@@ -69,16 +70,37 @@ module.exports = async function (deployer, network, accounts) {
   const colonyRoles = await ColonyRoles.new();
   const colonyTask = await ColonyTask.new();
   const colonyPayment = await ColonyPayment.new();
-  const contractRecovery = await ContractRecovery.deployed();
+  const colonyRecovery = await ColonyRecovery.new();
+  const colonyArbitraryTransaction = await ColonyArbitraryTransaction.new();
 
   const resolver3 = await Resolver.new();
-  await setupColonyVersionResolver(colony, colonyExpenditure, colonyTask, colonyPayment, colonyFunding, colonyRoles, contractRecovery, resolver3);
+  await setupColonyVersionResolver(
+    colony,
+    colonyExpenditure,
+    colonyTask,
+    colonyPayment,
+    colonyFunding,
+    colonyRoles,
+    colonyRecovery,
+    colonyArbitraryTransaction,
+    resolver3
+  );
   const v3responder = await Version3.new();
   await resolver3.register("version()", v3responder.address);
   await metaColony.addNetworkColonyVersion(3, resolver3.address);
 
   const resolver4 = await Resolver.new();
-  await setupColonyVersionResolver(colony, colonyExpenditure, colonyTask, colonyPayment, colonyFunding, colonyRoles, contractRecovery, resolver4);
+  await setupColonyVersionResolver(
+    colony,
+    colonyExpenditure,
+    colonyTask,
+    colonyPayment,
+    colonyFunding,
+    colonyRoles,
+    colonyRecovery,
+    colonyArbitraryTransaction,
+    resolver4
+  );
   const v4responder = await Version4.new();
   await resolver4.register("version()", v4responder.address);
   await metaColony.addNetworkColonyVersion(4, resolver4.address);

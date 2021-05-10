@@ -77,7 +77,8 @@ export async function setupColonyVersionResolver(
   colonyPayment,
   colonyFunding,
   colonyRoles,
-  contractRecovery,
+  colonyRecovery,
+  colonyArbitraryTransaction,
   resolver
 ) {
   const deployedImplementations = {};
@@ -87,7 +88,8 @@ export async function setupColonyVersionResolver(
   deployedImplementations.ColonyRoles = colonyRoles.address;
   deployedImplementations.ColonyPayment = colonyPayment.address;
   deployedImplementations.ColonyFunding = colonyFunding.address;
-  deployedImplementations.ContractRecovery = contractRecovery.address;
+  deployedImplementations.ColonyRecovery = colonyRecovery.address;
+  deployedImplementations.ColonyArbitraryTransaction = colonyArbitraryTransaction.address;
 
   await setupEtherRouter("IMetaColony", deployedImplementations, resolver);
 }

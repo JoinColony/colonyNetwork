@@ -26,7 +26,7 @@ import "./IRecovery.sol";
 
 /// @title Used for recovery in both ColonyNetwork and Colony instances
 /// @notice Implements functions defined in IRecovery interface
-contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignore-swc-123
+abstract contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignore-swc-123
   uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
 
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
@@ -58,7 +58,7 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
     recoveryApprovalCount = 0;
     recoveryEditedTimestamp = block.timestamp;
 
-    emit RecoveryStorageSlotSet(msg.sender, _slot, oldValue, _value);
+    emit RecoveryStorageSlotSet(msgSender(), _slot, oldValue, _value);
   }
 
   function isInRecoveryMode() public view returns (bool) {
@@ -70,15 +70,15 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
     recoveryApprovalCount = 0;
     recoveryEditedTimestamp = block.timestamp;
 
-    emit RecoveryModeEntered(msg.sender);
+    emit RecoveryModeEntered(msgSender());
   }
 
   function approveExitRecovery() public recovery auth {
-    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "colony-recovery-approval-already-given");  // ignore-swc-116
-    recoveryApprovalTimestamps[msg.sender] = block.timestamp;
+    require(recoveryApprovalTimestamps[msgSender()] < recoveryEditedTimestamp, "colony-recovery-approval-already-given");  // ignore-swc-116
+    recoveryApprovalTimestamps[msgSender()] = block.timestamp;
     recoveryApprovalCount++;
 
-    emit RecoveryModeExitApproved(msg.sender);
+    emit RecoveryModeExitApproved(msgSender());
   }
 
   function exitRecoveryMode() public recovery auth {
@@ -91,7 +91,7 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
     require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
     recoveryMode = false;
 
-    emit RecoveryModeExited(msg.sender);
+    emit RecoveryModeExited(msgSender());
   }
 
   // Can only be called by the root role.

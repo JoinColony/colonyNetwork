@@ -64,19 +64,19 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
   unowned(userNode, username)
   {
     require(bytes(username).length > 0, "colony-user-label-invalid");
-    require(bytes(userLabels[msg.sender]).length == 0, "colony-user-label-already-owned");
+    require(bytes(userLabels[msgSender()]).length == 0, "colony-user-label-already-owned");
 
     bytes32 subnode = keccak256(abi.encodePacked(username));
     bytes32 node = keccak256(abi.encodePacked(userNode, subnode));
 
-    userLabels[msg.sender] = username;
-    records[node].addr = msg.sender;
+    userLabels[msgSender()] = username;
+    records[node].addr = msgSender();
     records[node].orbitdb = orbitdb;
 
     ENS(ens).setSubnodeOwner(userNode, subnode, address(this));
     ENS(ens).setResolver(node, address(this));
 
-    emit UserLabelRegistered(msg.sender, subnode);
+    emit UserLabelRegistered(msgSender(), subnode);
   }
 
   function registerColonyLabel(string memory colonyName, string memory orbitdb)
@@ -86,19 +86,19 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
   stoppable
   {
     require(bytes(colonyName).length > 0, "colony-colony-label-invalid");
-    require(bytes(colonyLabels[msg.sender]).length == 0, "colony-already-labeled");
+    require(bytes(colonyLabels[msgSender()]).length == 0, "colony-already-labeled");
 
     bytes32 subnode = keccak256(abi.encodePacked(colonyName));
     bytes32 node = keccak256(abi.encodePacked(colonyNode, subnode));
 
-    colonyLabels[msg.sender] = colonyName;
-    records[node].addr = msg.sender;
+    colonyLabels[msgSender()] = colonyName;
+    records[node].addr = msgSender();
     records[node].orbitdb = orbitdb;
 
     ENS(ens).setSubnodeOwner(colonyNode, subnode, address(this));
     ENS(ens).setResolver(node, address(this));
 
-    emit ColonyLabelRegistered(msg.sender, subnode);
+    emit ColonyLabelRegistered(msgSender(), subnode);
   }
 
   function updateColonyOrbitDB(string memory orbitdb)
@@ -106,7 +106,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
   calledByColony
   stoppable
   {
-    string storage label = colonyLabels[msg.sender];
+    string storage label = colonyLabels[msgSender()];
     require(bytes(label).length > 0, "colony-colony-not-labeled");
     bytes32 subnode = keccak256(abi.encodePacked(label));
     bytes32 node = keccak256(abi.encodePacked(colonyNode, subnode));
@@ -118,7 +118,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
   notCalledByColony
   stoppable
   {
-    string storage label = userLabels[msg.sender];
+    string storage label = userLabels[msgSender()];
     require(bytes(label).length > 0, "colony-user-not-labeled");
     bytes32 subnode = keccak256(abi.encodePacked(label));
     bytes32 node = keccak256(abi.encodePacked(userNode, subnode));

@@ -27,7 +27,7 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
   function setRootRole(address _user, bool _setTo) public stoppable auth {
     ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
 
-    emit ColonyRoleSet(msg.sender, _user, 1, uint8(ColonyRole.Root), _setTo);
+    emit ColonyRoleSet(msgSender(), _user, 1, uint8(ColonyRole.Root), _setTo);
   }
 
   function setArbitrationRole(
@@ -40,7 +40,7 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
   {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
 
-    emit ColonyRoleSet(msg.sender, _user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
+    emit ColonyRoleSet(msgSender(), _user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
   }
 
   function setArchitectureRole(
@@ -53,7 +53,7 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
   {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Architecture), _setTo);
 
-    emit ColonyRoleSet(msg.sender, _user, _domainId, uint8(ColonyRole.Architecture), _setTo);
+    emit ColonyRoleSet(msgSender(), _user, _domainId, uint8(ColonyRole.Architecture), _setTo);
   }
 
   function setFundingRole(
@@ -66,7 +66,7 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
   {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
 
-    emit ColonyRoleSet(msg.sender, _user, _domainId, uint8(ColonyRole.Funding), _setTo);
+    emit ColonyRoleSet(msgSender(), _user, _domainId, uint8(ColonyRole.Funding), _setTo);
   }
 
   function setAdministrationRole(
@@ -79,7 +79,7 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
   {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
 
-    emit ColonyRoleSet(msg.sender, _user, _domainId, uint8(ColonyRole.Administration), _setTo);
+    emit ColonyRoleSet(msgSender(), _user, _domainId, uint8(ColonyRole.Administration), _setTo);
   }
 
   function setUserRoles(
@@ -112,7 +112,7 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
           }
           emit RecoveryRoleSet(_user, setTo);
         }
-        emit ColonyRoleSet(msg.sender, _user, _domainId, roleId, setTo);
+        emit ColonyRoleSet(msgSender(), _user, _domainId, roleId, setTo);
 
       }
       roles >>= 1;

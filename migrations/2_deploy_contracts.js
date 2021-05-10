@@ -1,6 +1,7 @@
 /* globals artifacts */
 
-const ContractRecovery = artifacts.require("./ContractRecovery");
+const ColonyRecovery = artifacts.require("./ColonyRecovery");
+const ColonyNetworkRecovery = artifacts.require("./ColonyNetworkRecovery");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("./ColonyNetworkAuction");
@@ -31,5 +32,6 @@ module.exports = (deployer, network) => {
   deployer.deploy(ReputationMiningCycleBinarySearch);
   deployer.deploy(EtherRouter);
   deployer.deploy(Resolver);
-  deployer.deploy(ContractRecovery);
+  deployer.deploy(ColonyRecovery);
+  deployer.deploy(ColonyNetworkRecovery);
 };
