@@ -33,9 +33,9 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
   // All colonies are able to manage their Local (domain associated) skills
   modifier allowedToAddSkill(bool globalSkill) {
     if (globalSkill) {
-      require(msg.sender == metaColony, "colony-must-be-meta-colony");
+      require(msgSender() == metaColony, "colony-must-be-meta-colony");
     } else {
-      require(_isColony[msg.sender] || msg.sender == address(this), "colony-caller-must-be-colony");
+      require(_isColony[msgSender()] || msgSender() == address(this), "colony-caller-must-be-colony");
     }
     _;
   }
@@ -315,7 +315,7 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
       _user,
       _amount,
       _skillId,
-      msg.sender,
+      msgSender(),
       nParents,
       nChildren
     );
@@ -385,12 +385,12 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
 
     // Assign all permissions in root domain
     IColony colony = IColony(_colonyAddress);
-    colony.setRecoveryRole(msg.sender);
-    colony.setRootRole(msg.sender, true);
-    colony.setArbitrationRole(1, UINT256_MAX, msg.sender, 1, true);
-    colony.setArchitectureRole(1, UINT256_MAX, msg.sender, 1, true);
-    colony.setFundingRole(1, UINT256_MAX, msg.sender, 1, true);
-    colony.setAdministrationRole(1, UINT256_MAX, msg.sender, 1, true);
+    colony.setRecoveryRole(msgSender());
+    colony.setRootRole(msgSender(), true);
+    colony.setArbitrationRole(1, UINT256_MAX, msgSender(), 1, true);
+    colony.setArchitectureRole(1, UINT256_MAX, msgSender(), 1, true);
+    colony.setFundingRole(1, UINT256_MAX, msgSender(), 1, true);
+    colony.setAdministrationRole(1, UINT256_MAX, msgSender(), 1, true);
 
     // Colony will not have owner
     DSAuth dsauth = DSAuth(_colonyAddress);

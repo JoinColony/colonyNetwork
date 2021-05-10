@@ -27,7 +27,7 @@ import "./ColonyNetworkDataTypes.sol";
 // ignore-file-swc-108
 
 
-contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
+contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   // Number of colonies in the network
   uint256 colonyCount; // Storage slot 6
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
@@ -100,18 +100,29 @@ contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   // Used for whitelisting payout tokens
   mapping (address => bool) payoutWhitelist; // Storage slot 40
 
+  mapping(address => uint256) metatransactionNonces; // Storage slot 41
+
+
   modifier calledByColony() {
-    require(_isColony[msg.sender], "colony-caller-must-be-colony");
+    require(_isColony[msgSender()], "colony-caller-must-be-colony");
     _;
   }
 
   modifier notCalledByColony() {
-    require(!_isColony[msg.sender], "colony-caller-must-not-be-colony");
+    require(!_isColony[msgSender()], "colony-caller-must-not-be-colony");
     _;
   }
 
   modifier calledByMetaColony() {
-    require(msg.sender == metaColony, "colony-caller-must-be-meta-colony");
+    require(msgSender() == metaColony, "colony-caller-must-be-meta-colony");
     _;
+  }
+
+  function getMetatransactionNonce(address user) public override returns(uint256 nonce){
+    return metatransactionNonces[user];
+  }
+
+  function incrementMetatransactionNonce(address user) internal override{
+    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
   }
 }

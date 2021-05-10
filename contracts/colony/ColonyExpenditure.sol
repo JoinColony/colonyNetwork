@@ -34,7 +34,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     defaultGlobalClaimDelay = _defaultGlobalClaimDelay;
 
-    emit ExpenditureGlobalClaimDelaySet(msg.sender, _defaultGlobalClaimDelay);
+    emit ExpenditureGlobalClaimDelaySet(msgSender(), _defaultGlobalClaimDelay);
   }
 
   function makeExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId)
@@ -51,7 +51,7 @@ contract ColonyExpenditure is ColonyStorage {
 
     expenditures[expenditureCount] = Expenditure({
       status: ExpenditureStatus.Draft,
-      owner: msg.sender,
+      owner: msgSender(),
       fundingPotId: fundingPotCount,
       domainId: _domainId,
       finalizedTimestamp: 0,
@@ -59,7 +59,7 @@ contract ColonyExpenditure is ColonyStorage {
     });
 
     emit FundingPotAdded(fundingPotCount);
-    emit ExpenditureAdded(msg.sender, expenditureCount);
+    emit ExpenditureAdded(msgSender(), expenditureCount);
 
     return expenditureCount;
   }
@@ -73,7 +73,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditures[_id].owner = _newOwner;
 
-    emit ExpenditureTransferred(msg.sender, _id, _newOwner);
+    emit ExpenditureTransferred(msgSender(), _id, _newOwner);
   }
 
   // Deprecated
@@ -91,7 +91,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditures[_id].owner = _newOwner;
 
-    emit ExpenditureTransferred(msg.sender, _id, _newOwner);
+    emit ExpenditureTransferred(msgSender(), _id, _newOwner);
   }
 
   function cancelExpenditure(uint256 _id)
@@ -103,7 +103,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditures[_id].status = ExpenditureStatus.Cancelled;
 
-    emit ExpenditureCancelled(msg.sender, _id);
+    emit ExpenditureCancelled(msgSender(), _id);
   }
 
   function lockExpenditure(uint256 _id)
@@ -115,7 +115,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditures[_id].status = ExpenditureStatus.Locked;
 
-    emit ExpenditureLocked(msg.sender, _id);
+    emit ExpenditureLocked(msgSender(), _id);
   }
 
   function finalizeExpenditure(uint256 _id)
@@ -131,7 +131,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditures[_id].status = ExpenditureStatus.Finalized;
     expenditures[_id].finalizedTimestamp = block.timestamp;
 
-    emit ExpenditureFinalized(msg.sender, _id);
+    emit ExpenditureFinalized(msgSender(), _id);
   }
 
   function setExpenditureMetadata(uint256 _id, string memory _metadata)
@@ -141,7 +141,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
-    emit ExpenditureMetadataSet(msg.sender, _id, _metadata);
+    emit ExpenditureMetadataSet(msgSender(), _id, _metadata);
   }
 
   function setExpenditureMetadata(
@@ -155,7 +155,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureExists(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
-    emit ExpenditureMetadataSet(msg.sender, _id, _metadata);
+    emit ExpenditureMetadataSet(msgSender(), _id, _metadata);
   }
 
   function setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address payable[] memory _recipients)
@@ -170,7 +170,7 @@ contract ColonyExpenditure is ColonyStorage {
     for (uint256 i; i < _slots.length; i++) {
       expenditureSlots[_id][_slots[i]].recipient = _recipients[i];
 
-      emit ExpenditureRecipientSet(msg.sender, _id, _slots[i], _recipients[i]);
+      emit ExpenditureRecipientSet(msgSender(), _id, _slots[i], _recipients[i]);
     }
   }
 
@@ -200,7 +200,7 @@ contract ColonyExpenditure is ColonyStorage {
       expenditureSlots[_id][_slots[i]].skills = new uint256[](1);
       expenditureSlots[_id][_slots[i]].skills[0] = _skillIds[i];
 
-      emit ExpenditureSkillSet(msg.sender, _id, _slots[i], _skillIds[i]);
+      emit ExpenditureSkillSet(msgSender(), _id, _slots[i], _skillIds[i]);
     }
   }
 
@@ -216,7 +216,7 @@ contract ColonyExpenditure is ColonyStorage {
     for (uint256 i; i < _slots.length; i++) {
       expenditureSlots[_id][_slots[i]].claimDelay = _claimDelays[i];
 
-      emit ExpenditureClaimDelaySet(msg.sender, _id, _slots[i], _claimDelays[i]);
+      emit ExpenditureClaimDelaySet(msgSender(), _id, _slots[i], _claimDelays[i]);
     }
   }
 
@@ -232,7 +232,7 @@ contract ColonyExpenditure is ColonyStorage {
     for (uint256 i; i < _slots.length; i++) {
       expenditureSlots[_id][_slots[i]].payoutModifier = _payoutModifiers[i];
 
-      emit ExpenditurePayoutModifierSet(msg.sender, _id, _slots[i], _payoutModifiers[i]);
+      emit ExpenditurePayoutModifierSet(msgSender(), _id, _slots[i], _payoutModifiers[i]);
     }
   }
 
