@@ -59,6 +59,30 @@ contract OneTxPayment is ColonyExtension {
     selfdestruct(address(uint160(address(colony))));
   }
 
+  bytes4 constant MAKE_PAYMENT_SIG = bytes4(keccak256(
+    "makePayment(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"
+  ));
+
+  bytes4 constant MAKE_PAYMENT_DOMAIN_SIG = bytes4(keccak256(
+    "makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"
+  ));
+
+  bytes32 constant REQUIRED_ROLES = (
+    bytes32(uint256(1)) << uint8(FUNDING) |
+    bytes32(uint256(1)) << uint8(ADMINISTRATION)
+  );
+
+  /// @notice Return the permissions required for each function
+  /// @param _sig The function signature
+  /// @return The byte32 of permissions required
+  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32) {
+    if (_sig == MAKE_PAYMENT_SIG || _sig == MAKE_PAYMENT_DOMAIN_SIG) {
+      return REQUIRED_ROLES;
+    } else {
+      return bytes32(0);
+    }
+  }
+
   /// @notice Completes a colony payment in a single transaction
   /// @dev Assumes that each entity holds administration and funding roles in the root domain
   /// @param _permissionDomainId The domainId in which the _contract_ has permissions to add a payment and fund it

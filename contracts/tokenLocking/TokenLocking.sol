@@ -216,7 +216,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
       userLock.balance = add(userLock.balance, _amount);
     } else {
       // If the transfer fails (for any reason), add tokens to pendingBalance
-      // slither-disable-next-line unused-return
+      // slither-disable-next-line unchecked-transfer
       try ERC20Extended(_token).transfer(_user, _amount) returns (bool success) {
         if (!success) {
           userLock.pendingBalance = add(userLock.pendingBalance, _amount);

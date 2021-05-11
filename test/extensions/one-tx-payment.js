@@ -70,6 +70,9 @@ contract("One transaction payments", (accounts) => {
       expect(identifier).to.equal(ONE_TX_PAYMENT);
       expect(version).to.eq.BN(1);
 
+      const capabilityRoles = await oneTxPayment.getCapabilityRoles("0x0");
+      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+
       await oneTxPayment.finishUpgrade();
       await oneTxPayment.deprecate(true);
       await oneTxPayment.uninstall();
@@ -212,7 +215,7 @@ contract("One transaction payments", (accounts) => {
 
     it("should not allow an admin to specify a non-existent domain", async () => {
       await checkErrorRevert(
-        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 99, GLOBAL_SKILL_ID),
+        oneTxPayment.makePaymentFundedFromDomain(1, 98, 1, 98, [USER1], [token.address], [10], 99, GLOBAL_SKILL_ID),
         "colony-network-out-of-range-child-skill-index"
       );
     });

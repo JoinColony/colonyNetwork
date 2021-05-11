@@ -2,6 +2,7 @@
 
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, IPFS_HASH } from "../../helpers/constants";
@@ -64,6 +65,9 @@ contract("Whitelist", (accounts) => {
       const version = await whitelist.version();
       expect(identifier).to.equal(WHITELIST);
       expect(version).to.eq.BN(whitelistVersion);
+
+      const capabilityRoles = await whitelist.getCapabilityRoles("0x0");
+      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
 
       await whitelist.finishUpgrade();
       await whitelist.deprecate(true);

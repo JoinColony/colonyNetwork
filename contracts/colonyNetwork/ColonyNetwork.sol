@@ -280,9 +280,13 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
   }
 
   function getChildSkillId(uint _skillId, uint _childSkillIndex) public view returns (uint256) {
-    Skill storage skill = skills[_skillId];
-    require(_childSkillIndex < skill.children.length, "colony-network-out-of-range-child-skill-index");
-    return skill.children[_childSkillIndex];
+    if (_childSkillIndex == UINT256_MAX) {
+      return _skillId;
+    } else {
+      Skill storage skill = skills[_skillId];
+      require(_childSkillIndex < skill.children.length, "colony-network-out-of-range-child-skill-index");
+      return skill.children[_childSkillIndex];
+    }
   }
 
   function deprecateSkill(uint256 _skillId) public stoppable
