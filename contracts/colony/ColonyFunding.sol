@@ -205,6 +205,27 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     return (fundingPot.associatedType, fundingPot.associatedTypeId, fundingPot.payoutsWeCannotMake);
   }
 
+ function moveFundsBetweenPots(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    uint256 _fromChildSkillIndex,
+    uint256 _toChildSkillIndex,
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256 _amount,
+    address _token
+  )
+  public
+  stoppable
+  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  authDomain(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot))
+  authDomain(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot))
+  validFundingTransfer(_fromPot, _toPot)
+  {
+    moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
+  }
+
   function moveFundsBetweenPots(
     uint256 _permissionDomainId,
     uint256 _fromChildSkillIndex,
@@ -220,6 +241,16 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   authDomain(_permissionDomainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot))
   validFundingTransfer(_fromPot, _toPot)
   {
+    moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
+  }
+
+  function moveFundsBetweenPotsFunctionality(
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256 _amount,
+    address _token
+  )
+  internal {
     FundingPot storage fromPot = fundingPots[_fromPot];
     FundingPot storage toPot = fundingPots[_toPot];
 
