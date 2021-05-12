@@ -145,7 +145,9 @@ export async function setupFundedTask({
 
   const childSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, task.domainId);
   await colony.setFundingRole(1, UINT256_MAX, manager, 1, true);
-  await colony.moveFundsBetweenPots(1, UINT256_MAX, childSkillIndex, 1, task.fundingPotId, totalPayouts, tokenAddress, { from: manager });
+  await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, childSkillIndex, 1, task.fundingPotId, totalPayouts, tokenAddress, {
+    from: manager,
+  });
   await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout, { from: manager });
   await assignRoles({ colony, taskId, manager, evaluator, worker });
 

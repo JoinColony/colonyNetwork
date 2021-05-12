@@ -41,7 +41,7 @@ contract("Colony Staking", (accounts) => {
     await colony.setExpenditureRecipient(1, 1, USER1);
 
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-    await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 3, WAD.muln(200), token.address);
+    await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 3, WAD.muln(200), token.address);
     await colony.setExpenditurePayout(1, 0, token.address, WAD.muln(100));
     await colony.setExpenditurePayout(1, 1, token.address, WAD.muln(100));
 

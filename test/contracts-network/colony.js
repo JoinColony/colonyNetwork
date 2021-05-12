@@ -351,7 +351,7 @@ contract("Colony", (accounts) => {
 
     it("cannot burn more tokens than are in the root funding pot", async () => {
       const amount = await colony.getFundingPotBalance(1, token.address);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, amount.divn(2), token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, amount.divn(2), token.address);
 
       await checkErrorRevert(colony.burnTokens(token.address, amount), "colony-not-enough-tokens");
     });

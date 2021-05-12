@@ -467,7 +467,6 @@ contract("Voting Reputation", (accounts) => {
       const domainAction = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
 
       await voting.createRootMotion(ADDRESS_ZERO, rootAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      await voting.createDomainMotion(1, UINT256_MAX, ADDRESS_ZERO, domainAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       await voting.createDomainMotion(1, UINT256_MAX, domainAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
     });
 
