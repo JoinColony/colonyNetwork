@@ -383,7 +383,7 @@ Executes a task role update transaction `_data` which is approved and signed by 
 
 ### `finalizeExpenditure`
 
-Finalizes the expenditure and prevents further editing. Can only be called by expenditure owner.
+Finalizes the expenditure and allows for funds to be claimed. Can only be called by expenditure owner.
 
 
 **Parameters**
@@ -1039,6 +1039,18 @@ Install an extension to the colony. Secured function to authorised members.
 |version|uint256|The new extension version to install
 
 
+### `lockExpenditure`
+
+Locks the expenditure and prevents further editing. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+
+
 ### `lockToken`
 
 Lock the colony's token. Can only be called by a network-managed extension.
@@ -1365,19 +1377,16 @@ Update the default global claim delay for expenditures
 
 ### `setExpenditureClaimDelay`
 
-DEPRECATED Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
+Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
 
-*Note: This is now deprecated and will be removed in a future version*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
 |_id|uint256|Expenditure identifier
 |_slot|uint256|Number of the slot
-|_claimDelay|uint256|Time (in seconds) to delay claiming payout after finalization
+|_claimDelay|uint256|Duration of time (in seconds) to delay
 
 
 ### `setExpenditurePayout`
@@ -1393,23 +1402,6 @@ Set the token payout on an expenditure slot. Can only be called by expenditure o
 |_slot|uint256|Number of the slot
 |_token|address|Address of the token, `0x0` value indicates Ether
 |_amount|uint256|Payout amount
-
-
-### `setExpenditurePayoutModifier`
-
-DEPRECATED Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
-
-*Note: This is now deprecated and will be removed in a future version*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
-|_id|uint256|Expenditure identifier
-|_slot|uint256|Number of the slot
-|_payoutModifier|int256|Modifier to their payout (between -1 and 1, denominated in WADs, 0 means no modification)
 
 
 ### `setExpenditureRecipient`

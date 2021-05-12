@@ -872,6 +872,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
 
       if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
+        // 50% gets 0% of loser's stake, 100% gets 100% of loser's stake, linear in between
         stakerReward = wmul(stakeFraction, add(winnerStake, wmul(loserStake, winShare - WAD)));
       } else {
         stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));

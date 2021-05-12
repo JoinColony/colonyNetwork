@@ -361,7 +361,11 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _id Expenditure identifier
   function cancelExpenditure(uint256 _id) external;
 
-  /// @notice Finalizes the expenditure and prevents further editing. Can only be called by expenditure owner.
+  /// @notice Locks the expenditure and prevents further editing. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  function lockExpenditure(uint256 _id) external;
+
+  /// @notice Finalizes the expenditure and allows for funds to be claimed. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   function finalizeExpenditure(uint256 _id) external;
 
@@ -384,38 +388,11 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _skillId Id of the new skill to set
   function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId) external;
 
-  /// @notice DEPRECATED Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
-  /// @dev This is now deprecated and will be removed in a future version
-  /// @dev Note that when determining payouts the payoutModifier is incremented by WAD and converted into payoutScalar
-  /// @param _permissionDomainId The domainId in which I have the permission to take this action
-  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
-  /// (only used if `_permissionDomainId` is different to `_domainId`)
+  /// @notice Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
-  /// @param _payoutModifier Modifier to their payout (between -1 and 1, denominated in WADs, 0 means no modification)
-  function setExpenditurePayoutModifier(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    uint256 _slot,
-    int256 _payoutModifier
-    ) external;
-
-  /// @notice DEPRECATED Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
-  /// @dev This is now deprecated and will be removed in a future version
-  /// @param _permissionDomainId The domainId in which I have the permission to take this action
-  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
-  /// (only used if `_permissionDomainId` is different to `_domainId`)
-  /// @param _id Expenditure identifier
-  /// @param _slot Number of the slot
-  /// @param _claimDelay Time (in seconds) to delay claiming payout after finalization
-  function setExpenditureClaimDelay(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    uint256 _slot,
-    uint256 _claimDelay
-    ) external;
+  /// @param _claimDelay Duration of time (in seconds) to delay
+  function setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay) external;
 
   /// @notice Set arbitrary state on an expenditure slot. Can only be called by Arbitration role.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action

@@ -565,7 +565,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   public
   stoppable
   expenditureExists(_id)
-  expenditureActive(_id)
+  expenditureDraft(_id)
   expenditureOnlyOwner(_id)
   validPayoutAmount(_amount)
   {

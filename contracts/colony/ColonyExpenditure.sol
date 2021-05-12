@@ -50,7 +50,7 @@ contract ColonyExpenditure is ColonyStorage {
     fundingPots[fundingPotCount].associatedTypeId = expenditureCount;
 
     expenditures[expenditureCount] = Expenditure({
-      status: ExpenditureStatus.Active,
+      status: ExpenditureStatus.Draft,
       owner: msg.sender,
       fundingPotId: fundingPotCount,
       domainId: _domainId,
@@ -68,7 +68,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
     expenditures[_id].owner = _newOwner;
@@ -87,7 +87,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraft(_id)
   {
     expenditures[_id].owner = _newOwner;
 
@@ -98,7 +98,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
     expenditures[_id].status = ExpenditureStatus.Cancelled;
@@ -106,13 +106,30 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureCancelled(msg.sender, _id);
   }
 
+  function lockExpenditure(uint256 _id)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    expenditures[_id].status = ExpenditureStatus.Locked;
+
+    emit ExpenditureLocked(msg.sender, _id);
+  }
+
   function finalizeExpenditure(uint256 _id)
     public
     stoppable
     expenditureExists(_id)
-    expenditureActive(_id)
     expenditureOnlyOwner(_id)
   {
+    require(
+      expenditures[_id].status == ExpenditureStatus.Draft ||
+      expenditures[_id].status == ExpenditureStatus.Locked,
+      "colony-expenditure-not-draft-or-active"
+    );
+
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     require(fundingPot.payoutsWeCannotMake == 0, "colony-expenditure-not-funded");
 
@@ -126,7 +143,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
     expenditureSlots[_id][_slot].recipient = _recipient;
@@ -138,7 +155,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraft(_id)
     expenditureOnlyOwner(_id)
     skillExists(_skillId)
     validGlobalSkill(_skillId)
@@ -152,37 +169,16 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureSkillSet(msg.sender, _id, _slot, _skillId);
   }
 
-  // Deprecated
-  function setExpenditurePayoutModifier(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    uint256 _slot,
-    int256 _payoutModifier
-  )
+  function setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)
     public
     stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
-  {
-    require(_payoutModifier <= MAX_PAYOUT_MODIFIER, "colony-expenditure-payout-modifier-too-large");
-    require(_payoutModifier >= MIN_PAYOUT_MODIFIER, "colony-expenditure-payout-modifier-too-small");
-
-    expenditureSlots[_id][_slot].payoutModifier = _payoutModifier;
-  }
-
-  // Deprecated
-  function setExpenditureClaimDelay(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    uint256 _slot,
-    uint256 _claimDelay
-  )
-    public
-    stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
   {
     expenditureSlots[_id][_slot].claimDelay = _claimDelay;
+
+    emit ExpenditureClaimDelaySet(msg.sender, _id, _slot, _claimDelay);
   }
 
   uint256 constant EXPENDITURES_SLOT = 25;
@@ -215,6 +211,15 @@ contract ColonyExpenditure is ColonyStorage {
       require(_keys.length >= 2, "colony-expenditure-bad-keys");
       uint256 offset = uint256(_keys[1]);
       require(offset <= 3, "colony-expenditure-bad-offset");
+
+      // Validate payout modifier
+      if (offset == 2) {
+        require(
+          int256(_value) <= MAX_PAYOUT_MODIFIER &&
+          int256(_value) >= MIN_PAYOUT_MODIFIER,
+          "colony-expenditure-bad-payout-modifier"
+        );
+      }
 
     // Should always be two mappings
     } else if (_storageSlot == EXPENDITURESLOTPAYOUTS_SLOT) {
