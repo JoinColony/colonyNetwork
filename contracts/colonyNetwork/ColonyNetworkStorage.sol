@@ -117,12 +117,4 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
     require(msgSender() == metaColony, "colony-caller-must-be-meta-colony");
     _;
   }
-
-  function getMetatransactionNonce(address user) public override returns(uint256 nonce){
-    return metatransactionNonces[user];
-  }
-
-  function incrementMetatransactionNonce(address user) internal override{
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
-  }
 }

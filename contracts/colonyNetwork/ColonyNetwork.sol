@@ -349,6 +349,16 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
     emit TokenWhitelisted(_token, _status);
   }
 
+
+  function getMetatransactionNonce(address user) public returns(uint256 nonce){
+    return metatransactionNonces[user];
+  }
+
+  function incrementMetatransactionNonce(address user) internal {
+    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+  }
+
+
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {
     require(_tokenAddress != address(0x0), "colony-token-invalid-address");
     require(colonyVersionResolver[_version] != address(0x00), "colony-network-invalid-version");
