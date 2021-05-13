@@ -19,12 +19,13 @@ pragma solidity >=0.7.3; // ignore-swc-103
 pragma experimental ABIEncoderV2;
 
 import "./../common/IRecovery.sol";
+import "./../common/IBasicMetaTransaction.sol";
 import "./ColonyDataTypes.sol";
 
 
 /// @title Colony interface
 /// @notice All externally available functions are available here and registered to work with EtherRouter Network contract
-interface IColony is ColonyDataTypes, IRecovery {
+interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   // Implemented in DSAuth.sol
   /// @notice Get the `ColonyAuthority` for the colony.
   /// @return colonyAuthority The `ColonyAuthority` contract address

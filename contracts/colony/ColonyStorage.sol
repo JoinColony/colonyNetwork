@@ -336,12 +336,4 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
       success := call(gas(), to, value, add(data, 0x20), mload(data), 0, 0)
     }
   }
-
-  function getMetatransactionNonce(address user) public override returns(uint256 nonce){
-    return metatransactionNonces[user];
-  }
-
-  function incrementMetatransactionNonce(address user) internal override {
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
-  }
 }
