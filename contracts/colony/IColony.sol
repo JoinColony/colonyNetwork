@@ -375,6 +375,12 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _recipient Address of the recipient
   function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient) external;
 
+  /// @notice Sets the recipients in sequential expenditure slots. Can only be called by expenditure owner.
+  /// @param _id Id of the expenditure
+  /// @param _firstSlot Starting slot to set recipients
+  /// @param _recipients Addresses of the recipients
+  function setExpenditureRecipients(uint256 _id, uint256 _firstSlot, address payable[] memory _recipients) external;
+
   /// @notice Set the token payout on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Id of the expenditure
   /// @param _slot Number of the slot
@@ -382,17 +388,36 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _amount Payout amount
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount) external;
 
+  /// @notice Set the token payouts in sequential expenditure slots. Can only be called by expenditure owner.
+  /// @param _id Id of the expenditure
+  /// @param _firstSlot Starting slot to set payouts
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amounts Payout amounts
+  function setExpenditurePayouts(uint256 _id, uint256 _firstSlot, address _token, uint256[] memory _amounts) external;
+
   /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
   /// @param _skillId Id of the new skill to set
   function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId) external;
 
+  /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  /// @param _firstSlot Starting slot to set skills
+  /// @param _skillIds Ids of the new skills to set
+  function setExpenditureSkills(uint256 _id, uint256 _firstSlot, uint256[] memory _skillIds) external;
+
   /// @notice Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
   /// @param _claimDelay Duration of time (in seconds) to delay
   function setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay) external;
+
+  /// @notice Sets the claim delays in sequential expenditure slots. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  /// @param _firstSlot Starting slot to set claim delays
+  /// @param _claimDelays Durations of time (in seconds) to delay
+  function setExpenditureClaimDelays(uint256 _id, uint256 _firstSlot, uint256[] memory _claimDelays) external;
 
   /// @notice Set arbitrary state on an expenditure slot. Can only be called by Arbitration role.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action

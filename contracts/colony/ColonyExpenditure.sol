@@ -139,46 +139,95 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureFinalized(msg.sender, _id);
   }
 
+  function setExpenditureRecipients(uint256 _id, uint256 _firstSlot, address payable[] memory _recipients)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    for (uint256 i; i < _recipients.length; i++) {
+      uint256 slot = _firstSlot + i;
+      expenditureSlots[_id][slot].recipient = _recipients[i];
+
+      emit ExpenditureRecipientSet(msg.sender, _id, slot, _recipients[i]);
+    }
+  }
+
+  function setExpenditureSkills(uint256 _id, uint256 _firstSlot, uint256[] memory _skillIds)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+
+    for (uint256 i; i < _skillIds.length; i++) {
+      uint256 slot = _firstSlot + i;
+
+      require(
+        _skillIds[i] > 0 && _skillIds[i] <= colonyNetworkContract.getSkillCount(),
+        "colony-skill-does-not-exist"
+      );
+
+      Skill memory skill = colonyNetworkContract.getSkill(_skillIds[i]);
+      require(skill.globalSkill, "colony-not-global-skill");
+      require(!skill.deprecated, "colony-deprecated-global-skill");
+
+      // We only allow setting of the first skill here.
+      // If we allow more in the future, make sure to have a hard limit that
+      // comfortably limits respondToChallenge's gas.
+      expenditureSlots[_id][slot].skills = new uint256[](1);
+      expenditureSlots[_id][slot].skills[0] = _skillIds[i];
+
+      emit ExpenditureSkillSet(msg.sender, _id, slot, _skillIds[i]);
+    }
+  }
+
+  function setExpenditureClaimDelays(uint256 _id, uint256 _firstSlot, uint256[] memory _claimDelays)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    for (uint256 i; i < _claimDelays.length; i++) {
+      uint256 slot = _firstSlot + i;
+      expenditureSlots[_id][slot].claimDelay = _claimDelays[i];
+
+      emit ExpenditureClaimDelaySet(msg.sender, _id, slot, _claimDelays[i]);
+    }
+  }
+
+  // Deprecated
   function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient)
     public
     stoppable
-    expenditureExists(_id)
-    expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
   {
-    expenditureSlots[_id][_slot].recipient = _recipient;
-
-    emit ExpenditureRecipientSet(msg.sender, _id, _slot, _recipient);
+    address payable[] memory recipients = new address payable[](1);
+    recipients[0] = _recipient;
+    setExpenditureRecipients(_id, _slot, recipients);
   }
 
+  // Deprecated
   function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId)
     public
     stoppable
-    expenditureExists(_id)
-    expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
-    skillExists(_skillId)
-    validGlobalSkill(_skillId)
   {
-    // We only allow setting of the first skill here.
-    // If we allow more in the future, make sure to have a hard limit that
-    // comfortably limits respondToChallenge's gas.
-    expenditureSlots[_id][_slot].skills = new uint256[](1);
-    expenditureSlots[_id][_slot].skills[0] = _skillId;
-
-    emit ExpenditureSkillSet(msg.sender, _id, _slot, _skillId);
+    uint256[] memory skillIds = new uint256[](1);
+    skillIds[0] = _skillId;
+    setExpenditureSkills(_id, _slot, skillIds);
   }
 
+  // Deprecated
   function setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)
     public
     stoppable
-    expenditureExists(_id)
-    expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
   {
-    expenditureSlots[_id][_slot].claimDelay = _claimDelay;
-
-    emit ExpenditureClaimDelaySet(msg.sender, _id, _slot, _claimDelay);
+    uint256[] memory claimDelays = new uint256[](1);
+    claimDelays[0] = _claimDelay;
+    setExpenditureClaimDelays(_id, _slot, claimDelays);
   }
 
   uint256 constant EXPENDITURES_SLOT = 25;

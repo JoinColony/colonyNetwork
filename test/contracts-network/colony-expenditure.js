@@ -2,6 +2,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import { BN } from "bn.js";
+import { ethers } from "ethers";
 
 import { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } from "../../helpers/test-helper";
@@ -19,6 +20,7 @@ const Token = artifacts.require("Token");
 contract("Colony Expenditure", (accounts) => {
   const SLOT0 = 0;
   const SLOT1 = 1;
+  const SLOT2 = 2;
 
   const DRAFT = 0;
   const CANCELLED = 1;
@@ -149,6 +151,7 @@ contract("Colony Expenditure", (accounts) => {
 
   describe("when updating expenditures", () => {
     let expenditureId;
+    let expenditureSlot;
 
     beforeEach(async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1, { from: ADMIN });
@@ -159,13 +162,58 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditureSkill(100, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN }), "colony-expenditure-does-not-exist");
     });
 
-    it("should allow owners to update a slot skill", async () => {
-      let expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
-      expect(expenditureSlot.skills.length).to.be.zero;
+    it("should allow owners to update a slot recipient", async () => {
+      await colony.setExpenditureRecipient(expenditureId, SLOT0, USER, { from: ADMIN });
 
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
+      expect(expenditureSlot.recipient).to.equal(USER);
+    });
+
+    it("should allow owners to update many slot recipients at once", async () => {
+      await colony.setExpenditureRecipients(expenditureId, SLOT1, [RECIPIENT, USER], { from: ADMIN });
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
+      expect(expenditureSlot.recipient).to.equal(ethers.constants.AddressZero);
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT1);
+      expect(expenditureSlot.recipient).to.equal(RECIPIENT);
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT2);
+      expect(expenditureSlot.recipient).to.equal(USER);
+    });
+
+    it("should allow owners to update a slot skill", async () => {
       await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
+
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+    });
+
+    it("should allow owners to update many slot skills at once", async () => {
+      await colony.setExpenditureSkills(expenditureId, SLOT1, [GLOBAL_SKILL_ID, GLOBAL_SKILL_ID], { from: ADMIN });
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
+      expect(expenditureSlot.skills[0]).to.be.zero;
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT1);
+      expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT2);
+      expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+    });
+
+    it("should allow owners to update a slot claim delay", async () => {
+      await colony.setExpenditureClaimDelay(expenditureId, SLOT0, SECONDS_PER_DAY, { from: ADMIN });
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
+      expect(expenditureSlot.claimDelay).to.eq.BN(SECONDS_PER_DAY);
+    });
+
+    it("should allow owners to update many slot claim delays at once", async () => {
+      await colony.setExpenditureClaimDelays(expenditureId, SLOT1, [10, 20], { from: ADMIN });
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
+      expect(expenditureSlot.claimDelay).to.be.zero;
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT1);
+      expect(expenditureSlot.claimDelay).to.eq.BN(10);
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT2);
+      expect(expenditureSlot.claimDelay).to.eq.BN(20);
     });
 
     it("should not allow owners to set a non-global skill or a deprecated global skill", async () => {

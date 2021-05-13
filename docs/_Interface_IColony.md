@@ -1389,6 +1389,20 @@ Sets the claim delay on an expenditure slot. Can only be called by expenditure o
 |_claimDelay|uint256|Duration of time (in seconds) to delay
 
 
+### `setExpenditureClaimDelays`
+
+Sets the claim delays in sequential expenditure slots. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_firstSlot|uint256|Starting slot to set claim delays
+|_claimDelays|uint256[]|Durations of time (in seconds) to delay
+
+
 ### `setExpenditurePayout`
 
 Set the token payout on an expenditure slot. Can only be called by expenditure owner.
@@ -1402,6 +1416,21 @@ Set the token payout on an expenditure slot. Can only be called by expenditure o
 |_slot|uint256|Number of the slot
 |_token|address|Address of the token, `0x0` value indicates Ether
 |_amount|uint256|Payout amount
+
+
+### `setExpenditurePayouts`
+
+Set the token payouts in sequential expenditure slots. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the expenditure
+|_firstSlot|uint256|Starting slot to set payouts
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_amounts|uint256[]|Payout amounts
 
 
 ### `setExpenditureRecipient`
@@ -1418,6 +1447,20 @@ Sets the recipient on an expenditure slot. Can only be called by expenditure own
 |_recipient|address|Address of the recipient
 
 
+### `setExpenditureRecipients`
+
+Sets the recipients in sequential expenditure slots. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the expenditure
+|_firstSlot|uint256|Starting slot to set recipients
+|_recipients|address[]|Addresses of the recipients
+
+
 ### `setExpenditureSkill`
 
 Sets the skill on an expenditure slot. Can only be called by expenditure owner.
@@ -1430,6 +1473,20 @@ Sets the skill on an expenditure slot. Can only be called by expenditure owner.
 |_id|uint256|Expenditure identifier
 |_slot|uint256|Number of the slot
 |_skillId|uint256|Id of the new skill to set
+
+
+### `setExpenditureSkills`
+
+Sets the skill on an expenditure slot. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_firstSlot|uint256|Starting slot to set skills
+|_skillIds|uint256[]|Ids of the new skills to set
 
 
 ### `setExpenditureState`
