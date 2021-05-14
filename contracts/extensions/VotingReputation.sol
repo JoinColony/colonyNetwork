@@ -975,17 +975,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
   }
 
-  function getActionPermissionSkillId(bytes memory _action) internal view returns (uint256) {
-    uint256 permissionDomainId;
-
-    assembly {
-      permissionDomainId := mload(add(_action, 0x24))
-    }
-
-    uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
-    return permissionSkillId;
-  }
-
   function executeCall(uint256 motionId, bytes memory action) internal returns (bool success) {
     address to = getTarget(motions[motionId].altTarget);
 
