@@ -16,7 +16,7 @@ import {
 } from "../../helpers/constants";
 
 import { fundColonyWithTokens, setupFinalizedTask, setupRandomColony, makeTask } from "../../helpers/test-data-generator";
-import { getTokenArgs, checkErrorRevert, web3GetBalance } from "../../helpers/test-helper";
+import { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit } from "../../helpers/test-helper";
 import { executeSignedTaskChange, executeSignedRoleAssignment } from "../../helpers/task-review-signing";
 
 const { expect } = chai;
@@ -93,6 +93,25 @@ contract("Colony Funding", (accounts) => {
       expect(colonyTokenBalance).to.eq.BN(100);
       expect(colonyPotBalance).to.eq.BN(48);
       expect(pot2Balance).to.eq.BN(51);
+    });
+
+    it("when moving tokens between pots, should respect permission inheritance", async () => {
+      await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
+      await fundColonyWithTokens(colony, otherToken, 100);
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await colony.addDomain(1, 0, 2);
+      const domain1 = await colony.getDomain(1);
+      const domain2 = await colony.getDomain(2);
+      const domain3 = await colony.getDomain(3);
+
+      // Move funds from 1 to 2
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, 50, otherToken.address);
+
+      // From 2 to 3 using same permission (i.e. 'acting in' domain 1)
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, 0, 1, domain2.fundingPotId, domain3.fundingPotId, 10, otherToken.address);
+
+      // From 2 to 3 leveraging permissions slightly differently (i.e. 'acting in' domain 2)
+      await colony.moveFundsBetweenPots(1, 0, 2, UINT256_MAX, 0, domain2.fundingPotId, domain3.fundingPotId, 10, otherToken.address);
     });
 
     it("should not let tokens be moved between the same pot", async () => {

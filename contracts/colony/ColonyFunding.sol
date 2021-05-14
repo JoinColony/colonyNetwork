@@ -219,10 +219,11 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   public
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  authDomain(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot))
-  authDomain(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot))
   validFundingTransfer(_fromPot, _toPot)
   {
+    require(validateDomainInheritance(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot)), "colony-invalid-domain-inheritence");
+    require(validateDomainInheritance(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot)), "colony-invalid-domain-inheritence");
+
     moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
   }
 
