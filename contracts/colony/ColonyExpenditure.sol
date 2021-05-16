@@ -68,7 +68,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureExists(_id)
-    expenditureDraft(_id)
+    expenditureActive(_id)
     expenditureOnlyOwner(_id)
   {
     expenditures[_id].owner = _newOwner;
@@ -122,14 +122,9 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureExists(_id)
+    expenditureActive(_id)
     expenditureOnlyOwner(_id)
   {
-    require(
-      expenditures[_id].status == ExpenditureStatus.Draft ||
-      expenditures[_id].status == ExpenditureStatus.Locked,
-      "colony-expenditure-not-draft-or-active"
-    );
-
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     require(fundingPot.payoutsWeCannotMake == 0, "colony-expenditure-not-funded");
 

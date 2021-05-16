@@ -303,14 +303,8 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditure.status).to.eq.BN(LOCKED);
     });
 
-    it("should not allow the owner to transfer the expenditure", async () => {
-      await colony.lockExpenditure(expenditureId, { from: ADMIN });
-
-      await checkErrorRevert(colony.transferExpenditure(expenditureId, USER, { from: ADMIN }), "colony-expenditure-not-draft");
-    });
-
     it("should not allow the owner to cancel the expenditure", async () => {
-      await colony.lockExpenditure(expenditureId, { from: ADMIN });
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
       await checkErrorRevert(colony.cancelExpenditure(expenditureId, { from: ADMIN }), "colony-expenditure-not-draft");
     });
@@ -365,6 +359,12 @@ contract("Colony Expenditure", (accounts) => {
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.status).to.eq.BN(FINALIZED);
       expect(expenditure.finalizedTimestamp).to.eq.BN(currTime);
+    });
+
+    it("should not allow the owner to transfer the expenditure", async () => {
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+
+      await checkErrorRevert(colony.transferExpenditure(expenditureId, USER, { from: ADMIN }), "colony-expenditure-not-active");
     });
 
     it("cannot finalize expenditure if it is not fully funded", async () => {
