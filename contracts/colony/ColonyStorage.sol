@@ -102,7 +102,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   // Mapping of token address -> total amount approved
   mapping (address => uint256 ) tokenApprovalTotals; // Storage slot 33
 
-  uint256 globalClaimDelay; // Storage slot 34
+  uint256 defaultGlobalClaimDelay; // Storage slot 34
 
   // Constants
 

@@ -116,7 +116,7 @@ contract ColonyAuthority is CommonAuthority {
 
     // Added in colony v8 (ebony-lwss)
     addRoleCapability(ROOT_ROLE, "makeArbitraryTransactions(address[],bytes[],bool)");
-    addRoleCapability(ROOT_ROLE, "setGlobalClaimDelay(uint256)");
+    addRoleCapability(ROOT_ROLE, "setDefaultGlobalClaimDelay(uint256)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

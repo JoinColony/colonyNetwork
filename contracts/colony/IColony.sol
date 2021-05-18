@@ -333,7 +333,7 @@ interface IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Update the default global claim delay for expenditures
   /// @param _globalClaimDelay The new default global claim delay
-  function setGlobalClaimDelay(uint256 _globalClaimDelay) external;
+  function setDefaultGlobalClaimDelay(uint256 _globalClaimDelay) external;
 
   /// @notice Add a new expenditure in the colony. Secured function to authorised members.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action

@@ -132,7 +132,7 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should set the default global claim delay", async () => {
-      await colony.setGlobalClaimDelay(SECONDS_PER_DAY);
+      await colony.setDefaultGlobalClaimDelay(SECONDS_PER_DAY);
 
       await colony.makeExpenditure(1, UINT256_MAX, 1, { from: ADMIN });
       const expenditureId = await colony.getExpenditureCount();
@@ -141,7 +141,7 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditure.globalClaimDelay).to.eq.BN(SECONDS_PER_DAY);
 
       // Cleanup
-      await colony.setGlobalClaimDelay(0);
+      await colony.setDefaultGlobalClaimDelay(0);
     });
   });
 

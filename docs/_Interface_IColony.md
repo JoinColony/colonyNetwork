@@ -1351,6 +1351,18 @@ Set new colony architecture role. Can be called by root role or architecture rol
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
+### `setDefaultGlobalClaimDelay`
+
+Update the default global claim delay for expenditures
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_globalClaimDelay|uint256|The new default global claim delay
+
+
 ### `setExpenditureClaimDelay`
 
 DEPRECATED Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
@@ -1460,18 +1472,6 @@ Set new colony funding role. Can be called by root role or architecture role.
 |_user|address|User we want to give an funding role to
 |_domainId|uint256|Domain in which we are giving user the role
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
-
-
-### `setGlobalClaimDelay`
-
-Update the default global claim delay for expenditures
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_globalClaimDelay|uint256|The new default global claim delay
 
 
 ### `setPaymentPayout`
