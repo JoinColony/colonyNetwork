@@ -327,7 +327,7 @@ contract("Colony", (accounts) => {
     });
   });
 
-  describe.only("when executing metatransactions", () => {
+  describe("when executing metatransactions", () => {
     it("should allow a metatransaction to occur", async () => {
       const txData = await colony.contract.methods.mintTokens(100).encodeABI();
 

@@ -183,7 +183,7 @@ contract("Token Locking", (addresses) => {
       expect(balance).to.eq.BN(usersTokens);
     });
 
-    it.only("should allow deposits to be made via metatransaction", async () => {
+    it("should allow deposits to be made via metatransaction", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
 
       const txData = await tokenLocking.contract.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true).encodeABI();

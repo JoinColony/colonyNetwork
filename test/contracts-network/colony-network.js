@@ -453,7 +453,7 @@ contract("Colony Network", (accounts) => {
       expect(registrarAddress).to.equal(ensRegistry.address);
     });
 
-    it.only("should be able to create a colony with label in one tx", async () => {
+    it("should be able to create a colony with label in one tx", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address, 0, "test", "");
       const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
@@ -648,7 +648,7 @@ contract("Colony Network", (accounts) => {
     });
   });
 
-  describe.only("when executing metatransactions", () => {
+  describe("when executing metatransactions", () => {
     beforeEach(async () => {
       const ensRegistry = await ENSRegistry.new();
       await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
