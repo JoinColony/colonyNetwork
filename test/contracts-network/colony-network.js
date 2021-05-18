@@ -14,7 +14,12 @@ import {
   web3GetChainId,
 } from "../../helpers/test-helper";
 import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } from "../../helpers/constants";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
+import {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  setupRandomColony,
+  getMetatransactionParameters,
+} from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
 const namehash = require("eth-ens-namehash");
@@ -653,24 +658,9 @@ contract("Colony Network", (accounts) => {
       const tokenArgs = getTokenArgs();
       const token = await Token.new(...tokenArgs);
 
-      let txData = await colonyNetwork.contract.methods["createColony(address,uint256,string)"](token.address, CURR_VERSION, "").encodeABI();
-      let nonce = await colonyNetwork.getMetatransactionNonce(accounts[1]);
-      const chainId = await web3GetChainId();
+      let txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "").encodeABI();
 
-      txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "").encodeABI();
-
-      // Sign data
-      let msg = web3.utils.soliditySha3(
-        { t: "uint256", v: nonce.toString() },
-        { t: "address", v: colonyNetwork.address },
-        { t: "uint256", v: chainId },
-        { t: "bytes", v: txData }
-      );
-      let sig = await web3.eth.sign(msg, accounts[1]);
-
-      let r = `0x${sig.substring(2, 66)}`;
-      let s = `0x${sig.substring(66, 130)}`;
-      let v = parseInt(sig.substring(130), 16) + 27;
+      let { r, s, v } = await getMetatransactionParameters(txData, accounts[1], colonyNetwork.address);
 
       let tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
 
@@ -681,18 +671,7 @@ contract("Colony Network", (accounts) => {
       const colony = await IColony.at(colonyAddress);
       txData = await colony.contract.methods.registerColonyLabel("someColonyName", "").encodeABI();
 
-      nonce = await colony.getMetatransactionNonce(accounts[1]);
-      msg = web3.utils.soliditySha3(
-        { t: "uint256", v: nonce.toString() },
-        { t: "address", v: colony.address },
-        { t: "uint256", v: chainId },
-        { t: "bytes", v: txData }
-      );
-      sig = await web3.eth.sign(msg, accounts[1]);
-
-      r = `0x${sig.substring(2, 66)}`;
-      s = `0x${sig.substring(66, 130)}`;
-      v = parseInt(sig.substring(130), 16) + 27;
+      ({ r, s, v } = await getMetatransactionParameters(txData, accounts[1], colony.address));
 
       tx = await colony.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
     });

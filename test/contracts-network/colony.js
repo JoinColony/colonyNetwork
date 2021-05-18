@@ -15,16 +15,8 @@ import {
   RATING_2_SECRET,
   WAD,
 } from "../../helpers/constants";
-import {
-  getTokenArgs,
-  web3GetBalance,
-  checkErrorRevert,
-  expectNoEvent,
-  expectAllEvents,
-  expectEvent,
-  web3GetChainId,
-} from "../../helpers/test-helper";
-import { makeTask, setupRandomColony } from "../../helpers/test-data-generator";
+import { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } from "../../helpers/test-helper";
+import { makeTask, setupRandomColony, getMetatransactionParameters } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -338,21 +330,8 @@ contract("Colony", (accounts) => {
   describe.only("when executing metatransactions", () => {
     it("should allow a metatransaction to occur", async () => {
       const txData = await colony.contract.methods.mintTokens(100).encodeABI();
-      const nonce = await colony.getMetatransactionNonce(USER0);
-      const chainId = await web3GetChainId();
 
-      // Sign data
-      const msg = web3.utils.soliditySha3(
-        { t: "uint256", v: nonce.toString() },
-        { t: "address", v: colony.address },
-        { t: "uint256", v: chainId },
-        { t: "bytes", v: txData }
-      );
-      const sig = await web3.eth.sign(msg, USER0);
-
-      const r = `0x${sig.substring(2, 66)}`;
-      const s = `0x${sig.substring(66, 130)}`;
-      const v = parseInt(sig.substring(130), 16) + 27;
+      const { r, s, v } = await getMetatransactionParameters(txData, USER0, colony.address);
 
       const tx = await colony.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
