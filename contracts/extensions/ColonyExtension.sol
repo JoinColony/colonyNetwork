@@ -22,9 +22,11 @@ import "./../../lib/dappsys/math.sol";
 import "./../common/EtherRouter.sol";
 import "./../colony/IColony.sol";
 import "./../colony/ColonyDataTypes.sol";
+import "./../common/BasicMetaTransaction.sol";
+import "./../common/MetaTransactionMsgSender.sol";
 
 
-abstract contract ColonyExtension is DSAuth, DSMath {
+abstract contract ColonyExtension is DSAuth, DSMath, MetaTransactionMsgSender, BasicMetaTransaction {
 
   uint256 constant UINT256_MAX = 2**256 - 1;
 

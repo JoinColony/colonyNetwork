@@ -20,7 +20,7 @@ import {
   DELIVERABLE_HASH,
 } from "./constants";
 
-import { getTokenArgs, web3GetAccounts, getChildSkillIndex } from "./test-helper";
+import { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3GetChainId } from "./test-helper";
 import { executeSignedTaskChange, executeSignedRoleAssignment } from "./task-review-signing";
 
 const IColony = artifacts.require("IColony");
@@ -28,6 +28,7 @@ const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const TokenAuthority = artifacts.require("./TokenAuthority");
+const BasicMetaTransaction = artifacts.require("BasicMetaTransaction");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -392,4 +393,26 @@ export async function setupColony(colonyNetwork, tokenAddress) {
   const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
   const colony = await IColony.at(colonyAddress);
   return colony;
+}
+
+export async function getMetatransactionParameters(txData, userAddress, targetAddress) {
+  // const txData = await tokenLocking.contract.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true).encodeABI();
+  const contract = await BasicMetaTransaction.at(targetAddress);
+  const nonce = await contract.getMetatransactionNonce(userAddress);
+  const chainId = await web3GetChainId();
+
+  // Sign data
+  const msg = web3.utils.soliditySha3(
+    { t: "uint256", v: nonce.toString() },
+    { t: "address", v: targetAddress },
+    { t: "uint256", v: chainId },
+    { t: "bytes", v: txData }
+  );
+  const sig = await web3.eth.sign(msg, userAddress);
+
+  const r = `0x${sig.substring(2, 66)}`;
+  const s = `0x${sig.substring(66, 130)}`;
+  const v = parseInt(sig.substring(130), 16) + 27;
+
+  return { r, s, v };
 }
