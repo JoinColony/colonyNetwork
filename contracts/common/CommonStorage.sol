@@ -18,13 +18,13 @@
 pragma solidity 0.7.3;
 
 import "./../../lib/dappsys/auth.sol";
-import "./../common/BasicMetaTransaction.sol";
+import "./../common/MetaTransactionMsgSender.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
 
 
-abstract contract CommonStorage is DSAuth, BasicMetaTransaction {
+abstract contract CommonStorage is DSAuth, MetaTransactionMsgSender {
   uint256 constant UINT256_MAX = 2**256 - 1;
 
   uint256 constant AUTHORITY_SLOT = 0;

@@ -21,6 +21,7 @@ pragma experimental "ABIEncoderV2";
 import "./../common/EtherRouter.sol";
 import "./../common/ERC20Extended.sol";
 import "./../common/MultiChain.sol";
+import "./../common/BasicMetaTransaction.sol";
 import "./../colony/ColonyAuthority.sol";
 import "./../colony/IColony.sol";
 import "./../colony/IMetaColony.sol";
@@ -28,7 +29,7 @@ import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
 
 
-contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
+contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, MultiChain {
   // Meta Colony allowed to manage Global skills
   // All colonies are able to manage their Local (domain associated) skills
   modifier allowedToAddSkill(bool globalSkill) {
@@ -165,6 +166,8 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
     return createColony(_tokenAddress, _version, _colonyName, "");
   }
 
+  event Blah(string);
+
   function createColony(
     address _tokenAddress,
     uint256 _version,
@@ -176,12 +179,13 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
     address colonyAddress = deployColony(_tokenAddress, version);
 
     if (bytes(_colonyName).length > 0) {
+      emit Blah(_colonyName);
       IColony(colonyAddress).registerColonyLabel(_colonyName, "");
     }
 
-    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
-      IColony(colonyAddress).editColony(_metadata);
-    }
+    // if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
+    //   IColony(colonyAddress).editColony(_metadata);
+    // }
 
     setFounderPermissions(colonyAddress);
 
@@ -349,15 +353,13 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
     emit TokenWhitelisted(_token, _status);
   }
 
-
-  function getMetatransactionNonce(address user) public returns(uint256 nonce){
-    return metatransactionNonces[user];
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
   }
 
-  function incrementMetatransactionNonce(address user) internal {
+  function incrementMetatransactionNonce(address user) override internal {
     metatransactionNonces[user] = add(metatransactionNonces[user], 1);
   }
-
 
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {
     require(_tokenAddress != address(0x0), "colony-token-invalid-address");

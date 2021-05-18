@@ -11,6 +11,7 @@ import {
   expectEvent,
   expectNoEvent,
   getColonyEditable,
+  web3GetChainId,
 } from "../../helpers/test-helper";
 import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
@@ -25,6 +26,7 @@ const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
@@ -446,7 +448,7 @@ contract("Colony Network", (accounts) => {
       expect(registrarAddress).to.equal(ensRegistry.address);
     });
 
-    it("should be able to create a colony with label in one tx", async () => {
+    it.only("should be able to create a colony with label in one tx", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address, 0, "test", "");
       const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
@@ -638,6 +640,92 @@ contract("Colony Network", (accounts) => {
     it("should not allow a colony to change its orbitDBAddress without having registered a label", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       await checkErrorRevert(colony.updateColonyOrbitDB("anotherstring", { from: accounts[0] }), "colony-colony-not-labeled");
+    });
+  });
+
+  describe.only("when executing metatransactions", () => {
+    beforeEach(async () => {
+      const ensRegistry = await ENSRegistry.new();
+      await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
+    });
+
+    it("should allow colony creation via metatransactions, with ENS registration afterwards", async () => {
+      const tokenArgs = getTokenArgs();
+      const token = await Token.new(...tokenArgs);
+
+      let txData = await colonyNetwork.contract.methods["createColony(address,uint256,string)"](token.address, CURR_VERSION, "").encodeABI();
+      let nonce = await colonyNetwork.getMetatransactionNonce(accounts[1]);
+      const chainId = await web3GetChainId();
+
+      txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "").encodeABI();
+
+      // Sign data
+      let msg = web3.utils.soliditySha3(
+        { t: "uint256", v: nonce.toString() },
+        { t: "address", v: colonyNetwork.address },
+        { t: "uint256", v: chainId },
+        { t: "bytes", v: txData }
+      );
+      let sig = await web3.eth.sign(msg, accounts[1]);
+
+      let r = `0x${sig.substring(2, 66)}`;
+      let s = `0x${sig.substring(66, 130)}`;
+      let v = parseInt(sig.substring(130), 16) + 27;
+
+      let tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      const colonyCount = await colonyNetwork.getColonyCount();
+      const colonyAddress = await colonyNetwork.getColony(colonyCount);
+      await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
+
+      const colony = await IColony.at(colonyAddress);
+      txData = await colony.contract.methods.registerColonyLabel("someColonyName", "").encodeABI();
+
+      nonce = await colony.getMetatransactionNonce(accounts[1]);
+      msg = web3.utils.soliditySha3(
+        { t: "uint256", v: nonce.toString() },
+        { t: "address", v: colony.address },
+        { t: "uint256", v: chainId },
+        { t: "bytes", v: txData }
+      );
+      sig = await web3.eth.sign(msg, accounts[1]);
+
+      r = `0x${sig.substring(2, 66)}`;
+      s = `0x${sig.substring(66, 130)}`;
+      v = parseInt(sig.substring(130), 16) + 27;
+
+      tx = await colony.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+    });
+
+    it("should allow colony creation via metatransactions, with ENS registration at the time", async () => {
+      const tokenArgs = getTokenArgs();
+      const token = await Token.new(...tokenArgs);
+
+      let txData = await colonyNetwork.contract.methods["createColony(address,uint256,string)"](token.address, CURR_VERSION, "").encodeABI();
+      const nonce = await colonyNetwork.getMetatransactionNonce(accounts[1]);
+      const chainId = await web3GetChainId();
+
+      txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "someColonyName").encodeABI();
+
+      // Sign data
+      const msg = web3.utils.soliditySha3(
+        { t: "uint256", v: nonce.toString() },
+        { t: "address", v: colonyNetwork.address },
+        { t: "uint256", v: chainId },
+        { t: "bytes", v: txData }
+      );
+      const sig = await web3.eth.sign(msg, accounts[1]);
+
+      const r = `0x${sig.substring(2, 66)}`;
+      const s = `0x${sig.substring(66, 130)}`;
+      const v = parseInt(sig.substring(130), 16) + 27;
+
+      const tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      const colonyCount = await colonyNetwork.getColonyCount();
+      const colonyAddress = await colonyNetwork.getColony(colonyCount);
+      await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
+      await expectEvent(tx, "Blah(string)", ["someColonyName"]);
     });
   });
 });

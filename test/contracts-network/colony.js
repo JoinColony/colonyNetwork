@@ -15,7 +15,15 @@ import {
   RATING_2_SECRET,
   WAD,
 } from "../../helpers/constants";
-import { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent, web3GetChainId } from "../../helpers/test-helper";
+import {
+  getTokenArgs,
+  web3GetBalance,
+  checkErrorRevert,
+  expectNoEvent,
+  expectAllEvents,
+  expectEvent,
+  web3GetChainId,
+} from "../../helpers/test-helper";
 import { makeTask, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -327,7 +335,7 @@ contract("Colony", (accounts) => {
     });
   });
 
-  describe("when executing metatransactions", () => {
+  describe.only("when executing metatransactions", () => {
     it("should allow a metatransaction to occur", async () => {
       const txData = await colony.contract.methods.mintTokens(100).encodeABI();
       const nonce = await colony.getMetatransactionNonce(USER0);

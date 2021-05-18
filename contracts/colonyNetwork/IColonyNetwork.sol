@@ -19,12 +19,15 @@ pragma solidity >=0.7.3; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
 import "./../common/IRecovery.sol";
+import "./../common/IBasicMetaTransaction.sol";
+
 import "./ColonyNetworkDataTypes.sol";
 
 
 /// @title Colony Network interface
 /// @notice All externally available functions are available here and registered to work with EtherRouter Network contract
-interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
+interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransaction {
+  event Blah(bytes returnvalue);
 
   /// @notice Query if a contract implements an interface
   /// @param interfaceID The interface identifier, as specified in ERC-165
