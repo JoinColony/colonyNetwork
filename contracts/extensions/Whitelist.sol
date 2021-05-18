@@ -37,6 +37,16 @@ contract Whitelist is ColonyExtension {
 
   mapping (address => bool) approvals;
   mapping (address => bool) signatures;
+  mapping(address => uint256) metatransactionNonces;
+
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
+  }
+
+  function incrementMetatransactionNonce(address user) override internal {
+    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+  }
+
 
   // Modifiers
 
@@ -82,7 +92,7 @@ contract Whitelist is ColonyExtension {
   /// @param _useApprovals Whether or not to require administrative approval
   /// @param _agreementHash An agreement hash (such as an IPFS URI)
   function initialise(bool _useApprovals, string memory _agreementHash) public {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "whitelist-unauthorised");
+    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "whitelist-unauthorised");
     require(!useApprovals && bytes(agreementHash).length == 0, "whitelist-already-initialised");
     require(_useApprovals || bytes(_agreementHash).length > 0, "whitelist-bad-initialisation");
 
@@ -97,7 +107,7 @@ contract Whitelist is ColonyExtension {
   /// @param _status The whitelist status to set
   function approveUsers(address[] memory _users, bool _status) public initialised notDeprecated {
     require(useApprovals, "whitelist-no-approvals");
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Administration), "whitelist-unauthorised");
+    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Administration), "whitelist-unauthorised");
 
     for (uint256 i; i < _users.length; i++) {
       approvals[_users[i]] = _status;
@@ -116,9 +126,9 @@ contract Whitelist is ColonyExtension {
       "whitelist-bad-signature"
     );
 
-    signatures[msg.sender] = true;
+    signatures[msgSender()] = true;
 
-    emit AgreementSigned(msg.sender);
+    emit AgreementSigned(msgSender());
   }
 
   /// @notice Get the user's overall whitelist status

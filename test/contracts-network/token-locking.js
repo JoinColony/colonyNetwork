@@ -6,7 +6,14 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
-import { getTokenArgs, checkErrorRevert, makeReputationKey, advanceMiningCycleNoContest, expectEvent } from "../../helpers/test-helper";
+import {
+  getTokenArgs,
+  checkErrorRevert,
+  makeReputationKey,
+  advanceMiningCycleNoContest,
+  expectEvent,
+  web3GetChainId,
+} from "../../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupColony, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import { UINT256_MAX, DEFAULT_STAKE } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
@@ -175,6 +182,35 @@ contract("Token Locking", (addresses) => {
 
       const balance = await token.balanceOf(otherUserAddress);
       expect(balance).to.eq.BN(usersTokens);
+    });
+
+    it.only("should allow deposits to be made via metatransaction", async () => {
+      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
+
+      const txData = await tokenLocking.contract.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true).encodeABI();
+      const nonce = await tokenLocking.getMetatransactionNonce(userAddress);
+      const chainId = await web3GetChainId();
+
+      // Sign data
+      const msg = web3.utils.soliditySha3(
+        { t: "uint256", v: nonce.toString() },
+        { t: "address", v: tokenLocking.address },
+        { t: "uint256", v: chainId },
+        { t: "bytes", v: txData }
+      );
+      const sig = await web3.eth.sign(msg, userAddress);
+
+      const r = `0x${sig.substring(2, 66)}`;
+      const s = `0x${sig.substring(66, 130)}`;
+      const v = parseInt(sig.substring(130), 16) + 27;
+
+      await tokenLocking.executeMetaTransaction(userAddress, txData, r, s, v, { from: otherUserAddress });
+
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      expect(info.balance).to.eq.BN(usersTokens);
+
+      const tokenLockingContractBalance = await token.balanceOf(tokenLocking.address);
+      expect(tokenLockingContractBalance).to.eq.BN(usersTokens);
     });
   });
 
