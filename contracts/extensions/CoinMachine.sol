@@ -61,6 +61,11 @@ contract CoinMachine is ColonyExtension {
 
   bool evolvePrice; // If we should evolve the price or not
 
+  uint256 soldTotal; // Total tokens sold by the coin machine
+  uint256 userLimit; // Limit any address can buy of the total amount (as WAD percentage)
+
+  mapping(address => uint256) soldUser; // Tokens sold to a particular user
+
   // Modifiers
 
   modifier onlyRoot() {
@@ -133,6 +138,7 @@ contract CoinMachine is ColonyExtension {
     uint256 _windowSize,
     uint256 _targetPerPeriod,
     uint256 _maxPerPeriod,
+    uint256 _userLimit,
     uint256 _startingPrice,
     address _whitelist
   )
@@ -147,6 +153,7 @@ contract CoinMachine is ColonyExtension {
     require(_windowSize <= 511, "coin-machine-window-too-large");
     require(_targetPerPeriod > 0, "coin-machine-target-too-small");
     require(_maxPerPeriod >= _targetPerPeriod, "coin-machine-max-too-small");
+    require(_userLimit <= WAD, "coin-machine-limit-too-large");
 
     token = _token;
     purchaseToken = _purchaseToken;
@@ -159,6 +166,8 @@ contract CoinMachine is ColonyExtension {
 
     targetPerPeriod = _targetPerPeriod;
     maxPerPeriod = _maxPerPeriod;
+
+    userLimit = _userLimit;
 
     activePrice = _startingPrice;
     activePeriod = getCurrentPeriod();
@@ -191,13 +200,22 @@ contract CoinMachine is ColonyExtension {
     );
 
     uint256 tokenBalance = getTokenBalance();
-    uint256 numTokens = min(min(_numTokens, maxPerPeriod - activeSold), tokenBalance);
+    uint256 maxPurchase = getMaxPurchase(msg.sender);
+    uint256 remainingTokens = sub(maxPerPeriod, activeSold);
+
+    uint256 numTokens = min(maxPurchase, min(tokenBalance, min(remainingTokens, _numTokens)));
     uint256 totalCost = wmul(numTokens, activePrice);
 
     activeIntake = add(activeIntake, totalCost);
     activeSold = add(activeSold, numTokens);
 
     assert(activeSold <= maxPerPeriod);
+
+    // Do userLimit bookkeeping (only if needed)
+    if (userLimit < WAD) {
+      soldTotal = add(soldTotal, numTokens);
+      soldUser[msg.sender] = add(soldUser[msg.sender], numTokens);
+    }
 
     // Check if we've sold out
     if (numTokens >= tokenBalance) { setPriceEvolution(false); }
@@ -338,6 +356,15 @@ contract CoinMachine is ColonyExtension {
     return min(
       ERC20(token).balanceOf(address(this)),
       sub(maxPerPeriod, ((activePeriod >= getCurrentPeriod()) ? activeSold : 0))
+    );
+  }
+
+  /// @notice Get the maximum amount of tokens a user can purchase
+  function getMaxPurchase(address _user) public view returns (uint256) {
+    // ((max(soldTotal, targetPerPeriod) * userLimit) - soldUser) / (1 - userLimit)
+    return (userLimit == WAD) ? UINT256_MAX : wdiv(
+      sub(wmul(max(soldTotal, targetPerPeriod), userLimit), soldUser[_user]),
+      sub(WAD, userLimit)
     );
   }
 
