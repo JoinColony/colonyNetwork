@@ -809,7 +809,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   /// @return The voter reward
   function getVoterReward(uint256 _motionId, uint256 _voterRep) public view returns (uint256) {
     Motion storage motion = motions[_motionId];
-    uint256 fractionUserReputation = wdiv(_voterRep, motion.skillRep);
+    uint256 fractionUserReputation = wdiv(_voterRep, motion.repSubmitted);
     uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
     return wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
   }

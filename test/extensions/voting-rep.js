@@ -883,12 +883,23 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
+      const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
+
       await voting.revealVote(motionId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
+
+      const expectedReward = REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).div(WAD);
+
+      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward);
     });
 
     it("can tally votes from two users", async () => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
+      const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
 
       await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.revealVote(motionId, SALT, YAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
@@ -897,6 +908,15 @@ contract("Voting Reputation", (accounts) => {
       const { votes } = await voting.getMotion(motionId);
       expect(votes[0]).to.be.zero;
       expect(votes[1]).to.eq.BN(WAD.muln(3));
+
+      // Two users voted, check reward split appropriately
+      const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
+      const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
+      const expectedReward0 = REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).divn(3).div(WAD);
+      const expectedReward1 = REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).muln(2).divn(3).div(WAD);
+
+      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
+      expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
     });
 
     it("can update votes, but just the last one counts", async () => {
