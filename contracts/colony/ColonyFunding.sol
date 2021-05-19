@@ -245,68 +245,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
   }
 
-  function moveFundsBetweenPotsFunctionality(
-    uint256 _fromPot,
-    uint256 _toPot,
-    uint256 _amount,
-    address _token
-  )
-  internal {
-    FundingPot storage fromPot = fundingPots[_fromPot];
-    FundingPot storage toPot = fundingPots[_toPot];
-
-    fromPot.balance[_token] = sub(fromPot.balance[_token], _amount);
-    toPot.balance[_token] = add(toPot.balance[_token], _amount);
-
-    if (_fromPot == 1){
-      // If we're moving from the root pot, then check we haven't dropped below what we need
-      // to cover any approvals that we've made.
-      require(fromPot.balance[_token] >= tokenApprovalTotals[_token], "colony-funding-too-many-approvals");
-    }
-
-    // If this pot is associated with a Task or Expenditure, prevent money
-    // being taken from the pot if the remaining balance is less than
-    // the amount needed for payouts, unless the task was cancelled.
-    if (fromPot.associatedType == FundingPotAssociatedType.Task) {
-      require(
-        tasks[fromPot.associatedTypeId].status == TaskStatus.Cancelled ||
-        fromPot.balance[_token] >= fromPot.payouts[_token],
-        "colony-funding-task-bad-state"
-      );
-    }
-    if (fromPot.associatedType == FundingPotAssociatedType.Expenditure) {
-      require(
-        expenditures[fromPot.associatedTypeId].status == ExpenditureStatus.Cancelled ||
-        fromPot.balance[_token] >= fromPot.payouts[_token],
-        "colony-funding-expenditure-bad-state"
-      );
-    }
-
-    if (
-      fromPot.associatedType == FundingPotAssociatedType.Expenditure ||
-      fromPot.associatedType == FundingPotAssociatedType.Payment ||
-      fromPot.associatedType == FundingPotAssociatedType.Task
-    ) {
-      uint256 fromPotPreviousAmount = add(fromPot.balance[_token], _amount);
-      updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
-    }
-
-    if (
-      toPot.associatedType == FundingPotAssociatedType.Expenditure ||
-      toPot.associatedType == FundingPotAssociatedType.Payment ||
-      toPot.associatedType == FundingPotAssociatedType.Task
-    ) {
-      uint256 toPotPreviousAmount = sub(toPot.balance[_token], _amount);
-      updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
-    }
-
-    if (_toPot == 0 ) {
-      nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _amount);
-    }
-
-    emit ColonyFundsMovedBetweenFundingPots(msg.sender, _fromPot, _toPot, _amount, _token);
-  }
-
   function claimColonyFunds(address _token) public stoppable {
     uint toClaim;
     uint feeToPay;
@@ -511,6 +449,70 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     return (payout.tokenAddress, reward);
   }
+
+  function moveFundsBetweenPotsFunctionality(
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256 _amount,
+    address _token
+  )
+  internal {
+    FundingPot storage fromPot = fundingPots[_fromPot];
+    FundingPot storage toPot = fundingPots[_toPot];
+
+    fromPot.balance[_token] = sub(fromPot.balance[_token], _amount);
+    toPot.balance[_token] = add(toPot.balance[_token], _amount);
+
+    if (_fromPot == 1){
+      // If we're moving from the root pot, then check we haven't dropped below what we need
+      // to cover any approvals that we've made.
+      require(fromPot.balance[_token] >= tokenApprovalTotals[_token], "colony-funding-too-many-approvals");
+    }
+
+    // If this pot is associated with a Task or Expenditure, prevent money
+    // being taken from the pot if the remaining balance is less than
+    // the amount needed for payouts, unless the task was cancelled.
+    if (fromPot.associatedType == FundingPotAssociatedType.Task) {
+      require(
+        tasks[fromPot.associatedTypeId].status == TaskStatus.Cancelled ||
+        fromPot.balance[_token] >= fromPot.payouts[_token],
+        "colony-funding-task-bad-state"
+      );
+    }
+    if (fromPot.associatedType == FundingPotAssociatedType.Expenditure) {
+      require(
+        expenditures[fromPot.associatedTypeId].status == ExpenditureStatus.Cancelled ||
+        fromPot.balance[_token] >= fromPot.payouts[_token],
+        "colony-funding-expenditure-bad-state"
+      );
+    }
+
+    if (
+      fromPot.associatedType == FundingPotAssociatedType.Expenditure ||
+      fromPot.associatedType == FundingPotAssociatedType.Payment ||
+      fromPot.associatedType == FundingPotAssociatedType.Task
+    ) {
+      uint256 fromPotPreviousAmount = add(fromPot.balance[_token], _amount);
+      updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
+    }
+
+    if (
+      toPot.associatedType == FundingPotAssociatedType.Expenditure ||
+      toPot.associatedType == FundingPotAssociatedType.Payment ||
+      toPot.associatedType == FundingPotAssociatedType.Task
+    ) {
+      uint256 toPotPreviousAmount = sub(toPot.balance[_token], _amount);
+      updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
+    }
+
+    if (_toPot == 0 ) {
+      nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _amount);
+    }
+
+    emit ColonyFundsMovedBetweenFundingPots(msg.sender, _fromPot, _toPot, _amount, _token);
+  }
+
+
 
   function updatePayoutsWeCannotMakeAfterPotChange(uint256 _fundingPotId, address _token, uint _prev) internal {
     FundingPot storage tokenPot = fundingPots[_fundingPotId];

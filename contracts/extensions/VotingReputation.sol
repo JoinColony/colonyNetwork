@@ -54,9 +54,13 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
   );
 
-  bytes4 constant CHANGE_FUNCTION = bytes4(
-    keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
-  );
+  bytes4 constant CHANGE_FUNCTION_SIG = bytes4(keccak256(
+    "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"
+  ));
+
+  bytes4 constant OLD_MOVE_FUNDS_SIG = bytes4(keccak256(
+    "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"
+  ));
 
   enum ExtensionState { Deployed, Active, Deprecated }
 
@@ -214,7 +218,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
   // Public functions (interface)
 
-
   /// @notice Create a motion
   /// @param _domainId The domain where we vote on the motion
   /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
@@ -242,9 +245,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     address target = getTarget(_altTarget);
     bytes4 action = getSig(_action);
-    if (action == bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"))){
-      require(false, "voting-rep-disallowed-function");
-    }
+
+    require(action != OLD_MOVE_FUNDS_SIG, "voting-rep-disallowed-function");
 
     uint256 skillId;
 
@@ -378,7 +380,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       _vote == YAY &&
       !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
-      getSig(motion.action) == CHANGE_FUNCTION &&
+      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
       motion.altTarget == address(0x0)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
@@ -574,7 +576,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     );
 
     if (
-      getSig(motion.action) == CHANGE_FUNCTION &&
+      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
       getTarget(motion.altTarget) == address(colony)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
@@ -1008,7 +1010,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   }
 
   function hashExpenditureActionStruct(bytes memory action) internal returns (bytes32 hash) {
-    assert(getSig(action) == CHANGE_FUNCTION);
+    assert(getSig(action) == CHANGE_FUNCTION_SIG);
 
     uint256 expenditureId;
     uint256 storageSlot;
