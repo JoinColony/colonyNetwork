@@ -148,8 +148,9 @@ contract("Colony Funding", (accounts) => {
       const taskId = await makeTask({ colony });
       const task = await colony.getTask(taskId);
 
+      const moveFundsBetweenPots = colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"];
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 51, otherToken.address, { from: WORKER }),
+        moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 51, otherToken.address, { from: WORKER }),
         "ds-auth-unauthorized"
       );
 

@@ -113,7 +113,6 @@ contract ColonyAuthority is CommonAuthority {
 
     // Added in colony v6 (d-lwss)
     addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)");
-
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {
