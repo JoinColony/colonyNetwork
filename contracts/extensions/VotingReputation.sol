@@ -804,6 +804,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   }
 
   /// @notice Get the voter reward
+  /// NB This function will only return a meaningful value if in the reveal state.
+  /// Prior to the reveal state, getVoterRewardRange should be used.
   /// @param _motionId The id of the motion
   /// @param _voterRep The reputation the voter has in the domain
   /// @return The voter reward
@@ -812,6 +814,35 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     uint256 fractionUserReputation = wdiv(_voterRep, motion.repSubmitted);
     uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
     return wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
+  }
+
+  /// @notice Get the range of potential rewards for a voter on a specific motion, intended to be
+  /// used when the motion is in the reveal state.
+  /// Once a motion is in the reveal state the reward is known, and getVoterRewardRange should be used.
+  /// @param _motionId The id of the motion
+  /// @param _voterRep The reputation the voter has in the domain
+  /// @param _voterAddress The address the user will be voting as
+  /// @return The voter reward
+  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) public view returns (uint256, uint256) {
+    Motion storage motion = motions[_motionId];
+    // The minimum reward is when everyone has voted, with a total weight of motion.skillRep
+    uint256 minFractionUserReputation = wdiv(_voterRep, motion.skillRep);
+
+    // The maximum reward is when this user is the only other person who votes (if they haven't already),
+    // aside from those who have already done so
+    uint256 voteTotal = motion.repSubmitted;
+    // Has the user already voted?
+    if (voteSecrets[_motionId][_voterAddress] == bytes32(0)) {
+      // They have not, so add their rep
+      voteTotal = add(voteTotal, _voterRep);
+    }
+    uint256 maxFractionUserReputation = wdiv(_voterRep, voteTotal);
+
+    uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
+    return (
+      wmul(wmul(minFractionUserReputation, totalStake), voterRewardFraction),
+      wmul(wmul(maxFractionUserReputation, totalStake), voterRewardFraction)
+    );
   }
 
   /// @notice Get the staker reward

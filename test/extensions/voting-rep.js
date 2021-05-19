@@ -898,9 +898,6 @@ contract("Voting Reputation", (accounts) => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
-      const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
-
       await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.revealVote(motionId, SALT, YAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
@@ -908,15 +905,47 @@ contract("Voting Reputation", (accounts) => {
       const { votes } = await voting.getMotion(motionId);
       expect(votes[0]).to.be.zero;
       expect(votes[1]).to.eq.BN(WAD.muln(3));
+    });
+
+    it("rewards users for voting appropriately", async () => {
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
+      const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
+
+      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       // Two users voted, check reward split appropriately
       const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
-      const expectedReward0 = REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).divn(3).div(WAD);
-      const expectedReward1 = REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).muln(2).divn(3).div(WAD);
+      const expectedReward0 = WAD.divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD);
+      const expectedReward1 = WAD.muln(2).divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD);
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
+    });
+
+    it("tells users what their potential reward range is", async () => {
+      const USER0_REPUTATION = new BN(user0Value.slice(2, 66), 16);
+      const USER1_REPUTATION = new BN(user1Value.slice(2, 66), 16);
+
+      let { 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER0_REPUTATION, USER0);
+
+      expect(rewardMin).to.eq.BN(WAD.divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
+      expect(rewardMax).to.eq.BN(REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).div(WAD));
+
+      // They vote, expect no change
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      ({ 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER0_REPUTATION, USER0));
+      expect(rewardMin).to.eq.BN(WAD.divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
+      expect(rewardMax).to.eq.BN(REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).div(WAD));
+
+      // User 1 has no range, as they are the last to vote
+      ({ 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER1_REPUTATION, USER1));
+      expect(rewardMin).to.eq.BN(WAD.muln(2).divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
+      expect(rewardMax).to.eq.BN(WAD.muln(2).divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
     });
 
     it("can update votes, but just the last one counts", async () => {
