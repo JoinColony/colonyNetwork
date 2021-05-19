@@ -26,6 +26,8 @@ import "./../colony/ColonyDataTypes.sol";
 
 abstract contract ColonyExtension is DSAuth, DSMath {
 
+  uint256 constant UINT256_MAX = 2**256 - 1;
+
   event ExtensionInitialised();
 
   address resolver; // Align storage with EtherRouter

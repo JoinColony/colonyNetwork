@@ -26,7 +26,6 @@ import "./ColonyExtension.sol";
 contract OneTxPayment is ColonyExtension {
   event OneTxPaymentMade(address agent, uint256 fundamentalId, uint256 nPayouts);
 
-  uint256 constant UINT256_MAX = 2**256 - 1;
   ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
   ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
 

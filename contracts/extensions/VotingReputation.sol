@@ -39,7 +39,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   event MotionEventSet(uint256 indexed motionId, uint256 eventIndex);
 
   // Constants
-  uint256 constant UINT256_MAX = 2**256 - 1;
   uint256 constant UINT128_MAX = 2**128 - 1;
 
   uint256 constant NAY = 0;

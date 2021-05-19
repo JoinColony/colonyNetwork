@@ -38,7 +38,6 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
 
   // Constants
   uint256 constant HEAD = 0;
-  uint256 constant UINT256_MAX = (2 ** 256) - 1;
   uint256 constant STAKE_FRACTION = WAD / 1000; // 0.1%
   uint256 constant COOLDOWN_PERIOD = 14 days;
 
