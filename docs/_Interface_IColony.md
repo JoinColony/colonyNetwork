@@ -1140,12 +1140,32 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_fromChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_fromPotId`
-|_toChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_toPotId`
+|_childSkillIndex|uint256|The child index in _permissionDomainId where I will be taking this action
+|_domainId|uint256|The domain where I am taking this action, pointed to by _permissionDomainId and _childSkillIndex
+|_fromChildSkillIndex|uint256|In the array of child skills for the skill associated with the domain pointed to by _permissionDomainId + _childSkillIndex,         the index of the skill associated with the domain that contains _fromPot
+|_toChildSkillIndex|uint256|The same, but for the _toPot which the funds are being moved to
 |_fromPot|uint256|Funding pot id providing the funds
 |_toPot|uint256|Funding pot id receiving the funds
 |_amount|uint256|Amount of funds
 |_token|address|Address of the token, `0x0` value indicates Ether
+
+
+### `moveFundsBetweenPots`
+
+Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_fromChildSkillIndex|uint256|
+|_toChildSkillIndex|uint256|
+|_fromPot|uint256|
+|_toPot|uint256|
+|_amount|uint256|
+|_token|address|
 
 
 ### `obligateStake`

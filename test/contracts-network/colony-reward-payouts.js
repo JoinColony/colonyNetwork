@@ -193,7 +193,7 @@ contract("Colony Reward Payouts", (accounts) => {
       await colony.claimColonyFunds(token.address);
       // Move all of them in to the reward pot
       const amount = await colony.getFundingPotBalance(1, token.address);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, amount, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, amount, token.address);
 
       const tx1 = await colony.startNextRewardPayout(token.address, ...colonyWideReputationProof);
       const payoutId1 = tx1.logs[0].args.rewardPayoutId;
@@ -259,7 +259,7 @@ contract("Colony Reward Payouts", (accounts) => {
       let { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       colonyWideReputationProof = [key, value, branchMask, siblings];
 
-      await newColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, newToken.address);
+      await newColony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, newToken.address);
 
       const { logs } = await newColony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
@@ -294,7 +294,7 @@ contract("Colony Reward Payouts", (accounts) => {
       const colonyWideReputationKey = makeReputationKey(newColony.address, rootDomainSkill);
       const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       colonyWideReputationProof = [key, value, branchMask, siblings];
-      await newColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, newToken.address);
+      await newColony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, newToken.address);
 
       await checkErrorRevert(
         newColony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof),
@@ -308,10 +308,10 @@ contract("Colony Reward Payouts", (accounts) => {
     });
 
     it("should be able to create parallel payouts of the same token", async () => {
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
 
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
 
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
     });
@@ -320,7 +320,7 @@ contract("Colony Reward Payouts", (accounts) => {
       const tx1 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId1 = tx1.logs[0].args.rewardPayoutId;
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
 
       const tx2 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId2 = tx2.logs[0].args.rewardPayoutId;
@@ -335,7 +335,7 @@ contract("Colony Reward Payouts", (accounts) => {
       const payoutId1 = tx1.logs[0].args.rewardPayoutId;
       await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
       await colony.finalizeRewardPayout(payoutId1);
 
       const tx2 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
@@ -369,7 +369,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
       await colony.finalizeRewardPayout(payoutId1);
 
       const tx2 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
@@ -414,7 +414,7 @@ contract("Colony Reward Payouts", (accounts) => {
       const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       colonyWideReputationProof = [key, value, branchMask, siblings];
 
-      await newColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, newToken.address);
+      await newColony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, newToken.address);
 
       await checkErrorRevert(
         newColony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof),
@@ -895,7 +895,7 @@ contract("Colony Reward Payouts", (accounts) => {
         await tokenLocking.methods["deposit(address,uint256,bool)"](newToken.address, tokensPerUser, true, { from: userAddress3 });
         await forwardTime(1, this);
 
-        await newColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, payoutToken.address);
+        await newColony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, payoutToken.address);
 
         const { logs } = await newColony.startNextRewardPayout(payoutToken.address, ...colonyWideReputationProof);
         const payoutId = logs[0].args.rewardPayoutId;

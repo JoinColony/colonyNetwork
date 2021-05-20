@@ -54,9 +54,13 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
   );
 
-  bytes4 constant CHANGE_FUNCTION = bytes4(
-    keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
-  );
+  bytes4 constant CHANGE_FUNCTION_SIG = bytes4(keccak256(
+    "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"
+  ));
+
+  bytes4 constant OLD_MOVE_FUNDS_SIG = bytes4(keccak256(
+    "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"
+  ));
 
   enum ExtensionState { Deployed, Active, Deprecated }
 
@@ -214,6 +218,15 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
   // Public functions (interface)
 
+  /// @notice Create a motion
+  /// @param _domainId The domain where we vote on the motion
+  /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
+  /// @param _altTarget The contract to which we send the action (0x0 for the colony)
+  /// @param _action A bytes array encoding a function call
+  /// @param _key Reputation tree key for the root domain
+  /// @param _value Reputation tree value for the root domain
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
  function createMotion(
     uint256 _domainId,
     uint256 _childSkillIndex,
@@ -233,6 +246,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     address target = getTarget(_altTarget);
     bytes4 action = getSig(_action);
 
+    require(action != OLD_MOVE_FUNDS_SIG, "voting-rep-disallowed-function");
+
     uint256 skillId;
 
     if (ColonyRoles(target).getCapabilityRoles(action) | ROOT_ROLES == ROOT_ROLES) {
@@ -251,7 +266,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
         uint256 childSkillId = colonyNetwork.getChildSkillId(skillId, _childSkillIndex);
         require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
       }
-
     }
 
     motionCount += 1;
@@ -271,7 +285,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     emit MotionCreated(motionCount, msg.sender, _domainId);
   }
-
 
   /// @notice Create a motion in the root domain (DEPRECATED)
   /// @param _altTarget The contract to which we send the action (0x0 for the colony)
@@ -296,30 +309,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   /// @notice Create a motion in any domain (DEPRECATED)
   /// @param _domainId The domain where we vote on the motion
   /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
-  /// @param _altTarget The contract to which we send the action (0x0 for the colony)
-  /// @param _action A bytes array encoding a function call
-  /// @param _key Reputation tree key for the domain
-  /// @param _value Reputation tree value for the domain
-  /// @param _branchMask The branchmask of the proof
-  /// @param _siblings The siblings of the proof
-  function createDomainMotion(
-    uint256 _domainId,
-    uint256 _childSkillIndex,
-    address _altTarget,
-    bytes memory _action,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  )
-    public
-  {
-    createMotion(_domainId, _childSkillIndex, _altTarget, _action, _key, _value, _branchMask, _siblings);
-  }
-
-  /// @notice Create a motion in any domain (DEPRECATED)
-  /// @param _domainId The domain where we vote on the motion
-  /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
   /// @param _action A bytes array encoding a function call
   /// @param _key Reputation tree key for the domain
   /// @param _value Reputation tree value for the domain
@@ -336,7 +325,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   )
     public
   {
-    createDomainMotion(_domainId, _childSkillIndex, address(0x0), _action, _key, _value, _branchMask, _siblings);
+    createMotion(_domainId, _childSkillIndex, address(0x0), _action, _key, _value, _branchMask, _siblings);
   }
 
   /// @notice Stake on a motion
@@ -391,7 +380,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       _vote == YAY &&
       !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
-      getSig(motion.action) == CHANGE_FUNCTION &&
+      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
       motion.altTarget == address(0x0)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
@@ -587,7 +576,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     );
 
     if (
-      getSig(motion.action) == CHANGE_FUNCTION &&
+      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
       getTarget(motion.altTarget) == address(colony)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
@@ -1021,7 +1010,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   }
 
   function hashExpenditureActionStruct(bytes memory action) internal returns (bytes32 hash) {
-    assert(getSig(action) == CHANGE_FUNCTION);
+    assert(getSig(action) == CHANGE_FUNCTION_SIG);
 
     uint256 expenditureId;
     uint256 storageSlot;

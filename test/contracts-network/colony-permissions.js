@@ -120,7 +120,7 @@ contract("ColonyPermissions", (accounts) => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
       // Founder can move funds from domain 1 to domain 2.
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address);
 
       // User1 can only move funds from domain 2 into domain 2 task.
       await colony.setFundingRole(1, 0, USER1, 2, true);
@@ -128,13 +128,17 @@ contract("ColonyPermissions", (accounts) => {
       expect(hasRole).to.be.true;
 
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address, { from: USER1 }),
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address, {
+          from: USER1,
+        }),
         "ds-auth-unauthorized"
       );
 
       const taskId = await makeTask({ colonyNetwork, colony, domainId: 2 });
       const task = await colony.getTask(taskId);
-      await colony.moveFundsBetweenPots(2, UINT256_MAX, UINT256_MAX, domain2.fundingPotId, task.fundingPotId, WAD, token.address, { from: USER1 });
+      await colony.moveFundsBetweenPots(2, UINT256_MAX, 2, UINT256_MAX, UINT256_MAX, domain2.fundingPotId, task.fundingPotId, WAD, token.address, {
+        from: USER1,
+      });
     });
 
     it("should allow users with administration permission manipulate expenditures in their domains only", async () => {
@@ -351,17 +355,72 @@ contract("ColonyPermissions", (accounts) => {
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       // Test we can move funds between domain 1 and 2, and also 2 and 3
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address, { from: USER2 });
-      await colony.moveFundsBetweenPots(1, 0, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 });
+      // Deprecated version
+      await colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+        1,
+        UINT256_MAX,
+        0,
+        domain1.fundingPotId,
+        domain2.fundingPotId,
+        WAD,
+        token.address,
+        {
+          from: USER2,
+        }
+      );
+      await colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+        1,
+        0,
+        1,
+        domain2.fundingPotId,
+        domain3.fundingPotId,
+        WAD,
+        token.address,
+        { from: USER2 }
+      );
 
-      // But only with valid proofs
+      // Newest version
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address, {
+        from: USER2,
+      });
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, 0, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 });
+
+      // But only with valid proofs. Deprecated version of this function
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, 1, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 }),
+        colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+          1,
+          1,
+          1,
+          domain2.fundingPotId,
+          domain3.fundingPotId,
+          WAD,
+          token.address,
+          { from: USER2 }
+        ),
         "ds-auth-invalid-domain-inheritence"
       );
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, 0, 0, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 }),
+        colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+          1,
+          0,
+          0,
+          domain2.fundingPotId,
+          domain3.fundingPotId,
+          WAD,
+          token.address,
+          { from: USER2 }
+        ),
         "ds-auth-invalid-domain-inheritence"
+      );
+
+      // The newest version
+      await checkErrorRevert(
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, 1, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 }),
+        "colony-invalid-domain-inheritence"
+      );
+      await checkErrorRevert(
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, 0, 0, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 }),
+        "colony-invalid-domain-inheritence"
       );
     });
 

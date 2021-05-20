@@ -309,7 +309,17 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         await metaColony.addPayment(1, UINT256_MAX, accountsForTest[i], clnyToken.address, 40, 1, 0);
         const paymentId = await metaColony.getPaymentCount();
         const payment = await metaColony.getPayment(paymentId);
-        await metaColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, INITIAL_FUNDING, clnyToken.address);
+        await metaColony.moveFundsBetweenPots(
+          1,
+          UINT256_MAX,
+          1,
+          UINT256_MAX,
+          UINT256_MAX,
+          1,
+          payment.fundingPotId,
+          INITIAL_FUNDING,
+          clnyToken.address
+        );
         await metaColony.finalizePayment(1, UINT256_MAX, paymentId);
 
         // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the

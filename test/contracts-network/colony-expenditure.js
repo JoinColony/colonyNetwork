@@ -290,7 +290,17 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.finalizeExpenditure(expenditureId, { from: ADMIN }), "colony-expenditure-not-funded");
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
 
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
     });
@@ -319,7 +329,17 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
       const recipientBalanceBefore = await token.balanceOf(RECIPIENT);
@@ -338,8 +358,28 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, otherToken.address, WAD, { from: ADMIN });
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, otherToken.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        otherToken.address
+      );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
       const tokenBalanceBefore = await token.balanceOf(RECIPIENT);
@@ -357,7 +397,17 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
 
@@ -371,7 +421,17 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditurePayoutModifier(1, UINT256_MAX, expenditureId, SLOT0, WAD.neg());
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
       const balanceBefore = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
@@ -391,7 +451,17 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditurePayoutModifier(1, UINT256_MAX, expenditureId, SLOT0, WAD.divn(3).neg()); // 2/3 payout
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
       const balanceBefore = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
@@ -411,7 +481,17 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
 
@@ -438,7 +518,17 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditurePayoutModifier(1, UINT256_MAX, expenditureId, SLOT0, WAD.divn(2).neg());
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
       const recipientBalanceBefore = await token.balanceOf(RECIPIENT);
@@ -465,7 +555,17 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditurePayoutModifier(1, UINT256_MAX, expenditureId, SLOT0, WAD);
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
       const recipientBalanceBefore = await token.balanceOf(RECIPIENT);
@@ -490,7 +590,17 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditurePayoutModifier(1, UINT256_MAX, expenditureId, SLOT0, MAX_PAYOUT_MODIFIER);
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, MAX_PAYOUT, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        MAX_PAYOUT,
+        token.address
+      );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
 
@@ -511,7 +621,17 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, [MAPPING, ARRAY], ["0x0", bn2bytes32(new BN(1))], day32);
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
       await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, SLOT0, token.address), "colony-expenditure-cannot-claim");
@@ -543,16 +663,36 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
 
       // Try to move funds back
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, domain1.fundingPotId, WAD, token.address),
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, domain1.fundingPotId, WAD, token.address),
         "colony-funding-expenditure-bad-state"
       );
 
       await colony.cancelExpenditure(expenditureId, { from: ADMIN });
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, domain1.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        expenditure.fundingPotId,
+        domain1.fundingPotId,
+        WAD,
+        token.address
+      );
     });
   });
 

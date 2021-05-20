@@ -110,6 +110,9 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "editColony(string)");
     addRoleCapability(ROOT_ROLE, "burnTokens(address,uint256)");
     addRoleCapability(ROOT_ROLE, "unlockToken()");
+
+    // Added in colony v6 (d-lwss)
+    addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

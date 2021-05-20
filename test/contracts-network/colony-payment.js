@@ -186,7 +186,7 @@ contract("Colony Payment", (accounts) => {
       expect(fundingPotPayoutForToken).to.eq.BN(WAD);
 
       await fundColonyWithTokens(colony, token, 40);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 40, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 40, token.address);
       const fundingPotBalanceForToken = await colony.getFundingPotBalance(payment.fundingPotId, token.address);
       expect(fundingPotBalanceForToken).to.eq.BN(40);
     });
@@ -213,7 +213,7 @@ contract("Colony Payment", (accounts) => {
       paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
       await fundColonyWithTokens(colony, token, 40);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 40, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 40, token.address);
     });
 
     it("can finalize payment when it is fully funded", async () => {
@@ -229,7 +229,7 @@ contract("Colony Payment", (accounts) => {
 
     it("cannnot finalize payment if it is NOT fully funded", async () => {
       const payment = await colony.getPayment(paymentId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, payment.fundingPotId, 1, 1, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, payment.fundingPotId, 1, 1, token.address);
       expect(payment.finalized).to.be.false;
 
       await checkErrorRevert(colony.finalizePayment(1, UINT256_MAX, paymentId), "colony-payment-not-funded");
@@ -275,7 +275,7 @@ contract("Colony Payment", (accounts) => {
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
       await colony.finalizePayment(1, UINT256_MAX, paymentId);
 
       const recipientBalanceBefore = await token.balanceOf(RECIPIENT);
@@ -293,7 +293,7 @@ contract("Colony Payment", (accounts) => {
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
       await colony.finalizePayment(1, UINT256_MAX, paymentId);
 
       const recipientBalanceBefore = await token.balanceOf(RECIPIENT);
@@ -311,7 +311,7 @@ contract("Colony Payment", (accounts) => {
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
       await colony.finalizePayment(1, UINT256_MAX, paymentId);
       await colony.claimPayment(paymentId, token.address);
 
@@ -324,7 +324,7 @@ contract("Colony Payment", (accounts) => {
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 9999, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 9999, token.address);
       await checkErrorRevert(colony.claimPayment(paymentId, token.address), "colony-payment-not-finalized");
     });
 
@@ -338,11 +338,11 @@ contract("Colony Payment", (accounts) => {
       let fundingPot = await colony.getFundingPot(payment.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(2);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 199, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 199, token.address);
       fundingPot = await colony.getFundingPot(payment.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(2);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 100, otherToken.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 100, otherToken.address);
       fundingPot = await colony.getFundingPot(payment.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 

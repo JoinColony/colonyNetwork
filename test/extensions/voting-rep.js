@@ -467,8 +467,37 @@ contract("Voting Reputation", (accounts) => {
       const domainAction = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
 
       await voting.createRootMotion(ADDRESS_ZERO, rootAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      await voting.createDomainMotion(1, UINT256_MAX, ADDRESS_ZERO, domainAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       await voting.createDomainMotion(1, UINT256_MAX, domainAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+    });
+
+    it("when creating a motion for moveFundsBetweenPots, permissions are correctly respected", async () => {
+      // Move funds between domain 2 and domain 3 pots using the old deprecated function
+      // This should not be allowed - it doesn't conform to the standard permission proofs, and so can't
+      // be checked
+      let action = await encodeTxData(colony, "moveFundsBetweenPots", [1, 0, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address]);
+      const key = makeReputationKey(colony.address, domain2.skillId);
+      const value = makeReputationValue(WAD, 6);
+      const [mask, siblings] = await reputationTree.getProof(key);
+      checkErrorRevert(voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-disallowed-function");
+
+      // Now we make an action with the new moveFundsBetweenPots
+      action = await encodeTxData(colony, "moveFundsBetweenPots", [
+        1,
+        UINT256_MAX,
+        1,
+        0,
+        1,
+        domain2.fundingPotId,
+        domain3.fundingPotId,
+        WAD,
+        token.address,
+      ]);
+
+      // This is not allowed to be created in domain 2
+      await checkErrorRevert(voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
+
+      // But is in the root domain
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
     });
   });
 

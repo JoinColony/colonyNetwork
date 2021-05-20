@@ -74,8 +74,11 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     await fundColonyWithTokens(colony, token, 100);
     const action1 = await encodeTxData(token, "approve", [USER0, 50]);
     await colony.makeArbitraryTransaction(token.address, action1);
-    await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 50, token.address);
-    await checkErrorRevert(colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 50, token.address), "colony-funding-too-many-approvals");
+    await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 50, token.address);
+    await checkErrorRevert(
+      colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 50, token.address),
+      "colony-funding-too-many-approvals"
+    );
     const approval = await colony.getTokenApproval(token.address, USER0);
     expect(approval).to.be.eq.BN(50);
     const allApprovals = await colony.getTotalTokenApproval(token.address);
@@ -94,8 +97,11 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     expect(approval).to.eq.BN(20);
     let allApprovals = await colony.getTotalTokenApproval(token.address);
     expect(allApprovals).to.eq.BN(20);
-    await checkErrorRevert(colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 81, token.address), "colony-funding-too-many-approvals");
-    await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 80, token.address);
+    await checkErrorRevert(
+      colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 81, token.address),
+      "colony-funding-too-many-approvals"
+    );
+    await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 80, token.address);
     // Pot still thinks it has 20 tokens in it
     let potBalance = await colony.getFundingPotBalance(1, token.address);
     expect(potBalance).to.eq.BN(20);

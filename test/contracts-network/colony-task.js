@@ -1355,12 +1355,12 @@ contract("ColonyTask", (accounts) => {
       // but we need some Ether, too
       await colony.send(101);
       await colony.claimColonyFunds(ethers.constants.AddressZero);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domainPotId, taskPotId, 100, ethers.constants.AddressZero);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, domainPotId, taskPotId, 100, ethers.constants.AddressZero);
 
       // And another token
       await otherToken.mint(colony.address, 101);
       await colony.claimColonyFunds(otherToken.address);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domainPotId, taskPotId, 100, otherToken.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, domainPotId, taskPotId, 100, otherToken.address);
 
       // Keep track of original Ether balance in funding pots
       const originalDomainEtherBalance = await colony.getFundingPotBalance(domainPotId, ethers.constants.AddressZero);
@@ -1382,9 +1382,29 @@ contract("ColonyTask", (accounts) => {
         args: [taskId],
       });
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, taskPotId, domainPotId, originalTaskEtherBalance, ethers.constants.AddressZero);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, taskPotId, domainPotId, originalTaskTokenBalance, token.address);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, taskPotId, domainPotId, originalTaskOtherTokenBalance, otherToken.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        taskPotId,
+        domainPotId,
+        originalTaskEtherBalance,
+        ethers.constants.AddressZero
+      );
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, taskPotId, domainPotId, originalTaskTokenBalance, token.address);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        taskPotId,
+        domainPotId,
+        originalTaskOtherTokenBalance,
+        otherToken.address
+      );
 
       const cancelledTaskEtherBalance = await colony.getFundingPotBalance(taskPotId, ethers.constants.AddressZero);
       const cancelledDomainEtherBalance = await colony.getFundingPotBalance(domainPotId, ethers.constants.AddressZero);
