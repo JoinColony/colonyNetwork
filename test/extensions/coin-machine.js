@@ -178,6 +178,10 @@ contract("Coin Machine", (accounts) => {
         coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, WAD.addn(1), 0, ADDRESS_ZERO),
         "coin-machine-limit-too-large"
       );
+      await checkErrorRevert(
+        coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0, 0, ADDRESS_ZERO),
+        "coin-machine-limit-too-small"
+      );
     });
 
     it("cannot initialise twice", async () => {
@@ -390,56 +394,6 @@ contract("Coin Machine", (accounts) => {
 
       const balance = await token.balanceOf(USER0);
       expect(balance).to.eq.BN(maxPerPeriod);
-    });
-
-    it("cannot buy more than ther user limit allows", async () => {
-      await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
-      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
-      coinMachine = await CoinMachine.at(coinMachineAddress);
-
-      await token.mint(coinMachine.address, WAD.muln(1000));
-
-      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD.divn(2), WAD, ADDRESS_ZERO);
-      const periodLength = await coinMachine.getPeriodLength();
-
-      await purchaseToken.mint(USER0, WAD.muln(500), { from: USER0 });
-      await purchaseToken.approve(coinMachine.address, WAD.muln(500), { from: USER0 });
-
-      await purchaseToken.mint(USER1, WAD.muln(500), { from: USER0 });
-      await purchaseToken.approve(coinMachine.address, WAD.muln(500), { from: USER1 });
-
-      await purchaseToken.mint(USER2, WAD.muln(500), { from: USER0 });
-      await purchaseToken.approve(coinMachine.address, WAD.muln(500), { from: USER2 });
-
-      let maxPurchase;
-
-      // totalSold is 0, so we use targetPerPeriod (100) as a pseudo-total
-      // The user can buy 100 tokens, because it thinks the total will be 200
-      maxPurchase = await coinMachine.getMaxPurchase(USER0);
-      expect(maxPurchase).to.eq.BN(WAD.muln(100));
-
-      await coinMachine.buyTokens(WAD.muln(100), { from: USER0 });
-      await coinMachine.buyTokens(WAD.muln(100), { from: USER1 });
-
-      await forwardTime(periodLength.toNumber(), this);
-
-      // Now totalSold is 200
-      // Since each owns half already, neither can buy, only a new user can
-      // The new user can buy 200 tokens, half of 400
-      maxPurchase = await coinMachine.getMaxPurchase(USER0);
-      expect(maxPurchase).to.be.zero;
-      maxPurchase = await coinMachine.getMaxPurchase(USER2);
-      expect(maxPurchase).to.eq.BN(WAD.muln(200));
-
-      await coinMachine.buyTokens(WAD.muln(200), { from: USER2 });
-
-      await forwardTime(periodLength.toNumber(), this);
-
-      // Now totalSold is 400
-      // Original users can buy 200 tokens, owning half (300) of 600
-      maxPurchase = await coinMachine.getMaxPurchase(USER0);
-      expect(maxPurchase).to.eq.BN(WAD.muln(200));
     });
 
     it("can buy tokens over multiple periods", async () => {
@@ -840,6 +794,92 @@ contract("Coin Machine", (accounts) => {
       await expectEvent(tx, "WhitelistSet", [ADDRESS_ZERO]);
       recordedAddress = await coinMachine.getWhitelist();
       expect(recordedAddress).to.equal(ADDRESS_ZERO);
+    });
+
+    it("cannot buy more than ther user limit allows", async () => {
+      await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      coinMachine = await CoinMachine.at(coinMachineAddress);
+
+      await token.mint(coinMachine.address, WAD.muln(1000));
+
+      await whitelist.approveUsers([USER0, USER1, USER2], true, { from: USER1 });
+
+      await coinMachine.initialise(
+        token.address,
+        purchaseToken.address,
+        60 * 60,
+        10,
+        WAD.muln(100),
+        WAD.muln(200),
+        WAD.divn(2),
+        WAD,
+        whitelist.address
+      );
+
+      const periodLength = await coinMachine.getPeriodLength();
+
+      await purchaseToken.mint(USER0, WAD.muln(500), { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, WAD.muln(500), { from: USER0 });
+
+      await purchaseToken.mint(USER1, WAD.muln(500), { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, WAD.muln(500), { from: USER1 });
+
+      await purchaseToken.mint(USER2, WAD.muln(500), { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, WAD.muln(500), { from: USER2 });
+
+      let maxPurchase;
+      let balance;
+
+      // totalSold is 0, so we use targetPerPeriod (100) as a pseudo-total
+      // The user can buy 100 tokens, because it thinks the total will be 200
+      maxPurchase = await coinMachine.getMaxPurchase(USER0);
+      expect(maxPurchase).to.eq.BN(WAD.muln(100));
+
+      await coinMachine.buyTokens(WAD.muln(500), { from: USER0 });
+      await coinMachine.buyTokens(WAD.muln(500), { from: USER1 });
+
+      // Only buys up to limit
+      balance = await token.balanceOf(USER0);
+      expect(balance).to.eq.BN(WAD.muln(100));
+      balance = await token.balanceOf(USER1);
+      expect(balance).to.eq.BN(WAD.muln(100));
+
+      await forwardTime(periodLength.toNumber(), this);
+
+      // Now totalSold is 200
+      // Since each owns half already, neither can buy, only a new user can
+      // The new user can buy 200 tokens, half of 400
+      maxPurchase = await coinMachine.getMaxPurchase(USER0);
+      expect(maxPurchase).to.be.zero;
+      maxPurchase = await coinMachine.getMaxPurchase(USER2);
+      expect(maxPurchase).to.eq.BN(WAD.muln(200));
+
+      await coinMachine.buyTokens(WAD.muln(500), { from: USER2 });
+
+      // Only buys up to limit
+      balance = await token.balanceOf(USER2);
+      expect(balance).to.eq.BN(WAD.muln(200));
+
+      await forwardTime(periodLength.toNumber(), this);
+
+      // Now totalSold is 400
+      // Original users can buy 200 tokens, owning half (300) of 600
+      maxPurchase = await coinMachine.getMaxPurchase(USER0);
+      expect(maxPurchase).to.eq.BN(WAD.muln(200));
+    });
+
+    it("cannot set a user limit without a whitelist", async () => {
+      await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      coinMachine = await CoinMachine.at(coinMachineAddress);
+
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD.divn(2), WAD, ADDRESS_ZERO);
+
+      const maxPurchase = await coinMachine.getMaxPurchase(USER0);
+      expect(maxPurchase).to.eq.BN(UINT256_MAX);
     });
   });
 });

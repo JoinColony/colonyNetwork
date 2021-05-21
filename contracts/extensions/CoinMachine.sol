@@ -62,7 +62,7 @@ contract CoinMachine is ColonyExtension {
   bool evolvePrice; // If we should evolve the price or not
 
   uint256 soldTotal; // Total tokens sold by the coin machine
-  uint256 userLimit; // Limit any address can buy of the total amount (as WAD percentage)
+  uint256 userLimit; // Limit any address can buy of the total amount (as WAD-denominated fraction)
 
   mapping(address => uint256) soldUser; // Tokens sold to a particular user
 
@@ -154,6 +154,7 @@ contract CoinMachine is ColonyExtension {
     require(_targetPerPeriod > 0, "coin-machine-target-too-small");
     require(_maxPerPeriod >= _targetPerPeriod, "coin-machine-max-too-small");
     require(_userLimit <= WAD, "coin-machine-limit-too-large");
+    require(_userLimit > 0, "coin-machine-limit-too-small");
 
     token = _token;
     purchaseToken = _purchaseToken;
@@ -362,7 +363,7 @@ contract CoinMachine is ColonyExtension {
   /// @notice Get the maximum amount of tokens a user can purchase
   function getMaxPurchase(address _user) public view returns (uint256) {
     // ((max(soldTotal, targetPerPeriod) * userLimit) - soldUser) / (1 - userLimit)
-    return (userLimit == WAD) ? UINT256_MAX : wdiv(
+    return (userLimit == WAD || whitelist == address(0x0)) ? UINT256_MAX : wdiv(
       sub(wmul(max(soldTotal, targetPerPeriod), userLimit), soldUser[_user]),
       sub(WAD, userLimit)
     );
