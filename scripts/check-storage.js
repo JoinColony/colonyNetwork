@@ -36,6 +36,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/patriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
       "contracts/reputationMiningCycle/ReputationMiningCycleStorage.sol",
       "contracts/testHelpers/ToggleableToken.sol",
+      "contracts/testHelpers/TestExtensions.sol",
       "contracts/tokenLocking/TokenLockingStorage.sol",
       "contracts/Migrations.sol",
       "contracts/Token.sol", // Imported from colonyToken repo
