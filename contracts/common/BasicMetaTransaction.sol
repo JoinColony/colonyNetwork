@@ -31,6 +31,7 @@ abstract contract BasicMetaTransaction is DSMath, MetaTransactionMsgSender {
    * @param sigS S part of the signature
    * @param sigV V part of the signature
    */
+  // slither-disable-next-line locked-ether
   function executeMetaTransaction(address userAddress, bytes memory functionSignature,
       bytes32 sigR, bytes32 sigS, uint8 sigV) public payable returns(bytes memory) {
 
