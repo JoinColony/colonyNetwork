@@ -20,8 +20,6 @@ abstract contract BasicMetaTransaction is DSMath, MetaTransactionMsgSender {
       return id;
   }
 
-
-  event Blah(bytes);
   /**
    * Main function to be called when user wants to execute meta transaction.
    * The actual function to be called should be passed as param with name functionSignature
@@ -41,7 +39,6 @@ abstract contract BasicMetaTransaction is DSMath, MetaTransactionMsgSender {
 
       // Append userAddress at the end to extract it from calling context
       (bool success, bytes memory returnData) = address(this).call(abi.encodePacked(functionSignature, METATRANSACTION_FLAG, userAddress));
-      emit Blah(returnData);
       require(success, "Function call not successful");
       emit MetaTransactionExecuted(userAddress, msg.sender, functionSignature);
       return returnData;

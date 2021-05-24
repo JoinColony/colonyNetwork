@@ -166,8 +166,6 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, MultiChain
     return createColony(_tokenAddress, _version, _colonyName, "");
   }
 
-  event Blah(string);
-
   function createColony(
     address _tokenAddress,
     uint256 _version,
@@ -179,7 +177,6 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, MultiChain
     address colonyAddress = deployColony(_tokenAddress, version);
 
     if (bytes(_colonyName).length > 0) {
-      emit Blah(_colonyName);
       IColony(colonyAddress).registerColonyLabel(_colonyName, "");
     }
 
