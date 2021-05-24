@@ -87,7 +87,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
     expenditureExists(_id)
-    expenditureDraft(_id)
+    expenditureActive(_id)
   {
     expenditures[_id].owner = _newOwner;
 
@@ -134,33 +134,33 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureFinalized(msg.sender, _id);
   }
 
-  function setExpenditureRecipients(uint256 _id, uint256 _firstSlot, address payable[] memory _recipients)
+  function setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address payable[] memory _recipients)
     public
     stoppable
     expenditureExists(_id)
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
-    for (uint256 i; i < _recipients.length; i++) {
-      uint256 slot = _firstSlot + i;
-      expenditureSlots[_id][slot].recipient = _recipients[i];
+    require(_slots.length == _recipients.length, "colony-expenditure-bad-slots");
 
-      emit ExpenditureRecipientSet(msg.sender, _id, slot, _recipients[i]);
+    for (uint256 i; i < _slots.length; i++) {
+      expenditureSlots[_id][_slots[i]].recipient = _recipients[i];
+
+      emit ExpenditureRecipientSet(msg.sender, _id, _slots[i], _recipients[i]);
     }
   }
 
-  function setExpenditureSkills(uint256 _id, uint256 _firstSlot, uint256[] memory _skillIds)
+  function setExpenditureSkills(uint256 _id, uint256[] memory _slots, uint256[] memory _skillIds)
     public
     stoppable
     expenditureExists(_id)
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
+    require(_slots.length == _skillIds.length, "colony-expenditure-bad-slots");
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
 
-    for (uint256 i; i < _skillIds.length; i++) {
-      uint256 slot = _firstSlot + i;
-
+    for (uint256 i; i < _slots.length; i++) {
       require(
         _skillIds[i] > 0 && _skillIds[i] <= colonyNetworkContract.getSkillCount(),
         "colony-skill-does-not-exist"
@@ -173,25 +173,26 @@ contract ColonyExpenditure is ColonyStorage {
       // We only allow setting of the first skill here.
       // If we allow more in the future, make sure to have a hard limit that
       // comfortably limits respondToChallenge's gas.
-      expenditureSlots[_id][slot].skills = new uint256[](1);
-      expenditureSlots[_id][slot].skills[0] = _skillIds[i];
+      expenditureSlots[_id][_slots[i]].skills = new uint256[](1);
+      expenditureSlots[_id][_slots[i]].skills[0] = _skillIds[i];
 
-      emit ExpenditureSkillSet(msg.sender, _id, slot, _skillIds[i]);
+      emit ExpenditureSkillSet(msg.sender, _id, _slots[i], _skillIds[i]);
     }
   }
 
-  function setExpenditureClaimDelays(uint256 _id, uint256 _firstSlot, uint256[] memory _claimDelays)
+  function setExpenditureClaimDelays(uint256 _id, uint256[] memory _slots, uint256[] memory _claimDelays)
     public
     stoppable
     expenditureExists(_id)
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
-    for (uint256 i; i < _claimDelays.length; i++) {
-      uint256 slot = _firstSlot + i;
-      expenditureSlots[_id][slot].claimDelay = _claimDelays[i];
+    require(_slots.length == _claimDelays.length, "colony-expenditure-bad-slots");
 
-      emit ExpenditureClaimDelaySet(msg.sender, _id, slot, _claimDelays[i]);
+    for (uint256 i; i < _slots.length; i++) {
+      expenditureSlots[_id][_slots[i]].claimDelay = _claimDelays[i];
+
+      emit ExpenditureClaimDelaySet(msg.sender, _id, _slots[i], _claimDelays[i]);
     }
   }
 
@@ -200,9 +201,11 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
   {
+    uint256[] memory slots = new uint256[](1);
+    slots[0] = _slot;
     address payable[] memory recipients = new address payable[](1);
     recipients[0] = _recipient;
-    setExpenditureRecipients(_id, _slot, recipients);
+    setExpenditureRecipients(_id, slots, recipients);
   }
 
   // Deprecated
@@ -210,9 +213,11 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
   {
+    uint256[] memory slots = new uint256[](1);
+    slots[0] = _slot;
     uint256[] memory skillIds = new uint256[](1);
     skillIds[0] = _skillId;
-    setExpenditureSkills(_id, _slot, skillIds);
+    setExpenditureSkills(_id, slots, skillIds);
   }
 
   // Deprecated
@@ -220,9 +225,11 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
   {
+    uint256[] memory slots = new uint256[](1);
+    slots[0] = _slot;
     uint256[] memory claimDelays = new uint256[](1);
     claimDelays[0] = _claimDelay;
-    setExpenditureClaimDelays(_id, _slot, claimDelays);
+    setExpenditureClaimDelays(_id, slots, claimDelays);
   }
 
   uint256 constant EXPENDITURES_SLOT = 25;

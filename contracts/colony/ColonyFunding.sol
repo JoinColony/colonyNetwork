@@ -561,7 +561,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     }
   }
 
-  function setExpenditurePayouts(uint256 _id, uint256 _firstSlot, address _token, uint256[] memory _amounts)
+  function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts)
   public
   stoppable
   expenditureExists(_id)
@@ -571,20 +571,18 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     assert(fundingPot.associatedType == FundingPotAssociatedType.Expenditure);
 
-    for (uint256 i; i < _amounts.length; i++) {
-      uint256 slot = _firstSlot + i;
-
+    for (uint256 i; i < _slots.length; i++) {
       require(_amounts[i] <= MAX_PAYOUT, "colony-payout-too-large");
 
       uint256 currentTotal = fundingPot.payouts[_token];
-      uint256 currentPayout = expenditureSlotPayouts[_id][slot][_token];
+      uint256 currentPayout = expenditureSlotPayouts[_id][_slots[i]][_token];
 
-      expenditureSlotPayouts[_id][slot][_token] = _amounts[i];
+      expenditureSlotPayouts[_id][_slots[i]][_token] = _amounts[i];
       fundingPot.payouts[_token] = add(sub(currentTotal, currentPayout), _amounts[i]);
 
       updatePayoutsWeCannotMakeAfterBudgetChange(expenditures[_id].fundingPotId, _token, currentTotal);
 
-      emit ExpenditurePayoutSet(msg.sender, _id, slot, _token, _amounts[i]);
+      emit ExpenditurePayoutSet(msg.sender, _id, _slots[i], _token, _amounts[i]);
     }
   }
 
@@ -592,9 +590,11 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   public
   stoppable
   {
+    uint256[] memory slots = new uint256[](1);
+    slots[0] = _slot;
     uint256[] memory amounts = new uint256[](1);
     amounts[0] = _amount;
-    setExpenditurePayouts(_id, _slot, _token, amounts);
+    setExpenditurePayouts(_id, slots, _token, amounts);
   }
 
   function setTaskPayout(uint256 _id, TaskRole _role, address _token, uint256 _amount) private

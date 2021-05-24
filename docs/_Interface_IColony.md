@@ -1399,7 +1399,7 @@ Sets the claim delays in sequential expenditure slots. Can only be called by exp
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256|Expenditure identifier
-|_firstSlot|uint256|Starting slot to set claim delays
+|_slots|uint256[]|Array of slots to set claim delays
 |_claimDelays|uint256[]|Durations of time (in seconds) to delay
 
 
@@ -1428,7 +1428,7 @@ Set the token payouts in sequential expenditure slots. Can only be called by exp
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256|Id of the expenditure
-|_firstSlot|uint256|Starting slot to set payouts
+|_slots|uint256[]|Array of slots to set payouts
 |_token|address|Address of the token, `0x0` value indicates Ether
 |_amounts|uint256[]|Payout amounts
 
@@ -1457,7 +1457,7 @@ Sets the recipients in sequential expenditure slots. Can only be called by expen
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256|Id of the expenditure
-|_firstSlot|uint256|Starting slot to set recipients
+|_slots|uint256[]|Array of slots to set recipients
 |_recipients|address[]|Addresses of the recipients
 
 
@@ -1485,7 +1485,7 @@ Sets the skill on an expenditure slot. Can only be called by expenditure owner.
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256|Expenditure identifier
-|_firstSlot|uint256|Starting slot to set skills
+|_slots|uint256[]|Array of slots to set skills
 |_skillIds|uint256[]|Ids of the new skills to set
 
 
