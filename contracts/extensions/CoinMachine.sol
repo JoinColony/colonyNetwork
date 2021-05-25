@@ -61,9 +61,8 @@ contract CoinMachine is ColonyExtension {
 
   bool evolvePrice; // If we should evolve the price or not
 
+  uint256 userLimitFraction; // Limit an address can buy of the total amount (in WADs)
   uint256 soldTotal; // Total tokens sold by the coin machine
-  uint256 userLimit; // Limit any address can buy of the total amount (as WAD-denominated fraction)
-
   mapping(address => uint256) soldUser; // Tokens sold to a particular user
 
   // Modifiers
@@ -138,7 +137,7 @@ contract CoinMachine is ColonyExtension {
     uint256 _windowSize,
     uint256 _targetPerPeriod,
     uint256 _maxPerPeriod,
-    uint256 _userLimit,
+    uint256 _userLimitFraction,
     uint256 _startingPrice,
     address _whitelist
   )
@@ -153,8 +152,8 @@ contract CoinMachine is ColonyExtension {
     require(_windowSize <= 511, "coin-machine-window-too-large");
     require(_targetPerPeriod > 0, "coin-machine-target-too-small");
     require(_maxPerPeriod >= _targetPerPeriod, "coin-machine-max-too-small");
-    require(_userLimit <= WAD, "coin-machine-limit-too-large");
-    require(_userLimit > 0, "coin-machine-limit-too-small");
+    require(_userLimitFraction <= WAD, "coin-machine-limit-too-large");
+    require(_userLimitFraction > 0, "coin-machine-limit-too-small");
 
     token = _token;
     purchaseToken = _purchaseToken;
@@ -168,7 +167,7 @@ contract CoinMachine is ColonyExtension {
     targetPerPeriod = _targetPerPeriod;
     maxPerPeriod = _maxPerPeriod;
 
-    userLimit = _userLimit;
+    userLimitFraction = _userLimitFraction;
 
     activePrice = _startingPrice;
     activePeriod = getCurrentPeriod();
@@ -200,11 +199,8 @@ contract CoinMachine is ColonyExtension {
       "coin-machine-unauthorised"
     );
 
-    uint256 tokenBalance = getTokenBalance();
     uint256 maxPurchase = getMaxPurchase(msg.sender);
-    uint256 remainingTokens = sub(maxPerPeriod, activeSold);
-
-    uint256 numTokens = min(maxPurchase, min(tokenBalance, min(remainingTokens, _numTokens)));
+    uint256 numTokens = min(maxPurchase, _numTokens);
     uint256 totalCost = wmul(numTokens, activePrice);
 
     activeIntake = add(activeIntake, totalCost);
@@ -212,14 +208,14 @@ contract CoinMachine is ColonyExtension {
 
     assert(activeSold <= maxPerPeriod);
 
-    // Do userLimit bookkeeping (only if needed)
-    if (userLimit < WAD) {
+    // Do userLimitFraction bookkeeping (only if needed)
+    if (userLimitFraction < WAD) {
       soldTotal = add(soldTotal, numTokens);
       soldUser[msg.sender] = add(soldUser[msg.sender], numTokens);
     }
 
     // Check if we've sold out
-    if (numTokens >= tokenBalance) { setPriceEvolution(false); }
+    if (numTokens >= getTokenBalance()) { setPriceEvolution(false); }
 
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
@@ -353,20 +349,25 @@ contract CoinMachine is ColonyExtension {
   }
 
   /// @notice Get the number of remaining tokens for sale this period
-  function getNumAvailable() public view returns (uint256) {
-    return min(
-      ERC20(token).balanceOf(address(this)),
-      sub(maxPerPeriod, ((activePeriod >= getCurrentPeriod()) ? activeSold : 0))
+  function getSellableTokens() public view returns (uint256) {
+    return sub(maxPerPeriod, ((activePeriod >= getCurrentPeriod()) ? activeSold : 0));
+  }
+
+  /// @notice Get the maximum amount of tokens a user can purchase in total
+  function getUserLimit(address _user) public view returns (uint256) {
+    // ((max(soldTotal, targetPerPeriod) * userLimitFraction) - soldUser) / (1 - userLimitFraction)
+    return (userLimitFraction == WAD || whitelist == address(0x0)) ? UINT256_MAX : wdiv(
+      sub(wmul(max(soldTotal, targetPerPeriod), userLimitFraction), soldUser[_user]),
+      sub(WAD, userLimitFraction)
     );
   }
 
-  /// @notice Get the maximum amount of tokens a user can purchase
+  /// @notice Get the maximum amount of tokens a user can purchase in a period
   function getMaxPurchase(address _user) public view returns (uint256) {
-    // ((max(soldTotal, targetPerPeriod) * userLimit) - soldUser) / (1 - userLimit)
-    return (userLimit == WAD || whitelist == address(0x0)) ? UINT256_MAX : wdiv(
-      sub(wmul(max(soldTotal, targetPerPeriod), userLimit), soldUser[_user]),
-      sub(WAD, userLimit)
-    );
+    uint256 tokenBalance = getTokenBalance();
+    uint256 sellableTokens = getSellableTokens();
+    uint256 userLimit = getUserLimit(_user);
+    return min(userLimit, min(tokenBalance, sellableTokens));
   }
 
   /// @notice Get the address of the whitelist (if exists)
