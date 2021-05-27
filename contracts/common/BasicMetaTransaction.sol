@@ -7,6 +7,8 @@ abstract contract BasicMetaTransaction is DSMath, MetaTransactionMsgSender {
 
   function getMetatransactionNonce(address userAddress) public view virtual returns (uint256 nonce);
 
+  // NB if implementing this functionality in a contract with recovery mode,
+  // you MUST prevent the metatransaction nonces from being editable with recovery mode.
   function incrementMetatransactionNonce(address user) internal virtual;
 
   event MetaTransactionExecuted(address userAddress, address payable relayerAddress, bytes functionSignature);

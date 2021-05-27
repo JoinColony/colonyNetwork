@@ -31,6 +31,16 @@ abstract contract CommonStorage is DSAuth, MetaTransactionMsgSender {
   uint256 constant OWNER_SLOT = 1;
   uint256 constant RESOLVER_SLOT = 2;
 
+  bytes32 constant PROTECTED = keccak256("Recovery Mode Protected Slot");
+
+  function protectSlot(uint256 _slot) internal always {
+    uint256 flagSlot = uint256(keccak256(abi.encodePacked("RECOVERY_PROTECTED", _slot)));
+    uint256 protectFlag = uint256(PROTECTED);
+    assembly {
+      sstore(flagSlot, protectFlag) // ignore-swc-124
+    }
+  }
+
   // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
 

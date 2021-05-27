@@ -393,6 +393,12 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs, Mult
   }
 
   function incrementMetatransactionNonce(address user) override internal {
+    // We need to protect the metatransaction nonce slots, otherwise those with recovery
+    // permissions could replay metatransactions, which would be a disaster.
+    // What slot are we setting?
+    // This mapping is in slot 34 (see ColonyStorage.sol);
+    uint256 slot = uint256(keccak256(abi.encode(uint256(user), uint256(34))));
+    protectSlot(slot);
     metatransactionNonces[user] = add(metatransactionNonces[user], 1);
   }
 
