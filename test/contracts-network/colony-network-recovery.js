@@ -17,11 +17,13 @@ import {
   web3GetStorageAt,
   getActiveRepCycle,
   advanceMiningCycleNoContest,
+  web3GetChainId,
+  getTokenArgs,
 } from "../../helpers/test-helper";
 import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
-import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../../helpers/constants";
+import { DEFAULT_STAKE, MINING_CYCLE_DURATION, CURR_VERSION } from "../../helpers/constants";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -191,6 +193,58 @@ contract("Colony Network Recovery", (accounts) => {
       const protectedLoc = 0;
       await colonyNetwork.enterRecoveryMode();
       await checkErrorRevert(colonyNetwork.setStorageSlotRecovery(protectedLoc, "0xdeadbeef"), "colony-common-protected-variable");
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.exitRecoveryMode();
+    });
+
+    it("should not allow editing of a protected variable in a mapping", async () => {
+      // First, set a variable in a protected mapping. Currently, the only way we do that
+      // is via a metatransaction
+      const tokenArgs = getTokenArgs();
+      const token = await Token.new(...tokenArgs);
+
+      let txData = await colonyNetwork.contract.methods["createColony(address,uint256,string)"](token.address, CURR_VERSION, "").encodeABI();
+      const nonce = await colonyNetwork.getMetatransactionNonce(accounts[1]);
+      const chainId = await web3GetChainId();
+
+      txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "someColonyName").encodeABI();
+
+      // Sign data
+      const msg = web3.utils.soliditySha3(
+        { t: "uint256", v: nonce.toString() },
+        { t: "address", v: colonyNetwork.address },
+        { t: "uint256", v: chainId },
+        { t: "bytes", v: txData }
+      );
+      const sig = await web3.eth.sign(msg, accounts[1]);
+
+      const r = `0x${sig.substring(2, 66)}`;
+      const s = `0x${sig.substring(66, 130)}`;
+      const v = parseInt(sig.substring(130), 16) + 27;
+
+      await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      // Put network in to recovery mode
+      await colonyNetwork.enterRecoveryMode();
+      // work out the storage slot
+      // Metatransaction nonce mapping is storage slot 41
+      // So this user has their nonce stored at
+      const user0MetatransactionNonceSlot = await web3.utils.soliditySha3(
+        { type: "bytes32", value: ethers.utils.hexZeroPad(accounts[1], 32) },
+        { type: "uint256", value: "41" }
+      );
+
+      // Try and edit that slot
+      await checkErrorRevert(
+        colonyNetwork.setStorageSlotRecovery(user0MetatransactionNonceSlot, "0x00000000000000000000000000000000000000000000000000000000000000ff"),
+        "colony-protected-variable"
+      );
+
+      // Try and edit the protection
+      const user0MetatransactionNonceProtectionSlot = web3.utils.soliditySha3("RECOVERY_PROTECTED", user0MetatransactionNonceSlot);
+      await checkErrorRevert(colonyNetwork.setStorageSlotRecovery(user0MetatransactionNonceProtectionSlot, "0x00"), "colony-protected-variable");
+
+      // Leave recovery mode
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
     });
