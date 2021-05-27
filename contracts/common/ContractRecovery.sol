@@ -34,6 +34,15 @@ abstract contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage {
     require(_slot != OWNER_SLOT, "colony-common-protected-variable");
     require(_slot != RESOLVER_SLOT, "colony-common-protected-variable");
 
+    bytes32 flag;
+    uint256 flagSlot = uint256(keccak256(abi.encodePacked("RECOVERY_PROTECTED", _slot)));
+    assembly {
+      flag := sload(flagSlot)
+    }
+
+    // uint256 protectFlag = uint256(PROTECTED);
+    require(flag != PROTECTED, "colony-protected-variable");
+
     // NB. This isn't necessarily a colony - could be ColonyNetwork. But they both have this function, so it's okay.
     IRecovery(address(this)).checkNotAdditionalProtectedVariable(_slot); // ignore-swc-123
 
@@ -49,6 +58,9 @@ abstract contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage {
       oldValue := sload(x)
       sstore(x, y) // ignore-swc-124
     }
+
+    // Make sure we're not trying to change a flag protecting something else
+    require(oldValue != PROTECTED, "colony-protected-variable");
 
     // Restore key variables
     recoveryRolesCount = _recoveryRolesCount;
