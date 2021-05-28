@@ -292,7 +292,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     motion.altTarget = _altTarget;
     motion.action = _action;
 
-    emit MotionCreated(motionCount, msg.sender, _domainId);
+    emit MotionCreated(motionCount, msgSender(), _domainId);
   }
 
   /// @notice Create a motion in the root domain (DEPRECATED)
