@@ -60,7 +60,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
 }
 
 
-contract DutchAuction is DSMath, MultiChain {
+contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   address payable public colonyNetwork;
   address public metaColonyAddress;
   ERC20Extended public clnyToken;
@@ -82,6 +82,7 @@ contract DutchAuction is DSMath, MultiChain {
   // Final price in CLNY per 10**18 Tokens (min 1, max 1e36)
   uint public finalPrice;
   bool public finalized;
+  mapping(address => uint256) metatransactionNonces;
 
   mapping (address => uint256) public bids;
 
@@ -128,10 +129,18 @@ contract DutchAuction is DSMath, MultiChain {
   constructor(address _clnyToken, address _token, address _metaColonyAddress) public {
     require(_metaColonyAddress != address(0x0), "colony-auction-metacolony-cannot-be-zero");
 
-    colonyNetwork = msg.sender;
+    colonyNetwork = msgSender();
     metaColonyAddress = _metaColonyAddress;
     clnyToken = ERC20Extended(_clnyToken);
     token = ERC20Extended(_token);
+  }
+
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
+  }
+
+  function incrementMetatransactionNonce(address user) override internal {
+    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
   }
 
   function start() public
@@ -208,16 +217,16 @@ contract DutchAuction is DSMath, MultiChain {
       return;
     }
 
-    if (bids[msg.sender] == 0) {
+    if (bids[msgSender()] == 0) {
       bidCount += 1;
     }
 
-    bids[msg.sender] = add(bids[msg.sender], amount);
+    bids[msgSender()] = add(bids[msgSender()], amount);
     receivedTotal = add(receivedTotal, amount);
 
-    require(clnyToken.transferFrom(msg.sender, address(this), amount), "colony-auction-bid-transfer-failed");
+    require(clnyToken.transferFrom(msgSender(), address(this), amount), "colony-auction-bid-transfer-failed");
 
-    emit AuctionBid(msg.sender, amount, sub(_remainingToEndAuction, amount));
+    emit AuctionBid(msgSender(), amount, sub(_remainingToEndAuction, amount));
   }
 
   // Finalize the auction and set the final Token price
