@@ -20,7 +20,7 @@ import {
   DELIVERABLE_HASH,
 } from "./constants";
 
-import { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3GetChainId } from "./test-helper";
+import { getTokenArgs, web3GetAccounts, getChildSkillIndex } from "./test-helper";
 import { executeSignedTaskChange, executeSignedRoleAssignment } from "./task-review-signing";
 
 const IColony = artifacts.require("IColony");
@@ -29,6 +29,7 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const TokenAuthority = artifacts.require("./TokenAuthority");
 const BasicMetaTransaction = artifacts.require("BasicMetaTransaction");
+const MultiChain = artifacts.require("MultiChain");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -399,7 +400,10 @@ export async function getMetatransactionParameters(txData, userAddress, targetAd
   // const txData = await tokenLocking.contract.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true).encodeABI();
   const contract = await BasicMetaTransaction.at(targetAddress);
   const nonce = await contract.getMetatransactionNonce(userAddress);
-  const chainId = await web3GetChainId();
+  // We should just be able to get the chain id via a web3 call, but until ganache sort their stuff out,
+  // we dance around the houses.
+  const multichain = await MultiChain.new();
+  const chainId = await multichain.getChainId();
 
   // Sign data
   const msg = web3.utils.soliditySha3(

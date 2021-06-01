@@ -180,9 +180,9 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, MultiChain
       IColony(colonyAddress).registerColonyLabel(_colonyName, "");
     }
 
-    // if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
-    //   IColony(colonyAddress).editColony(_metadata);
-    // }
+    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
+      IColony(colonyAddress).editColony(_metadata);
+    }
 
     setFounderPermissions(colonyAddress);
 
