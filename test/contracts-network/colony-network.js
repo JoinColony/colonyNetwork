@@ -11,7 +11,6 @@ import {
   expectEvent,
   expectNoEvent,
   getColonyEditable,
-  web3GetChainId,
 } from "../../helpers/test-helper";
 import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } from "../../helpers/constants";
 import {
@@ -681,30 +680,16 @@ contract("Colony Network", (accounts) => {
       const token = await Token.new(...tokenArgs);
 
       let txData = await colonyNetwork.contract.methods["createColony(address,uint256,string)"](token.address, CURR_VERSION, "").encodeABI();
-      const nonce = await colonyNetwork.getMetatransactionNonce(accounts[1]);
-      const chainId = await web3GetChainId();
 
       txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "someColonyName").encodeABI();
 
-      // Sign data
-      const msg = web3.utils.soliditySha3(
-        { t: "uint256", v: nonce.toString() },
-        { t: "address", v: colonyNetwork.address },
-        { t: "uint256", v: chainId },
-        { t: "bytes", v: txData }
-      );
-      const sig = await web3.eth.sign(msg, accounts[1]);
-
-      const r = `0x${sig.substring(2, 66)}`;
-      const s = `0x${sig.substring(66, 130)}`;
-      const v = parseInt(sig.substring(130), 16) + 27;
+      const { r, s, v } = await getMetatransactionParameters(txData, accounts[1], colonyNetwork.address);
 
       const tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
 
       const colonyCount = await colonyNetwork.getColonyCount();
       const colonyAddress = await colonyNetwork.getColony(colonyCount);
       await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
-      await expectEvent(tx, "Blah(string)", ["someColonyName"]);
     });
   });
 });

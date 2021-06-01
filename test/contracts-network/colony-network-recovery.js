@@ -17,10 +17,15 @@ import {
   web3GetStorageAt,
   getActiveRepCycle,
   advanceMiningCycleNoContest,
-  web3GetChainId,
   getTokenArgs,
 } from "../../helpers/test-helper";
-import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
+import {
+  setupFinalizedTask,
+  giveUserCLNYTokensAndStake,
+  fundColonyWithTokens,
+  setupRandomColony,
+  getMetatransactionParameters,
+} from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { DEFAULT_STAKE, MINING_CYCLE_DURATION, CURR_VERSION } from "../../helpers/constants";
@@ -204,23 +209,10 @@ contract("Colony Network Recovery", (accounts) => {
       const token = await Token.new(...tokenArgs);
 
       let txData = await colonyNetwork.contract.methods["createColony(address,uint256,string)"](token.address, CURR_VERSION, "").encodeABI();
-      const nonce = await colonyNetwork.getMetatransactionNonce(accounts[1]);
-      const chainId = await web3GetChainId();
 
       txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "someColonyName").encodeABI();
 
-      // Sign data
-      const msg = web3.utils.soliditySha3(
-        { t: "uint256", v: nonce.toString() },
-        { t: "address", v: colonyNetwork.address },
-        { t: "uint256", v: chainId },
-        { t: "bytes", v: txData }
-      );
-      const sig = await web3.eth.sign(msg, accounts[1]);
-
-      const r = `0x${sig.substring(2, 66)}`;
-      const s = `0x${sig.substring(66, 130)}`;
-      const v = parseInt(sig.substring(130), 16) + 27;
+      const { r, s, v } = await getMetatransactionParameters(txData, accounts[1], colonyNetwork.address);
 
       await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
 

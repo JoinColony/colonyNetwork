@@ -29,6 +29,7 @@ contract EvaluatedExpenditure is ColonyExtension {
   uint256 constant PAYOUT_MODIFIER_OFFSET = 2;
   bool constant MAPPING = false;
   bool constant ARRAY = true;
+  mapping(address => uint256) metatransactionNonces;
 
   /// @notice Returns the identifier of the extension
   function identifier() public override pure returns (bytes32) {
@@ -59,6 +60,14 @@ contract EvaluatedExpenditure is ColonyExtension {
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
     selfdestruct(address(uint160(address(colony))));
+  }
+
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
+  }
+
+  function incrementMetatransactionNonce(address user) override internal {
+    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
   }
 
   /// @notice Sets the payout modifiers in given expenditure slots, using the arbitration permission
