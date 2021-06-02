@@ -371,6 +371,15 @@ contract("Voting Reputation", (accounts) => {
       expect(motion.skillId).to.eq.BN(domain1.skillId);
     });
 
+    it("cannot create a domain motion in the root domain with an invalid reputation proof", async () => {
+      // Create motion in domain of action (1)
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await checkErrorRevert(
+        voting.createMotion(1, 0, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        "voting-rep-invalid-domain-id"
+      );
+    });
+
     it("can create a domain motion in a child domain", async () => {
       const key = makeReputationKey(colony.address, domain2.skillId);
       const value = makeReputationValue(WAD, 6);

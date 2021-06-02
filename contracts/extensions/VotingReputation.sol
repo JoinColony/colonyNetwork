@@ -264,6 +264,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       if (skillId != actionDomainSkillId) {
         uint256 childSkillId = colonyNetwork.getChildSkillId(skillId, _childSkillIndex);
         require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
+      } else {
+        require(_childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");
       }
     }
 
