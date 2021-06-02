@@ -947,40 +947,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
   // Internal functions
 
-  function createMotion(
-    address _altTarget,
-    bytes memory _action,
-    uint256 _domainId,
-    uint256 _skillId,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  )
-    internal
-    notDeprecated
-  {
-    require(state == ExtensionState.Active, "voting-rep-not-active");
-    require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");
-
-    motionCount += 1;
-    Motion storage motion = motions[motionCount];
-
-    motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
-    motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-    motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
-
-    motion.rootHash = colonyNetwork.getReputationRootHash();
-    motion.domainId = _domainId;
-    motion.skillId = _skillId;
-
-    motion.skillRep = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
-    motion.altTarget = _altTarget;
-    motion.action = _action;
-
-    emit MotionCreated(motionCount, msgSender(), _domainId);
-  }
-
   function getVoteSecret(bytes32 _salt, uint256 _vote) internal pure returns (bytes32) {
     return keccak256(abi.encodePacked(_salt, _vote));
   }

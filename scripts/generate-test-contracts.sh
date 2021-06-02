@@ -22,7 +22,7 @@ sed -i.bak "s/address resolver;/address resolver;function isUpdated() public pur
 sed -i.bak "s/contract Colony/contract UpdatedColony/g" ./contracts/colony/UpdatedColony.sol
 sed -i.bak "s/ColonyStorage/UpdatedColonyStorage/g" ./contracts/colony/UpdatedColony.sol
 sed -i.bak "s/function version() public pure returns (uint256 colonyVersion) { return ${version}/function version() public pure returns (uint256 colonyVersion) { return ${updated_version}/g" ./contracts/colony/UpdatedColony.sol
-sed -i.bak "s/contract UpdatedColony is UpdatedColonyStorage, PatriciaTreeProofs, MultiChain {/contract UpdatedColony is UpdatedColonyStorage, PatriciaTreeProofs, MultiChain {function isUpdated() external pure returns(bool) {return true;}/g" ./contracts/colony/UpdatedColony.sol
+sed -i.bak "s/contract UpdatedColony is BasicMetaTransaction, UpdatedColonyStorage, PatriciaTreeProofs, MultiChain {/contract UpdatedColony is BasicMetaTransaction, UpdatedColonyStorage, PatriciaTreeProofs, MultiChain {function isUpdated() external pure returns(bool) {return true;}/g" ./contracts/colony/UpdatedColony.sol
 # Modify UpdatedColonyDataTypes contract
 sed -i.bak "s/ColonyDataTypes/UpdatedColonyDataTypes/g" ./contracts/colony/UpdatedColonyDataTypes.sol
 sed -i.bak "s/mapping (uint8 => mapping (address => uint256)) payouts;/mapping (uint8 => mapping (address => uint256)) payouts; uint256 x;/g" ./contracts/colony/UpdatedColonyDataTypes.sol
@@ -32,7 +32,7 @@ sed -i.bak "s/ColonyDataTypes/UpdatedColonyDataTypes/g" ./contracts/colony/Updat
 # Modify IUpdatedColony contract
 sed -i.bak "s/interface IColony/interface IUpdatedColony/g" ./contracts/colony/IUpdatedColony.sol
 sed -i.bak "s/ColonyDataTypes/UpdatedColonyDataTypes/g" ./contracts/colony/IUpdatedColony.sol
-sed -i.bak "s/interface IUpdatedColony is UpdatedColonyDataTypes, IRecovery {/interface IUpdatedColony is UpdatedColonyDataTypes, IRecovery {function isUpdated() external pure returns(bool);/g" ./contracts/colony/IUpdatedColony.sol
+sed -i.bak "s/interface IUpdatedColony is UpdatedColonyDataTypes, IRecovery, IBasicMetaTransaction {/interface IUpdatedColony is UpdatedColonyDataTypes, IRecovery, IBasicMetaTransaction {function isUpdated() external pure returns(bool);/g" ./contracts/colony/IUpdatedColony.sol
 # Modify UpdatedReputationMiningCycle contract
 sed -i.bak "s/contract ReputationMiningCycle/contract UpdatedReputationMiningCycle/g" ./contracts/reputationMiningCycle/UpdatedReputationMiningCycle.sol
 sed -i.bak "s| is ReputationMiningCycleCommon {| is ReputationMiningCycleCommon {\nfunction isUpdated() public pure returns(bool) {return true;}|g" ./contracts/reputationMiningCycle/UpdatedReputationMiningCycle.sol

@@ -8,7 +8,12 @@ import { soliditySha3 } from "web3-utils";
 import { UINT256_MAX, IPFS_HASH } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { checkErrorRevert, web3GetCode } from "../../helpers/test-helper";
-import { setupColonyNetwork, setupRandomColony, setupMetaColonyWithLockedCLNYToken } from "../../helpers/test-data-generator";
+import {
+  setupColonyNetwork,
+  setupRandomColony,
+  setupMetaColonyWithLockedCLNYToken,
+  getMetatransactionParameters,
+} from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -161,6 +166,31 @@ contract("Whitelist", (accounts) => {
       expect(status).to.be.false;
 
       await whitelist.signAgreement(IPFS_HASH, { from: USER1 });
+
+      signature = await whitelist.getSignature(USER1);
+      expect(signature).to.be.true;
+
+      status = await whitelist.isApproved(USER1);
+      expect(status).to.be.true;
+    });
+
+    it("can make users sign an agreement via metatransaction", async () => {
+      await whitelist.initialise(false, IPFS_HASH);
+
+      let status;
+      let signature;
+
+      signature = await whitelist.getSignature(USER1);
+      expect(signature).to.be.false;
+
+      status = await whitelist.isApproved(USER1);
+      expect(status).to.be.false;
+
+      const txData = await whitelist.contract.methods.signAgreement(IPFS_HASH).encodeABI();
+
+      const { r, s, v } = await getMetatransactionParameters(txData, USER1, whitelist.address);
+
+      await whitelist.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
 
       signature = await whitelist.getSignature(USER1);
       expect(signature).to.be.true;
