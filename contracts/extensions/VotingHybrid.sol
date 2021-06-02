@@ -123,7 +123,7 @@ contract VotingHybrid is VotingBase {
   /// @param _value Reputation tree value for the root domain
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
-  function createRootMotion(
+  function createMotion(
     address _altTarget,
     bytes memory _action,
     bytes memory _key,
@@ -132,8 +132,9 @@ contract VotingHybrid is VotingBase {
     bytes32[] memory _siblings
   )
     public
+    notDeprecated
   {
-    createMotion(_altTarget, _action, 1, NUM_INFLUENCES);
+    createMotionInternal(1, UINT256_MAX, _altTarget, _action, NUM_INFLUENCES);
 
     totalInfluences[motionCount] = new uint256[](NUM_INFLUENCES);
     motions[motionCount].maxVotes[0] = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);

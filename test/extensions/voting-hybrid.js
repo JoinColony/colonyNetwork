@@ -249,7 +249,7 @@ contract("Voting Hybrid", (accounts) => {
       // Cant make new motions!
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await checkErrorRevert(
-        voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
         "colony-extension-deprecated"
       );
 
@@ -263,7 +263,7 @@ contract("Voting Hybrid", (accounts) => {
 
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await checkErrorRevert(
-        voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
         "voting-base-not-active"
       );
     });
@@ -318,7 +318,7 @@ contract("Voting Hybrid", (accounts) => {
   describe("creating motions", async () => {
     it("can create a root motion", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
 
       const motionId = await voting.getMotionCount();
       const motion = await voting.getMotion(motionId);
@@ -327,7 +327,7 @@ contract("Voting Hybrid", (accounts) => {
 
     it("does not lock the token when a motion is created", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId = await voting.getMotionCount();
 
       const lockId = await voting.getLockId(motionId);
@@ -336,13 +336,13 @@ contract("Voting Hybrid", (accounts) => {
 
     it("can create a motion with an alternative target", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
-      await voting.createRootMotion(voting.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(voting.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
     });
 
     it("cannot create a motion with the colony as the alternative target", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
       await checkErrorRevert(
-        voting.createRootMotion(colony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        voting.createMotion(colony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
         "voting-base-alt-target-cannot-be-base-colony"
       );
     });
@@ -357,7 +357,7 @@ contract("Voting Hybrid", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
     });
 
@@ -445,7 +445,7 @@ contract("Voting Hybrid", (accounts) => {
       // Set finalizedTimestamp to WAD
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       let expenditureMotionCount;
@@ -484,7 +484,7 @@ contract("Voting Hybrid", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -512,7 +512,7 @@ contract("Voting Hybrid", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       let expenditureMotionCount;
@@ -550,7 +550,7 @@ contract("Voting Hybrid", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       let expenditureMotionCount;
@@ -583,7 +583,7 @@ contract("Voting Hybrid", (accounts) => {
       // Set finalizedTimestamp to WAD
       action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
@@ -599,7 +599,7 @@ contract("Voting Hybrid", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
@@ -615,7 +615,7 @@ contract("Voting Hybrid", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
@@ -632,7 +632,7 @@ contract("Voting Hybrid", (accounts) => {
       // Create a poorly-formed action (no keys)
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, 1, 0, [], [], ethers.constants.HashZero]);
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       await checkErrorRevert(
@@ -668,10 +668,10 @@ contract("Voting Hybrid", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action1, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action1, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId1 = await voting.getMotionCount();
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
 
       let expenditureMotionCount;
@@ -747,7 +747,7 @@ contract("Voting Hybrid", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -871,7 +871,7 @@ contract("Voting Hybrid", (accounts) => {
       await repCycle.confirmNewHash(0);
 
       // Create new motion with new reputation state
-      await voting.createRootMotion(ADDRESS_ZERO, FAKE, domain1Key, domain1Value, domain1Mask2, domain1Siblings2);
+      await voting.createMotion(ADDRESS_ZERO, FAKE, domain1Key, domain1Value, domain1Mask2, domain1Siblings2);
       const motionId2 = await voting.getMotionCount();
       await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
       await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask2, user1Siblings2, { from: USER1 });
@@ -934,7 +934,7 @@ contract("Voting Hybrid", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
     });
 
@@ -982,7 +982,7 @@ contract("Voting Hybrid", (accounts) => {
     it("can take an action with a return value", async () => {
       // Returns a uint256
       const action = await encodeTxData(colony, "version", []);
-      await voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -998,7 +998,7 @@ contract("Voting Hybrid", (accounts) => {
       await otherToken.mint(otherColony.address, WAD, { from: USER0 });
 
       const action = await encodeTxData(colony, "claimColonyFunds", [otherToken.address]);
-      await voting.createRootMotion(otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1016,7 +1016,7 @@ contract("Voting Hybrid", (accounts) => {
 
     it("can take a nonexistent action", async () => {
       const action = soliditySha3("foo");
-      await voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1094,7 +1094,7 @@ contract("Voting Hybrid", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(4))], WAD32]);
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId1 = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1114,7 +1114,7 @@ contract("Voting Hybrid", (accounts) => {
       expect(logs[0].args.executed).to.be.true;
 
       // Create another motion for the same variable
-      await voting.createRootMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1139,7 +1139,7 @@ contract("Voting Hybrid", (accounts) => {
 
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1168,10 +1168,10 @@ contract("Voting Hybrid", (accounts) => {
       const action1 = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
       const action2 = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], "0x0"]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action1, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ADDRESS_ZERO, action1, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId1 = await voting.getMotionCount();
 
-      await voting.createRootMotion(ADDRESS_ZERO, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ADDRESS_ZERO, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1195,7 +1195,7 @@ contract("Voting Hybrid", (accounts) => {
 
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
 
-      await voting.createRootMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1214,7 +1214,7 @@ contract("Voting Hybrid", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
     });
 
@@ -1289,7 +1289,7 @@ contract("Voting Hybrid", (accounts) => {
 
       const motion = await voting.getMotion(motionId);
       const loserStake = REQUIRED_STAKE.sub(new BN(motion.paidVoterComp));
-      const expectedReward0 = loserStake.divn(3).muln(2); // (stake * .8) * (winPct = 1/3 * 2)
+      const expectedReward0 = loserStake.divn(3).muln(2).addn(1); // (stake * .8) * (winPct = 1/3 * 2) + dust
       const expectedReward1 = REQUIRED_STAKE.add(loserStake.divn(3)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);

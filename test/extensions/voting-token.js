@@ -182,7 +182,7 @@ contract("Voting Token", (accounts) => {
       // Cant make new motions!
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
 
-      await checkErrorRevert(voting.createRootMotion(ADDRESS_ZERO, action), "colony-extension-deprecated");
+      await checkErrorRevert(voting.createMotion(ADDRESS_ZERO, action), "colony-extension-deprecated");
 
       deprecated = await voting.getDeprecated();
       expect(deprecated).to.equal(true);
@@ -193,7 +193,7 @@ contract("Voting Token", (accounts) => {
       await voting.install(colony.address);
 
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await checkErrorRevert(voting.createRootMotion(ADDRESS_ZERO, action), "voting-base-not-active");
+      await checkErrorRevert(voting.createMotion(ADDRESS_ZERO, action), "voting-base-not-active");
     });
 
     it("cannot initialise twice or more if not root", async () => {
@@ -246,7 +246,7 @@ contract("Voting Token", (accounts) => {
   describe("creating motions", async () => {
     it("can create a root motion", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
 
       const motionId = await voting.getMotionCount();
       const motion = await voting.getMotion(motionId);
@@ -255,7 +255,7 @@ contract("Voting Token", (accounts) => {
 
     it("does not lock the token when a motion is created", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       const motionId = await voting.getMotionCount();
 
       const lockId = await voting.getLockId(motionId);
@@ -264,13 +264,13 @@ contract("Voting Token", (accounts) => {
 
     it("can create a motion with an alternative target", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
-      await voting.createRootMotion(voting.address, action);
+      await voting.createMotion(voting.address, action);
     });
 
     it("cannot create a motion with the colony as the alternative target", async () => {
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
 
-      await checkErrorRevert(voting.createRootMotion(colony.address, action), "voting-base-alt-target-cannot-be-base-colony");
+      await checkErrorRevert(voting.createMotion(colony.address, action), "voting-base-alt-target-cannot-be-base-colony");
     });
 
     it("cannot set influence on a non-existent motion", async () => {
@@ -283,7 +283,7 @@ contract("Voting Token", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
     });
 
@@ -346,7 +346,7 @@ contract("Voting Token", (accounts) => {
       // Set finalizedTimestamp to WAD
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
       let expenditureMotionCount;
@@ -385,7 +385,7 @@ contract("Voting Token", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(otherColony.address, action);
+      await voting.createMotion(otherColony.address, action);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
@@ -413,7 +413,7 @@ contract("Voting Token", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
       let expenditureMotionCount;
@@ -451,7 +451,7 @@ contract("Voting Token", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
       let expenditureMotionCount;
@@ -484,7 +484,7 @@ contract("Voting Token", (accounts) => {
       // Set finalizedTimestamp to WAD
       action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
@@ -500,7 +500,7 @@ contract("Voting Token", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
@@ -516,7 +516,7 @@ contract("Voting Token", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
@@ -533,7 +533,7 @@ contract("Voting Token", (accounts) => {
       // Create a poorly-formed action (no keys)
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, 1, 0, [], [], ethers.constants.HashZero]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
       await checkErrorRevert(
@@ -569,10 +569,10 @@ contract("Voting Token", (accounts) => {
         WAD32,
       ]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action1);
+      await voting.createMotion(ADDRESS_ZERO, action1);
       const motionId1 = await voting.getMotionCount();
 
-      await voting.createRootMotion(ADDRESS_ZERO, action2);
+      await voting.createMotion(ADDRESS_ZERO, action2);
       const motionId2 = await voting.getMotionCount();
 
       let expenditureMotionCount;
@@ -637,7 +637,7 @@ contract("Voting Token", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
@@ -740,7 +740,7 @@ contract("Voting Token", (accounts) => {
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
 
       // Create new motion with new reputation state
-      await voting.createRootMotion(ADDRESS_ZERO, FAKE);
+      await voting.createMotion(ADDRESS_ZERO, FAKE);
       const motionId2 = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
@@ -798,7 +798,7 @@ contract("Voting Token", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
     });
 
@@ -842,7 +842,7 @@ contract("Voting Token", (accounts) => {
     it("can take an action with a return value", async () => {
       // Returns a uint256
       const action = await encodeTxData(colony, "version", []);
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
@@ -858,7 +858,7 @@ contract("Voting Token", (accounts) => {
       await otherToken.mint(otherColony.address, WAD);
 
       const action = await encodeTxData(colony, "claimColonyFunds", [otherToken.address]);
-      await voting.createRootMotion(otherColony.address, action);
+      await voting.createMotion(otherColony.address, action);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
@@ -876,7 +876,7 @@ contract("Voting Token", (accounts) => {
 
     it("can take a nonexistent action", async () => {
       const action = soliditySha3("foo");
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
@@ -958,7 +958,7 @@ contract("Voting Token", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(4))], WAD32]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       const motionId1 = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
@@ -978,7 +978,7 @@ contract("Voting Token", (accounts) => {
       expect(logs[0].args.executed).to.be.true;
 
       // Create another motion for the same variable
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       const motionId2 = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
@@ -1007,7 +1007,7 @@ contract("Voting Token", (accounts) => {
 
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
@@ -1036,10 +1036,10 @@ contract("Voting Token", (accounts) => {
       const action1 = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
       const action2 = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], "0x0"]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action1);
+      await voting.createMotion(ADDRESS_ZERO, action1);
       const motionId1 = await voting.getMotionCount();
 
-      await voting.createRootMotion(ADDRESS_ZERO, action2);
+      await voting.createMotion(ADDRESS_ZERO, action2);
       const motionId2 = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
@@ -1063,7 +1063,7 @@ contract("Voting Token", (accounts) => {
 
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
 
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
@@ -1082,7 +1082,7 @@ contract("Voting Token", (accounts) => {
 
     beforeEach(async () => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await voting.createRootMotion(ADDRESS_ZERO, action);
+      await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
     });
 
@@ -1157,8 +1157,8 @@ contract("Voting Token", (accounts) => {
 
       const motion = await voting.getMotion(motionId);
       const loserStake = requiredStake.sub(new BN(motion.paidVoterComp));
-      const expectedReward0 = loserStake.divn(3).muln(2).addn(1); // (stake * .8) * (winPct = 1/3 * 2) + dust
-      const expectedReward1 = requiredStake.add(loserStake.divn(3)).addn(1); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2)) + dust
+      const expectedReward0 = loserStake.divn(3).muln(2).subn(1); // (stake * .8) * (winPct = 1/3 * 2) + dust
+      const expectedReward1 = requiredStake.add(loserStake.divn(3)).subn(1); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2)) + dust
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
@@ -1201,13 +1201,13 @@ contract("Voting Token", (accounts) => {
 
       const motion = await voting.getMotion(motionId);
       const loserStake = requiredStake.sub(new BN(motion.paidVoterComp));
-      const expectedReward0 = loserStake.divn(3).muln(2).addn(1); // (stake * .8) * (winPct = 1/3 * 2) + dust
-      const expectedReward1 = requiredStake.add(loserStake.divn(3)).divn(3).muln(2).subn(2); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2)) - dust
+      const expectedReward0 = loserStake.divn(3).muln(2).subn(1); // (stake * .8) * (winPct = 1/3 * 2) + dust
+      const expectedReward1 = requiredStake.add(loserStake.divn(3)).divn(3).muln(2).subn(2); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2)) + dust
       const expectedReward2 = requiredStake.add(loserStake.divn(3)).divn(3); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
-      expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1.addn(1)); // Rounding
-      expect(new BN(user2LockPost.balance).sub(new BN(user2LockPre.balance))).to.eq.BN(expectedReward2.addn(1)); // Rounding
+      expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
+      expect(new BN(user2LockPost.balance).sub(new BN(user2LockPre.balance))).to.eq.BN(expectedReward2);
     });
 
     it("can let stakers claim rewards, based on the vote outcome, with multiple winning stakers", async () => {
@@ -1239,11 +1239,11 @@ contract("Voting Token", (accounts) => {
 
       const motion = await voting.getMotion(motionId);
       const loserStake = requiredStake.sub(new BN(motion.paidVoterComp));
-      const expectedReward0 = loserStake.divn(3).muln(2).divn(3).muln(2); // (stake * .8) * (winPct = 1/3 * 2)
-      const expectedReward1 = requiredStake.add(loserStake.divn(3)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
-      const expectedReward2 = loserStake.divn(3).muln(2).divn(3).addn(1); // (stake * .8) * (winPct = 1/3 * 2) + dust
+      const expectedReward0 = loserStake.divn(3).muln(2).divn(3).muln(2).subn(1); // (stake * .8) * (winPct = 1/3 * 2) + dust
+      const expectedReward1 = requiredStake.add(loserStake.divn(3)).subn(1); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2)) + dust
+      const expectedReward2 = loserStake.divn(3).muln(2).divn(3); // (stake * .8) * (winPct = 1/3 * 2)
 
-      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0.addn(1)); // Rounding
+      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
       expect(new BN(user2LockPost.balance).sub(new BN(user2LockPre.balance))).to.eq.BN(expectedReward2);
     });

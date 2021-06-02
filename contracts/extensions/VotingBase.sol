@@ -18,6 +18,7 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
+import "./../colony/ColonyRoles.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
@@ -212,33 +213,6 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
 
   // Public functions (interface)
 
-  /// @notice Submit a vote secret for a motion
-  /// @param _motionId The id of the motion
-  /// @param _voteSecret The hashed vote secret
-  function submitVote(uint256 _motionId, bytes32 _voteSecret) public {
-    Motion storage motion = motions[_motionId];
-    require(getMotionState(_motionId) == MotionState.Submit, "voting-base-motion-not-open");
-    require(_voteSecret != bytes32(0), "voting-base-invalid-secret");
-
-    uint256 influence = getInfluence(_motionId, msg.sender);
-
-    // Count reputation if first submission
-    if (voteSecrets[_motionId][msg.sender] == bytes32(0)) {
-      motion.totalVotes = add(motion.totalVotes, influence);
-    }
-
-    voteSecrets[_motionId][msg.sender] = _voteSecret;
-
-    emit MotionVoteSubmitted(_motionId, msg.sender);
-
-    if (motion.totalVotes >= wmul(motion.maxVotes, maxVoteFraction)) {
-      motion.events[SUBMIT_END] = uint64(block.timestamp);
-      motion.events[REVEAL_END] = uint64(block.timestamp + revealPeriod);
-
-      emit MotionEventSet(_motionId, SUBMIT_END);
-    }
-  }
-
   /// @notice Reveal a vote secret for a motion
   /// @param _motionId The id of the motion
   /// @param _salt The salt used to hash the vote
@@ -302,9 +276,11 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
 
     bool canExecute = true;
 
-    // Check if every sub-vote passed
-    for (uint256 j; j < motion.votes.length; j++) {
-      canExecute = canExecute && motion.votes[j][NAY] < motion.votes[j][YAY];
+    // If we went to a vote, check if every sub-vote passed
+    if (sumVotes > 0) {
+      for (uint256 j; j < motion.votes.length; j++) {
+        canExecute = canExecute && motion.votes[j][NAY] < motion.votes[j][YAY];
+      }
     }
 
     // Handle expenditure-related bookkeeping (claim delays, repeated vote checks)
@@ -541,15 +517,14 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
     Motion storage motion = motions[_motionId];
 
     uint256[] memory influence = getInfluence(_motionId, _user);
-    uint256[] memory totalInfluence = getTotalInfluence(_motionId);
-    assert(influence.length == totalInfluence.length);
+    assert(influence.length == motion.totalVotes.length);
 
     // Get the average per-influence fraction
     uint256 fractionUserInfluence;
 
     for (uint256 i; i < influence.length; i++) {
       // TODO: Divide-by-zero ?
-      fractionUserInfluence = add(fractionUserInfluence, wdiv(influence[i], totalInfluence[i]));
+      fractionUserInfluence = add(fractionUserInfluence, wdiv(influence[i], motion.totalVotes[i]));
     }
 
     fractionUserInfluence = fractionUserInfluence / influence.length;
@@ -562,28 +537,37 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
   /// used when the motion is in the reveal state.
   /// Once a motion is in the reveal state the reward is known, and getVoterRewardRange should be used.
   /// @param _motionId The id of the motion
-  /// @param _voterRep The reputation the voter has in the domain
-  /// @param _voterAddress The address the user will be voting as
+  /// @param _user The address of the user
   /// @return The voter reward
-  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) public view returns (uint256, uint256) {
+  function getVoterRewardRange(uint256 _motionId, address _user) public view returns (uint256, uint256) {
     Motion storage motion = motions[_motionId];
+
+    uint256[] memory influence = getInfluence(_motionId, _user);
+    assert(influence.length == motion.totalVotes.length);
+
+    uint256 minFractionUserInfluence;
+    uint256 maxFractionUserInfluence;
+
     // The minimum reward is when everyone has voted, with a total weight of motion.maxVotes
-    uint256 minFractionUserReputation = wdiv(_voterRep, motion.maxVotes);
-
     // The maximum reward is when this user is the only other person who votes (if they haven't already),
-    // aside from those who have already done so
-    uint256 voteTotal = motion.totalVotes;
-    // Has the user already voted?
-    if (voteSecrets[_motionId][_voterAddress] == bytes32(0)) {
-      // They have not, so add their rep
-      voteTotal = add(voteTotal, _voterRep);
-    }
-    uint256 maxFractionUserReputation = wdiv(_voterRep, voteTotal);
+    //  aside from those who have already done so
 
+    for (uint256 i; i < influence.length; i++) {
+      // If user hasn't voted, add their influence to totalVotes
+      uint256 pendingVote = (voteSecrets[_motionId][_user] == bytes32(0)) ? influence[i] : 0;
+
+      // TODO: Divide-by-zero ?
+      minFractionUserInfluence = add(minFractionUserInfluence, wdiv(influence[i], motion.maxVotes[i]));
+      maxFractionUserInfluence = add(maxFractionUserInfluence, wdiv(influence[i], add(motion.totalVotes[i], pendingVote)));
+    }
+
+    minFractionUserInfluence = minFractionUserInfluence / influence.length;
+    maxFractionUserInfluence = maxFractionUserInfluence / influence.length;
     uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
+
     return (
-      wmul(wmul(minFractionUserReputation, totalStake), voterRewardFraction),
-      wmul(wmul(maxFractionUserReputation, totalStake), voterRewardFraction)
+      wmul(wmul(minFractionUserInfluence, totalStake), voterRewardFraction),
+      wmul(wmul(maxFractionUserInfluence, totalStake), voterRewardFraction)
     );
   }
 
@@ -592,14 +576,21 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
   /// @param _staker The staker's address
   /// @param _vote The vote (0 = NAY, 1 = YAY)
   /// @return The staker reward and the reputation penalty (if any)
-  function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256, uint256) {
+  function getStakerReward(
+    uint256 _motionId,
+    address _staker,
+    uint256 _vote
+  )
+    public
+    view
+    returns (uint256, uint256)
+  {
     Motion storage motion = motions[_motionId];
 
     uint256 totalSideStake = add(motion.stakes[_vote], motion.pastVoterComp[_vote]);
     if (totalSideStake == 0) { return (0, 0); }
 
     uint256 stakeFraction = wdiv(stakes[_motionId][_staker][_vote], totalSideStake);
-
     uint256 realStake = wmul(stakeFraction, motion.stakes[_vote]);
 
     uint256 stakerReward;
@@ -608,76 +599,15 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
     uint256 sumVotes;
 
     for (uint256 i; i < motion.votes.length; i++) {
-      sumVotes = add(sumVotes, motion.totalVotes[i]);
+      sumVotes = add(sumVotes, add(motion.votes[i][NAY], motion.votes[i][YAY]));
     }
 
-    // Went to a vote, use vote to determine reward or penalty
     if (sumVotes > 0) {
-
-      uint256 loserStake;
-      uint256 winnerStake;
-
-      if (motion.votes[YAY] > motion.votes[NAY]){
-        loserStake = motion.stakes[NAY];
-        winnerStake = motion.stakes[YAY];
-      } else {
-        loserStake = motion.stakes[YAY];
-        winnerStake = motion.stakes[NAY];
-      }
-
-      loserStake = sub(loserStake, motion.paidVoterComp);
-
-      uint256 winFraction;
-
-      for (uint256 j; j < motion.votes.length; j++) {
-        // TODO: divide-by-zero ??
-        winFraction = add(winFraction, wdiv(motion.votes[j][_vote], motion.totalVotes[j]));
-      }
-
-      winFraction = winFraction / motion.votes.length;
-
-      uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
-      uint256 loserStake = sub(requiredStake, motion.paidVoterComp);
-
-      if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
-        stakerReward = wmul(stakeFraction, add(winnerStake, wmul(loserStake, winShare - WAD)));
-      } else {
-        stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));
-        repPenalty = sub(realStake, stakerReward);
-      }
-
-    // Determine rewards based on stakes alone
+      // Went to a vote, use vote to determine reward or penalty
+      (stakerReward, repPenalty) = getStakerRewardByVote(_motionId, _vote, stakeFraction, realStake);
     } else {
-      assert(motion.paidVoterComp == 0);
-      uint256 requiredStake = getRequiredStake(_motionId);
-
-      // Your side fully staked, receive 10% (proportional) of loser's stake
-      if (
-        motion.stakes[_vote] == requiredStake &&
-        motion.stakes[flip(_vote)] < requiredStake
-      ) {
-
-        uint256 loserStake = motion.stakes[flip(_vote)];
-        uint256 totalPenalty = wmul(loserStake, WAD / 10);
-        stakerReward = wmul(stakeFraction, add(requiredStake, totalPenalty));
-
-      // Opponent's side fully staked, pay 10% penalty
-      } else if (
-        motion.stakes[_vote] < requiredStake &&
-        motion.stakes[flip(_vote)] == requiredStake
-      ) {
-
-        uint256 loserStake = motion.stakes[_vote];
-        uint256 totalPenalty = wmul(loserStake, WAD / 10);
-        stakerReward = wmul(stakeFraction, sub(loserStake, totalPenalty));
-        repPenalty = sub(realStake, stakerReward);
-
-      // Neither side fully staked (or no votes were revealed), no reward or penalty
-      } else {
-
-        stakerReward = realStake;
-
-      }
+      // Determine rewards based on stakes alone
+      (stakerReward, repPenalty) = getStakerRewardByStake(_motionId, _vote, stakeFraction, realStake);
     }
 
     return (stakerReward, repPenalty);
@@ -756,7 +686,7 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
     uint256 _vote,
     uint256 _amount
   )
-    public
+    internal
   {
     Motion storage motion = motions[_motionId];
 
@@ -841,7 +771,7 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
   /// @notice Submit a vote secret for a motion
   /// @param _motionId The id of the motion
   /// @param _voteSecret The hashed vote secret
-  function internalSubmitVote(uint256 _motionId, bytes32 _voteSecret) public {
+  function internalSubmitVote(uint256 _motionId, bytes32 _voteSecret) internal {
     Motion storage motion = motions[_motionId];
 
     require(getMotionState(_motionId) == MotionState.Submit, "voting-base-motion-not-open");
@@ -872,6 +802,98 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
 
       emit MotionEventSet(_motionId, SUBMIT_END);
     }
+  }
+
+  function getStakerRewardByVote(
+    uint256 _motionId,
+    uint256 _vote,
+    uint256 _stakeFraction,
+    uint256 _realStake
+  )
+    internal
+    view
+    returns (uint256, uint256)
+  {
+    Motion storage motion = motions[_motionId];
+
+    uint256 stakerReward;
+    uint256 repPenalty;
+
+    bool yayWon = true;
+    uint256 winFraction;
+
+    // Check if every sub-vote passed, and calculate the win fraction
+    for (uint256 i; i < motion.votes.length; i++) {
+      yayWon = yayWon && motion.votes[i][NAY] < motion.votes[i][YAY];
+
+      // TODO: divide-by-zero ??
+      winFraction = add(winFraction, wdiv(motion.votes[i][_vote], motion.totalVotes[i]));
+    }
+
+    winFraction = winFraction / motion.votes.length;
+
+    uint256 winnerStake = motion.stakes[yayWon ? YAY : NAY];
+    uint256 loserStake = sub(motion.stakes[yayWon ? NAY : YAY], motion.paidVoterComp);
+
+    uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
+
+    if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
+      stakerReward = wmul(_stakeFraction, add(winnerStake, wmul(loserStake, winShare - WAD)));
+    } else {
+      stakerReward = wmul(_stakeFraction, wmul(loserStake, winShare));
+      repPenalty = sub(_realStake, stakerReward);
+    }
+
+    return (stakerReward, repPenalty);
+  }
+
+  function getStakerRewardByStake(
+    uint256 _motionId,
+    uint256 _vote,
+    uint256 _stakeFraction,
+    uint256 _realStake
+  )
+    internal
+    view
+    returns (uint256, uint256)
+  {
+    Motion storage motion = motions[_motionId];
+    assert(motion.paidVoterComp == 0);
+
+    uint256 stakerReward;
+    uint256 repPenalty;
+
+    uint256 requiredStake = getRequiredStake(_motionId);
+
+    // Your side fully staked, receive 10% (proportional) of loser's stake
+    if (
+      motion.stakes[_vote] == requiredStake &&
+      motion.stakes[flip(_vote)] < requiredStake
+    ) {
+
+      uint256 loserStake = motion.stakes[flip(_vote)];
+      uint256 totalPenalty = wmul(loserStake, WAD / 10);
+      stakerReward = wmul(_stakeFraction, add(requiredStake, totalPenalty));
+
+    // Opponent's side fully staked, pay 10% penalty
+    } else if (
+      motion.stakes[_vote] < requiredStake &&
+      motion.stakes[flip(_vote)] == requiredStake
+    ) {
+
+      uint256 loserStake = motion.stakes[_vote];
+      uint256 totalPenalty = wmul(loserStake, WAD / 10);
+      stakerReward = wmul(_stakeFraction, sub(loserStake, totalPenalty));
+      repPenalty = sub(_realStake, stakerReward);
+
+    // Neither side fully staked (or no votes were revealed), no reward or penalty
+    } else {
+
+      stakerReward = _realStake;
+
+    }
+
+    return (stakerReward, repPenalty);
   }
 
   function getVoteSecret(bytes32 _salt, uint256 _vote) internal pure returns (bytes32) {

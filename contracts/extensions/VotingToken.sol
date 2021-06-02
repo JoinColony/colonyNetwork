@@ -106,10 +106,11 @@ contract VotingToken is VotingBase {
   /// @notice Create a motion in the root domain
   /// @param _altTarget The contract to which we send the action (0x0 for the colony)
   /// @param _action A bytes array encoding a function call
-  function createRootMotion(address _altTarget, bytes memory _action)
+  function createMotion(address _altTarget, bytes memory _action)
     public
+    notDeprecated
   {
-    createMotion(_altTarget, _action, 1, NUM_INFLUENCES);
+    createMotionInternal(1, UINT256_MAX, _altTarget, _action, NUM_INFLUENCES);
 
     totalInfluences[motionCount] = new uint256[](NUM_INFLUENCES);
     motions[motionCount].maxVotes[0] = ERC20Extended(token).totalSupply();
