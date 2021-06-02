@@ -8,7 +8,12 @@ import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, SECONDS_PER_DAY } from "../../helpers/constants";
 import { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, getBlockTime, forwardTime } from "../../helpers/test-helper";
-import { setupColonyNetwork, setupRandomColony, setupMetaColonyWithLockedCLNYToken } from "../../helpers/test-data-generator";
+import {
+  setupColonyNetwork,
+  setupRandomColony,
+  setupMetaColonyWithLockedCLNYToken,
+  getMetatransactionParameters,
+} from "../../helpers/test-data-generator";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
 const { expect } = chai;
@@ -210,6 +215,24 @@ contract("Token Supplier", (accounts) => {
       time = new BN(time).addn(SECONDS_PER_DAY);
 
       await makeTxAtTimestamp(tokenSupplier.issueTokens, [], time.toNumber(), this);
+
+      const balancePost = await token.balanceOf(colony.address);
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
+
+      const tokenSupply = await token.totalSupply();
+      expect(tokenSupply).to.eq.BN(WAD);
+    });
+
+    it("can claim tokenIssuanceRate tokens per day via metatransaction", async () => {
+      const balancePre = await token.balanceOf(colony.address);
+
+      let time = await currentBlockTime();
+      time = new BN(time).addn(SECONDS_PER_DAY);
+
+      const txData = await tokenSupplier.contract.methods.issueTokens().encodeABI();
+      const { r, s, v } = await getMetatransactionParameters(txData, accounts[0], tokenSupplier.address);
+
+      await makeTxAtTimestamp(tokenSupplier.executeMetaTransaction, [accounts[0], txData, r, s, v], time.toNumber(), this);
 
       const balancePost = await token.balanceOf(colony.address);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
