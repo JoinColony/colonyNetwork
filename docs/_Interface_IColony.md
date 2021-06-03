@@ -1053,7 +1053,7 @@ Lock the colony's token. Can only be called by a network-managed extension.
 
 ### `makeArbitraryTransaction`
 
-Execute arbitrary transaction on behalf of the Colony
+Execute arbitrary transaction on behalf of the Colony DEPRECATED
 
 
 **Parameters**
@@ -1068,6 +1068,24 @@ Execute arbitrary transaction on behalf of the Colony
 |Name|Type|Description|
 |---|---|---|
 |success|bool|Boolean indicating whether the transaction succeeded
+
+### `makeArbitraryTransactions`
+
+Execute arbitrary transactions on behalf of the Colony in series
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_targets|address[]|Array of addressed to be targeted
+|_actions|bytes[]|Array of Bytes arrays encoding the function calls and arguments
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|success|bool|Boolean indicating whether the transactions succeeded
 
 ### `makeExpenditure`
 

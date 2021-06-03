@@ -61,10 +61,17 @@ interface IColony is ColonyDataTypes, IRecovery {
   function getToken() external view returns (address tokenAddress);
 
   /// @notice Execute arbitrary transaction on behalf of the Colony
+  /// DEPRECATED
   /// @param _to Contract to receive the function call (cannot be network or token locking)
   /// @param _action Bytes array encoding the function call and arguments
   /// @return success Boolean indicating whether the transaction succeeded
   function makeArbitraryTransaction(address _to, bytes memory _action) external returns (bool success);
+
+  /// @notice Execute arbitrary transactions on behalf of the Colony in series
+  /// @param _targets Array of addressed to be targeted
+  /// @param _actions Array of Bytes arrays encoding the function calls and arguments
+  /// @return success Boolean indicating whether the transactions succeeded
+  function makeArbitraryTransactions(address[] memory _targets, bytes[] memory _actions) external returns (bool success);
 
   /// @notice Emit a metadata string for a transaction
   /// @param _txHash Hash of transaction being annotated (0x0 for current tx)
