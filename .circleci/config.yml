@@ -128,6 +128,15 @@ jobs:
           name: "Running network contracts unit tests"
           command: yarn run test:contracts
       - run:
+          name: "Cleanup ganache leftovers"
+          command: sudo rm -rf /tmp/*
+      - run:
+          name: "Running extension contracts unit tests"
+          command: yarn run test:contracts:extensions
+      - run:
+          name: "Cleanup ganache leftovers"
+          command: sudo rm -rf /tmp/*
+      - run:
           name: "Running upgrade tests"
           command: yarn run test:contracts:upgrade:parity && yarn run test:contracts:upgrade:ganache
       - run:
@@ -154,7 +163,7 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
-          name: "Running contract unit tests with coverage"
+          name: "Running core contract unit tests with coverage"
           command: yarn run test:contracts:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
@@ -162,6 +171,24 @@ jobs:
           root: ./
           paths:
             - coverage-contracts
+  test-contracts-extensions-coverage:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: 19.03.13
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running extension contract unit tests with coverage"
+          command: yarn run test:contracts:extensions:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-extensions
   test-reputation-coverage:
     <<: *job_common
     steps:
@@ -272,6 +299,8 @@ workflows:
           context: dockerhub-credentials
       - test-contracts-coverage:
           context: dockerhub-credentials
+      - test-contracts-extensions-coverage:
+          context: dockerhub-credentials
       - test-reputation-coverage:
           context: dockerhub-credentials
       - test-chainid-coverage:
@@ -280,6 +309,7 @@ workflows:
           context: dockerhub-credentials
           requires:
             - test-contracts-coverage
+            - test-contracts-extensions-coverage
             - test-reputation-coverage
             - test-chainid-coverage
   nightly:
