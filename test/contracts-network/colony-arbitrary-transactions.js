@@ -45,6 +45,17 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
   });
 
+  it("should be able to make multiple arbitrary transactions", async () => {
+    const action = await encodeTxData(token, "mint", [WAD]);
+    const action2 = await encodeTxData(token, "mint", [WAD.muln(2)]);
+    const balancePre = await token.balanceOf(colony.address);
+
+    await colony.makeArbitraryTransactions([token.address, token.address], [action, action2]);
+
+    const balancePost = await token.balanceOf(colony.address);
+    expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(3));
+  });
+
   it("should not be able to make arbitrary transactions if not root", async () => {
     const action = await encodeTxData(token, "mint", [WAD]);
 
