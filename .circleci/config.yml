@@ -129,13 +129,13 @@ jobs:
           command: yarn run test:contracts
       - run:
           name: "Cleanup ganache leftovers"
-          command: sudo rm -rf /tmp/*
+          command: yarn run clean:ganache
       - run:
           name: "Running extension contracts unit tests"
           command: yarn run test:contracts:extensions
       - run:
           name: "Cleanup ganache leftovers"
-          command: sudo rm -rf /tmp/*
+          command: yarn run clean:ganache
       - run:
           name: "Running upgrade tests"
           command: yarn run test:contracts:upgrade:parity && yarn run test:contracts:upgrade:ganache
