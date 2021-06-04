@@ -1233,6 +1233,32 @@ contract("Voting Reputation", (accounts) => {
       expect(logs[0].args.executed).to.be.true;
     });
 
+    it("can take an action to install an extension", async () => {
+      let installation = await colonyNetwork.getExtensionInstallation(soliditySha3("OneTxPayment"), colony.address);
+      expect(installation).to.be.equal(ADDRESS_ZERO);
+
+      const oneTxPaymentImplementation = await OneTxPayment.new();
+      const resolver = await Resolver.new();
+      await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPaymentImplementation.address }, resolver);
+      await metaColony.addExtensionToNetwork(soliditySha3("OneTxPayment"), resolver.address);
+
+      const oneTxPaymentVersion = await oneTxPaymentImplementation.version();
+
+      const action = await encodeTxData(colony, "installExtension", [soliditySha3("OneTxPayment"), oneTxPaymentVersion]);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      const { logs } = await voting.finalizeMotion(motionId);
+      expect(logs[1].args.executed).to.be.true;
+
+      installation = await colonyNetwork.getExtensionInstallation(soliditySha3("OneTxPayment"), colony.address);
+      expect(installation).to.not.be.equal(ADDRESS_ZERO);
+    });
+
     it("can take an action with an arbitrary target", async () => {
       const { colony: otherColony } = await setupRandomColony(colonyNetwork);
       await token.mint(otherColony.address, WAD, { from: USER0 });
