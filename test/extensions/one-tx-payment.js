@@ -14,6 +14,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const OneTxPayment = artifacts.require("OneTxPayment");
+const ColonyExtension = artifacts.require("ColonyExtension");
 const Resolver = artifacts.require("Resolver");
 
 const ONE_TX_PAYMENT = soliditySha3("OneTxPayment");
@@ -24,6 +25,7 @@ contract("One transaction payments", (accounts) => {
   let colonyNetwork;
   let metaColony;
   let oneTxPayment;
+  let oneTxPaymentVersion;
 
   const USER1 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[1] : accounts[2];
   const USER2 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[2] : accounts[1];
@@ -41,6 +43,11 @@ contract("One transaction payments", (accounts) => {
     const resolver = await Resolver.new();
     await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPaymentImplementation.address }, resolver);
     await metaColony.addExtensionToNetwork(ONE_TX_PAYMENT, resolver.address);
+
+    const versionSig = await resolver.stringToSig("version()");
+    const target = await resolver.lookup(versionSig);
+    const extensionImplementation = await ColonyExtension.at(target);
+    oneTxPaymentVersion = await extensionImplementation.version();
   });
 
   beforeEach(async () => {
@@ -50,7 +57,7 @@ contract("One transaction payments", (accounts) => {
 
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-    await colony.installExtension(ONE_TX_PAYMENT, 1);
+    await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
     const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
     oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
 
@@ -68,7 +75,7 @@ contract("One transaction payments", (accounts) => {
       const identifier = await oneTxPayment.identifier();
       const version = await oneTxPayment.version();
       expect(identifier).to.equal(ONE_TX_PAYMENT);
-      expect(version).to.eq.BN(1);
+      expect(version).to.eq.BN(oneTxPaymentVersion);
 
       const capabilityRoles = await oneTxPayment.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -83,9 +90,9 @@ contract("One transaction payments", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(ONE_TX_PAYMENT, 1);
+      await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
 
-      await checkErrorRevert(colony.installExtension(ONE_TX_PAYMENT, 1), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(ONE_TX_PAYMENT, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(ONE_TX_PAYMENT);
