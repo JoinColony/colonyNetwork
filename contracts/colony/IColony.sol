@@ -369,6 +369,18 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _id Expenditure identifier
   function finalizeExpenditure(uint256 _id) external;
 
+  /// @notice Sets the metadata for an expenditure. Can only be called by expenditure owner.
+  /// @param _id Id of the expenditure
+  /// @param _metadata IPFS hash of the metadata
+  function setExpenditureMetadata(uint256 _id, string memory _metadata) external;
+
+  /// @notice Sets the metadata for an expenditure. Can only be called by Arbitration role.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
+  /// @param _id Id of the expenditure
+  /// @param _metadata IPFS hash of the metadata
+  function setExpenditureMetadata(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, string memory _metadata) external;
+
   /// @notice Deprecated
   /// @notice Sets the recipient on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Id of the expenditure

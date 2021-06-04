@@ -115,6 +115,11 @@ interface ColonyDataTypes {
   /// @param expenditureId Id of the finalized expenditure
   event ExpenditureFinalized(address agent, uint256 indexed expenditureId);
 
+  /// @notice Event logged when expenditure metadata is set
+  /// @param agent The address that is responsible for triggering this event
+  /// @param metadata IPFS hash of the metadata
+  event ExpenditureMetadataSet(address agent, string metadata);
+
   /// @notice Event logged when an expenditure's recipient is set
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the expenditure
@@ -235,7 +240,7 @@ interface ColonyDataTypes {
 
   /// @notice Event logged when domain metadata is updated
   /// @param agent The address that is responsible for triggering this event
-  /// @param domainId Id of the newly-created Domain
+  /// @param metadata IPFS hash of the metadata
   event DomainMetadata(address agent, uint256 indexed domainId, string metadata);
 
   /// @notice Event logged when Colony metadata is updated
@@ -250,7 +255,7 @@ interface ColonyDataTypes {
   /// @notice Emit a metadata string for a transaction
   /// @param agent Agent emitting the annotation
   /// @param txHash Hash of transaction being annotated (0x0 for current tx)
-  /// @param metadata String of metadata for tx
+  /// @param metadata IPFS hash of the metadata
   event Annotation(address indexed agent, bytes32 indexed txHash, string metadata);
 
   /// @notice Event logged when a payment has its payout set

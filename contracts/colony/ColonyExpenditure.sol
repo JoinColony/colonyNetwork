@@ -134,6 +134,30 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureFinalized(msg.sender, _id);
   }
 
+  function setExpenditureMetadata(uint256 _id, string memory _metadata)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    emit ExpenditureMetadataSet(msg.sender, _metadata);
+  }
+
+  function setExpenditureMetadata(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    string memory _metadata
+  )
+    public
+    stoppable
+    expenditureExists(_id)
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
+  {
+    emit ExpenditureMetadataSet(msg.sender, _metadata);
+  }
+
   function setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address payable[] memory _recipients)
     public
     stoppable

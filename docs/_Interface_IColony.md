@@ -1403,6 +1403,34 @@ Sets the claim delays in sequential expenditure slots. Can only be called by exp
 |_claimDelays|uint256[]|Durations of time (in seconds) to delay
 
 
+### `setExpenditureMetadata`
+
+Sets the metadata for an expenditure. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the expenditure
+|_metadata|string|IPFS hash of the metadata
+
+
+### `setExpenditureMetadata`
+
+Sets the metadata for an expenditure. Can only be called by Arbitration role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`,
+|_id|uint256|Id of the expenditure
+|_metadata|string|IPFS hash of the metadata
+
+
 ### `setExpenditurePayout`
 
 Set the token payout on an expenditure slot. Can only be called by expenditure owner.

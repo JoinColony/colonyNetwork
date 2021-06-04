@@ -4,7 +4,7 @@ import bnChai from "bn-chai";
 import { BN } from "bn.js";
 import { ethers } from "ethers";
 
-import { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID } from "../../helpers/constants";
+import { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID, IPFS_HASH } from "../../helpers/constants";
 import { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } from "../../helpers/test-helper";
 import { fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
 
@@ -160,6 +160,20 @@ contract("Colony Expenditure", (accounts) => {
 
     it("should error if the expenditure does not exist", async () => {
       await checkErrorRevert(colony.setExpenditureSkill(100, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN }), "colony-expenditure-does-not-exist");
+    });
+
+    it("should allow owners to update the metadata", async () => {
+      const setExpenditureMetadata = colony.methods["setExpenditureMetadata(uint256,string)"];
+      const tx = await setExpenditureMetadata(expenditureId, IPFS_HASH, { from: ADMIN });
+
+      await expectEvent(tx, "ExpenditureMetadataSet", [ADMIN, IPFS_HASH]);
+    });
+
+    it("should allow arbitrators to update the metadata", async () => {
+      const setExpenditureMetadata = colony.methods["setExpenditureMetadata(uint256,uint256,uint256,string)"];
+      const tx = await setExpenditureMetadata(1, UINT256_MAX, expenditureId, IPFS_HASH, { from: ARBITRATOR });
+
+      await expectEvent(tx, "ExpenditureMetadataSet", [ARBITRATOR, IPFS_HASH]);
     });
 
     it("should allow owners to update a slot recipient", async () => {
