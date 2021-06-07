@@ -39,8 +39,6 @@ contract VotingToken is VotingBase {
 
   // [motionId][user] => tokenBalance
   mapping (uint256 => mapping (address => uint256[])) influences;
-  // [motionId] => tokenBalance
-  mapping (uint256 => uint256[]) totalInfluences;
 
   // [motionId] => lockId
   mapping (uint256 => uint256) lockIds;
@@ -50,14 +48,10 @@ contract VotingToken is VotingBase {
   /// @notice Set influence for a motion
   /// @param _motionId The id of the motion
   function setInfluence(uint256 _motionId) public {
-    require(totalInfluences[_motionId].length > 0, "voting-token-invalid-motion");
-
     if (influences[_motionId][msg.sender].length == 0) {
-      influences[_motionId][msg.sender] = new uint256[](NUM_INFLUENCES);
       uint256 balance = tokenLocking.getUserLock(token, msg.sender).balance;
-
+      influences[_motionId][msg.sender] = new uint256[](NUM_INFLUENCES);
       influences[_motionId][msg.sender][0] = balance;
-      totalInfluences[_motionId][0] = add(totalInfluences[_motionId][0], balance);
     }
   }
 
@@ -71,17 +65,6 @@ contract VotingToken is VotingBase {
     returns (uint256[] memory influence)
   {
     influence = influences[_motionId][_user];
-  }
-
-  /// @notice Get the total influence in the motion
-  /// @param _motionId The id of the motion
-  function getTotalInfluence(uint256 _motionId)
-    public
-    view
-    override
-    returns (uint256[] memory influence)
-  {
-    influence = totalInfluences[_motionId];
   }
 
   function postReveal(uint256 _motionId, address _user) internal override {
@@ -111,8 +94,6 @@ contract VotingToken is VotingBase {
     notDeprecated
   {
     createMotionInternal(1, UINT256_MAX, _altTarget, _action, NUM_INFLUENCES);
-
-    totalInfluences[motionCount] = new uint256[](NUM_INFLUENCES);
     motions[motionCount].maxVotes[0] = ERC20Extended(token).totalSupply();
   }
 

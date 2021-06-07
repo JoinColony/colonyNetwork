@@ -39,8 +39,6 @@ contract VotingHybrid is VotingBase {
 
   // [motionId][user] => [balances]
   mapping (uint256 => mapping (address => uint256[])) influences;
-  // [motionId] => [balances]
-  mapping (uint256 => uint256[]) totalInfluences;
 
   // [motionId] => lockId
   mapping (uint256 => uint256) lockIds;
@@ -62,19 +60,12 @@ contract VotingHybrid is VotingBase {
   )
     public
   {
-    require(totalInfluences[_motionId].length > 0, "voting-hybrid-invalid-motion");
-
     if (influences[_motionId][msg.sender].length == 0) {
-      influences[_motionId][msg.sender] = new uint256[](NUM_INFLUENCES);
-
       uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
       uint256 balance = tokenLocking.getUserLock(token, msg.sender).balance;
-
+      influences[_motionId][msg.sender] = new uint256[](NUM_INFLUENCES);
       influences[_motionId][msg.sender][0] = userRep;
       influences[_motionId][msg.sender][1] = balance;
-
-      totalInfluences[_motionId][0] = add(totalInfluences[_motionId][0], userRep);
-      totalInfluences[_motionId][1] = add(totalInfluences[_motionId][1], balance);
     }
   }
 
@@ -83,12 +74,6 @@ contract VotingHybrid is VotingBase {
   /// @param _user The user in question
   function getInfluence(uint256 _motionId, address _user) public view override returns (uint256[] memory influence) {
     influence = influences[_motionId][_user];
-  }
-
-  /// @notice Get the total influence of the motion
-  /// @param _motionId The id of the motion
-  function getTotalInfluence(uint256 _motionId) public view override returns (uint256[] memory influence) {
-    influence = totalInfluences[_motionId];
   }
 
   /// @notice Perform post-reveal bookkeeping
@@ -135,8 +120,6 @@ contract VotingHybrid is VotingBase {
     notDeprecated
   {
     createMotionInternal(1, UINT256_MAX, _altTarget, _action, NUM_INFLUENCES);
-
-    totalInfluences[motionCount] = new uint256[](NUM_INFLUENCES);
     motions[motionCount].maxVotes[0] = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
     motions[motionCount].maxVotes[1] = ERC20Extended(token).totalSupply();
   }

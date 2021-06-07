@@ -38,8 +38,6 @@ contract VotingReputation is VotingBase {
 
   // [motionId][skillId][user] => reputationBalance
   mapping (uint256 => mapping (uint256 => mapping (address => uint256[]))) influences;
-  // [motionId][skillId] => reputationBalance
-  mapping (uint256 => mapping (uint256 => uint256[])) totalInfluences;
 
   // Public
 
@@ -66,10 +64,7 @@ contract VotingReputation is VotingBase {
     notDeprecated
   {
     createMotionInternal(_domainId, _childSkillIndex, _altTarget, _action, NUM_INFLUENCES);
-    Motion storage motion = motions[motionCount];
-
-    totalInfluences[motionCount][motion.skillId] = new uint256[](NUM_INFLUENCES);
-    motion.maxVotes[0] = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
+    motions[motionCount].maxVotes[0] = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
   }
 
   /// @notice Deprecated
@@ -94,7 +89,6 @@ contract VotingReputation is VotingBase {
     createMotionInternal(1, UINT256_MAX, _altTarget, _action, NUM_INFLUENCES);
     Motion storage motion = motions[motionCount];
 
-    totalInfluences[motionCount][motion.skillId] = new uint256[](NUM_INFLUENCES);
     motion.maxVotes[0] = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
   }
 
@@ -122,7 +116,6 @@ contract VotingReputation is VotingBase {
     createMotionInternal(_domainId, _childSkillIndex, address(0x0), _action, NUM_INFLUENCES);
     Motion storage motion = motions[motionCount];
 
-    totalInfluences[motionCount][motion.skillId] = new uint256[](NUM_INFLUENCES);
     motion.maxVotes[0] = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
   }
 
@@ -142,14 +135,10 @@ contract VotingReputation is VotingBase {
     public
   {
     uint256 skillId = motions[_motionId].skillId;
-    require(totalInfluences[_motionId][skillId].length > 0, "voting-reputation-invalid-motion");
-
     if (influences[_motionId][skillId][msg.sender].length == 0) {
-      influences[_motionId][skillId][msg.sender] = new uint256[](NUM_INFLUENCES);
       uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
-
+      influences[_motionId][skillId][msg.sender] = new uint256[](NUM_INFLUENCES);
       influences[_motionId][skillId][msg.sender][0] = userRep;
-      totalInfluences[_motionId][skillId][0] = add(totalInfluences[_motionId][skillId][0], userRep);
     }
   }
 
@@ -163,17 +152,6 @@ contract VotingReputation is VotingBase {
     returns (uint256[] memory influence)
   {
     influence = influences[_motionId][motions[_motionId].skillId][_user];
-  }
-
-  /// @notice Get the total influence in the motion
-  /// @param _motionId The id of the motion
-  function getTotalInfluence(uint256 _motionId)
-    public
-    view
-    override
-    returns (uint256[] memory influence)
-  {
-    influence = totalInfluences[_motionId][motions[_motionId].skillId];
   }
 
   function postReveal(uint256 _motionId, address _user) internal override {}
@@ -257,8 +235,6 @@ contract VotingReputation is VotingBase {
     uint256 domainId = motion.domainId;
     motion.domainId = _newDomainId;
     motion.skillId = newDomainSkillId;
-
-    totalInfluences[_motionId][motion.skillId] = new uint256[](NUM_INFLUENCES);
     motion.maxVotes[0] = getReputationFromProof(_motionId, address(0x0), _key, _value, _branchMask, _siblings);
 
     uint256 loser = (motion.votes[0][NAY] < motion.votes[0][YAY]) ? NAY : YAY;

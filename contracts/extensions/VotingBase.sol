@@ -207,7 +207,6 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
   // Virtual functions
 
   function getInfluence(uint256 _motionId, address _user) public view virtual returns (uint256[] memory);
-  function getTotalInfluence(uint256 _motionId) public view virtual returns (uint256[] memory);
   function postReveal(uint256 _motionId, address _user) internal virtual;
   function postClaim(uint256 _motionId, address _user) internal virtual;
 
