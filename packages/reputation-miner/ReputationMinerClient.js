@@ -296,10 +296,12 @@ class ReputationMinerClient {
         }
         await this._miner.updatePeriodLength(repCycle);
 
-        // If we don't see this next cycle completed in the period length and ten minutes, then report it
+        // If we don't see this next cycle completed at an appropriate time, then report it
+
+        const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
         this.confirmTimeoutCheck = setTimeout(
           this.reportConfirmTimeout.bind(this),
-          (this._miner.getMiningCycleDuration() + 10 * MINUTE_IN_SECONDS) * 1000
+          (this._miner.getMiningCycleDuration() + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
         );
 
         // Let's process the reputation log if it's been this._processingDelay blocks

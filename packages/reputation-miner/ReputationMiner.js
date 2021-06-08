@@ -15,7 +15,7 @@ const sqlite = require("sqlite");
 const secretKey = "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7";
 const minStake = ethers.BigNumber.from(10).pow(18).mul(2000);
 
-const DAY_IN_SECONDS = 3600 * 24;
+const DAY_IN_SECONDS = 60 * 60 * 24;
 
 class ReputationMiner {
   /**
@@ -1079,7 +1079,7 @@ class ReputationMiner {
 
     this.miningCycleDuration = await repCycle.getMiningWindowDuration();
     this.miningCycleDuration = this.miningCycleDuration.toNumber();
-    this.constant = ethers.BigNumber.from(2).pow(256).sub(1).div(this.miningCycleDuration);
+    this.constant = ethers.constants.MaxUint256.sub(1).div(this.miningCycleDuration);
 
     if (calculatedPeriodLength !== this.miningCycleDuration) {
       this._adapter.log(
