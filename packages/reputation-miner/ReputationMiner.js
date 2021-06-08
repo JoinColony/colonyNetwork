@@ -130,6 +130,10 @@ class ReputationMiner {
     this.justificationHashes = {};
     this.reverseReputationHashLookup = {};
     const repCycle = await this.getActiveRepCycle(blockNumber)
+    // Update fractions
+    const decayFraction = await repCycle.getDecayConstant({ blockTag: blockNumber });
+    this.decayNumerator = decayFraction.numerator;
+    this.decayDenominator = decayFraction.denominator;
 
     // Do updates
     this.nReputationsBeforeLatestLog = ethers.BigNumber.from(this.nReputations.toString());
@@ -241,12 +245,9 @@ class ReputationMiner {
     if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
       const key = await Object.keys(this.reputations)[updateNumber];
       const reputation = ethers.BigNumber.from(`0x${this.reputations[key].slice(2, 66)}`);
-      // These are the numerator and the denominator of the fraction we wish to reduce the reputation by. It
-      // is very slightly less than one (0.5 ** (1/2160) for a 1-hr mining cycle, 0.5 ** (1/90) for a 24-hr cycle).
-      // Disabling prettier on the next line so we can have these two values aligned so it's easy to see
-      // the fraction will be slightly less than one.
-      const numerator = ethers.BigNumber.from("992327946262944");
-      const denominator = ethers.BigNumber.from("1000000000000000");
+
+      const numerator = ethers.BigNumber.from(this.decayNumerator);
+      const denominator = ethers.BigNumber.from(this.decayDenominator);
 
       const newReputation = reputation.mul(numerator).div(denominator);
       const reputationChange = newReputation.sub(reputation);

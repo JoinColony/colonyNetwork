@@ -200,10 +200,12 @@ class ReputationMinerClient {
 
     // Work out when the confirm timeout should be.
     const repCycle = await this._miner.getActiveRepCycle();
+    await this.updatePeriodLength(repCycle);
+
     const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
     this.confirmTimeoutCheck = setTimeout(
       this.reportConfirmTimeout.bind(this),
-      (DAY_IN_SECONDS + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
+      (this.periodLength + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
     );
 
     this.miningCycleAddress = repCycle.address;
@@ -288,13 +290,17 @@ class ReputationMinerClient {
 
       const block = await this._miner.realProvider.getBlock(blockNumber);
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+
+      const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
       if (addr !== this.miningCycleAddress) {
         // Then the cycle has completed since we last checked.
         if (this.confirmTimeoutCheck) {
           clearTimeout(this.confirmTimeoutCheck);
         }
-        // If we don't see this next cycle completed in the next day and ten minutes, then report it
-        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (DAY_IN_SECONDS + 10 * MINUTE_IN_SECONDS) * 1000);
+        await this.updatePeriodLength(repCycle);
+
+        // If we don't see this next cycle completed in the period length and ten minutes, then report it
+        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (this.periodLength + 10 * MINUTE_IN_SECONDS) * 1000);
 
         // Let's process the reputation log if it's been this._processingDelay blocks
         if (this.blocksSinceCycleCompleted < this._processingDelay) {
@@ -321,8 +327,6 @@ class ReputationMinerClient {
         this.endDoBlockChecks();
         return;
       }
-
-      const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
       const hash = await this._miner.getRootHash();
       const NLeaves = await this._miner.getRootHashNLeaves();
@@ -611,6 +615,32 @@ class ReputationMinerClient {
 
   async reportConfirmTimeout() {
     this._adapter.error("Error: We expected to see the mining cycle confirm ten minutes ago. Something might be wrong!");
+  }
+
+  async updatePeriodLength(repCycle) {
+    const { numerator, denominator } = await repCycle.getDecayConstant();
+
+    // Hard to do logs with bignumbers, so let's just see what happens!
+    let value = ethers.BigNumber.from("1000000000000000000");
+    // Due to rounding, and how we conventionally define the decay constant, after the
+    // intended halfing period, we will still be very slightly above half and only drop
+    // below half on the next period. This starting value takes that in to account.
+    let count = -1;
+    while (value.gt(ethers.BigNumber.from("500000000000000000"))){
+      value = value.mul(numerator).div(denominator);
+      count += 1;
+    }
+    const calculatedPeriodLength = Math.floor(90 * DAY_IN_SECONDS / count);
+
+    this.periodLength = await repCycle.getMiningWindowDuration();
+    this.periodLength = this.periodLength.toNumber();
+    if (calculatedPeriodLength !== this.periodLength) {
+      this._adapter.log(
+        `Warning: Inconsistent period length from contracts... have the rules changed?
+        Will no longer have 50% decay of reputation in three months.
+        Period length is ${this.periodLength} but decay constant implies ${calculatedPeriodLength}.`
+        );
+    };
   }
 }
 

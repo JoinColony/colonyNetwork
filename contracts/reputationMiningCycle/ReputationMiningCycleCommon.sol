@@ -27,7 +27,8 @@ import "./ReputationMiningCycleStorage.sol";
 contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
   // Minimum reputation mining stake in CLNY
   uint256 constant MIN_STAKE = 2000 * WAD;
-  // Size of mining window in seconds
+  // Size of mining window in seconds. Should be consistent with decay constant
+  // in reputationMiningCycleRespond. If you change one, you should change the other.
   uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
 
   function expectedBranchMask(uint256 _nLeaves, uint256 _leaf) public pure returns (uint256) {
