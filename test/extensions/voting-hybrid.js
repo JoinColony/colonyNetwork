@@ -54,6 +54,8 @@ contract("Voting Hybrid", (accounts) => {
 
   let reputationTree;
 
+  let requiredStake;
+
   let domain1Key;
   let domain1Value;
   let domain1Mask;
@@ -100,7 +102,6 @@ contract("Voting Hybrid", (accounts) => {
   // const EXECUTED = 6;
   // const FAILED = 7;
 
-  let REQUIRED_STAKE;
   const ADDRESS_ZERO = ethers.constants.AddressZero;
   const WAD32 = bn2bytes32(WAD);
   const HALF = WAD.divn(2);
@@ -201,7 +202,7 @@ contract("Voting Hybrid", (accounts) => {
     await colony.approveStake(voting.address, 1, user1Influence, { from: USER1 });
 
     // Add both reputation and token influence
-    REQUIRED_STAKE = totalInfluence.muln(2).divn(1000);
+    requiredStake = totalInfluence.muln(2).divn(1000);
   });
 
   function hashExpenditureSlot(action) {
@@ -362,17 +363,17 @@ contract("Voting Hybrid", (accounts) => {
     });
 
     it("can stake on a motion", async () => {
-      const requiredStake = await voting.getRequiredStake(motionId);
-      expect(requiredStake).to.eq.BN(REQUIRED_STAKE);
+      const requiredStakeOnChain = await voting.getRequiredStake(motionId);
+      expect(requiredStake).to.eq.BN(requiredStakeOnChain);
 
-      const half = REQUIRED_STAKE.divn(2);
+      const half = requiredStake.divn(2);
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, half, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, half, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       const motion = await voting.getMotion(motionId);
       expect(motion.stakes[0]).to.be.zero;
-      expect(motion.stakes[1]).to.eq.BN(REQUIRED_STAKE);
+      expect(motion.stakes[1]).to.eq.BN(requiredStake);
 
       const stake0 = await voting.getStake(motionId, USER0, YAY);
       const stake1 = await voting.getStake(motionId, USER1, YAY);
@@ -384,11 +385,11 @@ contract("Voting Hybrid", (accounts) => {
       let motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(STAKING);
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(STAKING);
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(SUBMIT);
     });
@@ -399,11 +400,11 @@ contract("Voting Hybrid", (accounts) => {
       await colony.claimColonyFunds(token.address);
       await colony.startNextRewardPayout(token.address, domain1Key, domain1Value, domain1Mask, domain1Siblings);
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       const lock = await tokenLocking.getUserLock(token.address, voting.address);
-      expect(lock.balance).to.eq.BN(REQUIRED_STAKE.muln(2));
+      expect(lock.balance).to.eq.BN(requiredStake.muln(2));
     });
 
     it("cannot stake 0", async () => {
@@ -415,13 +416,13 @@ contract("Voting Hybrid", (accounts) => {
 
     it("cannot stake a nonexistent side", async () => {
       await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, 2, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        voting.stakeMotion(motionId, 1, UINT256_MAX, 2, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "voting-base-bad-vote"
       );
     });
 
     it("cannot stake less than the minStake, unless there is less than minStake to go", async () => {
-      const minStake = REQUIRED_STAKE.divn(10);
+      const minStake = requiredStake.divn(10);
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake.subn(1), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
@@ -432,7 +433,7 @@ contract("Voting Hybrid", (accounts) => {
 
       // Unless there's less than the minStake to go!
 
-      const stake = REQUIRED_STAKE.sub(minStake.muln(2)).addn(1);
+      const stake = requiredStake.sub(minStake.muln(2)).addn(1);
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, stake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake.subn(1), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
     });
@@ -456,7 +457,7 @@ contract("Voting Hybrid", (accounts) => {
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.globalClaimDelay).to.be.zero;
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
       expect(expenditureMotionCount).to.eq.BN(1);
@@ -487,7 +488,7 @@ contract("Voting Hybrid", (accounts) => {
       await voting.createMotion(otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       const expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
       expect(expenditureMotionCount).to.be.zero;
@@ -523,7 +524,7 @@ contract("Voting Hybrid", (accounts) => {
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.be.zero;
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
       expect(expenditureMotionCount).to.eq.BN(1);
@@ -561,7 +562,7 @@ contract("Voting Hybrid", (accounts) => {
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.be.zero;
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
       expect(expenditureMotionCount).to.eq.BN(1);
@@ -585,7 +586,7 @@ contract("Voting Hybrid", (accounts) => {
 
       await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       // Motion 2
       // Set payoutModifier to 1 for expenditure slot 0
@@ -601,7 +602,7 @@ contract("Voting Hybrid", (accounts) => {
 
       await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       // Motion 2
       // Set payout to WAD for expenditure slot 0, internal token
@@ -617,7 +618,7 @@ contract("Voting Hybrid", (accounts) => {
 
       await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       const expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.globalClaimDelay).to.eq.BN(UINT256_MAX.divn(3));
@@ -636,7 +637,7 @@ contract("Voting Hybrid", (accounts) => {
       motionId = await voting.getMotionCount();
 
       await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "voting-base-expenditure-lock-failed"
       );
     });
@@ -682,8 +683,8 @@ contract("Voting Hybrid", (accounts) => {
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.be.zero;
 
-      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       expenditureMotionCount = await voting.getExpenditureMotionCount(expenditureHash);
       expect(expenditureMotionCount).to.eq.BN(2);
@@ -711,7 +712,7 @@ contract("Voting Hybrid", (accounts) => {
 
     it("cannot stake with someone else's reputation", async () => {
       await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER1 }),
+        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER1 }),
         "voting-base-invalid-user-address"
       );
     });
@@ -722,7 +723,7 @@ contract("Voting Hybrid", (accounts) => {
       const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
 
       await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 }),
+        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 }),
         "voting-base-insufficient-influence"
       );
     });
@@ -731,12 +732,12 @@ contract("Voting Hybrid", (accounts) => {
       await forwardTime(STAKE_PERIOD, this);
 
       await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "voting-base-motion-not-staking"
       );
 
       await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
+        voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
         "voting-base-motion-not-staking"
       );
     });
@@ -750,8 +751,8 @@ contract("Voting Hybrid", (accounts) => {
       await voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
     });
 
     it("can rate and reveal for a motion", async () => {
@@ -873,8 +874,8 @@ contract("Voting Hybrid", (accounts) => {
       // Create new motion with new reputation state
       await voting.createMotion(ADDRESS_ZERO, FAKE, domain1Key, domain1Value, domain1Mask2, domain1Siblings2);
       const motionId2 = await voting.getMotionCount();
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask2, user1Siblings2, { from: USER1 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask2, user1Siblings2, { from: USER1 });
 
       await voting.submitVote(motionId2, soliditySha3(SALT, NAY), user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
 
@@ -944,7 +945,7 @@ contract("Voting Hybrid", (accounts) => {
 
     it("motion has no effect if extension does not have permissions", async () => {
       await colony.setAdministrationRole(1, UINT256_MAX, voting.address, 1, false);
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
       const tasksBefore = await colony.getTaskCount();
@@ -958,7 +959,7 @@ contract("Voting Hybrid", (accounts) => {
     });
 
     it("cannot take an action if there is insufficient support", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.subn(1), user0Key, user0Value, user0Mask, user0Siblings, {
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake.subn(1), user0Key, user0Value, user0Mask, user0Siblings, {
         from: USER0,
       });
 
@@ -968,8 +969,8 @@ contract("Voting Hybrid", (accounts) => {
     });
 
     it("can take an action if there is insufficient opposition", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.subn(1), user1Key, user1Value, user1Mask, user1Siblings, {
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake.subn(1), user1Key, user1Value, user1Mask, user1Siblings, {
         from: USER1,
       });
 
@@ -985,7 +986,7 @@ contract("Voting Hybrid", (accounts) => {
       await voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1001,7 +1002,7 @@ contract("Voting Hybrid", (accounts) => {
       await voting.createMotion(otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1019,7 +1020,7 @@ contract("Voting Hybrid", (accounts) => {
       await voting.createMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1029,13 +1030,13 @@ contract("Voting Hybrid", (accounts) => {
 
     it("cannot take an action during staking or voting", async () => {
       let motionState;
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(STAKING);
       await checkErrorRevert(voting.finalizeMotion(motionId), "voting-base-motion-not-finalizable");
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(SUBMIT);
@@ -1043,7 +1044,7 @@ contract("Voting Hybrid", (accounts) => {
     });
 
     it("cannot take an action twice", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1054,8 +1055,8 @@ contract("Voting Hybrid", (accounts) => {
     });
 
     it("can take an action if the motion passes", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
@@ -1072,8 +1073,8 @@ contract("Voting Hybrid", (accounts) => {
     });
 
     it("cannot take an action if the motion fails", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
@@ -1097,8 +1098,8 @@ contract("Voting Hybrid", (accounts) => {
       await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId1 = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId1, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId1, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await voting.submitVote(motionId1, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
@@ -1117,8 +1118,8 @@ contract("Voting Hybrid", (accounts) => {
       await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await voting.submitVote(motionId2, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
@@ -1142,8 +1143,8 @@ contract("Voting Hybrid", (accounts) => {
       await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
@@ -1174,8 +1175,8 @@ contract("Voting Hybrid", (accounts) => {
       await voting.createMotion(ADDRESS_ZERO, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1198,14 +1199,14 @@ contract("Voting Hybrid", (accounts) => {
       await voting.createMotion(ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
       await voting.finalizeMotion(motionId);
       const slotHash = hashExpenditureSlot(action);
       const pastVote = await voting.getExpenditurePastVote(slotHash);
-      expect(pastVote).to.eq.BN(REQUIRED_STAKE);
+      expect(pastVote).to.eq.BN(requiredStake);
     });
   });
 
@@ -1227,8 +1228,8 @@ contract("Voting Hybrid", (accounts) => {
       const repCycle = await IReputationMiningCycle.at(addr);
       const numEntriesPrev = await repCycle.getReputationUpdateLogLength();
 
-      const nayStake = REQUIRED_STAKE.divn(2);
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      const nayStake = requiredStake.divn(2);
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
@@ -1245,8 +1246,8 @@ contract("Voting Hybrid", (accounts) => {
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
 
       // Note that no voter rewards were paid out
-      const expectedReward0 = REQUIRED_STAKE.add(REQUIRED_STAKE.divn(20)); // 110% of stake
-      const expectedReward1 = REQUIRED_STAKE.divn(20).muln(9); // 90% of stake
+      const expectedReward0 = requiredStake.add(requiredStake.divn(20)); // 110% of stake
+      const expectedReward1 = requiredStake.divn(20).muln(9); // 90% of stake
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
@@ -1257,7 +1258,7 @@ contract("Voting Hybrid", (accounts) => {
 
       const repUpdate = await repCycle.getReputationUpdateLogEntry(numEntriesPost.subn(1));
       expect(repUpdate.user).to.equal(USER1);
-      expect(repUpdate.amount).to.eq.BN(REQUIRED_STAKE.divn(20).neg());
+      expect(repUpdate.amount).to.eq.BN(requiredStake.divn(20).neg());
     });
 
     it("can let stakers claim rewards, based on the vote outcome", async () => {
@@ -1265,8 +1266,8 @@ contract("Voting Hybrid", (accounts) => {
       const repCycle = await IReputationMiningCycle.at(addr);
       const numEntriesPrev = await repCycle.getReputationUpdateLogLength();
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
@@ -1288,9 +1289,9 @@ contract("Voting Hybrid", (accounts) => {
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
 
       const motion = await voting.getMotion(motionId);
-      const loserStake = REQUIRED_STAKE.sub(new BN(motion.paidVoterComp));
+      const loserStake = requiredStake.sub(new BN(motion.paidVoterComp));
       const expectedReward0 = loserStake.divn(3).muln(2).addn(1); // (stake * .8) * (winPct = 1/3 * 2) + dust
-      const expectedReward1 = REQUIRED_STAKE.add(loserStake.divn(3)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
+      const expectedReward1 = requiredStake.add(loserStake.divn(3)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
@@ -1301,7 +1302,7 @@ contract("Voting Hybrid", (accounts) => {
 
       const repUpdate = await repCycle.getReputationUpdateLogEntry(numEntriesPost.subn(1));
       expect(repUpdate.user).to.equal(USER0);
-      expect(repUpdate.amount).to.eq.BN(REQUIRED_STAKE.sub(expectedReward0).neg());
+      expect(repUpdate.amount).to.eq.BN(requiredStake.sub(expectedReward0).neg());
     });
 
     it("can let stakers claim their original stake if neither side fully staked", async () => {
@@ -1309,7 +1310,7 @@ contract("Voting Hybrid", (accounts) => {
       const repCycle = await IReputationMiningCycle.at(addr);
       const numEntriesPrev = await repCycle.getReputationUpdateLogLength();
 
-      const half = REQUIRED_STAKE.divn(2);
+      const half = requiredStake.divn(2);
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, half, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, half, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
@@ -1332,8 +1333,8 @@ contract("Voting Hybrid", (accounts) => {
     });
 
     it("cannot claim rewards twice", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
@@ -1353,6 +1354,39 @@ contract("Voting Hybrid", (accounts) => {
 
     it("cannot claim rewards before a motion is finalized", async () => {
       await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-base-motion-not-claimable");
+    });
+
+    it("can unlock the token after claiming", async () => {
+      const user2Key = makeReputationKey(colony.address, domain1.skillId, USER2);
+      const user2Value = makeReputationValue(0, 4);
+      const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER2 });
+
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(ESCALATION_PERIOD, this);
+
+      await voting.finalizeMotion(motionId);
+
+      let lockCount;
+      const lockId = await voting.getLockId(motionId);
+
+      ({ lockCount } = await tokenLocking.getUserLock(token.address, USER1));
+      expect(lockCount).to.be.zero;
+
+      await voting.claimReward(motionId, 1, UINT256_MAX, USER1, NAY);
+
+      ({ lockCount } = await tokenLocking.getUserLock(token.address, USER1));
+      expect(lockCount).to.eq.BN(lockId);
     });
   });
 });
