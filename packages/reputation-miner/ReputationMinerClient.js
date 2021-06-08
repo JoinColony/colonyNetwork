@@ -7,10 +7,7 @@ const ConsoleAdapter = require('./adapters/console').default;
 const ReputationMiner = require("./ReputationMiner");
 
 const minStake = ethers.BigNumber.from(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
-const miningCycleDuration = ethers.BigNumber.from(60).mul(60).mul(24); // 24 hours
 const MINUTE_IN_SECONDS = 60;
-const DAY_IN_SECONDS = 3600 * 24;
-const constant = ethers.BigNumber.from(2).pow(256).sub(1).div(miningCycleDuration);
 const disputeStages = {
  CONFIRM_JRH: 0,
  BINARY_SEARCH_RESPONSE: 1,
@@ -200,12 +197,12 @@ class ReputationMinerClient {
 
     // Work out when the confirm timeout should be.
     const repCycle = await this._miner.getActiveRepCycle();
-    await this.updatePeriodLength(repCycle);
+    await this._miner.updatePeriodLength(repCycle);
 
     const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
     this.confirmTimeoutCheck = setTimeout(
       this.reportConfirmTimeout.bind(this),
-      (this.periodLength + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
+      (this._miner.getMiningCycleDuration() + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
     );
 
     this.miningCycleAddress = repCycle.address;
@@ -297,10 +294,13 @@ class ReputationMinerClient {
         if (this.confirmTimeoutCheck) {
           clearTimeout(this.confirmTimeoutCheck);
         }
-        await this.updatePeriodLength(repCycle);
+        await this._miner.updatePeriodLength(repCycle);
 
         // If we don't see this next cycle completed in the period length and ten minutes, then report it
-        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (this.periodLength + 10 * MINUTE_IN_SECONDS) * 1000);
+        this.confirmTimeoutCheck = setTimeout(
+          this.reportConfirmTimeout.bind(this),
+          (this._miner.getMiningCycleDuration() + 10 * MINUTE_IN_SECONDS) * 1000
+        );
 
         // Let's process the reputation log if it's been this._processingDelay blocks
         if (this.blocksSinceCycleCompleted < this._processingDelay) {
@@ -374,7 +374,7 @@ class ReputationMinerClient {
           // Then we don't have an opponent
           if (round.eq(0)) {
             // We can only advance if the window is closed
-            if (ethers.BigNumber.from(block.timestamp).sub(windowOpened).lt(miningCycleDuration)) {
+            if (ethers.BigNumber.from(block.timestamp).sub(windowOpened).lt(this._miner.getMiningCycleDuration())) {
               this.endDoBlockChecks();
               return;
             };
@@ -462,7 +462,7 @@ class ReputationMinerClient {
         }
       }
 
-      if (lastHashStanding && ethers.BigNumber.from(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
+      if (lastHashStanding && ethers.BigNumber.from(block.timestamp).sub(windowOpened).gte(this._miner.getMiningCycleDuration())) {
         // If the submission window is closed and we are the last hash, confirm it
         const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
         const disputeRound = await repCycle.getDisputeRound(round);
@@ -558,7 +558,7 @@ class ReputationMinerClient {
     const timeAbleToSubmitEntries = [];
     for (let i = ethers.BigNumber.from(1); i.lte(balance.div(minStake)); i = i.add(1)) {
       const entryHash = await repCycle.getEntryHash(this._miner.minerAddress, i, rootHash);
-      const timeAbleToSubmitEntry = ethers.BigNumber.from(entryHash).div(constant).add(reputationMiningWindowOpenTimestamp);
+      const timeAbleToSubmitEntry = ethers.BigNumber.from(entryHash).div(this._miner.constant).add(reputationMiningWindowOpenTimestamp);
 
       const validEntry = {
         timestamp: timeAbleToSubmitEntry,
@@ -617,31 +617,6 @@ class ReputationMinerClient {
     this._adapter.error("Error: We expected to see the mining cycle confirm ten minutes ago. Something might be wrong!");
   }
 
-  async updatePeriodLength(repCycle) {
-    const { numerator, denominator } = await repCycle.getDecayConstant();
-
-    // Hard to do logs with bignumbers, so let's just see what happens!
-    let value = ethers.BigNumber.from("1000000000000000000");
-    // Due to rounding, and how we conventionally define the decay constant, after the
-    // intended halfing period, we will still be very slightly above half and only drop
-    // below half on the next period. This starting value takes that in to account.
-    let count = -1;
-    while (value.gt(ethers.BigNumber.from("500000000000000000"))){
-      value = value.mul(numerator).div(denominator);
-      count += 1;
-    }
-    const calculatedPeriodLength = Math.floor(90 * DAY_IN_SECONDS / count);
-
-    this.periodLength = await repCycle.getMiningWindowDuration();
-    this.periodLength = this.periodLength.toNumber();
-    if (calculatedPeriodLength !== this.periodLength) {
-      this._adapter.log(
-        `Warning: Inconsistent period length from contracts... have the rules changed?
-        Will no longer have 50% decay of reputation in three months.
-        Period length is ${this.periodLength} but decay constant implies ${calculatedPeriodLength}.`
-        );
-    };
-  }
 }
 
 module.exports = ReputationMinerClient;

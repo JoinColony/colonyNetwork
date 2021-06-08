@@ -92,7 +92,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
   // Note that these values and the mining window size (defined in ReputationMiningCycleCommon)
   // need to be consistent with each other, but are not checked, in order for the decay
   // rate to be as-expected.
-  uint constant DECAY_NUMERATOR =    992327946262944; // 24-hr mining cycles
+  uint constant DECAY_NUMERATOR =    999679150010889; // 24-hr mining cycles
   uint constant DECAY_DENOMINATOR = 1000000000000000;
 
   function getDecayConstant() public pure returns (uint256, uint256) {
