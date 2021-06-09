@@ -57,7 +57,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   returns (bool)
   {
     require(_targets.length == _actions.length, "colony-targets-and-actions-length-mismatch");
-    for (uint256 i = 0; i < _targets.length; i+= 1){
+    for (uint256 i; i < _targets.length; i+= 1){
       require(
         makeArbitraryTransactionFunctionality(_targets[i], _actions[i]),
         "colony-arbitrary-transaction-failed"
