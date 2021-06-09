@@ -59,6 +59,7 @@ contract VotingHybrid is VotingBase {
     bytes32[] memory _siblings
   )
     public
+    motionExists(_motionId)
   {
     if (influences[_motionId][msg.sender].length == 0) {
       uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);

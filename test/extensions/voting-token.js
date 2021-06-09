@@ -274,7 +274,7 @@ contract("Voting Token", (accounts) => {
     });
 
     it("cannot set influence on a non-existent motion", async () => {
-      await checkErrorRevert(voting.setInfluence(0, { from: USER0 }), "voting-token-invalid-motion");
+      await checkErrorRevert(voting.setInfluence(0, { from: USER0 }), "voting-base-motion-does-not-exist");
     });
   });
 

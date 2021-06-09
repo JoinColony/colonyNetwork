@@ -133,6 +133,7 @@ contract VotingReputation is VotingBase {
     bytes32[] memory _siblings
   )
     public
+    motionExists(_motionId)
   {
     uint256 skillId = motions[_motionId].skillId;
     if (influences[_motionId][skillId][msg.sender].length == 0) {

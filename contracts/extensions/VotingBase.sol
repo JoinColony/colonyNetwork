@@ -98,6 +98,11 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
     _;
   }
 
+  modifier motionExists(uint256 _id) {
+    require(_id > 0 && _id <= motionCount, "voting-base-motion-does-not-exist");
+    _;
+  }
+
   // Public
 
   /// @notice Install the extension
@@ -223,7 +228,7 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
     require(_vote <= 1, "voting-base-bad-vote");
 
     uint256[] memory influence = getInfluence(_motionId, msg.sender);
-    for (uint256 i; i < influence.length; i++) {
+    for (uint256 i; i < motion.votes.length; i++) {
       motion.votes[i][_vote] = add(motion.votes[i][_vote], influence[i]);
     }
 
@@ -239,7 +244,7 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
     // See if reputation revealed matches reputation submitted
     bool fullyRevealed = true;
 
-    for (uint256 j; j < influence.length; j++) {
+    for (uint256 j; j < motion.totalVotes.length; j++) {
       fullyRevealed = fullyRevealed &&
         add(motion.votes[j][NAY], motion.votes[j][YAY]) == motion.totalVotes[j];
     }
@@ -779,7 +784,7 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
     // Add influence to totals if first submission
     if (voteSecrets[_motionId][msg.sender] == bytes32(0)) {
       uint256[] memory influence = getInfluence(_motionId, msg.sender);
-      for (uint256 i; i < influence.length; i++) {
+      for (uint256 i; i < motion.totalVotes.length; i++) {
         motion.totalVotes[i] = add(motion.totalVotes[i], influence[i]);
       }
     }

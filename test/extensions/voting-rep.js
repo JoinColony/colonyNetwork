@@ -492,6 +492,13 @@ contract("Voting Reputation", (accounts) => {
       // But is in the root domain
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
     });
+
+    it("cannot set influence on a non-existent motion", async () => {
+      await checkErrorRevert(
+        voting.setInfluence(0, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-base-motion-does-not-exist"
+      );
+    });
   });
 
   describe("staking on motions", async () => {

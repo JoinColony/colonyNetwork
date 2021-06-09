@@ -149,7 +149,8 @@ contract("Voting Hybrid", (accounts) => {
 
     const user0Influence = WAD;
     const user1Influence = WAD.muln(2);
-    const totalInfluence = user0Influence.add(user1Influence);
+    const user2Influence = WAD.divn(10000);
+    const totalInfluence = user0Influence.add(user1Influence).add(user2Influence);
 
     // Setup reputation values
 
@@ -168,7 +169,7 @@ contract("Voting Hybrid", (accounts) => {
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER2), // User2
-      makeReputationValue(0, 4)
+      makeReputationValue(user2Influence, 4)
     );
 
     domain1Key = makeReputationKey(colony.address, domain1.skillId);
@@ -194,12 +195,16 @@ contract("Voting Hybrid", (accounts) => {
 
     await token.mint(USER0, user0Influence);
     await token.mint(USER1, user1Influence);
+    await token.mint(USER2, user2Influence);
     await token.approve(tokenLocking.address, user0Influence, { from: USER0 });
     await token.approve(tokenLocking.address, user1Influence, { from: USER1 });
+    await token.approve(tokenLocking.address, user2Influence, { from: USER2 });
     await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, user0Influence, true, { from: USER0 });
     await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, user1Influence, true, { from: USER1 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, user2Influence, true, { from: USER2 });
     await colony.approveStake(voting.address, 1, user0Influence, { from: USER0 });
     await colony.approveStake(voting.address, 1, user1Influence, { from: USER1 });
+    await colony.approveStake(voting.address, 1, user2Influence, { from: USER2 });
 
     // Add both reputation and token influence
     requiredStake = totalInfluence.muln(2).divn(1000);
@@ -349,7 +354,10 @@ contract("Voting Hybrid", (accounts) => {
     });
 
     it("cannot set influence on a non-existent motion", async () => {
-      await checkErrorRevert(voting.setInfluence(0, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }), "voting-hybrid-invalid-motion");
+      await checkErrorRevert(
+        voting.setInfluence(0, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-base-motion-does-not-exist"
+      );
     });
   });
 
@@ -719,7 +727,7 @@ contract("Voting Hybrid", (accounts) => {
 
     it("cannot stake with insufficient reputation", async () => {
       const user2Key = makeReputationKey(colony.address, domain1.skillId, USER2);
-      const user2Value = makeReputationValue(0, 4);
+      const user2Value = makeReputationValue(WAD.divn(10000), 4);
       const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
 
       await checkErrorRevert(
@@ -1358,7 +1366,7 @@ contract("Voting Hybrid", (accounts) => {
 
     it("can unlock the token after claiming", async () => {
       const user2Key = makeReputationKey(colony.address, domain1.skillId, USER2);
-      const user2Value = makeReputationValue(0, 4);
+      const user2Value = makeReputationValue(WAD.divn(10000), 4);
       const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });

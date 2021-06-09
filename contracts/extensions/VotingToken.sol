@@ -47,7 +47,7 @@ contract VotingToken is VotingBase {
 
   /// @notice Set influence for a motion
   /// @param _motionId The id of the motion
-  function setInfluence(uint256 _motionId) public {
+  function setInfluence(uint256 _motionId) public motionExists(_motionId) {
     if (influences[_motionId][msg.sender].length == 0) {
       uint256 balance = tokenLocking.getUserLock(token, msg.sender).balance;
       influences[_motionId][msg.sender] = new uint256[](NUM_INFLUENCES);
