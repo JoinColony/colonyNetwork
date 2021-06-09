@@ -199,11 +199,7 @@ class ReputationMinerClient {
     const repCycle = await this._miner.getActiveRepCycle();
     await this._miner.updatePeriodLength(repCycle);
 
-    const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    this.confirmTimeoutCheck = setTimeout(
-      this.reportConfirmTimeout.bind(this),
-      (this._miner.getMiningCycleDuration() + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
-    );
+    await this.setMiningCycleTimeout(repCycle);
 
     this.miningCycleAddress = repCycle.address;
 
@@ -298,11 +294,7 @@ class ReputationMinerClient {
 
         // If we don't see this next cycle completed at an appropriate time, then report it
 
-        const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-        this.confirmTimeoutCheck = setTimeout(
-          this.reportConfirmTimeout.bind(this),
-          (this._miner.getMiningCycleDuration() + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
-        );
+        await this.setMiningCycleTimeout(repCycle);
 
         // Let's process the reputation log if it's been this._processingDelay blocks
         if (this.blocksSinceCycleCompleted < this._processingDelay) {
@@ -576,6 +568,14 @@ class ReputationMinerClient {
     const maxEntries = Math.min(12, timeAbleToSubmitEntries.length);
 
     return timeAbleToSubmitEntries.slice(0, maxEntries);
+  }
+
+  async setMiningCycleTimeout(repCycle){
+    const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+    this.confirmTimeoutCheck = setTimeout(
+      this.reportConfirmTimeout.bind(this),
+      (this._miner.getMiningCycleDuration() + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
+    );
   }
 
   async submitEntry(entryIndex) {

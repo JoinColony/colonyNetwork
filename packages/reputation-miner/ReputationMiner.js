@@ -1079,7 +1079,7 @@ class ReputationMiner {
 
     this.miningCycleDuration = await repCycle.getMiningWindowDuration();
     this.miningCycleDuration = this.miningCycleDuration.toNumber();
-    this.constant = ethers.constants.MaxUint256.sub(1).div(this.miningCycleDuration);
+    this.constant = ethers.constants.MaxUint256.div(this.miningCycleDuration);
 
     if (calculatedPeriodLength !== this.miningCycleDuration) {
       this._adapter.log(
