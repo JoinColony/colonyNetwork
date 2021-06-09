@@ -7,10 +7,7 @@ const ConsoleAdapter = require('./adapters/console').default;
 const ReputationMiner = require("./ReputationMiner");
 
 const minStake = ethers.BigNumber.from(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
-const miningCycleDuration = ethers.BigNumber.from(60).mul(60).mul(24); // 24 hours
 const MINUTE_IN_SECONDS = 60;
-const DAY_IN_SECONDS = 3600 * 24;
-const constant = ethers.BigNumber.from(2).pow(256).sub(1).div(miningCycleDuration);
 const disputeStages = {
  CONFIRM_JRH: 0,
  BINARY_SEARCH_RESPONSE: 1,
@@ -200,11 +197,9 @@ class ReputationMinerClient {
 
     // Work out when the confirm timeout should be.
     const repCycle = await this._miner.getActiveRepCycle();
-    const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    this.confirmTimeoutCheck = setTimeout(
-      this.reportConfirmTimeout.bind(this),
-      (DAY_IN_SECONDS + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
-    );
+    await this._miner.updatePeriodLength(repCycle);
+
+    await this.setMiningCycleTimeout(repCycle);
 
     this.miningCycleAddress = repCycle.address;
 
@@ -288,13 +283,18 @@ class ReputationMinerClient {
 
       const block = await this._miner.realProvider.getBlock(blockNumber);
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+
+      const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
       if (addr !== this.miningCycleAddress) {
         // Then the cycle has completed since we last checked.
         if (this.confirmTimeoutCheck) {
           clearTimeout(this.confirmTimeoutCheck);
         }
-        // If we don't see this next cycle completed in the next day and ten minutes, then report it
-        this.confirmTimeoutCheck = setTimeout(this.reportConfirmTimeout.bind(this), (DAY_IN_SECONDS + 10 * MINUTE_IN_SECONDS) * 1000);
+        await this._miner.updatePeriodLength(repCycle);
+
+        // If we don't see this next cycle completed at an appropriate time, then report it
+
+        await this.setMiningCycleTimeout(repCycle);
 
         // Let's process the reputation log if it's been this._processingDelay blocks
         if (this.blocksSinceCycleCompleted < this._processingDelay) {
@@ -321,8 +321,6 @@ class ReputationMinerClient {
         this.endDoBlockChecks();
         return;
       }
-
-      const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
       const hash = await this._miner.getRootHash();
       const NLeaves = await this._miner.getRootHashNLeaves();
@@ -370,7 +368,7 @@ class ReputationMinerClient {
           // Then we don't have an opponent
           if (round.eq(0)) {
             // We can only advance if the window is closed
-            if (ethers.BigNumber.from(block.timestamp).sub(windowOpened).lt(miningCycleDuration)) {
+            if (ethers.BigNumber.from(block.timestamp).sub(windowOpened).lt(this._miner.getMiningCycleDuration())) {
               this.endDoBlockChecks();
               return;
             };
@@ -458,7 +456,7 @@ class ReputationMinerClient {
         }
       }
 
-      if (lastHashStanding && ethers.BigNumber.from(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
+      if (lastHashStanding && ethers.BigNumber.from(block.timestamp).sub(windowOpened).gte(this._miner.getMiningCycleDuration())) {
         // If the submission window is closed and we are the last hash, confirm it
         const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
         const disputeRound = await repCycle.getDisputeRound(round);
@@ -554,7 +552,7 @@ class ReputationMinerClient {
     const timeAbleToSubmitEntries = [];
     for (let i = ethers.BigNumber.from(1); i.lte(balance.div(minStake)); i = i.add(1)) {
       const entryHash = await repCycle.getEntryHash(this._miner.minerAddress, i, rootHash);
-      const timeAbleToSubmitEntry = ethers.BigNumber.from(entryHash).div(constant).add(reputationMiningWindowOpenTimestamp);
+      const timeAbleToSubmitEntry = ethers.BigNumber.from(entryHash).div(this._miner.constant).add(reputationMiningWindowOpenTimestamp);
 
       const validEntry = {
         timestamp: timeAbleToSubmitEntry,
@@ -570,6 +568,14 @@ class ReputationMinerClient {
     const maxEntries = Math.min(12, timeAbleToSubmitEntries.length);
 
     return timeAbleToSubmitEntries.slice(0, maxEntries);
+  }
+
+  async setMiningCycleTimeout(repCycle){
+    const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+    this.confirmTimeoutCheck = setTimeout(
+      this.reportConfirmTimeout.bind(this),
+      (this._miner.getMiningCycleDuration() + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
+    );
   }
 
   async submitEntry(entryIndex) {
@@ -612,6 +618,7 @@ class ReputationMinerClient {
   async reportConfirmTimeout() {
     this._adapter.error("Error: We expected to see the mining cycle confirm ten minutes ago. Something might be wrong!");
   }
+
 }
 
 module.exports = ReputationMinerClient;

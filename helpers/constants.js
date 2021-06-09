@@ -58,11 +58,11 @@ const FINALIZED_TASK_STATE = 2;
 
 const SECONDS_PER_DAY = 86400;
 
-const MINING_CYCLE_DURATION = 60 * 60 * 24; // 24 hours
+const MINING_CYCLE_DURATION = 60 * 60 * 1; // 1 hour
 const MINING_CYCLE_TIMEOUT = 60 * 10; // Ten minutes
 const SUBMITTER_ONLY_WINDOW = 60 * 10; // Ten minutes
 const DECAY_RATE = {
-  NUMERATOR:    new BN("992327946262944"), // eslint-disable-line prettier/prettier
+  NUMERATOR:    new BN("999679150010889"), // eslint-disable-line prettier/prettier
   DENOMINATOR: new BN("1000000000000000"),
 };
 

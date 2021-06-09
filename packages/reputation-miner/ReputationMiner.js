@@ -13,9 +13,9 @@ const sqlite = require("sqlite");
 // do in the future.
 // const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
 const secretKey = "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7";
-const miningCycleDuration = ethers.BigNumber.from(60).mul(60).mul(24); // 24 hours
 const minStake = ethers.BigNumber.from(10).pow(18).mul(2000);
-const constant = ethers.BigNumber.from(2).pow(256).sub(1).div(miningCycleDuration);
+
+const DAY_IN_SECONDS = 60 * 60 * 24;
 
 class ReputationMiner {
   /**
@@ -104,7 +104,8 @@ class ReputationMiner {
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
     this.gasPrice = ethers.utils.hexlify(20000000000);
-
+    const repCycle = await this.getActiveRepCycle();
+    await this.updatePeriodLength(repCycle);
   }
 
   /**
@@ -130,6 +131,10 @@ class ReputationMiner {
     this.justificationHashes = {};
     this.reverseReputationHashLookup = {};
     const repCycle = await this.getActiveRepCycle(blockNumber)
+    // Update fractions
+    const decayFraction = await repCycle.getDecayConstant({ blockTag: blockNumber });
+    this.decayNumerator = decayFraction.numerator;
+    this.decayDenominator = decayFraction.denominator;
 
     // Do updates
     this.nReputationsBeforeLatestLog = ethers.BigNumber.from(this.nReputations.toString());
@@ -241,12 +246,9 @@ class ReputationMiner {
     if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
       const key = await Object.keys(this.reputations)[updateNumber];
       const reputation = ethers.BigNumber.from(`0x${this.reputations[key].slice(2, 66)}`);
-      // These are the numerator and the denominator of the fraction we wish to reduce the reputation by. It
-      // is very slightly less than one (0.5 ** (1/2160) for a 1-hr mining cycle, 0.5 ** (1/90) for a 24-hr cycle).
-      // Disabling prettier on the next line so we can have these two values aligned so it's easy to see
-      // the fraction will be slightly less than one.
-      const numerator = ethers.BigNumber.from("992327946262944");
-      const denominator = ethers.BigNumber.from("1000000000000000");
+
+      const numerator = ethers.BigNumber.from(this.decayNumerator);
+      const denominator = ethers.BigNumber.from(this.decayDenominator);
 
       const newReputation = reputation.mul(numerator).div(denominator);
       const reputationChange = newReputation.sub(reputation);
@@ -680,7 +682,7 @@ class ReputationMiner {
     const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
     const elapsedTime = ethers.BigNumber.from(block.timestamp).sub(reputationMiningWindowOpenTimestamp);
 
-    if (elapsedTime.gte(miningCycleDuration) && !nUniqueSubmittedHashes.eq(0)) {
+    if (elapsedTime.gte(this.getMiningCycleDuration()) && !nUniqueSubmittedHashes.eq(0)) {
       return false;
     }
 
@@ -702,8 +704,8 @@ class ReputationMiner {
     }
 
     // Check the proposed entry is within the current allowable submission window (emulates withinTarget modifier behaviour)
-    if (elapsedTime.lt(miningCycleDuration)) {
-      const target = ethers.BigNumber.from(block.timestamp).sub(reputationMiningWindowOpenTimestamp).mul(constant);
+    if (elapsedTime.lt(this.getMiningCycleDuration())) {
+      const target = ethers.BigNumber.from(block.timestamp).sub(reputationMiningWindowOpenTimestamp).mul(this.constant);
       const entryHash = await repCycle.getEntryHash(this.minerAddress, entryIndex, hash);
 
       if (ethers.BigNumber.from(entryHash).lt(target)) {
@@ -720,7 +722,7 @@ class ReputationMiner {
    * @return {integer}      Mining cycle duration
    */
   getMiningCycleDuration() {  // eslint-disable-line class-methods-use-this
-    return miningCycleDuration;
+    return this.miningCycleDuration;
   }
 
   /**
@@ -1058,6 +1060,34 @@ class ReputationMiner {
     return repCycle.respondToChallenge(...functionArgs,
       { gasLimit: gasEstimate, gasPrice: this.gasPrice }
     );
+  }
+
+  async updatePeriodLength(repCycle) {
+    const { numerator, denominator } = await repCycle.getDecayConstant();
+
+    // Hard to do logs with bignumbers, so let's just see what happens!
+    let value = ethers.BigNumber.from("1000000000000000000");
+    // Due to rounding, and how we conventionally define the decay constant, after the
+    // intended halfing period, we will still be very slightly above half and only drop
+    // below half on the next period. This starting value takes that in to account.
+    let count = -1;
+    while (value.gt(ethers.BigNumber.from("500000000000000000"))){
+      value = value.mul(numerator).div(denominator);
+      count += 1;
+    }
+    const calculatedPeriodLength = Math.floor(90 * DAY_IN_SECONDS / count);
+
+    this.miningCycleDuration = await repCycle.getMiningWindowDuration();
+    this.miningCycleDuration = this.miningCycleDuration.toNumber();
+    this.constant = ethers.constants.MaxUint256.div(this.miningCycleDuration);
+
+    if (calculatedPeriodLength !== this.miningCycleDuration) {
+      this._adapter.log(
+        `Warning: Inconsistent period length from contracts... have the rules changed?
+        Will no longer have 50% decay of reputation in three months.
+        Period length is ${this.miningCycleDuration} but decay constant implies ${calculatedPeriodLength}.`
+        );
+    };
   }
 
   /**
