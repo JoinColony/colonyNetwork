@@ -796,7 +796,7 @@ contract("Coin Machine", (accounts) => {
       expect(recordedAddress).to.equal(ADDRESS_ZERO);
     });
 
-    it("cannot buy more than ther user limit allows", async () => {
+    it("cannot buy more than their user limit allows", async () => {
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
       await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);

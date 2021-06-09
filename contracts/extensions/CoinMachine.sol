@@ -95,6 +95,7 @@ contract CoinMachine is ColonyExtension {
   /// @notice Called when upgrading the extension
   function finishUpgrade() public override auth {
     token = colony.getToken();
+    userLimitFraction = WAD;
 
     setPriceEvolution(getTokenBalance() > 0 && !deprecated);
   }
@@ -202,6 +203,8 @@ contract CoinMachine is ColonyExtension {
     uint256 maxPurchase = getMaxPurchase(msg.sender);
     uint256 numTokens = min(maxPurchase, _numTokens);
     uint256 totalCost = wmul(numTokens, activePrice);
+
+    if (numTokens <= 0) { return; }
 
     activeIntake = add(activeIntake, totalCost);
     activeSold = add(activeSold, numTokens);
