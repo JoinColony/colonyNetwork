@@ -304,30 +304,41 @@ contract("Voting Reputation", (accounts) => {
       expect(deprecated).to.equal(true);
     });
 
+    it("can initialise with valid values and emit expected event", async () => {
+      voting = await VotingReputation.new();
+      await voting.install(colony.address);
+
+      await expectEvent(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "ExtensionInitialised", []);
+    });
+
+    it("cannot make a motion before initialised", async () => {
+      voting = await VotingReputation.new();
+      await voting.install(colony.address);
+
+      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      await checkErrorRevert(
+        voting.createRootMotion(ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        "voting-base-not-active"
+      );
+    });
+
     it("cannot initialise twice or more if not root", async () => {
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-rep-already-initialised");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR, { from: USER2 }), "voting-rep-caller-not-root");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-base-already-initialised");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR, { from: USER2 }), "voting-base-caller-not-root");
     });
 
     it("cannot initialise with invalid values", async () => {
       voting = await VotingReputation.new();
       await voting.install(colony.address);
 
-      await checkErrorRevert(voting.initialise(HALF.addn(1), HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-rep-greater-than-half-wad");
-      await checkErrorRevert(voting.initialise(HALF, HALF.addn(1), WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-rep-greater-than-half-wad");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD.addn(1), WAD, YEAR, YEAR, YEAR, YEAR), "voting-rep-greater-than-wad");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD.addn(1), YEAR, YEAR, YEAR, YEAR), "voting-rep-greater-than-wad");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR + 1, YEAR, YEAR, YEAR), "voting-rep-period-too-long");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR + 1, YEAR, YEAR), "voting-rep-period-too-long");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR + 1, YEAR), "voting-rep-period-too-long");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR + 1), "voting-rep-period-too-long");
-    });
-
-    it("can initialised with valid values and emit expected event", async () => {
-      voting = await VotingReputation.new();
-      await voting.install(colony.address);
-
-      await expectEvent(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "ExtensionInitialised", []);
+      await checkErrorRevert(voting.initialise(HALF.addn(1), HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-base-greater-than-half-wad");
+      await checkErrorRevert(voting.initialise(HALF, HALF.addn(1), WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-base-greater-than-half-wad");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD.addn(1), WAD, YEAR, YEAR, YEAR, YEAR), "voting-base-greater-than-wad");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD.addn(1), YEAR, YEAR, YEAR, YEAR), "voting-base-greater-than-wad");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR + 1, YEAR, YEAR, YEAR), "voting-base-period-too-long");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR + 1, YEAR, YEAR), "voting-base-period-too-long");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR + 1, YEAR), "voting-base-period-too-long");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR + 1), "voting-base-period-too-long");
     });
 
     it("can query for initialisation values", async () => {
@@ -419,7 +430,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.createMotion(1, UINT256_MAX, colony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
-        "voting-rep-alt-target-cannot-be-base-colony"
+        "voting-base-alt-target-cannot-be-base-colony"
       );
     });
 
@@ -431,25 +442,7 @@ contract("Voting Reputation", (accounts) => {
       // Action in domain 1, motion in domain 2
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
 
-      await checkErrorRevert(voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
-    });
-
-    it("cannot create a domain motion with an alternative target with an action in a higher domain", async () => {
-      const key = makeReputationKey(colony.address, domain2.skillId);
-      const value = makeReputationValue(WAD, 6);
-      const [mask, siblings] = await reputationTree.getProof(key);
-
-      const oneTxPayment = await OneTxPayment.new();
-      await oneTxPayment.install(colony.address);
-
-      // Action in domain 1, motion in domain 2
-      const args = [1, UINT256_MAX, 1, UINT256_MAX, [USER0], [token.address], [10], 1, 0];
-      const action = await encodeTxData(oneTxPayment, "makePaymentFundedFromDomain", args);
-
-      await checkErrorRevert(
-        voting.createMotion(2, UINT256_MAX, oneTxPayment.address, action, key, value, mask, siblings),
-        "voting-rep-invalid-domain-id"
-      );
+      await checkErrorRevert(voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-base-invalid-domain-id");
     });
 
     it("cannot externally escalate a domain motion with an invalid domain proof", async () => {
@@ -457,9 +450,9 @@ contract("Voting Reputation", (accounts) => {
       const value = makeReputationValue(WAD.muln(3), 7);
       const [mask, siblings] = await reputationTree.getProof(key);
 
-      // Provide proof for (3) instead of (2)
+      // Action in (2) but proof for (3)
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
-      await checkErrorRevert(voting.createMotion(1, 1, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
+      await checkErrorRevert(voting.createMotion(1, 1, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-base-invalid-domain-id");
     });
 
     it("can create a motion using the deprecated interfaces", async () => {
@@ -478,7 +471,7 @@ contract("Voting Reputation", (accounts) => {
       const key = makeReputationKey(colony.address, domain2.skillId);
       const value = makeReputationValue(WAD, 6);
       const [mask, siblings] = await reputationTree.getProof(key);
-      checkErrorRevert(voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-disallowed-function");
+      checkErrorRevert(voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-base-disallowed-function");
 
       // Now we make an action with the new moveFundsBetweenPots
       action = await encodeTxData(colony, "moveFundsBetweenPots", [
@@ -494,10 +487,17 @@ contract("Voting Reputation", (accounts) => {
       ]);
 
       // This is not allowed to be created in domain 2
-      await checkErrorRevert(voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
+      await checkErrorRevert(voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-base-invalid-domain-id");
 
       // But is in the root domain
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+    });
+
+    it("cannot set influence on a non-existent motion", async () => {
+      await checkErrorRevert(
+        voting.setInfluence(0, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-base-motion-does-not-exist"
+      );
     });
   });
 
@@ -552,24 +552,17 @@ contract("Voting Reputation", (accounts) => {
       expect(lock.balance).to.eq.BN(REQUIRED_STAKE.muln(2));
     });
 
-    it("cannot stake on a non-existent motion", async () => {
-      await checkErrorRevert(
-        voting.stakeMotion(0, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-motion-not-staking"
-      );
-    });
-
     it("cannot stake 0", async () => {
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, 0, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-bad-amount"
+        "voting-base-bad-amount"
       );
     });
 
     it("cannot stake a nonexistent side", async () => {
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, 2, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-bad-vote"
+        "voting-base-bad-vote"
       );
     });
 
@@ -578,7 +571,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake.subn(1), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-insufficient-stake"
+        "voting-base-insufficient-stake"
       );
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -790,7 +783,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-expenditure-lock-failed"
+        "voting-base-expenditure-lock-failed"
       );
     });
 
@@ -865,7 +858,7 @@ contract("Voting Reputation", (accounts) => {
     it("cannot stake with someone else's reputation", async () => {
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER1 }),
-        "voting-rep-invalid-user-address"
+        "voting-base-invalid-user-address"
       );
     });
 
@@ -876,7 +869,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 }),
-        "voting-rep-insufficient-rep"
+        "voting-base-insufficient-influence"
       );
     });
 
@@ -885,12 +878,12 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-motion-not-staking"
+        "voting-base-motion-not-staking"
       );
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
-        "voting-rep-motion-not-staking"
+        "voting-base-motion-not-staking"
       );
     });
   });
@@ -914,7 +907,7 @@ contract("Voting Reputation", (accounts) => {
 
       const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
 
-      await voting.revealVote(motionId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
 
       const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
 
@@ -927,13 +920,13 @@ contract("Voting Reputation", (accounts) => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, YAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER1 });
 
       // See final counts
       const { votes } = await voting.getMotion(motionId);
-      expect(votes[0]).to.be.zero;
-      expect(votes[1]).to.eq.BN(WAD.muln(3));
+      expect(votes[0][0]).to.be.zero;
+      expect(votes[0][1]).to.eq.BN(WAD.muln(3));
     });
 
     it("rewards users for voting appropriately", async () => {
@@ -943,8 +936,8 @@ contract("Voting Reputation", (accounts) => {
       const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, YAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER1 });
 
       // Two users voted, check reward split appropriately
       const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
@@ -957,24 +950,26 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("tells users what their potential reward range is", async () => {
-      const USER0_REPUTATION = new BN(user0Value.slice(2, 66), 16);
-      const USER1_REPUTATION = new BN(user1Value.slice(2, 66), 16);
+      await voting.setInfluence(motionId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.setInfluence(motionId, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      let { 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER0_REPUTATION, USER0);
+      const rewardBase = REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).div(WAD);
 
-      expect(rewardMin).to.eq.BN(WAD.divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
-      expect(rewardMax).to.eq.BN(REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).div(WAD));
+      let { 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER0);
+      expect(rewardMin).to.eq.BN(WAD.divn(3).mul(rewardBase).div(WAD));
+      expect(rewardMax).to.eq.BN(rewardBase);
 
       // They vote, expect no change
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      ({ 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER0_REPUTATION, USER0));
-      expect(rewardMin).to.eq.BN(WAD.divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
-      expect(rewardMax).to.eq.BN(REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).div(WAD));
+
+      ({ 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER0));
+      expect(rewardMin).to.eq.BN(WAD.divn(3).mul(rewardBase).div(WAD));
+      expect(rewardMax).to.eq.BN(rewardBase);
 
       // User 1 has no range, as they are the last to vote
-      ({ 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER1_REPUTATION, USER1));
-      expect(rewardMin).to.eq.BN(WAD.muln(2).divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
-      expect(rewardMax).to.eq.BN(WAD.muln(2).divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
+      ({ 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER1));
+      expect(rewardMin).to.eq.BN(WAD.muln(2).divn(3).mul(rewardBase).div(WAD));
+      expect(rewardMax).to.eq.BN(WAD.muln(2).divn(3).mul(rewardBase).div(WAD));
     });
 
     it("can update votes, but just the last one counts", async () => {
@@ -984,28 +979,25 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(SUBMIT_PERIOD, this);
 
       // Revealing first vote fails
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-secret-no-match"
-      );
+      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, { from: USER0 }), "voting-base-secret-no-match");
 
       // Revealing second succeeds
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
     });
 
     it("can update votes, but the total reputation does not change", async () => {
       let motion = await voting.getMotion(motionId);
-      expect(motion.repSubmitted).to.be.zero;
+      expect(motion.totalVotes[0]).to.be.zero;
 
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       motion = await voting.getMotion(motionId);
-      expect(motion.repSubmitted).to.eq.BN(WAD);
+      expect(motion.totalVotes[0]).to.eq.BN(WAD);
 
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       motion = await voting.getMotion(motionId);
-      expect(motion.repSubmitted).to.eq.BN(WAD);
+      expect(motion.totalVotes[0]).to.eq.BN(WAD);
     });
 
     it("cannot reveal an invalid vote", async () => {
@@ -1013,22 +1005,16 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, 2, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-bad-vote"
-      );
+      await checkErrorRevert(voting.revealVote(motionId, SALT, 2, { from: USER0 }), "voting-base-bad-vote");
     });
 
     it("cannot reveal a vote twice, and so cannot vote twice", async () => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
 
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-secret-no-match"
-      );
+      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, { from: USER0 }), "voting-base-secret-no-match");
     });
 
     it("can vote in two motions with two reputation states, with different proofs", async () => {
@@ -1066,21 +1052,14 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId2, SALT, NAY, user0Key, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
-    });
-
-    it("cannot submit a vote on a non-existent motion", async () => {
-      await checkErrorRevert(
-        voting.submitVote(0, "0x0", user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-motion-not-open"
-      );
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
+      await voting.revealVote(motionId2, SALT, NAY, { from: USER0 });
     });
 
     it("cannot submit a null vote", async () => {
       await checkErrorRevert(
         voting.submitVote(motionId, "0x0", user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-invalid-secret"
+        "voting-base-invalid-secret"
       );
     });
 
@@ -1089,22 +1068,19 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-motion-not-open"
+        "voting-base-motion-not-open"
       );
     });
 
     it("cannot reveal a vote on a non-existent motion", async () => {
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await checkErrorRevert(
-        voting.revealVote(0, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-motion-not-reveal"
-      );
+      await checkErrorRevert(voting.revealVote(0, SALT, YAY, { from: USER0 }), "voting-base-motion-not-reveal");
     });
 
     it("cannot reveal a vote during the submit period", async () => {
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, FAKE, FAKE, 0, [], { from: USER0 }), "voting-rep-motion-not-reveal");
+      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, { from: USER0 }), "voting-base-motion-not-reveal");
     });
 
     it("cannot reveal a vote after the reveal period ends", async () => {
@@ -1113,7 +1089,7 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(SUBMIT_PERIOD, this);
       await forwardTime(REVEAL_PERIOD, this);
 
-      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, FAKE, FAKE, 0, [], { from: USER0 }), "voting-rep-motion-not-reveal");
+      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, { from: USER0 }), "voting-base-motion-not-reveal");
     });
 
     it("cannot reveal a vote with a bad secret", async () => {
@@ -1121,42 +1097,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-secret-no-match"
-      );
-    });
-
-    it("cannot reveal a vote with a bad proof", async () => {
-      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      await forwardTime(SUBMIT_PERIOD, this);
-
-      // Invalid proof (wrong root hash)
-      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, FAKE, FAKE, 0, [], { from: USER0 }), "voting-rep-invalid-root-hash");
-
-      // Invalid colony address
-      let key, value, mask, siblings; // eslint-disable-line one-var
-      key = makeReputationKey(metaColony.address, domain1.skillId, USER0);
-      value = makeReputationValue(WAD, 3);
-      [mask, siblings] = await reputationTree.getProof(key);
-
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, NAY, key, value, mask, siblings, { from: USER0 }),
-        "voting-rep-invalid-colony-address"
-      );
-
-      // Invalid skill id
-      key = makeReputationKey(colony.address, 1234, USER0);
-      value = makeReputationValue(WAD, 4);
-      [mask, siblings] = await reputationTree.getProof(key);
-      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, key, value, mask, siblings, { from: USER0 }), "voting-rep-invalid-skill-id");
-
-      // Invalid user address
-      await checkErrorRevert(
-        voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER0 }),
-        "voting-rep-invalid-user-address"
-      );
+      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, { from: USER0 }), "voting-base-secret-no-match");
     });
   });
 
@@ -1170,39 +1111,36 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot execute a non-existent motion", async () => {
-      await checkErrorRevert(voting.finalizeMotion(0), "voting-rep-motion-not-finalizable");
+      await checkErrorRevert(voting.finalizeMotion(0), "voting-base-motion-not-finalizable");
     });
 
     it("motion has no effect if extension does not have permissions", async () => {
       await colony.setRootRole(voting.address, false);
+
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
-      const tasksBefore = await colony.getTaskCount();
 
       const { logs } = await voting.finalizeMotion(motionId);
       expect(logs[0].args.executed).to.be.false;
 
-      const tasksAfter = await colony.getTaskCount();
-      expect(tasksAfter).to.eq.BN(tasksBefore);
+      // Cleanup
       await colony.setRootRole(voting.address, true);
     });
 
     it("cannot take an action if there is insufficient support", async () => {
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.subn(1), user0Key, user0Value, user0Mask, user0Siblings, {
-        from: USER0,
-      });
+      const smallStake = REQUIRED_STAKE.subn(1);
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, smallStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
 
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-base-motion-not-finalizable");
     });
 
     it("can take an action if there is insufficient opposition", async () => {
+      const smallStake = REQUIRED_STAKE.subn(1);
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.subn(1), user1Key, user1Value, user1Mask, user1Siblings, {
-        from: USER1,
-      });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, smallStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
 
@@ -1230,6 +1168,7 @@ contract("Voting Reputation", (accounts) => {
 
       const action = await encodeTxData(colony, "claimColonyFunds", [token.address]);
       await voting.createMotion(1, UINT256_MAX, otherColony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1264,13 +1203,13 @@ contract("Voting Reputation", (accounts) => {
 
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(STAKING);
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-base-motion-not-finalizable");
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(SUBMIT);
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-base-motion-not-finalizable");
     });
 
     it("cannot take an action twice", async () => {
@@ -1281,7 +1220,7 @@ contract("Voting Reputation", (accounts) => {
       const { logs } = await voting.finalizeMotion(motionId);
       expect(logs[0].args.executed).to.be.true;
 
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-base-motion-not-finalizable");
     });
 
     it("can take an action if the motion passes", async () => {
@@ -1292,7 +1231,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
 
       // Don't need to wait for the reveal period, since 100% of the secret is revealed
 
@@ -1310,7 +1249,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(STAKE_PERIOD, this);
@@ -1335,7 +1274,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId1, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId1, SALT, YAY, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(STAKE_PERIOD, this);
@@ -1355,7 +1294,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId2, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId2, SALT, YAY, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(STAKE_PERIOD, this);
@@ -1380,7 +1319,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(ESCALATION_PERIOD, this);
@@ -1450,7 +1389,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot claim rewards from a non-existent motion", async () => {
-      await checkErrorRevert(voting.claimReward(0, 1, UINT256_MAX, USER0, YAY), "voting-rep-motion-not-claimable");
+      await checkErrorRevert(voting.claimReward(0, 1, UINT256_MAX, USER0, YAY), "voting-base-motion-not-claimable");
     });
 
     it("returns 0 for staker rewards if no-one staked on a side of a motion", async () => {
@@ -1512,8 +1451,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER1 });
 
       await forwardTime(ESCALATION_PERIOD, this);
 
@@ -1525,15 +1464,12 @@ contract("Voting Reputation", (accounts) => {
       await voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY);
       await voting.claimReward(motionId, 1, UINT256_MAX, USER1, NAY);
 
-      let votingPayout = await voting.getVoterReward(motionId, WAD);
-      const voter1reward = await voting.getVoterReward(motionId, WAD.muln(2));
-      votingPayout = votingPayout.add(voter1reward);
-
       const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
 
-      const loserStake = REQUIRED_STAKE.sub(votingPayout); // Take out voter comp
-      const expectedReward0 = loserStake.muln(2).divn(3); // (stake * .8) * (winPct = 1/3 * 2)
+      const motion = await voting.getMotion(motionId);
+      const loserStake = REQUIRED_STAKE.sub(new BN(motion.paidVoterComp));
+      const expectedReward0 = loserStake.divn(3).muln(2).addn(1); // (stake * .8) * (winPct = 1/3 * 2) + dust
       const expectedReward1 = REQUIRED_STAKE.add(loserStake.divn(3)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
@@ -1564,8 +1500,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER1 });
 
       await forwardTime(ESCALATION_PERIOD, this);
 
@@ -1579,15 +1515,12 @@ contract("Voting Reputation", (accounts) => {
       await voting.claimReward(motionId, 1, UINT256_MAX, USER1, NAY);
       await voting.claimReward(motionId, 1, UINT256_MAX, USER2, NAY);
 
-      let votingPayout = await voting.getVoterReward(motionId, new BN(user0Value.slice(2, 66), 16));
-      const voter1reward = await voting.getVoterReward(motionId, new BN(user1Value.slice(2, 66), 16));
-      votingPayout = votingPayout.add(voter1reward);
-
       const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
       const user2LockPost = await tokenLocking.getUserLock(token.address, USER2);
 
-      const loserStake = REQUIRED_STAKE.sub(votingPayout); // Take out voter comp
+      const motion = await voting.getMotion(motionId);
+      const loserStake = REQUIRED_STAKE.sub(new BN(motion.paidVoterComp));
       const expectedReward0 = loserStake.muln(2).divn(3); // (stake * .8) * (winPct = 1/3 * 2)
       const expectedReward1 = REQUIRED_STAKE.add(loserStake.divn(3)).muln(2).divn(3); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
       const expectedReward2 = REQUIRED_STAKE.add(loserStake.divn(3)).divn(3); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
@@ -1613,8 +1546,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER1 });
 
       await forwardTime(ESCALATION_PERIOD, this);
 
@@ -1632,19 +1565,16 @@ contract("Voting Reputation", (accounts) => {
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
       const user2LockPost = await tokenLocking.getUserLock(token.address, USER2);
 
-      let votingPayout = await voting.getVoterReward(motionId, new BN(user0Value.slice(2, 66), 16));
-      const voter1reward = await voting.getVoterReward(motionId, new BN(user1Value.slice(2, 66), 16));
-      votingPayout = votingPayout.add(voter1reward);
-
-      const loserStake = REQUIRED_STAKE.sub(votingPayout); // Take out voter comp
+      const motion = await voting.getMotion(motionId);
+      const loserStake = REQUIRED_STAKE.sub(new BN(motion.paidVoterComp));
       // User 0 staked 2/3rds of the losing side. 1/3 of the total stake of that side has been
       // removed due to that side only receiving a third of the vote
-      const expectedReward0 = loserStake.muln(2).divn(3).muln(2).divn(3);
+      const expectedReward0 = loserStake.muln(2).divn(3).muln(2).divn(3); // (stake * .8) * (winPct = 1/3 * 2)
       // User 1 staked all of the winning side, so gets that back plus a third of what is left
       // on the losing side as a reward (as the winning side got 2/3rds of the vote)
-      const expectedReward1 = REQUIRED_STAKE.add(loserStake.muln(1).divn(3));
+      const expectedReward1 = REQUIRED_STAKE.add(loserStake.muln(1).divn(3)); // stake + ((stake * .8) * (1 - (winPct = 2/3 * 2))
       // Same as user 0, but they only staked 1/3 of the losing side.
-      const expectedReward2 = loserStake.muln(2).divn(3).divn(3);
+      const expectedReward2 = loserStake.muln(2).divn(3).divn(3); // (stake * .8) * (winPct = 1/3 * 2)
 
       expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(expectedReward0);
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
@@ -1670,8 +1600,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER1 });
 
       await forwardTime(ESCALATION_PERIOD, this);
 
@@ -1690,11 +1620,8 @@ contract("Voting Reputation", (accounts) => {
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
       const user2LockPost = await tokenLocking.getUserLock(token.address, USER2);
 
-      let votingPayout = await voting.getVoterReward(motionId, new BN(user0Value.slice(2, 66), 16));
-      const voter1reward = await voting.getVoterReward(motionId, new BN(user1Value.slice(2, 66), 16));
-      votingPayout = votingPayout.add(voter1reward);
-
-      const loserStake = REQUIRED_STAKE.sub(votingPayout); // Take out voter comp
+      const motion = await voting.getMotion(motionId);
+      const loserStake = REQUIRED_STAKE.sub(new BN(motion.paidVoterComp));
       const expectedReward0 = loserStake.muln(2).divn(3).muln(2).divn(3); // (stake * .8) * (winPct = 1/3 * 2)
       const expectedReward1 = loserStake.muln(2).divn(3).divn(6);
       const expectedReward2 = loserStake.divn(3).muln(2).divn(6);
@@ -1741,7 +1668,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
 
       await forwardTime(REVEAL_PERIOD, this);
       await forwardTime(ESCALATION_PERIOD, this);
@@ -1750,11 +1677,11 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY);
 
-      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-rep-nothing-to-claim");
+      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-base-nothing-to-claim");
     });
 
     it("cannot claim rewards before a motion is finalized", async () => {
-      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-rep-motion-not-claimable");
+      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-base-motion-not-claimable");
     });
   });
 
@@ -1789,20 +1716,16 @@ contract("Voting Reputation", (accounts) => {
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, NAY, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
-      await voting.revealVote(motionId, SALT, YAY, user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER1 });
 
-      votingPayout = await voting.getVoterReward(motionId, new BN(user0Value2.slice(2, 66), 16));
-      const voter1reward = await voting.getVoterReward(motionId, new BN(user1Value2.slice(2, 66), 16));
+      votingPayout = await voting.getVoterReward(motionId, USER0);
+      const voter1reward = await voting.getVoterReward(motionId, USER1);
       votingPayout = votingPayout.add(voter1reward);
     });
 
     it("can internally escalate a domain motion after a vote", async () => {
       await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
-    });
-
-    it("can internally escalate a domain motion after a vote", async () => {
-      await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER1 });
     });
 
     it("cannot internally escalate a domain motion if not in a 'closed' state", async () => {
@@ -1812,19 +1735,19 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER2 }),
-        "voting-rep-motion-not-closed"
+        "voting-base-motion-not-closed"
       );
     });
 
     it("cannot internally escalate a domain motion with an invalid domain proof", async () => {
       await checkErrorRevert(
         voting.escalateMotion(motionId, 1, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 }),
-        "voting-rep-invalid-domain-proof"
+        "voting-base-invalid-domain-proof"
       );
     });
 
     it("cannot internally escalate a domain motion with an invalid reputation proof", async () => {
-      await checkErrorRevert(voting.escalateMotion(motionId, 1, 0, "0x0", "0x0", "0x0", [], { from: USER0 }), "voting-rep-invalid-root-hash");
+      await checkErrorRevert(voting.escalateMotion(motionId, 1, 0, "0x0", "0x0", "0x0", [], { from: USER0 }), "voting-base-invalid-root-hash");
     });
 
     it("can stake after internally escalating a domain motion", async () => {
@@ -1832,6 +1755,7 @@ contract("Voting Reputation", (accounts) => {
 
       const yayStake = REQUIRED_STAKE.sub(REQUIRED_STAKE_DOMAIN_2);
       const nayStake = yayStake.add(REQUIRED_STAKE.divn(10));
+
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, yayStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
@@ -1843,6 +1767,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
 
       const yayStake = REQUIRED_STAKE.sub(REQUIRED_STAKE_DOMAIN_2);
+
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, yayStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
@@ -1877,6 +1802,7 @@ contract("Voting Reputation", (accounts) => {
 
       const yayStake = REQUIRED_STAKE.sub(REQUIRED_STAKE_DOMAIN_2);
       const nayStake = yayStake.add(votingPayout);
+
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       await forwardTime(STAKE_PERIOD, this);
@@ -1887,7 +1813,7 @@ contract("Voting Reputation", (accounts) => {
       // Now check that the rewards come out properly
       const user1LockPre = await tokenLocking.getUserLock(token.address, USER1);
 
-      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-rep-nothing-to-claim");
+      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-base-nothing-to-claim");
       await voting.claimReward(motionId, 1, UINT256_MAX, USER1, NAY);
 
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
@@ -1905,6 +1831,7 @@ contract("Voting Reputation", (accounts) => {
 
       const yayStake = REQUIRED_STAKE.sub(REQUIRED_STAKE_DOMAIN_2);
       const nayStake = yayStake.add(votingPayout);
+
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, yayStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, nayStake, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
@@ -1912,8 +1839,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER1 });
 
       await forwardTime(ESCALATION_PERIOD, this);
 
@@ -1931,8 +1858,8 @@ contract("Voting Reputation", (accounts) => {
       const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
       const user1LockPost = await tokenLocking.getUserLock(token.address, USER1);
 
-      let votingPayout2 = await voting.getVoterReward(motionId, new BN(user0Value.slice(2, 66), 16));
-      const voter1reward2 = await voting.getVoterReward(motionId, new BN(user1Value.slice(2, 66), 16));
+      let votingPayout2 = await voting.getVoterReward(motionId, USER0);
+      const voter1reward2 = await voting.getVoterReward(motionId, USER1);
       votingPayout2 = votingPayout2.add(voter1reward2);
 
       const loserStake = REQUIRED_STAKE.sub(votingPayout2); // Take out voter comp
@@ -2021,8 +1948,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER1 });
 
       const state = await voting.getMotionState(motionId);
       expect(state).to.eq.BN(EXECUTABLE);
@@ -2071,8 +1998,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key3, user0Value3, user0Mask3, user0Siblings3, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user1Key3, user1Value3, user1Mask3, user1Siblings3, { from: USER1 });
 
-      await voting.revealVote(motionId, SALT, NAY, user0Key3, user0Value3, user0Mask3, user0Siblings3, { from: USER0 });
-      await voting.revealVote(motionId, SALT, YAY, user1Key3, user1Value3, user1Mask3, user1Siblings3, { from: USER1 });
+      await voting.revealVote(motionId, SALT, NAY, { from: USER0 });
+      await voting.revealVote(motionId, SALT, YAY, { from: USER1 });
 
       // Now escalate, should go directly into submit phase
       await voting.escalateMotion(motionId, 1, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
