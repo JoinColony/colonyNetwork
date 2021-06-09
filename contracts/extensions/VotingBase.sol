@@ -836,8 +836,16 @@ abstract contract VotingBase is ColonyExtension, PatriciaTreeProofs {
 
     winFraction = winFraction / motion.votes.length;
 
-    uint256 winnerStake = motion.stakes[yayWon ? YAY : NAY];
-    uint256 loserStake = sub(motion.stakes[yayWon ? NAY : YAY], motion.paidVoterComp);
+    uint256 winnerStake;
+    uint256 loserStake;
+
+    if (yayWon) {
+      winnerStake = motion.stakes[YAY];
+      loserStake = sub(motion.stakes[NAY], motion.paidVoterComp);
+    } else {
+      winnerStake = motion.stakes[NAY];
+      loserStake = sub(motion.stakes[YAY], motion.paidVoterComp);
+    }
 
     uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
 
