@@ -388,7 +388,7 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _recipient Address of the recipient
   function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient) external;
 
-  /// @notice Sets the recipients in sequential expenditure slots. Can only be called by expenditure owner.
+  /// @notice Sets the recipients in given expenditure slots. Can only be called by expenditure owner.
   /// @param _id Id of the expenditure
   /// @param _slots Array of slots to set recipients
   /// @param _recipients Addresses of the recipients
@@ -402,7 +402,7 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _amount Payout amount
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount) external;
 
-  /// @notice Set the token payouts in sequential expenditure slots. Can only be called by expenditure owner.
+  /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
   /// @param _id Id of the expenditure
   /// @param _slots Array of slots to set payouts
   /// @param _token Address of the token, `0x0` value indicates Ether
@@ -429,11 +429,17 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _claimDelay Duration of time (in seconds) to delay
   function setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay) external;
 
-  /// @notice Sets the claim delays in sequential expenditure slots. Can only be called by expenditure owner.
+  /// @notice Sets the claim delays in given expenditure slots. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slots Array of slots to set claim delays
   /// @param _claimDelays Durations of time (in seconds) to delay
   function setExpenditureClaimDelays(uint256 _id, uint256[] memory _slots, uint256[] memory _claimDelays) external;
+
+  /// @notice Sets the claim delays in given expenditure slots. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  /// @param _slots Array of slots to set payout modifiers
+  /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus
+  function setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers) external;
 
   /// @notice Set arbitrary state on an expenditure slot. Can only be called by Arbitration role.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action

@@ -230,6 +230,29 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditureSlot.claimDelay).to.eq.BN(20);
     });
 
+    it("should allow owners to update many slot payout modifiers at once", async () => {
+      await colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(2), WAD], { from: ADMIN });
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
+      expect(expenditureSlot.payoutModifier).to.be.zero;
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT1);
+      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD.divn(2));
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT2);
+      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD);
+    });
+
+    it("should allow owners to update many slot payouts at once", async () => {
+      await colony.setExpenditurePayouts(expenditureId, [SLOT1, SLOT2], token.address, [10, 20], { from: ADMIN });
+
+      let payout;
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
+      expect(payout).to.be.zero;
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT1, token.address);
+      expect(payout).to.eq.BN(10);
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT2, token.address);
+      expect(payout).to.eq.BN(20);
+    });
+
     it("should not allow owners to set a non-global skill or a deprecated global skill", async () => {
       await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, 2, { from: ADMIN }), "colony-not-global-skill");
 
@@ -250,18 +273,6 @@ contract("Colony Expenditure", (accounts) => {
 
       const payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
       expect(payout).to.eq.BN(WAD);
-    });
-
-    it("should allow owners to update many slot payouts at once", async () => {
-      await colony.setExpenditurePayouts(expenditureId, [SLOT1, SLOT2], token.address, [10, 20], { from: ADMIN });
-
-      let payout;
-      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
-      expect(payout).to.be.zero;
-      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT1, token.address);
-      expect(payout).to.eq.BN(10);
-      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT2, token.address);
-      expect(payout).to.eq.BN(20);
     });
 
     it("should be able to add multiple payouts in different tokens", async () => {
@@ -316,9 +327,14 @@ contract("Colony Expenditure", (accounts) => {
     beforeEach(async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1, { from: ADMIN });
       expenditureId = await colony.getExpenditureCount();
+
+      await colony.lockExpenditure(expenditureId, { from: ADMIN });
     });
 
     it("should allow owners to lock expenditures", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1, { from: ADMIN });
+      expenditureId = await colony.getExpenditureCount();
+
       let expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.status).to.eq.BN(DRAFT);
 
@@ -330,41 +346,33 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should not allow the owner to cancel the expenditure", async () => {
-      await colony.lockExpenditure(expenditureId, { from: ADMIN });
-
       await checkErrorRevert(colony.cancelExpenditure(expenditureId, { from: ADMIN }), "colony-expenditure-not-draft");
     });
 
     it("should not allow the owner to lock the expenditure again", async () => {
-      await colony.lockExpenditure(expenditureId, { from: ADMIN });
-
       await checkErrorRevert(colony.lockExpenditure(expenditureId, { from: ADMIN }), "colony-expenditure-not-draft");
     });
 
     it("should not allow the owner to set recipients", async () => {
-      await colony.lockExpenditure(expenditureId, { from: ADMIN });
-
       await checkErrorRevert(colony.setExpenditureRecipients(expenditureId, [SLOT0], [USER], { from: ADMIN }), "colony-expenditure-not-draft");
     });
 
     it("should not allow the owner to set skills", async () => {
-      await colony.lockExpenditure(expenditureId, { from: ADMIN });
-
       await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [GLOBAL_SKILL_ID], { from: ADMIN }), "colony-expenditure-not-draft");
     });
 
     it("should not allow the owner to set claim delays", async () => {
-      await colony.lockExpenditure(expenditureId, { from: ADMIN });
-
       await checkErrorRevert(
         colony.setExpenditureClaimDelays(expenditureId, [SLOT0], [SECONDS_PER_DAY], { from: ADMIN }),
         "colony-expenditure-not-draft"
       );
     });
 
-    it("should not allow the owner to set payouts", async () => {
-      await colony.lockExpenditure(expenditureId, { from: ADMIN });
+    it("should not allow the owner to set payout modifiers", async () => {
+      await checkErrorRevert(colony.setExpenditurePayoutModifiers(expenditureId, [SLOT0], [WAD], { from: ADMIN }), "colony-expenditure-not-draft");
+    });
 
+    it("should not allow the owner to set payouts", async () => {
       await checkErrorRevert(
         colony.setExpenditurePayouts(expenditureId, [SLOT0], token.address, [WAD], { from: ADMIN }),
         "colony-expenditure-not-draft"

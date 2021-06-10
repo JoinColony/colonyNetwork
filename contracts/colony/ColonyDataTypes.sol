@@ -149,6 +149,13 @@ interface ColonyDataTypes {
   /// @param claimDelay Additional amount of time to hold the funds
   event ExpenditureClaimDelaySet(address agent, uint256 indexed expenditureId, uint256 indexed slot, uint256 claimDelay);
 
+  /// @notice Event logged when an expenditure slot payout modifier changes
+  /// @param agent The address that is responsible for triggering this event
+  /// @param expenditureId Id of the expenditure
+  /// @param slot Expenditure slot being changed
+  /// @param payoutModifier The payout modifier for the slot
+  event ExpenditurePayoutModifierSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, int256 payoutModifier);
+
   /// @notice Event logged when a new payment is added
   /// @param agent The address that is responsible for triggering this event
   /// @param paymentId The newly added payment id

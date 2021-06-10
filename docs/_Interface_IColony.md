@@ -1391,7 +1391,7 @@ Sets the claim delay on an expenditure slot. Can only be called by expenditure o
 
 ### `setExpenditureClaimDelays`
 
-Sets the claim delays in sequential expenditure slots. Can only be called by expenditure owner.
+Sets the claim delays in given expenditure slots. Can only be called by expenditure owner.
 
 
 **Parameters**
@@ -1446,9 +1446,23 @@ Set the token payout on an expenditure slot. Can only be called by expenditure o
 |_amount|uint256|Payout amount
 
 
+### `setExpenditurePayoutModifiers`
+
+Sets the claim delays in given expenditure slots. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slots|uint256[]|Array of slots to set payout modifiers
+|_payoutModifiers|int256[]|Values (between +/- WAD) to modify the payout & reputation bonus
+
+
 ### `setExpenditurePayouts`
 
-Set the token payouts in sequential expenditure slots. Can only be called by expenditure owner.
+Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
 
 
 **Parameters**
@@ -1477,7 +1491,7 @@ Sets the recipient on an expenditure slot. Can only be called by expenditure own
 
 ### `setExpenditureRecipients`
 
-Sets the recipients in sequential expenditure slots. Can only be called by expenditure owner.
+Sets the recipients in given expenditure slots. Can only be called by expenditure owner.
 
 
 **Parameters**

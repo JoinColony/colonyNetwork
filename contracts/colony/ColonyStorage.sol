@@ -164,6 +164,11 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     _;
   }
 
+  modifier expenditureLocked(uint256 _id) {
+    require(expenditures[_id].status == ExpenditureStatus.Locked, "colony-expenditure-not-locked");
+    _;
+  }
+
   modifier expenditureActive(uint256 _id) {
     require(
       expenditures[_id].status == ExpenditureStatus.Draft ||

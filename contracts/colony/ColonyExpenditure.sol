@@ -220,6 +220,22 @@ contract ColonyExpenditure is ColonyStorage {
     }
   }
 
+  function setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureLocked(_id)
+    expenditureOnlyOwner(_id)
+  {
+    require(_slots.length == _payoutModifiers.length, "colony-expenditure-bad-slots");
+
+    for (uint256 i; i < _slots.length; i++) {
+      expenditureSlots[_id][_slots[i]].payoutModifier = _payoutModifiers[i];
+
+      emit ExpenditurePayoutModifierSet(msg.sender, _id, _slots[i], _payoutModifiers[i]);
+    }
+  }
+
   // Deprecated
   function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient)
     public
