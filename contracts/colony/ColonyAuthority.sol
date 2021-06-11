@@ -115,7 +115,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)");
 
     // Added in colony v8 (e-lwss)
-    addRoleCapability(ROOT_ROLE, "makeArbitraryTransactions(address[],bytes[])");
+    addRoleCapability(ROOT_ROLE, "makeArbitraryTransactions(address[],bytes[],bool)");
 
   }
 

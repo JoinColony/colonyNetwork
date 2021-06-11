@@ -50,7 +50,43 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     const action2 = await encodeTxData(token, "mint", [WAD.muln(2)]);
     const balancePre = await token.balanceOf(colony.address);
 
-    await colony.makeArbitraryTransactions([token.address, token.address], [action, action2]);
+    await colony.makeArbitraryTransactions([token.address, token.address], [action, action2], true);
+
+    const balancePost = await token.balanceOf(colony.address);
+    expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(3));
+  });
+
+  it("should be able to make multiple arbitrary transactions and revert if one fails in strict mode", async () => {
+    const action = await encodeTxData(token, "mint", [WAD]);
+    const action2 = await encodeTxData(token, "mint", [WAD.muln(2)]);
+    const balancePre = await token.balanceOf(colony.address);
+
+    await checkErrorRevert(
+      colony.makeArbitraryTransactions([token.address, ADDRESS_ZERO], [action, action2], true),
+      "colony-arbitrary-transaction-failed"
+    );
+
+    const balancePost = await token.balanceOf(colony.address);
+    expect(balancePost).to.eq.BN(balancePre);
+  });
+
+  it("should be able to make multiple arbitrary transactions and not revert if one fails not in strict mode", async () => {
+    const action = await encodeTxData(token, "mint", [WAD]);
+    const action2 = await encodeTxData(token, "mint", [WAD.muln(2)]);
+    const balancePre = await token.balanceOf(colony.address);
+
+    await colony.makeArbitraryTransactions([token.address, ADDRESS_ZERO], [action, action2], false);
+
+    const balancePost = await token.balanceOf(colony.address);
+    expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
+  });
+
+  it("should be able to make multiple arbitrary transactions", async () => {
+    const action = await encodeTxData(token, "mint", [WAD]);
+    const action2 = await encodeTxData(token, "mint", [WAD.muln(2)]);
+    const balancePre = await token.balanceOf(colony.address);
+
+    await colony.makeArbitraryTransactions([token.address, token.address], [action, action2], true);
 
     const balancePost = await token.balanceOf(colony.address);
     expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(3));
