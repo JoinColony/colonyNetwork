@@ -116,7 +116,7 @@ contract ColonyAuthority is CommonAuthority {
 
 
     // Added in colony v8
-    addRoleCapability(ROOT_ROLE, "makeArbitraryTransactions(address[],bytes[])");
+    addRoleCapability(ROOT_ROLE, "makeArbitraryTransactions(address[],bytes[],bool)");
 
   }
 
