@@ -1749,6 +1749,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.finalizeMotion(motionId);
 
       await voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY);
+      await expectEvent(voting.claimReward(motionId, 1, UINT256_MAX, USER1, NAY), "MotionRewardClaimed", [motionId, USER1, NAY, 0]);
 
       await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-rep-nothing-to-claim");
     });
