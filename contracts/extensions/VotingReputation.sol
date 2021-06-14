@@ -633,7 +633,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     (uint256 stakerReward, uint256 repPenalty) = getStakerReward(_motionId, _staker, _vote);
 
-    require(stakerReward > 0, "voting-rep-nothing-to-claim");
+    require(stakes[_motionId][_staker][_vote] > 0, "voting-rep-nothing-to-claim");
     delete stakes[_motionId][_staker][_vote];
 
     tokenLocking.transfer(token, stakerReward, _staker, true);
