@@ -59,6 +59,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     require(_targets.length == _actions.length, "colony-targets-and-actions-length-mismatch");
     for (uint256 i; i < _targets.length; i += 1){
       bool success = true;
+      // slither-disable-next-line unused-return
       try this.makeSingleArbitraryTransaction(_targets[i], _actions[i]) returns (bool ret){
         if (_strict){
           success = ret;
@@ -75,8 +76,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   }
 
   function makeSingleArbitraryTransaction(address _to, bytes memory _action)
-  external
-  self
+  external stoppable self
   returns (bool)
   {
     // Prevent transactions to network contracts
