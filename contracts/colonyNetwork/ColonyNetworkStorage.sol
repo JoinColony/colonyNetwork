@@ -100,6 +100,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   // Used for whitelisting payout tokens
   mapping (address => bool) payoutWhitelist; // Storage slot 40
 
+  uint256 constant METATRANSACTION_NONCES_SLOT = 41;
   mapping(address => uint256) metatransactionNonces; // Storage slot 41
 
 

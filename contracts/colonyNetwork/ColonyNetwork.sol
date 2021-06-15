@@ -20,7 +20,6 @@ pragma experimental "ABIEncoderV2";
 
 import "./../common/EtherRouter.sol";
 import "./../common/ERC20Extended.sol";
-import "./../common/MultiChain.sol";
 import "./../common/BasicMetaTransaction.sol";
 import "./../colony/ColonyAuthority.sol";
 import "./../colony/IColony.sol";
@@ -29,7 +28,7 @@ import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
 
 
-contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, MultiChain {
+contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
   // Meta Colony allowed to manage Global skills
   // All colonies are able to manage their Local (domain associated) skills
   modifier allowedToAddSkill(bool globalSkill) {
@@ -350,18 +349,18 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, MultiChain
     emit TokenWhitelisted(_token, _status);
   }
 
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
+  function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
+  function incrementMetatransactionNonce(address _user) override internal {
     // We need to protect the metatransaction nonce slots, otherwise those with recovery
     // permissions could replay metatransactions, which would be a disaster.
     // What slot are we setting?
     // This mapping is in slot 41 (see ColonyNetworkStorage.sol);
-    uint256 slot = uint256(keccak256(abi.encode(uint256(user), uint256(41))));
+    uint256 slot = uint256(keccak256(abi.encode(uint256(_user), uint256(METATRANSACTION_NONCES_SLOT))));
     protectSlot(slot);
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+    metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
   }
 
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {

@@ -104,6 +104,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   uint256 defaultGlobalClaimDelay; // Storage slot 34
 
+  uint256 constant METATRANSACTION_NONCES_SLOT = 35;
   mapping(address => uint256) metatransactionNonces; // Storage slot 35
 
   // Constants

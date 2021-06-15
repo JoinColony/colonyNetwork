@@ -40,7 +40,6 @@ abstract contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage {
       flag := sload(flagSlot)
     }
 
-    // uint256 protectFlag = uint256(PROTECTED);
     require(flag != PROTECTED, "colony-protected-variable");
 
     // NB. This isn't necessarily a colony - could be ColonyNetwork. But they both have this function, so it's okay.

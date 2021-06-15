@@ -20,12 +20,11 @@ pragma experimental ABIEncoderV2;
 
 import "./../common/ERC20Extended.sol";
 import "./../common/IEtherRouter.sol";
-import "./../common/MultiChain.sol";
 import "./../common/BasicMetaTransaction.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
-contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs, MultiChain {
+contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
   // V8: Ebony Lightweight Spaceship
   // This function, exactly as defined, is used in build scripts. Take care when updating.
@@ -388,18 +387,18 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs, Mult
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
   }
 
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
+  function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
+  function incrementMetatransactionNonce(address _user) override internal {
     // We need to protect the metatransaction nonce slots, otherwise those with recovery
     // permissions could replay metatransactions, which would be a disaster.
     // What slot are we setting?
     // This mapping is in slot 34 (see ColonyStorage.sol);
-    uint256 slot = uint256(keccak256(abi.encode(uint256(user), uint256(34))));
+    uint256 slot = uint256(keccak256(abi.encode(uint256(_user), uint256(METATRANSACTION_NONCES_SLOT))));
     protectSlot(slot);
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+    metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

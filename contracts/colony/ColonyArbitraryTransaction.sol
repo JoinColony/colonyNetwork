@@ -24,7 +24,7 @@ import "./../common/MultiChain.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
-contract ColonyArbitraryTransaction is ColonyStorage, PatriciaTreeProofs, MultiChain {
+contract ColonyArbitraryTransaction is ColonyStorage {
 
   bytes4 constant APPROVE_SIG = bytes4(keccak256("approve(address,uint256)"));
   bytes4 constant TRANSFER_SIG = bytes4(keccak256("transfer(address,uint256)"));
