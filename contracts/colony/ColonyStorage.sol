@@ -102,6 +102,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   // Mapping of token address -> total amount approved
   mapping (address => uint256 ) tokenApprovalTotals; // Storage slot 33
 
+  uint256 constant METATRANSACTION_NONCES_SLOT = 34;
   mapping(address => uint256) metatransactionNonces; // Storage slot 34
 
   // Constants

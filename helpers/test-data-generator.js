@@ -397,7 +397,6 @@ export async function setupColony(colonyNetwork, tokenAddress) {
 }
 
 export async function getMetatransactionParameters(txData, userAddress, targetAddress) {
-  // const txData = await tokenLocking.contract.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true).encodeABI();
   const contract = await BasicMetaTransaction.at(targetAddress);
   const nonce = await contract.getMetatransactionNonce(userAddress);
   // We should just be able to get the chain id via a web3 call, but until ganache sort their stuff out,
