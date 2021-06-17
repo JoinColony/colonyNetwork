@@ -497,6 +497,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
 
     sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
