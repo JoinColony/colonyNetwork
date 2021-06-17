@@ -4,7 +4,7 @@ const path = require("path");
 const { setupUpgradableColonyNetwork } = require("../helpers/upgradable-contracts");
 
 const ColonyNetworkAuthority = artifacts.require("./ColonyNetworkAuthority");
-const ColonyNetworkRecovery = artifacts.require("./ColonyNetworkRecovery");
+const ContractRecovery = artifacts.require("./ContractRecovery");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("./ColonyNetworkAuction");
@@ -22,7 +22,7 @@ module.exports = async function (deployer) {
   const colonyNetworkExtensions = await ColonyNetworkExtensions.deployed();
   const etherRouter = await EtherRouter.deployed();
   const resolver = await Resolver.deployed();
-  const colonyNetworkRecovery = await ColonyNetworkRecovery.deployed();
+  const contractRecovery = await ContractRecovery.deployed();
 
   await setupUpgradableColonyNetwork(
     etherRouter,
@@ -32,7 +32,7 @@ module.exports = async function (deployer) {
     colonyNetworkAuction,
     colonyNetworkENS,
     colonyNetworkExtensions,
-    colonyNetworkRecovery
+    contractRecovery
   );
 
   const authorityNetwork = await ColonyNetworkAuthority.new(etherRouter.address);

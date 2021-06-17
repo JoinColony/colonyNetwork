@@ -61,7 +61,7 @@ module.exports = async function (deployer, network, accounts) {
   const ColonyRoles = artifacts.require("./ColonyRoles");
   const ColonyTask = artifacts.require("./ColonyTask");
   const ColonyPayment = artifacts.require("./ColonyPayment");
-  const ColonyRecovery = artifacts.require("./ColonyRecovery");
+  const ContractRecovery = artifacts.require("./ContractRecovery");
   const ColonyArbitraryTransaction = artifacts.require("./ColonyArbitraryTransaction");
 
   const colony = await Colony.new();
@@ -70,7 +70,7 @@ module.exports = async function (deployer, network, accounts) {
   const colonyRoles = await ColonyRoles.new();
   const colonyTask = await ColonyTask.new();
   const colonyPayment = await ColonyPayment.new();
-  const colonyRecovery = await ColonyRecovery.new();
+  const contractRecovery = await ContractRecovery.new();
   const colonyArbitraryTransaction = await ColonyArbitraryTransaction.new();
 
   const resolver3 = await Resolver.new();
@@ -81,7 +81,7 @@ module.exports = async function (deployer, network, accounts) {
     colonyPayment,
     colonyFunding,
     colonyRoles,
-    colonyRecovery,
+    contractRecovery,
     colonyArbitraryTransaction,
     resolver3
   );
@@ -97,7 +97,7 @@ module.exports = async function (deployer, network, accounts) {
     colonyPayment,
     colonyFunding,
     colonyRoles,
-    colonyRecovery,
+    contractRecovery,
     colonyArbitraryTransaction,
     resolver4
   );
