@@ -224,7 +224,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureExists(_id)
-    expenditureLocked(_id)
+    expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
     require(_slots.length == _payoutModifiers.length, "colony-expenditure-bad-slots");
