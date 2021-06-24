@@ -230,7 +230,7 @@ Set the deprecation of an extension in a colony. Can only be called by a Colony.
 
 |Name|Type|Description|
 |---|---|---|
-|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|extension|address|Address of the extension installation
 |deprecated|bool|Whether to deprecate the extension or not
 
 
@@ -351,6 +351,23 @@ Get an extension's installation.
 |Name|Type|Description|
 |---|---|---|
 |installation|address|The address of the installed extension
+
+### `getExtensionMultiInstallation`
+
+Get an extension's installed colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|Address of the extension installation
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colony|address|Address of the colony the extension is installed in
 
 ### `getExtensionResolver`
 
@@ -663,6 +680,11 @@ Install an extension in a colony. Can only be called by a Colony.
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |version|uint256|Version of the extension to install
 
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|The address of the extension installation
 
 ### `isColony`
 
@@ -934,7 +956,7 @@ Uninstall an extension in a colony. Can only be called by a Colony.
 
 |Name|Type|Description|
 |---|---|---|
-|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|extension|address|Address of the extension installation
 
 
 ### `unstakeForMining`
@@ -982,5 +1004,5 @@ Upgrade an extension in a colony. Can only be called by a Colony.
 
 |Name|Type|Description|
 |---|---|---|
-|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|extension|address|Address of the extension installation
 |newVersion|uint256|Version of the extension to upgrade to (must be one greater than current)
