@@ -116,26 +116,27 @@ interface ColonyNetworkDataTypes {
 
   /// @notice Event logged when an extension is installed in a colony
   /// @param extensionId The identifier for the extension
+  /// @param extension Address of the extension installation
   /// @param colony The address of the colony
   /// @param version The version of the extension
-  event ExtensionInstalled(bytes32 indexed extensionId, address indexed colony, uint256 version);
+  event ExtensionInstalled(bytes32 indexed extensionId, address indexed extension, address indexed colony, uint256 version);
 
   /// @notice Event logged when an extension is upgraded in a colony
-  /// @param extensionId The identifier for the extension
+  /// @param extension Address of the extension installation
   /// @param colony The address of the colony
   /// @param version The new version of the extension
-  event ExtensionUpgraded(bytes32 indexed extensionId, address indexed colony, uint256 version);
+  event ExtensionUpgraded(address indexed extension, address indexed colony, uint256 version);
 
   /// @notice Event logged when an extension is (un)deprecated in a colony
-  /// @param extensionId The identifier for the extension
+  /// @param extension Address of the extension installation
   /// @param colony The address of the colony
   /// @param deprecated Whether the extension is deprecated or not
-  event ExtensionDeprecated(bytes32 indexed extensionId, address indexed colony, bool deprecated);
+  event ExtensionDeprecated(address indexed extension, address indexed colony, bool deprecated);
 
   /// @notice Event logged when an extension is uninstalled from a colony
-  /// @param extensionId The identifier for the extension
+  /// @param extension Address of the extension installation
   /// @param colony The address of the colony
-  event ExtensionUninstalled(bytes32 indexed extensionId, address indexed colony);
+  event ExtensionUninstalled(address indexed extension, address indexed colony);
 
   struct Skill {
     // total number of parent skills

@@ -316,21 +316,22 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Install an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param version Version of the extension to install
-  function installExtension(bytes32 extensionId, uint256 version) external;
+  /// @return extension The address of the extension installation
+  function installExtension(bytes32 extensionId, uint256 version) external returns (address extension);
 
   /// @notice Upgrade an extension in a colony. Can only be called by a Colony.
-  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param extension Address of the extension installation
   /// @param newVersion Version of the extension to upgrade to (must be one greater than current)
-  function upgradeExtension(bytes32 extensionId, uint256 newVersion) external;
+  function upgradeExtension(address payable extension, uint256 newVersion) external;
 
   /// @notice Set the deprecation of an extension in a colony. Can only be called by a Colony.
-  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param extension Address of the extension installation
   /// @param deprecated Whether to deprecate the extension or not
-  function deprecateExtension(bytes32 extensionId, bool deprecated) external;
+  function deprecateExtension(address payable extension, bool deprecated) external;
 
   /// @notice Uninstall an extension in a colony. Can only be called by a Colony.
-  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
-  function uninstallExtension(bytes32 extensionId) external;
+  /// @param extension Address of the extension installation
+  function uninstallExtension(address payable extension) external;
 
   /// @notice Get an extension's resolver.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
@@ -343,6 +344,11 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param colony Address of the colony the extension is installed in
   /// @return installation The address of the installed extension
   function getExtensionInstallation(bytes32 extensionId, address colony) external view returns (address installation);
+
+  /// @notice Get an extension's installed colony.
+  /// @param extension Address of the extension installation
+  /// @return colony Address of the colony the extension is installed in
+  function getExtensionMultiInstallation(address extension) external view returns (address colony);
 
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
   /// @return _feeInverse The inverse of the network fee

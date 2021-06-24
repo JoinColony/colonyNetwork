@@ -242,11 +242,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     // Ensure msg.sender is a contract
     require(isContract(msg.sender), "colony-sender-must-be-contract");
 
-    // Ensure msg.sender is an extension
+    // Ensure msg.sender is an extension, must check old & new formats
     // slither-disable-next-line unused-return
     try ColonyExtension(msg.sender).identifier() returns (bytes32 extensionId) {
       require(
-        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == msg.sender,
+        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == msg.sender ||
+        IColonyNetwork(colonyNetworkAddress).getExtensionMultiInstallation(msg.sender) == address(this),
         "colony-must-be-extension"
       );
     } catch {

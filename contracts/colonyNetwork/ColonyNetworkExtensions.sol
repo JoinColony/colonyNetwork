@@ -50,59 +50,63 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     public
     stoppable
     calledByColony
+    returns (address)
   {
     require(resolvers[_extensionId][_version] != address(0x0), "colony-network-extension-bad-version");
-    require(installations[_extensionId][msg.sender] == address(0x0), "colony-network-extension-already-installed");
 
     EtherRouter extension = new EtherRouter();
-    installations[_extensionId][msg.sender] = address(extension);
+    multiInstallations[address(extension)] = msg.sender;
 
     extension.setResolver(resolvers[_extensionId][_version]);
     ColonyExtension(address(extension)).install(msg.sender);
 
-    emit ExtensionInstalled(_extensionId, msg.sender, _version);
+    emit ExtensionInstalled(_extensionId, address(extension), msg.sender, _version);
+
+    return address(extension);
   }
 
-  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
+  function upgradeExtension(address payable _extension, uint256 _newVersion)
     public
     stoppable
     calledByColony
   {
-    require(installations[_extensionId][msg.sender] != address(0x0), "colony-network-extension-not-installed");
+    require(multiInstallations[_extension] == msg.sender, "colony-network-extension-not-installed");
 
-    address payable extension = installations[_extensionId][msg.sender];
-    require(_newVersion == ColonyExtension(extension).version() + 1, "colony-network-extension-bad-increment");
-    require(resolvers[_extensionId][_newVersion] != address(0x0), "colony-network-extension-bad-version");
+    bytes32 extensionId = ColonyExtension(_extension).identifier();
 
-    EtherRouter(extension).setResolver(resolvers[_extensionId][_newVersion]);
-    ColonyExtension(extension).finishUpgrade();
-    assert(ColonyExtension(extension).version() == _newVersion);
+    require(_newVersion == ColonyExtension(_extension).version() + 1, "colony-network-extension-bad-increment");
+    require(resolvers[extensionId][_newVersion] != address(0x0), "colony-network-extension-bad-version");
 
-    emit ExtensionUpgraded(_extensionId, msg.sender, _newVersion);
+    EtherRouter(_extension).setResolver(resolvers[extensionId][_newVersion]);
+    ColonyExtension(_extension).finishUpgrade();
+
+    assert(ColonyExtension(_extension).version() == _newVersion);
+
+    emit ExtensionUpgraded(_extension, msg.sender, _newVersion);
   }
 
-  function deprecateExtension(bytes32 _extensionId, bool _deprecated)
+  function deprecateExtension(address payable _extension, bool _deprecated)
     public
     stoppable
     calledByColony
   {
-    ColonyExtension(installations[_extensionId][msg.sender]).deprecate(_deprecated);
+    ColonyExtension(_extension).deprecate(_deprecated);
 
-    emit ExtensionDeprecated(_extensionId, msg.sender, _deprecated);
+    emit ExtensionDeprecated(_extension, msg.sender, _deprecated);
   }
 
-  function uninstallExtension(bytes32 _extensionId)
+  function uninstallExtension(address payable _extension)
     public
     stoppable
     calledByColony
   {
-    require(installations[_extensionId][msg.sender] != address(0x0), "colony-network-extension-not-installed");
+    require(multiInstallations[_extension] == msg.sender, "colony-network-extension-not-installed");
 
-    ColonyExtension extension = ColonyExtension(installations[_extensionId][msg.sender]);
-    installations[_extensionId][msg.sender] = address(0x0);
-    extension.uninstall();
+    delete multiInstallations[_extension];
 
-    emit ExtensionUninstalled(_extensionId, msg.sender);
+    ColonyExtension(_extension).uninstall();
+
+    emit ExtensionUninstalled(_extension, msg.sender);
   }
 
   // Public view functions
@@ -113,6 +117,14 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     returns (address)
   {
     return resolvers[_extensionId][_version];
+  }
+
+  function getExtensionMultiInstallation(address _extension)
+    public
+    view
+    returns (address)
+  {
+    return multiInstallations[_extension];
   }
 
   function getExtensionInstallation(bytes32 _extensionId, address _colony)

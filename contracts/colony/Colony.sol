@@ -373,27 +373,28 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   }
 
   function installExtension(bytes32 _extensionId, uint256 _version)
-  public stoppable auth
+  public stoppable auth returns (address)
   {
-    IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
+    address extension = IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
+    return extension;
   }
 
-  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
+  function upgradeExtension(address payable _extension, uint256 _newVersion)
   public stoppable auth
   {
-    IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extensionId, _newVersion);
+    IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extension, _newVersion);
   }
 
-  function deprecateExtension(bytes32 _extensionId, bool _deprecated)
+  function deprecateExtension(address payable _extension, bool _deprecated)
   public stoppable auth
   {
-    IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extensionId, _deprecated);
+    IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extension, _deprecated);
   }
 
-  function uninstallExtension(bytes32 _extensionId)
+  function uninstallExtension(address payable _extension)
   public stoppable auth
   {
-    IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId);
+    IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extension);
   }
 
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
@@ -499,6 +500,15 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
     sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("upgradeExtension(address,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("deprecateExtension(address,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("uninstallExtension(address)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
     sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
