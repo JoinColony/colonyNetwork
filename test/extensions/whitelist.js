@@ -7,7 +7,7 @@ import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, IPFS_HASH } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
-import { checkErrorRevert, web3GetCode } from "../../helpers/test-helper";
+import { checkErrorRevert, web3GetCode, getExtensionAddressFromTx } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupRandomColony, setupMetaColonyWithLockedCLNYToken } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -46,9 +46,8 @@ contract("Whitelist", (accounts) => {
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
 
-    await colony.installExtension(WHITELIST, whitelistVersion);
-
-    const whitelistAddress = await colonyNetwork.getExtensionInstallation(WHITELIST, colony.address);
+    const tx = await colony.installExtension(WHITELIST, whitelistVersion);
+    const whitelistAddress = getExtensionAddressFromTx(tx);
     whitelist = await Whitelist.at(whitelistAddress);
 
     await colony.setAdministrationRole(1, UINT256_MAX, USER0, 1, true);
@@ -79,12 +78,12 @@ contract("Whitelist", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(WHITELIST, whitelistVersion, { from: USER0 });
+      const tx = await colony.installExtension(WHITELIST, whitelistVersion, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(WHITELIST, whitelistVersion, { from: USER0 }), "colony-network-extension-already-installed");
-      await checkErrorRevert(colony.uninstallExtension(WHITELIST, { from: USER1 }), "ds-auth-unauthorized");
+      const whitelistAddress = getExtensionAddressFromTx(tx);
+      await checkErrorRevert(colony.methods["uninstallExtension(address)"](whitelistAddress, { from: USER1 }), "ds-auth-unauthorized");
 
-      await colony.uninstallExtension(WHITELIST, { from: USER0 });
+      await colony.methods["uninstallExtension(address)"](whitelistAddress, { from: USER0 });
     });
   });
 
@@ -221,7 +220,7 @@ contract("Whitelist", (accounts) => {
       status = await whitelist.isApproved(USER1);
       expect(status).to.be.true;
 
-      await colony.deprecateExtension(WHITELIST, true, { from: USER0 });
+      await colony.methods["deprecateExtension(address,bool)"](whitelist.address, true, { from: USER0 });
 
       status = await whitelist.isApproved(USER1);
       expect(status).to.be.false;

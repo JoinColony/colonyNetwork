@@ -19,6 +19,7 @@ import {
   encodeTxData,
   bn2bytes32,
   expectEvent,
+  getExtensionAddressFromTx,
 } from "../../helpers/test-helper";
 
 import {
@@ -143,8 +144,8 @@ contract("Voting Reputation", (accounts) => {
     domain2 = await colony.getDomain(2);
     domain3 = await colony.getDomain(3);
 
-    await colony.installExtension(VOTING_REPUTATION, reputationVotingVersion);
-    const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
+    const tx = await colony.installExtension(VOTING_REPUTATION, reputationVotingVersion);
+    const votingAddress = getExtensionAddressFromTx(tx);
     voting = await VotingReputation.at(votingAddress);
 
     await voting.initialise(
@@ -275,23 +276,20 @@ contract("Voting Reputation", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(VOTING_REPUTATION, reputationVotingVersion, { from: USER0 });
+      const tx = await colony.installExtension(VOTING_REPUTATION, reputationVotingVersion, { from: USER0 });
 
-      await checkErrorRevert(
-        colony.installExtension(VOTING_REPUTATION, reputationVotingVersion, { from: USER0 }),
-        "colony-network-extension-already-installed"
-      );
-      await checkErrorRevert(colony.uninstallExtension(VOTING_REPUTATION, { from: USER1 }), "ds-auth-unauthorized");
+      const votingAddress = getExtensionAddressFromTx(tx);
+      await checkErrorRevert(colony.methods["uninstallExtension(address)"](votingAddress, { from: USER1 }), "ds-auth-unauthorized");
 
-      await colony.uninstallExtension(VOTING_REPUTATION, { from: USER0 });
+      await colony.methods["uninstallExtension(address)"](votingAddress, { from: USER0 });
     });
 
     it("can deprecate the extension if root", async () => {
       let deprecated = await voting.getDeprecated();
       expect(deprecated).to.equal(false);
 
-      await checkErrorRevert(colony.deprecateExtension(VOTING_REPUTATION, true, { from: USER2 }), "ds-auth-unauthorized");
-      await colony.deprecateExtension(VOTING_REPUTATION, true);
+      await checkErrorRevert(colony.methods["deprecateExtension(address,bool)"](voting.address, true, { from: USER2 }), "ds-auth-unauthorized");
+      await colony.methods["deprecateExtension(address,bool)"](voting.address, true, { from: USER0 });
 
       // Can't make new motions!
       const action = await encodeTxData(colony, "mintTokens", [WAD]);

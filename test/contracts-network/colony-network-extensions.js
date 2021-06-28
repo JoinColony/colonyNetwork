@@ -25,9 +25,11 @@ const TestExtension3 = artifacts.require("TestExtension3");
 const TestVotingToken = artifacts.require("TestVotingToken");
 const Resolver = artifacts.require("Resolver");
 const RequireExecuteCall = artifacts.require("RequireExecuteCall");
+const ContractEditing = artifacts.require("ContractEditing");
 
 contract("Colony Network Extensions", (accounts) => {
   let colonyNetwork;
+  let editableColonyNetwork;
   let metaColony;
   let colony;
   let token;
@@ -70,6 +72,13 @@ contract("Colony Network Extensions", (accounts) => {
   beforeEach(async () => {
     colonyNetwork = await setupColonyNetwork();
     ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+    const colonyNetworkAsER = await EtherRouter.at(colonyNetwork.address);
+    const colonyNetworkResolverAddress = await colonyNetworkAsER.resolver();
+    const colonyNetworkResolver = await Resolver.at(colonyNetworkResolverAddress);
+    const contractEditing = await ContractEditing.new();
+    await colonyNetworkResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
+    editableColonyNetwork = await ContractEditing.at(colonyNetwork.address);
 
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.addDomain(1, UINT256_MAX, 1); // Domain 2
@@ -184,7 +193,27 @@ contract("Colony Network Extensions", (accounts) => {
       let version = await extension.version();
       expect(version).to.eq.BN(1);
 
-      await colony.upgradeExtension(extensionAddress, 2, { from: ROOT });
+      await colony.methods["upgradeExtension(address,uint256)"](extensionAddress, 2, { from: ROOT });
+
+      extension = await ColonyExtension.at(extensionAddress);
+      version = await extension.version();
+      expect(version).to.eq.BN(2);
+    });
+
+    it("allows root users to upgrade an extension, with the deprecated interface", async () => {
+      const tx = await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
+
+      const extensionAddress = getExtensionAddressFromTx(tx);
+      let extension = await ColonyExtension.at(extensionAddress);
+      let version = await extension.version();
+      expect(version).to.eq.BN(1);
+
+      // Set up `installations` mapping in the old style
+      const slot = soliditySha3(`0x000000000000000000000000${colony.address.slice(2)}`, soliditySha3(TEST_EXTENSION, 39));
+      const value = `0x000000000000000000000000${extensionAddress.slice(2)}`;
+      await editableColonyNetwork.setStorageSlot(slot, value);
+
+      await colony.methods["upgradeExtension(bytes32,uint256)"](TEST_EXTENSION, 2, { from: ROOT });
 
       extension = await ColonyExtension.at(extensionAddress);
       version = await extension.version();
@@ -195,12 +224,15 @@ contract("Colony Network Extensions", (accounts) => {
       const tx = await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
       const extensionAddress = getExtensionAddressFromTx(tx);
-      await checkErrorRevert(colony.upgradeExtension(extensionAddress, 2, { from: ARCHITECT }), "ds-auth-unauthorized");
-      await checkErrorRevert(colony.upgradeExtension(extensionAddress, 2, { from: USER }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.methods["upgradeExtension(address,uint256)"](extensionAddress, 2, { from: ARCHITECT }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.methods["upgradeExtension(address,uint256)"](extensionAddress, 2, { from: USER }), "ds-auth-unauthorized");
     });
 
     it("does not allow upgrading a extension which is not installed", async () => {
-      await checkErrorRevert(colony.upgradeExtension(ethers.constants.AddressZero, 2, { from: ROOT }), "colony-network-extension-not-installed");
+      await checkErrorRevert(
+        colony.methods["upgradeExtension(address,uint256)"](ethers.constants.AddressZero, 2, { from: ROOT }),
+        "colony-network-extension-not-installed"
+      );
     });
 
     it("does not allow upgrading a extension to a version which does not exist", async () => {
@@ -208,14 +240,20 @@ contract("Colony Network Extensions", (accounts) => {
 
       // Can't upgrade from version 3 to nonexistent 4
       const extensionAddress = getExtensionAddressFromTx(tx);
-      await checkErrorRevert(colony.upgradeExtension(extensionAddress, 4, { from: ROOT }), "colony-network-extension-bad-version");
+      await checkErrorRevert(
+        colony.methods["upgradeExtension(address,uint256)"](extensionAddress, 4, { from: ROOT }),
+        "colony-network-extension-bad-version"
+      );
     });
 
     it("does not allow upgrading a extension out of order", async () => {
       const tx = await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
       const extensionAddress = getExtensionAddressFromTx(tx);
-      await checkErrorRevert(colony.upgradeExtension(extensionAddress, 3, { from: ROOT }), "colony-network-extension-bad-increment");
+      await checkErrorRevert(
+        colony.methods["upgradeExtension(address,uint256)"](extensionAddress, 3, { from: ROOT }),
+        "colony-network-extension-bad-increment"
+      );
     });
   });
 
@@ -232,11 +270,33 @@ contract("Colony Network Extensions", (accounts) => {
 
       await extension.foo();
 
-      await colony.deprecateExtension(extensionAddress, true, { from: ROOT });
+      await colony.methods["deprecateExtension(address,bool)"](extensionAddress, true, { from: ROOT });
 
       await checkErrorRevert(extension.foo(), "colony-extension-deprecated");
 
-      await colony.deprecateExtension(extensionAddress, false, { from: ROOT });
+      await colony.methods["deprecateExtension(address,bool)"](extensionAddress, false, { from: ROOT });
+
+      await extension.foo();
+    });
+
+    it("allows root users to deprecate and undeprecate an extension, with the deprecated interface", async () => {
+      const tx = await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
+
+      const extensionAddress = getExtensionAddressFromTx(tx);
+      const extension = await TestExtension1.at(extensionAddress);
+
+      // Set up `installations` mapping in the old style
+      const slot = soliditySha3(`0x000000000000000000000000${colony.address.slice(2)}`, soliditySha3(TEST_EXTENSION, 39));
+      const value = `0x000000000000000000000000${extensionAddress.slice(2)}`;
+      await editableColonyNetwork.setStorageSlot(slot, value);
+
+      await extension.foo();
+
+      await colony.methods["deprecateExtension(bytes32,bool)"](TEST_EXTENSION, true, { from: ROOT });
+
+      await checkErrorRevert(extension.foo(), "colony-extension-deprecated");
+
+      await colony.methods["deprecateExtension(bytes32,bool)"](TEST_EXTENSION, false, { from: ROOT });
 
       await extension.foo();
     });
@@ -245,7 +305,7 @@ contract("Colony Network Extensions", (accounts) => {
       const tx = await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
       const extensionAddress = getExtensionAddressFromTx(tx);
-      await checkErrorRevert(colony.deprecateExtension(extensionAddress, true, { from: ARCHITECT }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.methods["deprecateExtension(address,bool)"](extensionAddress, true, { from: ARCHITECT }), "ds-auth-unauthorized");
     });
   });
 
@@ -264,19 +324,42 @@ contract("Colony Network Extensions", (accounts) => {
       // Only colonyNetwork can uninstall
       await checkErrorRevert(extension.uninstall(), "ds-auth-unauthorized");
 
-      await colony.uninstallExtension(extensionAddress, { from: ROOT });
+      await colony.methods["uninstallExtension(address)"](extensionAddress, { from: ROOT });
+
+      const colonyBalance = await web3GetBalance(colony.address);
+      expect(new BN(colonyBalance)).to.eq.BN(100);
+    });
+
+    it("allows root users to uninstall an extension and send ether to the beneficiary, with the deprecated interface", async () => {
+      const tx = await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
+
+      const extensionAddress = getExtensionAddressFromTx(tx);
+      const extension = await TestExtension1.at(extensionAddress);
+      await extension.send(100);
+
+      // Set up `installations` mapping in the old style
+      const slot = soliditySha3(`0x000000000000000000000000${colony.address.slice(2)}`, soliditySha3(TEST_EXTENSION, 39));
+      const value = `0x000000000000000000000000${extensionAddress.slice(2)}`;
+      await editableColonyNetwork.setStorageSlot(slot, value);
+
+      // Only colonyNetwork can uninstall
+      await checkErrorRevert(extension.uninstall(), "ds-auth-unauthorized");
+
+      await colony.methods["uninstallExtension(bytes32)"](TEST_EXTENSION, { from: ROOT });
 
       const colonyBalance = await web3GetBalance(colony.address);
       expect(new BN(colonyBalance)).to.eq.BN(100);
     });
 
     it("does not allow non-root users to uninstall an extension", async () => {
-      await checkErrorRevert(colony.uninstallExtension(ethers.constants.AddressZero, { from: ARCHITECT }), "ds-auth-unauthorized");
-      await checkErrorRevert(colony.uninstallExtension(ethers.constants.AddressZero, { from: USER }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.methods["uninstallExtension(address)"](ethers.constants.AddressZero, { from: USER }), "ds-auth-unauthorized");
     });
 
     it("does not allow root users to uninstall an extension which is not installed", async () => {
-      await checkErrorRevert(colony.uninstallExtension(ethers.constants.AddressZero, { from: ROOT }), "colony-network-extension-not-installed");
+      await checkErrorRevert(
+        colony.methods["uninstallExtension(address)"](ethers.constants.AddressZero, { from: ROOT }),
+        "colony-network-extension-not-installed"
+      );
     });
   });
 
@@ -325,8 +408,8 @@ contract("Colony Network Extensions", (accounts) => {
     });
 
     it("does not allow users to lock and unlock tokens", async () => {
-      await checkErrorRevert(colony.lockToken(), "colony-sender-must-be-contract");
-      await checkErrorRevert(colony.unlockTokenForUser(ROOT, 0), "colony-sender-must-be-contract");
+      await checkErrorRevert(colony.lockToken(), "colony-must-be-extension");
+      await checkErrorRevert(colony.unlockTokenForUser(ROOT, 0), "colony-must-be-extension");
     });
 
     it("does not allow a colony to unlock a lock placed by another colony", async () => {

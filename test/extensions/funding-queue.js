@@ -17,6 +17,7 @@ import {
   forwardTime,
   getBlockTime,
   removeSubdomainLimit,
+  getExtensionAddressFromTx,
 } from "../../helpers/test-helper";
 
 import {
@@ -112,9 +113,9 @@ contract("Funding Queues", (accounts) => {
     await colony.addDomain(1, 0, 2);
     domain1 = await colony.getDomain(1);
     domain2 = await colony.getDomain(2);
-    await colony.installExtension(FUNDING_QUEUE, fundingQueueVersion);
 
-    const fundingQueueAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
+    const tx = await colony.installExtension(FUNDING_QUEUE, fundingQueueVersion);
+    const fundingQueueAddress = getExtensionAddressFromTx(tx);
     fundingQueue = await FundingQueue.at(fundingQueueAddress);
 
     await colony.setFundingRole(1, UINT256_MAX, fundingQueue.address, 1, true);
@@ -206,15 +207,12 @@ contract("Funding Queues", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(FUNDING_QUEUE, fundingQueueVersion, { from: USER0 });
+      const tx = await colony.installExtension(FUNDING_QUEUE, fundingQueueVersion, { from: USER0 });
 
-      await checkErrorRevert(
-        colony.installExtension(FUNDING_QUEUE, fundingQueueVersion, { from: USER0 }),
-        "colony-network-extension-already-installed"
-      );
-      await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "ds-auth-unauthorized");
+      const fundingQueueAddress = getExtensionAddressFromTx(tx);
+      await checkErrorRevert(colony.methods["uninstallExtension(address)"](fundingQueueAddress, { from: USER1 }), "ds-auth-unauthorized");
 
-      await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });
+      await colony.methods["uninstallExtension(address)"](fundingQueueAddress, { from: USER0 });
     });
   });
 
@@ -232,7 +230,7 @@ contract("Funding Queues", (accounts) => {
       let deprecated = await fundingQueue.getDeprecated();
       expect(deprecated).to.equal(false);
 
-      await colony.deprecateExtension(FUNDING_QUEUE, true);
+      await colony.methods["deprecateExtension(address,bool)"](fundingQueue.address, true);
 
       await checkErrorRevert(
         fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 }),
