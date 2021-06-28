@@ -65,7 +65,18 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     return address(extension);
   }
 
-  function upgradeExtension(address payable _extension, uint256 _newVersion)
+  // Deprecated
+  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
+    public
+    stoppable
+  {
+    address extension = migrateToMultiExtension(_extensionId);
+    upgradeExtension(extension, _newVersion);
+
+    emit ExtensionUpgraded(_extensionId, msg.sender, _newVersion);
+  }
+
+  function upgradeExtension(address _extension, uint256 _newVersion)
     public
     stoppable
     calledByColony
@@ -77,7 +88,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     require(_newVersion == ColonyExtension(_extension).version() + 1, "colony-network-extension-bad-increment");
     require(resolvers[extensionId][_newVersion] != address(0x0), "colony-network-extension-bad-version");
 
-    EtherRouter(_extension).setResolver(resolvers[extensionId][_newVersion]);
+    EtherRouter(payable(_extension)).setResolver(resolvers[extensionId][_newVersion]);
     ColonyExtension(_extension).finishUpgrade();
 
     assert(ColonyExtension(_extension).version() == _newVersion);
@@ -85,7 +96,18 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     emit ExtensionUpgraded(_extension, msg.sender, _newVersion);
   }
 
-  function deprecateExtension(address payable _extension, bool _deprecated)
+  // Deprecated
+  function deprecateExtension(bytes32 _extensionId, bool _deprecated)
+    public
+    stoppable
+  {
+    address extension = migrateToMultiExtension(_extensionId);
+    deprecateExtension(extension, _deprecated);
+
+    emit ExtensionDeprecated(_extensionId, msg.sender, _deprecated);
+  }
+
+  function deprecateExtension(address _extension, bool _deprecated)
     public
     stoppable
     calledByColony
@@ -95,7 +117,18 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     emit ExtensionDeprecated(_extension, msg.sender, _deprecated);
   }
 
-  function uninstallExtension(address payable _extension)
+  // Deprecated
+  function uninstallExtension(bytes32 _extensionId)
+    public
+    stoppable
+  {
+    address extension = migrateToMultiExtension(_extensionId);
+    uninstallExtension(extension);
+
+    emit ExtensionUninstalled(_extensionId, msg.sender);
+  }
+
+  function uninstallExtension(address _extension)
     public
     stoppable
     calledByColony
@@ -149,5 +182,13 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
   function getResolverVersion(address _resolver) internal returns (uint256) {
     address extension = Resolver(_resolver).lookup(VERSION_SIG);
     return ColonyExtension(extension).version();
+  }
+
+  function migrateToMultiExtension(bytes32 _extensionId) internal returns (address) {
+    address extension = installations[_extensionId][msg.sender];
+    require(extension != address(0x0), "colony-network-extension-not-installed");
+
+    multiInstallations[extension] = msg.sender;
+    return extension;
   }
 }

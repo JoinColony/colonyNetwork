@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID, FUNDING_ROLE, ADMINISTRATION_ROLE } from "../../helpers/constants";
-import { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent } from "../../helpers/test-helper";
+import { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent, getExtensionAddressFromTx } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
@@ -57,8 +57,8 @@ contract("One transaction payments", (accounts) => {
 
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-    await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
-    const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
+    const tx = await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
+    const oneTxPaymentAddress = getExtensionAddressFromTx(tx);
     oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
 
     // Give extension funding and administration rights
@@ -90,12 +90,12 @@ contract("One transaction payments", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
+      const tx = await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
 
-      await checkErrorRevert(colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion), "colony-network-extension-already-installed");
-      await checkErrorRevert(colony.uninstallExtension(ONE_TX_PAYMENT, { from: USER1 }), "ds-auth-unauthorized");
+      const oneTxPaymentAddress = getExtensionAddressFromTx(tx);
+      await checkErrorRevert(colony.methods["uninstallExtension(address)"](oneTxPaymentAddress, { from: USER1 }), "ds-auth-unauthorized");
 
-      await colony.uninstallExtension(ONE_TX_PAYMENT);
+      await colony.methods["uninstallExtension(address)"](oneTxPaymentAddress);
     });
   });
 

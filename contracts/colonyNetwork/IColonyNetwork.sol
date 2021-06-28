@@ -319,19 +319,36 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return extension The address of the extension installation
   function installExtension(bytes32 extensionId, uint256 version) external returns (address extension);
 
+  /// @dev DEPRECATED
+  /// @notice Upgrade an extension in a colony. Can only be called by a Colony.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param newVersion Version of the extension to upgrade to (must be one greater than current)
+  function upgradeExtension(bytes32 extensionId, uint256 newVersion) external;
+
   /// @notice Upgrade an extension in a colony. Can only be called by a Colony.
   /// @param extension Address of the extension installation
   /// @param newVersion Version of the extension to upgrade to (must be one greater than current)
-  function upgradeExtension(address payable extension, uint256 newVersion) external;
+  function upgradeExtension(address extension, uint256 newVersion) external;
+
+  /// @dev DEPRECATED
+  /// @notice Set the deprecation of an extension in a colony. Can only be called by a Colony.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param deprecated Whether to deprecate the extension or not
+  function deprecateExtension(bytes32 extensionId, bool deprecated) external;
 
   /// @notice Set the deprecation of an extension in a colony. Can only be called by a Colony.
   /// @param extension Address of the extension installation
   /// @param deprecated Whether to deprecate the extension or not
-  function deprecateExtension(address payable extension, bool deprecated) external;
+  function deprecateExtension(address extension, bool deprecated) external;
+
+  /// @dev DEPRECATED
+  /// @notice Uninstall an extension in a colony. Can only be called by a Colony.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  function uninstallExtension(bytes32 extensionId) external;
 
   /// @notice Uninstall an extension in a colony. Can only be called by a Colony.
   /// @param extension Address of the extension installation
-  function uninstallExtension(address payable extension) external;
+  function uninstallExtension(address extension) external;
 
   /// @notice Get an extension's resolver.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier

@@ -261,6 +261,19 @@ Set the deprecation of an extension in a colony. Secured function to authorised 
 |deprecated|bool|Whether to deprecate the extension or not
 
 
+### `deprecateExtension`
+
+Set the deprecation of an extension in a colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|deprecated|bool|Whether to deprecate the extension or not
+
+
 ### `editColony`
 
 Called to change the metadata associated with a colony. Expected to be a IPFS hash of a JSON blob, but not enforced to any degree by the contracts
@@ -1902,6 +1915,19 @@ Uninstall an extension from a colony. Secured function to authorised members.
 |extension|address|The address of the extension installation
 
 
+### `uninstallExtension`
+
+Uninstall an extension from a colony. Secured function to authorised members.
+
+*Note: This is a permanent action -- re-installing the extension will deploy a new contract*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+
+
 ### `unlockToken`
 
 unlock the native colony token, if possible
@@ -1970,6 +1996,19 @@ Upgrade an extension in a colony. Secured function to authorised members.
 |Name|Type|Description|
 |---|---|---|
 |extension|address|The address of the extension installation
+|newVersion|uint256|The version to upgrade to (must be one larger than the current version)
+
+
+### `upgradeExtension`
+
+Upgrade an extension in a colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |newVersion|uint256|The version to upgrade to (must be one larger than the current version)
 
 

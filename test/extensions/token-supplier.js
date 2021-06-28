@@ -7,9 +7,17 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, SECONDS_PER_DAY } from "../../helpers/constants";
-import { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, getBlockTime, forwardTime } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupRandomColony, setupMetaColonyWithLockedCLNYToken } from "../../helpers/test-data-generator";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+
+import {
+  checkErrorRevert,
+  currentBlockTime,
+  makeTxAtTimestamp,
+  getBlockTime,
+  forwardTime,
+  getExtensionAddressFromTx,
+} from "../../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -50,10 +58,10 @@ contract("Token Supplier", (accounts) => {
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
-    await colony.installExtension(TOKEN_SUPPLIER, tokenSupplierVersion);
     await colony.addDomain(1, UINT256_MAX, 1);
 
-    const tokenSupplierAddress = await colonyNetwork.getExtensionInstallation(TOKEN_SUPPLIER, colony.address);
+    const tx = await colony.installExtension(TOKEN_SUPPLIER, tokenSupplierVersion);
+    const tokenSupplierAddress = getExtensionAddressFromTx(tx);
     tokenSupplier = await TokenSupplier.at(tokenSupplierAddress);
 
     await colony.setRootRole(tokenSupplier.address, true);
@@ -76,15 +84,12 @@ contract("Token Supplier", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(TOKEN_SUPPLIER, tokenSupplierVersion, { from: USER0 });
+      const tx = await colony.installExtension(TOKEN_SUPPLIER, tokenSupplierVersion, { from: USER0 });
 
-      await checkErrorRevert(
-        colony.installExtension(TOKEN_SUPPLIER, tokenSupplierVersion, { from: USER0 }),
-        "colony-network-extension-already-installed"
-      );
-      await checkErrorRevert(colony.uninstallExtension(TOKEN_SUPPLIER, { from: USER1 }), "ds-auth-unauthorized");
+      const tokenSupplierAddress = getExtensionAddressFromTx(tx);
+      await checkErrorRevert(colony.methods["uninstallExtension(address)"](tokenSupplierAddress, { from: USER1 }), "ds-auth-unauthorized");
 
-      await colony.uninstallExtension(TOKEN_SUPPLIER, { from: USER0 });
+      await colony.methods["uninstallExtension(address)"](tokenSupplierAddress, { from: USER0 });
     });
 
     it("can initialise", async () => {
@@ -126,7 +131,7 @@ contract("Token Supplier", (accounts) => {
 
       token.mint(SUPPLY_CEILING.muln(3));
 
-      await checkErrorRevert(tokenSupplier.setTokenSupplyCeiling(SUPPLY_CEILING.muln(2)), "token-supplier-ceiling-too-low");
+      await checkErrorRevert(tokenSupplier.setTokenSupplyCeiling(SUPPLY_CEILING.muln(2).subn(1)), "token-supplier-ceiling-too-low");
     });
 
     it("can update the tokenIssuanceRate if root", async () => {

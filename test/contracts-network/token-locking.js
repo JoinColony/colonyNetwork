@@ -6,12 +6,20 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
-import { getTokenArgs, checkErrorRevert, makeReputationKey, advanceMiningCycleNoContest, expectEvent } from "../../helpers/test-helper";
+import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
+
 import { giveUserCLNYTokensAndStake, setupColony, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import { UINT256_MAX, DEFAULT_STAKE } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
-import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
+import {
+  getTokenArgs,
+  checkErrorRevert,
+  makeReputationKey,
+  advanceMiningCycleNoContest,
+  expectEvent,
+  getExtensionAddressFromTx,
+} from "../../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -331,8 +339,8 @@ contract("Token Locking", (addresses) => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress });
 
-      await colony.installExtension(TEST_VOTING_TOKEN, 1);
-      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
+      const tx = await colony.installExtension(TEST_VOTING_TOKEN, 1);
+      const extensionAddress = getExtensionAddressFromTx(tx);
       const votingToken = await TestVotingToken.at(extensionAddress);
 
       await votingToken.lockToken();
@@ -361,8 +369,8 @@ contract("Token Locking", (addresses) => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress });
 
-      await colony.installExtension(TEST_VOTING_TOKEN, 1);
-      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
+      const tx = await colony.installExtension(TEST_VOTING_TOKEN, 1);
+      const extensionAddress = getExtensionAddressFromTx(tx);
       const votingToken = await TestVotingToken.at(extensionAddress);
 
       await votingToken.lockToken();

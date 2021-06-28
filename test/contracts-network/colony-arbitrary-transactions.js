@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD } from "../../helpers/constants";
-import { checkErrorRevert, encodeTxData } from "../../helpers/test-helper";
+import { checkErrorRevert, encodeTxData, getExtensionAddressFromTx } from "../../helpers/test-helper";
 import { setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -103,7 +103,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
   });
 
   it("should not be able to make arbitrary transactions to a user address", async () => {
-    await checkErrorRevert(colony.makeArbitraryTransaction(accounts[0], "0x0"), "colony-to-must-be-contract");
+    await checkErrorRevert(colony.makeArbitraryTransaction(accounts[0], "0x0"), "colony-must-target-contract");
   });
 
   it("should not be able to make arbitrary transactions to network or token locking", async () => {
@@ -206,16 +206,16 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
   it("should not be able to make arbitrary transactions to the colony's own extensions", async () => {
     const COIN_MACHINE = soliditySha3("CoinMachine");
-    await colony.installExtension(COIN_MACHINE, 2);
+    const tx = await colony.installExtension(COIN_MACHINE, 2);
 
-    const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+    const coinMachineAddress = getExtensionAddressFromTx(tx);
     const coinMachine = await CoinMachine.at(coinMachineAddress);
     await coinMachine.initialise(token.address, ethers.constants.AddressZero, 60 * 60, 10, WAD, WAD, WAD, WAD, ADDRESS_ZERO);
     await token.mint(coinMachine.address, WAD);
 
     const action = await encodeTxData(coinMachine, "buyTokens", [WAD]);
 
-    await checkErrorRevert(colony.makeArbitraryTransaction(coinMachine.address, action), "colony-cannot-target-extensions");
+    await checkErrorRevert(colony.makeArbitraryTransaction(coinMachine.address, action), "colony-cannot-target-own-extensions");
 
     // But other colonies can
     const { colony: otherColony } = await setupRandomColony(colonyNetwork);

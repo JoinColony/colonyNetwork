@@ -266,21 +266,40 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @return extension The address of the extension installation
   function installExtension(bytes32 extensionId, uint256 version) external returns (address extension);
 
+  /// @dev DEPRECATED
+  /// @notice Upgrade an extension in a colony. Secured function to authorised members.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param newVersion The version to upgrade to (must be one larger than the current version)
+  function upgradeExtension(bytes32 extensionId, uint256 newVersion) external;
+
   /// @notice Upgrade an extension in a colony. Secured function to authorised members.
   /// @param extension The address of the extension installation
   /// @param newVersion The version to upgrade to (must be one larger than the current version)
-  function upgradeExtension(address payable extension, uint256 newVersion) external;
+  function upgradeExtension(address extension, uint256 newVersion) external;
+
+  /// @dev DEPRECATED
+  /// @notice Set the deprecation of an extension in a colony. Secured function to authorised members.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param deprecated Whether to deprecate the extension or not
+  function deprecateExtension(bytes32 extensionId, bool deprecated) external;
 
   /// @notice Set the deprecation of an extension in a colony. Secured function to authorised members.
   /// @param extension The address of the extension installation
   /// @param deprecated Whether to deprecate the extension or not
-  function deprecateExtension(address payable extension, bool deprecated) external;
+  function deprecateExtension(address extension, bool deprecated) external;
+
+  /// @dev DEPRECATED
+  /// @notice Uninstall an extension from a colony. Secured function to authorised members.
+  /// @dev This is a permanent action -- re-installing the extension will deploy a new contract
+  /// @dev It is recommended to deprecate an extension before uninstalling to allow active objects to be resolved
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  function uninstallExtension(bytes32 extensionId) external;
 
   /// @notice Uninstall an extension from a colony. Secured function to authorised members.
   /// @dev This is a permanent action -- re-installing the extension will deploy a new contract
   /// @dev It is recommended to deprecate an extension before uninstalling to allow active objects to be resolved
   /// @param extension The address of the extension installation
-  function uninstallExtension(address payable extension) external;
+  function uninstallExtension(address extension) external;
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`.
   /// New funding pot is created and associated with the domain here.

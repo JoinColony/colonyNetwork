@@ -234,6 +234,19 @@ Set the deprecation of an extension in a colony. Can only be called by a Colony.
 |deprecated|bool|Whether to deprecate the extension or not
 
 
+### `deprecateExtension`
+
+Set the deprecation of an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|deprecated|bool|Whether to deprecate the extension or not
+
+
 ### `deprecateSkill`
 
 Mark a global skill as deprecated which stops new tasks and payments from using it.
@@ -959,6 +972,18 @@ Uninstall an extension in a colony. Can only be called by a Colony.
 |extension|address|Address of the extension installation
 
 
+### `uninstallExtension`
+
+Uninstall an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+
+
 ### `unstakeForMining`
 
 Unstake CLNY currently staked for reputation mining.
@@ -1005,4 +1030,17 @@ Upgrade an extension in a colony. Can only be called by a Colony.
 |Name|Type|Description|
 |---|---|---|
 |extension|address|Address of the extension installation
+|newVersion|uint256|Version of the extension to upgrade to (must be one greater than current)
+
+
+### `upgradeExtension`
+
+Upgrade an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |newVersion|uint256|Version of the extension to upgrade to (must be one greater than current)

@@ -79,10 +79,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   external stoppable self
   returns (bool)
   {
-    // Prevent transactions to network contracts
+    // Prevent transactions to network contracts or network-managed extensions installed in this colony
     require(_to != address(this), "colony-cannot-target-self");
     require(_to != colonyNetworkAddress, "colony-cannot-target-network");
     require(_to != tokenLockingAddress, "colony-cannot-target-token-locking");
+    require(isContract(_to), "colony-must-target-contract");
+    require(!isOwnExtension(_to), "colony-cannot-target-own-extensions");
 
     // Prevent transactions to transfer held tokens
     bytes4 sig;
@@ -92,16 +94,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     else if (sig == BURN_SIG) { burnTransactionPreparation(_to, _action); }
     else if (sig == TRANSFER_SIG) { transferTransactionPreparation(_to, _action); }
     else if (sig == BURN_GUY_SIG || sig == TRANSFER_FROM_SIG) { burnGuyOrTransferFromTransactionPreparation(_action); }
-
-    // Prevent transactions to network-managed extensions installed in this colony
-    require(isContract(_to), "colony-to-must-be-contract");
-    // slither-disable-next-line unused-return
-    try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
-      require(
-        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) != _to,
-        "colony-cannot-target-extensions"
-      );
-    } catch {}
 
     bool res = executeCall(_to, 0, _action);
 
@@ -375,23 +367,43 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   function installExtension(bytes32 _extensionId, uint256 _version)
   public stoppable auth returns (address)
   {
-    address extension = IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
-    return extension;
+    return IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
   }
 
-  function upgradeExtension(address payable _extension, uint256 _newVersion)
+  // Deprecated
+  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extensionId, _newVersion);
+  }
+
+  function upgradeExtension(address _extension, uint256 _newVersion)
   public stoppable auth
   {
     IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extension, _newVersion);
   }
 
-  function deprecateExtension(address payable _extension, bool _deprecated)
+  // Deprecated
+  function deprecateExtension(bytes32 _extensionId, bool _deprecated)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extensionId, _deprecated);
+  }
+
+  function deprecateExtension(address _extension, bool _deprecated)
   public stoppable auth
   {
     IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extension, _deprecated);
   }
 
-  function uninstallExtension(address payable _extension)
+  // Deprecated
+  function uninstallExtension(bytes32 _extensionId)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId);
+  }
+
+  function uninstallExtension(address _extension)
   public stoppable auth
   {
     IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extension);
