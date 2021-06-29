@@ -187,7 +187,7 @@ contract ColonyExpenditure is ColonyStorage {
     for (uint256 i; i < _slots.length; i++) {
       require(
         _skillIds[i] > 0 && _skillIds[i] <= colonyNetworkContract.getSkillCount(),
-        "colony-skill-does-not-exist"
+        "colony-expenditure-skill-does-not-exist"
       );
 
       Skill memory skill = colonyNetworkContract.getSkill(_skillIds[i]);

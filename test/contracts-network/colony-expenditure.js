@@ -194,6 +194,10 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditureSlot.recipient).to.equal(USER);
     });
 
+    it("should not allow owners to update many slot recipients with mismatched arguments", async () => {
+      await checkErrorRevert(colony.setExpenditureRecipients(expenditureId, [SLOT0, SLOT1], [USER], { from: ADMIN }), "colony-expenditure-bad-slots");
+    });
+
     it("should allow owners to update a slot skill", async () => {
       await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
 
@@ -210,6 +214,17 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT2);
       expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+    });
+
+    it("should not allow owners to update many slot skills with mismatched arguments", async () => {
+      await checkErrorRevert(
+        colony.setExpenditureSkills(expenditureId, [SLOT0, SLOT1], [GLOBAL_SKILL_ID], { from: ADMIN }),
+        "colony-expenditure-bad-slots"
+      );
+    });
+
+    it("should not allow owners to update many slot skills with nonexistent skills", async () => {
+      await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [100], { from: ADMIN }), "colony-expenditure-skill-does-not-exist");
     });
 
     it("should allow owners to update a slot claim delay", async () => {
@@ -230,6 +245,10 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditureSlot.claimDelay).to.eq.BN(20);
     });
 
+    it("should not allow owners to update many slot claim delays with mismatched arguments", async () => {
+      await checkErrorRevert(colony.setExpenditureClaimDelays(expenditureId, [SLOT0, SLOT1], [10], { from: ADMIN }), "colony-expenditure-bad-slots");
+    });
+
     it("should allow owners to update many slot payout modifiers at once", async () => {
       await colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(2), WAD], { from: ADMIN });
 
@@ -239,6 +258,13 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditureSlot.payoutModifier).to.eq.BN(WAD.divn(2));
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT2);
       expect(expenditureSlot.payoutModifier).to.eq.BN(WAD);
+    });
+
+    it("should not allow owners to update many slot payout modifiers with mismatched arguments", async () => {
+      await checkErrorRevert(
+        colony.setExpenditurePayoutModifiers(expenditureId, [SLOT0, SLOT1], [WAD], { from: ADMIN }),
+        "colony-expenditure-bad-slots"
+      );
     });
 
     it("should allow owners to update many slot payouts at once", async () => {
@@ -251,6 +277,13 @@ contract("Colony Expenditure", (accounts) => {
       expect(payout).to.eq.BN(10);
       payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT2, token.address);
       expect(payout).to.eq.BN(20);
+    });
+
+    it("should not allow owners to update many slot payouts with mismatched arguments", async () => {
+      await checkErrorRevert(
+        colony.setExpenditurePayouts(expenditureId, [SLOT0, SLOT1], token.address, [WAD], { from: ADMIN }),
+        "colony-expenditure-bad-slots"
+      );
     });
 
     it("should not allow owners to set a non-global skill or a deprecated global skill", async () => {

@@ -568,6 +568,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   expenditureDraft(_id)
   expenditureOnlyOwner(_id)
   {
+    require(_slots.length == _amounts.length, "colony-expenditure-bad-slots");
+
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     assert(fundingPot.associatedType == FundingPotAssociatedType.Expenditure);
 
