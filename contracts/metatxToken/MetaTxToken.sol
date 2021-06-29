@@ -13,19 +13,9 @@
 import "./../common/ERC20Extended.sol";
 import "./../common/BasicMetaTransaction.sol";
 import "./../common/ERC20Extended.sol";
+import "./../../lib/dappsys/auth.sol";
 
 pragma solidity 0.7.3;
-
-abstract contract DSAuthority {
-    function canCall(
-        address src, address dst, bytes4 sig
-    ) virtual public view returns (bool);
-}
-
-contract DSAuthEvents {
-    event LogSetAuthority (address indexed authority);
-    event LogSetOwner     (address indexed owner);
-}
 
 abstract contract DSAuthMeta is DSAuthEvents, BasicMetaTransaction {
     DSAuthority  public  authority;
