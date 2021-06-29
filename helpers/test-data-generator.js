@@ -20,7 +20,7 @@ import {
   DELIVERABLE_HASH,
 } from "./constants";
 
-import { getTokenArgs, web3GetAccounts, getChildSkillIndex } from "./test-helper";
+import { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } from "./test-helper";
 import { executeSignedTaskChange, executeSignedRoleAssignment } from "./task-review-signing";
 
 const IColony = artifacts.require("IColony");
@@ -32,6 +32,7 @@ const BasicMetaTransaction = artifacts.require("BasicMetaTransaction");
 const MultiChain = artifacts.require("MultiChain");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
+const MetaTxToken = artifacts.require("MetaTxToken");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 
 export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 3, dueDate = 0, manager }) {
@@ -416,6 +417,81 @@ export async function getMetatransactionParameters(txData, userAddress, targetAd
   const r = `0x${sig.substring(2, 66)}`;
   const s = `0x${sig.substring(66, 130)}`;
   const v = parseInt(sig.substring(130), 16) + 27;
+
+  return { r, s, v };
+}
+
+export async function getPermitParameters(owner, spender, amount, deadline, targetAddress) {
+  const contract = await MetaTxToken.at(targetAddress);
+  const nonce = await contract.getMetatransactionNonce(owner);
+  const multichain = await MultiChain.new();
+  const chainId = await multichain.getChainId();
+  const name = await contract.name();
+
+  const sigObject = {
+    types: {
+      EIP712Domain: [
+        {
+          name: "name",
+          type: "string",
+        },
+        {
+          name: "version",
+          type: "string",
+        },
+        {
+          name: "chainId",
+          type: "uint256",
+        },
+        {
+          name: "verifyingContract",
+          type: "address",
+        },
+      ],
+      Permit: [
+        {
+          name: "owner",
+          type: "address",
+        },
+        {
+          name: "spender",
+          type: "address",
+        },
+        {
+          name: "value",
+          type: "uint256",
+        },
+        {
+          name: "nonce",
+          type: "uint256",
+        },
+        {
+          name: "deadline",
+          type: "uint256",
+        },
+      ],
+    },
+    primaryType: "Permit",
+    domain: {
+      name,
+      version: "1",
+      chainId: chainId.toNumber(),
+      verifyingContract: contract.address,
+    },
+    message: {
+      owner,
+      spender,
+      value: amount,
+      nonce,
+      deadline,
+    },
+  };
+
+  const sig = await web3SignTypedData(owner, sigObject);
+
+  const r = `0x${sig.substring(2, 66)}`;
+  const s = `0x${sig.substring(66, 130)}`;
+  const v = parseInt(sig.substring(130), 16);
 
   return { r, s, v };
 }
