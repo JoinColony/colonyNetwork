@@ -41,6 +41,9 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/Migrations.sol",
       "contracts/Token.sol", // Imported from colonyToken repo
       "contracts/TokenAuthority.sol", // Imported from colonyToken repo
+      "contracts/metatxToken/MetaTxToken.sol",
+      "contracts/metatxToken/DSAuthMeta.sol",
+      "contracts/metatxToken/DSTokenBaseMeta.sol",
     ].indexOf(contractName) > -1
   ) {
     return;
