@@ -87,7 +87,7 @@ abstract contract DSTokenBaseMeta is ERC20, DSMath, BasicMetaTransaction {
     mapping (address => uint256)                       _balances;
     mapping (address => mapping (address => uint256))  _approvals;
 
-    constructor(uint supply) {
+    constructor(uint256 supply) {
         _balances[msgSender()] = supply;
         _supply = supply;
     }
@@ -102,11 +102,11 @@ abstract contract DSTokenBaseMeta is ERC20, DSMath, BasicMetaTransaction {
         return _approvals[src][guy];
     }
 
-    function transfer(address dst, uint wad) public override returns (bool) {
+    function transfer(address dst, uint256 wad) public override returns (bool) {
         return transferFrom(msgSender(), dst, wad);
     }
 
-    function transferFrom(address src, address dst, uint wad)
+    function transferFrom(address src, address dst, uint256 wad)
         public override virtual
         returns (bool)
     {
@@ -124,7 +124,7 @@ abstract contract DSTokenBaseMeta is ERC20, DSMath, BasicMetaTransaction {
         return true;
     }
 
-    function approve(address guy, uint wad) public override returns (bool) {
+    function approve(address guy, uint256 wad) public override returns (bool) {
         _approvals[msgSender()][guy] = wad;
 
         emit Approval(msgSender(), guy, wad);
@@ -165,6 +165,9 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
 
   mapping(address => uint256) metatransactionNonces;
 
+  event Mint(address indexed guy, uint256 wad);
+  event Burn(address indexed guy, uint256 wad);
+
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
     return metatransactionNonces[_user];
   }
@@ -172,9 +175,6 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
   function incrementMetatransactionNonce(address _user) override internal {
     metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
   }
-
-  event Mint(address indexed guy, uint wad);
-  event Burn(address indexed guy, uint wad);
 
   modifier unlocked {
     if (locked) {
@@ -189,7 +189,7 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
     decimals = _decimals;
     locked = true;
 
-    uint chainId;
+    uint256 chainId;
     assembly {
         chainId := chainid()
     }
@@ -205,29 +205,30 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
     );
   }
 
-  function transferFrom(address src, address dst, uint wad) public
+  function transferFrom(address src, address dst, uint256 wad) public
   unlocked override
   returns (bool)
   {
     return super.transferFrom(src, dst, wad);
   }
 
-  function mint(uint wad) public auth {
+  function mint(uint256 wad) public auth {
     mint(msgSender(), wad);
   }
 
-  function burn(uint wad) public {
+  function burn(uint256 wad) public {
     burn(msgSender(), wad);
   }
 
-  function mint(address guy, uint wad) public auth {
+  function mint(address guy, uint256 wad) public auth {
     _balances[guy] = add(_balances[guy], wad);
     _supply = add(_supply, wad);
+
     emit Mint(guy, wad);
     emit Transfer(address(0x0), guy, wad);
   }
 
-  function burn(address guy, uint wad) public {
+  function burn(address guy, uint256 wad) public {
     if (guy != msgSender()) {
       require(_approvals[guy][msgSender()] >= wad, "ds-token-insufficient-approval");
       _approvals[guy][msgSender()] = sub(_approvals[guy][msgSender()], wad);
@@ -236,6 +237,7 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
     require(_balances[guy] >= wad, "ds-token-insufficient-balance");
     _balances[guy] = sub(_balances[guy], wad);
     _supply = sub(_supply, wad);
+
     emit Burn(guy, wad);
   }
 
@@ -251,7 +253,7 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
   // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
   bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
 
-  function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external unlocked {
+  function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external unlocked {
       require(deadline >= block.timestamp, "colony-token-expired-deadline");
 
       bytes32 digest = keccak256(
@@ -264,6 +266,7 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
       address recoveredAddress = ecrecover(digest, v, r, s);
       require(recoveredAddress != address(0) && recoveredAddress == owner, "colony-token-invalid-signature");
       _approvals[owner][spender] = value;
+
       emit Approval(owner, spender, value);
   }
 }

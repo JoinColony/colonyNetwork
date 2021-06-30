@@ -70,7 +70,7 @@ module.exports = async function (deployer, network, accounts) {
   const colonyRoles = await ColonyRoles.new();
   const colonyTask = await ColonyTask.new();
   const colonyPayment = await ColonyPayment.new();
-  const contractRecovery = await ContractRecovery.new();
+  const contractRecovery = await ContractRecovery.deployed();
   const colonyArbitraryTransaction = await ColonyArbitraryTransaction.new();
 
   const resolver3 = await Resolver.new();
