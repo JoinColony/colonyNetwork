@@ -321,6 +321,19 @@ contract("MetaTxToken", (accounts) => {
         expect(balanceAccount2).to.eq.BN(300000);
       });
 
+      it("metatransaction should not be able to be replayed", async () => {
+        const txData = await metaTxToken.contract.methods.transfer(USER1, 300000).encodeABI();
+
+        const { r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address);
+
+        await metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
+
+        await checkErrorRevert(
+          metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 }),
+          "metatransaction-signer-signature-mismatch"
+        );
+      });
+
       it("should NOT be able to transfer more tokens than they have", async () => {
         const txData = await metaTxToken.contract.methods.transfer(USER1, 1500001).encodeABI();
 
