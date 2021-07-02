@@ -96,7 +96,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   }
 
   function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+    metatransactionNonces[user]++;
   }
 
   // Modifiers

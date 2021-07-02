@@ -35,7 +35,7 @@ contract OneTxPayment is ColonyExtension {
   }
 
   function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+    metatransactionNonces[user]++;
   }
 
   /// @notice Returns the identifier of the extension
