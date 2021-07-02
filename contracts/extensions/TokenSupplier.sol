@@ -45,7 +45,7 @@ contract TokenSupplier is ColonyExtension {
   }
 
   function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+    metatransactionNonces[user]++;
   }
 
   // Modifiers
