@@ -3,13 +3,12 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 import { web3GetBalance, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
-import { getMetatransactionParameters, getPermitParameters } from "../../helpers/test-data-generator";
+import { getMetatransactionParameters, getPermitParameters, setupColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
-const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const MetaTxToken = artifacts.require("MetaTxToken");
 
@@ -31,9 +30,7 @@ contract("MetaTxToken", (accounts) => {
 
   beforeEach(async () => {
     metaTxToken = await MetaTxToken.new("Test", "TEST", 18);
-    const { logs } = await colonyNetwork.createColony(metaTxToken.address, 0, "", "");
-    const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
-    colony = await IColony.at(colonyAddress);
+    colony = await setupColony(colonyNetwork, metaTxToken.address);
     await colony.setRewardInverse(100);
   });
 
