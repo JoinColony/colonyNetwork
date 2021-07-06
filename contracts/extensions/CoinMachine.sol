@@ -65,10 +65,19 @@ contract CoinMachine is ColonyExtension {
   uint256 soldTotal; // Total tokens sold by the coin machine
   mapping(address => uint256) soldUser; // Tokens sold to a particular user
 
+  mapping(address => uint256) metatransactionNonces;
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
+  }
+
+  function incrementMetatransactionNonce(address user) override internal {
+    metatransactionNonces[user]++;
+  }
+
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "coin-machine-caller-not-root");
+    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "coin-machine-caller-not-root");
     _;
   }
 
@@ -196,7 +205,7 @@ contract CoinMachine is ColonyExtension {
     updatePeriod();
 
     require(
-      whitelist == address(0x0) || Whitelist(whitelist).isApproved(msg.sender),
+      whitelist == address(0x0) || Whitelist(whitelist).isApproved(msgSender()),
       "coin-machine-unauthorised"
     );
 
@@ -222,15 +231,15 @@ contract CoinMachine is ColonyExtension {
 
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
-      if (msg.value > totalCost) { msg.sender.transfer(msg.value - totalCost); } // Refund any balance
+      if (msg.value > totalCost) { msgSender().transfer(msg.value - totalCost); } // Refund any balance
       payable(address(colony)).transfer(totalCost);
     } else {
-      require(ERC20(purchaseToken).transferFrom(msg.sender, address(colony), totalCost), "coin-machine-purchase-failed");
+      require(ERC20(purchaseToken).transferFrom(msgSender(), address(colony), totalCost), "coin-machine-purchase-failed");
     }
 
-    require(ERC20(token).transfer(msg.sender, numTokens), "coin-machine-transfer-failed");
+    require(ERC20(token).transfer(msgSender(), numTokens), "coin-machine-transfer-failed");
 
-    emit TokensBought(msg.sender, numTokens, totalCost);
+    emit TokensBought(msgSender(), numTokens, totalCost);
   }
 
   /// @notice Bring the token accounting current

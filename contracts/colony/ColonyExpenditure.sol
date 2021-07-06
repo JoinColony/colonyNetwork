@@ -41,7 +41,7 @@ contract ColonyExpenditure is ColonyStorage {
 
     expenditures[expenditureCount] = Expenditure({
       status: ExpenditureStatus.Active,
-      owner: msg.sender,
+      owner: msgSender(),
       fundingPotId: fundingPotCount,
       domainId: _domainId,
       finalizedTimestamp: 0,
@@ -49,7 +49,7 @@ contract ColonyExpenditure is ColonyStorage {
     });
 
     emit FundingPotAdded(fundingPotCount);
-    emit ExpenditureAdded(msg.sender, expenditureCount);
+    emit ExpenditureAdded(msgSender(), expenditureCount);
 
     return expenditureCount;
   }
@@ -63,7 +63,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditures[_id].owner = _newOwner;
 
-    emit ExpenditureTransferred(msg.sender, _id, _newOwner);
+    emit ExpenditureTransferred(msgSender(), _id, _newOwner);
   }
 
   // Deprecated
@@ -81,7 +81,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditures[_id].owner = _newOwner;
 
-    emit ExpenditureTransferred(msg.sender, _id, _newOwner);
+    emit ExpenditureTransferred(msgSender(), _id, _newOwner);
   }
 
   function cancelExpenditure(uint256 _id)
@@ -93,7 +93,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditures[_id].status = ExpenditureStatus.Cancelled;
 
-    emit ExpenditureCancelled(msg.sender, _id);
+    emit ExpenditureCancelled(msgSender(), _id);
   }
 
   function finalizeExpenditure(uint256 _id)
@@ -109,7 +109,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditures[_id].status = ExpenditureStatus.Finalized;
     expenditures[_id].finalizedTimestamp = block.timestamp;
 
-    emit ExpenditureFinalized(msg.sender, _id);
+    emit ExpenditureFinalized(msgSender(), _id);
   }
 
   function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient)
@@ -121,7 +121,7 @@ contract ColonyExpenditure is ColonyStorage {
   {
     expenditureSlots[_id][_slot].recipient = _recipient;
 
-    emit ExpenditureRecipientSet(msg.sender, _id, _slot, _recipient);
+    emit ExpenditureRecipientSet(msgSender(), _id, _slot, _recipient);
   }
 
   function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId)
@@ -139,7 +139,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureSlots[_id][_slot].skills = new uint256[](1);
     expenditureSlots[_id][_slot].skills[0] = _skillId;
 
-    emit ExpenditureSkillSet(msg.sender, _id, _slot, _skillId);
+    emit ExpenditureSkillSet(msgSender(), _id, _slot, _skillId);
   }
 
   // Deprecated

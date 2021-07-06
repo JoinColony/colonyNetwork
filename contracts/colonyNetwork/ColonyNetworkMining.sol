@@ -30,7 +30,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {
-    require(msg.sender == activeReputationMiningCycle, "colony-reputation-mining-sender-not-active-reputation-cycle");
+    require(msgSender() == activeReputationMiningCycle, "colony-reputation-mining-sender-not-active-reputation-cycle");
     _;
   }
 
@@ -227,21 +227,21 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
 
   function stakeForMining(uint256 _amount) public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
-    uint256 existingObligation = ITokenLocking(tokenLocking).getObligation(msg.sender, clnyToken, address(this));
+    uint256 existingObligation = ITokenLocking(tokenLocking).getObligation(msgSender(), clnyToken, address(this));
 
-    ITokenLocking(tokenLocking).approveStake(msg.sender, _amount, clnyToken);
-    ITokenLocking(tokenLocking).obligateStake(msg.sender, _amount, clnyToken);
+    ITokenLocking(tokenLocking).approveStake(msgSender(), _amount, clnyToken);
+    ITokenLocking(tokenLocking).obligateStake(msgSender(), _amount, clnyToken);
 
-    miningStakes[msg.sender].timestamp = getNewTimestamp(existingObligation, _amount, miningStakes[msg.sender].timestamp, block.timestamp);
-    miningStakes[msg.sender].amount = add(miningStakes[msg.sender].amount, _amount);
+    miningStakes[msgSender()].timestamp = getNewTimestamp(existingObligation, _amount, miningStakes[msgSender()].timestamp, block.timestamp);
+    miningStakes[msgSender()].amount = add(miningStakes[msgSender()].amount, _amount);
   }
 
   function unstakeForMining(uint256 _amount) public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
     // Prevent those involved in a mining cycle withdrawing stake during the mining process.
-    require(!IReputationMiningCycle(activeReputationMiningCycle).userInvolvedInMiningCycle(msg.sender), "colony-network-hash-submitted");
-    ITokenLocking(tokenLocking).deobligateStake(msg.sender, _amount, clnyToken);
-    miningStakes[msg.sender].amount = sub(miningStakes[msg.sender].amount, _amount);
+    require(!IReputationMiningCycle(activeReputationMiningCycle).userInvolvedInMiningCycle(msgSender()), "colony-network-hash-submitted");
+    ITokenLocking(tokenLocking).deobligateStake(msgSender(), _amount, clnyToken);
+    miningStakes[msgSender()].amount = sub(miningStakes[msgSender()].amount, _amount);
   }
 
   function getMiningStake(address _user) public stoppable returns (MiningStake memory) {

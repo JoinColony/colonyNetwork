@@ -26,6 +26,7 @@ import {
   setupRandomColony,
   setupColony,
   setupMetaColonyWithLockedCLNYToken,
+  getMetatransactionParameters,
 } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -223,6 +224,26 @@ contract("Coin Machine", (accounts) => {
       await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
 
       await coinMachine.buyTokens(WAD, { from: USER0 });
+
+      const userBalance = await token.balanceOf(USER0);
+      expect(userBalance).to.eq.BN(WAD);
+      const colonyBalance = await purchaseToken.balanceOf(colony.address);
+      expect(colonyBalance).to.eq.BN(WAD);
+
+      // But not with insufficient funds
+      await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
+      await checkErrorRevert(coinMachine.buyTokens(WAD, { from: USER0 }), "ds-token-insufficient-balance");
+    });
+
+    it("can buy tokens via metatransaction", async () => {
+      await purchaseToken.mint(USER0, WAD, { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, WAD, { from: USER0 });
+
+      const txData = await coinMachine.contract.methods.buyTokens(WAD.toString()).encodeABI();
+
+      const { r, s, v } = await getMetatransactionParameters(txData, USER0, coinMachine.address);
+
+      await coinMachine.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
       const userBalance = await token.balanceOf(USER0);
       expect(userBalance).to.eq.BN(WAD);

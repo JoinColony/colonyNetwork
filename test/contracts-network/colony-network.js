@@ -13,7 +13,12 @@ import {
   getColonyEditable,
 } from "../../helpers/test-helper";
 import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } from "../../helpers/constants";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
+import {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  setupRandomColony,
+  getMetatransactionParameters,
+} from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
 const namehash = require("eth-ens-namehash");
@@ -25,6 +30,7 @@ const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
@@ -638,6 +644,52 @@ contract("Colony Network", (accounts) => {
     it("should not allow a colony to change its orbitDBAddress without having registered a label", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       await checkErrorRevert(colony.updateColonyOrbitDB("anotherstring", { from: accounts[0] }), "colony-colony-not-labeled");
+    });
+  });
+
+  describe("when executing metatransactions", () => {
+    beforeEach(async () => {
+      const ensRegistry = await ENSRegistry.new();
+      await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
+    });
+
+    it("should allow colony creation via metatransactions, with ENS registration afterwards", async () => {
+      const tokenArgs = getTokenArgs();
+      const token = await Token.new(...tokenArgs);
+
+      let txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "").encodeABI();
+
+      let { r, s, v } = await getMetatransactionParameters(txData, accounts[1], colonyNetwork.address);
+
+      let tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      const colonyCount = await colonyNetwork.getColonyCount();
+      const colonyAddress = await colonyNetwork.getColony(colonyCount);
+      await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
+
+      const colony = await IColony.at(colonyAddress);
+      txData = await colony.contract.methods.registerColonyLabel("someColonyName", "").encodeABI();
+
+      ({ r, s, v } = await getMetatransactionParameters(txData, accounts[1], colony.address));
+
+      tx = await colony.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+    });
+
+    it("should allow colony creation via metatransactions, with ENS registration at the time", async () => {
+      const tokenArgs = getTokenArgs();
+      const token = await Token.new(...tokenArgs);
+
+      let txData = await colonyNetwork.contract.methods["createColony(address,uint256,string)"](token.address, CURR_VERSION, "").encodeABI();
+
+      txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "someColonyName").encodeABI();
+
+      const { r, s, v } = await getMetatransactionParameters(txData, accounts[1], colonyNetwork.address);
+
+      const tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      const colonyCount = await colonyNetwork.getColonyCount();
+      const colonyAddress = await colonyNetwork.getColony(colonyCount);
+      await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
     });
   });
 });
