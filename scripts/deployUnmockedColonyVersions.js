@@ -24,6 +24,7 @@ module.exports = async (callback) => {
   let v4ResolverAddress;
   let v5ResolverAddress;
   let v6ResolverAddress;
+  let v7ResolverAddress;
   const colonyNetwork = await IColonyNetwork.at(cnAddress);
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
@@ -96,6 +97,23 @@ module.exports = async (callback) => {
     index = res.indexOf("Colony version 6 set to Resolver");
     v6ResolverAddress = res.substring(index + RESOLVER_LOG_OFFSET, index + RESOLVER_LOG_OFFSET + ADDRESS_LENGTH);
     await metaColony.addNetworkColonyVersion(6, v6ResolverAddress);
+
+    await exec("git checkout -f dlwss && git submodule update");
+
+    // Comment out uneeded parts of file
+    await exec("sed -i'' -e '29,30 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
+    await exec("sed -i'' -e '34 s|^|//|' ./migrations/4_setup_colony_version_resolver.js");
+    await exec("sed -i'' -e 's|await ContractRecovery.deployed()|await ContractRecovery.new()|' ./migrations/4_setup_colony_version_resolver.js");
+    await exec("rm -rf ./build");
+    res = await exec("yarn run truffle migrate --reset -f 4 --to 4");
+
+    if (res.stdout) {
+      // How this response looks changes node 10->12
+      res = res.stdout;
+    }
+    index = res.indexOf("Colony version 7 set to Resolver");
+    v7ResolverAddress = res.substring(index + RESOLVER_LOG_OFFSET, index + RESOLVER_LOG_OFFSET + ADDRESS_LENGTH);
+    await metaColony.addNetworkColonyVersion(7, v7ResolverAddress);
   } catch (err) {
     console.log(err);
   }
