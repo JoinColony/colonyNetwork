@@ -26,10 +26,10 @@ import "./ColonyStorage.sol";
 
 contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
 
-  // V6: Cerulean Lightweight Spaceship
+  // V8: Ebony Lightweight Spaceship
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 7; }
+  function version() public pure returns (uint256 colonyVersion) { return 8; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
@@ -460,17 +460,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     emit ColonyUpgraded(msg.sender, currentVersion, _newVersion);
   }
 
-  // v5 to v6
+  // v7 to v8
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
-
-    sig = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Funding), address(this), sig, true);
-
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
