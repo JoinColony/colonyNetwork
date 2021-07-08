@@ -288,16 +288,16 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     return size > 0;
   }
 
+  // slither-disable-next-line unused-return
   function isOwnExtension(address addr) internal returns (bool) {
     // Ensure addr is a contract first, otherwise `try` block will revert
     if (!isContract(addr)) { return false; }
 
-    // // Ensure addr is an extension installed in the colony, must check old & new formats
-    // // slither-disable-next-line unused-return
+    // Ensure addr is an extension installed in the colony, must check old & new formats
     try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
       return (
-        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == addr ||
-        IColonyNetwork(colonyNetworkAddress).getExtensionMultiInstallation(addr) == address(this)
+        IColonyNetwork(colonyNetworkAddress).getExtensionMultiInstallation(addr) == address(this) ||
+        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == addr
       );
     } catch {
       return false;
