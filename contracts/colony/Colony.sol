@@ -340,37 +340,16 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     return IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
   }
 
-  // Deprecated
-  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
-  public stoppable auth
-  {
-    IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extensionId, _newVersion);
-  }
-
   function upgradeExtension(address _extension, uint256 _newVersion)
   public stoppable auth
   {
     IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extension, _newVersion);
   }
 
-  // Deprecated
-  function deprecateExtension(bytes32 _extensionId, bool _deprecated)
-  public stoppable auth
-  {
-    IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extensionId, _deprecated);
-  }
-
   function deprecateExtension(address _extension, bool _deprecated)
   public stoppable auth
   {
     IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extension, _deprecated);
-  }
-
-  // Deprecated
-  function uninstallExtension(bytes32 _extensionId)
-  public stoppable auth
-  {
-    IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId);
   }
 
   function uninstallExtension(address _extension)
@@ -477,6 +456,15 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
+
+    sig = bytes4(keccak256("upgradeExtension(address,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("deprecateExtension(address,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("uninstallExtension(address)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

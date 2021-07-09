@@ -733,6 +733,24 @@ Reverse lookup a username from an address.
 |---|---|---|
 |domain|string|A string containing the colony-based ENS name corresponding to addr
 
+### `migrateToMultiExtension`
+
+Migrate extension bookkeeping to multiExtension
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|colony|address|Address of the colony the extension is installed in
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|The address of the extension
+
 ### `punishStakers`
 
 Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.

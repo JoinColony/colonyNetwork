@@ -70,7 +70,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     public
     stoppable
   {
-    address extension = migrateToMultiExtension(_extensionId);
+    address extension = migrateToMultiExtension(_extensionId, msg.sender);
     upgradeExtension(extension, _newVersion);
 
     emit ExtensionUpgraded(_extensionId, msg.sender, _newVersion);
@@ -101,7 +101,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     public
     stoppable
   {
-    address extension = migrateToMultiExtension(_extensionId);
+    address extension = migrateToMultiExtension(_extensionId, msg.sender);
     deprecateExtension(extension, _deprecated);
 
     emit ExtensionDeprecated(_extensionId, msg.sender, _deprecated);
@@ -122,7 +122,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     public
     stoppable
   {
-    address extension = migrateToMultiExtension(_extensionId);
+    address extension = migrateToMultiExtension(_extensionId, msg.sender);
     uninstallExtension(extension);
 
     emit ExtensionUninstalled(_extensionId, msg.sender);
@@ -140,6 +140,18 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     ColonyExtension(_extension).uninstall();
 
     emit ExtensionUninstalled(_extension, msg.sender);
+  }
+
+  function migrateToMultiExtension(bytes32 _extensionId, address _colony)
+    public
+    stoppable
+    returns (address)
+  {
+    address extension = installations[_extensionId][_colony];
+    require(extension != address(0x0), "colony-network-extension-not-installed");
+
+    multiInstallations[extension] = payable(_colony);
+    return extension;
   }
 
   // Public view functions
@@ -182,13 +194,5 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
   function getResolverVersion(address _resolver) internal returns (uint256) {
     address extension = Resolver(_resolver).lookup(VERSION_SIG);
     return ColonyExtension(extension).version();
-  }
-
-  function migrateToMultiExtension(bytes32 _extensionId) internal returns (address) {
-    address extension = installations[_extensionId][msg.sender];
-    require(extension != address(0x0), "colony-network-extension-not-installed");
-
-    multiInstallations[extension] = msg.sender;
-    return extension;
   }
 }
