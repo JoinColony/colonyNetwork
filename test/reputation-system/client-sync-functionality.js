@@ -3,9 +3,9 @@
 import path from "path";
 import chai from "chai";
 import bnChai from "bn-chai";
-import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
+import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
+import { DEFAULT_STAKE, MIN_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
 import { forwardTime, currentBlock, advanceMiningCycleNoContest, getActiveRepCycle } from "../../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -20,7 +20,7 @@ const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
@@ -28,7 +28,7 @@ const useJsTree = true;
 
 process.env.SOLIDITY_COVERAGE
   ? contract.skip
-  : contract("Reputation mining - client sync functionality", accounts => {
+  : contract("Reputation mining - client sync functionality", (accounts) => {
       const MINER1 = accounts[5];
       const MINER2 = accounts[6];
 
@@ -59,7 +59,7 @@ process.env.SOLIDITY_COVERAGE
         await reputationMiner1.initialise(colonyNetwork.address);
 
         const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-        expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
+        expect(lock.balance).to.eq.BN(MIN_STAKE);
 
         // Advance two cycles to clear active and inactive state.
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });

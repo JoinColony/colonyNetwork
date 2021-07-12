@@ -16,7 +16,7 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
     const disputeRound = await repCycle.getDisputeRound(round);
     const disputedEntry = disputeRound[index];
-    const firstDisagreeIdx = ethers.utils.bigNumberify(disputedEntry.lowerBound);
+    const firstDisagreeIdx = ethers.BigNumber.from(disputedEntry.lowerBound);
     const lastAgreeIdx = firstDisagreeIdx.sub(1);
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
     const lastAgreeKey = MaliciousReputationMinerWrongProofLogEntry.getHexString(lastAgreeIdx, 64);
@@ -24,7 +24,7 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
 
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(lastAgreeKey);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(firstDisagreeKey);
-    let logEntryNumber = ethers.utils.bigNumberify(0);
+    let logEntryNumber = ethers.BigNumber.from(0);
     if (lastAgreeIdx.gte(this.nReputationsBeforeLatestLog)) {
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
@@ -35,11 +35,10 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
         round,
         index,
         this.justificationHashes[firstDisagreeKey].justUpdatedProof.branchMask,
-        this.justificationHashes[lastAgreeKey].nextUpdateProof.nNodes,
+        this.justificationHashes[lastAgreeKey].nextUpdateProof.nLeaves,
         MaliciousReputationMinerWrongProofLogEntry.getHexString(agreeStateBranchMask),
-        this.justificationHashes[firstDisagreeKey].justUpdatedProof.nNodes,
+        this.justificationHashes[firstDisagreeKey].justUpdatedProof.nLeaves,
         MaliciousReputationMinerWrongProofLogEntry.getHexString(disagreeStateBranchMask),
-        this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
         logEntryNumber,
         "0",
         this.justificationHashes[lastAgreeKey].originReputationProof.branchMask,
@@ -47,8 +46,6 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
         this.justificationHashes[lastAgreeKey].nextUpdateProof.uid,
         this.justificationHashes[firstDisagreeKey].justUpdatedProof.reputation,
         this.justificationHashes[firstDisagreeKey].justUpdatedProof.uid,
-        this.justificationHashes[lastAgreeKey].newestReputationProof.reputation,
-        this.justificationHashes[lastAgreeKey].newestReputationProof.uid,
         this.justificationHashes[lastAgreeKey].originReputationProof.reputation,
         this.justificationHashes[lastAgreeKey].originReputationProof.uid,
         this.justificationHashes[lastAgreeKey].childReputationProof.branchMask,
@@ -65,7 +62,6 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
       [
         ...ReputationMinerTestWrapper.breakKeyInToElements(reputationKey).map(x => ethers.utils.hexZeroPad(x, 32)),
         soliditySha3(reputationKey),
-        soliditySha3(this.justificationHashes[lastAgreeKey].newestReputationProof.key),
         soliditySha3(this.justificationHashes[lastAgreeKey].adjacentReputationProof.key),
         soliditySha3(this.justificationHashes[lastAgreeKey].originAdjacentReputationProof.key),
         soliditySha3(this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.key),
@@ -73,7 +69,6 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
       agreeStateSiblings,
       disagreeStateSiblings,
-      this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
       this.justificationHashes[lastAgreeKey].originReputationProof.siblings,
       this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
       this.justificationHashes[lastAgreeKey].adjacentReputationProof.siblings,

@@ -4,14 +4,32 @@ require("@babel/register")({
 require("@babel/polyfill");
 
 const path = require("path");
-const { argv } = require("yargs");
-const { TruffleLoader } = require("@colony/colony-js-contract-loader-fs");
+const { argv } = require("yargs")
+  .option('privateKey', {string:true})
+  .option('colonyNetworkAddress', {string:true})
+  .option('minerAddress', {string:true});
 const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
+const TruffleLoader = require("../TruffleLoader").default;
 
 const supportedInfuraNetworks = ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"];
-const { minerAddress, privateKey, colonyNetworkAddress, dbPath, network, localPort, syncFrom, auto } = argv;
+const {
+  minerAddress,
+  privateKey,
+  colonyNetworkAddress,
+  dbPath,
+  network,
+  localPort,
+  localProviderAddress,
+  syncFrom,
+  auto,
+  oracle,
+  exitOnError,
+  adapter,
+  oraclePort,
+  processingDelay
+} = argv;
 
 if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
   console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress and --syncFrom on the command line!");
@@ -19,7 +37,7 @@ if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
 }
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(process.cwd(), "build", "contracts")
+  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts")
 });
 
 let provider;
@@ -30,8 +48,31 @@ if (network) {
   }
   provider = new ethers.providers.InfuraProvider(network);
 } else {
-  provider = new ethers.providers.JsonRpcProvider(`http://localhost:${localPort || "8545"}`);
+  provider = new ethers.providers.JsonRpcProvider(`http://${localProviderAddress || "localhost"}:${localPort || "8545"}`);
 }
 
-const client = new ReputationMinerClient({ loader, minerAddress, privateKey, provider, useJsTree: true, dbPath, auto });
+let adapterObject;
+
+if (adapter === 'slack') {
+  adapterObject = require('../adapters/slack').default; // eslint-disable-line global-require
+} else if (adapter === 'discord'){
+  adapterObject = require('../adapters/discord').default; // eslint-disable-line global-require
+} else {
+  adapterObject = require('../adapters/console').default; // eslint-disable-line global-require
+}
+
+const client = new ReputationMinerClient({
+  loader,
+  minerAddress,
+  privateKey,
+  provider,
+  useJsTree: true,
+  dbPath,
+  auto,
+  oracle,
+  exitOnError,
+  adapter: adapterObject,
+  oraclePort,
+  processingDelay
+});
 client.initialise(colonyNetworkAddress, syncFrom);

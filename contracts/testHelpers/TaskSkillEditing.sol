@@ -15,10 +15,10 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../ColonyStorage.sol";
+import "./../colony/ColonyStorage.sol";
 
 
 contract TaskSkillEditing is ColonyStorage {

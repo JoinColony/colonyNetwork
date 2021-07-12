@@ -13,7 +13,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const ColonyNetwork = artifacts.require("ColonyNetwork");
 
-contract("EtherRouter / Resolver", accounts => {
+contract("EtherRouter / Resolver", (accounts) => {
   const COINBASE_ACCOUNT = accounts[0];
   const ACCOUNT_TWO = accounts[1];
   const ACCOUNT_THREE = accounts[2];
@@ -67,11 +67,14 @@ contract("EtherRouter / Resolver", accounts => {
   });
 
   describe("Resolver", () => {
-    it("should return correct destination for given function", async () => {
+    it("should return correct destination for given function, including overloads", async () => {
       const deployedColonyNetwork = await ColonyNetwork.deployed();
       const signature = await resolver.stringToSig("createColony(address)");
+      const overloadedSignature = await resolver.stringToSig("createColony(address,uint256,string,string)");
       const destination = await resolver.lookup(signature);
+      const overloadedDestination = await resolver.lookup(overloadedSignature);
       expect(destination).to.equal(deployedColonyNetwork.address);
+      expect(destination).to.equal(overloadedDestination);
     });
 
     it("when checking destination for a function that doesn't exist, should return 0", async () => {

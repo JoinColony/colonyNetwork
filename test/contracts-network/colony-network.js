@@ -3,8 +3,16 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
-import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent, getColonyEditable } from "../../helpers/test-helper";
-import { GLOBAL_SKILL_ID } from "../../helpers/constants";
+import {
+  getTokenArgs,
+  web3GetNetwork,
+  web3GetBalance,
+  checkErrorRevert,
+  expectEvent,
+  expectNoEvent,
+  getColonyEditable,
+} from "../../helpers/test-helper";
+import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } from "../../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
@@ -20,7 +28,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
-contract("Colony Network", accounts => {
+contract("Colony Network", (accounts) => {
   let newResolverAddress;
   const TOKEN_ARGS = getTokenArgs();
   const OTHER_ACCOUNT = accounts[1];
@@ -59,7 +67,7 @@ contract("Colony Network", accounts => {
 
     it("should have the correct current Colony version set", async () => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      expect(currentColonyVersion).to.eq.BN(3);
+      expect(currentColonyVersion).to.eq.BN(CURR_VERSION);
     });
 
     it("should have the Resolver for current Colony version set", async () => {
@@ -86,24 +94,13 @@ contract("Colony Network", accounts => {
       expect(updatedColonyVersion).to.eq.BN(currentColonyVersion);
     });
 
-    it("should not be able to set the token locking contract twice", async () => {
-      await checkErrorRevert(colonyNetwork.setTokenLocking(ethers.constants.AddressZero), "colony-token-locking-address-already-set");
+    it("should not be able to set the token locking to null or set twice", async () => {
+      await checkErrorRevert(colonyNetwork.setTokenLocking(ethers.constants.AddressZero), "colony-token-locking-cannot-be-zero");
+      await checkErrorRevert(colonyNetwork.setTokenLocking(metaColony.address), "colony-token-locking-address-already-set");
     });
 
     it("should not be able to initialise network twice", async () => {
       await checkErrorRevert(colonyNetwork.initialise("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA", 3), "colony-network-already-initialised");
-    });
-
-    it("should not be able to create a colony if the network is not initialised", async () => {
-      const resolverColonyNetworkDeployed = await Resolver.deployed();
-      const etherRouter = await EtherRouter.new();
-      await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
-      colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-
-      await checkErrorRevert(
-        colonyNetwork.createColony("0x8972e86549bb8E350673e0562fba9a4889d01637"),
-        "colony-network-not-initialised-cannot-create-colony"
-      );
     });
 
     it("should not be able to initialise the network with colony version number 0", async () => {
@@ -133,6 +130,10 @@ contract("Colony Network", accounts => {
       await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-already-initialised");
     });
 
+    it("should not allow setting the mining resolver to null", async () => {
+      await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.constants.AddressZero), "colony-mining-resolver-cannot-be-zero");
+    });
+
     it("should not allow initialisation if the clny token is 0", async () => {
       const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
       await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
@@ -150,6 +151,88 @@ contract("Colony Network", accounts => {
 
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-clny-token-invalid-address");
     });
+
+    it('should not allow "punishStakers" to be called from an account that is not the mining cycle', async () => {
+      await checkErrorRevert(
+        colonyNetwork.punishStakers([accounts[0], accounts[1]], MIN_STAKE),
+        "colony-reputation-mining-sender-not-active-reputation-cycle"
+      );
+    });
+  });
+
+  describe("when creating new colonies at a specific version", () => {
+    beforeEach(async () => {
+      // The new resolver also needs to know a load of functions to let createColony work...
+      const copyWiring = async function (resolverFrom, resolverTo, functionSig) {
+        const sig = await resolverFrom.stringToSig(functionSig);
+        const functionLocation = await resolverFrom.lookup(sig);
+        await resolverTo.register(functionSig, functionLocation);
+      };
+
+      const metaColonyAsEtherRouter = await EtherRouter.at(metaColony.address);
+      const wiredResolverAddress = await metaColonyAsEtherRouter.resolver();
+      const wiredResolver = await Resolver.at(wiredResolverAddress);
+
+      const r = await Resolver.at(newResolverAddress);
+
+      await copyWiring(wiredResolver, r, "initialiseColony(address,address)");
+      await copyWiring(wiredResolver, r, "setRecoveryRole(address)");
+      await copyWiring(wiredResolver, r, "setRootRole(address,bool)");
+      await copyWiring(wiredResolver, r, "setArbitrationRole(uint256,uint256,address,uint256,bool)");
+      await copyWiring(wiredResolver, r, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
+      await copyWiring(wiredResolver, r, "setFundingRole(uint256,uint256,address,uint256,bool)");
+      await copyWiring(wiredResolver, r, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
+      await copyWiring(wiredResolver, r, "editColony(string)");
+
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
+      const oldVersion = currentColonyVersion.subn(1);
+      await metaColony.addNetworkColonyVersion(oldVersion, newResolverAddress);
+
+      // v4 specifically is needed for the deprecated five-parameter test
+      await metaColony.addNetworkColonyVersion(4, newResolverAddress);
+    });
+
+    it("should allow users to create a new colony at a specific older version", async () => {
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
+      const oldVersion = currentColonyVersion.subn(1);
+
+      const token = await Token.new(...getTokenArgs());
+      await token.unlock();
+      await colonyNetwork.createColony(token.address, oldVersion, "", IPFS_HASH);
+
+      const colonyAddress = await colonyNetwork.getColony(2);
+
+      const colonyEtherRouter = await EtherRouter.at(colonyAddress);
+      const colonyResolver = await colonyEtherRouter.resolver();
+      expect(colonyResolver.toLowerCase()).to.equal(newResolverAddress);
+    });
+
+    it("should not allow users to create a new colony at a nonexistent version", async () => {
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
+      const nonexistentVersion = currentColonyVersion.addn(1);
+      const token = await Token.new(...getTokenArgs());
+
+      await checkErrorRevert(colonyNetwork.createColony(token.address, nonexistentVersion, "", ""), "colony-network-invalid-version");
+    });
+
+    it("should allow use of the deprecated one-parameter createColony", async () => {
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
+      const oldVersion = currentColonyVersion.subn(1);
+      await metaColony.addNetworkColonyVersion(oldVersion, newResolverAddress);
+      // Add version 3 if necessary, required to test the deprecated createColony
+      if (!oldVersion.eq(3)) {
+        await metaColony.addNetworkColonyVersion(3, newResolverAddress);
+      }
+      const token = await Token.new(...getTokenArgs());
+
+      await colonyNetwork.createColony(token.address);
+    });
+
+    it("should allow use of the deprecated five-parameter createColony", async () => {
+      const token = await Token.new(...getTokenArgs());
+
+      await colonyNetwork.createColony(token.address, 5, "", "", "");
+    });
   });
 
   describe("when creating new colonies", () => {
@@ -160,16 +243,30 @@ contract("Colony Network", accounts => {
       expect(colonyCount).to.eq.BN(2);
     });
 
+    it("metadata should be emitted on colony creation if supplied", async () => {
+      const token = await Token.new(...getTokenArgs());
+      await token.unlock();
+      const tx = await colonyNetwork.createColony(token.address, 0, "", IPFS_HASH);
+      await expectEvent(tx, "ColonyMetadata(address,string)", [colonyNetwork.address, IPFS_HASH]);
+    });
+
+    it("metadata should not be emitted on colony creation if not supplied", async () => {
+      const token = await Token.new(...getTokenArgs());
+      await token.unlock();
+      const tx = await colonyNetwork.createColony(token.address, 0, "");
+      await expectNoEvent(tx, "ColonyMetadata(string)");
+    });
+
     it("should maintain correct count of colonies", async () => {
       const token = await Token.new(...getTokenArgs());
       await token.unlock();
-      await colonyNetwork.createColony(token.address);
-      await colonyNetwork.createColony(token.address);
-      await colonyNetwork.createColony(token.address);
-      await colonyNetwork.createColony(token.address);
-      await colonyNetwork.createColony(token.address);
-      await colonyNetwork.createColony(token.address);
-      await colonyNetwork.createColony(token.address);
+      await colonyNetwork.createColony(token.address, 0, "", "");
+      await colonyNetwork.createColony(token.address, 0, "", "");
+      await colonyNetwork.createColony(token.address, 0, "", "");
+      await colonyNetwork.createColony(token.address, 0, "", "");
+      await colonyNetwork.createColony(token.address, 0, "", "");
+      await colonyNetwork.createColony(token.address, 0, "", "");
+      await colonyNetwork.createColony(token.address, 0, "", "");
       const colonyCount = await colonyNetwork.getColonyCount();
       expect(colonyCount).to.eq.BN(8);
     });
@@ -198,7 +295,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should not allow users to create a colony with empty token", async () => {
-      await checkErrorRevert(colonyNetwork.createColony(ethers.constants.AddressZero), "colony-token-invalid-address");
+      await checkErrorRevert(colonyNetwork.createColony(ethers.constants.AddressZero, 0, "", ""), "colony-token-invalid-address");
     });
 
     it("when any colony is created, should have the root local skill initialised", async () => {
@@ -222,7 +319,8 @@ contract("Colony Network", accounts => {
 
     it("should fail if ETH is sent", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      await checkErrorRevert(colonyNetwork.createColony(token.address, { value: 1, gas: createColonyGas }));
+      const sig = "createColony(address,uint256,string,string)";
+      await checkErrorRevert(colonyNetwork.methods[sig](token.address, 0, "", "", { value: 1, gas: createColonyGas }));
 
       const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
       expect(colonyNetworkBalance).to.be.zero;
@@ -230,16 +328,19 @@ contract("Colony Network", accounts => {
 
     it("should log a ColonyAdded event", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      await expectEvent(colonyNetwork.createColony(token.address), "ColonyAdded");
+      const tx = await colonyNetwork.createColony(token.address, 0, "", "");
+      const colonyCount = await colonyNetwork.getColonyCount();
+      const colonyAddress = await colonyNetwork.getColony(colonyCount);
+      await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
     });
   });
 
   describe("when getting existing colonies", () => {
     it("should allow users to get the address of a colony by its index", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      await colonyNetwork.createColony(token.address);
-      await colonyNetwork.createColony(token.address);
-      await colonyNetwork.createColony(token.address);
+      await colonyNetwork.createColony(token.address, 0, "", "");
+      await colonyNetwork.createColony(token.address, 0, "", "");
+      await colonyNetwork.createColony(token.address, 0, "", "");
       const colonyAddress = await colonyNetwork.getColony(3);
       expect(colonyAddress).to.not.equal(ethers.constants.AddressZero);
     });
@@ -329,7 +430,6 @@ contract("Colony Network", accounts => {
 
   describe("when managing ENS names", () => {
     const orbitDBAddress = "QmPFtHi3cmfZerxtH9ySLdzpg1yFhocYDZgEZywdUXHxFU/my-db-name";
-    const rootNode = namehash.hash("joincolony.eth");
     let ensRegistry;
 
     beforeEach(async () => {
@@ -337,12 +437,27 @@ contract("Colony Network", accounts => {
       await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
     });
 
+    it("should not be able to set the ENS reigstrar to null", async () => {
+      await checkErrorRevert(colonyNetwork.setupRegistrar(ethers.constants.AddressZero, "0x0"), "colony-ens-cannot-be-zero");
+    });
+
     it("should be able to get the ENSRegistrar", async () => {
       const registrarAddress = await colonyNetwork.getENSRegistrar();
       expect(registrarAddress).to.equal(ensRegistry.address);
     });
 
+    it("should be able to create a colony with label in one tx", async () => {
+      const token = await Token.new(...TOKEN_ARGS);
+      const { logs } = await colonyNetwork.createColony(token.address, 0, "test", "");
+      const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
+
+      const name = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
+      expect(name).to.equal("test.colony.joincolony.eth");
+    });
+
     it("should own the root domains", async () => {
+      const rootNode = namehash.hash("joincolony.eth");
+
       let owner;
       owner = await ensRegistry.owner(rootNode);
       expect(owner).to.equal(accounts[0]);
@@ -514,7 +629,6 @@ contract("Colony Network", accounts => {
       const hash = namehash.hash("test.colony.joincolony.eth");
       const { colony } = await setupRandomColony(colonyNetwork);
       await colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[0] });
-      await colony.finishUpgrade2To3();
       await colony.updateColonyOrbitDB("anotherstring", { from: accounts[0] });
       // Get stored orbitdb address
       const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
@@ -523,7 +637,6 @@ contract("Colony Network", accounts => {
 
     it("should not allow a colony to change its orbitDBAddress without having registered a label", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
-      await colony.finishUpgrade2To3();
       await checkErrorRevert(colony.updateColonyOrbitDB("anotherstring", { from: accounts[0] }), "colony-colony-not-labeled");
     });
   });

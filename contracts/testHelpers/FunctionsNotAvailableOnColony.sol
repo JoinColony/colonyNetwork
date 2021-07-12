@@ -15,11 +15,11 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../Colony.sol";
-import "./../IColonyNetwork.sol";
+import "./../colony/Colony.sol";
+import "./../colonyNetwork/IColonyNetwork.sol";
 
 
 contract FunctionsNotAvailableOnColony is Colony {

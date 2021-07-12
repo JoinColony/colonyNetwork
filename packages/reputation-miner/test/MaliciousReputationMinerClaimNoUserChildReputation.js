@@ -21,7 +21,7 @@ class MaliciousReputationMinerClaimNoUserChildReputation extends ReputationMiner
       const logEntryUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog);
       const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(logEntryUpdateNumber, blockNumber);
       logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockTag: blockNumber });
-      const nUpdates = ethers.utils.bigNumberify(logEntry.nUpdates);
+      const nUpdates = ethers.BigNumber.from(logEntry.nUpdates);
       relativeUpdateNumber = updateNumber.sub(logEntry.nPreviousUpdates).sub(this.nReputationsBeforeLatestLog);
       // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
       const originSkillUpdateNumber = updateNumber.sub(relativeUpdateNumber).add(nUpdates).sub(1);

@@ -22,6 +22,22 @@ Add a colony domain, and its respective local skill under skill with id `_parent
 |_parentDomainId|uint256|Id of the domain under which the new one will be added
 
 
+### `addDomain`
+
+Add a colony domain, and its respective local skill under skill with id `_parentSkillId`. New funding pot is created and associated with the domain here.
+
+*Note: Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: `1`.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_parentDomainId|uint256|Id of the domain under which the new one will be added
+|_metadata|string|Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
+
+
 ### `addPayment`
 
 Add a new payment in the colony. Secured function to authorised members.
@@ -44,6 +60,33 @@ Add a new payment in the colony. Secured function to authorised members.
 |Name|Type|Description|
 |---|---|---|
 |paymentId|uint256|Identifier of the newly created payment
+
+### `annotateTransaction`
+
+Emit a metadata string for a transaction
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_txHash|bytes32|Hash of transaction being annotated (0x0 for current tx)
+|_metadata|string|String of metadata for tx
+
+
+### `approveStake`
+
+Allow the _approvee to obligate some amount of tokens as a stake.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_approvee|address|Address of the account we are willing to let obligate us.
+|_domainId|uint256|Domain in which we are willing to be obligated.
+|_amount|uint256|Amount of internal token up to which we are willing to be obligated.
+
 
 ### `authority`
 
@@ -71,6 +114,31 @@ Allows the colony to bootstrap itself by having initial reputation and token `_a
 |_amount|int[]|Amount of reputation/tokens for every address
 
 
+### `burnTokens`
+
+Burn tokens held by the colony. Can only burn tokens held in the root funding pot.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|token|address|The address of the token to burn
+|amount|uint256|The amount of tokens to burn
+
+
+### `cancelExpenditure`
+
+Cancels the expenditure and prevents further editing. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+
+
 ### `cancelTask`
 
 Cancel a task at any point before it is finalized. Secured function to authorised members. Any funds assigned to its funding pot can be moved back to the domain via `IColony.moveFundsBetweenPots`.
@@ -93,6 +161,20 @@ Move any funds received by the colony in `_token` denomination to the top-level 
 
 |Name|Type|Description|
 |---|---|---|
+|_token|address|Address of the token, `0x0` value indicates Ether
+
+
+### `claimExpenditurePayout`
+
+Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Number of the slot
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
@@ -119,7 +201,7 @@ Claim the reward payout at `_payoutId`. User needs to provide their reputation a
 |Name|Type|Description|
 |---|---|---|
 |_payoutId|uint256|Id of the reward payout
-|_squareRoots|uint256[7]|Square roots of values used in equation: `_squareRoots[0]` - square root of user reputation, `_squareRoots[1]` - square root of user tokens, `_squareRoots[2]` - square root of total reputation, `_squareRoots[3]` - square root of total tokens, `_squareRoots[4]` - square root of numerator (user reputation * user tokens), `_squareRoots[5]` - square root of denominator (total reputation * total tokens), `_squareRoots[6]` - square root of payout amount.
+|_squareRoots|uint256[7]|Square roots of values used in equation: `_squareRoots[0]` - square root of user reputation, `_squareRoots[1]` - square root of user tokens (deposited in TokenLocking), `_squareRoots[2]` - square root of total reputation, `_squareRoots[3]` - square root of total tokens, `_squareRoots[4]` - square root of numerator (user reputation * user tokens), `_squareRoots[5]` - square root of denominator (total reputation * total tokens), `_squareRoots[6]` - square root of payout amount.
 |key|bytes|Some Reputation hash tree key
 |value|bytes|Reputation value
 |branchMask|uint256|The branchmask of the proof
@@ -150,6 +232,118 @@ Mark a task as complete after the due date has passed. This allows the task to b
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256|Id of the task
+
+
+### `deobligateStake`
+
+Deobligate the user some amount of tokens, releasing the stake.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are deobligating.
+|_domainId|uint256|Domain in which we are deobligating the user.
+|_amount|uint256|Amount of internal token we are deobligating.
+
+
+### `deprecateExtension`
+
+Set the deprecation of an extension in a colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|deprecated|bool|Whether to deprecate the extension or not
+
+
+### `editColony`
+
+Called to change the metadata associated with a colony. Expected to be a IPFS hash of a JSON blob, but not enforced to any degree by the contracts
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_metadata|string|IPFS hash of the metadata
+
+
+### `editDomain`
+
+Add a colony domain, and its respective local skill under skill with id `_parentSkillId`. New funding pot is created and associated with the domain here.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_domainId|uint256|Id of the domain being edited
+|_metadata|string|Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
+
+
+### `emitDomainReputationPenalty`
+
+Emit a negative domain reputation update. Available only to Arbitration role holders
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I hold the Arbitration role
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_domainId|uint256|The domain where the user will lose reputation
+|_user|address|The user who will lose reputation
+|_amount|int256|The (negative) amount of reputation to lose
+
+
+### `emitDomainReputationReward`
+
+Emit a positive domain reputation update. Available only to Root role holders
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_domainId|uint256|The domain where the user will gain reputation
+|_user|address|The user who will gain reputation
+|_amount|int256|The (positive) amount of reputation to gain
+
+
+### `emitSkillReputationPenalty`
+
+Emit a negative skill reputation update. Available only to Arbitration role holders in the root domain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill where the user will lose reputation
+|_user|address|The user who will lose reputation
+|_amount|int256|The (negative) amount of reputation to lose
+
+
+### `emitSkillReputationReward`
+
+Emit a positive skill reputation update. Available only to Root role holders
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill where the user will gain reputation
+|_user|address|The user who will gain reputation
+|_amount|int256|The (positive) amount of reputation to gain
 
 
 ### `executeTaskChange`
@@ -185,6 +379,18 @@ Executes a task role update transaction `_data` which is approved and signed by 
 |_mode|uint8[]|How the signature was generated - 0 for Geth-style (usual), 1 for Trezor-style (only Trezor does this)
 |_value|uint256|The transaction value, i.e. number of wei to be sent when the transaction is executed Currently we only accept 0 value transactions but this is kept as a future option
 |_data|bytes|The transaction data
+
+
+### `finalizeExpenditure`
+
+Finalizes the expenditure and prevents further editing. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
 
 
 ### `finalizePayment`
@@ -230,15 +436,7 @@ Called after task work rating is complete which closes the task and logs the res
 
 A function to be called after an upgrade has been done from v2 to v3.
 
-*Note: Can only be called by the colony itself, and only expected to be called as part of the `upgrade()` call. Required to be public so it can be an external call.*
-
-
-
-### `finishUpgrade2To3`
-
-A function to be called after an upgrade has been done from v2 to v3.
-
-*Note: Sets up the permission for those with root permission to be able to call updateColonyOrbitDB, which is new in v3*
+*Note: Can only be called by the colony itself, and only expected to be called as part of the `upgrade()` call. Required to be external so it can be an external call.*
 
 
 
@@ -259,6 +457,42 @@ Helper function used to generage consistently the rating secret using salt value
 |Name|Type|Description|
 |---|---|---|
 |secret|bytes32|`keccak256` hash of joint _salt and _value
+
+### `getApproval`
+
+View an approval to obligate tokens.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|User allowing their tokens to be obligated.
+|_obligator|address|Address of the account we are willing to let obligate us.
+|_domainId|uint256|Domain in which we are willing to be obligated.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|approval|uint256|The amount the user has approved
+
+### `getCapabilityRoles`
+
+Gets the bytes32 representation of the roles authorized to call a function
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_sig|bytes4|The function signature
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|roles|bytes32|bytes32 representation of the authorized roles
 
 ### `getColonyNetwork`
 
@@ -301,6 +535,89 @@ Get the number of domains in the colony.
 |Name|Type|Description|
 |---|---|---|
 |count|uint256|The domain count. Min 1 as the root domain is created at the same time as the colony
+
+### `getDomainFromFundingPot`
+
+Get the domain corresponding to a funding pot
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_fundingPotId|uint256|Id of the funding pot
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainId|uint256|Id of the corresponding domain
+
+### `getExpenditure`
+
+Returns an existing expenditure.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|expenditure|Expenditure|The expenditure
+
+### `getExpenditureCount`
+
+Get the number of expenditures in the colony.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|count|uint256|The expenditure count
+
+### `getExpenditureSlot`
+
+Returns an existing expenditure slot.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Expenditure slot
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|expenditureSlot|ExpenditureSlot|The expenditure slot
+
+### `getExpenditureSlotPayout`
+
+Returns an existing expenditure slot's payout for a token.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Expenditure slot
+|_token|address|Token address
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|amount|uint256|Amount of the payout for that slot/token.
 
 ### `getFundingPot`
 
@@ -386,6 +703,25 @@ Get the total amount of tokens `_token` minus amount reserved to be paid to the 
 |Name|Type|Description|
 |---|---|---|
 |amount|uint256|Total amount of tokens in funding pots other than the rewards pot (id 0)
+
+### `getObligation`
+
+View an obligation of tokens.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|User whose tokens are obligated.
+|_obligator|address|Address of the account who obligated us.
+|_domainId|uint256|Domain in which we are obligated.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|obligation|uint256|The amount that is currently obligated
 
 ### `getPayment`
 
@@ -583,6 +919,80 @@ Get the colony token.
 |---|---|---|
 |tokenAddress|address|Address of the token contract
 
+### `getTokenApproval`
+
+Get the current approval amount
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|token|address|The address of the token which was approved
+|spender|address|The account we have approved
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|amount|uint256|
+
+### `getTotalTokenApproval`
+
+Get the current total approval amount across all spenders
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|token|address|The address of the token which was approved
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|amount|uint256|
+
+### `getUserRoles`
+
+Gets the bytes32 representation of the roles for a user in a given domain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|The user whose roles we want to get
+|_domain|uint256|The domain we want to get roles in
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|roles|bytes32|bytes32 representation of the held roles
+
+### `hasInheritedUserRole`
+
+Check whether a given user has a given role for the colony, in a child domain. Calls the function of the same name on the colony's authority contract and an internal inheritence validator function
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|The user whose role we want to check
+|_domainId|uint256|Domain in which the caller has the role
+|_role|ColonyRole|The role we want to check for
+|_childSkillIndex|uint256|The index that the `_childDomainId` is relative to `_domainId`
+|_childDomainId|uint256|The domain where we want to use the role
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|hasRole|bool|Boolean indicating whether the given user has the given role in domain
+
 ### `hasUserRole`
 
 Check whether a given user has a given role for the colony. Calls the function of the same name on the colony's authority contract.
@@ -616,6 +1026,68 @@ Called once when the colony is created to initialise certain storage slot values
 |_token|address|Address of the colony ERC20 Token
 
 
+### `installExtension`
+
+Install an extension to the colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|version|uint256|The new extension version to install
+
+
+### `lockToken`
+
+Lock the colony's token. Can only be called by a network-managed extension.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
+
+### `makeArbitraryTransaction`
+
+Execute arbitrary transaction on behalf of the Colony
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_to|address|Contract to receive the function call (cannot be network or token locking)
+|_action|bytes|Bytes array encoding the function call and arguments
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|success|bool|Boolean indicating whether the transaction succeeded
+
+### `makeExpenditure`
+
+Add a new expenditure in the colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_domainId|uint256|The domain where the expenditure belongs
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|expenditureId|uint256|Identifier of the newly created expenditure
+
 ### `makeTask`
 
 Make a new task in the colony. Secured function to authorised members.
@@ -645,6 +1117,19 @@ Mint `_wad` amount of colony tokens. Secured function to authorised members.
 |_wad|uint256|Amount to mint
 
 
+### `mintTokensFor`
+
+Mint `_wad` amount of colony tokens and send to `_guy`. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_guy|address|Recipient of new tokens
+|_wad|uint256|Amount to mint
+
+
 ### `moveFundsBetweenPots`
 
 Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
@@ -655,12 +1140,46 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_fromChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_fromPotId`
-|_toChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_toPotId`
+|_childSkillIndex|uint256|The child index in _permissionDomainId where I will be taking this action
+|_domainId|uint256|The domain where I am taking this action, pointed to by _permissionDomainId and _childSkillIndex
+|_fromChildSkillIndex|uint256|In the array of child skills for the skill associated with the domain pointed to by _permissionDomainId + _childSkillIndex,         the index of the skill associated with the domain that contains _fromPot
+|_toChildSkillIndex|uint256|The same, but for the _toPot which the funds are being moved to
 |_fromPot|uint256|Funding pot id providing the funds
 |_toPot|uint256|Funding pot id receiving the funds
 |_amount|uint256|Amount of funds
 |_token|address|Address of the token, `0x0` value indicates Ether
+
+
+### `moveFundsBetweenPots`
+
+Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_fromChildSkillIndex|uint256|
+|_toChildSkillIndex|uint256|
+|_fromPot|uint256|
+|_toPot|uint256|
+|_amount|uint256|
+|_token|address|
+
+
+### `obligateStake`
+
+Obligate the user some amount of tokens as a stake.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|Address of the account we are obligating.
+|_domainId|uint256|Domain in which we are obligating the user.
+|_amount|uint256|Amount of internal token we are obligating.
 
 
 ### `owner`
@@ -794,6 +1313,101 @@ Set new colony architecture role. Can be called by root role or architecture rol
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
+### `setExpenditureClaimDelay`
+
+DEPRECATED Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
+
+*Note: This is now deprecated and will be removed in a future version*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Number of the slot
+|_claimDelay|uint256|Time (in seconds) to delay claiming payout after finalization
+
+
+### `setExpenditurePayout`
+
+Set the token payout on an expenditure slot. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the expenditure
+|_slot|uint256|Number of the slot
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_amount|uint256|Payout amount
+
+
+### `setExpenditurePayoutModifier`
+
+DEPRECATED Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
+
+*Note: This is now deprecated and will be removed in a future version*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Number of the slot
+|_payoutModifier|int256|Modifier to their payout (between -1 and 1, denominated in WADs, 0 means no modification)
+
+
+### `setExpenditureRecipient`
+
+Sets the recipient on an expenditure slot. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the expenditure
+|_slot|uint256|Slot for the recipient address
+|_recipient|address|Address of the recipient
+
+
+### `setExpenditureSkill`
+
+Sets the skill on an expenditure slot. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Number of the slot
+|_skillId|uint256|Id of the new skill to set
+
+
+### `setExpenditureState`
+
+Set arbitrary state on an expenditure slot. Can only be called by Arbitration role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_id|uint256|Expenditure identifier
+|_storageSlot|uint256|Number of the top-level storage slot (25, 26, or 27)
+|_mask|bool[]|Array of booleans indicated whether a key is a mapping (F) or an array index (T).
+|_keys|bytes32[]|Array of additional keys (for mappings & arrays)
+|_value|bytes32|Value to set at location
+
+
 ### `setFundingRole`
 
 Set new colony funding role. Can be called by root role or architecture role.
@@ -808,21 +1422,6 @@ Set new colony funding role. Can be called by root role or architecture role.
 |_user|address|User we want to give an funding role to
 |_domainId|uint256|Domain in which we are giving user the role
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
-
-
-### `setPaymentDomain`
-
-Sets the domain on an existing payment. Secured function to authorised members
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action.
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
-|_id|uint256|Payment identifier
-|_domainId|uint256|Id of the new domain to set
 
 
 ### `setPaymentPayout`
@@ -907,19 +1506,6 @@ Set the hash for the task brief, aka task work specification, which identifies t
 |---|---|---|
 |_id|uint256|Id of the task
 |_specificationHash|bytes32|Unique hash of the task brief in ddb
-
-
-### `setTaskDomain`
-
-Set the domain for task `_id`.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_domainId|uint256|Id of the domain
 
 
 ### `setTaskDueDate`
@@ -1035,6 +1621,22 @@ Assigning worker role. Can only be set if there is no one currently assigned to 
 |_user|address|Address of the user we want to give a worker role to
 
 
+### `setUserRoles`
+
+Set several roles in one transaction. Can be called by root role or architecture role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|Domain in which the caller has root/architecture role
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_user|address|User we want to give a role to
+|_domainId|uint256|Domain in which we are giving user the role
+|_roles|bytes32|Byte array representing the desired role setting (1 for on, 0 for off)
+
+
 ### `startNextRewardPayout`
 
 Add a new payment in the colony. Can only be called by users with root permission. All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
@@ -1094,6 +1696,99 @@ Submit a hashed secret of the rating for work in task `_id` which was performed 
 |_ratingSecret|bytes32|`keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50). Can be generated via `IColony.generateSecret` helper function.
 
 
+### `transferExpenditure`
+
+Updates the expenditure owner. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_newOwner|address|New owner of expenditure
+
+
+### `transferExpenditureViaArbitration`
+
+DEPRECATED Updates the expenditure owner. Can only be called by Arbitration role.
+
+*Note: This is now deprecated and will be removed in a future version*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_id|uint256|Expenditure identifier
+|_newOwner|address|New owner of expenditure
+
+
+### `transferStake`
+
+Transfer some amount of obligated tokens. Can be called by the arbitration role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action.
+|_childSkillIndex|uint256|The child index in `_permissionDomainId` where we can find `_domainId`.
+|_obligator|address|Address of the account who set the obligation.
+|_user|address|Address of the account we are transferring.
+|_domainId|uint256|Domain in which we are transferring the tokens.
+|_amount|uint256|Amount of internal token we are transferring.
+|_recipient|address|Recipient of the transferred tokens.
+
+
+### `uninstallExtension`
+
+Uninstall an extension from a colony. Secured function to authorised members.
+
+*Note: This is a permanent action -- re-installing the extension will deploy a new contract*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+
+
+### `unlockToken`
+
+unlock the native colony token, if possible
+
+
+
+
+### `unlockTokenForUser`
+
+Unlock the colony's token for a user. Can only be called by a network-managed extension.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|user|address|The user to unlock
+|lockId|uint256|The specific lock to unlock
+
+
+### `updateApprovalAmount`
+
+Update the internal bookkeeping around external ERC20 approvals
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|token|address|The address of the token which was approved
+|spender|address|The account we have approved
+
+
 ### `updateColonyOrbitDB`
 
 Update a colony's orbitdb address. Can only be called by a colony with a registered subdomain
@@ -1119,11 +1814,44 @@ Upgrades a colony to a new Colony contract version `_newVersion`.
 |_newVersion|uint|The target version for the upgrade
 
 
+### `upgradeExtension`
+
+Upgrade an extension in a colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|newVersion|uint256|The version to upgrade to (must be one larger than the current version)
+
+
+### `userCanSetRoles`
+
+Check whether a given user can modify roles in the target domain `_childDomainId`. Mostly a convenience function to provide a uniform interface for extension contracts validating permissions
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|The user whose permissions we want to check
+|_domainId|uint256|Domain in which the caller has the role (currently Root or Architecture)
+|_childSkillIndex|uint256|The index that the `_childDomainId` is relative to `_domainId`
+|_childDomainId|uint256|The domain where we want to edit roles
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|canSet|bool|Boolean indicating whether the given user is allowed to edit roles in the target domain.
+
 ### `verifyReputationProof`
 
 Helper function that can be used by a client to verify the correctness of a patricia proof they have been supplied with.
 
-*Note: For more detail about branchMask and siblings, examine the PatriciaTree implementation. While public, likely only to be used by the Colony contracts, as it checks that the user is proving their own reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function is not currently exposed on the Colony's EtherRouter.*
+*Note: For more detail about branchMask and siblings, examine the PatriciaTree implementation. While external, likely only to be used by the Colony contracts, as it checks that the user is proving their own reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function is not currently exposed on the Colony's EtherRouter.*
 
 **Parameters**
 

@@ -20,22 +20,19 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 |_resolver|address|Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
 
 
-### `addr`
+### `addExtensionToNetwork`
 
-Returns the address the supplied node resolves do, if we are the resolver.
+Add a new extension resolver to the Extensions repository.
 
+*Note: Can only be called by the MetaColony.*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|node|bytes32|The namehash of the ENS address being requested
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|resolver|address|The deployed resolver containing the extension contract logic
 
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|address|address|The address the supplied node resolves to
 
 ### `addSkill`
 
@@ -55,6 +52,23 @@ Adds a new skill to the global or local skills tree, under skill `_parentSkillId
 |---|---|---|
 |skillId|uint256|Id of the added skill
 
+### `addr`
+
+Returns the address the supplied node resolves do, if we are the resolver.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|node|bytes32|The namehash of the ENS address being requested
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|address|address|The address the supplied node resolves to
+
 ### `appendReputationUpdateLog`
 
 Adds a reputation update entry to log.
@@ -68,6 +82,19 @@ Adds a reputation update entry to log.
 |_user|address|The address of the user for the reputation update
 |_amount|int256|The amount of reputation change for the update, this can be a negative as well as a positive value
 |_skillId|uint256|The skill for the reputation update
+
+
+### `burnUnneededRewards`
+
+Used to burn tokens that are not needed to pay out rewards (because not every possible defence was made for all submissions)
+
+*Note: Only callable by the active reputation mining cycle*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|The amount of CLNY to burn
 
 
 ### `calculateMinerWeight`
@@ -88,16 +115,93 @@ Calculate raw miner weight in WADs.
 |---|---|---|
 |minerWeight|uint256|The weight of miner reward
 
-### `createColony`
+### `claimMiningReward`
 
-Creates a new colony in the network. Note that the token ownership (if there is one) has to be transferred to the newly created colony.
+Used by a user to claim any mining rewards due to them. This will place them in their balance or pending balance, as appropriate.
 
+*Note: Can be called by anyone, not just _recipient*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token. Additionally token can optionally support `mint` as defined in `ERC20Extended`. Support for `mint` is mandatory only for the Meta Colony Token.
+|_recipient|address|The user whose rewards to claim
+
+
+### `createColony`
+
+Creates a new colony in the network, at version 3
+
+*Note: This is now deprecated and will be removed in a future version*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
+Creates a new colony in the network, with an optional ENS name
+
+*Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
+Creates a new colony in the network, with an optional ENS name
+
+*Note: For the colony to mint tokens, token ownership must be transferred to the new colony*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
+|_metadata|string|The metadata associated with the new colony
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyAddress|address|Address of the newly created colony
+
+### `createColony`
+
+Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options, at version 4
+
+*Note: This is now deprecated and will be removed in a future version*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
+|_orbitdb|string|DEPRECATED Currently a no-op
+|_useExtensionManager|bool|DEPRECATED Currently a no-op
 
 **Return Parameters**
 
@@ -115,6 +219,19 @@ Create the Meta Colony, same as a normal colony plus the root skill.
 |Name|Type|Description|
 |---|---|---|
 |_tokenAddress|address|Address of the CLNY token
+
+
+### `deprecateExtension`
+
+Set the deprecation of an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|deprecated|bool|Whether to deprecate the extension or not
 
 
 ### `deprecateSkill`
@@ -217,6 +334,42 @@ Returns the address of the ENSRegistrar for the Network.
 |---|---|---|
 |address|address|The address the ENSRegistrar resolves to
 
+### `getExtensionInstallation`
+
+Get an extension's installation.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|colony|address|Address of the colony the extension is installed in
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|installation|address|The address of the installed extension
+
+### `getExtensionResolver`
+
+Get an extension's resolver.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|version|uint256|Version of the extension
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|resolver|address|The address of the deployed resolver
+
 ### `getFeeInverse`
 
 Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
@@ -253,6 +406,23 @@ Get the resolver to be used by new instances of ReputationMiningCycle.
 |---|---|---|
 |miningResolverAddress|address|The address of the mining cycle resolver currently used by new instances
 
+### `getMiningStake`
+
+returns how much CLNY _user has staked for the purposes of reputation mining
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|The user to query
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_info|MiningStake|The amount staked and the timestamp the stake was made at.
+
 ### `getParentSkillId`
 
 Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_skillId`.
@@ -270,6 +440,23 @@ Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_
 |Name|Type|Description|
 |---|---|---|
 |skillId|uint256|Skill Id of the requested parent skill
+
+### `getPayoutWhitelist`
+
+Get a token's status in the payout whitelist
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|The token being queried
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|status|bool|
 
 ### `getProfileDBAddress`
 
@@ -340,6 +527,18 @@ Get the address of either the active or inactive reputation mining cycle, based 
 |---|---|---|
 |repMiningCycleAddress|address|address of active or inactive ReputationMiningCycle
 
+### `getReputationMiningCycleReward`
+
+Called to get the total per-cycle reputation mining reward.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
+
 ### `getReputationMiningSkillId`
 
 Get the `skillId` of the reputation mining skill. Only set once the metacolony is set up.
@@ -364,9 +563,9 @@ Get the root hash of the current reputation state tree.
 |---|---|---|
 |rootHash|bytes32|The current Reputation Root Hash
 
-### `getReputationRootHashNNodes`
+### `getReputationRootHashNLeaves`
 
-Get the number of nodes in the current reputation state tree.
+Get the number of leaves in the current reputation state tree.
 
 *Note: I cannot see a reason why a user's client would need to call this - only stored to help with some edge cases in reputation mining dispute resolution.*
 
@@ -375,7 +574,20 @@ Get the number of nodes in the current reputation state tree.
 
 |Name|Type|Description|
 |---|---|---|
-|nNodes|uint256|uint256 The number of nodes in the state tree
+|nLeaves|uint256|uint256 The number of leaves in the state tree
+
+### `getReputationRootHashNNodes`
+
+Get the number of leaves in the current reputation state tree.
+
+*Note: Deprecated, replaced by getReputationRootHashNLeaves which does the same thing but is more accurately named.*
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nNodes|uint256|uint256 The number of leaves in the state tree
 
 ### `getSkill`
 
@@ -439,6 +651,19 @@ Creates initial inactive reputation mining cycle.
 
 
 
+### `installExtension`
+
+Install an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|version|uint256|Version of the extension to install
+
+
 ### `isColony`
 
 Check if specific address is a colony created on colony network.
@@ -473,6 +698,20 @@ Reverse lookup a username from an address.
 |---|---|---|
 |domain|string|A string containing the colony-based ENS name corresponding to addr
 
+### `punishStakers`
+
+Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
+
+*Note: While external, it can only be called successfully by the current ReputationMiningCycle.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_stakers|address[]|Array of the addresses of stakers to punish
+|_amount|uint256|Amount of stake to slash
+
+
 ### `registerColonyLabel`
 
 Register a "colony.joincolony.eth" label. Can only be called by a Colony.
@@ -499,6 +738,20 @@ Register a "user.joincolony.eth" label.
 |orbitdb|string|The path of the orbitDB database associated with the user profile
 
 
+### `reward`
+
+Used to track that a user is eligible to claim a reward
+
+*Note: Only callable by the active reputation mining cycle*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_recipient|address|The address receiving the award
+|_amount|uint256|The amount of CLNY to be awarded
+
+
 ### `setFeeInverse`
 
 Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as `_feeInverse`.
@@ -523,6 +776,19 @@ Set the resolver to be used by new instances of ReputationMiningCycle.
 |miningResolverAddress|address|The address of the Resolver contract with the functions correctly wired.
 
 
+### `setPayoutWhitelist`
+
+Set a token's status in the payout whitelist
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|The token being set
+|_status|bool|The whitelist status
+
+
 ### `setReplacementReputationUpdateLogEntry`
 
 Set a replacement log entry if we're in recovery mode.
@@ -543,6 +809,19 @@ Set a replacement log entry if we're in recovery mode.
 |_nPreviousUpdates|uint128|The number of updates in the log before this entry
 
 
+### `setReputationMiningCycleReward`
+
+Called to set the total per-cycle reputation reward, which will be split between all miners.
+
+*Note: Can only be called by the MetaColony.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|
+
+
 ### `setReputationRootHash`
 
 Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
@@ -553,9 +832,23 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |Name|Type|Description|
 |---|---|---|
 |newHash|bytes32|The reputation root hash
-|newNNodes|uint256|The updated nodes count value
+|newNLeaves|uint256|The updated leaves count value
 |stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-|reward|uint256|Amount of CLNY to be distributed as reward to miners
+
+
+### `setReputationRootHash`
+
+This version of setReputationRootHash is deprecated and will be removed in a future release. It transparently calls the new version if it is called (essentially, removing the `reward` parameter.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|newHash|bytes32|The reputation root hash
+|newNLeaves|uint256|The updated leaves count value
+|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
+|reward|uint256|Amount of CLNY to be distributed as reward to miners (not used)
 
 
 ### `setTokenLocking`
@@ -581,6 +874,18 @@ Setup registrar with ENS and root node.
 |---|---|---|
 |_ens|address|Address of ENS registrar
 |_rootNode|bytes32|Namehash of the root node for the domain
+
+
+### `stakeForMining`
+
+Stake CLNY to allow the staker to participate in reputation mining.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|Amount of CLNY to stake for the purposes of mining
 
 
 ### `startNextCycle`
@@ -618,7 +923,31 @@ Query if a contract implements an interface
 
 |Name|Type|Description|
 |---|---|---|
-|bool|bool|
+|status|bool|`true` if the contract implements `interfaceID`
+
+### `uninstallExtension`
+
+Uninstall an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+
+
+### `unstakeForMining`
+
+Unstake CLNY currently staked for reputation mining.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|Amount of CLNY staked for mining to unstake
+
 
 ### `updateColonyOrbitDB`
 
@@ -642,3 +971,16 @@ Update a user's orbitdb address. Can only be called by a user with a registered 
 |Name|Type|Description|
 |---|---|---|
 |orbitdb|string|The path of the orbitDB database to be associated with the user
+
+
+### `upgradeExtension`
+
+Upgrade an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|newVersion|uint256|Version of the extension to upgrade to (must be one greater than current)

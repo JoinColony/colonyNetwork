@@ -4,6 +4,7 @@ import BN from "bn.js";
 import { ethers } from "ethers";
 
 import {
+  UINT256_MAX,
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
@@ -13,30 +14,23 @@ import {
   RATING_1_SALT,
   RATING_2_SALT,
   MANAGER_ROLE,
+  EVALUATOR_ROLE,
   WORKER_ROLE,
   SPECIFICATION_HASH,
-  DELIVERABLE_HASH
+  DELIVERABLE_HASH,
 } from "./constants";
 
 import { getTokenArgs, web3GetAccounts, getChildSkillIndex } from "./test-helper";
 import { executeSignedTaskChange, executeSignedRoleAssignment } from "./task-review-signing";
 
-const { setupColonyVersionResolver, setupUpgradableTokenLocking } = require("../helpers/upgradable-contracts");
-
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
-const TokenLocking = artifacts.require("TokenLocking");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const TokenAuthority = artifacts.require("./TokenAuthority");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
-const Colony = artifacts.require("Colony");
-const ColonyFunding = artifacts.require("ColonyFunding");
-const ColonyTask = artifacts.require("ColonyTask");
-const ColonyPayment = artifacts.require("ColonyPayment");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const ContractRecovery = artifacts.require("ContractRecovery");
 
 export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 3, dueDate = 0, manager }) {
   const accounts = await web3GetAccounts();
@@ -54,18 +48,18 @@ export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HAS
   await colony.setAdministrationRole(1, childSkillIndex, manager, domainId, true);
   const { logs } = await colony.makeTask(1, childSkillIndex, hash, domainId, skillId, dueDate, { from: manager });
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
-  return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
+  return logs.filter((log) => log.event === "TaskAdded")[0].args.taskId;
 }
 
 export async function assignRoles({ colony, taskId, manager, evaluator, worker }) {
-  if (manager !== evaluator) {
+  if (evaluator && manager !== evaluator) {
     await executeSignedTaskChange({
       colony,
       taskId,
       functionName: "removeTaskEvaluatorRole",
       signers: [manager],
       sigTypes: [0],
-      args: [taskId]
+      args: [taskId],
     });
 
     await executeSignedRoleAssignment({
@@ -74,7 +68,7 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
       functionName: "setTaskEvaluatorRole",
       signers: [manager, evaluator],
       sigTypes: [0, 0],
-      args: [taskId, evaluator]
+      args: [taskId, evaluator],
     });
   }
 
@@ -87,8 +81,21 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
     functionName: "setTaskWorkerRole",
     signers,
     sigTypes,
-    args: [taskId, worker]
+    args: [taskId, worker],
   });
+}
+
+export async function submitDeliverableAndRatings({ colony, taskId, managerRating = MANAGER_RATING, workerRating = WORKER_RATING }) {
+  const managerRatingSecret = soliditySha3(RATING_1_SALT, managerRating);
+  const workerRatingSecret = soliditySha3(RATING_2_SALT, workerRating);
+
+  const evaluatorRole = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
+  const workerRole = await colony.getTaskRole(taskId, WORKER_ROLE);
+
+  await colony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, managerRatingSecret, { from: workerRole.user });
+  await colony.submitTaskWorkRating(taskId, WORKER_ROLE, workerRatingSecret, { from: evaluatorRole.user });
+  await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, RATING_1_SALT, { from: workerRole.user });
+  await colony.revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, RATING_2_SALT, { from: evaluatorRole.user });
 }
 
 export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId, manager, evaluator, worker }) {
@@ -115,7 +122,7 @@ export async function setupFundedTask({
   worker,
   managerPayout = MANAGER_PAYOUT,
   evaluatorPayout = EVALUATOR_PAYOUT,
-  workerPayout = WORKER_PAYOUT
+  workerPayout = WORKER_PAYOUT,
 }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
@@ -137,8 +144,10 @@ export async function setupFundedTask({
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
 
   const childSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, task.domainId);
-  await colony.setFundingRole(1, 0, manager, 1, true);
-  await colony.moveFundsBetweenPots(1, 0, childSkillIndex, 1, task.fundingPotId, totalPayouts, tokenAddress, { from: manager });
+  const moveFundsBetweenPots = colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"];
+
+  await colony.setFundingRole(1, UINT256_MAX, manager, 1, true);
+  await moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, childSkillIndex, 1, task.fundingPotId, totalPayouts, tokenAddress, { from: manager });
   await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout, { from: manager });
   await assignRoles({ colony, taskId, manager, evaluator, worker });
 
@@ -159,9 +168,7 @@ export async function setupRatedTask({
   evaluatorPayout = EVALUATOR_PAYOUT,
   workerPayout = WORKER_PAYOUT,
   managerRating = MANAGER_RATING,
-  managerRatingSalt = RATING_1_SALT,
   workerRating = WORKER_RATING,
-  workerRatingSalt = RATING_2_SALT
 }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
@@ -180,16 +187,10 @@ export async function setupRatedTask({
     worker,
     managerPayout,
     evaluatorPayout,
-    workerPayout
+    workerPayout,
   });
 
-  const WORKER_RATING_SECRET = soliditySha3(workerRatingSalt, workerRating);
-  const MANAGER_RATING_SECRET = soliditySha3(managerRatingSalt, managerRating);
-  await colony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, MANAGER_RATING_SECRET, { from: worker });
-  await colony.submitTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING_SECRET, { from: evaluator });
-  await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, managerRatingSalt, { from: worker });
-  await colony.revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, workerRatingSalt, { from: evaluator });
-
+  await submitDeliverableAndRatings({ colony, taskId, evaluator, worker, managerRating, workerRating });
   return taskId;
 }
 
@@ -207,9 +208,7 @@ export async function setupFinalizedTask({
   evaluatorPayout,
   workerPayout,
   managerRating,
-  managerRatingSalt,
   workerRating,
-  workerRatingSalt
 }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
@@ -230,9 +229,7 @@ export async function setupFinalizedTask({
     evaluatorPayout,
     workerPayout,
     managerRating,
-    managerRatingSalt,
     workerRating,
-    workerRatingSalt
   });
 
   await colony.finalizeTask(taskId);
@@ -266,7 +263,8 @@ export async function giveUserCLNYTokensAndStake(colonyNetwork, user, _amount) {
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   await clnyToken.approve(tokenLocking.address, amount, { from: user });
-  await tokenLocking.deposit(clnyToken.address, amount, { from: user });
+  await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, amount, true, { from: user });
+  await colonyNetwork.stakeForMining(amount, { from: user });
 }
 
 export async function fundColonyWithTokens(colony, token, tokenAmount = INITIAL_FUNDING) {
@@ -333,28 +331,33 @@ export async function unlockCLNYToken(metaColony) {
 
 export async function setupColonyNetwork() {
   const resolverColonyNetworkDeployed = await Resolver.deployed();
-  const colonyTemplate = await Colony.new();
-  const colonyFunding = await ColonyFunding.new();
-  const colonyTask = await ColonyTask.new();
-  const colonyPayment = await ColonyPayment.new();
-  const resolver = await Resolver.new();
-  const contractRecovery = await ContractRecovery.new();
+  const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
+
+  // Get the version resolver and version number from the metacolony deployed during migration
+  const deployedMetaColonyAddress = await deployedColonyNetwork.getMetaColony();
+  const deployedMetaColony = await IMetaColony.at(deployedMetaColonyAddress);
+  const deployedMetaColonyAsEtherRouter = await EtherRouter.at(deployedMetaColonyAddress);
+  const colonyVersionResolverAddress = await deployedMetaColonyAsEtherRouter.resolver();
+  const version = await deployedMetaColony.version();
+
+  // Make a new ColonyNetwork
   const etherRouter = await EtherRouter.new();
   await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
-
   const colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-  await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
-  const version = await colonyTemplate.version();
-  await colonyNetwork.initialise(resolver.address, version);
+
+  // Initialise with originally deployed version
+  await colonyNetwork.initialise(colonyVersionResolverAddress, version);
+
   // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
-  const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
   const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
   await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
 
-  const tokenLockingResolver = await Resolver.new();
+  // Get token-locking router from when it was deployed during migrations
+  const deployedTokenLockingAddress = await deployedColonyNetwork.getTokenLocking();
+  const deployedTokenLockingAsEtherRouter = await EtherRouter.at(deployedTokenLockingAddress);
+  const tokenLockingResolverAddress = await deployedTokenLockingAsEtherRouter.resolver();
   const tokenLockingEtherRouter = await EtherRouter.new();
-  const tokenLockingContract = await TokenLocking.new();
-  await setupUpgradableTokenLocking(tokenLockingEtherRouter, tokenLockingResolver, tokenLockingContract);
+  await tokenLockingEtherRouter.setResolver(tokenLockingResolverAddress);
 
   await colonyNetwork.setTokenLocking(tokenLockingEtherRouter.address);
   const tokenLocking = await ITokenLocking.at(tokenLockingEtherRouter.address);
@@ -363,18 +366,30 @@ export async function setupColonyNetwork() {
   return colonyNetwork;
 }
 
-export async function setupRandomColony(colonyNetwork) {
+export async function setupRandomToken(lockedToken) {
   const tokenArgs = getTokenArgs();
   const token = await Token.new(...tokenArgs);
-  await token.unlock();
+  if (!lockedToken) {
+    await token.unlock();
+  }
+  return token;
+}
 
-  const { logs } = await colonyNetwork.createColony(token.address);
-  const { colonyAddress } = logs[0].args;
-  const colony = await IColony.at(colonyAddress);
+export async function setupRandomColony(colonyNetwork, lockedToken = false) {
+  const token = await setupRandomToken(lockedToken);
+
+  const colony = await setupColony(colonyNetwork, token.address);
+
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-
   const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [tokenLockingAddress]);
   await token.setAuthority(tokenAuthority.address);
 
   return { colony, token };
+}
+
+export async function setupColony(colonyNetwork, tokenAddress) {
+  const { logs } = await colonyNetwork.createColony(tokenAddress, 0, "", "");
+  const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
+  const colony = await IColony.at(colonyAddress);
+  return colony;
 }

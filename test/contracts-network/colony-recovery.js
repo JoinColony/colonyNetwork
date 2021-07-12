@@ -1,25 +1,27 @@
+/* global artifacts */
+
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
-import { SPECIFICATION_HASH } from "../../helpers/constants";
-import { web3GetStorageAt, checkErrorRevert } from "../../helpers/test-helper";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
+import { UINT256_MAX, SPECIFICATION_HASH } from "../../helpers/constants";
+import { web3GetStorageAt, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
+import { setupRandomColony } from "../../helpers/test-data-generator";
+
+const EtherRouter = artifacts.require("EtherRouter");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-contract("Colony Recovery", accounts => {
+contract("Colony Recovery", (accounts) => {
   let colony;
   let colonyNetwork;
-  let metaColony;
 
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
   beforeEach(async () => {
@@ -63,6 +65,32 @@ contract("Colony Recovery", accounts => {
       expect(numRecoveryRoles).to.eq.BN(1);
     });
 
+    it("should emit events when changing recovery roles", async () => {
+      await expectEvent(colony.setRecoveryRole(accounts[1]), "RecoveryRoleSet", [accounts[1]]);
+      await expectEvent(colony.removeRecoveryRole(accounts[1]), "RecoveryRoleSet", [accounts[1]]);
+    });
+
+    it("should emit events when moving through the recovery procress", async () => {
+      await expectEvent(colony.enterRecoveryMode(), "RecoveryModeEntered", [accounts[0]]);
+      await expectEvent(
+        colony.setStorageSlotRecovery("0xdead", "0xbeef00000000000000000000000000000000000000000000000000000000beef"),
+        "RecoveryStorageSlotSet",
+        [accounts[0], "0xdead", "0x00", "0xbeef00000000000000000000000000000000000000000000000000000000beef"]
+      );
+      await expectEvent(
+        colony.setStorageSlotRecovery("0xdead", "0xbadbeef00000000000000000000000000000000000000000000000000badbeef"),
+        "RecoveryStorageSlotSet",
+        [
+          accounts[0],
+          "0xdead",
+          "0xbeef00000000000000000000000000000000000000000000000000000000beef",
+          "0xbadbeef00000000000000000000000000000000000000000000000000badbeef",
+        ]
+      );
+      await expectEvent(colony.approveExitRecovery(), "RecoveryModeExitApproved", [accounts[0]]);
+      await expectEvent(colony.exitRecoveryMode(), "RecoveryModeExited", [accounts[0]]);
+    });
+
     it("should not error when adding recovery roles for existing recovery users", async () => {
       let numRecoveryRoles;
 
@@ -94,8 +122,8 @@ contract("Colony Recovery", accounts => {
 
     it("should not be able to add and remove roles when in recovery", async () => {
       await colony.enterRecoveryMode();
-      await checkErrorRevert(colony.setAdministrationRole(1, 0, accounts[1], 1, true), "colony-in-recovery-mode");
-      await checkErrorRevert(colony.setAdministrationRole(1, 0, accounts[1], 1, false), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setAdministrationRole(1, UINT256_MAX, accounts[1], 1, true), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setAdministrationRole(1, UINT256_MAX, accounts[1], 1, false), "colony-in-recovery-mode");
       await checkErrorRevert(colony.setRecoveryRole(accounts[1]), "colony-in-recovery-mode");
       await checkErrorRevert(colony.removeRecoveryRole(accounts[1]), "colony-in-recovery-mode");
       await checkErrorRevert(colony.setRootRole(accounts[1], true), "colony-in-recovery-mode");
@@ -104,6 +132,9 @@ contract("Colony Recovery", accounts => {
 
     it("should not be able to call normal functions while in recovery", async () => {
       await colony.enterRecoveryMode();
+
+      const metaColonyAddress = await colonyNetwork.getMetaColony();
+      const metaColony = await IMetaColony.at(metaColonyAddress);
       await metaColony.enterRecoveryMode();
 
       await checkErrorRevert(colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero), "colony-in-recovery-mode");

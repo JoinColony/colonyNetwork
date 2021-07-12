@@ -19,7 +19,7 @@ class MaliciousReputationMinerReuseUID extends ReputationMinerTestWrapper {
     return this.getReputationProofObject(key);
   }
 
-  getValueAsBytes(reputation, _uid, index) { //eslint-disable-line
+  getValueAsBytes(reputation, _uid, index) {
     let uid;
     if (index && index.toString() === this.entryToFalsify) {
       uid = new BN(_uid.toString()).sub(new BN(this.amountToFalsify));

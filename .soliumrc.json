@@ -11,6 +11,7 @@
     "no-experimental": 0,
     "error-reason": "error",
     "max-len": "error",
-    "no-trailing-whitespace": "error"
+    "no-trailing-whitespace": "error",
+    "blank-lines": "error"
   }
 }

@@ -1,103 +1,171 @@
 const ethers = require("ethers");
 const express = require("express");
 const path = require('path');
+const request = require('request-promise');
+const ConsoleAdapter = require('./adapters/console').default;
 
 const ReputationMiner = require("./ReputationMiner");
 
-const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
-const miningCycleDuration = ethers.utils.bigNumberify(60).mul(60).mul(24); // 24 hours
-const constant = ethers.utils.bigNumberify(2).pow(256).sub(1).div(miningCycleDuration);
-let submissionIndex = 0;
-let best12Submissions = [];
-let filterReputationMiningCycleComplete;
-let lockedForBlockProcessing;
-let lockedForLogProcessing;
+const minStake = ethers.BigNumber.from(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
+const MINUTE_IN_SECONDS = 60;
+const disputeStages = {
+ CONFIRM_JRH: 0,
+ BINARY_SEARCH_RESPONSE: 1,
+ BINARY_SEARCH_CONFIRM: 2,
+ RESPOND_TO_CHALLENGE: 3,
+ INVALIDATE_HASH: 4,
+ CONFIRM_NEW_HASH: 5
+}
 
 class ReputationMinerClient {
   /**
    * Constructor for ReputationMiner
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
-   * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
+   * @param {Object} loader                  The loader for loading the contract interfaces. Usually a TruffleLoader
+   * @param {Number} [realProviderPort]      The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
+   * @param {Number} oraclePort              The port the reputation oracle will serve on
+   * @param {string} privateKey              The private key of the address that is mining, allowing the miner to sign transactions.
+   *                                         If used, `minerAddress` is not needed and will be derived.
+   * @param {Object} provider                Ethers Provider that allows access to an ethereum node.
+   * @param {bool}   useJsTree               Whether to use the Javascript Patricia tree implementation (true) or the solidity implementation (false)
+   * @param {string} dbPath                  Path where to save the database
+   * @param {bool}   auto                    Whether to automatically submit hashes and respond to challenges
+   * @param {bool}   oracle                  Whether to serve requests as a reputation oracle or not
+   * @param {bool}   exitOnError             Whether to exit when an error is hit or not.
+   * @param {Object} adapter                 An object with .log and .error that controls where the output from the miner ends up.
    */
-  constructor({ minerAddress, loader, realProviderPort, minerPort = 3000, privateKey, provider, useJsTree, dbPath, auto }) {
+  constructor({ minerAddress, loader, realProviderPort, oraclePort = 3000, privateKey, provider, useJsTree, dbPath, auto, oracle, exitOnError, adapter, processingDelay }) { // eslint-disable-line max-len
     this._loader = loader;
     this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, useJsTree, dbPath });
     this._auto = auto;
+    this._oracle = oracle;
+    this._exitOnError = exitOnError;
+    this.submissionIndex = 0;
+    this.blocksSinceCycleCompleted = 0;
+    this.best12Submissions = [];
+    this.lockedForBlockProcessing;
+    this._adapter = adapter;
+    this._processingDelay = processingDelay;
+
+    if (typeof this._processingDelay === "undefined") {
+      this._processingDelay = 10;
+    }
+
     if (typeof this._auto === "undefined") {
       this._auto = true;
     }
 
-    this._app = express();
+    if (typeof this._oracle === "undefined") {
+      this._oracle = true;
+    }
 
-    this._app.use(function(req, res, next) {
-      res.header("Access-Control-Allow-Origin", "*");
-      next();
-    });
+    if (typeof this._adapter === "undefined" ) {
+      this._adapter = ConsoleAdapter;
+    }
 
-    this._app.get("/", async (req, res) => {
-      return res.status(200).sendFile(path.join(__dirname, 'viz/index.html'));
-    });
+    if (this._oracle) {
+      this._app = express();
 
-    // Serve visualizers
-    this._app.get("/repTree", async (req, res) => {
-      return res.status(200).sendFile(path.join(__dirname, 'viz/repTree.html'));
-    });
+      this._app.use(function(req, res, next) {
+        res.header("Access-Control-Allow-Origin", "*");
+        next();
+      });
 
-    this._app.get("/repCycle", async (req, res) => {
-      return res.status(200).sendFile(path.join(__dirname, 'viz/repCycle.html'));
-    });
+      this._app.get("/", async (req, res) => {
+        return res.status(200).sendFile(path.join(__dirname, 'viz/index.html'));
+      });
 
-    // Serve data for visualizers
-    this._app.get("/reputations", async (req, res) => {
-      const rootHash = await this._miner.getRootHash();
-      const reputations = Object.keys(this._miner.reputations).map(key => {
-        const decimalValue = ethers.utils.bigNumberify(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
-        return { key, decimalValue }
-      })
-      return res.status(200).send({ rootHash, reputations });
-    });
+      // Serve visualizers
+      this._app.get("/repTree", async (req, res) => {
+        return res.status(200).sendFile(path.join(__dirname, 'viz/repTree.html'));
+      });
 
-    this._app.get("/network", async (req, res) => {
-      return res.status(200).send(this._miner.realProvider._network.name); // eslint-disable-line no-underscore-dangle
-    });
+      this._app.get("/repCycle", async (req, res) => {
+        return res.status(200).sendFile(path.join(__dirname, 'viz/repCycle.html'));
+      });
 
-    this._app.get("/repCycleContractDef", async (req, res) => {
-      return res.status(200).send(this._miner.repCycleContractDef);
-    });
+      // Serve data for visualizers
+      this._app.get("/reputations", async (req, res) => {
+        const rootHash = await this._miner.getRootHash();
+        const reputations = Object.keys(this._miner.reputations).map(key => {
+          const decimalValue = ethers.BigNumber.from(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
+          return { key, decimalValue }
+        })
+        return res.status(200).send({ rootHash, reputations });
+      });
 
-    this._app.get("/repCycleAddresses", async (req, res) => {
-      const activeAddr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
-      const inactiveAddr = await this._miner.colonyNetwork.getReputationMiningCycle(false);
-      return res.status(200).send({ active: activeAddr, inactive: inactiveAddr });
-    });
+      this._app.get("/network", async (req, res) => {
+        return res.status(200).send(this._miner.realProvider._network.name); // eslint-disable-line no-underscore-dangle
+      });
 
-    // Query specific reputation values
-    this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
-      const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
-      const currentHash = await this._miner.getRootHash();
-      if (currentHash === req.params.rootHash) {
-        if (this._miner.reputations[key]) {
-          const proof = await this._miner.getReputationProofObject(key);
-          delete proof.nNodes;
-          proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
-          return res.status(200).send(proof);
+      this._app.get("/repCycleContractDef", async (req, res) => {
+        return res.status(200).send(this._miner.repCycleContractDef);
+      });
+
+      this._app.get("/repCycleAddresses", async (req, res) => {
+        const activeAddr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+        const inactiveAddr = await this._miner.colonyNetwork.getReputationMiningCycle(false);
+        return res.status(200).send({ active: activeAddr, inactive: inactiveAddr });
+      });
+
+      // Query users who have given reputation in colony
+      this._app.get("/:rootHash/:colonyAddress/:skillId/", async (req, res) => {
+        if (
+          !ethers.utils.isHexString(req.params.rootHash) ||
+          !ethers.utils.isHexString(req.params.colonyAddress) ||
+          !ethers.BigNumber.from(req.params.skillId)
+        ) {
+          return res.status(400).send({ message: "One of the parameters was incorrect" });
         }
-        return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
-      }
+        const addresses = await this._miner.getAddressesWithReputation(req.params.rootHash, req.params.colonyAddress, req.params.skillId);
+        try {
+          return res.status(200).send({ addresses });
+        } catch (err) {
+          return res.status(500).send({ message: "An error occurred querying the reputation" });
+        }
+      });
 
-      try {
-        const [branchMask, siblings, value] = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
-        const proof = { branchMask: `${branchMask.toString(16)}`, siblings, key, value };
-        proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
-        return res.status(200).send(proof);
-      } catch (err) {
-        return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
-      }
-    });
+      // Query specific reputation values
+      this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
+        if (
+          !ethers.utils.isHexString(req.params.rootHash) ||
+          !ethers.utils.isHexString(req.params.colonyAddress) ||
+          !ethers.utils.isHexString(req.params.userAddress) ||
+          !ethers.BigNumber.from(req.params.skillId)
+        ) {
+          return res.status(400).send({ message: "One of the parameters was incorrect" });
+        }
 
-    this.server = this._app.listen(minerPort, () => {
-      console.log("⭐️ Reputation oracle running on port ", this.server.address().port);
-    });
+        const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
+        const currentHash = await this._miner.getRootHash();
+        if (currentHash === req.params.rootHash) {
+          if (this._miner.reputations[key]) {
+            const proof = await this._miner.getReputationProofObject(key);
+            delete proof.NLeaves;
+            proof.reputationAmount = ethers.BigNumber.from(`0x${proof.value.slice(2, 66)}`).toString();
+            return res.status(200).send(proof);
+          }
+          return res.status(400).send({ message: "Requested reputation does not exist" });
+        }
+
+        try {
+          const historicalProof = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
+          if (historicalProof instanceof Error) {
+            return res.status(400).send({ message: historicalProof.message.replace("Error: ") });
+          }
+          const [branchMask, siblings, value] = historicalProof;
+          const proof = { branchMask: `${branchMask.toString(16)}`, siblings, key, value };
+          proof.reputationAmount = ethers.BigNumber.from(`0x${proof.value.slice(2, 66)}`).toString();
+          return res.status(200).send(proof);
+        } catch (err) {
+          return res.status(500).send({ message: "An error occurred querying the reputation" });
+        }
+      });
+
+      this.server = this._app.listen(oraclePort, () => {
+        this._adapter.log(`⭐️ Reputation oracle running on port ${this.server.address().port}`);
+      });
+    }
   }
 
   /**
@@ -114,224 +182,320 @@ class ReputationMinerClient {
     await this._miner.createDB();
     await this._miner.loadState(latestReputationHash);
     if (this._miner.nReputations.eq(0)) {
-      console.log("No existing reputations found - starting from scratch");
-      await this._miner.sync(startingBlock);
+      this._adapter.log("No existing reputations found - starting from scratch");
+      await this._miner.sync(startingBlock, true);
     }
 
     this.gasBlockAverages = [];
 
-    // See if we're talking to Ganache to fix a ganache crash (which, while fun to say, is not fun to see)
-    const clientString = await this._miner.realProvider.send("web3_clientVersion");
-    this.ganacheClient = clientString.indexOf('TestRPC') !== -1
+    // Initial call to process the existing log from the cycle we're currently in
+    await this.processReputationLog();
+    this._miner.realProvider.polling = true;
+    this._miner.realProvider.pollingInterval = 1000;
 
-    console.log("🏁 Initialised");
+    this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
+
+    // Work out when the confirm timeout should be.
+    const repCycle = await this._miner.getActiveRepCycle();
+    await this._miner.updatePeriodLength(repCycle);
+
+    await this.setMiningCycleTimeout(repCycle);
+
+    this.miningCycleAddress = repCycle.address;
+
     if (this._auto) {
-      // Initial call to process the existing log from the cycle we're currently in
-      await this.processReputationLog();
-      best12Submissions = await this.getTwelveBestSubmissions();
+      this.best12Submissions = await this.getTwelveBestSubmissions();
 
-      // Add a listener to process log for when a new cycle starts
-      const ReputationMiningCycleComplete = ethers.utils.id("ReputationMiningCycleComplete(bytes32,uint256)");
-      filterReputationMiningCycleComplete = {
-        address: this._miner.colonyNetwork.address,
-        topics: [ ReputationMiningCycleComplete ]
+      // Have we already submitted any of these? Need to update submissionIndex if so
+      const block = await this._miner.realProvider.getBlock('latest');
+      // Ensure the submission index is reset to the correct point in the best12Submissions array
+      this.submissionIndex = 0;
+      for (let i = 0; i < this.best12Submissions.length; i += 1 ){
+        if (block.timestamp >= this.best12Submissions[i].timestamp) {
+          const {entryIndex} = this.best12Submissions[i];
+          const entryIndexAlreadySubmitted = await repCycle.minerSubmittedEntryIndex(this._miner.minerAddress, entryIndex);
+          if (entryIndexAlreadySubmitted) {
+            this.submissionIndex += 1
+          } else {
+            break;
+          }
+        }
       }
-
-      // If a new mining cycle starts, process the new reputation update log and rehydrate the 12 best submissions
-      await this._miner.realProvider.on(filterReputationMiningCycleComplete, async () => {
-        if (lockedForLogProcessing) {
-          // This would be quite a big surprise if it happened, but for completeness
-          console.log("WARNING: Somehow, two log updates were triggered. This seems very unlikely, so maybe something is broken...?")
-          return;
-        }
-        lockedForLogProcessing = true;
-        // No awaits above this line in this function, otherwise race conditions will rear their head
-        await this.processReputationLog();
-        best12Submissions = await this.getTwelveBestSubmissions();
-        lockedForLogProcessing = false;
-        if (this.resolveLogProcessingFinished){
-          this.resolveLogProcessingFinished();
-        }
-      });
-
-      this._miner.realProvider.polling = true;
-      this._miner.realProvider.pollingInterval = 1000;
-
-      // Do the other checks for whether we can submit or confirm a hash
-      lockedForBlockProcessing = false;
-      this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
     }
+    // Set up the listener to take actions on each block
+    this.lockedForBlockProcessing = false;
+    this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
+
+    const network = await this._miner.realProvider.getNetwork();
+    this.chainId = network.chainId;
+
+    this._adapter.log("🏁 Initialised");
   }
 
-  async updateGasEstimate(block) {
-    // Get the average from this block
-    // Logic mostly taken from https://github.com/MetaMask/eth-gas-price-suggestor which
-    // sadly doesn't actually work any more, otherwise I'd have just used it.
-    const gasPriceSum = block.transactions
-    .map(tx => ethers.utils.bigNumberify(tx.gasPrice))
-    .reduce((result, gasPrice) => {
-      return result.add(gasPrice)
-    }, new ethers.utils.bigNumberify(0)); // eslint-disable-line new-cap
-
-    let average = ethers.utils.bigNumberify(20000000000);
-    if (block.transactions.length > 0){
-      average = gasPriceSum.div(block.transactions.length)
+  async updateGasEstimate(type) {
+    if (this.chainId === 100){
+      this._miner.gasPrice = ethers.utils.hexlify(1000000000);
+      return;
     }
-    this.gasBlockAverages.push(average);
+    // Get latest from ethGasStation
+    const options = {
+      uri: 'https://ethgasstation.info/json/ethgasAPI.json',
+      headers: {
+          'User-Agent': 'Request-Promise'
+      },
+      json: true // Automatically parses the JSON string in the response
+    };
+    try {
+      const gasEstimates = await request(options);
 
-    if (this.gasBlockAverages.length > 10) {
-      this.gasBlockAverages.shift()
+      if (gasEstimates[type]){
+        this._miner.gasPrice = ethers.utils.hexlify(gasEstimates[type] / 10 * 1e9);
+      } else {
+        this._miner.gasPrice = ethers.utils.hexlify(20000000000);
+      }
+    } catch (err) {
+      this._adapter.error(`Error during gas estimation: ${err}`);
+      this._miner.gasPrice = ethers.utils.hexlify(20000000000);
     }
-
-    this._miner.gasPrice = ethers.utils.hexlify(
-      this.gasBlockAverages.reduce(
-        (total, sum) => {
-          return total.add(sum)
-        },
-        ethers.utils.bigNumberify(0)
-      ).div(this.gasBlockAverages.length)
-    );
-    // console.log("Average gas price from last 10 blocks: ", this._miner.gasPrice);
   }
 
   /**
    * Navigate through the mining process logic used when the client is in auto mode.
-   * Up to 12 submissions of our current proposed Hash/nNodes/JRH are made at the earliest block possible
+   * Up to 12 submissions of our current proposed Hash/nLeaves/JRH are made at the earliest block possible
    * Once any disputes are resolved and mining window has closed, we confirm the last remaining hash
    * @param  {Number}  blockNumber The block number we are currently acting on
    * @return {Promise}
    */
   async doBlockChecks(blockNumber) {
-    if (lockedForBlockProcessing || lockedForLogProcessing) {
-      return;
-    }
-    lockedForBlockProcessing = true;
-    // DO NOT PUT ANY AWAITS ABOVE THIS LINE OR YOU WILL GET RACE CONDITIONS
+    try {
+      if (this.lockedForBlockProcessing) {
+        this.blockSeenWhileLocked = blockNumber;
+        return;
+      }
+      this.blockSeenWhileLocked = false;
+      this.lockedForBlockProcessing = true;
+      // DO NOT PUT ANY AWAITS ABOVE THIS LINE OR YOU WILL GET RACE CONDITIONS
+      // When you leave this function, make sure to call this.endDoBlockChecks() to unlock
 
-    const block = await this._miner.realProvider.getBlock(blockNumber, true);
-    await this.updateGasEstimate(block);
-    const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
+      if (this.blockTimeoutCheck) {
+        clearTimeout(this.blockTimeoutCheck);
+      }
 
-    const hash = await this._miner.getRootHash();
-    const nNodes = await this._miner.getRootHashNNodes();
-    const jrh = await this._miner.justificationTree.getRootHash();
-    const nHashSubmissions = await repCycle.getNSubmissionsForHash(hash, nNodes, jrh);
+      const block = await this._miner.realProvider.getBlock(blockNumber);
+      const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
 
-    // If less than 12 submissions have been made, submit at our next best possible time
-    if (nHashSubmissions.lt(12) && best12Submissions[submissionIndex]) {
-      if (block.timestamp >= best12Submissions[submissionIndex].timestamp) {
-        const {entryIndex} = best12Submissions[submissionIndex];
-        const canSubmit = await this._miner.submissionPossible(entryIndex);
-        if (canSubmit) {
-          console.log("⏰ Looks like it's time to submit an entry to the current cycle");
-          submissionIndex += 1;
-          await this.submitEntry(entryIndex);
+      const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
+      if (addr !== this.miningCycleAddress) {
+        // Then the cycle has completed since we last checked.
+        if (this.confirmTimeoutCheck) {
+          clearTimeout(this.confirmTimeoutCheck);
+        }
+        await this._miner.updatePeriodLength(repCycle);
+
+        // If we don't see this next cycle completed at an appropriate time, then report it
+
+        await this.setMiningCycleTimeout(repCycle);
+
+        // Let's process the reputation log if it's been this._processingDelay blocks
+        if (this.blocksSinceCycleCompleted < this._processingDelay) {
+          this.blocksSinceCycleCompleted += 1;
+		      if (this.blocksSinceCycleCompleted === 1) {
+            this._adapter.log(`⏰ Waiting for ${this._processingDelay} blocks before processing next log`)
+          };
+          this.endDoBlockChecks();
+          return;
+        }
+        await this.processReputationLog();
+
+        // And if appropriate, sort out our potential submissions for the next cycle.
+        if (this._auto){
+          this.best12Submissions = await this.getTwelveBestSubmissions();
+        }
+
+        this.miningCycleAddress = addr;
+        this.blocksSinceCycleCompleted = 0;
+      }
+
+      // If we're not auto-mining, then we don't need to do anything else.
+      if (!this._auto) {
+        this.endDoBlockChecks();
+        return;
+      }
+
+      const hash = await this._miner.getRootHash();
+      const NLeaves = await this._miner.getRootHashNLeaves();
+      const jrh = await this._miner.justificationTree.getRootHash();
+      const nHashSubmissions = await repCycle.getNSubmissionsForHash(hash, NLeaves, jrh);
+
+      // If less than 12 submissions have been made, submit at our next best possible time
+      if (nHashSubmissions.lt(12) && this.best12Submissions[this.submissionIndex]) {
+        if (block.timestamp >= this.best12Submissions[this.submissionIndex].timestamp) {
+          const {entryIndex} = this.best12Submissions[this.submissionIndex];
+          const canSubmit = await this._miner.submissionPossible(entryIndex);
+          if (canSubmit) {
+            this._adapter.log("⏰ Looks like it's time to submit an entry to the current cycle");
+            this.submissionIndex += 1;
+            await this.updateGasEstimate('safeLow');
+            await this.submitEntry(entryIndex);
+          }
         }
       }
-    }
 
-    const windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
+      const windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
 
-    const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
-    const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
-    const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
+      const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+      const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
+      const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
 
-    // We are in a state of dispute! Run through the process.
-    if (!lastHashStanding && !nUniqueSubmittedHashes.isZero()) {
-      // Is what we believe to be the right submission being disputed?
-      const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
-      const disputeRound = await repCycle.getDisputeRound(round);
-      const entry = disputeRound[index];
-      const submission = await repCycle.getReputationHashSubmission(entry.firstSubmitter);
+      // We are in a state of dispute! Run through the process.
+      if (!lastHashStanding && !nUniqueSubmittedHashes.isZero()) {
+        // Is what we believe to be the right submission being disputed?
+        const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
+        const disputeRound = await repCycle.getDisputeRound(round);
+        const entry = disputeRound[index];
+        const submission = await repCycle.getReputationHashSubmission(entry.firstSubmitter);
 
-      // Do we have an opponent?
-      const oppIndex = index.mod(2).isZero() ? index.add(1) : index.sub(1);
-      // console.log("oppIndex", oppIndex);
-      const oppEntry = disputeRound[oppIndex];
-      // console.log("oppEntry", oppEntry);
-      const oppSubmission = await repCycle.getReputationHashSubmission(oppEntry.firstSubmitter);
+        // Do we have an opponent?
+        const oppIndex = index.mod(2).isZero() ? index.add(1) : index.sub(1);
+        // this._adapter.log(`oppIndex ${oppIndex}`);
+        const oppEntry = disputeRound[oppIndex];
+        // this._adapter.log(`oppEntry ${oppEntry}`);
+        const oppSubmission = await repCycle.getReputationHashSubmission(oppEntry.firstSubmitter);
 
-      if (oppSubmission.proposedNewRootHash === ethers.constants.AddressZero){
-        // Then we don't have an opponent
-        if (round.eq(0)) {
-          // We can only advance if the window is closed
-          if (ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).lt(miningCycleDuration)) {
-            this.endDoBlockChecks();
-            return;
-          };
-        } else {
-          // We can only advance if the previous round is complete
-          const previousRoundComplete = await repCycle.challengeRoundComplete(round - 1);
-          if (!previousRoundComplete) {
+        if (oppSubmission.proposedNewRootHash === ethers.constants.AddressZero){
+          const responsePossible = await repCycle.getResponsePossible(disputeStages.INVALIDATE_HASH, entry.lastResponseTimestamp);
+          if (!responsePossible) { return; }
+          // Then we don't have an opponent
+          if (round.eq(0)) {
+            // We can only advance if the window is closed
+            if (ethers.BigNumber.from(block.timestamp).sub(windowOpened).lt(this._miner.getMiningCycleDuration())) {
+              this.endDoBlockChecks();
+              return;
+            };
+          } else {
+            // We can only advance if the previous round is complete
+            const previousRoundComplete = await repCycle.challengeRoundComplete(round - 1);
+            if (!previousRoundComplete) {
+              this.endDoBlockChecks();
+              return;
+            }
+          }
+          await this.updateGasEstimate('safeLow');
+          await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
+          this.endDoBlockChecks();
+          return;
+        }
+
+        // If we're here, we do have an opponent.
+        // Has our opponent timed out?
+        // TODO: Remove these magic numbers
+
+        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600);
+        if (opponentTimeout){
+          const responsePossible = await repCycle.getResponsePossible(
+            disputeStages.INVALIDATE_HASH,
+            ethers.BigNumber.from(oppEntry.lastResponseTimestamp).add(600)
+          );
+          if (responsePossible) {
+            // If so, invalidate them.
+            await this.updateGasEstimate('safeLow');
+            await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
             this.endDoBlockChecks();
             return;
           }
         }
-        await repCycle.invalidateHash(round, oppIndex);
-        this.endDoBlockChecks();
-        return;
-      }
+        // this._adapter.log(oppSubmission);
 
-      // If we're here, we do have an opponent.
-      // Has our opponent timed out?
-      const opponentTimeout = ethers.utils.bigNumberify(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600);
-      if (opponentTimeout){
-        // If so, invalidate them.
-        await repCycle.invalidateHash(round, oppIndex);
-        this.endDoBlockChecks();
-        return;
-      }
-      // console.log(oppSubmission);
-
-      // Our opponent hasn't timed out yet. We should check if we can respond to something though
-      // 1. Do we still need to confirm JRH?
-      if (submission.jrhNNodes.eq(0)) {
-        await this._miner.confirmJustificationRootHash();
-      // 2. Are we in the middle of a binary search?
-      // Check our opponent has confirmed their JRH, and the binary search is ongoing.
-      } else if (!oppSubmission.jrhNNodes.eq(0) && !entry.upperBound.eq(entry.lowerBound)){
-        // Yes. Are we able to respond?
-        // We can respond if neither of us have responded to this stage yet or
-        // if they have responded already
-        if (oppEntry.challengeStepCompleted.gte(entry.challengeStepCompleted)) {
-          await this._miner.respondToBinarySearchForChallenge();
-        }
-      // 3. Are we at the end of a binary search and need to confirm?
-      // Check that our opponent has finished the binary search, check that we have, and check we've not confirmed yet
-      } else if (
-        oppEntry.upperBound.eq(oppEntry.lowerBound) &&
-        entry.upperBound.eq(entry.lowerBound) &&
-        ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNNodes)
-      )
-      {
-        await this._miner.confirmBinarySearchResult();
-      // 4. Is the binary search confirmed, and we need to respond to challenge?
-      // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
-      } else if (
-          ethers.utils.bigNumberify(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNNodes) &&
-          ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNNodes) &&
-          ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNNodes)
+        // Our opponent hasn't timed out yet. We should check if we can respond to something though
+        // 1. Do we still need to confirm JRH?
+        if (submission.jrhNLeaves.eq(0)) {
+          const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
+          if (responsePossible){
+            await this.updateGasEstimate('fast');
+            await this._miner.confirmJustificationRootHash();
+          }
+        // 2. Are we in the middle of a binary search?
+        // Check our opponent has confirmed their JRH, and the binary search is ongoing.
+        } else if (!oppSubmission.jrhNLeaves.eq(0) && !entry.upperBound.eq(entry.lowerBound)){
+          // Yes. Are we able to respond?
+          // We can respond if neither of us have responded to this stage yet or
+          // if they have responded already
+          if (oppEntry.challengeStepCompleted.gte(entry.challengeStepCompleted)) {
+            const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_RESPONSE, entry.lastResponseTimestamp);
+            if (responsePossible){
+              await this.updateGasEstimate('fast');
+              await this._miner.respondToBinarySearchForChallenge();
+            }
+          }
+        // 3. Are we at the end of a binary search and need to confirm?
+        // Check that our opponent has finished the binary search, check that we have, and check we've not confirmed yet
+        } else if (
+          oppEntry.upperBound.eq(oppEntry.lowerBound) &&
+          entry.upperBound.eq(entry.lowerBound) &&
+          ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNLeaves)
         )
-      {
-        await this._miner.respondToChallenge();
+        {
+          const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
+          if (responsePossible){
+            await this.updateGasEstimate('fast');
+            await this._miner.confirmBinarySearchResult();
+          }
+        // 4. Is the binary search confirmed, and we need to respond to challenge?
+        // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
+        } else if (
+            ethers.BigNumber.from(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNLeaves) &&
+            ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNLeaves) &&
+            ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNLeaves)
+          )
+        {
+          const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
+          if (responsePossible){
+            await this.updateGasEstimate('fast');
+            await this._miner.respondToChallenge();
+          }
+        }
+      }
+
+      if (lastHashStanding && ethers.BigNumber.from(block.timestamp).sub(windowOpened).gte(this._miner.getMiningCycleDuration())) {
+        // If the submission window is closed and we are the last hash, confirm it
+        const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
+        const disputeRound = await repCycle.getDisputeRound(round);
+        const entry = disputeRound[index];
+
+        const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_NEW_HASH, entry.lastResponseTimestamp);
+        if (responsePossible){
+          this.best12Submissions = []; // Clear the submissions
+          this.submissionIndex = 0;
+          await this.updateGasEstimate('safeLow');
+          await this.confirmEntry();
+        }
+      }
+      this.endDoBlockChecks();
+    } catch (err) {
+      this._adapter.error(`Error during block checks: ${err}`);
+      // If it's out-of-ether...
+      if (err.toString().indexOf('does not have enough funds') >= 0 ) {
+        // This could obviously be much better in the future, but for now, we'll settle for this not triggering a restart loop.
+        this._adapter.error(`Block checks suspended due to not enough Ether. Send ether to \`${this._miner.minerAddress}\`, then restart the miner`);
+      } else if (this._exitOnError) {
+          process.exit(1);
+          // Note we don't call this.endDoBlockChecks here... this is a deliberate choice on my part; depending on what the error is,
+          // we might no longer be in a sane state, and might have only half-processed the reputation log, or similar. So playing it safe,
+          // and not unblocking the doBlockCheck function.
       }
     }
-
-    if (lastHashStanding && ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
-      // If the submission window is closed and we are the last hash, confirm it
-      best12Submissions = []; // Clear the submissions
-      submissionIndex = 0;
-      await this.confirmEntry();
-    }
-    this.endDoBlockChecks();
   }
 
   endDoBlockChecks() {
     if (this.resolveBlockChecksFinished){
       this.resolveBlockChecksFinished();
     }
-    lockedForBlockProcessing = false;
+    this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
+    this.lockedForBlockProcessing = false;
+    if (this.blockSeenWhileLocked){
+      // NB Not an async call - we do not want to wait here for the block checks to complete.
+      this.doBlockChecks(this.blockSeenWhileLocked);
+    }
   }
 
   async close() {
@@ -340,50 +504,55 @@ class ReputationMinerClient {
     const blockChecksFinished = new Promise((resolve) => {
       this.resolveBlockChecksFinished = resolve;
     });
-    const logProcessingFinished = new Promise((resolve) => {
-      this.resolveLogProcessingFinished = resolve;
-    });
 
     this._miner.realProvider.removeAllListeners('block');
     const blockListenerCount = this._miner.realProvider.listenerCount('block');
     if(blockListenerCount !== 0) {
-      console.log("ERROR: on block listener not removed on client close");
+      this._adapter.error("ERROR: on block listener not removed on client close");
     }
 
-    this._miner.realProvider.removeAllListeners(filterReputationMiningCycleComplete);
-    const reputationMiningCycleCompleteListener = this._miner.realProvider.listenerCount(filterReputationMiningCycleComplete);
-    if(reputationMiningCycleCompleteListener !== 0) {
-      console.log("ERROR: on ReputationMiningCycleComplete listener not removed on client close");
+    if (this.server){
+      this.server.close();
     }
 
-    this.server.close();
-    if (lockedForBlockProcessing) {
+    if (this.lockedForBlockProcessing) {
       await blockChecksFinished;
     }
-    if (lockedForLogProcessing) {
-      await logProcessingFinished;
+
+    if (this.blockTimeoutCheck) {
+      clearTimeout(this.blockTimeoutCheck);
+    }
+
+    if (this.confirmTimeoutCheck) {
+      clearTimeout(this.confirmTimeoutCheck);
     }
 
   }
 
   async processReputationLog() {
-    console.log("📁 Processing reputation update log");
+    this._adapter.log("📁 Processing reputation update log");
     await this._miner.addLogContentsToReputationTree();
-    console.log("💾 Writing new reputation state to database");
+    this._adapter.log("💾 Writing new reputation state to database");
     await this._miner.saveCurrentState();
   }
 
   async getTwelveBestSubmissions() {
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
-    const [, balance] = await this._miner.tokenLocking.getUserLock(this._miner.clnyAddress, this._miner.minerAddress);
+
+    const balance = await this._miner.tokenLocking.getObligation(
+      this._miner.minerAddress,
+      this._miner.clnyAddress,
+      this._miner.colonyNetwork.address
+    );
+
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
     const rootHash = await this._miner.getRootHash();
 
     const timeAbleToSubmitEntries = [];
-    for (let i = ethers.utils.bigNumberify(1); i.lte(balance.div(minStake)); i = i.add(1)) {
+    for (let i = ethers.BigNumber.from(1); i.lte(balance.div(minStake)); i = i.add(1)) {
       const entryHash = await repCycle.getEntryHash(this._miner.minerAddress, i, rootHash);
-      const timeAbleToSubmitEntry = ethers.utils.bigNumberify(entryHash).div(constant).add(reputationMiningWindowOpenTimestamp);
+      const timeAbleToSubmitEntry = ethers.BigNumber.from(entryHash).div(this._miner.constant).add(reputationMiningWindowOpenTimestamp);
 
       const validEntry = {
         timestamp: timeAbleToSubmitEntry,
@@ -396,12 +565,22 @@ class ReputationMinerClient {
       return a.timestamp.sub(b.timestamp).toNumber();
     });
 
-    return timeAbleToSubmitEntries.slice(0, 12);
+    const maxEntries = Math.min(12, timeAbleToSubmitEntries.length);
+
+    return timeAbleToSubmitEntries.slice(0, maxEntries);
+  }
+
+  async setMiningCycleTimeout(repCycle){
+    const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+    this.confirmTimeoutCheck = setTimeout(
+      this.reportConfirmTimeout.bind(this),
+      (this._miner.getMiningCycleDuration() + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
+    );
   }
 
   async submitEntry(entryIndex) {
     const rootHash = await this._miner.getRootHash();
-    console.log("#️⃣ Miner", this._miner.minerAddress ,"submitting new reputation hash", rootHash, "at entry index", entryIndex.toNumber());
+    this._adapter.log(`#️⃣ Miner ${this._miner.minerAddress} submitting new reputation hash ${rootHash} at entry index ${entryIndex.toNumber()}`);
 
     // Submit hash
     let submitRootHashTx = await this._miner.submitRootHash(entryIndex);
@@ -409,33 +588,37 @@ class ReputationMinerClient {
       // Assume we've been given back the submitRootHashTx hash.
       submitRootHashTx = await this._miner.realProvider.getTransaction(submitRootHashTx);
     }
-    console.log("⛏️ Transaction waiting to be mined", submitRootHashTx.hash);
+    this._adapter.log(`⛏️ Transaction waiting to be mined ${submitRootHashTx.hash}`);
 
     await submitRootHashTx.wait();
-    console.log("🆗 New reputation hash submitted successfully");
+    this._adapter.log("🆗 New reputation hash submitted successfully");
   }
 
   async confirmEntry() {
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
-    console.log("⏰ Looks like it's time to confirm the new hash");
+    this._adapter.log("⏰ Looks like it's time to confirm the new hash");
     // Confirm hash
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
-      let gasEstimate;
-      if (process.env.SOLIDITY_COVERAGE || this.ganacheClient) {
-        gasEstimate = ethers.utils.bigNumberify(3500000);
-      } else {
-        gasEstimate = await repCycle.estimate.confirmNewHash(round);
-      }
-      // This estimate still goes a bit wrong in ganache, it seems, so we add an extra 10%.
-      const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: gasEstimate.mul(11).div(10) , gasPrice: this._miner.gasPrice });
-      console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
+      const gasEstimate = await repCycle.estimateGas.confirmNewHash(round);
+
+      const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: gasEstimate, gasPrice: this._miner.gasPrice });
+      this._adapter.log(`⛏️ Transaction waiting to be mined ${confirmNewHashTx.hash}`);
       await confirmNewHashTx.wait();
-      console.log("✅ New reputation hash confirmed");
+      this._adapter.log("✅ New reputation hash confirmed");
     }
   }
+
+  async reportBlockTimeout() {
+    this._adapter.error("Error: No block seen for five minutes. Something is almost certainly wrong!");
+  }
+
+  async reportConfirmTimeout() {
+    this._adapter.error("Error: We expected to see the mining cycle confirm ten minutes ago. Something might be wrong!");
+  }
+
 }
 
 module.exports = ReputationMinerClient;

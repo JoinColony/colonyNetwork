@@ -14,19 +14,24 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@colony/colony-js-contract-loader-fs": "1.12.0",
-    "bn.js": "^4.11.8",
-    "ethers": "^4.0.26",
+    "bn.js": "^5.0.0",
+    "discord.js": "^12.2.0",
+    "ethers": "^5.0.19",
     "express": "^4.16.3",
-    "ganache-core": "^2.5.3",
-    "sqlite": "^3.0.2",
+    "ganache-core": "^2.8.0",
+    "jsonfile": "^6.0.1",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4",
+    "slack": "^11.0.2",
+    "sqlite": "^4.0.0",
+    "sqlite3": "^5.0.0",
     "web3-utils": "^1.0.0",
-    "yargs": "^13.2.4"
+    "yargs": "^16.0.0"
   },
   "devDependencies": {
-    "@babel/polyfill": "^7.4.4",
-    "@babel/preset-env": "^7.5.4",
-    "@babel/register": "^7.4.4",
-    "babel-plugin-istanbul": "^5.1.4"
+    "@babel/polyfill": "^7.8.3",
+    "@babel/preset-env": "^7.8.2",
+    "@babel/register": "^7.8.3",
+    "babel-plugin-istanbul": "^6.0.0"
   }
 }

@@ -8,7 +8,10 @@ test-results.xml
 parityPassword
 **/build/*
 coverageEnv
-coverage
+coverage-contracts
+coverage-merged
+coverage-reputation
+coverage-chainid-*
 coverage.json
 .nyc_output
 coverage-miner
@@ -19,3 +22,6 @@ yarn-error.log
 reputations.json
 reputationStates.sqlite
 truffle-security-output.json
+.coverage_contracts
+etherrouter-address.json
+ganache-chain-db

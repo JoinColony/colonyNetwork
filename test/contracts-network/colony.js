@@ -5,6 +5,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import {
+  IPFS_HASH,
   UINT256_MAX,
   MANAGER_RATING,
   WORKER_RATING,
@@ -12,27 +13,31 @@ import {
   RATING_2_SALT,
   RATING_1_SECRET,
   RATING_2_SECRET,
-  WAD
+  WAD,
 } from "../../helpers/constants";
-import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents } from "../../helpers/test-helper";
-import { makeTask, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
+import { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } from "../../helpers/test-helper";
+import { makeTask, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const Token = artifacts.require("Token");
+const EtherRouter = artifacts.require("EtherRouter");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const TransferTest = artifacts.require("TransferTest");
+const Token = artifacts.require("Token");
 
-contract("Colony", accounts => {
+contract("Colony", (accounts) => {
   let colony;
   let token;
   let colonyNetwork;
 
+  const USER0 = accounts[0];
+  const USER1 = accounts[1];
+
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
   beforeEach(async () => {
@@ -52,6 +57,13 @@ contract("Colony", accounts => {
       await colony.send(1);
       const colonyBalance = await web3GetBalance(colony.address);
       expect(colonyBalance).to.eq.BN(1);
+    });
+
+    it("should accept ether from a contract using .transfer", async () => {
+      const transferTest = await TransferTest.new({ value: 10 });
+      await transferTest.fireTransfer(colony.address, 10);
+      const colonyBalance = await web3GetBalance(colony.address);
+      expect(colonyBalance).to.eq.BN(10);
     });
 
     it("should not have owner", async () => {
@@ -77,15 +89,26 @@ contract("Colony", accounts => {
       await expectAllEvents(otherToken.methods["mint(uint256)"](100), ["Mint"]);
     });
 
+    it("should emit correct Mint event when minting tokens through the colony", async () => {
+      const tokenArgs = getTokenArgs();
+      const otherToken = await Token.new(...tokenArgs);
+      await otherToken.unlock();
+
+      await expectEvent(colony.mintTokens(100), "TokensMinted", [accounts[0], colony.address, 100]);
+      await expectEvent(colony.mintTokensFor(USER1, 100), "TokensMinted", [accounts[0], USER1, 100]);
+    });
+
     it("should fail if a non-admin tries to mint tokens", async () => {
       await checkErrorRevert(colony.mintTokens(100, { from: accounts[3] }), "ds-auth-unauthorized");
     });
 
+    it("should not allow initialisation with null token or network addresses", async () => {
+      await checkErrorRevert(colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero), "colony-network-cannot-be-zero");
+      await checkErrorRevert(colony.initialiseColony(colonyNetwork.address, ethers.constants.AddressZero), "colony-token-cannot-be-zero");
+    });
+
     it("should not allow reinitialisation", async () => {
-      await checkErrorRevert(
-        colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero),
-        "colony-already-initialised-network"
-      );
+      await checkErrorRevert(colony.initialiseColony(colonyNetwork.address, token.address), "colony-already-initialised-network");
     });
 
     it("should correctly generate a rating secret", async () => {
@@ -131,11 +154,49 @@ contract("Colony", accounts => {
       expect(rewardPotInfo.associatedTypeId).to.be.zero;
       expect(rewardPotInfo.payoutsWeCannotMake).to.be.zero;
     });
+
+    it("should allow the token to be unlocked by a root user only", async () => {
+      ({ colony, token } = await setupRandomColony(colonyNetwork, true));
+      await token.setOwner(colony.address);
+      let locked = await token.locked();
+      expect(locked).to.be.equal(true);
+
+      await checkErrorRevert(colony.unlockToken({ from: USER1 }), "ds-auth-unauthorized");
+
+      await expectEvent(colony.unlockToken({ from: accounts[0] }), "TokenUnlocked", []);
+      locked = await token.locked();
+      expect(locked).to.be.equal(false);
+    });
   });
 
   describe("when adding domains", () => {
-    it("should log DomainAdded and FundingPotAdded events", async () => {
-      await expectAllEvents(colony.addDomain(1, 0, 1), ["DomainAdded", "FundingPotAdded"]);
+    it("should log DomainAdded and FundingPotAdded and DomainMetadata events", async () => {
+      let tx = await colony.addDomain(1, UINT256_MAX, 1);
+      let domainCount = await colony.getDomainCount();
+      await expectEvent(tx, "DomainAdded", [accounts[0], domainCount]);
+      let fundingPotCount = await colony.getFundingPotCount();
+      await expectEvent(tx, "FundingPotAdded", [fundingPotCount]);
+      await expectNoEvent(tx, "DomainMetadata");
+
+      tx = await colony.addDomain(1, UINT256_MAX, 1, IPFS_HASH);
+      domainCount = await colony.getDomainCount();
+      await expectEvent(tx, "DomainAdded", [accounts[0], domainCount]);
+      fundingPotCount = await colony.getFundingPotCount();
+      await expectEvent(tx, "FundingPotAdded", [fundingPotCount]);
+      await expectEvent(tx, "DomainMetadata", [accounts[0], domainCount, IPFS_HASH]);
+    });
+  });
+
+  describe("when editing domains", () => {
+    it("should log the DomainMetadata event", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const domainCount = await colony.getDomainCount();
+      await expectEvent(colony.editDomain(1, 0, 2, IPFS_HASH), "DomainMetadata", [accounts[0], domainCount, IPFS_HASH]);
+    });
+
+    it("should not log the DomainMetadata event if empty string passed", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await expectNoEvent(colony.editDomain(1, 0, 2, ""), "DomainMetadata");
     });
   });
 
@@ -209,15 +270,27 @@ contract("Colony", accounts => {
       await colony.mintTokens(WAD.muln(14));
       await checkErrorRevert(
         colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS, {
-          from: accounts[1]
+          from: USER1,
         }),
         "ds-auth-unauthorized"
       );
     });
 
-    it("should not allow bootstrapping if colony is not in bootstrap state", async () => {
+    it("should not allow bootstrapping if tasks have been made", async () => {
       await colony.mintTokens(WAD.muln(14));
       await makeTask({ colony });
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
+    });
+
+    it("should not allow bootstrapping if payments have been made", async () => {
+      await colony.mintTokens(WAD.muln(14));
+      await colony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, 0);
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
+    });
+
+    it("should not allow bootstrapping if expenditures have been made", async () => {
+      await colony.mintTokens(WAD.muln(14));
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
       await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
     });
   });
@@ -236,13 +309,51 @@ contract("Colony", accounts => {
 
     it("should not allow anyone else but a root user to set it", async () => {
       await colony.setRewardInverse(100);
-      await checkErrorRevert(colony.setRewardInverse(234, { from: accounts[1] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setRewardInverse(234, { from: USER1 }), "ds-auth-unauthorized");
       const defaultRewardInverse = await colony.getRewardInverse();
       expect(defaultRewardInverse).to.eq.BN(100);
     });
 
     it("should not allow the amount to be set to zero", async () => {
       await checkErrorRevert(colony.setRewardInverse(0), "colony-reward-inverse-cannot-be-zero");
+    });
+  });
+
+  describe("when annotating transactions", () => {
+    it("should be able to emit transaction annotations", async () => {
+      const tx1 = await colony.addDomain(1, UINT256_MAX, 1);
+      const tx2 = await colony.annotateTransaction(tx1.tx, "annotation");
+      await expectEvent(tx2, "Annotation", [USER0, tx1.tx, "annotation"]);
+    });
+  });
+
+  describe("when burning tokens", async () => {
+    beforeEach(async () => {
+      await colony.mintTokens(WAD);
+      await colony.claimColonyFunds(token.address);
+    });
+
+    it("should allow root user to burn", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      const tx = await colony.burnTokens(token.address, amount);
+      await expectEvent(tx, "TokensBurned", [accounts[0], token.address, amount]);
+    });
+
+    it("should not allow anyone else but a root user to burn", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      await checkErrorRevert(colony.burnTokens(token.address, amount, { from: USER1 }), "ds-auth-unauthorized");
+    });
+
+    it("cannot burn more tokens than it has", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      await checkErrorRevert(colony.burnTokens(token.address, amount.muln(2)), "colony-not-enough-tokens");
+    });
+
+    it("cannot burn more tokens than are in the root funding pot", async () => {
+      const amount = await colony.getFundingPotBalance(1, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, amount.divn(2), token.address);
+
+      await checkErrorRevert(colony.burnTokens(token.address, amount), "colony-not-enough-tokens");
     });
   });
 });

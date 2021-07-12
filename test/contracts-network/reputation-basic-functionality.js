@@ -6,8 +6,8 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
-import { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE } from "../../helpers/constants";
-import { forwardTime, checkErrorRevert, getActiveRepCycle } from "../../helpers/test-helper";
+import { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
+import { forwardTime, checkErrorRevert, getActiveRepCycle, advanceMiningCycleNoContest, getBlockTime } from "../../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -19,9 +19,11 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
-contract("Reputation mining - basic functionality", accounts => {
-  const MINER1 = accounts[5];
-  const MINER2 = accounts[6];
+contract("Reputation mining - basic functionality", (accounts) => {
+  // Not using accounts[5] here otherwise the afterEach breaks reputation mining, which we need
+  // for one of the tests.
+  const MINER1 = accounts[6];
+  const MINER2 = accounts[7];
 
   let colonyNetwork;
   let tokenLocking;
@@ -43,12 +45,16 @@ contract("Reputation mining - basic functionality", accounts => {
     // Ensure consistent state of token locking and clnyToken balance for two test accounts
     const miner1Lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
     if (miner1Lock.balance > 0) {
-      await tokenLocking.withdraw(clnyToken.address, miner1Lock.balance, { from: MINER1 });
+      const obligation = await tokenLocking.getObligation(MINER1, clnyToken.address, colonyNetwork.address);
+      await colonyNetwork.unstakeForMining(obligation, { from: MINER1 });
+      await tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken.address, miner1Lock.balance, false, { from: MINER1 });
     }
 
     const miner2Lock = await tokenLocking.getUserLock(clnyToken.address, MINER2);
     if (miner2Lock.balance > 0) {
-      await tokenLocking.withdraw(clnyToken.address, miner2Lock.balance, { from: MINER2 });
+      const obligation = await tokenLocking.getObligation(MINER2, clnyToken.address, colonyNetwork.address);
+      await colonyNetwork.unstakeForMining(obligation, { from: MINER2 });
+      await tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken.address, miner2Lock.balance, false, { from: MINER2 });
     }
 
     const miner1Balance = await clnyToken.balanceOf(MINER1);
@@ -62,7 +68,7 @@ contract("Reputation mining - basic functionality", accounts => {
     it("should allow miners to stake CLNY", async () => {
       await giveUserCLNYTokens(colonyNetwork, MINER2, 9000);
       await clnyToken.approve(tokenLocking.address, 5000, { from: MINER2 });
-      await tokenLocking.deposit(clnyToken.address, 5000, { from: MINER2 });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, 5000, true, { from: MINER2 });
 
       const userBalance = await clnyToken.balanceOf(MINER2);
       expect(userBalance).to.eq.BN(4000);
@@ -75,7 +81,8 @@ contract("Reputation mining - basic functionality", accounts => {
     it("should allow miners to withdraw staked CLNY", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, 5000);
 
-      await tokenLocking.withdraw(clnyToken.address, 5000, { from: MINER2 });
+      await colonyNetwork.unstakeForMining(5000, { from: MINER2 });
+      await tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken.address, 5000, false, { from: MINER2 });
 
       const info = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       const stakedBalance = new BN(info.balance);
@@ -86,7 +93,10 @@ contract("Reputation mining - basic functionality", accounts => {
       await giveUserCLNYTokens(colonyNetwork, MINER2, 9000);
       await clnyToken.approve(tokenLocking.address, 10000, { from: MINER2 });
 
-      await checkErrorRevert(tokenLocking.deposit(clnyToken.address, 10000, { from: MINER2 }), "ds-token-insufficient-balance");
+      await checkErrorRevert(
+        tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, 10000, true, { from: MINER2 }),
+        "ds-token-insufficient-balance"
+      );
 
       const userBalance = await clnyToken.balanceOf(MINER2);
       expect(userBalance).to.eq.BN(9000);
@@ -99,7 +109,10 @@ contract("Reputation mining - basic functionality", accounts => {
     it("should not allow miners to withdraw more CLNY than they staked, even if enough has been staked total", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, 9000);
 
-      await checkErrorRevert(tokenLocking.withdraw(clnyToken.address, 10000, { from: MINER2 }), "ds-math-sub-underflow");
+      await checkErrorRevert(
+        tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken.address, 10000, false, { from: MINER2 }),
+        "ds-math-sub-underflow"
+      );
 
       const info = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       const stakedBalance = new BN(info.balance);
@@ -117,6 +130,52 @@ contract("Reputation mining - basic functionality", accounts => {
 
       const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
       expect(nUniqueSubmittedHashes).to.be.zero;
+    });
+
+    it("should correctly set staking timestamp", async () => {
+      const usersTokens = 10000;
+      await giveUserCLNYTokens(colonyNetwork, MINER2, usersTokens);
+      await clnyToken.approve(tokenLocking.address, usersTokens, { from: MINER2 });
+      const quarter = Math.floor(usersTokens / 4);
+
+      let tx;
+      await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, quarter * 3, true, { from: MINER2 });
+      tx = await colonyNetwork.stakeForMining(quarter * 3, { from: MINER2 });
+      const time1 = await getBlockTime(tx.receipt.blockNumber);
+      const [stakedAmount, stakedTimestamp] = await colonyNetwork.getMiningStake(MINER2);
+      console.log(stakedAmount, stakedTimestamp);
+      expect(stakedAmount).to.eq.BN(quarter * 3);
+      expect(stakedTimestamp).to.eq.BN(time1);
+
+      await forwardTime(3600);
+
+      await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, quarter, true, { from: MINER2 });
+      tx = await colonyNetwork.stakeForMining(quarter, { from: MINER2 });
+      const time2 = await getBlockTime(tx.receipt.blockNumber);
+
+      const [stakedAmount2, stakedTimestamp2] = await colonyNetwork.getMiningStake(MINER2);
+
+      const weightedAvgTime = Math.floor((time1 * 3 + time2) / 4);
+      expect(stakedAmount2).to.eq.BN(quarter * 4);
+      expect(stakedTimestamp2).to.eq.BN(weightedAvgTime);
+    });
+
+    it("should update nSubmissionsForHash as submissions are made", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, MIN_STAKE);
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+
+      let nSubmissionsForHash = await repCycle.getNSubmissionsForHash("0x12345678", 10, "0x00");
+      expect(nSubmissionsForHash).to.be.zero;
+      await repCycle.submitRootHash("0x12345678", 10, "0x00", 1, { from: MINER1 });
+      nSubmissionsForHash = await repCycle.getNSubmissionsForHash("0x12345678", 10, "0x00");
+      expect(nSubmissionsForHash).to.eq.BN(1);
+
+      // Cleanup
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
+      await repCycle.confirmNewHash(0);
     });
   });
 
@@ -159,6 +218,17 @@ contract("Reputation mining - basic functionality", accounts => {
       );
     });
 
+    it("should not allow the ReputationMiningCycle to be initialised with null values", async () => {
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
+      await checkErrorRevert(
+        repCycle.initialise(ethers.constants.AddressZero, ethers.constants.AddressZero),
+        "colony-reputation-token-locking-cannot-be-zero"
+      );
+      await checkErrorRevert(repCycle.initialise(tokenLocking.address, ethers.constants.AddressZero), "colony-reputation-clny-token-cannot-be-zero");
+      await checkErrorRevert(repCycle.initialise(tokenLocking.address, clnyToken.address), "colony-reputation-mining-cycle-already-initialised");
+    });
+
     it('should not allow "initialise" to be called on either the active or inactive ReputationMiningCycle', async () => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await checkErrorRevert(repCycle.initialise(MINER1, MINER2), "colony-reputation-mining-cycle-already-initialised");
@@ -188,6 +258,20 @@ contract("Reputation mining - basic functionality", accounts => {
       const decay = await repCycle.getDecayConstant();
       expect(decay.numerator).to.eq.BN(DECAY_RATE.NUMERATOR);
       expect(decay.denominator).to.eq.BN(DECAY_RATE.DENOMINATOR);
+    });
+
+    it("when there are no logs, getDisputeRewardSize returns 0", async () => {
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const rewardIncrement = await repCycle.getDisputeRewardSize();
+      expect(rewardIncrement.toString(), "RewardIncrement was nonzero").to.equal("0");
+    });
+
+    it("when no dispute is yet required, getDisputeRewardSize returns 0", async () => {
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const rewardIncrement = await repCycle.getDisputeRewardSize();
+      expect(rewardIncrement.toString(), "RewardIncrement was nonzero").to.equal("0");
     });
   });
 });

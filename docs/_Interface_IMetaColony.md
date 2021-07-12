@@ -7,6 +7,20 @@ order: 4
   
 ## Interface Methods
 
+### `addExtensionToNetwork`
+
+Add a new extension/version to the Extensions repository.
+
+*Note: Calls `IColonyNetwork.addExtensionToNetwork`.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|_resolver|address|The deployed resolver containing the extension contract logic
+
+
 ### `addGlobalSkill`
 
 Add a new global skill.
@@ -70,3 +84,29 @@ Set the Colony Network fee inverse amount.
 |Name|Type|Description|
 |---|---|---|
 |_feeInverse|uint256|Nonzero amount for the fee inverse
+
+
+### `setPayoutWhitelist`
+
+Set a token's status in the payout whitelist on the Colony Network
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|The token being set
+|_status|bool|The whitelist status
+
+
+### `setReputationMiningCycleReward`
+
+Called to set the total per-cycle reputation reward, which will be split between all miners.
+
+*Note: Calls the corresponding function on the ColonyNetwork.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_amount|uint256|

@@ -6,12 +6,11 @@ import fs from "fs";
 export function parseImplementation(contractName, functionsToResolve, deployedImplementations) {
   // Goes through a contract, and sees if anything in it is in the interface. If it is, then wire up the resolver to point at it
   const { abi } = JSON.parse(fs.readFileSync(`./build/contracts/${contractName}.json`));
-  abi.map(value => {
+  abi.map((value) => {
     const fName = value.name;
     if (functionsToResolve[fName]) {
-      if (functionsToResolve[fName].definedIn !== "") {
-        // It's a Friday afternoon, and I can't be bothered to deal with same name, different signature.
-        // Let's just resolve to not do it? We'd probably just trip ourselves up later.
+      if (functionsToResolve[fName].definedIn !== "" && functionsToResolve[fName].definedIn !== deployedImplementations[contractName]) {
+        // We allow function overloads so long as they are in the same file.
         // eslint-disable-next-line no-console
         console.log(
           "What are you doing!? Defining functions with the same name in different files!? You are going to do yourself a mischief. ",
@@ -35,39 +34,57 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
 
   // Load ABI of the interface of the contract we're trying to stich together
   const iAbi = JSON.parse(fs.readFileSync(`./build/contracts/${interfaceContract}.json`, "utf8")).abi;
-  iAbi.map(value => {
+  iAbi.map((value) => {
     const fName = value.name;
     const fType = value.type;
     // These are from DSAuth, and so are on EtherRouter itself without any more help.
-    if (fName !== "authority" && fName !== "owner") {
+    if (fName !== "authority" && fName !== "owner" && !fName.includes("c_0x")) {
       // We only care about functions.
       if (fType === "function") {
         // Gets the types of the parameters, which is all we care about for function signatures.
-        const fInputs = value.inputs.map(parameter => parameter.type);
+        const fInputs = value.inputs.map((parameter) => parameter.type);
         // Record function name
         functionsToResolve[fName] = { inputs: fInputs, definedIn: "" };
       }
     }
     return functionsToResolve;
   });
-  Object.keys(deployedImplementations).map(name => parseImplementation(name, functionsToResolve, deployedImplementations));
-  for (let i = 0; i < Object.keys(functionsToResolve).length; i += 1) {
+  Object.keys(deployedImplementations).map((name) => parseImplementation(name, functionsToResolve, deployedImplementations));
+  // Iterate over the ABI again to make sure we get overloads - the functionToResolve is only indexed by name, not signature.
+  for (let i = 0; i < iAbi.length; i += 1) {
     // We do it like this rather than a nice await Promise.all on a mapped array of promises because of
     // https://github.com/paritytech/parity-ethereum/issues/9155
-    const fName = Object.keys(functionsToResolve)[i];
-    const sig = `${fName}(${functionsToResolve[fName].inputs.join(",")})`;
-    const address = functionsToResolve[fName].definedIn;
-    const sigHash = await soliditySha3(sig).substr(0, 10);
-    await resolver.register(sig, address);
-    const destination = await resolver.lookup(sigHash);
-    assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);
+    const fName = iAbi[i].name;
+    if (functionsToResolve[fName]) {
+      const sig = `${fName}(${iAbi[i].inputs.map((parameter) => parameter.type).join(",")})`;
+      const address = functionsToResolve[fName].definedIn;
+      try {
+        await resolver.register(sig, address);
+      } catch (err) {
+        throw new Error(`${sig} could not be registered. Is it defined?`);
+      }
+      const sigHash = soliditySha3(sig).substr(0, 10);
+      const destination = await resolver.lookup(sigHash);
+      assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);
+    }
   }
 }
 
-export async function setupColonyVersionResolver(colony, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver) {
+export async function setupColonyVersionResolver(
+  colony,
+  colonyExpenditure,
+  colonyTask,
+  colonyPayment,
+  colonyFunding,
+  colonyRoles,
+  contractRecovery,
+  resolver
+) {
   const deployedImplementations = {};
   deployedImplementations.Colony = colony.address;
+  deployedImplementations.ColonyExpenditure = colonyExpenditure.address;
   deployedImplementations.ColonyTask = colonyTask.address;
+  deployedImplementations.ColonyRoles = colonyRoles.address;
   deployedImplementations.ColonyPayment = colonyPayment.address;
   deployedImplementations.ColonyFunding = colonyFunding.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
@@ -82,6 +99,7 @@ export async function setupUpgradableColonyNetwork(
   colonyNetworkMining,
   colonyNetworkAuction,
   colonyNetworkENS,
+  colonyNetworkExtensions,
   contractRecovery
 ) {
   const deployedImplementations = {};
@@ -89,10 +107,10 @@ export async function setupUpgradableColonyNetwork(
   deployedImplementations.ColonyNetworkMining = colonyNetworkMining.address;
   deployedImplementations.ColonyNetworkAuction = colonyNetworkAuction.address;
   deployedImplementations.ColonyNetworkENS = colonyNetworkENS.address;
+  deployedImplementations.ColonyNetworkExtensions = colonyNetworkExtensions.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
 
   await setupEtherRouter("IColonyNetwork", deployedImplementations, resolver);
-
   await etherRouter.setResolver(resolver.address);
 }
 
@@ -106,10 +124,17 @@ export async function setupUpgradableTokenLocking(etherRouter, resolver, tokenLo
   assert.equal(registeredResolver, resolver.address);
 }
 
-export async function setupReputationMiningCycleResolver(reputationMiningCycle, reputationMiningCycleRespond, resolver, colonyNetwork) {
+export async function setupReputationMiningCycleResolver(
+  reputationMiningCycle,
+  reputationMiningCycleRespond,
+  reputationMiningCycleBinarySearch,
+  resolver,
+  colonyNetwork
+) {
   const deployedImplementations = {};
   deployedImplementations.ReputationMiningCycle = reputationMiningCycle.address;
   deployedImplementations.ReputationMiningCycleRespond = reputationMiningCycleRespond.address;
+  deployedImplementations.ReputationMiningCycleBinarySearch = reputationMiningCycleBinarySearch.address;
 
   await setupEtherRouter("IReputationMiningCycle", deployedImplementations, resolver);
 

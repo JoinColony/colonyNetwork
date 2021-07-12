@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-console */
 
 const { setupENSRegistrar } = require("../helpers/upgradable-contracts");
 
@@ -8,7 +7,7 @@ const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const ENSRegistry = artifacts.require("ENSRegistry");
 
 // eslint-disable-next-line no-unused-vars
-module.exports = async function(deployer, network, accounts) {
+module.exports = async function (deployer, network, accounts) {
   const etherRouterDeployed = await EtherRouter.deployed();
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
   const ensRegistry = await ENSRegistry.new();

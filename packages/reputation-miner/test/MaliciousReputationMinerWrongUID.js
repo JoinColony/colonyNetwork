@@ -9,7 +9,7 @@ class MaliciousReputationMinerWrongUID extends ReputationMinerTestWrapper {
     this.amountToFalsify = amountToFalsify.toString();
   }
 
-  getValueAsBytes(reputation, _uid, index) { //eslint-disable-line
+  getValueAsBytes(reputation, _uid, index) {
     let uid;
     if (index && index.toString() === this.entryToFalsify) {
       uid = new BN(_uid.toString()).add(new BN(this.amountToFalsify));

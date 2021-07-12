@@ -11,7 +11,7 @@ The Colony Network is a large set of contracts that together define how all colo
 Colony is designed to be modular, upgradable, and eternally backwards-compatible. This is achieved through a sophisticated contract architecture that requires a bit of exposition. It is recommended that any developer seeking to understand the Colony Network solidity implementation first read the [Colony White Paper](https://colony.io/whitepaper.pdf), or at the very least, the [White Paper TL;DR](/colonynetwork/whitepaper-tldr-colony/).
 
 ## Smart Contracts Architecture
-The Colony Network contracts are separated out into four functional layers, and four logical entities outined below. This design is to an extent mandated by the [contract upgrade mechanism](/colonynetwork/docs-upgrade-design/) we use.
+The Colony Network contracts are separated out into four functional layers, and four logical entities outlined below. This design is to an extent mandated by the [contract upgrade mechanism](/colonynetwork/docs-upgrade-design/) we use.
 
 ![Interface, Logic, Data](img/colonyNetwork_diagram_r12.png)
 Starting from the layer closes to the user:
@@ -26,7 +26,7 @@ Starting from the layer closes to the user:
   * `IRecovery.sol`
   * `IEtherRouter.sol`
 
-All public and external functions from the logic contracts for an entity are composed into a single interface. For example the Colony interface - `IColony.sol` is a superset of the public and external functions from the logic contracts for a Colony entity, i.e. `Colony.sol`, `ColonyFunding.sol`, `ColonyPayment.sol` and `ColonyTask.sol`.
+All public and external functions from the logic contracts for an entity are composed into a single interface. For example the Colony interface - `IColony.sol` is a superset of the public and external functions from the logic contracts for a Colony entity, i.e. `Colony.sol`, `ColonyFunding.sol`, etc.
 
 This layer represents the Colony Network API, documented in the [Interface section](https://docs.colony.io/colonynetwork/interface-ietherrouter) of the documentation.
 
@@ -34,7 +34,7 @@ This layer represents the Colony Network API, documented in the [Interface secti
 
 All function declarations live in this layer, which constitutes the majority of the colonyNetwork code. Functions that implement a feature or set of related actions are grouped together into a single contract. There are often several logic contracts representing a single logical entity.
 
-For example, the logic for a colony is distributed across `Colony.sol`, `ColonyFunding.sol`, `ColonyPayment.sol` and `ColonyTask.sol`. Likewise for the ColonyNetwork and ReputationMiningCycle entities.
+For example, the logic for a colony is distributed across `Colony.sol`, `ColonyFunding.sol`, and so on. Likewise for the ColonyNetwork and ReputationMiningCycle entities.
 
 Note that this logic distribution is possible due to the [contract upgrade mechanism](/colonynetwork/docs-upgrade-design/), in which all functions are called from the same underlying `EtherRouter` delegate proxy instance, regardless of where they are implemented.
 
@@ -63,12 +63,11 @@ Colony supports an ENS integration, which defines a custom ENS registry for use 
   * `ENSRegistry.sol`
 
 
-Colony also supports the creation of extension contracts for use with other smart contracts or dapps. There are 2 officially supported extensions: OldRoles, and OneTxPayment.
-  * `ExtensionFactory.sol`
-  * `OldRoles.sol`
-  * `OldRolesFactory.sol`
+Colony also supports the creation of extension contracts for use with other smart contracts or dapps. There are four officially supported extensions:
+  * `CoinMachine.sol`
+  * `FundingQueue.sol`
   * `OneTxPayment.sol`
-  * `OneTxPaymentFactory.sol`
+  * `VotingReputation.sol`
 
 ## Logic Entities
 Broadly speaking, the Colony Network can be divided into four logical entities:
@@ -78,6 +77,8 @@ Broadly speaking, the Colony Network can be divided into four logical entities:
 Defines the state of an individual colony, such as funding pots, tasks, domains, and skills.
   * `Colony.sol`
   * `ColonyFunding.sol`
+  * `ColonyStaking.sol`
+  * `ColonyExpenditure.sol`
   * `ColonyPayment.sol`
   * `ColonyTask.sol`
 

@@ -15,7 +15,7 @@ import {
   WORKER_ROLE,
   DELIVERABLE_HASH,
   INITIAL_FUNDING,
-  SECONDS_PER_DAY
+  SECONDS_PER_DAY,
 } from "../../helpers/constants";
 import { currentBlockTime, checkErrorRevert, forwardTime, expectEvent } from "../../helpers/test-helper";
 import { fundColonyWithTokens, setupAssignedTask, setupRatedTask, setupRandomColony } from "../../helpers/test-data-generator";
@@ -26,7 +26,7 @@ chai.use(bnChai(web3.utils.BN));
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 
-contract("Colony Task Work Rating", accounts => {
+contract("Colony Task Work Rating", (accounts) => {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
@@ -365,13 +365,14 @@ contract("Colony Task Work Rating", accounts => {
 
       await expectEvent(
         colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
-        "TaskWorkRatingRevealed"
+        "TaskWorkRatingRevealed",
+        [EVALUATOR, taskId, WORKER_ROLE, WORKER_RATING]
       );
     });
   });
 
   describe("when assigning work ratings after the user not commiting or revealing on time", () => {
-    it("should assign rating 3 to manager and penalise worker, when they haven't submitted rating on time", async () => {
+    it("should assign rating 2 to manager and penalise worker, when they haven't submitted rating on time", async () => {
       const dueDate = await currentBlockTime();
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
       await colony.completeTask(taskId);
@@ -386,13 +387,13 @@ contract("Colony Task Work Rating", accounts => {
       expect(roleWorker.rating).to.eq.BN(WORKER_RATING);
 
       const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      expect(roleManager.rating).to.eq.BN(3);
+      expect(roleManager.rating).to.eq.BN(2);
 
       const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       expect(roleEvaluator.rateFail).to.be.false;
     });
 
-    it("should assign rating 3 to worker and 1 to evaluator if evaluator hasn't submitted rating on time", async () => {
+    it("should assign rating 2 to worker and 1 to evaluator if evaluator hasn't submitted rating on time", async () => {
       const dueDate = await currentBlockTime();
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
       await colony.completeTask(taskId);
@@ -404,7 +405,7 @@ contract("Colony Task Work Rating", accounts => {
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       expect(roleWorker.rateFail).to.be.false;
-      expect(roleWorker.rating).to.eq.BN(3);
+      expect(roleWorker.rating).to.eq.BN(2);
 
       const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
       expect(roleManager.rateFail).to.be.false;
@@ -415,7 +416,7 @@ contract("Colony Task Work Rating", accounts => {
       expect(roleEvaluator.rating).to.eq.BN(1);
     });
 
-    it("should assign rating 3 to manager and 3 to worker, with penalties, when no one has submitted any ratings", async () => {
+    it("should assign rating 2 to manager and 2 to worker, with penalties, when no one has submitted any ratings", async () => {
       const dueDate = await currentBlockTime();
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
       await colony.completeTask(taskId);
@@ -424,11 +425,11 @@ contract("Colony Task Work Rating", accounts => {
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       expect(roleWorker.rateFail).to.be.true;
-      expect(roleWorker.rating).to.eq.BN(3);
+      expect(roleWorker.rating).to.eq.BN(2);
 
       const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
       expect(roleManager.rateFail).to.be.false;
-      expect(roleManager.rating).to.eq.BN(3);
+      expect(roleManager.rating).to.eq.BN(2);
 
       const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       expect(roleEvaluator.rateFail).to.be.true;

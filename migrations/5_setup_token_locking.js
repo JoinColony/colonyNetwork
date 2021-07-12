@@ -1,5 +1,4 @@
 /* globals artifacts */
-/* eslint-disable no-console */
 
 const { setupUpgradableTokenLocking } = require("../helpers/upgradable-contracts");
 
@@ -9,7 +8,7 @@ const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
 
 // eslint-disable-next-line no-unused-vars
-module.exports = async function(deployer) {
+module.exports = async function (deployer) {
   const resolver = await Resolver.new();
   const etherRouter = await EtherRouter.new();
   const tokenLockingContract = await TokenLocking.new();

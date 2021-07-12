@@ -2,11 +2,17 @@ version: 2
 
 job_common: &job_common
   docker:
-    - image: circleci/node:10.12-stretch
+    - image: circleci/node:12.16.3-stretch
+      auth:
+        username: colonyci
+        password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
 job_python: &job_python
   docker:
-    - image: circleci/python:3.7.3-stretch-node
+    - image: circleci/python:3.8.0b1-stretch-node
+      auth:
+        username: colonyci
+        password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
 step_save_cache: &step_save_cache
   save_cache:
@@ -21,7 +27,7 @@ step_setup_global_packages: &step_setup_global_packages
   run:
     name: "Set up global packages"
     command: |
-      yarn --pure-lockfile --network-concurrency 1
+      yarn --pure-lockfile --ignore-engines --network-concurrency 1
       git submodule update --remote --init
       yarn run provision:token:contracts
 step_pull_solc_docker: &step_pull_solc_docker
@@ -36,14 +42,38 @@ step_setup_slither: &step_setup_slither
         chmod +x solc-static-linux
         sudo mv solc-static-linux /usr/local/bin/solc
         sudo pip install slither-analyzer
+        sudo pip install solc-select
+        sudo solc-select install 0.7.3
+        sudo solc-select use 0.7.3
 
 jobs:
+  reputation-test:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: 19.03.13
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Install lsof"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+      - run:
+          name: "Running reputation system unit tests"
+          command: yarn run test:reputation
+      - run:
+          name: "Running storage consistency smoke tests"
+          command: yarn run test:contracts:smoke
   lint-and-unit-test:
     <<: *job_common
     steps:
       - checkout
       - <<: *step_restore_cache
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
@@ -68,6 +98,12 @@ jobs:
             sed -i "s/000000000000000000000000000000deadbeef10/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
             sed -i "s/000000000000000000000000000000deadbeef11/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
             sed -i "s/000000000000000000000000000000deadbeef12/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef13/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef14/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef15/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef16/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef17/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef18/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
       - run:
           name: "Install lsof"
           command: |
@@ -78,7 +114,7 @@ jobs:
           command: yarn run eslint
       - run:
           name: "Linting Solidity"
-          command: yarn run solium
+          command: yarn run solhint
       - run:
           name: "Checking contract storage variables"
           command: yarn run check:storagevars
@@ -92,14 +128,17 @@ jobs:
           name: "Running network contracts unit tests"
           command: yarn run test:contracts
       - run:
-          name: "Running reputation system unit tests"
-          command: yarn run test:reputation
+          name: "Cleanup ganache leftovers"
+          command: yarn run clean:ganache
+      - run:
+          name: "Running extension contracts unit tests"
+          command: yarn run test:contracts:extensions
+      - run:
+          name: "Cleanup ganache leftovers"
+          command: yarn run clean:ganache
       - run:
           name: "Running upgrade tests"
           command: yarn run test:contracts:upgrade:parity && yarn run test:contracts:upgrade:ganache
-      - run:
-          name: "Running v2 to v3 upgrade tests, forked from mainnet"
-          command: yarn run test:contracts:upgrade:2to3
       - run:
           name: "Running gas cost tests"
           command: yarn run test:contracts:gasCosts && yarn run codechecks
@@ -114,44 +153,134 @@ jobs:
           path: test-results.xml
       - store_artifacts:
           path: coverage-miner
-  test-coverage:
+  test-contracts-coverage:
     <<: *job_common
     steps:
       - checkout
       - <<: *step_restore_cache
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
-          name: "Running unit tests with coverage"
+          name: "Running core contract unit tests with coverage"
           command: yarn run test:contracts:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-contracts
+  test-contracts-extensions-coverage:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: 19.03.13
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running extension contract unit tests with coverage"
+          command: yarn run test:contracts:extensions:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-extensions
+  test-reputation-coverage:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: 19.03.13
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running reputation tests with coverage"
+          command: yarn run test:reputation:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-reputation
+  test-chainid-coverage:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: 19.03.13
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running chainid tests with coverage for mainnet"
+          command: CHAIN_ID=1 yarn run test:contracts:chainid:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - run:
+          name: "Running chainid tests with coverage for goerli"
+          command: CHAIN_ID=5 yarn run test:contracts:chainid:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - run:
+          name: "Running chainid tests with coverage for xDai"
+          command: CHAIN_ID=100 yarn run test:contracts:chainid:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - run:
+          name: "Running chainid tests with coverage for an unsupported network"
+          command: CHAIN_ID=777 yarn run test:contracts:chainid:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-chainid-1
+            - coverage-chainid-5
+            - coverage-chainid-100
+            - coverage-chainid-777
+  check-coverage:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - run:
+          name: "Install packages"
+          command: yarn --pure-lockfile --ignore-engines --network-concurrency 1
+      - attach_workspace:
+          at: ./
+      - run:
+          name: "Merge coverage runs and check coverage thresholds"
+          command: yarn run check:coverage
       # Save coverage artifacts
       - store_artifacts:
-          path: coverage
+          path: coverage-merged
   security-analysis:
     <<: *job_python
     steps:
       - checkout
       - <<: *step_restore_cache
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - <<: *step_setup_slither
       - run:
           name: "Slither analysis"
-          command: yarn run test:security:slither
-      - run:
-          name: "MythX security analysis"
-          command: yarn run test:security:mythril
-          no_output_timeout: 60m
+          command: |
+            rm build/contracts/*
+            yarn run test:security:slither
   end-to-end-tests:
     <<: *job_common
     steps:
       - checkout
       - <<: *step_restore_cache
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
@@ -162,8 +291,27 @@ workflows:
   version: 2
   commit:
     jobs:
-      - lint-and-unit-test
-      - test-coverage
+      - lint-and-unit-test:
+          context: dockerhub-credentials
+      - security-analysis:
+          context: dockerhub-credentials
+      - reputation-test:
+          context: dockerhub-credentials
+      - test-contracts-coverage:
+          context: dockerhub-credentials
+      - test-contracts-extensions-coverage:
+          context: dockerhub-credentials
+      - test-reputation-coverage:
+          context: dockerhub-credentials
+      - test-chainid-coverage:
+          context: dockerhub-credentials
+      - check-coverage:
+          context: dockerhub-credentials
+          requires:
+            - test-contracts-coverage
+            - test-contracts-extensions-coverage
+            - test-reputation-coverage
+            - test-chainid-coverage
   nightly:
     triggers:
       - schedule:
@@ -173,6 +321,4 @@ workflows:
               only:
                 - develop
     jobs:
-      - security-analysis:
-          context: colony-network-context
       - end-to-end-tests

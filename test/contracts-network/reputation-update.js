@@ -3,6 +3,7 @@ import { BN } from "bn.js";
 import { soliditySha3 } from "web3-utils";
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import {
   fundColonyWithTokens,
@@ -11,10 +12,11 @@ import {
   setupFinalizedTask,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
-  giveUserCLNYTokensAndStake
+  giveUserCLNYTokensAndStake,
 } from "../../helpers/test-data-generator";
 
 import {
+  UINT256_MAX,
   INT256_MAX,
   INT128_MAX,
   INT128_MIN,
@@ -27,12 +29,13 @@ import {
   WORKER_PAYOUT,
   MAX_PAYOUT,
   SECONDS_PER_DAY,
+  GLOBAL_SKILL_ID,
   MANAGER_ROLE,
   WORKER_ROLE,
   RATING_1_SALT,
   RATING_2_SALT,
   RATING_1_SECRET,
-  RATING_2_SECRET
+  RATING_2_SECRET,
 } from "../../helpers/constants";
 
 import {
@@ -41,8 +44,10 @@ import {
   advanceMiningCycleNoContest,
   getTokenArgs,
   removeSubdomainLimit,
-  addTaskSkillEditingFunctions
+  addTaskSkillEditingFunctions,
 } from "../../helpers/test-helper";
+
+const ADDRESS_ZERO = ethers.constants.AddressZero;
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -51,7 +56,7 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const Token = artifacts.require("Token");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 
-contract("Reputation Updates", accounts => {
+contract("Reputation Updates", (accounts) => {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
@@ -73,7 +78,7 @@ contract("Reputation Updates", accounts => {
     await colonyNetwork.startNextCycle();
   });
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     const amount = WAD.mul(new BN(1000));
     await fundColonyWithTokens(metaColony, clnyToken, amount);
 
@@ -123,29 +128,29 @@ contract("Reputation Updates", accounts => {
         manager: 1,
         reputationChangeManager: MANAGER_PAYOUT.neg(),
         worker: 1,
-        reputationChangeWorker: WORKER_PAYOUT.neg()
+        reputationChangeWorker: WORKER_PAYOUT.neg(),
       },
       {
         manager: 2,
         reputationChangeManager: MANAGER_PAYOUT,
         worker: 2,
-        reputationChangeWorker: WORKER_PAYOUT
+        reputationChangeWorker: WORKER_PAYOUT,
       },
       {
         manager: 3,
         reputationChangeManager: MANAGER_PAYOUT.muln(3).divn(2),
         worker: 3,
-        reputationChangeWorker: WORKER_PAYOUT.muln(3).divn(2)
-      }
+        reputationChangeWorker: WORKER_PAYOUT.muln(3).divn(2),
+      },
     ];
 
-    ratings.forEach(async rating => {
+    ratings.forEach(async (rating) => {
       it(`should set the correct reputation change amount in log for rating ${rating.worker}`, async () => {
         await setupFinalizedTask({
           colonyNetwork,
           colony: metaColony,
           managerRating: rating.manager,
-          workerRating: rating.worker
+          workerRating: rating.worker,
         });
 
         const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
@@ -185,7 +190,7 @@ contract("Reputation Updates", accounts => {
       });
     });
 
-    it("should set the correct reputation change amount in log when all users have failed to rate", async function() {
+    it("should set the correct reputation change amount in log when all users have failed to rate", async function () {
       const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, evaluator: accounts[1] });
       await metaColony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
       await forwardTime(SECONDS_PER_DAY * 11, this);
@@ -193,7 +198,7 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryManager.user).to.equal(MANAGER);
-      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT.muln(3).divn(2));
+      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT);
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       expect(repLogEntryEvaluator.user).to.equal(accounts[1]);
@@ -201,14 +206,17 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryWorker1 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
       expect(repLogEntryWorker1.user).to.equal(WORKER);
-      expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT);
+      expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT.divn(2));
 
+      // The entry for the worker's skill shouldn't have the penalty applied - their ability to perform a
+      // task is unrelated to their ability to rate the manager. So they only have their domain reward penalised
+      // (i.e. the one tested above) but not the skill reward.
       const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(4);
       expect(repLogEntryWorker2.user).to.equal(WORKER);
-      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT.muln(3).divn(2));
+      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT);
     });
 
-    it("should set the correct reputation change amount in log when evaluator has failed to rate", async function() {
+    it("should set the correct reputation change amount in log when evaluator has failed to rate", async function () {
       const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, evaluator: accounts[1] });
       await metaColony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, RATING_2_SECRET, { from: WORKER });
       await forwardTime(SECONDS_PER_DAY * 6, this);
@@ -226,14 +234,14 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryWorker1 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
       expect(repLogEntryWorker1.user).to.equal(WORKER);
-      expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT.muln(3).divn(2));
+      expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT);
 
       const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(4);
       expect(repLogEntryWorker2.user).to.equal(WORKER);
-      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT.muln(3).divn(2));
+      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT);
     });
 
-    it("should set the correct reputation change amount in log when worker has failed to rate", async function() {
+    it("should set the correct reputation change amount in log when worker has failed to rate", async function () {
       const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, evaluator: accounts[1] });
       await metaColony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
       await metaColony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_1_SECRET, { from: accounts[1] });
@@ -244,7 +252,7 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryManager.user).to.equal(MANAGER);
-      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT.muln(3).divn(2));
+      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT);
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       expect(repLogEntryEvaluator.user).to.equal(accounts[1]);
@@ -285,7 +293,7 @@ contract("Reputation Updates", accounts => {
 
     it("should calculate nUpdates correctly when making a log", async () => {
       await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
-      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, UINT256_MAX, 1);
       await metaColony.addDomain(1, 1, 2);
       await metaColony.addDomain(1, 2, 3);
       await metaColony.addDomain(1, 3, 4);
@@ -309,7 +317,7 @@ contract("Reputation Updates", accounts => {
       expect(repLogEntryWorker.amount).to.eq.BN(INT128_MAX);
     });
 
-    it("should correctly make large negative reputation updates", async function() {
+    it("should correctly make large negative reputation updates", async function () {
       const workerRating = 1;
       const workerRatingSecret = soliditySha3(RATING_2_SALT, workerRating);
 
@@ -341,14 +349,61 @@ contract("Reputation Updates", accounts => {
       expect(numUpdates).to.eq.BN(3);
     });
 
+    it("should not make reputation updates to the zero address", async () => {
+      // Entry for miner reward only
+      let numUpdates = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
+      expect(numUpdates).to.eq.BN(1);
+
+      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
+      const RECIPIENT = ADDRESS_ZERO;
+      await metaColony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await metaColony.getExpenditureCount();
+
+      const SLOT0 = 0;
+
+      await metaColony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT);
+      await metaColony.setExpenditurePayout(expenditureId, SLOT0, clnyToken.address, WAD);
+
+      const domain1 = await metaColony.getDomain(1);
+
+      const expenditure = await metaColony.getExpenditure(expenditureId);
+      await metaColony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        clnyToken.address
+      );
+      await metaColony.finalizeExpenditure(expenditureId);
+      await metaColony.claimExpenditurePayout(expenditureId, SLOT0, clnyToken.address);
+
+      // Entry for miner reward only still
+      numUpdates = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
+      expect(numUpdates).to.eq.BN(1);
+    });
+
     it("should set the correct domain and skill reputation change amount in log for payments", async () => {
       const RECIPIENT = accounts[3];
-      await metaColony.addPayment(1, 0, RECIPIENT, clnyToken.address, WAD, 1, 3);
+      await metaColony.addPayment(1, UINT256_MAX, RECIPIENT, clnyToken.address, WAD, 1, GLOBAL_SKILL_ID);
       const paymentId = await metaColony.getPaymentCount();
 
       const payment = await metaColony.getPayment(paymentId);
-      await metaColony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), clnyToken.address);
-      await metaColony.finalizePayment(1, 0, paymentId);
+      await metaColony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        1,
+        payment.fundingPotId,
+        WAD.add(WAD.divn(10)),
+        clnyToken.address
+      );
+      await metaColony.finalizePayment(1, UINT256_MAX, paymentId);
       await metaColony.claimPayment(paymentId, clnyToken.address);
 
       const reputationUpdateLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
@@ -373,12 +428,22 @@ contract("Reputation Updates", accounts => {
       await otherToken.unlock();
       await fundColonyWithTokens(metaColony, otherToken, WAD.muln(2));
 
-      await metaColony.addPayment(1, 0, RECIPIENT, otherToken.address, WAD, 1, 3);
+      await metaColony.addPayment(1, UINT256_MAX, RECIPIENT, otherToken.address, WAD, 1, GLOBAL_SKILL_ID);
       const paymentId = await metaColony.getPaymentCount();
 
       const payment = await metaColony.getPayment(paymentId);
-      await metaColony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), otherToken.address);
-      await metaColony.finalizePayment(1, 0, paymentId);
+      await metaColony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        1,
+        payment.fundingPotId,
+        WAD.add(WAD.divn(10)),
+        otherToken.address
+      );
+      await metaColony.finalizePayment(1, UINT256_MAX, paymentId);
       await metaColony.claimPayment(paymentId, otherToken.address);
 
       const reputationUpdateLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();

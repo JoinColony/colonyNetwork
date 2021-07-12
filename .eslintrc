@@ -13,14 +13,22 @@
     "import/no-extraneous-dependencies": [2, {"devDependencies": ["**/*.js"]}],
     "max-len": [2, { "code": 150, "ignoreComments": true }],
     "prettier/prettier": ["error", {"printWidth": 150}],
-    "flowtype/require-valid-file-annotation": "off",
     "import/named": "off",
+    "func-names": "off",
     "no-console": "off",
     "no-unused-expressions": "off",
+    "eslint-comments/no-unlimited-disable": "off",
     "no-await-in-loop": "off",
-    "no-trailing-spaces": "error"
+    "no-trailing-spaces": "error",
+    "no-multi-spaces": ["error", {"ignoreEOLComments": true}],
+    "no-only-tests/no-only-tests": ["error", {"block": ["contract", "it"], "focus": ["only"]}],
+    "eslint-comments/disable-enable-pair": ["error", {"allowWholeFile": true}],
+    "space-infix-ops": ["error"]
   },
   "parserOptions": {
-    "ecmaVersion": 2017
-  }
+    "ecmaVersion": 2018
+  },
+  "plugins": [
+    "no-only-tests"
+  ]
 }

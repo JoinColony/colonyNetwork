@@ -1,12 +1,13 @@
 /* globals artifacts */
 
-import { padLeft, soliditySha3, numberToHex } from "web3-utils";
+import { padLeft, soliditySha3 } from "web3-utils";
 import BN from "bn.js";
 import { ethers } from "ethers";
 import chai from "chai";
 import bnChai from "bn-chai";
 import path from "path";
-import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
+
+import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import {
   forwardTime,
   makeReputationKey,
@@ -15,7 +16,7 @@ import {
   checkErrorRevert,
   web3GetStorageAt,
   getActiveRepCycle,
-  advanceMiningCycleNoContest
+  advanceMiningCycleNoContest,
 } from "../../helpers/test-helper";
 import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -32,16 +33,17 @@ const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("ReputationMiningCycleRespond");
+const ReputationMiningCycleBinarySearch = artifacts.require("ReputationMiningCycleBinarySearch");
 const Resolver = artifacts.require("Resolver");
 const ContractEditing = artifacts.require("ContractEditing");
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
 });
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
-contract("Colony Network Recovery", accounts => {
+contract("Colony Network Recovery", (accounts) => {
   let colonyNetwork;
   let client;
   let startingBlockNumber;
@@ -60,7 +62,7 @@ contract("Colony Network Recovery", accounts => {
       loader: contractLoader,
       minerAddress: accounts[5],
       realProviderPort: REAL_PROVIDER_PORT,
-      useJsTree: true
+      useJsTree: true,
     });
   });
 
@@ -203,9 +205,9 @@ contract("Colony Network Recovery", accounts => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this }); // Default (0x00, 0)
 
       let rootHash = await colonyNetwork.getReputationRootHash();
-      let nNodes = await colonyNetwork.getReputationRootHashNNodes();
+      let nLeaves = await colonyNetwork.getReputationRootHashNLeaves();
       expect(rootHash).to.equal(ethers.constants.HashZero);
-      expect(nNodes).to.be.zero;
+      expect(nLeaves).to.be.zero;
 
       await colonyNetwork.enterRecoveryMode();
 
@@ -215,9 +217,9 @@ contract("Colony Network Recovery", accounts => {
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
       rootHash = await colonyNetwork.getReputationRootHash();
-      nNodes = await colonyNetwork.getReputationRootHashNNodes();
+      nLeaves = await colonyNetwork.getReputationRootHashNLeaves();
       expect(rootHash).to.equal("0x0200000000000000000000000000000000000000000000000000000000000000");
-      expect(nNodes).to.eq.BN(7);
+      expect(nLeaves).to.eq.BN(7);
     });
 
     it("should be able to set replacement reputation log entry", async () => {
@@ -271,7 +273,7 @@ contract("Colony Network Recovery", accounts => {
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,
-            useJsTree: true
+            useJsTree: true,
           });
           await newClient.initialise(colonyNetwork.address);
 
@@ -313,20 +315,20 @@ contract("Colony Network Recovery", accounts => {
           console.log("The WARNING and ERROR immediately preceeding can be ignored (they are expected as part of the test)");
 
           const rootHash = await client.getRootHash();
-          const nNodes = await client.nReputations;
+          const nLeaves = await client.nReputations;
 
-          // slots 13 and 14 are hash and nodes respectively
+          // slots 13 and 14 are hash and number of leaves respectively
           await colonyNetwork.setStorageSlotRecovery(13, rootHash);
-          const nNodesHex = numberToHex(nNodes);
-          await colonyNetwork.setStorageSlotRecovery(14, `${padLeft(nNodesHex, 64)}`);
+          const nLeavesHex = nLeaves.toHexString();
+          await colonyNetwork.setStorageSlotRecovery(14, `${padLeft(nLeavesHex, 64)}`);
 
           await colonyNetwork.approveExitRecovery();
           await colonyNetwork.exitRecoveryMode();
 
           const newHash = await colonyNetwork.getReputationRootHash();
-          const newHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
+          const newHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
           expect(newHash).to.equal(rootHash);
-          expect(newHashNNodes).to.eq.BN(nNodes.toString()); // nNodes is a BigNumber :sob:
+          expect(newHashNLeaves).to.eq.BN(nLeaves.toString()); // nLeaves is a BigNumber :sob:
 
           await newClient.sync(startingBlockNumber);
           const newValue = newClient.reputations[reputationKey].slice(2, 66);
@@ -343,7 +345,7 @@ contract("Colony Network Recovery", accounts => {
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,
-            useJsTree: true
+            useJsTree: true,
           });
           await ignorantclient.initialise(colonyNetwork.address);
 
@@ -372,6 +374,7 @@ contract("Colony Network Recovery", accounts => {
           const deployedImplementations = {};
           deployedImplementations.ReputationMiningCycle = ReputationMiningCycle.address;
           deployedImplementations.ReputationMiningCycleRespond = ReputationMiningCycleRespond.address;
+          deployedImplementations.ReputationMiningCycleBinarySearch = ReputationMiningCycleBinarySearch.address;
           await setupEtherRouter("IReputationMiningCycle", deployedImplementations, newResolver);
 
           // Now add our extra functions.
@@ -490,7 +493,7 @@ contract("Colony Network Recovery", accounts => {
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,
-            useJsTree: true
+            useJsTree: true,
           });
           await newClient.initialise(colonyNetwork.address);
           await newClient.sync(startingBlockNumber);

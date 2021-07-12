@@ -1,29 +1,30 @@
+/* globals artifacts */
+
 import chai from "chai";
 import bnChai from "bn-chai";
 
 import { soliditySha3 } from "web3-utils";
-import { INITIAL_FUNDING, DELIVERABLE_HASH, GLOBAL_SKILL_ID } from "../../helpers/constants";
-import { checkErrorRevert, removeSubdomainLimit } from "../../helpers/test-helper";
+import { UINT256_MAX, INITIAL_FUNDING, SPECIFICATION_HASH, GLOBAL_SKILL_ID, WAD } from "../../helpers/constants";
+import { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit } from "../../helpers/test-helper";
 import { executeSignedTaskChange } from "../../helpers/task-review-signing";
 
 import {
   fundColonyWithTokens,
-  setupAssignedTask,
-  setupFundedTask,
   setupFinalizedTask,
   makeTask,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
-  setupRandomColony
+  setupRandomColony,
 } from "../../helpers/test-data-generator";
+
+const IMetaColony = artifacts.require("IMetaColony");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-contract("Meta Colony", accounts => {
+contract("Meta Colony", (accounts) => {
   const MANAGER = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
-  const WORKER = accounts[2];
 
   let metaColony;
   let clnyToken;
@@ -53,12 +54,16 @@ contract("Meta Colony", accounts => {
   });
 
   describe("when adding skills to the tree by adding domains", () => {
-    beforeEach(async () => {
+    before(async () => {
       await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
     });
 
+    after(async () => {
+      await restoreSubdomainLimit(colonyNetwork);
+    });
+
     it("should be able to add a new skill as a child of a domain", async () => {
-      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, UINT256_MAX, 1);
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(4);
@@ -83,9 +88,9 @@ contract("Meta Colony", accounts => {
     });
 
     it("should be able to add multiple child skills to the skill corresponding to the root domain by adding child domains", async () => {
-      await metaColony.addDomain(1, 0, 1);
-      await metaColony.addDomain(1, 0, 1);
-      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, UINT256_MAX, 1);
+      await metaColony.addDomain(1, UINT256_MAX, 1);
+      await metaColony.addDomain(1, UINT256_MAX, 1);
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(6);
@@ -117,10 +122,10 @@ contract("Meta Colony", accounts => {
 
     it("should NOT be able to add a domain that has a non existent parent", async () => {
       // Add 2 skill nodes to skill corresponding to root domain
-      await metaColony.addDomain(1, 0, 1);
-      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, UINT256_MAX, 1);
+      await metaColony.addDomain(1, UINT256_MAX, 1);
 
-      await checkErrorRevert(metaColony.addDomain(1, 0, 6), "ds-auth-child-domain-does-not-exist");
+      await checkErrorRevert(metaColony.addDomain(1, UINT256_MAX, 6), "ds-auth-child-domain-does-not-exist");
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(5);
     });
@@ -139,7 +144,7 @@ contract("Meta Colony", accounts => {
       await metaColony.approveExitRecovery();
       await metaColony.exitRecoveryMode();
       // Try to add a child
-      await checkErrorRevert(metaColony.addDomain(1, 0, 1), "colony-global-and-local-skill-trees-are-separate");
+      await checkErrorRevert(metaColony.addDomain(1, UINT256_MAX, 1), "colony-global-and-local-skill-trees-are-separate");
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(3);
     });
@@ -148,8 +153,8 @@ contract("Meta Colony", accounts => {
       // Why this random addGlobalSkill in the middle? It means we can use effectively the same tests
       // below, but with skill ID 7 replaced with skill ID 2. While porting everything to the tag cloud
       // arrangement, I was very interested in changing tests as little as possible.
-      await metaColony.addDomain(1, 0, 1); // Domain ID 2, skill id 4
-      await metaColony.addDomain(1, 0, 1); // Domain ID 3, skill id 5
+      await metaColony.addDomain(1, UINT256_MAX, 1); // Domain ID 2, skill id 4
+      await metaColony.addDomain(1, UINT256_MAX, 1); // Domain ID 3, skill id 5
       await metaColony.addDomain(1, 2, 3); // Domain ID 4, skill id 6
       await metaColony.addGlobalSkill(); // Skill id 7
       await metaColony.addDomain(1, 1, 2); // Domain ID 5, skill id 8
@@ -221,7 +226,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should correctly ascend the skills tree to find parents", async () => {
-      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, UINT256_MAX, 1);
       await metaColony.addDomain(1, 1, 2);
       await metaColony.addDomain(1, 2, 3);
       await metaColony.addDomain(1, 3, 4);
@@ -282,13 +287,13 @@ contract("Meta Colony", accounts => {
       await metaColony.approveExitRecovery();
       await metaColony.exitRecoveryMode();
       // Try to add a child
-      await checkErrorRevert(metaColony.addDomain(1, 0, 1), "colony-invalid-skill-id");
+      await checkErrorRevert(metaColony.addDomain(1, UINT256_MAX, 1), "colony-invalid-skill-id");
     });
   });
 
   describe("when adding domains in the meta colony", () => {
     it("should be able to add new domains as children to the root domain", async () => {
-      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, UINT256_MAX, 1);
       const newDomainId = await metaColony.getDomainCount();
 
       const skillCount = await colonyNetwork.getSkillCount();
@@ -311,7 +316,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to add a child domain more than one level away from the root domain", async () => {
-      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, UINT256_MAX, 1);
 
       // In position 1 because the mining skill occupies position 0
       await checkErrorRevert(metaColony.addDomain(1, 1, 2), "colony-parent-domain-not-root");
@@ -329,13 +334,13 @@ contract("Meta Colony", accounts => {
     });
 
     it("someone who does not have root role should not be able to add domains", async () => {
-      await checkErrorRevert(colony.addDomain(1, 0, 1, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.addDomain(1, UINT256_MAX, 1, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
     });
 
     it("should be able to add new domains as children to the root domain", async () => {
-      await colony.addDomain(1, 0, 1);
-      await colony.addDomain(1, 0, 1);
-      await colony.addDomain(1, 0, 1);
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await colony.addDomain(1, UINT256_MAX, 1);
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(7);
@@ -386,118 +391,24 @@ contract("Meta Colony", accounts => {
     });
   });
 
+  // NOTE: Does this test block really belong here?
   describe("when setting domain and skill on task", () => {
     beforeEach(async () => {
       ({ colony, token } = await setupRandomColony(colonyNetwork));
     });
 
     it("should be able to set domain on task", async () => {
-      await colony.addDomain(1, 0, 1);
-      const taskId = await makeTask({ colony });
+      await colony.addDomain(1, UINT256_MAX, 1);
 
-      await executeSignedTaskChange({
-        colony,
-        functionName: "setTaskDomain",
-        taskId,
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, 2]
-      });
+      const { logs } = await colony.makeTask(1, 0, SPECIFICATION_HASH, 2, 0, 0);
+      const { taskId } = logs[0].args;
 
       const task = await colony.getTask(taskId);
       expect(task.domainId).to.eq.BN(2);
     });
 
-    it("should NOT allow a non-manager to set domain on task", async () => {
-      await colony.addDomain(1, 0, 1);
-      const taskId = await makeTask({ colony });
-      await checkErrorRevert(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [OTHER_ACCOUNT],
-          sigTypes: [0],
-          args: [taskId, 2]
-        }),
-        "colony-task-signatures-do-not-match-reviewer-1"
-      );
-
-      const task = await colony.getTask(taskId);
-      expect(task.domainId).to.eq.BN(1);
-    });
-
-    it("should NOT allow a non-worker to set domain on task", async () => {
-      await colony.addDomain(1, 0, 1);
-      const taskId = await setupAssignedTask({ colony });
-      await checkErrorRevert(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [MANAGER, OTHER_ACCOUNT],
-          sigTypes: [0, 0],
-          args: [taskId, 2]
-        }),
-        "colony-task-signatures-do-not-match-reviewer-2"
-      );
-
-      const task = await colony.getTask(taskId);
-      expect(task.domainId).to.eq.BN(1);
-    });
-
-    it("should NOT be able to set a domain on nonexistent task", async () => {
-      const taskId = await makeTask({ colony });
-      const nonexistentTaskId = taskId.addn(10);
-
-      await checkErrorRevert(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [MANAGER],
-          sigTypes: [0],
-          args: [nonexistentTaskId, 1]
-        }),
-        "colony-task-does-not-exist"
-      );
-    });
-
     it("should NOT be able to set a nonexistent domain on task", async () => {
-      const taskId = await makeTask({ colony });
-
-      await checkErrorRevert(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [MANAGER],
-          sigTypes: [0],
-          args: [taskId, 20]
-        }),
-        "colony-task-change-execution-failed"
-      );
-
-      const task = await colony.getTask(taskId);
-      expect(task.domainId).to.eq.BN(1);
-    });
-
-    it("should NOT be able to set a domain on completed task", async () => {
-      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupFundedTask({ colonyNetwork, colony });
-      await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
-
-      await checkErrorRevert(
-        executeSignedTaskChange({
-          colony,
-          functionName: "setTaskDomain",
-          taskId,
-          signers: [MANAGER, WORKER],
-          sigTypes: [0, 0],
-          args: [taskId, 1]
-        }),
-        "colony-task-change-execution-failed"
-      );
+      await checkErrorRevert(colony.makeTask(1, 0, SPECIFICATION_HASH, 2, 0, 0), "ds-auth-child-domain-does-not-exist");
     });
 
     it("should be able to set global skill on task", async () => {
@@ -512,7 +423,7 @@ contract("Meta Colony", accounts => {
         functionName: "setTaskSkill",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, 6]
+        args: [taskId, 6],
       });
 
       const task = await colony.getTask(taskId);
@@ -627,9 +538,51 @@ contract("Meta Colony", accounts => {
     });
   });
 
+  describe("when managing the payout whitelist", () => {
+    it("should allow a meta colony root user to update the whitelist", async () => {
+      let status = await colonyNetwork.getPayoutWhitelist(clnyToken.address);
+      expect(status).to.be.false;
+
+      await metaColony.setPayoutWhitelist(clnyToken.address, true);
+
+      status = await colonyNetwork.getPayoutWhitelist(clnyToken.address);
+      expect(status).to.be.true;
+    });
+
+    it("should not allow anyone else but a meta colony root user to update the whitelist", async () => {
+      await checkErrorRevert(metaColony.setPayoutWhitelist(clnyToken.address, true, { from: accounts[1] }), "ds-auth-unauthorized");
+    });
+
+    it("should not allow another account, than the meta colony, to update the whitelist", async () => {
+      await checkErrorRevert(colonyNetwork.setPayoutWhitelist(clnyToken.address, true), "colony-caller-must-be-meta-colony");
+    });
+  });
+
   describe("when minting tokens for the Network", () => {
     it("should NOT allow anyone but the Network to call mintTokensForColonyNetwork", async () => {
       await checkErrorRevert(metaColony.mintTokensForColonyNetwork(100), "colony-access-denied-only-network-allowed");
     });
+  });
+
+  describe("when setting the per-cycle miner reward", () => {
+    it("should allow the reward to be set", async () => {
+      const rewardBefore = await colonyNetwork.getReputationMiningCycleReward();
+      expect(rewardBefore).to.be.zero;
+      await metaColony.setReputationMiningCycleReward(WAD);
+      const rewardAfter = await colonyNetwork.getReputationMiningCycleReward();
+      expect(rewardAfter).to.eq.BN(WAD);
+    });
+
+    it("setting the reward should be a permissioned function", async () => {
+      await checkErrorRevert(metaColony.setReputationMiningCycleReward(0, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
+    });
+
+    it("a non-meta colony should not be able to set the reward", async () => {
+      ({ colony } = await setupRandomColony(colonyNetwork));
+      const colonyAsMetaColony = await IMetaColony.at(colony.address);
+      await checkErrorRevert(colonyAsMetaColony.setReputationMiningCycleReward(0), "colony-caller-must-be-meta-colony");
+    });
+
+    // Checking that the rewards are paid out is done in tests in root-hash-submissions.js
   });
 });

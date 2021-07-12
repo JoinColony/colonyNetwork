@@ -1,11 +1,12 @@
 /* globals artifacts */
-/* eslint-disable no-console */
 import shortid from "shortid";
 import chai from "chai";
-import { asciiToHex } from "web3-utils";
+import { asciiToHex, isBN } from "web3-utils";
 import BN from "bn.js";
+import { ethers } from "ethers";
+import { BigNumber } from "bignumber.js";
 
-import { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE } from "./constants";
+import { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW } from "./constants";
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -16,6 +17,7 @@ const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 const Resolver = artifacts.require("Resolver");
 const ContractEditing = artifacts.require("ContractEditing");
+const Colony = artifacts.require("Colony");
 
 const { expect } = chai;
 
@@ -100,12 +102,28 @@ export function web3GetAccounts() {
   });
 }
 
+export function web3GetChainId() {
+  const packet = {
+    jsonrpc: "2.0",
+    method: "eth_chainId",
+    params: [],
+    id: new Date().getTime(),
+  };
+
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(packet, (err, res) => {
+      if (err !== null) return reject(err);
+      return resolve(parseInt(res.result, 16));
+    });
+  });
+}
+
 export function web3GetRawCall(params) {
   const packet = {
     jsonrpc: "2.0",
     method: "eth_call",
     params: [params],
-    id: new Date().getTime()
+    id: new Date().getTime(),
   };
 
   return new Promise((resolve, reject) => {
@@ -202,10 +220,7 @@ export function getRandomString(_length) {
   const length = _length || 7;
   let randString = "";
   while (randString.length < length) {
-    randString += shortid
-      .generate()
-      .replace(/_/g, "")
-      .toLowerCase();
+    randString += shortid.generate().replace(/_/g, "").toLowerCase();
   }
   return randString.slice(0, length);
 }
@@ -252,19 +267,99 @@ export async function getBlockTime(blockNumber) {
   return p;
 }
 
-export async function expectEvent(tx, eventName) {
-  const { logs } = await tx;
-  const event = logs.find(e => e.event === eventName);
-  return expect(event).to.exist;
+function hexlifyAndPad(input) {
+  let i = input;
+  if (i.toString) {
+    i = i.toString();
+  }
+  i = ethers.BigNumber.from(i);
+  return ethers.utils.hexZeroPad(ethers.utils.hexlify(i), 32);
+}
+
+export async function expectEvent(tx, nameOrSig, args) {
+  const matches = await eventMatches(tx, nameOrSig, args);
+  if (matches.indexOf(true) === -1) {
+    throw Error(`No matching event was found for ${nameOrSig} with args ${args}`);
+  }
+}
+
+export async function expectNoEvent(tx, nameOrSig, args) {
+  const matches = await eventMatches(tx, nameOrSig, args);
+  if (matches.indexOf(true) !== -1) {
+    throw Error(`A matching event was found for ${nameOrSig} with args ${args}`);
+  }
+}
+
+async function eventMatches(tx, nameOrSig, args) {
+  const re = /\((.*)\)/;
+  let eventMatch;
+  if (nameOrSig.match(re)) {
+    // i.e. if the passed nameOrSig has () in it, we assume it's a signature
+    const { rawLogs } = await tx.receipt;
+    const canonicalSig = nameOrSig.replace(/ indexed/g, "");
+    const topic = web3.utils.soliditySha3(canonicalSig);
+    const events = rawLogs.filter((e) => e.topics[0] === topic);
+    eventMatch = await Promise.all(
+      events.map((e) => {
+        // Set up an abi so we decode correctly, including indexed topics
+        const event = e;
+        const abi = [`event ${nameOrSig}`];
+        const iface = new ethers.utils.Interface(abi);
+
+        event.args = iface.parseLog(event).args;
+        return eventMatchArgs(event, args);
+      })
+    );
+  } else {
+    const { logs } = await tx;
+    const events = logs.filter((e) => e.event === nameOrSig);
+    eventMatch = await Promise.all(events.map((e) => eventMatchArgs(e, args)));
+  }
+  return eventMatch;
+}
+
+async function eventMatchArgs(event, args) {
+  for (let i = 0; i < args.length; i += 1) {
+    let arg = args[i];
+    if (arg === null) {
+      continue; // eslint-disable-line no-continue
+    }
+    if (arg.constructor.name === "BN" || event.args[i].constructor.name === "BN") {
+      if (ethers.utils.isHexString(arg)) {
+        arg = ethers.BigNumber.from(arg).toString();
+      }
+      if (arg.toString() !== event.args[i].toString()) {
+        return false;
+      }
+    } else if (typeof arg === "object") {
+      if (JSON.stringify(arg) !== JSON.stringify(event.args[i])) {
+        return false;
+      }
+    } else if (typeof arg === "string" && !ethers.utils.isHexString(event.args[i])) {
+      if (arg !== event.args[i]) {
+        return false;
+      }
+    } else if (typeof arg === "boolean") {
+      if (arg !== event.args[i]) {
+        return false;
+      }
+    } else if (hexlifyAndPad(arg) !== hexlifyAndPad(event.args[i])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export async function expectAllEvents(tx, eventNames) {
   const { logs } = await tx;
-  const events = eventNames.every(eventName => logs.find(e => e.event === eventName));
+  const events = eventNames.every((eventName) => logs.find((e) => e.event === eventName));
   return expect(events).to.be.true;
 }
 
 export async function forwardTime(seconds, test) {
+  if (typeof seconds !== "number") {
+    throw new Error("typeof seconds is not a number");
+  }
   const client = await web3GetClient();
   const p = new Promise((resolve, reject) => {
     if (client.indexOf("TestRPC") === -1) {
@@ -276,9 +371,9 @@ export async function forwardTime(seconds, test) {
           jsonrpc: "2.0",
           method: "evm_increaseTime",
           params: [seconds],
-          id: 0
+          id: 0,
         },
-        err => {
+        (err) => {
           if (err) {
             return reject(err);
           }
@@ -287,7 +382,7 @@ export async function forwardTime(seconds, test) {
               jsonrpc: "2.0",
               method: "evm_mine",
               params: [],
-              id: 0
+              id: 0,
             },
             (err2, res) => {
               if (err2) {
@@ -303,16 +398,23 @@ export async function forwardTime(seconds, test) {
   return p;
 }
 
-export async function mineBlock() {
+export async function forwardTimeTo(timestamp, test) {
+  const lastBlockTime = await getBlockTime("latest");
+  const amountToForward = new BN(timestamp).sub(new BN(lastBlockTime));
+  // Forward that much
+  await forwardTime(amountToForward.toNumber(), test);
+}
+
+export async function mineBlock(timestamp) {
   return new Promise((resolve, reject) => {
     web3.currentProvider.send(
       {
         jsonrpc: "2.0",
         method: "evm_mine",
-        params: [],
-        id: new Date().getTime()
+        params: timestamp ? [timestamp] : [],
+        id: new Date().getTime(),
       },
-      err => {
+      (err) => {
         if (err) {
           return reject(err);
         }
@@ -322,15 +424,86 @@ export async function mineBlock() {
   });
 }
 
+export async function stopMining() {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "miner_stop",
+        params: [],
+        id: new Date().getTime(),
+      },
+      (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve();
+      }
+    );
+  });
+}
+
+export async function startMining() {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "miner_start",
+        params: [],
+        id: new Date().getTime(),
+      },
+      (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve();
+      }
+    );
+  });
+}
+
+export async function makeTxAtTimestamp(f, args, timestamp, test) {
+  const client = await web3GetClient();
+  if (client.indexOf("TestRPC") === -1) {
+    test.skip();
+  }
+  await stopMining();
+  let mined;
+  // Send the transaction to the RPC endpoint. This might be a truffle contract object, which doesn't
+  // return until the transaction has been mined... but we've stopped mining. So we can't await it
+  // now. But if we `mineBlock` straight away, the transaction might not have pecolated all the way through
+  // to the pending transaction pool, especially on CI.
+
+  // I have tried lots of better ways to solve this problem. The problem is, while mining is stopped, the
+  // 'pending' block isn't updated and, even when mining, in some cases it is interpreted to mean 'latest' in
+  // ganache cli. The sender's nonce isn't updated, the number of pending transactions is not updated... I'm at a
+  // loss for how to do this better.
+  // This works for ethers and truffle
+  const promise = f(...args);
+  // Chaining these directly on the above declaration doesn't work in the case of being passed an ethers function
+  // (They don't seem to return the original promise, somehow?)
+  promise
+    .then(() => {
+      mined = true;
+    })
+    .catch(() => {
+      mined = true;
+    });
+  while (!mined) {
+    // eslint-disable-next-line no-await-in-loop
+    await mineBlock(timestamp);
+  }
+  // Turn auto-mining back on
+  await startMining();
+  return promise;
+}
+
 export function bnSqrt(bn, isGreater) {
   let a = bn.addn(1).divn(2);
   let b = bn;
   while (a.lt(b)) {
     b = a;
-    a = bn
-      .div(a)
-      .add(a)
-      .divn(2);
+    a = bn.div(a).add(a).divn(2);
   }
 
   if (isGreater && b.mul(b).lt(bn)) {
@@ -356,7 +529,7 @@ export function makeReputationKey(colonyAddress, skillBN, accountAddress = undef
 
 // Note: value can be anything with a `.toString()` method -- a string, number, or BN.
 export function makeReputationValue(value, reputationId) {
-  return `0x${(new BN(value.toString())).toString(16, 64)}${(new BN(reputationId)).toString(16, 64)}`; // eslint-disable-line
+  return `0x${new BN(value.toString()).toString(16, 64)}${new BN(reputationId).toString(16, 64)}`;
 }
 
 export async function getValidEntryNumber(colonyNetwork, account, hash, startingEntryNumber = 1) {
@@ -403,11 +576,11 @@ export async function submitAndForwardTimeToDispute(clients, test) {
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
 
   // If there are multiple submissions, ensure they are all different
-  const submissionsPromise = clients.map(async client => {
+  const submissionsPromise = clients.map(async (client) => {
     const rootHash = await client.getRootHash();
-    const nNodes = await client.getRootHashNNodes();
+    const nLeaves = await client.getRootHashNLeaves();
     const jrh = await client.justificationTree.getRootHash();
-    return rootHash + nNodes + jrh;
+    return rootHash + nLeaves + jrh;
   });
 
   const submissions = await Promise.all(submissionsPromise);
@@ -415,11 +588,12 @@ export async function submitAndForwardTimeToDispute(clients, test) {
   expect(submissions.length, "Submissions from clients are equal, surprisingly").to.be.equal(uniqueSubmissions.length);
 }
 
-export async function runBinarySearch(client1, client2) {
+export async function runBinarySearch(client1, client2, test) {
   // Loop while doing the binary search, checking we were successful at each point
   // Binary search will error when it is complete.
   let noError = true;
   while (noError) {
+    await forwardTime(SUBMITTER_ONLY_WINDOW, test);
     try {
       await client1.respondToBinarySearchForChallenge();
     } catch (err) {
@@ -441,7 +615,7 @@ export async function getActiveRepCycle(colonyNetwork) {
 }
 
 export async function advanceMiningCycleNoContest({ colonyNetwork, client, minerAddress, test }) {
-  await forwardTime(MINING_CYCLE_DURATION, test);
+  await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
 
   if (client !== undefined) {
@@ -451,13 +625,35 @@ export async function advanceMiningCycleNoContest({ colonyNetwork, client, miner
     const accounts = await web3GetAccounts();
     minerAddress = minerAddress || accounts[5]; // eslint-disable-line no-param-reassign
     try {
-      await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: minerAddress });
+      await repCycle.submitRootHash("0x00", 0, "0x00", 1, { from: minerAddress });
     } catch (err) {
       console.log("advanceMiningCycleNoContest error thrown by .submitRootHash", err);
     }
   }
-
   await repCycle.confirmNewHash(0);
+}
+
+export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, test, client1) {
+  const repCycle = await getActiveRepCycle(colonyNetwork);
+  const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
+  // Make a submission from client1
+  const submission1before = await repCycle.getReputationHashSubmission(client1.minerAddress);
+  await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+
+  // Submit JRH for submission 1 if needed
+  // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
+  if (submission1before.jrhNLeaves === "0") {
+    await checkSuccessEthers(client1.confirmJustificationRootHash(), "Client 1 was unable to confirmJustificationRootHash");
+  } else {
+    await checkSuccessEthers(client1.respondToBinarySearchForChallenge(), "Client 1 was unable to respondToBinarySearchForChallenge");
+  }
+
+  // Timeout the other client
+  await forwardTime(SUBMITTER_ONLY_WINDOW + 600, this);
+
+  const toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
+
+  return repCycle.invalidateHash(round1, toInvalidateIdx);
 }
 
 export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test, client1, client2, _errors) {
@@ -501,14 +697,13 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
       toInvalidateIdx = idx1;
     }
     // Forward time, so that whichever has failed to respond by now has timed out.
-    await forwardTime(600, test);
+    await forwardTime(SUBMITTER_ONLY_WINDOW + 600, test);
   } else {
-    // idx1.modn returns a javascript number, which is surprising!
-    toInvalidateIdx = idx1.mod(2) === 1 ? idx1.sub(1) : idx1.add(1);
+    toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
   }
+  await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
-  const accounts = await web3GetAccounts();
-  return repCycle.invalidateHash(round1, toInvalidateIdx, { from: accounts[5] });
+  return repCycle.invalidateHash(round1, toInvalidateIdx);
 }
 
 async function navigateChallenge(colonyNetwork, client1, client2, errors) {
@@ -516,9 +711,11 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
   const submission1before = await repCycle.getReputationHashSubmission(client1.minerAddress);
 
+  await forwardTime(SUBMITTER_ONLY_WINDOW);
+
   // Submit JRH for submission 1 if needed
   // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
-  if (submission1before.jrhNNodes === "0") {
+  if (submission1before.jrhNLeaves === "0") {
     if (errors.client1.confirmJustificationRootHash) {
       await checkErrorRevertEthers(client1.confirmJustificationRootHash(), errors.client1.confirmJustificationRootHash);
     } else {
@@ -534,7 +731,9 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     "Clients are not facing each other in this round"
   ).to.be.true;
 
-  if (submission2before.jrhNNodes === "0") {
+  await forwardTime(SUBMITTER_ONLY_WINDOW);
+
+  if (submission2before.jrhNLeaves === "0") {
     if (errors.client2.confirmJustificationRootHash) {
       await checkErrorRevertEthers(client2.confirmJustificationRootHash(), errors.client2.confirmJustificationRootHash);
     } else {
@@ -552,6 +751,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   let binarySearchStep = -1;
   let binarySearchError = false;
   while (submission1.lowerBound !== submission1.upperBound && binarySearchError === false) {
+    await forwardTime(SUBMITTER_ONLY_WINDOW);
     binarySearchStep += 1;
     if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep]) {
       await checkErrorRevertEthers(client1.respondToBinarySearchForChallenge(), errors.client1.respondToBinarySearchForChallenge[binarySearchStep]);
@@ -579,6 +779,8 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     return;
   }
 
+  await forwardTime(SUBMITTER_ONLY_WINDOW);
+
   if (errors.client1.confirmBinarySearchResult) {
     await checkErrorRevertEthers(client1.confirmBinarySearchResult(), errors.client1.confirmBinarySearchResult);
   } else {
@@ -593,6 +795,8 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   if (errors.client1.confirmBinarySearchResult || errors.client2.confirmBinarySearchResult) {
     return;
   }
+
+  await forwardTime(SUBMITTER_ONLY_WINDOW);
 
   // Respond to the challenge - usually, only one of these should work.
   // If both work, then the starting reputation is 0 and one client is lying
@@ -613,15 +817,19 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
   // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
   const repCycle = await getActiveRepCycle(colonyNetwork);
   const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+
   if (nUniqueSubmittedHashes.gtn(0)) {
-    await forwardTime(MINING_CYCLE_DURATION, test);
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
-      await repCycle.confirmNewHash(nUniqueSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.
+      const roundNumber = nUniqueSubmittedHashes.eqn(1) ? 0 : 1; // Not a general solution - only works for one or two submissions.
+      const disputeRound = await repCycle.getDisputeRound(roundNumber);
+      const timestamp = disputeRound[0].lastResponseTimestamp;
+      await forwardTimeTo(parseInt(timestamp, 10) + MINING_CYCLE_DURATION, test);
+      await repCycle.confirmNewHash(roundNumber);
       // But for now, that's okay.
     } else {
       // We shouldn't get here. If this fires during a test, you haven't finished writing the test.
-      console.log("We're mid dispute process, and can't untangle from here"); // eslint-disable-line no-console
+      console.log("We're mid dispute process, and can't untangle from here");
       // process.exit(1);
       return false;
     }
@@ -640,7 +848,7 @@ export async function withdrawAllMinerStakes(colonyNetwork) {
 
   const accounts = await web3GetAccounts();
   await Promise.all(
-    accounts.map(async user => {
+    accounts.map(async (user) => {
       const info = await tokenLocking.getUserLock(clny.address, user);
       const stakedBalance = new BN(info.balance);
 
@@ -672,6 +880,14 @@ export async function removeSubdomainLimit(colonyNetwork) {
   await resolver.register("addDomain(uint256,uint256,uint256)", noLimitSubdomains.address);
 }
 
+export async function restoreSubdomainLimit(colonyNetwork) {
+  const originalSubdomains = await Colony.new();
+  const latestVersion = await colonyNetwork.getCurrentColonyVersion();
+  const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
+  const resolver = await Resolver.at(resolverAddress);
+  await resolver.register("addDomain(uint256,uint256,uint256)", originalSubdomains.address);
+}
+
 export async function addTaskSkillEditingFunctions(colonyNetwork) {
   const taskSkillEditing = await TaskSkillEditing.new();
   const latestVersion = await colonyNetwork.getCurrentColonyVersion();
@@ -686,7 +902,7 @@ export async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId,
   const childDomainId = new BN(_childDomainId);
 
   if (parentDomainId.eq(childDomainId)) {
-    return 0;
+    return UINT256_MAX;
   }
 
   const parentDomain = await colony.getDomain(parentDomainId);
@@ -709,4 +925,82 @@ export async function getColonyEditable(colony, colonyNetwork) {
   await colonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
   const colonyUnderRecovery = await ContractEditing.at(colony.address);
   return colonyUnderRecovery;
+}
+
+export async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, n) {
+  return new Promise(function (resolve, reject) {
+    repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nLeaves, _jrh, _entryIndex, event) => {
+      const nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
+      if (nSubmissions.toNumber() >= n) {
+        event.removeListener();
+        resolve();
+      } else {
+        await mineBlock();
+      }
+    });
+
+    // After 60s, we throw a timeout error
+    setTimeout(() => {
+      reject(new Error("Timeout while waiting for 12 hash submissions"));
+    }, 60 * 1000);
+  });
+}
+
+export async function encodeTxData(colony, functionName, args) {
+  const convertedArgs = [];
+  args.forEach((arg) => {
+    if (Number.isInteger(arg)) {
+      const convertedArg = ethers.BigNumber.from(arg);
+      convertedArgs.push(convertedArg);
+    } else if (isBN(arg) || BigNumber.isBigNumber(arg)) {
+      // Can use isBigNumber from utils once https://github.com/ethereum/web3.js/issues/2835 sorted
+      const convertedArg = ethers.BigNumber.from(arg.toString());
+      convertedArgs.push(convertedArg);
+    } else {
+      convertedArgs.push(arg);
+    }
+  });
+
+  const txData = await colony.contract.methods[functionName](...convertedArgs).encodeABI();
+  return txData;
+}
+
+export async function getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId, userAddress) {
+  const payout = await colony.getRewardPayoutInfo(payoutId);
+
+  const squareRoots = [0, 0, 0, 0, 0, 0, 0];
+
+  const rootDomain = await colony.getDomain(1);
+  const rootDomainSkill = rootDomain.skillId;
+
+  const userReputationKey = makeReputationKey(colony.address, rootDomainSkill, userAddress);
+  const userProof = await client.getReputationProofObject(userReputationKey);
+
+  squareRoots[0] = bnSqrt(new BN(userProof.reputation.slice(2), 16));
+
+  const colonyTokenAddress = await colony.getToken();
+
+  const lock = await tokenLocking.getUserLock(colonyTokenAddress, userAddress);
+  squareRoots[1] = bnSqrt(new BN(lock.balance, 10));
+
+  const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
+  const colonyProof = await client.getReputationProofObject(colonyWideReputationKey);
+  squareRoots[2] = bnSqrt(new BN(colonyProof.reputation.slice(2), 16), true);
+
+  squareRoots[3] = bnSqrt(new BN(payout.totalTokens, 10), true);
+
+  squareRoots[4] = bnSqrt(squareRoots[0].mul(squareRoots[1])); // Numerator
+  squareRoots[5] = bnSqrt(squareRoots[2].mul(squareRoots[3]), true); // Denominator
+
+  squareRoots[6] = bnSqrt(new BN(payout.amount, 10));
+
+  return { squareRoots, userProof };
+}
+
+export function bn2bytes32(x, size = 64) {
+  return `0x${x.toString(16, size)}`;
+}
+
+export function rolesToBytes32(roles) {
+  return `0x${new BN(roles.map((role) => new BN(1).shln(role)).reduce((a, b) => a.or(b), new BN(0))).toString(16, 64)}`;
 }

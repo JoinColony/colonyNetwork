@@ -15,149 +15,346 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.8;
+pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../ColonyAuthority.sol";
-import "./../ColonyDataTypes.sol";
-import "./../IColony.sol";
-import "./../IColonyNetwork.sol";
+import "./ColonyExtension.sol";
+
+// ignore-file-swc-108
 
 
-contract OneTxPayment {
-  bytes4 constant ADD_PAYMENT_SIG = bytes4(keccak256("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"));
-  bytes4 constant MOVE_FUNDS_SIG = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"));
+contract OneTxPayment is ColonyExtension {
+  event OneTxPaymentMade(address agent, uint256 fundamentalId, uint256 nPayouts);
 
-  IColony colony;
-  IColonyNetwork colonyNetwork;
+  ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
+  ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
 
-  constructor(address _colony) public {
+  /// @notice Returns the identifier of the extension
+  function identifier() public override pure returns (bytes32) {
+    return keccak256("OneTxPayment");
+  }
+
+  /// @notice Returns the version of the extension
+  function version() public override pure returns (uint256) {
+    return 2;
+  }
+
+  /// @notice Configures the extension
+  /// @param _colony The colony in which the extension holds permissions
+  function install(address _colony) public override auth {
+    require(address(colony) == address(0x0), "extension-already-installed");
+
     colony = IColony(_colony);
-    colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
+  }
+
+  /// @notice Called when upgrading the extension
+  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
+
+  /// @notice Called when deprecating (or undeprecating) the extension
+  function deprecate(bool _deprecated) public override auth {} // solhint-disable-line no-empty-blocks
+
+  /// @notice Called when uninstalling the extension
+  function uninstall() public override auth {
+    selfdestruct(address(uint160(address(colony))));
+  }
+
+  bytes4 constant MAKE_PAYMENT_SIG = bytes4(keccak256(
+    "makePayment(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"
+  ));
+
+  bytes4 constant MAKE_PAYMENT_DOMAIN_SIG = bytes4(keccak256(
+    "makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"
+  ));
+
+  bytes32 constant REQUIRED_ROLES = (
+    bytes32(uint256(1)) << uint8(FUNDING) |
+    bytes32(uint256(1)) << uint8(ADMINISTRATION)
+  );
+
+  /// @notice Return the permissions required for each function
+  /// @param _sig The function signature
+  /// @return The byte32 of permissions required
+  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32) {
+    if (_sig == MAKE_PAYMENT_SIG || _sig == MAKE_PAYMENT_DOMAIN_SIG) {
+      return REQUIRED_ROLES;
+    } else {
+      return bytes32(0);
+    }
   }
 
   /// @notice Completes a colony payment in a single transaction
-  /// @dev Assumes that each entity holds administration and funding roles in the same domain,
-  /// although contract and caller can have the permissions in different domains.
-  /// Payment is taken from root domain, and the caller must have funding permission explicitly in the root domain
+  /// @dev Assumes that each entity holds administration and funding roles in the root domain
   /// @param _permissionDomainId The domainId in which the _contract_ has permissions to add a payment and fund it
   /// @param _childSkillIndex Index of the _permissionDomainId skill.children array to get
-  /// @param _callerPermissionDomainId The domainId in which the _caller_ has permissions to add a payment and fund it
+  /// @param _callerPermissionDomainId The domainId in which the _caller_ has the administration permission (must have funding in root)
   /// @param _callerChildSkillIndex Index of the _callerPermissionDomainId skill.children array to get
-  /// @param _worker The address of the recipient of the payment
-  /// @param _token The address of the token the payment is being made in. 0x00 for Ether.
-  /// @param _amount The amount of the token being paid out
-  /// @param _domainId The Id of the domain the payment should be coming from
-  /// @param _skillId The Id of the skill that the payment should be marked with, possibly awarding reputation in this skill.
+  /// @param _workers The addresses of the recipients of the payment
+  /// @param _tokens Addresses of the tokens the payments are being made in. 0x00 for Ether.
+  /// @param _amounts amounts of the tokens being paid out
+  /// @param _domainId The domainId the payment should be coming from
+  /// @param _skillId The skillId that the payment should be marked with, possibly awarding reputation in this skill.
   function makePayment(
-    uint256 _permissionDomainId,
+    uint256 _permissionDomainId, // Unused
     uint256 _childSkillIndex,
     uint256 _callerPermissionDomainId,
     uint256 _callerChildSkillIndex,
-    address payable _worker,
-    address _token,
-    uint256 _amount,
+    address payable[] memory _workers,
+    address[] memory _tokens,
+    uint256[] memory _amounts,
     uint256 _domainId,
-    uint256 _skillId) public
+    uint256 _skillId
+  )
+    public
   {
-    // Check caller is able to call {add,finalize}Payment and moveFundsBetweenPots on the colony in the domain in question
-    validateCallerPermissions(_callerPermissionDomainId, _callerChildSkillIndex, _domainId);
-    // In addition, check the caller is able to call moveFundsBetweenPots from the root domain
+    require(_workers.length == _tokens.length && _workers.length == _amounts.length, "one-tx-payment-invalid-input");
+
     require(
-      ColonyAuthority(colony.authority()).canCall(msg.sender, 1, address(colony), MOVE_FUNDS_SIG),
-      "colony-one-tx-payment-root-funding-not-authorized"
+      colony.hasInheritedUserRole(msg.sender, 1, FUNDING, _childSkillIndex, _domainId) &&
+      colony.hasInheritedUserRole(msg.sender, _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
+      "one-tx-payment-not-authorized"
     );
 
-    // Add a new payment
-    uint256 paymentId = colony.addPayment(_permissionDomainId, _childSkillIndex, _worker, _token, _amount, _domainId, _skillId);
-    ColonyDataTypes.Payment memory payment = colony.getPayment(paymentId);
 
-    // Fund the payment
-    colony.moveFundsBetweenPots(
-      1, // Root domain always 1
-      0, // Not used, this extension contract must have funding permission in the root for this function to work
-      _childSkillIndex,
-      1, // Root domain funding pot is always 1
-      payment.fundingPotId,
-      _amount,
-      _token
-    );
-    colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
+    if (_workers.length == 1) {
 
-    // Claim payout on behalf of the recipient
-    colony.claimPayment(paymentId, _token);
+      uint256 paymentId = colony.addPayment(1, _childSkillIndex, _workers[0], _tokens[0], _amounts[0], _domainId, _skillId);
+      uint256 fundingPotId = colony.getPayment(paymentId).fundingPotId;
+
+      colony.moveFundsBetweenPots(1, UINT256_MAX, _childSkillIndex, 1, fundingPotId, _amounts[0], _tokens[0]);
+
+      colony.finalizePayment(1, _childSkillIndex, paymentId);
+      colony.claimPayment(paymentId, _tokens[0]);
+
+      emit OneTxPaymentMade(msg.sender, paymentId, _workers.length);
+    } else {
+
+      uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
+      uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
+
+      prepareFunding(_childSkillIndex, fundingPotId, _tokens, _amounts);
+
+      uint256 idx;
+      uint256 slot;
+
+      for (idx = 0; idx < _workers.length; idx++) {
+
+         // If a new worker, start a new slot
+        if (idx == 0 || _workers[idx] != _workers[idx-1]) {
+          require(idx == 0 || _workers[idx] > _workers[idx-1], "one-tx-payment-bad-worker-order");
+
+          slot++;
+          colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
+
+          if (_skillId != 0) {
+            colony.setExpenditureSkill(expenditureId, slot, _skillId);
+          }
+        } else {
+          require(_tokens[idx] > _tokens[idx-1], "one-tx-payment-bad-token-order");
+        }
+
+        colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
+      }
+
+      finalizeAndClaim(expenditureId, _workers, _tokens);
+
+      emit OneTxPaymentMade(msg.sender, expenditureId, _workers.length);
+    }
   }
-
 
   /// @notice Completes a colony payment in a single transaction
   /// @dev Assumes that each entity holds administration and funding roles in the same domain,
-  /// although contract and caller can have the permissions in different domains.
+  ///   although contract and caller can have the permissions in different domains.
   /// Payment is taken from domain funds - if the domain does not have sufficient funds, call will fail.
   /// @param _permissionDomainId The domainId in which the _contract_ has permissions to add a payment and fund it
   /// @param _childSkillIndex Index of the _permissionDomainId skill.children array to get
   /// @param _callerPermissionDomainId The domainId in which the _caller_ has permissions to add a payment and fund it
   /// @param _callerChildSkillIndex Index of the _callerPermissionDomainId skill.children array to get
-  /// @param _worker The address of the recipient of the payment
-  /// @param _token The address of the token the payment is being made in. 0x00 for Ether.
-  /// @param _amount The amount of the token being paid out
-  /// @param _domainId The Id of the domain the payment should be coming from
-  /// @param _skillId The Id of the skill that the payment should be marked with, possibly awarding reputation in this skill.
+  /// @param _workers The addresses of the recipients of the payment
+  /// @param _tokens The addresses of the token the payments are being made in. 0x00 for Ether.
+  /// @param _amounts The amounts of the tokens being paid out
+  /// @param _domainId The domainId the payment should be coming from
+  /// @param _skillId The skillId that the payment should be marked with, possibly awarding reputation in this skill.
   function makePaymentFundedFromDomain(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _callerPermissionDomainId,
     uint256 _callerChildSkillIndex,
-    address payable _worker,
-    address _token,
-    uint256 _amount,
+    address payable[] memory  _workers,
+    address[] memory _tokens,
+    uint256[] memory _amounts,
     uint256 _domainId,
-    uint256 _skillId) public
+    uint256 _skillId
+  )
+    public
   {
-    // Check caller is able to call {add,finalize}Payment and moveFundsBetweenPots on the colony
-    validateCallerPermissions(_callerPermissionDomainId, _callerChildSkillIndex, _domainId);
+    require(_workers.length == _tokens.length && _workers.length == _amounts.length, "one-tx-payment-invalid-input");
 
-    // Add a new payment
-    uint256 paymentId = colony.addPayment(_permissionDomainId, _childSkillIndex, _worker, _token, _amount, _domainId, _skillId);
-    ColonyDataTypes.Payment memory payment = colony.getPayment(paymentId);
-    ColonyDataTypes.Domain memory domain = colony.getDomain(_domainId);
-
-    // Fund the payment
-    colony.moveFundsBetweenPots(
-      _permissionDomainId,
-      _childSkillIndex,
-      _childSkillIndex,
-      domain.fundingPotId,
-      payment.fundingPotId,
-      _amount,
-      _token
+    require(
+      colony.hasInheritedUserRole(msg.sender, _callerPermissionDomainId, FUNDING, _callerChildSkillIndex, _domainId) &&
+      colony.hasInheritedUserRole(msg.sender, _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
+      "one-tx-payment-not-authorized"
     );
-    colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
 
-    // Claim payout on behalf of the recipient
-    colony.claimPayment(paymentId, _token);
+    if (_workers.length == 1) {
+
+      uint256 paymentId = colony.addPayment(_permissionDomainId, _childSkillIndex, _workers[0], _tokens[0], _amounts[0], _domainId, _skillId);
+      uint256 fundingPotId = colony.getPayment(paymentId).fundingPotId;
+      uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
+
+      // We use a separate function to get around the local variable limit :(
+      moveFundsWithinDomain(_permissionDomainId, _childSkillIndex, domainPotId, fundingPotId, _amounts[0], _tokens[0]);
+
+      colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
+      colony.claimPayment(paymentId, _tokens[0]);
+
+      emit OneTxPaymentMade(msg.sender, paymentId, _workers.length);
+    } else {
+
+      uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
+      uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
+      uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
+
+      prepareFundingWithinDomain(_permissionDomainId, _childSkillIndex, domainPotId, fundingPotId, _tokens, _amounts);
+
+      uint256 idx;
+      uint256 slot;
+
+      for (idx = 0; idx < _workers.length; idx++) {
+
+         // If a new worker, start a new slot
+        if (idx == 0 || _workers[idx] != _workers[idx-1]) {
+          require(idx == 0 || _workers[idx] > _workers[idx-1], "one-tx-payment-bad-worker-order");
+
+          slot++;
+          colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
+
+          if (_skillId != 0) {
+            colony.setExpenditureSkill(expenditureId, slot, _skillId);
+          }
+        } else {
+          require(_tokens[idx] > _tokens[idx-1], "one-tx-payment-bad-token-order");
+        }
+
+        colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
+      }
+
+      finalizeAndClaim(expenditureId, _workers, _tokens);
+
+      emit OneTxPaymentMade(msg.sender, expenditureId, _workers.length);
+    }
   }
 
-  function validateCallerPermissions(
-    uint256 _callerPermissionDomainId,
-    uint256 _callerChildSkillIndex,
-    uint256 _domainId) internal view
+  function calculateUniqueAmounts(
+    address[] memory _tokens,
+    uint256[] memory _amounts
+  )
+    internal
+    pure
+    returns (uint256, address[] memory, uint256[] memory)
   {
-    require(
-      ColonyAuthority(colony.authority()).canCall(msg.sender, _callerPermissionDomainId, address(colony), ADD_PAYMENT_SIG),
-      "colony-one-tx-payment-administration-not-authorized"
-    );
-    require(
-      ColonyAuthority(colony.authority()).canCall(msg.sender, _callerPermissionDomainId, address(colony), MOVE_FUNDS_SIG),
-      "colony-one-tx-payment-funding-not-authorized"
-    );
+    uint256 uniqueTokensIdx;
+    address[] memory uniqueTokens = new address[](_tokens.length);
+    uint256[] memory uniqueAmounts = new uint256[](_tokens.length);
 
-    if (_callerPermissionDomainId != _domainId) {
-      uint256 permissionSkillId = colony.getDomain(_callerPermissionDomainId).skillId;
-      uint256 domainSkillId = colony.getDomain(_domainId).skillId;
-      require(domainSkillId > 0, "colony-one-tx-payment-domain-does-not-exist");
+    for (uint256 i; i < _tokens.length; i++) {
 
-      uint256 childSkillId = colonyNetwork.getChildSkillId(permissionSkillId, _callerChildSkillIndex);
-      require(childSkillId == domainSkillId, "colony-one-tx-payment-bad-child-skill");
+      bool isMatch;
+      uint256 j;
+
+      while (j < uniqueTokensIdx && !isMatch) {
+        if (_tokens[i] == uniqueTokens[j]) {
+          isMatch = true;
+          uniqueAmounts[j] = add(uniqueAmounts[j], _amounts[i]);
+        }
+        j++;
+      }
+
+      if (!isMatch) {
+        uniqueTokens[uniqueTokensIdx] = _tokens[i];
+        uniqueAmounts[uniqueTokensIdx] = _amounts[i];
+        uniqueTokensIdx++;
+      }
+
+    }
+
+    return (uniqueTokensIdx, uniqueTokens, uniqueAmounts);
+  }
+
+  function prepareFunding(
+    uint256 _childSkillIndex,
+    uint256 _fundingPotId,
+    address[] memory _tokens,
+    uint256[] memory _amounts
+  ) internal {
+    (
+      uint256 uniqueTokensIdx,
+      address[] memory uniqueTokens,
+      uint256[] memory uniqueAmounts
+    ) = calculateUniqueAmounts(_tokens, _amounts);
+
+    for (uint256 i; i < uniqueTokensIdx; i++) {
+      colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        _childSkillIndex,
+        1,
+        _fundingPotId,
+        uniqueAmounts[i],
+        uniqueTokens[i]
+      );
+    }
+  }
+
+  function prepareFundingWithinDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainPotId,
+    uint256 _fundingPotId,
+    address[] memory _tokens,
+    uint256[] memory _amounts
+  ) internal {
+    (
+      uint256 uniqueTokensIdx,
+      address[] memory uniqueTokens,
+      uint256[] memory uniqueAmounts
+    ) = calculateUniqueAmounts(_tokens, _amounts);
+
+    for (uint256 i; i < uniqueTokensIdx; i++) {
+      colony.moveFundsBetweenPots(
+        _permissionDomainId,
+        _childSkillIndex,
+        _childSkillIndex,
+        _domainPotId,
+        _fundingPotId,
+        uniqueAmounts[i],
+        uniqueTokens[i]
+      );
+    }
+  }
+
+  function moveFundsWithinDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainPotId,
+    uint256 _fundingPotId,
+    uint256 _amount,
+    address _token
+  )
+    internal
+  {
+    colony.moveFundsBetweenPots(_permissionDomainId, _childSkillIndex, _childSkillIndex, _domainPotId, _fundingPotId, _amount, _token);
+  }
+
+  function finalizeAndClaim(uint256 _expenditureId, address payable[] memory  _workers, address[] memory _tokens) internal {
+    colony.finalizeExpenditure(_expenditureId);
+
+    uint256 slot;
+
+    for (uint256 idx; idx < _workers.length; idx++) {
+      if (idx == 0 || _workers[idx] != _workers[idx-1]) {
+        slot++;
+      }
+      colony.claimExpenditurePayout(_expenditureId, slot, _tokens[idx]);
     }
   }
 }
