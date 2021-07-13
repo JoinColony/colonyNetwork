@@ -316,21 +316,45 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Install an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param version Version of the extension to install
-  function installExtension(bytes32 extensionId, uint256 version) external;
+  /// @return extension The address of the extension installation
+  function installExtension(bytes32 extensionId, uint256 version) external returns (address extension);
 
+  /// @dev DEPRECATED
   /// @notice Upgrade an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param newVersion Version of the extension to upgrade to (must be one greater than current)
   function upgradeExtension(bytes32 extensionId, uint256 newVersion) external;
 
+  /// @notice Upgrade an extension in a colony. Can only be called by a Colony.
+  /// @param extension Address of the extension installation
+  /// @param newVersion Version of the extension to upgrade to (must be one greater than current)
+  function upgradeExtension(address extension, uint256 newVersion) external;
+
+  /// @dev DEPRECATED
   /// @notice Set the deprecation of an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param deprecated Whether to deprecate the extension or not
   function deprecateExtension(bytes32 extensionId, bool deprecated) external;
 
+  /// @notice Set the deprecation of an extension in a colony. Can only be called by a Colony.
+  /// @param extension Address of the extension installation
+  /// @param deprecated Whether to deprecate the extension or not
+  function deprecateExtension(address extension, bool deprecated) external;
+
+  /// @dev DEPRECATED
   /// @notice Uninstall an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   function uninstallExtension(bytes32 extensionId) external;
+
+  /// @notice Uninstall an extension in a colony. Can only be called by a Colony.
+  /// @param extension Address of the extension installation
+  function uninstallExtension(address extension) external;
+
+  /// @notice Migrate extension bookkeeping to multiExtension
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  /// @param colony Address of the colony the extension is installed in
+  /// @return extension The address of the extension
+  function migrateToMultiExtension(bytes32 extensionId, address colony) external returns (address extension);
 
   /// @notice Get an extension's resolver.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
@@ -343,6 +367,11 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param colony Address of the colony the extension is installed in
   /// @return installation The address of the installed extension
   function getExtensionInstallation(bytes32 extensionId, address colony) external view returns (address installation);
+
+  /// @notice Get an extension's installed colony.
+  /// @param extension Address of the extension installation
+  /// @return colony Address of the colony the extension is installed in
+  function getExtensionMultiInstallation(address extension) external view returns (address colony);
 
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
   /// @return _feeInverse The inverse of the network fee

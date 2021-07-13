@@ -257,6 +257,19 @@ Set the deprecation of an extension in a colony. Secured function to authorised 
 
 |Name|Type|Description|
 |---|---|---|
+|extension|address|The address of the extension installation
+|deprecated|bool|Whether to deprecate the extension or not
+
+
+### `deprecateExtension`
+
+Set the deprecation of an extension in a colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |deprecated|bool|Whether to deprecate the extension or not
 
@@ -1038,6 +1051,11 @@ Install an extension to the colony. Secured function to authorised members.
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |version|uint256|The new extension version to install
 
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|The address of the extension installation
 
 ### `lockToken`
 
@@ -1753,6 +1771,19 @@ Uninstall an extension from a colony. Secured function to authorised members.
 
 |Name|Type|Description|
 |---|---|---|
+|extension|address|The address of the extension installation
+
+
+### `uninstallExtension`
+
+Uninstall an extension from a colony. Secured function to authorised members.
+
+*Note: This is a permanent action -- re-installing the extension will deploy a new contract*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 
 
@@ -1812,6 +1843,19 @@ Upgrades a colony to a new Colony contract version `_newVersion`.
 |Name|Type|Description|
 |---|---|---|
 |_newVersion|uint|The target version for the upgrade
+
+
+### `upgradeExtension`
+
+Upgrade an extension in a colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|The address of the extension installation
+|newVersion|uint256|The version to upgrade to (must be one larger than the current version)
 
 
 ### `upgradeExtension`

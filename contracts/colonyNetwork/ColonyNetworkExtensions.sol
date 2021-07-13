@@ -50,59 +50,108 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     public
     stoppable
     calledByColony
+    returns (address)
   {
     require(resolvers[_extensionId][_version] != address(0x0), "colony-network-extension-bad-version");
-    require(installations[_extensionId][msg.sender] == address(0x0), "colony-network-extension-already-installed");
 
     EtherRouter extension = new EtherRouter();
-    installations[_extensionId][msg.sender] = address(extension);
+    multiInstallations[address(extension)] = msg.sender;
 
     extension.setResolver(resolvers[_extensionId][_version]);
     ColonyExtension(address(extension)).install(msg.sender);
 
-    emit ExtensionInstalled(_extensionId, msg.sender, _version);
+    emit ExtensionInstalled(_extensionId, address(extension), msg.sender, _version);
+
+    return address(extension);
   }
 
+  // Deprecated
   function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
     public
     stoppable
-    calledByColony
   {
-    require(installations[_extensionId][msg.sender] != address(0x0), "colony-network-extension-not-installed");
-
-    address payable extension = installations[_extensionId][msg.sender];
-    require(_newVersion == ColonyExtension(extension).version() + 1, "colony-network-extension-bad-increment");
-    require(resolvers[_extensionId][_newVersion] != address(0x0), "colony-network-extension-bad-version");
-
-    EtherRouter(extension).setResolver(resolvers[_extensionId][_newVersion]);
-    ColonyExtension(extension).finishUpgrade();
-    assert(ColonyExtension(extension).version() == _newVersion);
+    address extension = migrateToMultiExtension(_extensionId, msg.sender);
+    upgradeExtension(extension, _newVersion);
 
     emit ExtensionUpgraded(_extensionId, msg.sender, _newVersion);
   }
 
-  function deprecateExtension(bytes32 _extensionId, bool _deprecated)
+  function upgradeExtension(address _extension, uint256 _newVersion)
     public
     stoppable
     calledByColony
   {
-    ColonyExtension(installations[_extensionId][msg.sender]).deprecate(_deprecated);
+    require(multiInstallations[_extension] == msg.sender, "colony-network-extension-not-installed");
+
+    bytes32 extensionId = ColonyExtension(_extension).identifier();
+
+    require(_newVersion == ColonyExtension(_extension).version() + 1, "colony-network-extension-bad-increment");
+    require(resolvers[extensionId][_newVersion] != address(0x0), "colony-network-extension-bad-version");
+
+    EtherRouter(payable(_extension)).setResolver(resolvers[extensionId][_newVersion]);
+    ColonyExtension(_extension).finishUpgrade();
+
+    assert(ColonyExtension(_extension).version() == _newVersion);
+
+    emit ExtensionUpgraded(_extension, msg.sender, _newVersion);
+  }
+
+  // Deprecated
+  function deprecateExtension(bytes32 _extensionId, bool _deprecated)
+    public
+    stoppable
+  {
+    address extension = migrateToMultiExtension(_extensionId, msg.sender);
+    deprecateExtension(extension, _deprecated);
 
     emit ExtensionDeprecated(_extensionId, msg.sender, _deprecated);
   }
 
-  function uninstallExtension(bytes32 _extensionId)
+  function deprecateExtension(address _extension, bool _deprecated)
     public
     stoppable
     calledByColony
   {
-    require(installations[_extensionId][msg.sender] != address(0x0), "colony-network-extension-not-installed");
+    ColonyExtension(_extension).deprecate(_deprecated);
 
-    ColonyExtension extension = ColonyExtension(installations[_extensionId][msg.sender]);
-    installations[_extensionId][msg.sender] = address(0x0);
-    extension.uninstall();
+    emit ExtensionDeprecated(_extension, msg.sender, _deprecated);
+  }
+
+  // Deprecated
+  function uninstallExtension(bytes32 _extensionId)
+    public
+    stoppable
+  {
+    address extension = migrateToMultiExtension(_extensionId, msg.sender);
+    uninstallExtension(extension);
 
     emit ExtensionUninstalled(_extensionId, msg.sender);
+  }
+
+  function uninstallExtension(address _extension)
+    public
+    stoppable
+    calledByColony
+  {
+    require(multiInstallations[_extension] == msg.sender, "colony-network-extension-not-installed");
+
+    delete multiInstallations[_extension];
+
+    ColonyExtension(_extension).uninstall();
+
+    emit ExtensionUninstalled(_extension, msg.sender);
+  }
+
+  function migrateToMultiExtension(bytes32 _extensionId, address _colony)
+    public
+    stoppable
+    returns (address)
+  {
+    address extension = installations[_extensionId][_colony];
+    require(extension != address(0x0), "colony-network-extension-not-installed");
+
+    multiInstallations[extension] = payable(_colony);
+    return extension;
   }
 
   // Public view functions
@@ -113,6 +162,14 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     returns (address)
   {
     return resolvers[_extensionId][_version];
+  }
+
+  function getExtensionMultiInstallation(address _extension)
+    public
+    view
+    returns (address)
+  {
+    return multiInstallations[_extension];
   }
 
   function getExtensionInstallation(bytes32 _extensionId, address _colony)

@@ -230,6 +230,19 @@ Set the deprecation of an extension in a colony. Can only be called by a Colony.
 
 |Name|Type|Description|
 |---|---|---|
+|extension|address|Address of the extension installation
+|deprecated|bool|Whether to deprecate the extension or not
+
+
+### `deprecateExtension`
+
+Set the deprecation of an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |deprecated|bool|Whether to deprecate the extension or not
 
@@ -351,6 +364,23 @@ Get an extension's installation.
 |Name|Type|Description|
 |---|---|---|
 |installation|address|The address of the installed extension
+
+### `getExtensionMultiInstallation`
+
+Get an extension's installed colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|Address of the extension installation
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colony|address|Address of the colony the extension is installed in
 
 ### `getExtensionResolver`
 
@@ -663,6 +693,11 @@ Install an extension in a colony. Can only be called by a Colony.
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |version|uint256|Version of the extension to install
 
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|The address of the extension installation
 
 ### `isColony`
 
@@ -697,6 +732,24 @@ Reverse lookup a username from an address.
 |Name|Type|Description|
 |---|---|---|
 |domain|string|A string containing the colony-based ENS name corresponding to addr
+
+### `migrateToMultiExtension`
+
+Migrate extension bookkeeping to multiExtension
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|colony|address|Address of the colony the extension is installed in
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|The address of the extension
 
 ### `punishStakers`
 
@@ -934,6 +987,18 @@ Uninstall an extension in a colony. Can only be called by a Colony.
 
 |Name|Type|Description|
 |---|---|---|
+|extension|address|Address of the extension installation
+
+
+### `uninstallExtension`
+
+Uninstall an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 
 
@@ -971,6 +1036,19 @@ Update a user's orbitdb address. Can only be called by a user with a registered 
 |Name|Type|Description|
 |---|---|---|
 |orbitdb|string|The path of the orbitDB database to be associated with the user
+
+
+### `upgradeExtension`
+
+Upgrade an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|Address of the extension installation
+|newVersion|uint256|Version of the extension to upgrade to (must be one greater than current)
 
 
 ### `upgradeExtension`
