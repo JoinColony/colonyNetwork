@@ -1053,14 +1053,14 @@ Lock the colony's token. Can only be called by a network-managed extension.
 
 ### `makeArbitraryTransaction`
 
-Execute arbitrary transaction on behalf of the Colony
+Execute arbitrary transaction on behalf of the Colony DEPRECATED
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_to|address|Contract to receive the function call (cannot be network or token locking)
+|_to|address|Contract to receive the function call (cannot be this contract, network or token locking)
 |_action|bytes|Bytes array encoding the function call and arguments
 
 **Return Parameters**
@@ -1068,6 +1068,25 @@ Execute arbitrary transaction on behalf of the Colony
 |Name|Type|Description|
 |---|---|---|
 |success|bool|Boolean indicating whether the transaction succeeded
+
+### `makeArbitraryTransactions`
+
+Execute arbitrary transactions on behalf of the Colony in series
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_targets|address[]|Array of addressed to be targeted
+|_actions|bytes[]|Array of Bytes arrays encoding the function calls and arguments
+|_strict|bool|Boolean indicating whether if one transaction fails, the whole call to this function should fail.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|success|bool|Boolean indicating whether the transactions succeeded
 
 ### `makeExpenditure`
 
@@ -1087,6 +1106,25 @@ Add a new expenditure in the colony. Secured function to authorised members.
 |Name|Type|Description|
 |---|---|---|
 |expenditureId|uint256|Identifier of the newly created expenditure
+
+### `makeSingleArbitraryTransaction`
+
+Executes a single arbitrary transaction
+
+*Note: Only callable by the colony itself. If you wish to use this functionality, you should use the makeAbitraryTransactions function*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_target|address|Contract to receive the function call
+|_action|bytes|Bytes array encoding the function call and arguments
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|success|bool|Boolean indicating whether the transactions succeeded
 
 ### `makeTask`
 

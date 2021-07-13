@@ -49,6 +49,36 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   public stoppable auth
   returns (bool)
   {
+    return this.makeSingleArbitraryTransaction(_to, _action);
+  }
+
+  function makeArbitraryTransactions(address[] memory _targets, bytes[] memory _actions, bool _strict)
+  public stoppable auth
+  returns (bool)
+  {
+    require(_targets.length == _actions.length, "colony-targets-and-actions-length-mismatch");
+    for (uint256 i; i < _targets.length; i += 1){
+      bool success = true;
+      // slither-disable-next-line unused-return
+      try this.makeSingleArbitraryTransaction(_targets[i], _actions[i]) returns (bool ret){
+        if (_strict){
+          success = ret;
+        }
+      } catch {
+        // We failed in a require, which is only okay if we're not in strict mode
+        if (_strict){
+          success = false;
+        }
+      }
+      require(success, "colony-arbitrary-transaction-failed");
+    }
+    return true;
+  }
+
+  function makeSingleArbitraryTransaction(address _to, bytes memory _action)
+  external stoppable self
+  returns (bool)
+  {
     // Prevent transactions to network contracts
     require(_to != address(this), "colony-cannot-target-self");
     require(_to != colonyNetworkAddress, "colony-cannot-target-network");
@@ -464,6 +494,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
+
+    sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

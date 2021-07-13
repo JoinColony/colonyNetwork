@@ -27,6 +27,10 @@ interface TokenLockingDataTypes {
   event UserTokenClaimed(address token, address user, uint256 amount);
   event UserTokenTransferred(address token, address user, address recipient, uint256 amount);
   event UserTokenWithdrawn(address token, address user, uint256 amount);
+  event UserTokenObligated(address token, address user, address obligatedBy, uint256 amount);
+  event UserTokenDeobligated(address token, address user, address obligatedBy, uint256 amount);
+  event UserTokenApproved(address token, address user, address approvedBy, uint256 amount);
+  event StakeTransferred(address token, address by, address from, address to, uint256 amount);
 
   struct Lock {
     // User's lock count
