@@ -4,7 +4,7 @@ import bnChai from "bn-chai";
 import { BN } from "bn.js";
 
 import { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID } from "../../helpers/constants";
-import { checkErrorRevert, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } from "../../helpers/test-helper";
+import { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } from "../../helpers/test-helper";
 import { fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -30,6 +30,7 @@ contract("Colony Expenditure", (accounts) => {
   const MAPPING = false;
   const ARRAY = true;
 
+  const ROOT = accounts[0];
   const RECIPIENT = accounts[3];
   const ADMIN = accounts[4];
   const ARBITRATOR = accounts[5];
@@ -129,6 +130,22 @@ contract("Colony Expenditure", (accounts) => {
 
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.owner).to.equal(USER);
+    });
+
+    it("should set the default global claim delay", async () => {
+      await expectEvent(colony.setDefaultGlobalClaimDelay(SECONDS_PER_DAY, { from: ROOT }), "ExpenditureGlobalClaimDelaySet", [
+        ROOT,
+        SECONDS_PER_DAY,
+      ]);
+
+      await colony.makeExpenditure(1, UINT256_MAX, 1, { from: ADMIN });
+      const expenditureId = await colony.getExpenditureCount();
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.globalClaimDelay).to.eq.BN(SECONDS_PER_DAY);
+
+      // Cleanup
+      await colony.setDefaultGlobalClaimDelay(0);
     });
   });
 

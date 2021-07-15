@@ -1351,6 +1351,18 @@ Set new colony architecture role. Can be called by root role or architecture rol
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
+### `setDefaultGlobalClaimDelay`
+
+Update the default global claim delay for expenditures
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_globalClaimDelay|uint256|The new default global claim delay
+
+
 ### `setExpenditureClaimDelay`
 
 DEPRECATED Set the claim delay on an expenditure slot. Can only be called by Arbitration role.

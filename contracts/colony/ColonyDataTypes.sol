@@ -84,6 +84,11 @@ interface ColonyDataTypes {
   /// @param rewardInverse The reward inverse value
   event ColonyRewardInverseSet(address agent, uint256 rewardInverse);
 
+  /// @notice Event logged when the default global claim delay is updated
+  /// @param agent The address that is responsible for triggering this event
+  /// @param globalClaimDelay The new default global claim delay
+  event ExpenditureGlobalClaimDelaySet(address agent, uint256 globalClaimDelay);
+
   /// @notice Event logged when a new expenditure is added
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId The newly added expenditure id

@@ -330,6 +330,11 @@ interface IColony is ColonyDataTypes, IRecovery {
     external view returns (bool isValid);
 
   // Implemented in ColonyExpenditure.sol
+
+  /// @notice Update the default global claim delay for expenditures
+  /// @param _globalClaimDelay The new default global claim delay
+  function setDefaultGlobalClaimDelay(uint256 _globalClaimDelay) external;
+
   /// @notice Add a new expenditure in the colony. Secured function to authorised members.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
