@@ -159,8 +159,22 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     _;
   }
 
+  modifier expenditureDraft(uint256 _id) {
+    require(expenditures[_id].status == ExpenditureStatus.Draft, "colony-expenditure-not-draft");
+    _;
+  }
+
+  modifier expenditureLocked(uint256 _id) {
+    require(expenditures[_id].status == ExpenditureStatus.Locked, "colony-expenditure-not-locked");
+    _;
+  }
+
   modifier expenditureActive(uint256 _id) {
-    require(expenditures[_id].status == ExpenditureStatus.Active, "colony-expenditure-not-active");
+    require(
+      expenditures[_id].status == ExpenditureStatus.Draft ||
+      expenditures[_id].status == ExpenditureStatus.Locked,
+      "colony-expenditure-not-active"
+    );
     _;
   }
 
