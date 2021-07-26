@@ -247,6 +247,7 @@ interface ColonyDataTypes {
 
   /// @notice Event logged when domain metadata is updated
   /// @param agent The address that is responsible for triggering this event
+  /// @param domainId Id of the newly-created Domain
   /// @param metadata IPFS hash of the metadata
   event DomainMetadata(address agent, uint256 indexed domainId, string metadata);
 

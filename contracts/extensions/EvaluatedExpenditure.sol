@@ -61,6 +61,12 @@ contract EvaluatedExpenditure is ColonyExtension {
     selfdestruct(address(uint160(address(colony))));
   }
 
+  /// @notice Sets the payout modifiers in given expenditure slots, using the arbitration permission
+  /// @param _permissionDomainId The domainId in which the extension has the arbitration permission
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _id Expenditure identifier
+  /// @param _slots Array of slots to set payout modifiers
+  /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus
   function setExpenditurePayoutModifiers(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,

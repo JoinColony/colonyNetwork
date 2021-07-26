@@ -435,7 +435,7 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _claimDelays Durations of time (in seconds) to delay
   function setExpenditureClaimDelays(uint256 _id, uint256[] memory _slots, uint256[] memory _claimDelays) external;
 
-  /// @notice Sets the claim delays in given expenditure slots. Can only be called by expenditure owner.
+  /// @notice Sets the payout modifiers in given expenditure slots. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slots Array of slots to set payout modifiers
   /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus

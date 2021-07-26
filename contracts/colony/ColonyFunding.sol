@@ -573,19 +573,21 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     assert(fundingPot.associatedType == FundingPotAssociatedType.Expenditure);
 
+    uint256 currentTotal = fundingPot.payouts[_token];
+
     for (uint256 i; i < _slots.length; i++) {
       require(_amounts[i] <= MAX_PAYOUT, "colony-payout-too-large");
 
-      uint256 currentTotal = fundingPot.payouts[_token];
       uint256 currentPayout = expenditureSlotPayouts[_id][_slots[i]][_token];
 
       expenditureSlotPayouts[_id][_slots[i]][_token] = _amounts[i];
       fundingPot.payouts[_token] = add(sub(currentTotal, currentPayout), _amounts[i]);
 
-      updatePayoutsWeCannotMakeAfterBudgetChange(expenditures[_id].fundingPotId, _token, currentTotal);
 
       emit ExpenditurePayoutSet(msg.sender, _id, _slots[i], _token, _amounts[i]);
     }
+
+    updatePayoutsWeCannotMakeAfterBudgetChange(expenditures[_id].fundingPotId, _token, currentTotal);
   }
 
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)

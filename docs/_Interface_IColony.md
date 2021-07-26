@@ -1448,7 +1448,7 @@ Set the token payout on an expenditure slot. Can only be called by expenditure o
 
 ### `setExpenditurePayoutModifiers`
 
-Sets the claim delays in given expenditure slots. Can only be called by expenditure owner.
+Sets the payout modifiers in given expenditure slots. Can only be called by expenditure owner.
 
 
 **Parameters**
