@@ -46,6 +46,7 @@ class ReputationMinerClient {
     this.lockedForBlockProcessing;
     this._adapter = adapter;
     this._processingDelay = processingDelay;
+    this.oraclePort = oraclePort;
 
     if (typeof this._processingDelay === "undefined") {
       this._processingDelay = 10;
@@ -161,10 +162,6 @@ class ReputationMinerClient {
           return res.status(500).send({ message: "An error occurred querying the reputation" });
         }
       });
-
-      this.server = this._app.listen(oraclePort, () => {
-        this._adapter.log(`⭐️ Reputation oracle running on port ${this.server.address().port}`);
-      });
     }
   }
 
@@ -230,6 +227,11 @@ class ReputationMinerClient {
     this.chainId = network.chainId;
 
     this._adapter.log("🏁 Initialised");
+    if (this._oracle) {
+      this.server = this._app.listen(this.oraclePort, () => {
+       this._adapter.log(`⭐️ Reputation oracle running on port ${this.server.address().port}`);
+     });
+    }
   }
 
   async updateGasEstimate(type) {
