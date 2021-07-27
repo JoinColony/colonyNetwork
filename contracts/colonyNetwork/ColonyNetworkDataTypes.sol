@@ -137,6 +137,10 @@ interface ColonyNetworkDataTypes {
   /// @param colony The address of the colony
   event ExtensionUninstalled(bytes32 indexed extensionId, address indexed colony);
 
+  /// @notice Event logged when a token is deployed via transaction through the colony network
+  /// @param tokenAddress The address of the token deployed
+  event TokenDeployed(address tokenAddress);
+
   struct Skill {
     // total number of parent skills
     uint128 nParents;

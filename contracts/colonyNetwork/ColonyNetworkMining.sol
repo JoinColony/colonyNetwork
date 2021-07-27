@@ -287,4 +287,19 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
 
     return add(mul(prevWeight, _prevTime), mul(currWeight, _currTime)) / add(prevWeight, currWeight);
   }
+
+  function setMiningResolver(address _miningResolver) public
+  stoppable
+  auth
+  {
+    require(_miningResolver != address(0x0), "colony-mining-resolver-cannot-be-zero");
+
+    miningCycleResolver = _miningResolver;
+
+    emit MiningCycleResolverSet(_miningResolver);
+  }
+
+  function getMiningResolver() public view returns (address) {
+    return miningCycleResolver;
+  }
 }

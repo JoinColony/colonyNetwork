@@ -22,6 +22,7 @@ import "../colony/ColonyDataTypes.sol";
 import "../colonyNetwork/IColonyNetwork.sol";
 import "../extensions/ColonyExtension.sol";
 import "./ColonyNetworkStorage.sol";
+import "./../metatxToken/MetaTxToken.sol";
 
 
 contract ColonyNetworkExtensions is ColonyNetworkStorage {
@@ -138,4 +139,15 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     address extension = Resolver(_resolver).lookup(VERSION_SIG);
     return ColonyExtension(extension).version();
   }
+
+  function deployToken(string memory _name, string memory _symbol, uint8 _decimals) public
+  stoppable
+  returns (address)
+  {
+    MetaTxToken token = new MetaTxToken(_name, _symbol, _decimals);
+    token.setOwner(msgSender());
+    emit TokenDeployed(address(token));
+  }
+
+
 }

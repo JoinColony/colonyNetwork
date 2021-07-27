@@ -32,6 +32,7 @@ const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
+const MetaTxToken = artifacts.require("MetaTxToken");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
 contract("Colony Network", (accounts) => {
@@ -338,6 +339,21 @@ contract("Colony Network", (accounts) => {
       const colonyCount = await colonyNetwork.getColonyCount();
       const colonyAddress = await colonyNetwork.getColony(colonyCount);
       await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
+    });
+  });
+
+  describe("when users create tokens", () => {
+    it("should allow users to create new tokens", async () => {
+      const tx = await colonyNetwork.deployToken("TEST", "TST", 18);
+      await expectEvent(tx, "TokenDeployed", []);
+    });
+
+    it("should have the user as the owner of the token", async () => {
+      const tx = await colonyNetwork.deployToken("TEST", "TST", 18);
+      const address = tx.logs[0].args.tokenAddress;
+      const token = await MetaTxToken.at(address);
+      const owner = await token.owner();
+      expect(owner).to.equal(accounts[0]);
     });
   });
 
@@ -690,6 +706,18 @@ contract("Colony Network", (accounts) => {
       const colonyCount = await colonyNetwork.getColonyCount();
       const colonyAddress = await colonyNetwork.getColony(colonyCount);
       await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
+    });
+
+    it("should have the user as the owner of a token deployed through ColonyNetwork via metatransaction", async () => {
+      const txData = await colonyNetwork.contract.methods["deployToken(string,string,uint8)"]("Test token", "TST", 18).encodeABI();
+      const { r, s, v } = await getMetatransactionParameters(txData, accounts[1], colonyNetwork.address);
+
+      const tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      const address = tx.logs[0].args.tokenAddress;
+      const token = await MetaTxToken.at(address);
+      const owner = await token.owner();
+      expect(owner).to.equal(accounts[1]);
     });
   });
 });

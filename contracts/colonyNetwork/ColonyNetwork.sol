@@ -107,21 +107,6 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
     return tokenLocking;
   }
 
-  function setMiningResolver(address _miningResolver) public
-  stoppable
-  auth
-  {
-    require(_miningResolver != address(0x0), "colony-mining-resolver-cannot-be-zero");
-
-    miningCycleResolver = _miningResolver;
-
-    emit MiningCycleResolverSet(_miningResolver);
-  }
-
-  function getMiningResolver() public view returns (address) {
-    return miningCycleResolver;
-  }
-
   function createMetaColony(address _tokenAddress) public
   stoppable
   auth

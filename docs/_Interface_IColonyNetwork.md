@@ -221,6 +221,26 @@ Create the Meta Colony, same as a normal colony plus the root skill.
 |_tokenAddress|address|Address of the CLNY token
 
 
+### `deployToken`
+
+Called to deploy a token.
+
+*Note: This is more expensive than deploying a token directly, but is able to be done via a metatransaction*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_name|string|The name of the token
+|_symbol|string|The short 'ticket' symbol for the token
+|_decimals|uint8|The number of decimal places that 1 user-facing token can be divided up in to In the case of ETH, and most tokens, this is 18.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|address|address|
+
 ### `deprecateExtension`
 
 Set the deprecation of an extension in a colony. Can only be called by a Colony.
