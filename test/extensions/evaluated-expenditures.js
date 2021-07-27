@@ -7,7 +7,7 @@ import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
-import { checkErrorRevert, web3GetCode } from "../../helpers/test-helper";
+import { checkErrorRevert, web3GetCode, getExtensionAddressFromTx } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupRandomColony, setupMetaColonyWithLockedCLNYToken } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -46,9 +46,8 @@ contract("EvaluatedExpenditure", (accounts) => {
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
 
-    await colony.installExtension(EVALUATED_EXPENDITURE, evaluatedExpenditureVersion);
-
-    const evaluatedExpenditureAddress = await colonyNetwork.getExtensionInstallation(EVALUATED_EXPENDITURE, colony.address);
+    const tx = await colony.installExtension(EVALUATED_EXPENDITURE, evaluatedExpenditureVersion);
+    const evaluatedExpenditureAddress = getExtensionAddressFromTx(tx);
     evaluatedExpenditure = await EvaluatedExpenditure.at(evaluatedExpenditureAddress);
 
     await colony.setArbitrationRole(1, UINT256_MAX, evaluatedExpenditure.address, 1, true);
@@ -79,16 +78,12 @@ contract("EvaluatedExpenditure", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(EVALUATED_EXPENDITURE, evaluatedExpenditureVersion, { from: USER0 });
+      const tx = await colony.installExtension(EVALUATED_EXPENDITURE, evaluatedExpenditureVersion);
 
-      await checkErrorRevert(
-        colony.installExtension(EVALUATED_EXPENDITURE, evaluatedExpenditureVersion, { from: USER0 }),
-        "colony-network-extension-already-installed"
-      );
+      const evaluatedExpenditureAddress = getExtensionAddressFromTx(tx);
+      await checkErrorRevert(colony.methods["uninstallExtension(address)"](evaluatedExpenditureAddress, { from: USER1 }), "ds-auth-unauthorized");
 
-      await checkErrorRevert(colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
-
-      await colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER0 });
+      await colony.methods["uninstallExtension(address)"](evaluatedExpenditureAddress, { from: USER0 });
     });
   });
 

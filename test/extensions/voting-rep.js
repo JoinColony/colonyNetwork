@@ -1232,9 +1232,6 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can take an action to install an extension", async () => {
-      let installation = await colonyNetwork.getExtensionInstallation(soliditySha3("OneTxPayment"), colony.address);
-      expect(installation).to.be.equal(ADDRESS_ZERO);
-
       const oneTxPaymentImplementation = await OneTxPayment.new();
       const resolver = await Resolver.new();
       await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPaymentImplementation.address }, resolver);
@@ -1250,11 +1247,12 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const { logs } = await voting.finalizeMotion(motionId);
-      expect(logs[1].args.executed).to.be.true;
+      const tx = await voting.finalizeMotion(motionId);
+      expect(tx.logs[1].args.executed).to.be.true;
 
-      installation = await colonyNetwork.getExtensionInstallation(soliditySha3("OneTxPayment"), colony.address);
-      expect(installation).to.not.be.equal(ADDRESS_ZERO);
+      const extensionAddress = getExtensionAddressFromTx(tx);
+      const colonyAddress = await colonyNetwork.getExtensionMultiInstallation(extensionAddress);
+      expect(colonyAddress).to.equal(colony.address);
     });
 
     it("can take an action with an arbitrary target", async () => {
