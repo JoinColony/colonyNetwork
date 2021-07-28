@@ -15,7 +15,7 @@ import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, getMetatransact
 const axios = require("axios");
 
 const { expect } = chai;
-const ganacheAccounts = require("../../ganache-accounts.json");
+const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
 
 const ColonyExtension = artifacts.require("ColonyExtension");
 const CoinMachine = artifacts.require("CoinMachine");
