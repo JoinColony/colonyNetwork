@@ -216,11 +216,11 @@ contract("Colony Recovery", (accounts) => {
       // Put colony in to recovery mode
       await colony.enterRecoveryMode();
       // work out the storage slot
-      // Metatransaction nonce mapping is storage slot 34
+      // Metatransaction nonce mapping is storage slot 35
       // So this user has their nonce stored at
       const user0MetatransactionNonceSlot = await web3.utils.soliditySha3(
         { type: "bytes32", value: ethers.utils.hexZeroPad(accounts[0], 32) },
-        { type: "uint256", value: "34" }
+        { type: "uint256", value: "35" }
       );
 
       // Try and edit that slot
