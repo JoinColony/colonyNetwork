@@ -117,8 +117,9 @@ interface ColonyDataTypes {
 
   /// @notice Event logged when expenditure metadata is set
   /// @param agent The address that is responsible for triggering this event
+  /// @param expenditureId Id of the expenditure
   /// @param metadata IPFS hash of the metadata
-  event ExpenditureMetadataSet(address agent, string metadata);
+  event ExpenditureMetadataSet(address agent, uint256 indexed expenditureId, string metadata);
 
   /// @notice Event logged when an expenditure's recipient is set
   /// @param agent The address that is responsible for triggering this event

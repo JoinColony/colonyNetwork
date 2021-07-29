@@ -166,14 +166,14 @@ contract("Colony Expenditure", (accounts) => {
       const setExpenditureMetadata = colony.methods["setExpenditureMetadata(uint256,string)"];
       const tx = await setExpenditureMetadata(expenditureId, IPFS_HASH, { from: ADMIN });
 
-      await expectEvent(tx, "ExpenditureMetadataSet", [ADMIN, IPFS_HASH]);
+      await expectEvent(tx, "ExpenditureMetadataSet", [ADMIN, expenditureId, IPFS_HASH]);
     });
 
     it("should allow arbitrators to update the metadata", async () => {
       const setExpenditureMetadata = colony.methods["setExpenditureMetadata(uint256,uint256,uint256,string)"];
       const tx = await setExpenditureMetadata(1, UINT256_MAX, expenditureId, IPFS_HASH, { from: ARBITRATOR });
 
-      await expectEvent(tx, "ExpenditureMetadataSet", [ARBITRATOR, IPFS_HASH]);
+      await expectEvent(tx, "ExpenditureMetadataSet", [ARBITRATOR, expenditureId, IPFS_HASH]);
     });
 
     it("should allow owners to update a slot recipient", async () => {
@@ -451,7 +451,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should not allow the owner to transfer the expenditure", async () => {
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
-      await checkErrorRevert(colony.transferExpenditure(expenditureId, USER, { from: ADMIN }), "colony-expenditure-not-active");
+      await checkErrorRevert(colony.transferExpenditure(expenditureId, USER, { from: ADMIN }), "colony-expenditure-not-draft-or-locked");
     });
 
     it("cannot finalize expenditure if it is not fully funded", async () => {

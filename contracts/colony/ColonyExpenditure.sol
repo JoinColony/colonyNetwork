@@ -68,7 +68,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraftOrLocked(_id)
     expenditureOnlyOwner(_id)
   {
     expenditures[_id].owner = _newOwner;
@@ -87,7 +87,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraftOrLocked(_id)
   {
     expenditures[_id].owner = _newOwner;
 
@@ -122,7 +122,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraftOrLocked(_id)
     expenditureOnlyOwner(_id)
   {
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
@@ -141,7 +141,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
-    emit ExpenditureMetadataSet(msg.sender, _metadata);
+    emit ExpenditureMetadataSet(msg.sender, _id, _metadata);
   }
 
   function setExpenditureMetadata(
@@ -155,7 +155,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureExists(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
-    emit ExpenditureMetadataSet(msg.sender, _metadata);
+    emit ExpenditureMetadataSet(msg.sender, _id, _metadata);
   }
 
   function setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address payable[] memory _recipients)
