@@ -361,16 +361,40 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _id Expenditure identifier
   function cancelExpenditure(uint256 _id) external;
 
-  /// @notice Finalizes the expenditure and prevents further editing. Can only be called by expenditure owner.
+  /// @notice Locks the expenditure and prevents further editing. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  function lockExpenditure(uint256 _id) external;
+
+  /// @notice Finalizes the expenditure and allows for funds to be claimed. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   function finalizeExpenditure(uint256 _id) external;
 
+  /// @notice Sets the metadata for an expenditure. Can only be called by expenditure owner.
+  /// @param _id Id of the expenditure
+  /// @param _metadata IPFS hash of the metadata
+  function setExpenditureMetadata(uint256 _id, string memory _metadata) external;
+
+  /// @notice Sets the metadata for an expenditure. Can only be called by Arbitration role.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
+  /// @param _id Id of the expenditure
+  /// @param _metadata IPFS hash of the metadata
+  function setExpenditureMetadata(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, string memory _metadata) external;
+
+  /// @notice Deprecated
   /// @notice Sets the recipient on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Id of the expenditure
   /// @param _slot Slot for the recipient address
   /// @param _recipient Address of the recipient
   function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient) external;
 
+  /// @notice Sets the recipients in given expenditure slots. Can only be called by expenditure owner.
+  /// @param _id Id of the expenditure
+  /// @param _slots Array of slots to set recipients
+  /// @param _recipients Addresses of the recipients
+  function setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address payable[] memory _recipients) external;
+
+  /// @notice Deprecated
   /// @notice Set the token payout on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Id of the expenditure
   /// @param _slot Number of the slot
@@ -378,44 +402,44 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _amount Payout amount
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount) external;
 
+  /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
+  /// @param _id Id of the expenditure
+  /// @param _slots Array of slots to set payouts
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amounts Payout amounts
+  function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts) external;
+
+  /// @notice Deprecated
   /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
   /// @param _skillId Id of the new skill to set
   function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId) external;
 
-  /// @notice DEPRECATED Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
-  /// @dev This is now deprecated and will be removed in a future version
-  /// @dev Note that when determining payouts the payoutModifier is incremented by WAD and converted into payoutScalar
-  /// @param _permissionDomainId The domainId in which I have the permission to take this action
-  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
-  /// (only used if `_permissionDomainId` is different to `_domainId`)
+  /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
-  /// @param _slot Number of the slot
-  /// @param _payoutModifier Modifier to their payout (between -1 and 1, denominated in WADs, 0 means no modification)
-  function setExpenditurePayoutModifier(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    uint256 _slot,
-    int256 _payoutModifier
-    ) external;
+  /// @param _slots Array of slots to set skills
+  /// @param _skillIds Ids of the new skills to set
+  function setExpenditureSkills(uint256 _id, uint256[] memory _slots, uint256[] memory _skillIds) external;
 
-  /// @notice DEPRECATED Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
-  /// @dev This is now deprecated and will be removed in a future version
-  /// @param _permissionDomainId The domainId in which I have the permission to take this action
-  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
-  /// (only used if `_permissionDomainId` is different to `_domainId`)
+  /// @notice Deprecated
+  /// @notice Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
-  /// @param _claimDelay Time (in seconds) to delay claiming payout after finalization
-  function setExpenditureClaimDelay(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    uint256 _slot,
-    uint256 _claimDelay
-    ) external;
+  /// @param _claimDelay Duration of time (in seconds) to delay
+  function setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay) external;
+
+  /// @notice Sets the claim delays in given expenditure slots. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  /// @param _slots Array of slots to set claim delays
+  /// @param _claimDelays Durations of time (in seconds) to delay
+  function setExpenditureClaimDelays(uint256 _id, uint256[] memory _slots, uint256[] memory _claimDelays) external;
+
+  /// @notice Sets the payout modifiers in given expenditure slots. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  /// @param _slots Array of slots to set payout modifiers
+  /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus
+  function setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers) external;
 
   /// @notice Set arbitrary state on an expenditure slot. Can only be called by Arbitration role.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action

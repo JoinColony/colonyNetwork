@@ -383,7 +383,7 @@ Executes a task role update transaction `_data` which is approved and signed by 
 
 ### `finalizeExpenditure`
 
-Finalizes the expenditure and prevents further editing. Can only be called by expenditure owner.
+Finalizes the expenditure and allows for funds to be claimed. Can only be called by expenditure owner.
 
 
 **Parameters**
@@ -1039,6 +1039,18 @@ Install an extension to the colony. Secured function to authorised members.
 |version|uint256|The new extension version to install
 
 
+### `lockExpenditure`
+
+Locks the expenditure and prevents further editing. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+
+
 ### `lockToken`
 
 Lock the colony's token. Can only be called by a network-managed extension.
@@ -1365,19 +1377,58 @@ Update the default global claim delay for expenditures
 
 ### `setExpenditureClaimDelay`
 
-DEPRECATED Set the claim delay on an expenditure slot. Can only be called by Arbitration role.
+Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
 
-*Note: This is now deprecated and will be removed in a future version*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Number of the slot
+|_claimDelay|uint256|Duration of time (in seconds) to delay
+
+
+### `setExpenditureClaimDelays`
+
+Sets the claim delays in given expenditure slots. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slots|uint256[]|Array of slots to set claim delays
+|_claimDelays|uint256[]|Durations of time (in seconds) to delay
+
+
+### `setExpenditureMetadata`
+
+Sets the metadata for an expenditure. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the expenditure
+|_metadata|string|IPFS hash of the metadata
+
+
+### `setExpenditureMetadata`
+
+Sets the metadata for an expenditure. Can only be called by Arbitration role.
+
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
-|_id|uint256|Expenditure identifier
-|_slot|uint256|Number of the slot
-|_claimDelay|uint256|Time (in seconds) to delay claiming payout after finalization
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`,
+|_id|uint256|Id of the expenditure
+|_metadata|string|IPFS hash of the metadata
 
 
 ### `setExpenditurePayout`
@@ -1395,21 +1446,33 @@ Set the token payout on an expenditure slot. Can only be called by expenditure o
 |_amount|uint256|Payout amount
 
 
-### `setExpenditurePayoutModifier`
+### `setExpenditurePayoutModifiers`
 
-DEPRECATED Set the payout modifier on an expenditure slot. Can only be called by Arbitration role.
+Sets the payout modifiers in given expenditure slots. Can only be called by expenditure owner.
 
-*Note: This is now deprecated and will be removed in a future version*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
 |_id|uint256|Expenditure identifier
-|_slot|uint256|Number of the slot
-|_payoutModifier|int256|Modifier to their payout (between -1 and 1, denominated in WADs, 0 means no modification)
+|_slots|uint256[]|Array of slots to set payout modifiers
+|_payoutModifiers|int256[]|Values (between +/- WAD) to modify the payout & reputation bonus
+
+
+### `setExpenditurePayouts`
+
+Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the expenditure
+|_slots|uint256[]|Array of slots to set payouts
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_amounts|uint256[]|Payout amounts
 
 
 ### `setExpenditureRecipient`
@@ -1426,6 +1489,20 @@ Sets the recipient on an expenditure slot. Can only be called by expenditure own
 |_recipient|address|Address of the recipient
 
 
+### `setExpenditureRecipients`
+
+Sets the recipients in given expenditure slots. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the expenditure
+|_slots|uint256[]|Array of slots to set recipients
+|_recipients|address[]|Addresses of the recipients
+
+
 ### `setExpenditureSkill`
 
 Sets the skill on an expenditure slot. Can only be called by expenditure owner.
@@ -1438,6 +1515,20 @@ Sets the skill on an expenditure slot. Can only be called by expenditure owner.
 |_id|uint256|Expenditure identifier
 |_slot|uint256|Number of the slot
 |_skillId|uint256|Id of the new skill to set
+
+
+### `setExpenditureSkills`
+
+Sets the skill on an expenditure slot. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slots|uint256[]|Array of slots to set skills
+|_skillIds|uint256[]|Ids of the new skills to set
 
 
 ### `setExpenditureState`
