@@ -26,9 +26,11 @@ const TestVotingToken = artifacts.require("TestVotingToken");
 const Resolver = artifacts.require("Resolver");
 const RequireExecuteCall = artifacts.require("RequireExecuteCall");
 const ContractEditing = artifacts.require("ContractEditing");
+const Version7 = artifacts.require("Version7");
 
 contract("Colony Network Extensions", (accounts) => {
   let colonyNetwork;
+  let editableColonyNetwork;
   let metaColony;
   let colony;
   let token;
@@ -71,6 +73,13 @@ contract("Colony Network Extensions", (accounts) => {
   beforeEach(async () => {
     colonyNetwork = await setupColonyNetwork();
     ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+    const colonyNetworkAsER = await EtherRouter.at(colonyNetwork.address);
+    const colonyNetworkResolverAddress = await colonyNetworkAsER.resolver();
+    const colonyNetworkResolver = await Resolver.at(colonyNetworkResolverAddress);
+    const contractEditing = await ContractEditing.new();
+    await colonyNetworkResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
+    editableColonyNetwork = await ContractEditing.at(colonyNetwork.address);
 
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.addDomain(1, UINT256_MAX, 1); // Domain 2
@@ -182,13 +191,6 @@ contract("Colony Network Extensions", (accounts) => {
     });
 
     it("allows colonies to migrate to multiExtension bookkeeping", async () => {
-      const colonyNetworkAsER = await EtherRouter.at(colonyNetwork.address);
-      const colonyNetworkResolverAddress = await colonyNetworkAsER.resolver();
-      const colonyNetworkResolver = await Resolver.at(colonyNetworkResolverAddress);
-      const contractEditing = await ContractEditing.new();
-      await colonyNetworkResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
-      const editableColonyNetwork = await ContractEditing.at(colonyNetwork.address);
-
       const extension = await TestExtension1.new();
       await extension.install(colony.address);
 
@@ -202,10 +204,34 @@ contract("Colony Network Extensions", (accounts) => {
       const value = `0x000000000000000000000000${extension.address.slice(2)}`;
       await editableColonyNetwork.setStorageSlot(slot, value);
 
+      let extensionAddress;
+      extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
+      expect(extensionAddress).to.not.equal(ethers.constants.AddressZero);
+
       await colonyNetwork.migrateToMultiExtension(TEST_EXTENSION, colony.address);
 
       colonyAddress = await colonyNetwork.getExtensionMultiInstallation(extension.address);
       expect(colonyAddress).to.equal(colony.address);
+
+      extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
+      expect(extensionAddress).to.equal(ethers.constants.AddressZero);
+    });
+
+    it("allows old colonies to install extensions correctly", async () => {
+      const version7Colony = await Version7.new(colonyNetwork.address);
+
+      // Add version7Colony to _isColony mapping
+      const slot = soliditySha3(`0x000000000000000000000000${version7Colony.address.slice(2)}`, 19);
+      const value = `0x0000000000000000000000000000000000000000000000000000000000000001`;
+      await editableColonyNetwork.setStorageSlot(slot, value);
+
+      await version7Colony.installExtension(TEST_EXTENSION, 1);
+
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, version7Colony.address);
+      expect(extensionAddress).to.not.equal(ethers.constants.AddressZero);
+
+      // But not twice
+      await checkErrorRevert(version7Colony.installExtension(TEST_EXTENSION, 1), "colony-network-extension-already-installed");
     });
   });
 
@@ -266,6 +292,25 @@ contract("Colony Network Extensions", (accounts) => {
         "colony-network-extension-bad-increment"
       );
     });
+
+    it("allows old colonies to upgrade extensions correctly", async () => {
+      const version7Colony = await Version7.new(colonyNetwork.address);
+
+      // Add version7Colony to _isColony mapping
+      const slot = soliditySha3(`0x000000000000000000000000${version7Colony.address.slice(2)}`, 19);
+      const value = `0x0000000000000000000000000000000000000000000000000000000000000001`;
+      await editableColonyNetwork.setStorageSlot(slot, value);
+
+      await version7Colony.installExtension(TEST_EXTENSION, 1);
+
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, version7Colony.address);
+
+      await version7Colony.upgradeExtension(TEST_EXTENSION, 2);
+
+      const extension = await ColonyExtension.at(extensionAddress);
+      const version = await extension.version();
+      expect(version).to.eq.BN(2);
+    });
   });
 
   describe("deprecating extensions", () => {
@@ -295,6 +340,24 @@ contract("Colony Network Extensions", (accounts) => {
 
       const extensionAddress = getExtensionAddressFromTx(tx);
       await checkErrorRevert(colony.methods["deprecateExtension(address,bool)"](extensionAddress, true, { from: ARCHITECT }), "ds-auth-unauthorized");
+    });
+
+    it("allows old colonies to deprecate extensions correctly", async () => {
+      const version7Colony = await Version7.new(colonyNetwork.address);
+
+      // Add version7Colony to _isColony mapping
+      const slot = soliditySha3(`0x000000000000000000000000${version7Colony.address.slice(2)}`, 19);
+      const value = `0x0000000000000000000000000000000000000000000000000000000000000001`;
+      await editableColonyNetwork.setStorageSlot(slot, value);
+
+      await version7Colony.installExtension(TEST_EXTENSION, 1);
+
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, version7Colony.address);
+      const extension = await TestExtension1.at(extensionAddress);
+
+      await version7Colony.deprecateExtension(TEST_EXTENSION, true);
+
+      await checkErrorRevert(extension.foo(), "colony-extension-deprecated");
     });
   });
 
@@ -328,6 +391,26 @@ contract("Colony Network Extensions", (accounts) => {
         colony.methods["uninstallExtension(address)"](ethers.constants.AddressZero, { from: ROOT }),
         "colony-network-extension-not-installed"
       );
+    });
+
+    it("allows old colonies to uninstall extensions correctly", async () => {
+      const version7Colony = await Version7.new(colonyNetwork.address);
+
+      // Add version7Colony to _isColony mapping
+      const slot = soliditySha3(`0x000000000000000000000000${version7Colony.address.slice(2)}`, 19);
+      const value = `0x0000000000000000000000000000000000000000000000000000000000000001`;
+      await editableColonyNetwork.setStorageSlot(slot, value);
+
+      await version7Colony.installExtension(TEST_EXTENSION, 1);
+
+      let extensionAddress;
+      extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, version7Colony.address);
+      expect(extensionAddress).to.not.equal(ethers.constants.AddressZero);
+
+      await version7Colony.uninstallExtension(TEST_EXTENSION);
+
+      extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, version7Colony.address);
+      expect(extensionAddress).to.equal(ethers.constants.AddressZero);
     });
   });
 

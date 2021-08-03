@@ -353,8 +353,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Migrate extension bookkeeping to multiExtension
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param colony Address of the colony the extension is installed in
-  /// @return extension The address of the extension
-  function migrateToMultiExtension(bytes32 extensionId, address colony) external returns (address extension);
+  function migrateToMultiExtension(bytes32 extensionId, address colony) external;
 
   /// @notice Get an extension's resolver.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier

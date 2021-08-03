@@ -745,11 +745,6 @@ Migrate extension bookkeeping to multiExtension
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |colony|address|Address of the colony the extension is installed in
 
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|extension|address|The address of the extension
 
 ### `punishStakers`
 
