@@ -312,6 +312,7 @@ class ReputationMinerClient {
         // And if appropriate, sort out our potential submissions for the next cycle.
         if (this._auto){
           this.best12Submissions = await this.getTwelveBestSubmissions();
+          this.submissionIndex = 0; // Reset that we've not submitted any
         }
 
         this.miningCycleAddress = addr;
@@ -466,9 +467,7 @@ class ReputationMinerClient {
 
         const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_NEW_HASH, entry.lastResponseTimestamp);
         if (responsePossible){
-          this.best12Submissions = []; // Clear the submissions
-          this.submissionIndex = 0;
-          await this.updateGasEstimate('safeLow');
+          await this.updateGasEstimate('average');
           await this.confirmEntry();
         }
       }
