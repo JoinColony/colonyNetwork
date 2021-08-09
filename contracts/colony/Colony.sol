@@ -123,12 +123,6 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     emit ColonyInitialised(msgSender(), _colonyNetworkAddress, _token);
   }
 
-  function initialiseColony(address _colonyNetworkAddress, address _token, string memory _metadata) public stoppable {
-    initialiseColony(_colonyNetworkAddress, _token);
-
-    emit ColonyMetadata(msgSender(), _metadata);
-  }
-
   function editColony(string memory _metadata) public
   stoppable
   auth {
