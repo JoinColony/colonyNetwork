@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 
 import { UINT256_MAX, SPECIFICATION_HASH } from "../../helpers/constants";
 import { web3GetStorageAt, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
-import { setupRandomColony, getMetatransactionParameters } from "../../helpers/test-data-generator";
+import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -209,7 +209,7 @@ contract("Colony Recovery", (accounts) => {
       // is via a metatransaction
       const txData = await colony.contract.methods.mintTokens(100).encodeABI();
 
-      const { r, s, v } = await getMetatransactionParameters(txData, accounts[0], colony.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[0], colony.address);
 
       await colony.executeMetaTransaction(accounts[0], txData, r, s, v, { from: accounts[1] });
 

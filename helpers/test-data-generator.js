@@ -397,7 +397,7 @@ export async function setupColony(colonyNetwork, tokenAddress) {
   return colony;
 }
 
-export async function getMetatransactionParameters(txData, userAddress, targetAddress) {
+export async function getMetaTransactionParameters(txData, userAddress, targetAddress) {
   const contract = await BasicMetaTransaction.at(targetAddress);
   const nonce = await contract.getMetatransactionNonce(userAddress);
   // We should just be able to get the chain id via a web3 call, but until ganache sort their stuff out,

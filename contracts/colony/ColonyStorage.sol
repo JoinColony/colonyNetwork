@@ -246,7 +246,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
-  modifier auth virtual override {
+  modifier auth override {
     require(isAuthorized(msgSender(), 1, msg.sig), "ds-auth-unauthorized");
     _;
   }

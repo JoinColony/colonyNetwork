@@ -24,7 +24,7 @@ import {
   setupRandomColony,
   giveUserCLNYTokensAndStake,
   setupMetaColonyWithLockedCLNYToken,
-  getMetatransactionParameters,
+  getMetaTransactionParameters,
 } from "../../helpers/test-data-generator";
 
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
@@ -235,7 +235,7 @@ contract("Funding Queues", (accounts) => {
         .createProposal(1, UINT256_MAX.toString(), 0, 1, 2, WAD.toString(), token.address)
         .encodeABI();
 
-      const { r, s, v } = await getMetatransactionParameters(txData, USER0, fundingQueue.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, fundingQueue.address);
 
       await fundingQueue.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 

@@ -12,7 +12,7 @@ import {
   setupColonyNetwork,
   setupRandomColony,
   setupMetaColonyWithLockedCLNYToken,
-  getMetatransactionParameters,
+  getMetaTransactionParameters,
 } from "../../helpers/test-data-generator";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
@@ -230,7 +230,7 @@ contract("Token Supplier", (accounts) => {
       time = new BN(time).addn(SECONDS_PER_DAY);
 
       const txData = await tokenSupplier.contract.methods.issueTokens().encodeABI();
-      const { r, s, v } = await getMetatransactionParameters(txData, accounts[0], tokenSupplier.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[0], tokenSupplier.address);
 
       await makeTxAtTimestamp(tokenSupplier.executeMetaTransaction, [accounts[0], txData, r, s, v], time.toNumber(), this);
 

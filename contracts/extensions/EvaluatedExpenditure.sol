@@ -62,12 +62,12 @@ contract EvaluatedExpenditure is ColonyExtension {
     selfdestruct(address(uint160(address(colony))));
   }
 
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
+  function getMetatransactionNonce(address _userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[_userAddress];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+  function incrementMetatransactionNonce(address _user) override internal {
+    metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
   }
 
   /// @notice Sets the payout modifiers in given expenditure slots, using the arbitration permission

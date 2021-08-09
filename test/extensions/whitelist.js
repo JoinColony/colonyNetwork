@@ -12,7 +12,7 @@ import {
   setupColonyNetwork,
   setupRandomColony,
   setupMetaColonyWithLockedCLNYToken,
-  getMetatransactionParameters,
+  getMetaTransactionParameters,
 } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -188,7 +188,7 @@ contract("Whitelist", (accounts) => {
 
       const txData = await whitelist.contract.methods.signAgreement(IPFS_HASH).encodeABI();
 
-      const { r, s, v } = await getMetatransactionParameters(txData, USER1, whitelist.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER1, whitelist.address);
 
       await whitelist.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
 

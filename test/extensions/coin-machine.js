@@ -26,7 +26,7 @@ import {
   setupRandomColony,
   setupColony,
   setupMetaColonyWithLockedCLNYToken,
-  getMetatransactionParameters,
+  getMetaTransactionParameters,
 } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -241,7 +241,7 @@ contract("Coin Machine", (accounts) => {
 
       const txData = await coinMachine.contract.methods.buyTokens(WAD.toString()).encodeABI();
 
-      const { r, s, v } = await getMetatransactionParameters(txData, USER0, coinMachine.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, coinMachine.address);
 
       await coinMachine.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 

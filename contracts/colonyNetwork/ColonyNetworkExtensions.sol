@@ -22,7 +22,7 @@ import "../colony/ColonyDataTypes.sol";
 import "../colonyNetwork/IColonyNetwork.sol";
 import "../extensions/ColonyExtension.sol";
 import "./ColonyNetworkStorage.sol";
-import "./../metatxToken/MetaTxToken.sol";
+import "./../metaTxToken/MetaTxToken.sol";
 
 
 contract ColonyNetworkExtensions is ColonyNetworkStorage {
@@ -146,6 +146,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
   {
     MetaTxToken token = new MetaTxToken(_name, _symbol, _decimals);
     token.setOwner(msgSender());
+
     emit TokenDeployed(address(token));
   }
 

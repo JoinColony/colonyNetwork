@@ -12,7 +12,7 @@ import {
   setupMetaColonyWithLockedCLNYToken,
   setupRandomColony,
   fundColonyWithTokens,
-  getMetatransactionParameters,
+  getMetaTransactionParameters,
 } from "../../helpers/test-data-generator";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
@@ -135,7 +135,7 @@ contract("One transaction payments", (accounts) => {
           GLOBAL_SKILL_ID.toString()
         )
         .encodeABI();
-      const { r, s, v } = await getMetatransactionParameters(txData, accounts[0], oneTxPayment.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[0], oneTxPayment.address);
 
       const tx = await oneTxPayment.executeMetaTransaction(accounts[0], txData, r, s, v, { from: USER2 });
 

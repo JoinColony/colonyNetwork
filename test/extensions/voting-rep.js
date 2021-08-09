@@ -26,7 +26,7 @@ import {
   setupMetaColonyWithLockedCLNYToken,
   setupRandomColony,
   giveUserCLNYTokensAndStake,
-  getMetatransactionParameters,
+  getMetaTransactionParameters,
 } from "../../helpers/test-data-generator";
 
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
@@ -369,7 +369,7 @@ contract("Voting Reputation", (accounts) => {
         .createMotion(1, UINT256_MAX.toString(), ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings)
         .encodeABI();
 
-      const { r, s, v } = await getMetatransactionParameters(txData, USER2, voting.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER2, voting.address);
 
       await voting.executeMetaTransaction(USER2, txData, r, s, v, { from: USER1 });
 

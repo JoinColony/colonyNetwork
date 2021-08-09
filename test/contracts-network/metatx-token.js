@@ -3,7 +3,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 import { web3GetBalance, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
-import { getMetatransactionParameters, getPermitParameters, setupColony } from "../../helpers/test-data-generator";
+import { getMetaTransactionParameters, getPermitParameters, setupColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -307,7 +307,7 @@ contract("MetaTxToken", (accounts) => {
       it("should be able to transfer tokens from own address", async () => {
         const txData = await metaTxToken.contract.methods.transfer(USER1, 300000).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
 
         const tx = await metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
@@ -321,7 +321,7 @@ contract("MetaTxToken", (accounts) => {
       it("metatransaction should not be able to be replayed", async () => {
         const txData = await metaTxToken.contract.methods.transfer(USER1, 300000).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
 
         await metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
@@ -334,7 +334,7 @@ contract("MetaTxToken", (accounts) => {
       it("should NOT be able to transfer more tokens than they have", async () => {
         const txData = await metaTxToken.contract.methods.transfer(USER1, 1500001).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 }),
@@ -349,7 +349,7 @@ contract("MetaTxToken", (accounts) => {
         await metaTxToken.approve(USER1, 300000, { from: USER0 });
         const txData = await metaTxToken.contract.methods.transferFrom(USER0, USER1, 300000).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER1, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
 
         await expectEvent(metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER2 }), "Transfer", [USER0, USER1, 300000]);
         const balanceAccount1 = await metaTxToken.balanceOf(USER0);
@@ -363,7 +363,7 @@ contract("MetaTxToken", (accounts) => {
       it("should NOT be able to transfer tokens from another address if NOT pre-approved", async () => {
         const txData = await metaTxToken.contract.methods.transferFrom(USER0, USER1, 300000).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER1, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER2 }),
@@ -377,7 +377,7 @@ contract("MetaTxToken", (accounts) => {
         await metaTxToken.approve(USER1, 300000);
         const txData = await metaTxToken.contract.methods.transferFrom(USER0, USER1, 300001).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER1, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER2 }),
@@ -393,7 +393,7 @@ contract("MetaTxToken", (accounts) => {
         await metaTxToken.transfer(USER2, 1500000, { from: USER0 });
         const txData = await metaTxToken.contract.methods.transferFrom(USER0, USER1, 300001).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER1, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER2 }),
@@ -406,7 +406,7 @@ contract("MetaTxToken", (accounts) => {
       it("should be able to approve token transfer for other accounts", async () => {
         const txData = await metaTxToken.contract.methods.approve(USER1, 200000).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
 
         await expectEvent(metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER2 }), "Approval", [USER0, USER1, 200000]);
         const allowance = await metaTxToken.allowance(USER0, USER1);
@@ -423,7 +423,7 @@ contract("MetaTxToken", (accounts) => {
       it("shouldn't be able to transfer tokens from own address", async () => {
         const txData = await metaTxToken.contract.methods.transfer(USER2, 300000).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER1, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER2 }),
@@ -441,7 +441,7 @@ contract("MetaTxToken", (accounts) => {
 
         const txData = await metaTxToken.contract.methods.transferFrom(USER1, USER2, 300000).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER2, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER2, metaTxToken.address);
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER2, txData, r, s, v, { from: USER0 }),
@@ -461,7 +461,7 @@ contract("MetaTxToken", (accounts) => {
       it("should be able to mint new tokens, when called by the Token owner", async () => {
         let txData = await metaTxToken.contract.methods.mint(USER0, 1500000).encodeABI();
 
-        let { r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address);
+        let { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
 
         await metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
@@ -474,7 +474,7 @@ contract("MetaTxToken", (accounts) => {
         // Mint some more tokens
         txData = await metaTxToken.contract.methods.mint(USER0, 1).encodeABI();
 
-        ({ r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address));
+        ({ r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address));
 
         const tx = metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
@@ -489,7 +489,7 @@ contract("MetaTxToken", (accounts) => {
       it("should be able to mint new tokens directly to sender, when called by the Token owner", async () => {
         const txData = await metaTxToken.contract.methods["mint(uint256)"](1500000).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
 
         await metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
@@ -503,7 +503,7 @@ contract("MetaTxToken", (accounts) => {
       it("should NOT be able to mint new tokens, when called by anyone NOT the Token owner", async () => {
         const txData = await metaTxToken.contract.methods.mint(USER0).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER1, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 }),
@@ -522,7 +522,7 @@ contract("MetaTxToken", (accounts) => {
 
         const txData = await metaTxToken.contract.methods["burn(address,uint256)"](USER1, 500000).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER2, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER2, metaTxToken.address);
 
         await metaTxToken.executeMetaTransaction(USER2, txData, r, s, v, { from: USER0 });
 
@@ -539,7 +539,7 @@ contract("MetaTxToken", (accounts) => {
 
         const txData = await metaTxToken.contract.methods["burn(address,uint256)"](USER2, 500001).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER2, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER2, metaTxToken.address);
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER2, txData, r, s, v, { from: USER0 }),
@@ -559,7 +559,7 @@ contract("MetaTxToken", (accounts) => {
 
         const txData = await metaTxToken.contract.methods["burn(address,uint256)"](USER1, 500000).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER1, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
 
         await metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
 
@@ -582,7 +582,7 @@ contract("MetaTxToken", (accounts) => {
 
         const txData = await metaTxToken.contract.methods.burn(6).encodeABI();
 
-        const { r, s, v } = await getMetatransactionParameters(txData, USER1, metaTxToken.address);
+        const { r, s, v } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 }),
@@ -600,12 +600,12 @@ contract("MetaTxToken", (accounts) => {
 
         let txData = await metaTxToken.contract.methods.unlock().encodeABI();
 
-        let { r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address);
+        let { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
 
         await metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
         txData = await metaTxToken.contract.methods.setAuthority(USER0).encodeABI();
-        ({ r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address));
+        ({ r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address));
 
         await metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
@@ -619,7 +619,7 @@ contract("MetaTxToken", (accounts) => {
       it("shouldn't be able to unlock token by non-owner", async () => {
         let txData = await metaTxToken.contract.methods.unlock().encodeABI();
 
-        let { r, s, v } = await getMetatransactionParameters(txData, USER2, metaTxToken.address);
+        let { r, s, v } = await getMetaTransactionParameters(txData, USER2, metaTxToken.address);
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER2, txData, r, s, v, { from: USER0 }),
@@ -628,7 +628,7 @@ contract("MetaTxToken", (accounts) => {
 
         txData = await metaTxToken.contract.methods.setAuthority(USER0).encodeABI();
 
-        ({ r, s, v } = await getMetatransactionParameters(txData, USER1, metaTxToken.address));
+        ({ r, s, v } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address));
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 }),

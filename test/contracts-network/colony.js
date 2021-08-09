@@ -16,7 +16,7 @@ import {
   WAD,
 } from "../../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } from "../../helpers/test-helper";
-import { makeTask, setupRandomColony, getMetatransactionParameters } from "../../helpers/test-data-generator";
+import { makeTask, setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -331,7 +331,7 @@ contract("Colony", (accounts) => {
     it("should allow a metatransaction to occur", async () => {
       const txData = await colony.contract.methods.mintTokens(100).encodeABI();
 
-      const { r, s, v } = await getMetatransactionParameters(txData, USER0, colony.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
 
       const tx = await colony.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 

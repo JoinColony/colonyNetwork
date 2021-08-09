@@ -24,7 +24,7 @@ import {
   giveUserCLNYTokensAndStake,
   fundColonyWithTokens,
   setupRandomColony,
-  getMetatransactionParameters,
+  getMetaTransactionParameters,
 } from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
@@ -212,7 +212,7 @@ contract("Colony Network Recovery", (accounts) => {
 
       txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "someColonyName").encodeABI();
 
-      const { r, s, v } = await getMetatransactionParameters(txData, accounts[1], colonyNetwork.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colonyNetwork.address);
 
       await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
 

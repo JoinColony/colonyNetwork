@@ -17,7 +17,7 @@ import {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   setupRandomColony,
-  getMetatransactionParameters,
+  getMetaTransactionParameters,
 } from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
@@ -675,7 +675,7 @@ contract("Colony Network", (accounts) => {
 
       let txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "").encodeABI();
 
-      let { r, s, v } = await getMetatransactionParameters(txData, accounts[1], colonyNetwork.address);
+      let { r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colonyNetwork.address);
 
       let tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
 
@@ -686,7 +686,7 @@ contract("Colony Network", (accounts) => {
       const colony = await IColony.at(colonyAddress);
       txData = await colony.contract.methods.registerColonyLabel("someColonyName", "").encodeABI();
 
-      ({ r, s, v } = await getMetatransactionParameters(txData, accounts[1], colony.address));
+      ({ r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colony.address));
 
       tx = await colony.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
     });
@@ -699,7 +699,7 @@ contract("Colony Network", (accounts) => {
 
       txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "someColonyName").encodeABI();
 
-      const { r, s, v } = await getMetatransactionParameters(txData, accounts[1], colonyNetwork.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colonyNetwork.address);
 
       const tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
 
@@ -710,7 +710,7 @@ contract("Colony Network", (accounts) => {
 
     it("should have the user as the owner of a token deployed through ColonyNetwork via metatransaction", async () => {
       const txData = await colonyNetwork.contract.methods["deployToken(string,string,uint8)"]("Test token", "TST", 18).encodeABI();
-      const { r, s, v } = await getMetatransactionParameters(txData, accounts[1], colonyNetwork.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colonyNetwork.address);
 
       const tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
 

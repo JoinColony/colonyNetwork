@@ -14,17 +14,15 @@ abstract contract BasicMetaTransaction is DSMath, MetaTransactionMsgSender, Mult
   // you MUST prevent the metatransaction nonces from being editable with recovery mode.
   function incrementMetatransactionNonce(address _user) internal virtual;
 
-  /**
-   * Main function to be called when user wants to execute meta transaction.
-   * The actual function to be called should be passed as param with name functionSignature
-   * Here the basic signature recovery is being used. Signature is expected to be generated using
-   * personal_sign method.
-   * @param _user Address of user trying to do meta transaction
-   * @param _payload Function call to make via meta transaction
-   * @param _sigR R part of the signature
-   * @param _sigS S part of the signature
-   * @param _sigV V part of the signature
-   */
+  /// @notice Main function to be called when user wants to execute meta transaction.
+  /// The actual function to be called should be passed as param with name functionSignature
+  /// Here the basic signature recovery is being used. Signature is expected to be generated using
+  /// personal_sign method.
+  /// @param _user Address of user trying to do meta transaction
+  /// @param _payload Function call to make via meta transaction
+  /// @param _sigR R part of the signature
+  /// @param _sigS S part of the signature
+  /// @param _sigV V part of the signature
   // slither-disable-next-line locked-ether
   function executeMetaTransaction(address _user, bytes memory _payload,
       bytes32 _sigR, bytes32 _sigS, uint8 _sigV) public payable returns (bytes memory) {

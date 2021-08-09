@@ -12,7 +12,7 @@ import {
   setupColony,
   setupRandomColony,
   fundColonyWithTokens,
-  getMetatransactionParameters,
+  getMetaTransactionParameters,
 } from "../../helpers/test-data-generator";
 import { UINT256_MAX, DEFAULT_STAKE } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
@@ -187,7 +187,7 @@ contract("Token Locking", (addresses) => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
 
       const txData = await tokenLocking.contract.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true).encodeABI();
-      const { r, s, v } = await getMetatransactionParameters(txData, userAddress, tokenLocking.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, userAddress, tokenLocking.address);
 
       await tokenLocking.executeMetaTransaction(userAddress, txData, r, s, v, { from: otherUserAddress });
 
