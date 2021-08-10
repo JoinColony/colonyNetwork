@@ -10,7 +10,7 @@ import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
 import MetatransactionBroadcaster from "../../packages/metatransaction-broadcaster/MetatransactionBroadcaster";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, getMetatransactionParameters, setupColony } from "../../helpers/test-data-generator";
+import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, getMetaTransactionParameters, setupColony } from "../../helpers/test-data-generator";
 
 const axios = require("axios");
 
@@ -150,7 +150,7 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       const txData = await metaTxToken.contract.methods.transfer(colony.address, 300000).encodeABI();
 
-      const { r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
 
       // Send to endpoint
 
@@ -192,7 +192,7 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       const txData = await metaTxToken.contract.methods.transfer(USER1, 300000).encodeABI();
 
-      const { r, s, v } = await getMetatransactionParameters(txData, USER0, metaTxToken.address);
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
 
       // Send to endpoint
 
