@@ -196,21 +196,21 @@ contract("Colony Network Extensions", (accounts) => {
 
       let colonyAddress;
 
-      colonyAddress = await colonyNetwork.getExtensionMultiInstallation(extension.address);
+      colonyAddress = await colonyNetwork.getExtensionColony(extension.address);
       expect(colonyAddress).to.equal(ethers.constants.AddressZero);
 
       // Set up `installations` mapping in the old style
-      const slot = soliditySha3(`0x000000000000000000000000${colony.address.slice(2)}`, soliditySha3(TEST_EXTENSION, 39));
-      const value = `0x000000000000000000000000${extension.address.slice(2)}`;
+      const slot = soliditySha3(ethers.utils.hexZeroPad(colony.address, 32), soliditySha3(TEST_EXTENSION, 39));
+      const value = ethers.utils.hexZeroPad(extension.address, 32);
       await editableColonyNetwork.setStorageSlot(slot, value);
 
       let extensionAddress;
       extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
       expect(extensionAddress).to.not.equal(ethers.constants.AddressZero);
 
-      await colonyNetwork.migrateToMultiExtension(TEST_EXTENSION, colony.address);
+      await colony.migrateToMultiExtension(TEST_EXTENSION);
 
-      colonyAddress = await colonyNetwork.getExtensionMultiInstallation(extension.address);
+      colonyAddress = await colonyNetwork.getExtensionColony(extension.address);
       expect(colonyAddress).to.equal(colony.address);
 
       extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
@@ -221,8 +221,8 @@ contract("Colony Network Extensions", (accounts) => {
       const version7Colony = await Version7.new(colonyNetwork.address);
 
       // Add version7Colony to _isColony mapping
-      const slot = soliditySha3(`0x000000000000000000000000${version7Colony.address.slice(2)}`, 19);
-      const value = `0x0000000000000000000000000000000000000000000000000000000000000001`;
+      const slot = soliditySha3(ethers.utils.hexZeroPad(version7Colony.address, 32), 19);
+      const value = ethers.utils.zeroPad(1, 32);
       await editableColonyNetwork.setStorageSlot(slot, value);
 
       await version7Colony.installExtension(TEST_EXTENSION, 1);
@@ -297,8 +297,8 @@ contract("Colony Network Extensions", (accounts) => {
       const version7Colony = await Version7.new(colonyNetwork.address);
 
       // Add version7Colony to _isColony mapping
-      const slot = soliditySha3(`0x000000000000000000000000${version7Colony.address.slice(2)}`, 19);
-      const value = `0x0000000000000000000000000000000000000000000000000000000000000001`;
+      const slot = soliditySha3(ethers.utils.hexZeroPad(version7Colony.address, 32), 19);
+      const value = ethers.utils.zeroPad(1, 32);
       await editableColonyNetwork.setStorageSlot(slot, value);
 
       await version7Colony.installExtension(TEST_EXTENSION, 1);
@@ -346,8 +346,8 @@ contract("Colony Network Extensions", (accounts) => {
       const version7Colony = await Version7.new(colonyNetwork.address);
 
       // Add version7Colony to _isColony mapping
-      const slot = soliditySha3(`0x000000000000000000000000${version7Colony.address.slice(2)}`, 19);
-      const value = `0x0000000000000000000000000000000000000000000000000000000000000001`;
+      const slot = soliditySha3(ethers.utils.hexZeroPad(version7Colony.address, 32), 19);
+      const value = ethers.utils.zeroPad(1, 32);
       await editableColonyNetwork.setStorageSlot(slot, value);
 
       await version7Colony.installExtension(TEST_EXTENSION, 1);
@@ -397,8 +397,8 @@ contract("Colony Network Extensions", (accounts) => {
       const version7Colony = await Version7.new(colonyNetwork.address);
 
       // Add version7Colony to _isColony mapping
-      const slot = soliditySha3(`0x000000000000000000000000${version7Colony.address.slice(2)}`, 19);
-      const value = `0x0000000000000000000000000000000000000000000000000000000000000001`;
+      const slot = soliditySha3(ethers.utils.hexZeroPad(version7Colony.address, 32), 19);
+      const value = ethers.utils.zeroPad(1, 32);
       await editableColonyNetwork.setStorageSlot(slot, value);
 
       await version7Colony.installExtension(TEST_EXTENSION, 1);

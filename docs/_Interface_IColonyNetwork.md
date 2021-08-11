@@ -347,6 +347,23 @@ Returns the address of the ENSRegistrar for the Network.
 |---|---|---|
 |address|address|The address the ENSRegistrar resolves to
 
+### `getExtensionColony`
+
+Get an extension's installed colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|Address of the extension installation
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colony|address|Address of the colony the extension is installed in
+
 ### `getExtensionInstallation`
 
 Get an extension's installation.
@@ -364,23 +381,6 @@ Get an extension's installation.
 |Name|Type|Description|
 |---|---|---|
 |installation|address|The address of the installed extension
-
-### `getExtensionMultiInstallation`
-
-Get an extension's installed colony.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|extension|address|Address of the extension installation
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|colony|address|Address of the colony the extension is installed in
 
 ### `getExtensionResolver`
 
@@ -693,11 +693,6 @@ Install an extension in a colony. Can only be called by a Colony.
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |version|uint256|Version of the extension to install
 
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|extension|address|The address of the extension installation
 
 ### `isColony`
 
@@ -735,7 +730,7 @@ Reverse lookup a username from an address.
 
 ### `migrateToMultiExtension`
 
-Migrate extension bookkeeping to multiExtension
+Migrate extension bookkeeping to multiExtension. Can only be called by a Colony.
 
 
 **Parameters**
@@ -743,7 +738,6 @@ Migrate extension bookkeeping to multiExtension
 |Name|Type|Description|
 |---|---|---|
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
-|colony|address|Address of the colony the extension is installed in
 
 
 ### `punishStakers`

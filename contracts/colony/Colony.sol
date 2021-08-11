@@ -365,9 +365,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   }
 
   function installExtension(bytes32 _extensionId, uint256 _version)
-  public stoppable auth returns (address)
+  public stoppable auth
   {
-    return IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
+    IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
   }
 
   function upgradeExtension(address _extension, uint256 _newVersion)
@@ -386,6 +386,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   public stoppable auth
   {
     IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extension);
+  }
+
+  function migrateToMultiExtension(bytes32 _extensionId)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).migrateToMultiExtension(_extensionId);
   }
 
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public

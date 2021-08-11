@@ -1038,11 +1038,6 @@ Install an extension to the colony. Secured function to authorised members.
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |version|uint256|The new extension version to install
 
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|extension|address|The address of the extension installation
 
 ### `lockExpenditure`
 
@@ -1158,6 +1153,18 @@ Make a new task in the colony. Secured function to authorised members.
 |_domainId|uint256|The domain where the task belongs
 |_skillId|uint256|The skill associated with the task, can set to `0` for no-op
 |_dueDate|uint256|The due date of the task, can set to `0` for no-op
+
+
+### `migrateToMultiExtension`
+
+Migrate extension bookkeeping to multiExtension. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 
 
 ### `mintTokens`

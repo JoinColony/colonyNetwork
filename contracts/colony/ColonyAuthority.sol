@@ -120,6 +120,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "upgradeExtension(address,uint256)");
     addRoleCapability(ROOT_ROLE, "deprecateExtension(address,bool)");
     addRoleCapability(ROOT_ROLE, "uninstallExtension(address)");
+    addRoleCapability(ROOT_ROLE, "migrateToMultiExtension(bytes32)");
     addRoleCapability(ARBITRATION_ROLE, "setExpenditureMetadata(uint256,uint256,uint256,string)");
   }
 

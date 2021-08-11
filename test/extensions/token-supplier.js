@@ -131,7 +131,7 @@ contract("Token Supplier", (accounts) => {
 
       token.mint(SUPPLY_CEILING.muln(3));
 
-      await checkErrorRevert(tokenSupplier.setTokenSupplyCeiling(SUPPLY_CEILING.muln(2).subn(1)), "token-supplier-ceiling-too-low");
+      await checkErrorRevert(tokenSupplier.setTokenSupplyCeiling(SUPPLY_CEILING.muln(2)), "token-supplier-ceiling-too-low");
     });
 
     it("can update the tokenIssuanceRate if root", async () => {

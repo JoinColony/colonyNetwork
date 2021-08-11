@@ -296,7 +296,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     // Ensure addr is an extension installed in the colony, must check old & new formats
     try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
       return (
-        IColonyNetwork(colonyNetworkAddress).getExtensionMultiInstallation(addr) == address(this) ||
+        IColonyNetwork(colonyNetworkAddress).getExtensionColony(addr) == address(this) ||
         IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == addr
       );
     } catch {

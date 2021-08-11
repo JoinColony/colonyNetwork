@@ -316,8 +316,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Install an extension in a colony. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param version Version of the extension to install
-  /// @return extension The address of the extension installation
-  function installExtension(bytes32 extensionId, uint256 version) external returns (address extension);
+  function installExtension(bytes32 extensionId, uint256 version) external;
 
   /// @dev DEPRECATED
   /// @notice Upgrade an extension in a colony. Can only be called by a Colony.
@@ -350,10 +349,9 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param extension Address of the extension installation
   function uninstallExtension(address extension) external;
 
-  /// @notice Migrate extension bookkeeping to multiExtension
+  /// @notice Migrate extension bookkeeping to multiExtension. Can only be called by a Colony.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
-  /// @param colony Address of the colony the extension is installed in
-  function migrateToMultiExtension(bytes32 extensionId, address colony) external;
+  function migrateToMultiExtension(bytes32 extensionId) external;
 
   /// @notice Get an extension's resolver.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
@@ -370,7 +368,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Get an extension's installed colony.
   /// @param extension Address of the extension installation
   /// @return colony Address of the colony the extension is installed in
-  function getExtensionMultiInstallation(address extension) external view returns (address colony);
+  function getExtensionColony(address extension) external view returns (address colony);
 
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
   /// @return _feeInverse The inverse of the network fee

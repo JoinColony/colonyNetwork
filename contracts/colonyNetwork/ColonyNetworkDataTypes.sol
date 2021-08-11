@@ -114,7 +114,13 @@ interface ColonyNetworkDataTypes {
   /// @param version The version of the extension
   event ExtensionAddedToNetwork(bytes32 indexed extensionId, uint256 version);
 
-  /// @notice Event logged when an extension is installed in a colony
+  /// @notice Event logged when an extension is installed in a colony (for v7 and below)
+  /// @param extensionId The identifier for the extension
+  /// @param colony The address of the colony
+  /// @param version The version of the extension
+  event ExtensionInstalled(bytes32 indexed extensionId, address indexed colony, uint256 version);
+
+  /// @notice Event logged when an extension is installed in a colony (for v8 and above)
   /// @param extensionId The identifier for the extension
   /// @param extension Address of the extension installation
   /// @param colony The address of the colony

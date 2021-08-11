@@ -1251,7 +1251,7 @@ contract("Voting Reputation", (accounts) => {
       expect(tx.logs[1].args.executed).to.be.true;
 
       const extensionAddress = getExtensionAddressFromTx(tx);
-      const colonyAddress = await colonyNetwork.getExtensionMultiInstallation(extensionAddress);
+      const colonyAddress = await colonyNetwork.getExtensionColony(extensionAddress);
       expect(colonyAddress).to.equal(colony.address);
     });
 

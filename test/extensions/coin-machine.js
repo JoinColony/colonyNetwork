@@ -55,6 +55,14 @@ contract("Coin Machine", (accounts) => {
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
+  async function installCoinMachine() {
+    const tx = await colony.installExtension(COIN_MACHINE, coinMachineVersion);
+    const coinMachineAddress = getExtensionAddressFromTx(tx);
+
+    coinMachine = await CoinMachine.at(coinMachineAddress);
+    return coinMachine;
+  }
+
   before(async () => {
     colonyNetwork = await setupColonyNetwork();
     const { metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
@@ -73,10 +81,7 @@ contract("Coin Machine", (accounts) => {
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     purchaseToken = await setupRandomToken();
-
-    const tx = await colony.installExtension(COIN_MACHINE, coinMachineVersion);
-    const coinMachineAddress = getExtensionAddressFromTx(tx);
-    coinMachine = await CoinMachine.at(coinMachineAddress);
+    coinMachine = await installCoinMachine();
 
     // Forward time to start of a Coin Machine period - so long a test doesn't take an hour to run, should be reproducible!
     // (I still don't like this functionality of CoinMachine though!)
@@ -268,9 +273,7 @@ contract("Coin Machine", (accounts) => {
       await otherToken.unlock();
 
       await colony.methods["uninstallExtension(address)"](coinMachine.address, { from: USER0 });
-      const tx = await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
-      const coinMachineAddress = getExtensionAddressFromTx(tx);
-      coinMachine = await CoinMachine.at(coinMachineAddress);
+      coinMachine = await installCoinMachine();
 
       await otherToken.mint(coinMachine.address, UINT128_MAX);
 
@@ -287,9 +290,7 @@ contract("Coin Machine", (accounts) => {
 
     it("cannot buy more than the balance of tokens", async () => {
       await colony.methods["uninstallExtension(address)"](coinMachine.address, { from: USER0 });
-      const tx = await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
-      const coinMachineAddress = getExtensionAddressFromTx(tx);
-      coinMachine = await CoinMachine.at(coinMachineAddress);
+      coinMachine = await installCoinMachine();
 
       await token.mint(coinMachine.address, WAD);
 
@@ -351,9 +352,7 @@ contract("Coin Machine", (accounts) => {
 
     it("can buy tokens with eth", async () => {
       await colony.methods["uninstallExtension(address)"](coinMachine.address, { from: USER0 });
-      const tx = await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
-      const coinMachineAddress = getExtensionAddressFromTx(tx);
-      coinMachine = await CoinMachine.at(coinMachineAddress);
+      coinMachine = await installCoinMachine();
 
       await token.mint(coinMachine.address, UINT128_MAX);
 
@@ -703,9 +702,7 @@ contract("Coin Machine", (accounts) => {
       colony = await setupColony(colonyNetwork, token.address);
       await token.unlock();
 
-      const tx = await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
-      const coinMachineAddress = getExtensionAddressFromTx(tx);
-      coinMachine = await CoinMachine.at(coinMachineAddress);
+      coinMachine = await installCoinMachine();
 
       await token.mint(coinMachine.address, UINT128_MAX);
 
@@ -725,9 +722,7 @@ contract("Coin Machine", (accounts) => {
       await purchaseToken.unlock();
 
       await colony.methods["uninstallExtension(address)"](coinMachine.address, { from: USER0 });
-      const tx = await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
-      const coinMachineAddress = getExtensionAddressFromTx(tx);
-      coinMachine = await CoinMachine.at(coinMachineAddress);
+      coinMachine = await installCoinMachine();
 
       await token.mint(coinMachine.address, UINT128_MAX);
 
@@ -795,9 +790,7 @@ contract("Coin Machine", (accounts) => {
 
     it("cannot buy more than their user limit allows", async () => {
       await colony.methods["uninstallExtension(address)"](coinMachine.address, { from: USER0 });
-      const tx = await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
-      const coinMachineAddress = getExtensionAddressFromTx(tx);
-      coinMachine = await CoinMachine.at(coinMachineAddress);
+      coinMachine = await installCoinMachine();
 
       await token.mint(coinMachine.address, WAD.muln(1000));
 
@@ -869,9 +862,7 @@ contract("Coin Machine", (accounts) => {
 
     it("cannot set a user limit without a whitelist", async () => {
       await colony.methods["uninstallExtension(address)"](coinMachine.address, { from: USER0 });
-      const tx = await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
-      const coinMachineAddress = getExtensionAddressFromTx(tx);
-      coinMachine = await CoinMachine.at(coinMachineAddress);
+      coinMachine = await installCoinMachine();
 
       await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD.muln(100), WAD.muln(200), WAD.divn(2), WAD, ADDRESS_ZERO);
 
@@ -881,9 +872,7 @@ contract("Coin Machine", (accounts) => {
 
     it("can calculate the max purchase at any given time", async () => {
       await colony.methods["uninstallExtension(address)"](coinMachine.address, { from: USER0 });
-      const tx = await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
-      const coinMachineAddress = getExtensionAddressFromTx(tx);
-      coinMachine = await CoinMachine.at(coinMachineAddress);
+      coinMachine = await installCoinMachine();
 
       // Initial supply of 250 tokens
       await token.mint(coinMachine.address, WAD.muln(250));

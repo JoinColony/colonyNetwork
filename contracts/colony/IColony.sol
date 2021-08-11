@@ -263,8 +263,7 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @notice Install an extension to the colony. Secured function to authorised members.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param version The new extension version to install
-  /// @return extension The address of the extension installation
-  function installExtension(bytes32 extensionId, uint256 version) external returns (address extension);
+  function installExtension(bytes32 extensionId, uint256 version) external;
 
   /// @notice Upgrade an extension in a colony. Secured function to authorised members.
   /// @param extension The address of the extension installation
@@ -281,6 +280,10 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @dev It is recommended to deprecate an extension before uninstalling to allow active objects to be resolved
   /// @param extension The address of the extension installation
   function uninstallExtension(address extension) external;
+
+  /// @notice Migrate extension bookkeeping to multiExtension. Secured function to authorised members.
+  /// @param extensionId keccak256 hash of the extension name, used as an indentifier
+  function migrateToMultiExtension(bytes32 extensionId) external;
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`.
   /// New funding pot is created and associated with the domain here.

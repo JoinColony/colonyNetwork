@@ -60,14 +60,17 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     if (IColony(msg.sender).version() <= 7) {
       require(installations[_extensionId][msg.sender] == address(0x0), "colony-network-extension-already-installed");
       installations[_extensionId][msg.sender] = address(extension);
+
+      emit ExtensionInstalled(_extensionId, address(extension), _version);
     } else {
       multiInstallations[address(extension)] = msg.sender;
+
+      emit ExtensionInstalled(_extensionId, address(extension), msg.sender, _version);
     }
 
     extension.setResolver(resolvers[_extensionId][_version]);
     ColonyExtension(address(extension)).install(msg.sender);
 
-    emit ExtensionInstalled(_extensionId, address(extension), msg.sender, _version);
 
     return address(extension);
   }
@@ -160,15 +163,16 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     emit ExtensionUninstalled(_extension, msg.sender);
   }
 
-  function migrateToMultiExtension(bytes32 _extensionId, address _colony)
+  function migrateToMultiExtension(bytes32 _extensionId)
     public
     stoppable
+    calledByColony
   {
-    require(installations[_extensionId][_colony] != address(0x0), "colony-network-extension-not-installed");
+    require(installations[_extensionId][msg.sender] != address(0x0), "colony-network-extension-not-installed");
 
-    multiInstallations[installations[_extensionId][_colony]] = payable(_colony);
+    multiInstallations[installations[_extensionId][msg.sender]] = payable(msg.sender);
 
-    delete installations[_extensionId][_colony];
+    delete installations[_extensionId][msg.sender];
   }
 
   // Public view functions
@@ -181,7 +185,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     return resolvers[_extensionId][_version];
   }
 
-  function getExtensionMultiInstallation(address _extension)
+  function getExtensionColony(address _extension)
     public
     view
     returns (address)
