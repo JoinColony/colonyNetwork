@@ -19,11 +19,12 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyExtension.sol";
+import "./../common/BasicMetaTransaction.sol";
 
 // ignore-file-swc-108
 
 
-contract EvaluatedExpenditure is ColonyExtension {
+contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
 
   uint256 constant EXPENDITURESLOTS_SLOT = 26;
   uint256 constant PAYOUT_MODIFIER_OFFSET = 2;

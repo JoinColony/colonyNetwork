@@ -19,13 +19,14 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/erc20.sol";
+import "./../common/BasicMetaTransaction.sol";
 import "./ColonyExtension.sol";
 import "./Whitelist.sol";
 
 // ignore-file-swc-108
 
 
-contract CoinMachine is ColonyExtension {
+contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
   // Events
 

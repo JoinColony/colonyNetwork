@@ -18,15 +18,16 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../colony/ColonyRoles.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../colony/ColonyRoles.sol";
+import "./../common/BasicMetaTransaction.sol";
 import "./../common/ERC20Extended.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyExtension.sol";
 
 
-contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
+contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTransaction {
 
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);

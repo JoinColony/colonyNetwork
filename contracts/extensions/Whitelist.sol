@@ -18,12 +18,13 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
+import "./../common/BasicMetaTransaction.sol";
 import "./ColonyExtension.sol";
 
 // ignore-file-swc-108
 
 
-contract Whitelist is ColonyExtension {
+contract Whitelist is ColonyExtension, BasicMetaTransaction {
 
   //  Events
 
