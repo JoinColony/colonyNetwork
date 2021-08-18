@@ -164,6 +164,12 @@ interface ColonyNetworkDataTypes {
   /// @param colony The address of the colony
   event ExtensionUninstalled(address indexed extension, address indexed colony);
 
+  /// @notice Event logged when an extension is migrated from old to new storage schemes
+  /// @param extensionId The identifier for the extension
+  /// @param colony The address of the colony
+  /// @param extension Address of the extension installation
+  event ExtensionMigrated(bytes32 indexed extensionId, address indexed colony, address extension);
+
   struct Skill {
     // total number of parent skills
     uint128 nParents;

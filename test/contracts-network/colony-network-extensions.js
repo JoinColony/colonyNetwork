@@ -6,7 +6,7 @@ import { BN } from "bn.js";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { checkErrorRevert, web3GetBalance, encodeTxData, getExtensionAddressFromTx } from "../../helpers/test-helper";
+import { checkErrorRevert, web3GetBalance, encodeTxData, expectEvent, getExtensionAddressFromTx } from "../../helpers/test-helper";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 import { UINT256_MAX } from "../../helpers/constants";
@@ -208,7 +208,8 @@ contract("Colony Network Extensions", (accounts) => {
       extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
       expect(extensionAddress).to.not.equal(ethers.constants.AddressZero);
 
-      await colony.migrateToMultiExtension(TEST_EXTENSION);
+      const tx = await colony.migrateToMultiExtension(TEST_EXTENSION);
+      await expectEvent(tx, "ExtensionMigrated(bytes32 indexed,address indexed,address)", [TEST_EXTENSION, colony.address, extensionAddress]);
 
       colonyAddress = await colonyNetwork.getExtensionColony(extension.address);
       expect(colonyAddress).to.equal(colony.address);

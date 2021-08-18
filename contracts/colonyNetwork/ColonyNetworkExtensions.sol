@@ -168,11 +168,15 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     stoppable
     calledByColony
   {
-    require(installations[_extensionId][msg.sender] != address(0x0), "colony-network-extension-not-installed");
+    address extension = installations[_extensionId][msg.sender];
 
-    multiInstallations[installations[_extensionId][msg.sender]] = payable(msg.sender);
+    require(extension != address(0x0), "colony-network-extension-not-installed");
+
+    multiInstallations[extension] = payable(msg.sender);
 
     delete installations[_extensionId][msg.sender];
+
+    emit ExtensionMigrated(_extensionId, msg.sender, extension);
   }
 
   // Public view functions
