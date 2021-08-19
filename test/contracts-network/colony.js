@@ -200,6 +200,22 @@ contract("Colony", (accounts) => {
     });
   });
 
+  describe("when deprecating domains", () => {
+    it("should log the DomainDeprecated event", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await expectEvent(colony.deprecateDomain(1, 0, 2, true), "DomainDeprecated", [USER0, 2, true]);
+    });
+
+    it("should not be able to perform prohibited actions in the domain", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await colony.deprecateDomain(1, 0, 2, true);
+
+      await checkErrorRevert(colony.addDomain(1, 0, 2), "colony-domain-deprecated");
+      await checkErrorRevert(colony.makeExpenditure(1, 0, 2), "colony-domain-deprecated");
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, 1, 2, 100, token.address), "colony-domain-deprecated");
+    });
+  });
+
   describe("when bootstrapping the colony", () => {
     const INITIAL_REPUTATIONS = [WAD.muln(5), WAD.muln(4), WAD.muln(3), WAD.muln(2)];
     const INITIAL_ADDRESSES = accounts.slice(0, 4);

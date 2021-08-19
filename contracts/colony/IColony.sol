@@ -308,6 +308,13 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _metadata Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
   function editDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, string memory _metadata) external;
 
+  /// @notice Deprecate a domain, preventing certain actions from happening there
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _domainId Id of the domain being deprecated
+  /// @param _deprecated Whether or not the domain is deprecated
+  function deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated) external;
+
   /// @notice Get a domain by id.
   /// @param _id Id of the domain which details to get
   /// @return domain The domain

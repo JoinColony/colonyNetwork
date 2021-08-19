@@ -40,6 +40,7 @@ contract ColonyExpenditure is ColonyStorage {
   function makeExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId)
     public
     stoppable
+    domainNotDeprecated(_domainId)
     authDomain(_permissionDomainId, _childSkillIndex, _domainId)
     returns (uint256)
   {

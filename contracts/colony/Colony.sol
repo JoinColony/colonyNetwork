@@ -274,6 +274,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
+  domainNotDeprecated(_parentDomainId)
   authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
   {
     addDomain(_permissionDomainId, _childSkillIndex, _parentDomainId, "");
@@ -310,8 +311,17 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     }
   }
 
-  function getDomain(uint256 _id) public view returns (Domain memory domain) {
-    domain = domains[_id];
+  function deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated) public
+  stoppable
+  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    domains[_domainId].deprecated = _deprecated;
+
+    emit DomainDeprecated(msg.sender, _domainId, _deprecated);
+  }
+
+  function getDomain(uint256 _domainId) public view returns (Domain memory domain) {
+    domain = domains[_domainId];
   }
 
   function getDomainCount() public view returns (uint256) {
@@ -465,7 +475,8 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     // Create a new domain with the given skill and new funding pot
     domains[domainCount] = Domain({
       skillId: _skillId,
-      fundingPotId: fundingPotCount
+      fundingPotId: fundingPotCount,
+      deprecated: false
     });
 
     emit DomainAdded(msgSender(), domainCount);
