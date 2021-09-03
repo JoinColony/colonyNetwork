@@ -8,14 +8,21 @@ client.once('ready', async () => {
 
 client.login(process.env.DISCORD_BOT_TOKEN);
 
-const DiscordAdapter = {
+class DiscordAdapter {
+  constructor (label){
+    if (label){
+      this.label = `${label}: `;
+    } else {
+      this.label = "";
+    }
+  }
+
   async log(output) {
-        console.log(output);
-  	// channel.send(output);
-  },
+    console.log(this.label, output);
+  }
 
   async error(output){
-  	channel.send(output);
+  	channel.send(`${this.label}${output}`);
   }
 }
 

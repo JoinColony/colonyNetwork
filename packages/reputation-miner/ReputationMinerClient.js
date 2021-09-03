@@ -1,3 +1,5 @@
+import apicache from 'apicache'
+
 const ethers = require("ethers");
 const express = require("express");
 const path = require('path');
@@ -16,6 +18,8 @@ const disputeStages = {
  INVALIDATE_HASH: 4,
  CONFIRM_NEW_HASH: 5
 }
+
+const cache = apicache.middleware
 
 class ReputationMinerClient {
   /**
@@ -126,8 +130,25 @@ class ReputationMinerClient {
         }
       });
 
+      // Query all reputation for a single user in a colony
+      this._app.get("/:rootHash/:colonyAddress/all/:userAddress", cache('1 hour'), async (req, res) => {
+        if (
+          !ethers.utils.isHexString(req.params.rootHash) ||
+          !ethers.utils.isHexString(req.params.colonyAddress) ||
+          !ethers.utils.isHexString(req.params.userAddress)
+        ) {
+          return res.status(400).send({ message: "One of the parameters was incorrect" });
+        }
+        const reputations = await this._miner.getReputationsForAddress(req.params.rootHash, req.params.colonyAddress, req.params.userAddress);
+        try {
+          return res.status(200).send({ reputations });
+        } catch (err) {
+          return res.status(500).send({ message: "An error occurred querying the reputation" });
+        }
+      });
+
       // Query specific reputation values
-      this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
+      this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", cache('1 hour'), async (req, res) => {
         if (
           !ethers.utils.isHexString(req.params.rootHash) ||
           !ethers.utils.isHexString(req.params.colonyAddress) ||
@@ -583,7 +604,6 @@ class ReputationMinerClient {
     });
 
     const maxEntries = Math.min(12, timeAbleToSubmitEntries.length);
-
     return timeAbleToSubmitEntries.slice(0, maxEntries);
   }
 

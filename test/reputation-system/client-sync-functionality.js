@@ -55,8 +55,8 @@ process.env.SOLIDITY_COVERAGE
       });
 
       beforeEach(async () => {
-        await reputationMiner1.resetDB();
         await reputationMiner1.initialise(colonyNetwork.address);
+        await reputationMiner1.resetDB();
 
         const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
         expect(lock.balance).to.eq.BN(MIN_STAKE);
@@ -105,8 +105,8 @@ process.env.SOLIDITY_COVERAGE
         await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
         await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 
-        await reputationMiner2.resetDB();
         await reputationMiner2.initialise(colonyNetwork.address);
+        await reputationMiner2.resetDB();
       });
 
       describe("when synchronising reputation mining client", () => {

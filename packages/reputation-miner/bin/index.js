@@ -7,8 +7,10 @@ const path = require("path");
 const { argv } = require("yargs")
   .option('privateKey', {string:true})
   .option('colonyNetworkAddress', {string:true})
-  .option('minerAddress', {string:true});
+  .option('minerAddress', {string:true})
+  .option('providerAddress', {type: "array"});
 const ethers = require("ethers");
+const backoff = require("exponential-backoff").backOff;
 
 const ReputationMinerClient = require("../ReputationMinerClient");
 const TruffleLoader = require("../TruffleLoader").default;
@@ -29,14 +31,28 @@ const {
   exitOnError,
   adapter,
   oraclePort,
-  processingDelay
+  processingDelay,
+  adapterLabel,
 } = argv;
+
 
 if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
   console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress and --syncFrom on the command line!");
   process.exit();
 }
 
+class RetryProvider extends ethers.providers.JsonRpcProvider {
+  getNetwork(){
+    return backoff(() => super.getNetwork(), {retry(err){console.log(err); return true;}});
+  }
+
+  // This should return a Promise (and may throw erros)
+  // method is the method name (e.g. getBalance) and params is an
+  // object with normalized values passed in, depending on the method
+  perform(method, params) {
+    return backoff(() => super.perform(method, params), {retry(err){console.log(err); return true;}});
+  }
+}
 
 const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts")
@@ -49,14 +65,15 @@ if (network) {
     process.exit();
   }
   provider = new ethers.providers.InfuraProvider(network);
-} else {
-  let rpcEndpoint = providerAddress;
-
-  if (!rpcEndpoint) {
-      rpcEndpoint = `http://${localProviderAddress || "localhost"}:${localPort || "8545"}`;
-  }
-
+} else if (providerAddress.length === 0){
+  const rpcEndpoint = `${localProviderAddress || "http://localhost"}:${localPort || "8545"}`;
   provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
+} else {
+  console.log('here')
+  const providers = providerAddress.map(endpoint => new RetryProvider(endpoint));
+  // This is, at best, a huge hack...
+  providers.forEach(x => x.getNetwork());
+  provider = new ethers.providers.FallbackProvider(providers, 1)
 }
 
 let adapterObject;
@@ -64,7 +81,8 @@ let adapterObject;
 if (adapter === 'slack') {
   adapterObject = require('../adapters/slack').default; // eslint-disable-line global-require
 } else if (adapter === 'discord'){
-  adapterObject = require('../adapters/discord').default; // eslint-disable-line global-require
+  const DiscordAdapter = require('../adapters/discord').default; // eslint-disable-line global-require
+  adapterObject = new DiscordAdapter(adapterLabel);
 } else {
   adapterObject = require('../adapters/console').default; // eslint-disable-line global-require
 }

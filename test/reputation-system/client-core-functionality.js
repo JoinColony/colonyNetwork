@@ -68,14 +68,13 @@ process.env.SOLIDITY_COVERAGE
         const repCycle = await getActiveRepCycle(colonyNetwork);
         const activeLogEntries = await repCycle.getReputationUpdateLogLength();
         expect(activeLogEntries).to.eq.BN(1);
-
-        await reputationMiner.resetDB();
         await reputationMiner.initialise(colonyNetwork.address);
+        await reputationMiner.resetDB();
         await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
         await reputationMiner.saveCurrentState();
 
         client = new ReputationMinerClient({ loader, realProviderPort, minerAddress: MINER1, useJsTree: true, auto: false });
-        await client.initialise(colonyNetwork.address);
+        await client.initialise(colonyNetwork.address, 1);
       });
 
       afterEach(async () => {
@@ -202,6 +201,36 @@ process.env.SOLIDITY_COVERAGE
           expect(addresses.length).to.equal(2);
           expect(addresses[0]).to.equal(accounts[6].toLowerCase());
           expect(addresses[1]).to.equal(MINER1.toLowerCase());
+        });
+
+        it("should correctly respond to a request for all reputation a single user has in a colony", async () => {
+          await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+
+          let rootHash = await reputationMiner.getRootHash();
+          await reputationMiner.saveCurrentState();
+
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/all/${MINER1}`;
+          let res = await request(url);
+          expect(res.statusCode).to.equal(200);
+          let { reputations } = JSON.parse(res.body);
+          expect(reputations.length).to.equal(3);
+
+          // More people get reputation doesn't change anything
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: accounts[6], manager: accounts[6] });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          rootHash = await reputationMiner.reputationTree.getRootHash();
+          await reputationMiner.saveCurrentState();
+
+          res = await request(url);
+          expect(res.statusCode).to.equal(200);
+
+          ({ reputations } = JSON.parse(res.body));
+          expect(reputations.length).to.equal(3);
         });
       });
     });
