@@ -2,11 +2,10 @@
 import { BN } from "bn.js";
 import { soliditySha3, isAddress } from "web3-utils";
 import { ethers } from "ethers";
+import Database from "better-sqlite3";
 
 import PatriciaTreeNoHash from "./patriciaNoHashKey";
 import PatriciaTree from "./patricia";
-
-const Database = require('better-sqlite3');
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.

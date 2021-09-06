@@ -69,7 +69,6 @@ if (network) {
   const rpcEndpoint = `${localProviderAddress || "http://localhost"}:${localPort || "8545"}`;
   provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
 } else {
-  console.log('here')
   const providers = providerAddress.map(endpoint => new RetryProvider(endpoint));
   // This is, at best, a huge hack...
   providers.forEach(x => x.getNetwork());
