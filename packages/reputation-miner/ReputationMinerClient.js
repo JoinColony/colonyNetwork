@@ -131,7 +131,7 @@ class ReputationMinerClient {
       });
 
       // Query all reputation for a single user in a colony
-      this._app.get("/:rootHash/:colonyAddress/all/:userAddress", cache('1 hour'), async (req, res) => {
+      this._app.get("/:rootHash/:colonyAddress/:userAddress/all", cache('1 hour'), async (req, res) => {
         if (
           !ethers.utils.isHexString(req.params.rootHash) ||
           !ethers.utils.isHexString(req.params.colonyAddress) ||

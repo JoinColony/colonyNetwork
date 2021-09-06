@@ -213,7 +213,7 @@ process.env.SOLIDITY_COVERAGE
           let rootHash = await reputationMiner.getRootHash();
           await reputationMiner.saveCurrentState();
 
-          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/all/${MINER1}`;
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${MINER1}/all`;
           let res = await request(url);
           expect(res.statusCode).to.equal(200);
           let { reputations } = JSON.parse(res.body);
