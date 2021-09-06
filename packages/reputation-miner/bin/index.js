@@ -8,7 +8,7 @@ const { argv } = require("yargs")
   .option('privateKey', {string:true})
   .option('colonyNetworkAddress', {string:true})
   .option('minerAddress', {string:true})
-  .option('providerAddress', {type: "array"});
+  .option('providerAddress', {type: "array", default: []});
 const ethers = require("ethers");
 const backoff = require("exponential-backoff").backOff;
 
