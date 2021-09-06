@@ -17,7 +17,7 @@ class KycOracle {
    * @param {string} whitelistAddress        The address of the whitelist.
    * @param {Object} loader                  The loader for loading the contract interfaces. Usually a TruffleLoader.
    * @param {Object} provider                Ethers provider that allows access to an ethereum node.
-   * @param {Number} [port]                  The port the oracle will serve on
+   * @param {Number} port                    The port the oracle will serve on
    */
   constructor({ privateKey, adminAddress, apiKey, loader, provider, dbPath, port = 3003 }) {
     if (privateKey) {
@@ -42,18 +42,19 @@ class KycOracle {
     this.app = express();
 
     this.app.use(function (req, res, next) {
-      const regex = /.*colony\.io/;
       const origin = req.get("origin");
-      const matches = regex.exec(origin);
 
-      if (matches) {
-        res.header("Access-Control-Allow-Origin", matches[0]);
+      const colonyRegex = /.*colony\.io/;
+      const colonyMatches = colonyRegex.exec(origin);
+
+      const localRegex = /^(127(\.\d+){1,3}|[0:]+1|localhost)$/;
+      const localMatches = localRegex.exec(origin);
+
+      if (colonyMatches) {
+        res.header("Access-Control-Allow-Origin", colonyMatches[0]);
+      } else if (localMatches) {
+        res.header("Access-Control-Allow-Origin", "*");
       }
-      next();
-    });
-
-    this.app.use(function(req, res, next) {
-      res.header("Access-Control-Allow-Origin", "*");
       res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Synaps-Session-Id");
       next();
     });
