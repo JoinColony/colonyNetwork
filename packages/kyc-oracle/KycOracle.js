@@ -47,7 +47,8 @@ class KycOracle {
       const colonyRegex = /.*colony\.io/;
       const colonyMatches = colonyRegex.exec(origin);
 
-      const localRegex = /^(127(\.\d+){1,3}|[0:]+1|localhost)$/;
+      const localRegex = /http:\/\/(127(\.\d+){1,3}|[0:]+1|localhost)/;
+
       const localMatches = localRegex.exec(origin);
 
       if (colonyMatches) {
