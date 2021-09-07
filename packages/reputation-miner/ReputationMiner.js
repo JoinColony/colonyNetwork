@@ -105,7 +105,6 @@ class ReputationMiner {
     const repCycle = await this.getActiveRepCycle();
     await this.updatePeriodLength(repCycle);
     this.db = new Database(this.dbPath, { });
-    this.prepareQueries()
     // this.db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
     process.on('exit', () => this.db.close());
     process.on('SIGHUP', () => process.exit(128 + 1));
@@ -1389,6 +1388,8 @@ class ReputationMiner {
       }
       console.log('n_nodes -> n_leaves database upgrade complete');
     }
+
+    this.prepareQueries()
   }
 
   async resetDB() {
