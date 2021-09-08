@@ -99,7 +99,7 @@
     "eth-gas-reporter": "^0.2.15",
     "ethereumjs-account": "^3.0.0",
     "ethereumjs-util": "^7.0.0",
-    "ethers": "^5.0.0",
+    "ethers": "5.0.17",
     "ethlint": "^1.2.5",
     "find-in-files": "^0.5.0",
     "ganache-cli": "^6.10.1",
