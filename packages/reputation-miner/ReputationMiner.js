@@ -1356,7 +1356,7 @@ class ReputationMiner {
     const res = await this.queries.getReputationsForAddress.all(reputationRootHash, colonyAddress.toLowerCase(), userAddress.toLowerCase());
     return res.map(function(x){ return {
       skill_id: x.skill_id,
-      reputation: `0x${x.value.slice(2,66)}`
+      reputationAmount: ethers.BigNumber.from(`0x${x.value.slice(2, 66)}`).toString()
     }});
   }
 
