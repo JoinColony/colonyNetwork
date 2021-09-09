@@ -22,7 +22,8 @@ class DiscordAdapter {
   }
 
   async error(output){
-  	channel.send(`${this.label}${output}`);
+    channel.send(`${this.label}${output}`);
+    console.log(`${this.label}${output}`);
   }
 }
 

@@ -307,6 +307,7 @@ class ReputationMinerClient {
    * @return {Promise}
    */
   async doBlockChecks(blockNumber) {
+    let repCycle;
     try {
       if (this.lockedForBlockProcessing) {
         this.blockSeenWhileLocked = blockNumber;
@@ -324,7 +325,7 @@ class ReputationMinerClient {
       const block = await this._miner.realProvider.getBlock(blockNumber);
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
 
-      const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
+      repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
       if (addr !== this.miningCycleAddress) {
         // Then the cycle has completed since we last checked.
         if (this.confirmTimeoutCheck) {
@@ -510,16 +511,26 @@ class ReputationMinerClient {
       }
       this.endDoBlockChecks();
     } catch (err) {
-      this._adapter.error(`Error during block checks: ${err}`);
+      const repCycleCode = await this._miner.realProvider.getCode(repCycle.address);
       // If it's out-of-ether...
       if (err.toString().indexOf('does not have enough funds') >= 0 ) {
         // This could obviously be much better in the future, but for now, we'll settle for this not triggering a restart loop.
         this._adapter.error(`Block checks suspended due to not enough Ether. Send ether to \`${this._miner.minerAddress}\`, then restart the miner`);
-      } else if (this._exitOnError) {
-          process.exit(1);
-          // Note we don't call this.endDoBlockChecks here... this is a deliberate choice on my part; depending on what the error is,
-          // we might no longer be in a sane state, and might have only half-processed the reputation log, or similar. So playing it safe,
-          // and not unblocking the doBlockCheck function.
+        return;
+      }
+      if (repCycleCode === "0x") {
+        // The repcycle was probably advanced by another miner while we were trying to
+        // respond to it. That's fine, and we'll sort ourselves out on the next block.
+        this.endDoBlockChecks();
+        return;
+      }
+      this._adapter.error(`Error during block checks: ${err}`);
+      if (this._exitOnError) {
+        this._adapter.error(`Automatically restarting`);
+        process.exit(1);
+        // Note we don't call this.endDoBlockChecks here... this is a deliberate choice on my part; depending on what the error is,
+        // we might no longer be in a sane state, and might have only half-processed the reputation log, or similar. So playing it safe,
+        // and not unblocking the doBlockCheck function.
       }
     }
   }
@@ -640,6 +651,7 @@ class ReputationMinerClient {
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
       const gasEstimate = await repCycle.estimateGas.confirmNewHash(round);
+      await this.updateGasEstimate('average');
 
       const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: gasEstimate, gasPrice: this._miner.gasPrice });
       this._adapter.log(`⛏️ Transaction waiting to be mined ${confirmNewHashTx.hash}`);

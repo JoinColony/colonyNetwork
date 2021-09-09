@@ -50,14 +50,16 @@ class RetryProvider extends ethers.providers.JsonRpcProvider {
   }
 
   getNetwork(){
-    return backoff(() => super.getNetwork(), {retry: this.attemptCheck});
+    const that = this;
+    return backoff(() => super.getNetwork(), {retry: that.attemptCheck});
   }
 
   // This should return a Promise (and may throw erros)
   // method is the method name (e.g. getBalance) and params is an
   // object with normalized values passed in, depending on the method
   perform(method, params) {
-    return backoff(() => super.perform(method, params), {retry: this.attemptCheck});
+    const that = this;
+    return backoff(() => super.perform(method, params), {retry: that.attemptCheck});
   }
 }
 
