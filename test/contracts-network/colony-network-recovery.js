@@ -74,8 +74,8 @@ contract("Colony Network Recovery", (accounts) => {
   });
 
   beforeEach(async () => {
-    await client.resetDB();
     await client.initialise(colonyNetwork.address);
+    await client.resetDB();
 
     // Advance two cycles to clear active and inactive state.
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
