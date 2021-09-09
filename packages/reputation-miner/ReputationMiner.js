@@ -106,6 +106,7 @@ class ReputationMiner {
     await this.updatePeriodLength(repCycle);
     this.db = new Database(this.dbPath, { });
     // this.db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
+    await this.createDB();
     process.on('exit', () => this.db.close());
     process.on('SIGHUP', () => process.exit(128 + 1));
     process.on('SIGINT', () => process.exit(128 + 2));
