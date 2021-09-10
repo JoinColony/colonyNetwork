@@ -257,7 +257,7 @@ Set the deprecation of an extension in a colony. Secured function to authorised 
 
 |Name|Type|Description|
 |---|---|---|
-|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|extension|address|The address of the extension installation
 |deprecated|bool|Whether to deprecate the extension or not
 
 
@@ -1155,6 +1155,18 @@ Make a new task in the colony. Secured function to authorised members.
 |_dueDate|uint256|The due date of the task, can set to `0` for no-op
 
 
+### `migrateToMultiExtension`
+
+Migrate extension bookkeeping to multiExtension. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+
+
 ### `mintTokens`
 
 Mint `_wad` amount of colony tokens. Secured function to authorised members.
@@ -1894,7 +1906,7 @@ Uninstall an extension from a colony. Secured function to authorised members.
 
 |Name|Type|Description|
 |---|---|---|
-|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|extension|address|The address of the extension installation
 
 
 ### `unlockToken`
@@ -1964,7 +1976,7 @@ Upgrade an extension in a colony. Secured function to authorised members.
 
 |Name|Type|Description|
 |---|---|---|
-|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+|extension|address|The address of the extension installation
 |newVersion|uint256|The version to upgrade to (must be one larger than the current version)
 
 

@@ -230,6 +230,19 @@ Set the deprecation of an extension in a colony. Can only be called by a Colony.
 
 |Name|Type|Description|
 |---|---|---|
+|extension|address|Address of the extension installation
+|deprecated|bool|Whether to deprecate the extension or not
+
+
+### `deprecateExtension`
+
+Set the deprecation of an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |deprecated|bool|Whether to deprecate the extension or not
 
@@ -333,6 +346,23 @@ Returns the address of the ENSRegistrar for the Network.
 |Name|Type|Description|
 |---|---|---|
 |address|address|The address the ENSRegistrar resolves to
+
+### `getExtensionColony`
+
+Get an extension's installed colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|Address of the extension installation
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colony|address|Address of the colony the extension is installed in
 
 ### `getExtensionInstallation`
 
@@ -698,6 +728,18 @@ Reverse lookup a username from an address.
 |---|---|---|
 |domain|string|A string containing the colony-based ENS name corresponding to addr
 
+### `migrateToMultiExtension`
+
+Migrate extension bookkeeping to multiExtension. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
+
+
 ### `punishStakers`
 
 Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
@@ -934,6 +976,18 @@ Uninstall an extension in a colony. Can only be called by a Colony.
 
 |Name|Type|Description|
 |---|---|---|
+|extension|address|Address of the extension installation
+
+
+### `uninstallExtension`
+
+Uninstall an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 
 
@@ -971,6 +1025,19 @@ Update a user's orbitdb address. Can only be called by a user with a registered 
 |Name|Type|Description|
 |---|---|---|
 |orbitdb|string|The path of the orbitDB database to be associated with the user
+
+
+### `upgradeExtension`
+
+Upgrade an extension in a colony. Can only be called by a Colony.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|extension|address|Address of the extension installation
+|newVersion|uint256|Version of the extension to upgrade to (must be one greater than current)
 
 
 ### `upgradeExtension`

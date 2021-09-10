@@ -79,10 +79,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   external stoppable self
   returns (bool)
   {
-    // Prevent transactions to network contracts
+    // Prevent transactions to network contracts or network-managed extensions installed in this colony
     require(_to != address(this), "colony-cannot-target-self");
     require(_to != colonyNetworkAddress, "colony-cannot-target-network");
     require(_to != tokenLockingAddress, "colony-cannot-target-token-locking");
+    require(isContract(_to), "colony-must-target-contract");
+    require(!isOwnExtension(_to), "colony-cannot-target-own-extensions");
 
     // Prevent transactions to transfer held tokens
     bytes4 sig;
@@ -92,16 +94,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     else if (sig == BURN_SIG) { burnTransactionPreparation(_to, _action); }
     else if (sig == TRANSFER_SIG) { transferTransactionPreparation(_to, _action); }
     else if (sig == BURN_GUY_SIG || sig == TRANSFER_FROM_SIG) { burnGuyOrTransferFromTransactionPreparation(_action); }
-
-    // Prevent transactions to network-managed extensions installed in this colony
-    require(isContract(_to), "colony-to-must-be-contract");
-    // slither-disable-next-line unused-return
-    try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
-      require(
-        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) != _to,
-        "colony-cannot-target-extensions"
-      );
-    } catch {}
 
     bool res = executeCall(_to, 0, _action);
 
@@ -378,22 +370,28 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
   }
 
-  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
+  function upgradeExtension(address _extension, uint256 _newVersion)
   public stoppable auth
   {
-    IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extensionId, _newVersion);
+    IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extension, _newVersion);
   }
 
-  function deprecateExtension(bytes32 _extensionId, bool _deprecated)
+  function deprecateExtension(address _extension, bool _deprecated)
   public stoppable auth
   {
-    IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extensionId, _deprecated);
+    IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extension, _deprecated);
   }
 
-  function uninstallExtension(bytes32 _extensionId)
+  function uninstallExtension(address _extension)
   public stoppable auth
   {
-    IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId);
+    IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extension);
+  }
+
+  function migrateToMultiExtension(bytes32 _extensionId)
+  public stoppable auth
+  {
+    IColonyNetwork(colonyNetworkAddress).migrateToMultiExtension(_extensionId);
   }
 
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
@@ -499,6 +497,15 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
     sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("upgradeExtension(address,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("deprecateExtension(address,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("uninstallExtension(address)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
     sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
