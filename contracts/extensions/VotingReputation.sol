@@ -605,6 +605,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     if (canExecute) {
       executed = executeCall(_motionId, motion.action);
+      require(executed || sub(block.timestamp, motion.events[REVEAL_END]) > 7 * 24 * 3600, "voting-execution-failed-not-one-week");
     }
 
     emit MotionFinalized(_motionId, motion.action, executed);
