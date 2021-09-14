@@ -84,6 +84,7 @@ contract("Voting Reputation", (accounts) => {
   const SUBMIT_PERIOD = SECONDS_PER_DAY * 2;
   const REVEAL_PERIOD = SECONDS_PER_DAY * 2;
   const ESCALATION_PERIOD = SECONDS_PER_DAY;
+  const FAIL_EXECUTION_TIMEOUT_PERIOD = SECONDS_PER_DAY * 7;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
@@ -1189,6 +1190,8 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(STAKE_PERIOD, this);
       const tasksBefore = await colony.getTaskCount();
 
+      await forwardTime(FAIL_EXECUTION_TIMEOUT_PERIOD, this);
+
       const { logs } = await voting.finalizeMotion(motionId);
       expect(logs[0].args.executed).to.be.false;
 
@@ -1288,7 +1291,51 @@ contract("Voting Reputation", (accounts) => {
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
+      await forwardTime(FAIL_EXECUTION_TIMEOUT_PERIOD, this);
 
+      const { logs } = await voting.finalizeMotion(motionId);
+      expect(logs[0].args.executed).to.be.false;
+    });
+
+    it("cannot take an action that will fail before a week has elapsed since staking if it didn't go to a vote", async () => {
+      const action = soliditySha3("foo");
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-execution-failed-not-one-week");
+
+      // But after a week we can
+      await forwardTime(FAIL_EXECUTION_TIMEOUT_PERIOD, this);
+
+      // But still failed
+      const { logs } = await voting.finalizeMotion(motionId);
+      expect(logs[0].args.executed).to.be.false;
+    });
+
+    it("cannot take an action that will fail before a week has elapsed since reveal finished if it went to a vote", async () => {
+      const action = soliditySha3("foo");
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await forwardTime(REVEAL_PERIOD, this);
+
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-execution-failed-not-one-week");
+
+      // But after a week we can
+      await forwardTime(FAIL_EXECUTION_TIMEOUT_PERIOD, this);
+
+      // But still failed
       const { logs } = await voting.finalizeMotion(motionId);
       expect(logs[0].args.executed).to.be.false;
     });

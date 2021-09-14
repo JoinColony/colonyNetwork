@@ -605,10 +605,30 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     if (canExecute) {
       executed = executeCall(_motionId, motion.action);
-      require(executed || sub(block.timestamp, motion.events[REVEAL_END]) > 7 * 24 * 3600, "voting-execution-failed-not-one-week");
+      require(executed || failingExecutionAllowed(_motionId), "voting-execution-failed-not-one-week");
     }
 
     emit MotionFinalized(_motionId, motion.action, executed);
+  }
+
+
+  /// @notice Return whether a motion, assuming it's in the finalizable state,
+  // is allowed to finalize without the call executing successfully.
+  /// @param _motionId The id of the motion
+  /// @dev We are only expecting this to be called from finalize motion in the contracts.
+  /// It is marked as public only so that the frontend can use it.
+  function failingExecutionAllowed(uint256 _motionId) public returns (bool) {
+    Motion storage motion = motions[_motionId];
+    uint256 requiredStake = getRequiredStake(_motionId);
+
+    // Failing execution is allowed if we didn't fully stake, and it's been a week since staking ended
+    if (motion.stakes[YAY] < requiredStake || motion.stakes[NAY] < requiredStake) {
+      return block.timestamp >= motion.events[STAKE_END] + 7 days;
+    } else {
+      // It was fully staked, and went to a vote.
+      // Failing execution is also allowed if it's been a week since reveal ended
+      return block.timestamp >= motion.events[REVEAL_END] + 7 days;
+    }
   }
 
   /// @notice Claim the staker's reward
