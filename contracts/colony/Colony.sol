@@ -315,9 +315,12 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   {
-    domains[_domainId].deprecated = _deprecated;
+    if (domains[_domainId].deprecated != _deprecated) {
+      domains[_domainId].deprecated = _deprecated;
 
-    emit DomainDeprecated(msg.sender, _domainId, _deprecated);
+      emit DomainDeprecated(msg.sender, _domainId, _deprecated);
+    }
+
   }
 
   function getDomain(uint256 _domainId) public view returns (Domain memory domain) {
@@ -386,6 +389,9 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
     sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("deprecateDomain(uint256,uint256,uint256,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
 
     sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
