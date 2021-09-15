@@ -122,7 +122,7 @@ contract("All", function (accounts) {
         taskId,
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, 7],
+        args: [taskId, GLOBAL_SKILL_ID],
       });
 
       // setTaskBrief

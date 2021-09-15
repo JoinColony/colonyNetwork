@@ -181,7 +181,7 @@ contract("ColonyTask", (accounts) => {
     });
 
     it("should log TaskAdded and FundingPotAdded events", async () => {
-      await expectAllEvents(colony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, 3, 0), ["TaskAdded", "FundingPotAdded"]);
+      await expectAllEvents(colony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0), ["TaskAdded", "FundingPotAdded"]);
     });
 
     it("should optionally set the skill and due date", async () => {
@@ -321,7 +321,7 @@ contract("ColonyTask", (accounts) => {
         functionName: "setTaskSkill",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, 3], // skillId 3
+        args: [taskId, GLOBAL_SKILL_ID],
       });
 
       executeSignedRoleAssignment({

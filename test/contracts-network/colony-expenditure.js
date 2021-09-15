@@ -318,8 +318,8 @@ contract("Colony Expenditure", (accounts) => {
       );
     });
 
-    it("should not allow owners to set a non-global skill or a deprecated global skill", async () => {
-      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, 2, { from: ADMIN }), "colony-not-global-skill");
+    it("should not allow owners to set a non-global/local skill or a deprecated global skill", async () => {
+      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, 2, { from: ADMIN }), "colony-not-valid-skill");
 
       await metaColony.addGlobalSkill();
       const skillId = await colonyNetwork.getSkillCount();

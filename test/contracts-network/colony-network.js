@@ -280,9 +280,10 @@ contract("Colony Network", (accounts) => {
       expect(colonyCount).to.eq.BN(8);
     });
 
-    it("when meta colony is created, should have the root global and local skills initialised, plus the local mining skill", async () => {
+    it("when meta colony is created, should have the root global, domain, and local skills initialised, plus the local mining skill", async () => {
       const skillCount = await colonyNetwork.getSkillCount();
-      expect(skillCount).to.eq.BN(3);
+      expect(skillCount).to.eq.BN(4);
+
       const globalSkill = await colonyNetwork.getSkill(GLOBAL_SKILL_ID);
       expect(parseInt(globalSkill.nParents, 10)).to.be.zero;
       expect(parseInt(globalSkill.nChildren, 10)).to.be.zero;
@@ -295,7 +296,7 @@ contract("Colony Network", (accounts) => {
       expect(localSkill2.globalSkill).to.be.false;
 
       const miningSkillId = await colonyNetwork.getReputationMiningSkillId();
-      expect(miningSkillId).to.eq.BN(2);
+      expect(miningSkillId).to.eq.BN(3);
     });
 
     it("should fail to create meta colony if it already exists", async () => {
@@ -307,23 +308,26 @@ contract("Colony Network", (accounts) => {
       await checkErrorRevert(colonyNetwork.createColony(ethers.constants.AddressZero, 0, "", ""), "colony-token-invalid-address");
     });
 
-    it("when any colony is created, should have the root local skill initialised", async () => {
+    it("when any colony is created, should have the root domain and local skills initialised", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
+      const skillCount = await colonyNetwork.getSkillCount();
+      const rootDomainSkillId = skillCount.subn(1);
 
-      const rootLocalSkill = await colonyNetwork.getSkill(4);
+      const rootLocalSkill = await colonyNetwork.getSkill(skillCount);
+      expect(rootLocalSkill.globalSkill).to.be.false;
       expect(parseInt(rootLocalSkill.nParents, 10)).to.be.zero;
       expect(parseInt(rootLocalSkill.nChildren, 10)).to.be.zero;
 
-      const skillCount = await colonyNetwork.getSkillCount();
-      const skill = await colonyNetwork.getSkill(skillCount.addn(1));
-      expect(skill.globalSkill).to.be.false;
-
-      const rootDomain = await colony.getDomain(1);
-      expect(rootDomain.skillId).to.eq.BN(4);
-      expect(rootDomain.fundingPotId).to.eq.BN(1);
+      const rootDomainSkill = await colonyNetwork.getSkill(rootDomainSkillId);
+      expect(parseInt(rootDomainSkill.nParents, 10)).to.be.zero;
+      expect(parseInt(rootDomainSkill.nChildren, 10)).to.be.zero;
 
       const domainCount = await colony.getDomainCount();
       expect(domainCount).to.eq.BN(1);
+
+      const rootDomain = await colony.getDomain(1);
+      expect(rootDomain.skillId).to.eq.BN(rootDomainSkillId);
+      expect(rootDomain.fundingPotId).to.eq.BN(1);
     });
 
     it("should fail if ETH is sent", async () => {
