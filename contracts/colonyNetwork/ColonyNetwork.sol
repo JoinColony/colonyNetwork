@@ -116,7 +116,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
     metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
 
     // Add the special mining skill
-    reputationMiningSkillId = this.addSkill(skillCount);
+    reputationMiningSkillId = this.addSkill(skillCount - 1);
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }

@@ -5,7 +5,7 @@ import BN from "bn.js";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { UINT256_MAX, WAD, MAX_PAYOUT } from "../../helpers/constants";
+import { UINT256_MAX, WAD, MAX_PAYOUT, GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { checkErrorRevert, getTokenArgs, expectEvent } from "../../helpers/test-helper";
 import { fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
@@ -147,10 +147,12 @@ contract("Colony Payment", (accounts) => {
 
       let payment = await colony.getPayment(paymentId);
       expect(payment.skills[0]).to.eq.BN(0);
-      const tx = await colony.setPaymentSkill(1, UINT256_MAX, paymentId, 3, { from: COLONY_ADMIN });
+
+      const tx = await colony.setPaymentSkill(1, UINT256_MAX, paymentId, GLOBAL_SKILL_ID, { from: COLONY_ADMIN });
       payment = await colony.getPayment(paymentId);
-      expect(payment.skills[0]).to.eq.BN(3);
-      await expectEvent(tx, "PaymentSkillSet", [COLONY_ADMIN, paymentId, 3]);
+      expect(payment.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+
+      await expectEvent(tx, "PaymentSkillSet", [COLONY_ADMIN, paymentId, GLOBAL_SKILL_ID]);
     });
 
     it("should not allow admins to update payment with deprecated global skill", async () => {

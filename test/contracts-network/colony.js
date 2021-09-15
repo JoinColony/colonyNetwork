@@ -128,9 +128,9 @@ contract("Colony", (accounts) => {
       // The first pot should have been created and assigned to the domain
       expect(domain.fundingPotId).to.eq.BN(1);
 
-      // A root skill should have been created for the Colony
+      // A domain skill should have been created for the Colony
       const rootLocalSkillId = await colonyNetwork.getSkillCount();
-      expect(domain.skillId).to.eq.BN(rootLocalSkillId);
+      expect(domain.skillId).to.eq.BN(rootLocalSkillId.subn(1));
     });
 
     it("should let funding pot information be read", async () => {
@@ -244,6 +244,7 @@ contract("Colony", (accounts) => {
 
     it("should assign reputation correctly", async () => {
       const skillCount = await colonyNetwork.getSkillCount();
+      const rootDomainSkillId = skillCount.subn(1);
 
       await colony.mintTokens(WAD.muln(14));
       await colony.claimColonyFunds(token.address);
@@ -255,7 +256,7 @@ contract("Colony", (accounts) => {
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       expect(updateLog.user).to.eq.BN(INITIAL_ADDRESSES[0]);
       expect(updateLog.amount).to.eq.BN(INITIAL_REPUTATIONS[0]);
-      expect(updateLog.skillId).to.eq.BN(skillCount);
+      expect(updateLog.skillId).to.eq.BN(rootDomainSkillId);
     });
 
     it("should assign tokens correctly", async () => {
