@@ -322,6 +322,11 @@ class ReputationMinerClient {
         clearTimeout(this.blockTimeoutCheck);
       }
 
+      if (this._blockOverdue) {
+          this._adapter.error("Resolved: We are seeing blocks be mined again.");
+          this._blockOverdue = false;
+      }
+
       const block = await this._miner.realProvider.getBlock(blockNumber);
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
 
@@ -331,6 +336,12 @@ class ReputationMinerClient {
         if (this.confirmTimeoutCheck) {
           clearTimeout(this.confirmTimeoutCheck);
         }
+
+        if (this._miningCycleConfirmationOverdue) {
+          this._adapter.error("Resolved: The mining cycle has now confirmed as expected.");
+          this._miningCycleConfirmationOverdue = false;
+        }
+
         await this._miner.updatePeriodLength(repCycle);
 
         // If we don't see this next cycle completed at an appropriate time, then report it
@@ -662,10 +673,12 @@ class ReputationMinerClient {
 
   async reportBlockTimeout() {
     this._adapter.error("Error: No block seen for five minutes. Something is almost certainly wrong!");
+    this._blockOverdue = true;
   }
 
   async reportConfirmTimeout() {
     this._adapter.error("Error: We expected to see the mining cycle confirm ten minutes ago. Something might be wrong!");
+    this._miningCycleConfirmationOverdue = true;
   }
 
 }
