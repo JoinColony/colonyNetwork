@@ -617,7 +617,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   /// @param _motionId The id of the motion
   /// @dev We are only expecting this to be called from finalize motion in the contracts.
   /// It is marked as public only so that the frontend can use it.
-  function failingExecutionAllowed(uint256 _motionId) public returns (bool) {
+  function failingExecutionAllowed(uint256 _motionId) public view returns (bool) {
     Motion storage motion = motions[_motionId];
     uint256 requiredStake = getRequiredStake(_motionId);
 

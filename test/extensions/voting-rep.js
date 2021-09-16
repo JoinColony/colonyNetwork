@@ -1306,11 +1306,16 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
+      let failingExecutionAllowed = await voting.failingExecutionAllowed(motionId);
+      expect(failingExecutionAllowed).to.be.false;
+
       await checkErrorRevert(voting.finalizeMotion(motionId), "voting-execution-failed-not-one-week");
 
       // But after a week we can
       await forwardTime(FAIL_EXECUTION_TIMEOUT_PERIOD, this);
 
+      failingExecutionAllowed = await voting.failingExecutionAllowed(motionId);
+      expect(failingExecutionAllowed).to.be.true;
       // But still failed
       const { logs } = await voting.finalizeMotion(motionId);
       expect(logs[0].args.executed).to.be.false;
