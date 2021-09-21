@@ -38,6 +38,13 @@ Add a colony domain, and its respective local skill under skill with id `_parent
 |_metadata|string|Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
 
 
+### `addLocalSkill`
+
+Add a new local skill for the colony. Secured function to authorised members.
+
+
+
+
 ### `addPayment`
 
 Add a new payment in the colony. Secured function to authorised members.
@@ -274,6 +281,19 @@ Set the deprecation of an extension in a colony. Secured function to authorised 
 |---|---|---|
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |deprecated|bool|Whether to deprecate the extension or not
+
+
+### `deprecateLocalSkill`
+
+Deprecate a local skill for the colony. Secured function to authorised members.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|localSkillId|uint256|Id for the local skill
+|deprecated|bool|Deprecation status to set for the skill
 
 
 ### `editColony`
@@ -795,6 +815,18 @@ Get useful information about specific reward payout.
 |Name|Type|Description|
 |---|---|---|
 |rewardPayoutCycle|RewardPayoutCycle|RewardPayoutCycle, containing propertes:  `reputationState` Reputation root hash at the time of creation,  `colonyWideReputation` Colony wide reputation in `reputationState`,  `totalTokens` Total colony tokens at the time of creation,  `amount` Total amount of tokens taken aside for reward payout,  `tokenAddress` Token address,  `blockTimestamp` Block number at the time of creation.
+
+### `getRootLocalSkill`
+
+Get the root local skill id
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|rootLocalSkill|uint256|The root local skill id
 
 ### `getTask`
 

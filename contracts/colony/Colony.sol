@@ -112,10 +112,11 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));
     setRoleAssignmentFunction(bytes4(keccak256("setTaskWorkerRole(uint256,address)")));
 
-    // Initialise the root domain
+    // Initialise the local skill and domain trees
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    uint256 rootLocalSkill = colonyNetwork.getSkillCount();
-    initialiseDomain(rootLocalSkill);
+    uint256 rootDomainSkill = colonyNetwork.getSkillCount();
+    initialiseDomain(rootDomainSkill);
+    initialiseRootLocalSkill();
 
     // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
     rewardInverse = 2**256 - 1;
@@ -272,6 +273,23 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId);
   }
 
+  function addLocalSkill() public stoppable auth {
+    uint256 newLocalSkill = IColonyNetwork(colonyNetworkAddress).addSkill(rootLocalSkill);
+    localSkills[newLocalSkill] = LocalSkill({ exists: true, deprecated: false });
+
+    emit LocalSkillAdded(msg.sender, newLocalSkill);
+  }
+
+  function deprecateLocalSkill(uint256 _localSkillId, bool _deprecated) public stoppable auth {
+    localSkills[_localSkillId].deprecated = _deprecated;
+
+    emit LocalSkillDeprecated(msg.sender, _localSkillId, _deprecated);
+  }
+
+  function getRootLocalSkill() public view returns (uint256) {
+    return rootLocalSkill;
+  }
+
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
   domainNotDeprecated(_parentDomainId)
@@ -289,13 +307,13 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
     uint256 parentSkillId = domains[_parentDomainId].skillId;
 
-    // Setup new local skill
+    // Setup new domain skill
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     // slither-disable-next-line reentrancy-no-eth
-    uint256 newLocalSkill = colonyNetwork.addSkill(parentSkillId);
+    uint256 newDomainSkill = colonyNetwork.addSkill(parentSkillId);
 
     // Add domain to local mapping
-    initialiseDomain(newLocalSkill);
+    initialiseDomain(newDomainSkill);
 
     if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
       emit DomainMetadata(msgSender(), domainCount, _metadata);
@@ -384,6 +402,14 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
+    sig = bytes4(keccak256("addLocalSkill()"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("deprecateLocalSkill(uint256,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    if (rootLocalSkill == 0) initialiseRootLocalSkill();
+
     sig = bytes4(keccak256("deprecateDomain(uint256,uint256,uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
   }
@@ -460,6 +486,11 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
   function getTotalTokenApproval(address _token) public view returns (uint256) {
     return tokenApprovalTotals[_token];
+  }
+
+  function initialiseRootLocalSkill() internal {
+    assert(rootLocalSkill == 0);
+    rootLocalSkill = IColonyNetwork(colonyNetworkAddress).initialiseRootLocalSkill();
   }
 
   function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {

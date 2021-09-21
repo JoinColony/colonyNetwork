@@ -169,6 +169,23 @@ contract("Colony", (accounts) => {
     });
   });
 
+  describe("when adding local skills", () => {
+    it("should log the LocalSkillAdded event", async () => {
+      const tx = await colony.addLocalSkill();
+
+      const skillCount = await colonyNetwork.getSkillCount();
+      await expectEvent(tx, "LocalSkillAdded", [accounts[0], skillCount]);
+    });
+
+    it("should allow root users to deprecate local skills", async () => {
+      await colony.addLocalSkill();
+      const skillCount = await colonyNetwork.getSkillCount();
+
+      const tx = await colony.deprecateLocalSkill(skillCount, true);
+      await expectEvent(tx, "LocalSkillDeprecated", [accounts[0], skillCount, true]);
+    });
+  });
+
   describe("when adding domains", () => {
     it("should log DomainAdded and FundingPotAdded and DomainMetadata events", async () => {
       let tx = await colony.addDomain(1, UINT256_MAX, 1);

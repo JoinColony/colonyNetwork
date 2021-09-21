@@ -280,6 +280,14 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
     skills[_skillId].deprecated = true;
   }
 
+  function initialiseRootLocalSkill() public
+  stoppable
+  calledByColony
+  returns (uint256)
+  {
+    return skillCount++;
+  }
+
   function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public
   stoppable
   calledByColony
@@ -366,7 +374,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
 
     colonyAuthority.setOwner(address(etherRouter));
 
-    // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
+    // Initialise the domain tree with defaults by just incrementing the skillCount
     skillCount += 1;
     colonyCount += 1;
     colonies[colonyCount] = address(colony);

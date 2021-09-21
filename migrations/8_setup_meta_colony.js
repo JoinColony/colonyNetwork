@@ -109,7 +109,7 @@ module.exports = async function (deployer, network, accounts) {
   await colonyNetwork.startNextCycle();
 
   const skillCount = await colonyNetwork.getSkillCount();
-  assert.equal(skillCount.toNumber(), 3);
+  assert.equal(skillCount.toNumber(), 4);
 
   console.log("### Meta Colony created at", metaColony.address);
 };
