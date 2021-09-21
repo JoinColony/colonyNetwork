@@ -107,6 +107,9 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   uint256 constant METATRANSACTION_NONCES_SLOT = 35;
   mapping(address => uint256) metatransactionNonces; // Storage slot 35
 
+  uint256 rootLocalSkill; // Storage slot 36
+  mapping (uint256 => LocalSkill) localSkills; // Storage slot 37
+
   // Constants
 
   uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs

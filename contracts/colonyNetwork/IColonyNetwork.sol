@@ -100,6 +100,10 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _skillId Id of the skill
   function deprecateSkill(uint256 _skillId) external;
 
+  /// @notice Initialise the local skills tree for a colony
+  /// @return rootLocalSkillId The root local skill
+  function initialiseRootLocalSkill() external returns (uint256 rootLocalSkillId);
+
   /// @notice Adds a reputation update entry to log.
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or.
   /// @param _user The address of the user for the reputation update

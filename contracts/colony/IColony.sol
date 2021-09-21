@@ -282,6 +282,18 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   function uninstallExtension(bytes32 extensionId) external;
 
+  /// @notice Add a new local skill for the colony. Secured function to authorised members.
+  function addLocalSkill() external;
+
+  /// @notice Deprecate a local skill for the colony. Secured function to authorised members.
+  /// @param localSkillId Id for the local skill
+  /// @param deprecated Deprecation status to set for the skill
+  function deprecateLocalSkill(uint256 localSkillId, bool deprecated) external;
+
+  /// @notice Get the root local skill id
+  /// @return rootLocalSkill The root local skill id
+  function getRootLocalSkill() external view returns (uint256 rootLocalSkill);
+
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`.
   /// New funding pot is created and associated with the domain here.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action

@@ -194,6 +194,14 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
     skills[_skillId].deprecated = true;
   }
 
+  function initialiseRootLocalSkill() public
+  stoppable
+  calledByColony
+  returns (uint256)
+  {
+    return skillCount++;
+  }
+
   function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public
   stoppable
   calledByColony

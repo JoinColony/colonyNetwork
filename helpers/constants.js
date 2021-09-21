@@ -66,7 +66,7 @@ const DECAY_RATE = {
   DENOMINATOR: new BN("1000000000000000"),
 };
 
-const GLOBAL_SKILL_ID = new BN("3"); // Not a root global skill ID or anything, just the first global skill's ID
+const GLOBAL_SKILL_ID = new BN("4"); // Not a root global skill ID or anything, just the first global skill's ID
 
 module.exports = {
   UINT256_MAX,

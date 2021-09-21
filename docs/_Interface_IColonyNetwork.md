@@ -708,6 +708,18 @@ Creates initial inactive reputation mining cycle.
 
 
 
+### `initialiseRootLocalSkill`
+
+Initialise the local skills tree for a colony
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|rootLocalSkillId|uint256|The root local skill
+
 ### `installExtension`
 
 Install an extension in a colony. Can only be called by a Colony.

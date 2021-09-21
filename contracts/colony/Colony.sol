@@ -287,6 +287,14 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
+    sig = bytes4(keccak256("addLocalSkill()"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("deprecateLocalSkill(uint256,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    if (rootLocalSkill == 0) initialiseRootLocalSkill();
+
     sig = bytes4(keccak256("deprecateDomain(uint256,uint256,uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
   }

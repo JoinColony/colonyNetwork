@@ -18,6 +18,7 @@ import {
   WORKER_ROLE,
   SPECIFICATION_HASH,
   DELIVERABLE_HASH,
+  GLOBAL_SKILL_ID,
 } from "./constants";
 
 import { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } from "./test-helper";
@@ -35,7 +36,7 @@ const Resolver = artifacts.require("Resolver");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 
-export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 3, dueDate = 0, manager }) {
+export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = GLOBAL_SKILL_ID, dueDate = 0, manager }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
 
