@@ -108,7 +108,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   /// @notice Return the version number
   /// @return The version number
   function version() public pure override returns (uint256) {
-    return 2;
+    return 3;
   }
 
   /// @notice Install the extension
