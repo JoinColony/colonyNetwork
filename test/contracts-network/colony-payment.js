@@ -404,6 +404,7 @@ contract("Colony Payment", (accounts) => {
 
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
       await colony.finalizePayment(1, UINT256_MAX, paymentId);
+      await colony.claimPayment(paymentId, token.address);
 
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const repCycle = await IReputationMiningCycle.at(addr);

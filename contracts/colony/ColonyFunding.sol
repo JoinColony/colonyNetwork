@@ -144,7 +144,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     }
 
     // Process reputation updates if internal token
-    if (_token == token) {
+    if (_token == token && !isExtension(slot.recipient)) {
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), domains[expenditure.domainId].skillId);
       if (slot.skills.length > 0 && slot.skills[0] > 0) {
@@ -623,7 +623,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     fundingPots[_fundingPotId].balance[_token] = sub(fundingPots[_fundingPotId].balance[_token], _payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _payout);
 
-    uint fee = calculateNetworkFeeForPayout(_payout);
+    uint fee = isExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
     uint remainder = sub(_payout, fee);
     fundingPots[_fundingPotId].payouts[_token] = sub(fundingPots[_fundingPotId].payouts[_token], _payout);
 
