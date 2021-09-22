@@ -3,6 +3,7 @@ import BN from "bn.js";
 import { ethers } from "ethers";
 import chai from "chai";
 import bnChai from "bn-chai";
+import { soliditySha3 } from "web3-utils";
 
 import {
   UINT256_MAX,
@@ -42,6 +43,7 @@ import {
   forwardTime,
   currentBlockTime,
   addTaskSkillEditingFunctions,
+  web3GetStorageAt,
 } from "../../helpers/test-helper";
 
 import {
@@ -54,6 +56,7 @@ import {
   setupRandomColony,
   assignRoles,
 } from "../../helpers/test-data-generator";
+import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -63,8 +66,11 @@ const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const TestExtension0 = artifacts.require("TestExtension0");
+const Resolver = artifacts.require("Resolver");
 
-contract("ColonyTask", (accounts) => {
+contract.only("ColonyTask", (accounts) => {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
@@ -1908,6 +1914,117 @@ contract("ColonyTask", (accounts) => {
       const workerBalanceAfter = await token.balanceOf(WORKER);
       expect(networkBalanceAfter.sub(networkBalanceBefore)).to.be.zero;
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
+    });
+  });
+
+  describe.only("when claiming payout for a task for an extension", () => {
+    let extensionAddress;
+    const TEST_EXTENSION = soliditySha3("TestExtension");
+    const extensionVersion = 0;
+
+    before(async () => {
+      // Install an extension
+
+      const extensionImplementation = await TestExtension0.new();
+      const resolver = await Resolver.new();
+      await setupEtherRouter("TestExtension0", { TestExtension0: extensionImplementation.address }, resolver);
+
+      await metaColony.addExtensionToNetwork(TEST_EXTENSION, resolver.address);
+
+      await colony.installExtension(TEST_EXTENSION, extensionVersion);
+      extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
+    });
+
+    it("if recipient is own extension, should not award reputation or pay network fee", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
+
+      // Enter recovery mode, and change the worker to the extension address.
+      // This is required because the extension can't sign the messages for tasks
+      await colony.enterRecoveryMode();
+
+      // Task mapping is storage slot 14
+      const taskSlot = soliditySha3(taskId.toNumber(), 14);
+
+      // Roles mapping in slot 8 of the struct
+      // Worker is index 2
+      const workerSlot = soliditySha3(2, new BN(taskSlot.slice(2), 16).addn(8));
+
+      // We also have the 'failed to rate' and 'rating' in this slot, so we do some quick string manipulation
+      // to make sure we're only changing the address.
+      const oldValue = await web3GetStorageAt(colony.address, workerSlot);
+      const newValue = ethers.utils.hexZeroPad(oldValue.slice(0, oldValue.length - 40) + extensionAddress.slice(2), 32);
+      await colony.setStorageSlotRecovery(workerSlot, newValue);
+      await colony.approveExitRecovery();
+      await colony.exitRecoveryMode();
+
+      const taskRole = await colony.getTaskRole(taskId, 2);
+      expect(taskRole.user).to.equal(extensionAddress);
+
+      await colony.finalizeTask(taskId);
+      await colony.claimTaskPayout(taskId, WORKER_ROLE, token.address);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(false);
+      const repCycle = await IReputationMiningCycle.at(addr);
+      const numEntries = await repCycle.getReputationUpdateLogLength();
+
+      // No entry in the log should be for this address
+      for (let i = new BN(0); i.lt(numEntries); i = i.addn(1)) {
+        const skillEntry = await repCycle.getReputationUpdateLogEntry(i);
+        expect(skillEntry.user).to.not.equal(extensionAddress);
+      }
+
+      // Balance should be whole payout
+      const balance = await token.balanceOf(extensionAddress);
+      expect(balance).to.eq.BN(WORKER_PAYOUT);
+    });
+
+    it("if recipient is an extension for another colony, should not award reputation but should pay fee", async () => {
+      const { colony: otherColony } = await setupRandomColony(colonyNetwork);
+
+      await otherColony.installExtension(TEST_EXTENSION, extensionVersion);
+      const otherExtensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, otherColony.address);
+
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
+
+      // Enter recovery mode, and change the worker to the extension address.
+      // This is required because the extension can't sign the messages for tasks
+      await colony.enterRecoveryMode();
+
+      // Task mapping is storage slot 14
+      const taskSlot = soliditySha3(taskId.toNumber(), 14);
+
+      // Roles mapping in slot 8 of the struct
+      // Worker is index 2
+      const workerSlot = soliditySha3(2, new BN(taskSlot.slice(2), 16).addn(8));
+
+      const oldValue = await web3GetStorageAt(colony.address, workerSlot);
+      const newValue = ethers.utils.hexZeroPad(oldValue.slice(0, oldValue.length - 40) + otherExtensionAddress.slice(2), 32);
+      await colony.setStorageSlotRecovery(workerSlot, newValue);
+
+      await colony.approveExitRecovery();
+      await colony.exitRecoveryMode();
+
+      const taskRole = await colony.getTaskRole(taskId, 2);
+      expect(taskRole.user).to.equal(otherExtensionAddress);
+
+      await colony.finalizeTask(taskId);
+      await colony.claimTaskPayout(taskId, WORKER_ROLE, token.address);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(false);
+      const repCycle = await IReputationMiningCycle.at(addr);
+      const numEntries = await repCycle.getReputationUpdateLogLength();
+
+      // No entry in the log should be for this address
+      for (let i = new BN(0); i.lt(numEntries); i = i.addn(1)) {
+        const skillEntry = await repCycle.getReputationUpdateLogEntry(numEntries.subn(1));
+        expect(skillEntry.user).to.not.equal(otherExtensionAddress);
+      }
+
+      // But the balance should have the fee deducted
+      const balance = await token.balanceOf(otherExtensionAddress);
+      expect(balance).to.be.lt.BN(WORKER_PAYOUT);
     });
   });
 
