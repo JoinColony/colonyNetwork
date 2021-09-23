@@ -310,7 +310,7 @@ contract("ColonyPermissions", (accounts) => {
       let tx = await colony.emitDomainReputationReward(3, USER2, 100, { from: FOUNDER });
 
       const domain = await colony.getDomain(3);
-      await expectEvent(tx, "CustomReputationUpdate", [FOUNDER, USER2, domain.skillId, 100]);
+      await expectEvent(tx, "ArbitraryReputationUpdate", [FOUNDER, USER2, domain.skillId, 100]);
 
       await checkErrorRevert(colony.emitDomainReputationReward(3, USER2, -100, { from: FOUNDER }), "colony-reward-must-be-positive");
       await checkErrorRevert(colony.emitDomainReputationReward(0, USER2, 100, { from: FOUNDER }), "colony-domain-does-not-exist");
@@ -318,7 +318,7 @@ contract("ColonyPermissions", (accounts) => {
 
       // Skill rewards
       tx = await colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, 100, { from: FOUNDER });
-      await expectEvent(tx, "CustomReputationUpdate", [FOUNDER, USER2, GLOBAL_SKILL_ID, 100]);
+      await expectEvent(tx, "ArbitraryReputationUpdate", [FOUNDER, USER2, GLOBAL_SKILL_ID, 100]);
 
       await checkErrorRevert(colony.emitSkillReputationReward(0, USER2, 100, { from: FOUNDER }), "colony-not-global-skill");
       await checkErrorRevert(colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, -100, { from: FOUNDER }), "colony-reward-must-be-positive");
@@ -333,13 +333,13 @@ contract("ColonyPermissions", (accounts) => {
       let tx = await colony.emitDomainReputationPenalty(1, 1, 3, USER2, -100, { from: USER1 });
 
       const domain = await colony.getDomain(3);
-      await expectEvent(tx, "CustomReputationUpdate", [USER1, USER2, domain.skillId, -100]);
+      await expectEvent(tx, "ArbitraryReputationUpdate", [USER1, USER2, domain.skillId, -100]);
 
       await checkErrorRevert(colony.emitDomainReputationPenalty(1, 1, 3, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");
 
       // Skill penalties (root domain only)
       tx = await colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, -100, { from: USER1 });
-      await expectEvent(tx, "CustomReputationUpdate", [USER1, USER2, GLOBAL_SKILL_ID, -100]);
+      await expectEvent(tx, "ArbitraryReputationUpdate", [USER1, USER2, GLOBAL_SKILL_ID, -100]);
 
       await checkErrorRevert(colony.emitSkillReputationPenalty(0, USER2, 100, { from: USER1 }), "colony-not-global-skill");
       await checkErrorRevert(colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");

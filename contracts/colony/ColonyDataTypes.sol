@@ -306,7 +306,7 @@ interface ColonyDataTypes {
   /// @param user The address that is having its reputation changed
   /// @param skillId The id of the skill the user is having their reputation changed in
   /// @param amount The (maximum) amount the address is having its reputation changed by
-  event CustomReputationUpdate(address agent, address user, uint256 skillId, int256 amount);
+  event ArbitraryReputationUpdate(address agent, address user, uint256 skillId, int256 amount);
 
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
