@@ -23,13 +23,13 @@ import "./ColonyStorage.sol";
 
 
 contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
-  function lockToken() public stoppable onlyExtension returns (uint256) {
+  function lockToken() public stoppable onlyOwnExtension returns (uint256) {
     uint256 lockId = ITokenLocking(tokenLockingAddress).lockToken(token);
     tokenLocks[msg.sender][lockId] = true;
     return lockId;
   }
 
-  function unlockTokenForUser(address _user, uint256 _lockId) public stoppable onlyExtension {
+  function unlockTokenForUser(address _user, uint256 _lockId) public stoppable onlyOwnExtension {
     require(tokenLocks[msg.sender][_lockId], "colony-bad-lock-id");
     ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, _user, _lockId);
   }
