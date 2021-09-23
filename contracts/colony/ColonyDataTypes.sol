@@ -301,6 +301,13 @@ interface ColonyDataTypes {
   /// provided function
   event TokenUnlocked();
 
+  /// @notice Event logged when a manual reputation reward/penalty is made
+  /// @param agent The address that is responsible for triggering this event
+  /// @param user The address that is having its reputation changed
+  /// @param skillId The id of the skill the user is having their reputation changed in
+  /// @param amount The (maximum) amount the address is having its reputation changed by
+  event ArbitraryReputationUpdate(address agent, address user, uint256 skillId, int256 amount);
+
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
     bytes32 reputationState;
