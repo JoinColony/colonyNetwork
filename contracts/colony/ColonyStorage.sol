@@ -239,7 +239,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   }
 
   modifier onlyExtension() {
-    require(isExtension(msg.sender), "colony-must-be-extension");
+    require(isOwnExtension(msg.sender), "colony-must-be-extension");
     _;
   }
 
@@ -288,7 +288,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     return size > 0;
   }
 
-  function isExtension(address addr) internal returns (bool) {
+  function isOwnExtension(address addr) internal returns (bool) {
     if (!isContract(addr)) {
       return false;
     }
@@ -300,6 +300,24 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
       return false;
     }
   }
+
+  function isExtension(address addr) internal returns (bool) {
+    if (!isContract(addr)) {
+      return false;
+    }
+
+    // slither-disable-next-line unused-return
+    try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
+      try ColonyExtension(addr).getColony() returns (address claimedAssociatedColony) {
+        return IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, claimedAssociatedColony) == addr;
+      } catch {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+
 
   function domainExists(uint256 domainId) internal view returns (bool) {
     return domainId > 0 && domainId <= domainCount;

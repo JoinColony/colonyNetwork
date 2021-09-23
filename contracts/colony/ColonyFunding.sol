@@ -623,7 +623,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     fundingPots[_fundingPotId].balance[_token] = sub(fundingPots[_fundingPotId].balance[_token], _payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _payout);
 
-    uint fee = isExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
+    uint fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
     uint remainder = sub(_payout, fee);
     fundingPots[_fundingPotId].payouts[_token] = sub(fundingPots[_fundingPotId].payouts[_token], _payout);
 

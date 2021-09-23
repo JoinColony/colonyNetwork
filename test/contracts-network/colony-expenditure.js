@@ -810,7 +810,7 @@ contract("Colony Expenditure", (accounts) => {
       }
 
       // But the balance should have the fee deducted
-      const balance = await token.balanceOf(extensionAddress);
+      const balance = await token.balanceOf(otherExtensionAddress);
       expect(balance).to.be.lt.BN(WAD);
     });
   });
