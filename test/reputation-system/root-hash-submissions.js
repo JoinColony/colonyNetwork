@@ -212,6 +212,8 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     });
 
     it("should allow a user to back the same hash more than once in a same cycle with different entries, and be rewarded", async () => {
+      const miningSkillId = 3;
+
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -255,7 +257,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       let repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(0);
       expect(repLogEntryMiner.user).to.equal(MINER1);
       expect(repLogEntryMiner.amount).to.eq.BN(r1);
-      expect(repLogEntryMiner.skillId).to.eq.BN(2);
+      expect(repLogEntryMiner.skillId).to.eq.BN(miningSkillId);
       expect(repLogEntryMiner.colony).to.equal(metaColony.address);
       expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
       expect(repLogEntryMiner.nPreviousUpdates).to.be.zero;
@@ -263,7 +265,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryMiner.user).to.equal(MINER1);
       expect(repLogEntryMiner.amount).to.eq.BN(r2);
-      expect(repLogEntryMiner.skillId).to.eq.BN(2);
+      expect(repLogEntryMiner.skillId).to.eq.BN(miningSkillId);
       expect(repLogEntryMiner.colony).to.equal(metaColony.address);
       expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
       expect(repLogEntryMiner.nPreviousUpdates).to.eq.BN(4);
@@ -689,6 +691,8 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     });
 
     it("should reward all stakers if they submitted the agreed new hash", async () => {
+      const miningSkillId = 3;
+
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       await clnyToken.burn(REWARD, { from: MINER1 });
@@ -745,7 +749,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       let repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(0);
       expect(repLogEntryMiner.user).to.equal(MINER1);
       expect(repLogEntryMiner.amount).to.eq.BN(r1);
-      expect(repLogEntryMiner.skillId).to.eq.BN(2);
+      expect(repLogEntryMiner.skillId).to.eq.BN(miningSkillId);
       expect(repLogEntryMiner.colony).to.equal(metaColony.address);
       expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
       expect(repLogEntryMiner.nPreviousUpdates).to.be.zero;
@@ -753,7 +757,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryMiner.user).to.equal(MINER2);
       expect(repLogEntryMiner.amount).to.eq.BN(r2);
-      expect(repLogEntryMiner.skillId).to.eq.BN(2);
+      expect(repLogEntryMiner.skillId).to.eq.BN(miningSkillId);
       expect(repLogEntryMiner.colony).to.equal(metaColony.address);
       expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
       expect(repLogEntryMiner.nPreviousUpdates).to.eq.BN(4);
