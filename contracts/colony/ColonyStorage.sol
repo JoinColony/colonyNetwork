@@ -308,6 +308,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
 
     // slither-disable-next-line unused-return
     try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
+      // slither-disable-next-line unused-return
       try ColonyExtension(addr).getColony() returns (address claimedAssociatedColony) {
         return IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, claimedAssociatedColony) == addr;
       } catch {
