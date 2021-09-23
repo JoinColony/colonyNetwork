@@ -2,7 +2,6 @@
 
 import path from "path";
 import request from "async-request";
-import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
@@ -34,6 +33,7 @@ process.env.SOLIDITY_COVERAGE
   ? contract.skip
   : contract("Reputation mining - client core functionality", (accounts) => {
       const MINER1 = accounts[5];
+      const MINING_SKILL_ID = 3;
 
       let colonyNetwork;
       let metaColony;
@@ -84,12 +84,12 @@ process.env.SOLIDITY_COVERAGE
       describe("core functionality", () => {
         it("should correctly respond to a request for a reputation state in the current state", async () => {
           const rootHash = await reputationMiner.getRootHash();
-          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MINER1}`;
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}`;
           const res = await request(url);
           expect(res.statusCode).to.equal(200);
 
           const oracleProofObject = JSON.parse(res.body);
-          const key = makeReputationKey(metaColony.address, new BN(2), MINER1);
+          const key = makeReputationKey(metaColony.address, MINING_SKILL_ID, MINER1);
 
           const [branchMask, siblings] = await reputationMiner.getProof(key);
           const value = reputationMiner.reputations[key];
@@ -107,13 +107,13 @@ process.env.SOLIDITY_COVERAGE
 
         it("should correctly respond to a request for a reputation state in a previous state", async () => {
           const rootHash = await reputationMiner.getRootHash();
-          const key = makeReputationKey(metaColony.address, new BN(2), MINER1);
+          const key = makeReputationKey(metaColony.address, MINING_SKILL_ID, MINER1);
           const [branchMask, siblings] = await reputationMiner.getProof(key);
           const value = reputationMiner.reputations[key];
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
 
-          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MINER1}`;
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}`;
           const res = await request(url);
           expect(res.statusCode).to.equal(200);
 
