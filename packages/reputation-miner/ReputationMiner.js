@@ -1222,13 +1222,31 @@ class ReputationMiner {
     let localHash = await this.reputationTree.getRootHash();
     let applyLogs = false;
 
+    // Run through events backwards find the most recent one that we know...
+    let syncFromIndex = 0;
+    for (let i = events.length - 1 ; i >= 0 ; i -= 1){
+      const event = events[i];
+      const hash = event.data.slice(0, 66);
+      const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
+      // Do we have such a state?
+      const res = await this.db.prepare(`SELECT COUNT ( * ) AS "n" FROM reputation_states WHERE root_hash='${hash}' AND n_leaves='${nLeaves}'`).get()
+      if (res.n === 1){
+        // We know that state! We can just sync from the next one...
+        syncFromIndex = i + 1;
+        await this.loadState(hash);
+        applyLogs = true;
+        break;
+      }
+    }
+
     // We're not going to apply the logs unless we're syncing from scratch (which is this if statement)
     // or we find a hash that we recognise as our current state, and we're going to sync from there (which
     // is the if statement at the end of the loop below
     if (localHash === `0x${new BN(0).toString(16, 64)}`) {
       applyLogs = true;
     }
-    for (let i = 0; i < events.length; i += 1) {
+
+    for (let i = syncFromIndex; i < events.length; i += 1) {
       console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
       const event = events[i];
       if (i === 0) {
@@ -1255,7 +1273,7 @@ class ReputationMiner {
           console.log("WARNING: Either sync has failed, or some log entries have been replaced. Continuing sync, as we might recover");
         }
         if (saveHistoricalStates) {
-          await this.saveCurrentState(event.blockNumber);
+          await this.saveCurrentState();
         }
       }
       if (applyLogs === false && localHash === hash) {
