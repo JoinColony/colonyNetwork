@@ -715,7 +715,7 @@ contract("Colony Expenditure", (accounts) => {
     });
   });
 
-  describe.only("when claiming expenditures for extension contracts", () => {
+  describe("when claiming expenditures for extension contracts", () => {
     let expenditureId;
     let extensionAddress;
     const TEST_EXTENSION = soliditySha3("TestExtension");

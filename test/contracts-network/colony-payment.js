@@ -379,7 +379,7 @@ contract("Colony Payment", (accounts) => {
     });
   });
 
-  describe.only("when claiming payments on behalf of extensions", () => {
+  describe("when claiming payments on behalf of extensions", () => {
     let extensionAddress;
     const TEST_EXTENSION = soliditySha3("TestExtension");
     const extensionVersion = 0;

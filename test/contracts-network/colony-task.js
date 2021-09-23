@@ -70,7 +70,7 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TestExtension0 = artifacts.require("TestExtension0");
 const Resolver = artifacts.require("Resolver");
 
-contract.only("ColonyTask", (accounts) => {
+contract("ColonyTask", (accounts) => {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
@@ -1917,7 +1917,7 @@ contract.only("ColonyTask", (accounts) => {
     });
   });
 
-  describe.only("when claiming payout for a task for an extension", () => {
+  describe("when claiming payout for a task for an extension", () => {
     let extensionAddress;
     const TEST_EXTENSION = soliditySha3("TestExtension");
     const extensionVersion = 0;
