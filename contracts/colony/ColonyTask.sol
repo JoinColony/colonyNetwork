@@ -419,7 +419,9 @@ contract ColonyTask is ColonyStorage {
     task.status = TaskStatus.Finalized;
 
     for (uint8 roleId = 0; roleId <= 2; roleId++) {
-      updateReputation(TaskRole(roleId), task);
+      if (!isExtension(task.roles[roleId].user)) {
+        updateReputation(TaskRole(roleId), task);
+      }
     }
 
     emit TaskFinalized(msg.sender, _id);

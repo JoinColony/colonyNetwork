@@ -3,10 +3,12 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import BN from "bn.js";
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, MAX_PAYOUT } from "../../helpers/constants";
 import { checkErrorRevert, getTokenArgs, expectEvent } from "../../helpers/test-helper";
 import { fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
+import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -14,7 +16,10 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const Token = artifacts.require("Token");
+const TestExtension0 = artifacts.require("TestExtension0");
+const Resolver = artifacts.require("Resolver");
 
 contract("Colony Payment", (accounts) => {
   const RECIPIENT = accounts[3];
@@ -371,6 +376,77 @@ contract("Colony Payment", (accounts) => {
       const networkBalanceAfter2 = await otherToken.balanceOf(colonyNetwork.address);
       expect(recipientBalanceAfter2.sub(recipientBalanceBefore2)).to.eq.BN(new BN("98"));
       expect(networkBalanceAfter2.sub(networkBalanceBefore2)).to.eq.BN(new BN("2"));
+    });
+  });
+
+  describe("when claiming payments on behalf of extensions", () => {
+    let extensionAddress;
+    const TEST_EXTENSION = soliditySha3("TestExtension");
+    const extensionVersion = 0;
+
+    before(async () => {
+      // Install an extension
+
+      const extensionImplementation = await TestExtension0.new();
+      const resolver = await Resolver.new();
+      await setupEtherRouter("TestExtension0", { TestExtension0: extensionImplementation.address }, resolver);
+
+      await metaColony.addExtensionToNetwork(TEST_EXTENSION, resolver.address);
+
+      await colony.installExtension(TEST_EXTENSION, extensionVersion);
+      extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
+    });
+
+    it("if recipient is own extension, should not award reputation or pay network fee", async () => {
+      await colony.addPayment(1, UINT256_MAX, extensionAddress, token.address, WAD, 1, 0);
+      const paymentId = await colony.getPaymentCount();
+      const payment = await colony.getPayment(paymentId);
+
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.finalizePayment(1, UINT256_MAX, paymentId);
+      await colony.claimPayment(paymentId, token.address);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(false);
+      const repCycle = await IReputationMiningCycle.at(addr);
+      const numEntries = await repCycle.getReputationUpdateLogLength();
+
+      // No entry in the log should be for this address
+      for (let i = new BN(0); i.lt(numEntries); i = i.addn(1)) {
+        const skillEntry = await repCycle.getReputationUpdateLogEntry(i);
+        expect(skillEntry.user).to.not.equal(extensionAddress);
+      }
+
+      // Balance should be whole payout
+      const balance = await token.balanceOf(extensionAddress);
+      expect(balance).to.eq.BN(WAD);
+    });
+
+    it("if recipient is an extension for another colony, should not award reputation but should pay fee", async () => {
+      const { colony: otherColony } = await setupRandomColony(colonyNetwork);
+
+      await otherColony.installExtension(TEST_EXTENSION, extensionVersion);
+      const otherExtensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, otherColony.address);
+
+      await colony.addPayment(1, UINT256_MAX, otherExtensionAddress, token.address, WAD, 1, 0);
+      const paymentId = await colony.getPaymentCount();
+      const payment = await colony.getPayment(paymentId);
+
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.finalizePayment(1, UINT256_MAX, paymentId);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(false);
+      const repCycle = await IReputationMiningCycle.at(addr);
+      const numEntries = await repCycle.getReputationUpdateLogLength();
+
+      // No entry in the log should be for this address
+      for (let i = new BN(0); i.lt(numEntries); i = i.addn(1)) {
+        const skillEntry = await repCycle.getReputationUpdateLogEntry(i);
+        expect(skillEntry.user).to.not.equal(otherExtensionAddress);
+      }
+
+      // But the balance should have the fee deducted
+      const balance = await token.balanceOf(otherExtensionAddress);
+      expect(balance).to.be.lt.BN(WAD);
     });
   });
 });

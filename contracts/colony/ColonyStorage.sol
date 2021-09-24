@@ -238,20 +238,8 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     _;
   }
 
-  modifier onlyExtension() {
-    // Ensure msg.sender is a contract
-    require(isContract(msg.sender), "colony-sender-must-be-contract");
-
-    // Ensure msg.sender is an extension
-    // slither-disable-next-line unused-return
-    try ColonyExtension(msg.sender).identifier() returns (bytes32 extensionId) {
-      require(
-        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == msg.sender,
-        "colony-must-be-extension"
-      );
-    } catch {
-      require(false, "colony-must-be-extension");
-    }
+  modifier onlyOwnExtension() {
+    require(isOwnExtension(msg.sender), "colony-must-be-own-extension");
     _;
   }
 
@@ -299,6 +287,38 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     assembly { size := extcodesize(addr) }
     return size > 0;
   }
+
+  function isOwnExtension(address addr) internal returns (bool) {
+    if (!isContract(addr)) {
+      return false;
+    }
+
+    // slither-disable-next-line unused-return
+    try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
+      return IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == addr;
+    } catch {
+      return false;
+    }
+  }
+
+  function isExtension(address addr) internal returns (bool) {
+    if (!isContract(addr)) {
+      return false;
+    }
+
+    // slither-disable-next-line unused-return
+    try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
+      // slither-disable-next-line unused-return
+      try ColonyExtension(addr).getColony() returns (address claimedAssociatedColony) {
+        return IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, claimedAssociatedColony) == addr;
+      } catch {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+
 
   function domainExists(uint256 domainId) internal view returns (bool) {
     return domainId > 0 && domainId <= domainCount;

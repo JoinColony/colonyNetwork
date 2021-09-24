@@ -23,13 +23,13 @@ import "./ColonyStorage.sol";
 
 
 contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
-  function lockToken() public stoppable onlyExtension returns (uint256) {
+  function lockToken() public stoppable onlyOwnExtension returns (uint256) {
     uint256 lockId = ITokenLocking(tokenLockingAddress).lockToken(token);
     tokenLocks[msg.sender][lockId] = true;
     return lockId;
   }
 
-  function unlockTokenForUser(address _user, uint256 _lockId) public stoppable onlyExtension {
+  function unlockTokenForUser(address _user, uint256 _lockId) public stoppable onlyOwnExtension {
     require(tokenLocks[msg.sender][_lockId], "colony-bad-lock-id");
     ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, _user, _lockId);
   }
@@ -144,7 +144,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     }
 
     // Process reputation updates if internal token
-    if (_token == token) {
+    if (_token == token && !isExtension(slot.recipient)) {
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), domains[expenditure.domainId].skillId);
       if (slot.skills.length > 0 && slot.skills[0] > 0) {
@@ -623,7 +623,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     fundingPots[_fundingPotId].balance[_token] = sub(fundingPots[_fundingPotId].balance[_token], _payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _payout);
 
-    uint fee = calculateNetworkFeeForPayout(_payout);
+    uint fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
     uint remainder = sub(_payout, fee);
     fundingPots[_fundingPotId].payouts[_token] = sub(fundingPots[_fundingPotId].payouts[_token], _payout);
 
