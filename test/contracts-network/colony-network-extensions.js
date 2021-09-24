@@ -324,13 +324,13 @@ contract("Colony Network Extensions", (accounts) => {
     it("does not allow non network-managed extensions to lock and unlock tokens", async () => {
       const testVotingToken = await TestVotingToken.new();
       await testVotingToken.install(colony.address);
-      await checkErrorRevert(testVotingToken.lockToken(), "colony-must-be-extension");
-      await checkErrorRevert(testVotingToken.unlockTokenForUser(ROOT, 0), "colony-must-be-extension");
+      await checkErrorRevert(testVotingToken.lockToken(), "colony-must-be-own-extension");
+      await checkErrorRevert(testVotingToken.unlockTokenForUser(ROOT, 0), "colony-must-be-own-extension");
     });
 
     it("does not allow users to lock and unlock tokens", async () => {
-      await checkErrorRevert(colony.lockToken(), "colony-sender-must-be-contract");
-      await checkErrorRevert(colony.unlockTokenForUser(ROOT, 0), "colony-sender-must-be-contract");
+      await checkErrorRevert(colony.lockToken(), "colony-must-be-own-extension");
+      await checkErrorRevert(colony.unlockTokenForUser(ROOT, 0), "colony-must-be-own-extension");
     });
 
     it("does not allow a colony to unlock a lock placed by another colony", async () => {

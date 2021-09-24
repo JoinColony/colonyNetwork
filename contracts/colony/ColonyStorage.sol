@@ -239,7 +239,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   }
 
   modifier onlyOwnExtension() {
-    require(isOwnExtension(msg.sender), "colony-must-be-extension");
+    require(isOwnExtension(msg.sender), "colony-must-be-own-extension");
     _;
   }
 
