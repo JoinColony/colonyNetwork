@@ -342,8 +342,6 @@ class ReputationMinerClient {
           this._miningCycleConfirmationOverdue = false;
         }
 
-        await this._miner.updatePeriodLength(repCycle);
-
         // If we don't see this next cycle completed at an appropriate time, then report it
 
         await this.setMiningCycleTimeout(repCycle);
@@ -357,6 +355,8 @@ class ReputationMinerClient {
           this.endDoBlockChecks();
           return;
         }
+
+        await this._miner.updatePeriodLength(repCycle);
         await this.processReputationLog();
 
         // And if appropriate, sort out our potential submissions for the next cycle.
