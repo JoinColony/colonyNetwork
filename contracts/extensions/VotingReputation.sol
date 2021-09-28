@@ -108,7 +108,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   /// @notice Return the version number
   /// @return The version number
   function version() public pure override returns (uint256) {
-    return 2;
+    return 3;
   }
 
   /// @notice Install the extension
@@ -264,6 +264,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       if (skillId != actionDomainSkillId) {
         uint256 childSkillId = colonyNetwork.getChildSkillId(skillId, _childSkillIndex);
         require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
+      } else {
+        require(_childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");
       }
     }
 
@@ -603,9 +605,30 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     if (canExecute) {
       executed = executeCall(_motionId, motion.action);
+      require(executed || failingExecutionAllowed(_motionId), "voting-execution-failed-not-one-week");
     }
 
     emit MotionFinalized(_motionId, motion.action, executed);
+  }
+
+
+  /// @notice Return whether a motion, assuming it's in the finalizable state,
+  // is allowed to finalize without the call executing successfully.
+  /// @param _motionId The id of the motion
+  /// @dev We are only expecting this to be called from finalize motion in the contracts.
+  /// It is marked as public only so that the frontend can use it.
+  function failingExecutionAllowed(uint256 _motionId) public view returns (bool) {
+    Motion storage motion = motions[_motionId];
+    uint256 requiredStake = getRequiredStake(_motionId);
+
+    // Failing execution is allowed if we didn't fully stake, and it's been a week since staking ended
+    if (motion.stakes[YAY] < requiredStake || motion.stakes[NAY] < requiredStake) {
+      return block.timestamp >= motion.events[STAKE_END] + 7 days;
+    } else {
+      // It was fully staked, and went to a vote.
+      // Failing execution is also allowed if it's been a week since reveal ended
+      return block.timestamp >= motion.events[REVEAL_END] + 7 days;
+    }
   }
 
   /// @notice Claim the staker's reward
@@ -870,6 +893,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
 
       if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
+        // 50% gets 0% of loser's stake, 100% gets 100% of loser's stake, linear in between
         stakerReward = wmul(stakeFraction, add(winnerStake, wmul(loserStake, winShare - WAD)));
       } else {
         stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));

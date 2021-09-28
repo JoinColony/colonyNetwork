@@ -15,7 +15,7 @@ const { argv } = require("yargs")
 const KycOracle = require("../KycOracle");
 const TruffleLoader = require("../TruffleLoader").default;
 
-const { adminAddress, privateKey, whitelistAddress, apiKey, network, providerPort, providerAddress, dbPath } = argv;
+const { adminAddress, privateKey, whitelistAddress, apiKey, network, providerPort, providerAddress, dbPath, port } = argv;
 const supportedInfuraNetworks = ["mainnet"];
 
 if ((!adminAddress && !privateKey) || !whitelistAddress || !apiKey) {
@@ -38,5 +38,5 @@ if (network) {
   provider = new ethers.providers.JsonRpcProvider(`http://${providerAddress || "localhost"}:${providerPort || "8545"}`);
 }
 
-const client = new KycOracle({ privateKey, adminAddress, apiKey, loader, provider, dbPath });
+const client = new KycOracle({ privateKey, adminAddress, apiKey, loader, provider, dbPath, port });
 client.initialise(whitelistAddress);

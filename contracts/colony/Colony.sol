@@ -26,10 +26,10 @@ import "./ColonyStorage.sol";
 
 contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
 
-  // V6: Cerulean Lightweight Spaceship
+  // V8: Ebony Lightweight Spaceship
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 7; }
+  function version() public pure returns (uint256 colonyVersion) { return 8; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
@@ -47,6 +47,36 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
 
   function makeArbitraryTransaction(address _to, bytes memory _action)
   public stoppable auth
+  returns (bool)
+  {
+    return this.makeSingleArbitraryTransaction(_to, _action);
+  }
+
+  function makeArbitraryTransactions(address[] memory _targets, bytes[] memory _actions, bool _strict)
+  public stoppable auth
+  returns (bool)
+  {
+    require(_targets.length == _actions.length, "colony-targets-and-actions-length-mismatch");
+    for (uint256 i; i < _targets.length; i += 1){
+      bool success = true;
+      // slither-disable-next-line unused-return
+      try this.makeSingleArbitraryTransaction(_targets[i], _actions[i]) returns (bool ret){
+        if (_strict){
+          success = ret;
+        }
+      } catch {
+        // We failed in a require, which is only okay if we're not in strict mode
+        if (_strict){
+          success = false;
+        }
+      }
+      require(success, "colony-arbitrary-transaction-failed");
+    }
+    return true;
+  }
+
+  function makeSingleArbitraryTransaction(address _to, bytes memory _action)
+  external stoppable self
   returns (bool)
   {
     // Prevent transactions to network contracts
@@ -155,6 +185,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     require(_amount > 0, "colony-reward-must-be-positive");
     require(domainExists(_domainId), "colony-domain-does-not-exist");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
+
+    emit ArbitraryReputationUpdate(msg.sender, _user, domains[_domainId].skillId, _amount);
   }
 
   function emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount)
@@ -162,6 +194,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   {
     require(_amount > 0, "colony-reward-must-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
+
+    emit ArbitraryReputationUpdate(msg.sender, _user, _skillId, _amount);
   }
 
   function emitDomainReputationPenalty(
@@ -174,6 +208,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
+
+    emit ArbitraryReputationUpdate(msg.sender, _user, domains[_domainId].skillId, _amount);
   }
 
   function emitSkillReputationPenalty(uint256 _skillId, address _user, int256 _amount)
@@ -181,6 +217,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
+
+    emit ArbitraryReputationUpdate(msg.sender, _user, _skillId, _amount);
   }
 
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
@@ -460,17 +498,19 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     emit ColonyUpgraded(msg.sender, currentVersion, _newVersion);
   }
 
-  // v5 to v6
+  // v7 to v8
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
+    sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
-    sig = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Funding), address(this), sig, true);
+    sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
+    sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {

@@ -79,15 +79,17 @@ contract ColonyPayment is ColonyStorage {
     Payment storage payment = payments[_id];
     payment.finalized = true;
 
-    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
+    if (!isExtension(payment.recipient)) {
+      FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
 
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    // All payments in Colony's home token earn domain reputation and if skill was set, earn skill reputation
-    colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), domains[payment.domainId].skillId);
-    if (payment.skills[0] > 0) {
-      // Currently we support at most one skill per Payment, similarly to Task model.
-      // This may change in future to allow multiple skills to be set on both Tasks and Payments
-      colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), payment.skills[0]);
+      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+      // All payments in Colony's home token earn domain reputation and if skill was set, earn skill reputation
+      colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), domains[payment.domainId].skillId);
+      if (payment.skills[0] > 0) {
+        // Currently we support at most one skill per Payment, similarly to Task model.
+        // This may change in future to allow multiple skills to be set on both Tasks and Payments
+        colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), payment.skills[0]);
+      }
     }
 
     emit PaymentFinalized(msg.sender, _id);

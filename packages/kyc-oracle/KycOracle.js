@@ -17,9 +17,9 @@ class KycOracle {
    * @param {string} whitelistAddress        The address of the whitelist.
    * @param {Object} loader                  The loader for loading the contract interfaces. Usually a TruffleLoader.
    * @param {Object} provider                Ethers provider that allows access to an ethereum node.
-   * @param {Number} [port]                  The port the oracle will serve on
+   * @param {Number} port                    The port the oracle will serve on
    */
-  constructor({ privateKey, adminAddress, apiKey, loader, provider, dbPath, port = 3000 }) {
+  constructor({ privateKey, adminAddress, apiKey, loader, provider, dbPath, port = 3003 }) {
     if (privateKey) {
       this.wallet = new ethers.Wallet(privateKey, this.provider);
       this.adminAddress = this.wallet.address;
@@ -42,13 +42,21 @@ class KycOracle {
     this.app = express();
 
     this.app.use(function (req, res, next) {
-      const regex = /.*colony\.io/;
       const origin = req.get("origin");
-      const matches = regex.exec(origin);
 
-      if (matches) {
-        res.header("Access-Control-Allow-Origin", matches[0]);
+      const colonyRegex = /.*colony\.io/;
+      const colonyMatches = colonyRegex.exec(origin);
+
+      const localRegex = /http:\/\/(127(\.\d+){1,3}|[0:]+1|localhost)/;
+
+      const localMatches = localRegex.exec(origin);
+
+      if (colonyMatches) {
+        res.header("Access-Control-Allow-Origin", colonyMatches[0]);
+      } else if (localMatches) {
+        res.header("Access-Control-Allow-Origin", "*");
       }
+      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Synaps-Session-Id");
       next();
     });
 
@@ -122,21 +130,20 @@ class KycOracle {
             "Session-Id": synapsSessionId,
           },
         });
-
         const validated = data.status === "VERIFIED";
-        const userAddress = await this.getAddressForSession(req.params.sessionId);
-
+        const userAddress = await this.getAddressForSession(synapsSessionId);
         if (validated) {
           const alreadyApproved = await this.whitelist.getApproval(userAddress);
           if (!alreadyApproved) {
             await this.updateGasEstimate("safeLow");
-            const gasEstimate = await this.whitelist.estimateGas.approveUser(userAddress, true);
-            this.whitelist.approveUser(userAddress, true, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+            const gasEstimate = await this.whitelist.estimateGas.approveUsers([userAddress], true);
+            this.whitelist.approveUsers([userAddress], true, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
           }
         }
 
         return res.status(200).send(data);
       } catch (err) {
+        console.log(err);
         return res.status(500).send(err);
       }
     });

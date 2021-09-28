@@ -102,12 +102,16 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   // Mapping of token address -> total amount approved
   mapping (address => uint256 ) tokenApprovalTotals; // Storage slot 33
 
+  uint256 defaultGlobalClaimDelay; // Storage slot 34
+
   // Constants
+
   uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs
   bytes32 constant ROOT_ROLES = bytes32(uint256(1)) << uint8(ColonyRole.Recovery) | bytes32(uint256(1)) << uint8(ColonyRole.Root);
   bytes32 constant BYTES32_1 = bytes32(uint256(1));
 
   // Modifiers
+
   modifier validPayoutAmount(uint256 _amount) {
     require(_amount <= MAX_PAYOUT, "colony-payout-too-large");
     _;
@@ -155,8 +159,22 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     _;
   }
 
-  modifier expenditureActive(uint256 _id) {
-    require(expenditures[_id].status == ExpenditureStatus.Active, "colony-expenditure-not-active");
+  modifier expenditureDraft(uint256 _id) {
+    require(expenditures[_id].status == ExpenditureStatus.Draft, "colony-expenditure-not-draft");
+    _;
+  }
+
+  modifier expenditureLocked(uint256 _id) {
+    require(expenditures[_id].status == ExpenditureStatus.Locked, "colony-expenditure-not-locked");
+    _;
+  }
+
+  modifier expenditureDraftOrLocked(uint256 _id) {
+    require(
+      expenditures[_id].status == ExpenditureStatus.Draft ||
+      expenditures[_id].status == ExpenditureStatus.Locked,
+      "colony-expenditure-not-draft-or-locked"
+    );
     _;
   }
 
@@ -220,20 +238,8 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     _;
   }
 
-  modifier onlyExtension() {
-    // Ensure msg.sender is a contract
-    require(isContract(msg.sender), "colony-sender-must-be-contract");
-
-    // Ensure msg.sender is an extension
-    // slither-disable-next-line unused-return
-    try ColonyExtension(msg.sender).identifier() returns (bytes32 extensionId) {
-      require(
-        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == msg.sender,
-        "colony-must-be-extension"
-      );
-    } catch {
-      require(false, "colony-must-be-extension");
-    }
+  modifier onlyOwnExtension() {
+    require(isOwnExtension(msg.sender), "colony-must-be-own-extension");
     _;
   }
 
@@ -281,6 +287,38 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     assembly { size := extcodesize(addr) }
     return size > 0;
   }
+
+  function isOwnExtension(address addr) internal returns (bool) {
+    if (!isContract(addr)) {
+      return false;
+    }
+
+    // slither-disable-next-line unused-return
+    try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
+      return IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == addr;
+    } catch {
+      return false;
+    }
+  }
+
+  function isExtension(address addr) internal returns (bool) {
+    if (!isContract(addr)) {
+      return false;
+    }
+
+    // slither-disable-next-line unused-return
+    try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
+      // slither-disable-next-line unused-return
+      try ColonyExtension(addr).getColony() returns (address claimedAssociatedColony) {
+        return IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, claimedAssociatedColony) == addr;
+      } catch {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+
 
   function domainExists(uint256 domainId) internal view returns (bool) {
     return domainId > 0 && domainId <= domainCount;

@@ -234,30 +234,47 @@ class ReputationMinerClient {
     }
   }
 
-  async updateGasEstimate(type) {
-    if (this.chainId === 100){
-      this._miner.gasPrice = ethers.utils.hexlify(1000000000);
-      return;
-    }
-    // Get latest from ethGasStation
+  async updateGasEstimate(_type) {
+    let type = _type;
     const options = {
-      uri: 'https://ethgasstation.info/json/ethgasAPI.json',
       headers: {
-          'User-Agent': 'Request-Promise'
+        'User-Agent': 'Request-Promise'
       },
       json: true // Automatically parses the JSON string in the response
     };
+    let defaultGasPrice;
+    let factor;
+
+    if (this.chainId === 100){
+      options.uri = "https://blockscout.com/xdai/mainnet/api/v1/gas-price-oracle";
+      defaultGasPrice = ethers.utils.hexlify(1000000000);
+      factor = 1;
+      // This oracle presents the information slightly differently from ethgasstation.
+      if (_type === "safeLow") {
+        type = "slow";
+      }
+    } else if (this.chainId === 1) {
+      options.uri = "https://ethgasstation.info/json/ethgasAPI.json";
+      defaultGasPrice = ethers.utils.hexlify(20000000000);
+      factor = 10;
+    } else {
+      this._adapter.error(`Error during gas estimation: unknown chainid ${this.chainId}`);
+      this._miner.gasPrice = ethers.utils.hexlify(20000000000);
+      return;
+    }
+
+    // Get latest from whichever oracle
     try {
       const gasEstimates = await request(options);
 
       if (gasEstimates[type]){
-        this._miner.gasPrice = ethers.utils.hexlify(gasEstimates[type] / 10 * 1e9);
+        this._miner.gasPrice = ethers.utils.hexlify(gasEstimates[type] / factor * 1e9);
       } else {
-        this._miner.gasPrice = ethers.utils.hexlify(20000000000);
+        this._miner.gasPrice = defaultGasPrice;
       }
     } catch (err) {
       this._adapter.error(`Error during gas estimation: ${err}`);
-      this._miner.gasPrice = ethers.utils.hexlify(20000000000);
+      this._miner.gasPrice = defaultGasPrice;
     }
   }
 
@@ -338,7 +355,7 @@ class ReputationMinerClient {
           if (canSubmit) {
             this._adapter.log("⏰ Looks like it's time to submit an entry to the current cycle");
             this.submissionIndex += 1;
-            await this.updateGasEstimate('safeLow');
+            await this.updateGasEstimate('average');
             await this.submitEntry(entryIndex);
           }
         }
@@ -383,7 +400,7 @@ class ReputationMinerClient {
               return;
             }
           }
-          await this.updateGasEstimate('safeLow');
+          await this.updateGasEstimate('average');
           await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
           this.endDoBlockChecks();
           return;
@@ -401,7 +418,7 @@ class ReputationMinerClient {
           );
           if (responsePossible) {
             // If so, invalidate them.
-            await this.updateGasEstimate('safeLow');
+            await this.updateGasEstimate('average');
             await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
             this.endDoBlockChecks();
             return;
@@ -467,7 +484,6 @@ class ReputationMinerClient {
 
         const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_NEW_HASH, entry.lastResponseTimestamp);
         if (responsePossible){
-          await this.updateGasEstimate('average');
           await this.confirmEntry();
         }
       }

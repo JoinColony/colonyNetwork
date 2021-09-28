@@ -22,6 +22,7 @@ const {
   network,
   localPort,
   localProviderAddress,
+  providerAddress,
   syncFrom,
   auto,
   oracle,
@@ -36,6 +37,7 @@ if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
   process.exit();
 }
 
+
 const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts")
 });
@@ -48,7 +50,13 @@ if (network) {
   }
   provider = new ethers.providers.InfuraProvider(network);
 } else {
-  provider = new ethers.providers.JsonRpcProvider(`http://${localProviderAddress || "localhost"}:${localPort || "8545"}`);
+  let rpcEndpoint = providerAddress;
+
+  if (!rpcEndpoint) {
+      rpcEndpoint = `http://${localProviderAddress || "localhost"}:${localPort || "8545"}`;
+  }
+
+  provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
 }
 
 let adapterObject;

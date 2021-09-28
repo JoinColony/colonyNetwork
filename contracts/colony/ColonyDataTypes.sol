@@ -84,6 +84,11 @@ interface ColonyDataTypes {
   /// @param rewardInverse The reward inverse value
   event ColonyRewardInverseSet(address agent, uint256 rewardInverse);
 
+  /// @notice Event logged when the default global claim delay is updated
+  /// @param agent The address that is responsible for triggering this event
+  /// @param globalClaimDelay The new default global claim delay
+  event ExpenditureGlobalClaimDelaySet(address agent, uint256 globalClaimDelay);
+
   /// @notice Event logged when a new expenditure is added
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId The newly added expenditure id
@@ -95,15 +100,26 @@ interface ColonyDataTypes {
   /// @param owner The new owner of the expenditure
   event ExpenditureTransferred(address agent, uint256 indexed expenditureId, address indexed owner);
 
-  /// @notice Event logged when a expenditure has been cancelled
+  /// @notice Event logged when an expenditure has been cancelled
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the cancelled expenditure
   event ExpenditureCancelled(address agent, uint256 indexed expenditureId);
 
-  /// @notice Event logged when a expenditure has been finalized
+  /// @notice Event logged when an expenditure has been locked
+  /// @param agent The address that is responsible for triggering this event
+  /// @param expenditureId Id of the locked expenditure
+  event ExpenditureLocked(address agent, uint256 indexed expenditureId);
+
+  /// @notice Event logged when an expenditure has been finalized
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the finalized expenditure
   event ExpenditureFinalized(address agent, uint256 indexed expenditureId);
+
+  /// @notice Event logged when expenditure metadata is set
+  /// @param agent The address that is responsible for triggering this event
+  /// @param expenditureId Id of the expenditure
+  /// @param metadata IPFS hash of the metadata
+  event ExpenditureMetadataSet(address agent, uint256 indexed expenditureId, string metadata);
 
   /// @notice Event logged when an expenditure's recipient is set
   /// @param agent The address that is responsible for triggering this event
@@ -112,20 +128,34 @@ interface ColonyDataTypes {
   /// @param recipient Address of the recipient
   event ExpenditureRecipientSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, address indexed recipient);
 
-  /// @notice Event logged when a expenditure's skill changes
+  /// @notice Event logged when an expenditure's skill changes
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the expenditure
   /// @param slot Slot receiving the skill
   /// @param skillId Id of the set skill
   event ExpenditureSkillSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, uint256 indexed skillId);
 
-  /// @notice Event logged when a expenditure payout changes
+  /// @notice Event logged when an expenditure payout changes
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the expenditure
   /// @param slot Expenditure slot of the payout being changed
   /// @param token Token of the payout funding
   /// @param amount Amount of the payout funding
   event ExpenditurePayoutSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, address indexed token, uint256 amount);
+
+  /// @notice Event logged when an expenditure slot claim delay changes
+  /// @param agent The address that is responsible for triggering this event
+  /// @param expenditureId Id of the expenditure
+  /// @param slot Expenditure slot being changed
+  /// @param claimDelay Additional amount of time to hold the funds
+  event ExpenditureClaimDelaySet(address agent, uint256 indexed expenditureId, uint256 indexed slot, uint256 claimDelay);
+
+  /// @notice Event logged when an expenditure slot payout modifier changes
+  /// @param agent The address that is responsible for triggering this event
+  /// @param expenditureId Id of the expenditure
+  /// @param slot Expenditure slot being changed
+  /// @param payoutModifier The payout modifier for the slot
+  event ExpenditurePayoutModifierSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, int256 payoutModifier);
 
   /// @notice Event logged when a new payment is added
   /// @param agent The address that is responsible for triggering this event
@@ -219,6 +249,7 @@ interface ColonyDataTypes {
   /// @notice Event logged when domain metadata is updated
   /// @param agent The address that is responsible for triggering this event
   /// @param domainId Id of the newly-created Domain
+  /// @param metadata IPFS hash of the metadata
   event DomainMetadata(address agent, uint256 indexed domainId, string metadata);
 
   /// @notice Event logged when Colony metadata is updated
@@ -233,7 +264,7 @@ interface ColonyDataTypes {
   /// @notice Emit a metadata string for a transaction
   /// @param agent Agent emitting the annotation
   /// @param txHash Hash of transaction being annotated (0x0 for current tx)
-  /// @param metadata String of metadata for tx
+  /// @param metadata IPFS hash of the metadata
   event Annotation(address indexed agent, bytes32 indexed txHash, string metadata);
 
   /// @notice Event logged when a payment has its payout set
@@ -270,6 +301,13 @@ interface ColonyDataTypes {
   /// provided function
   event TokenUnlocked();
 
+  /// @notice Event logged when a manual reputation reward/penalty is made
+  /// @param agent The address that is responsible for triggering this event
+  /// @param user The address that is having its reputation changed
+  /// @param skillId The id of the skill the user is having their reputation changed in
+  /// @param amount The (maximum) amount the address is having its reputation changed by
+  event ArbitraryReputationUpdate(address agent, address user, uint256 skillId, int256 amount);
+
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
     bytes32 reputationState;
@@ -305,7 +343,7 @@ interface ColonyDataTypes {
     uint256[] skills;
   }
 
-  enum ExpenditureStatus { Active, Cancelled, Finalized }
+  enum ExpenditureStatus { Draft, Cancelled, Finalized, Locked }
 
   struct Payment {
     address payable recipient;

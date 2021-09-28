@@ -27,6 +27,16 @@ contract ColonyExpenditure is ColonyStorage {
 
   // Public functions
 
+  function setDefaultGlobalClaimDelay(uint256 _defaultGlobalClaimDelay)
+    public
+    stoppable
+    auth
+  {
+    defaultGlobalClaimDelay = _defaultGlobalClaimDelay;
+
+    emit ExpenditureGlobalClaimDelaySet(msg.sender, _defaultGlobalClaimDelay);
+  }
+
   function makeExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId)
     public
     stoppable
@@ -40,12 +50,12 @@ contract ColonyExpenditure is ColonyStorage {
     fundingPots[fundingPotCount].associatedTypeId = expenditureCount;
 
     expenditures[expenditureCount] = Expenditure({
-      status: ExpenditureStatus.Active,
+      status: ExpenditureStatus.Draft,
       owner: msg.sender,
       fundingPotId: fundingPotCount,
       domainId: _domainId,
       finalizedTimestamp: 0,
-      globalClaimDelay: 0
+      globalClaimDelay: defaultGlobalClaimDelay
     });
 
     emit FundingPotAdded(fundingPotCount);
@@ -58,7 +68,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraftOrLocked(_id)
     expenditureOnlyOwner(_id)
   {
     expenditures[_id].owner = _newOwner;
@@ -77,7 +87,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraftOrLocked(_id)
   {
     expenditures[_id].owner = _newOwner;
 
@@ -88,7 +98,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
     expenditures[_id].status = ExpenditureStatus.Cancelled;
@@ -96,11 +106,23 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureCancelled(msg.sender, _id);
   }
 
+  function lockExpenditure(uint256 _id)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    expenditures[_id].status = ExpenditureStatus.Locked;
+
+    emit ExpenditureLocked(msg.sender, _id);
+  }
+
   function finalizeExpenditure(uint256 _id)
     public
     stoppable
     expenditureExists(_id)
-    expenditureActive(_id)
+    expenditureDraftOrLocked(_id)
     expenditureOnlyOwner(_id)
   {
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
@@ -112,67 +134,142 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureFinalized(msg.sender, _id);
   }
 
+  function setExpenditureMetadata(uint256 _id, string memory _metadata)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    emit ExpenditureMetadataSet(msg.sender, _id, _metadata);
+  }
+
+  function setExpenditureMetadata(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    string memory _metadata
+  )
+    public
+    stoppable
+    expenditureExists(_id)
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
+  {
+    emit ExpenditureMetadataSet(msg.sender, _id, _metadata);
+  }
+
+  function setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address payable[] memory _recipients)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    require(_slots.length == _recipients.length, "colony-expenditure-bad-slots");
+
+    for (uint256 i; i < _slots.length; i++) {
+      expenditureSlots[_id][_slots[i]].recipient = _recipients[i];
+
+      emit ExpenditureRecipientSet(msg.sender, _id, _slots[i], _recipients[i]);
+    }
+  }
+
+  function setExpenditureSkills(uint256 _id, uint256[] memory _slots, uint256[] memory _skillIds)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    require(_slots.length == _skillIds.length, "colony-expenditure-bad-slots");
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+
+    for (uint256 i; i < _slots.length; i++) {
+      require(
+        _skillIds[i] > 0 && _skillIds[i] <= colonyNetworkContract.getSkillCount(),
+        "colony-expenditure-skill-does-not-exist"
+      );
+
+      Skill memory skill = colonyNetworkContract.getSkill(_skillIds[i]);
+      require(skill.globalSkill, "colony-not-global-skill");
+      require(!skill.deprecated, "colony-deprecated-global-skill");
+
+      // We only allow setting of the first skill here.
+      // If we allow more in the future, make sure to have a hard limit that
+      // comfortably limits respondToChallenge's gas.
+      expenditureSlots[_id][_slots[i]].skills = new uint256[](1);
+      expenditureSlots[_id][_slots[i]].skills[0] = _skillIds[i];
+
+      emit ExpenditureSkillSet(msg.sender, _id, _slots[i], _skillIds[i]);
+    }
+  }
+
+  function setExpenditureClaimDelays(uint256 _id, uint256[] memory _slots, uint256[] memory _claimDelays)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    require(_slots.length == _claimDelays.length, "colony-expenditure-bad-slots");
+
+    for (uint256 i; i < _slots.length; i++) {
+      expenditureSlots[_id][_slots[i]].claimDelay = _claimDelays[i];
+
+      emit ExpenditureClaimDelaySet(msg.sender, _id, _slots[i], _claimDelays[i]);
+    }
+  }
+
+  function setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers)
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    require(_slots.length == _payoutModifiers.length, "colony-expenditure-bad-slots");
+
+    for (uint256 i; i < _slots.length; i++) {
+      expenditureSlots[_id][_slots[i]].payoutModifier = _payoutModifiers[i];
+
+      emit ExpenditurePayoutModifierSet(msg.sender, _id, _slots[i], _payoutModifiers[i]);
+    }
+  }
+
+  // Deprecated
   function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient)
     public
     stoppable
-    expenditureExists(_id)
-    expenditureActive(_id)
-    expenditureOnlyOwner(_id)
   {
-    expenditureSlots[_id][_slot].recipient = _recipient;
-
-    emit ExpenditureRecipientSet(msg.sender, _id, _slot, _recipient);
+    uint256[] memory slots = new uint256[](1);
+    slots[0] = _slot;
+    address payable[] memory recipients = new address payable[](1);
+    recipients[0] = _recipient;
+    setExpenditureRecipients(_id, slots, recipients);
   }
 
+  // Deprecated
   function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId)
     public
     stoppable
-    expenditureExists(_id)
-    expenditureActive(_id)
-    expenditureOnlyOwner(_id)
-    skillExists(_skillId)
-    validGlobalSkill(_skillId)
   {
-    // We only allow setting of the first skill here.
-    // If we allow more in the future, make sure to have a hard limit that
-    // comfortably limits respondToChallenge's gas.
-    expenditureSlots[_id][_slot].skills = new uint256[](1);
-    expenditureSlots[_id][_slot].skills[0] = _skillId;
-
-    emit ExpenditureSkillSet(msg.sender, _id, _slot, _skillId);
+    uint256[] memory slots = new uint256[](1);
+    slots[0] = _slot;
+    uint256[] memory skillIds = new uint256[](1);
+    skillIds[0] = _skillId;
+    setExpenditureSkills(_id, slots, skillIds);
   }
 
   // Deprecated
-  function setExpenditurePayoutModifier(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    uint256 _slot,
-    int256 _payoutModifier
-  )
+  function setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)
     public
     stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
-    require(_payoutModifier <= MAX_PAYOUT_MODIFIER, "colony-expenditure-payout-modifier-too-large");
-    require(_payoutModifier >= MIN_PAYOUT_MODIFIER, "colony-expenditure-payout-modifier-too-small");
-
-    expenditureSlots[_id][_slot].payoutModifier = _payoutModifier;
-  }
-
-  // Deprecated
-  function setExpenditureClaimDelay(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    uint256 _slot,
-    uint256 _claimDelay
-  )
-    public
-    stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
-  {
-    expenditureSlots[_id][_slot].claimDelay = _claimDelay;
+    uint256[] memory slots = new uint256[](1);
+    slots[0] = _slot;
+    uint256[] memory claimDelays = new uint256[](1);
+    claimDelays[0] = _claimDelay;
+    setExpenditureClaimDelays(_id, slots, claimDelays);
   }
 
   uint256 constant EXPENDITURES_SLOT = 25;
@@ -205,6 +302,15 @@ contract ColonyExpenditure is ColonyStorage {
       require(_keys.length >= 2, "colony-expenditure-bad-keys");
       uint256 offset = uint256(_keys[1]);
       require(offset <= 3, "colony-expenditure-bad-offset");
+
+      // Validate payout modifier
+      if (offset == 2) {
+        require(
+          int256(_value) <= MAX_PAYOUT_MODIFIER &&
+          int256(_value) >= MIN_PAYOUT_MODIFIER,
+          "colony-expenditure-bad-payout-modifier"
+        );
+      }
 
     // Should always be two mappings
     } else if (_storageSlot == EXPENDITURESLOTPAYOUTS_SLOT) {

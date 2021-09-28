@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 
 import { UINT256_MAX, WAD, INITIAL_FUNDING } from "../../helpers/constants";
 import { fundColonyWithTokens, setupRandomColony, setupColony } from "../../helpers/test-data-generator";
-import { checkErrorRevert } from "../../helpers/test-helper";
+import { checkErrorRevert, expectEvent } from "../../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -63,14 +63,19 @@ contract("Colony Staking", (accounts) => {
       let approval;
       let obligation;
 
-      await colony.approveStake(USER0, 1, WAD, { from: USER1 });
+      const tokenAddress = await colony.getToken();
+
+      let tx = await colony.approveStake(USER0, 1, WAD, { from: USER1 });
+      await expectEvent(tx, "UserTokenApproved(address,address,address,uint256)", [tokenAddress, USER1, colony.address, WAD]);
 
       approval = await colony.getApproval(USER1, USER0, 1);
       const tokenLockingApproval = await tokenLocking.getApproval(USER1, token.address, colony.address);
       expect(approval).to.eq.BN(WAD);
       expect(tokenLockingApproval).to.eq.BN(WAD);
 
-      await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
+      tx = await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
+
+      await expectEvent(tx, "UserTokenObligated(address,address,address,uint256)", [tokenAddress, USER1, colony.address, WAD]);
 
       approval = await colony.getApproval(USER1, USER0, 1);
       obligation = await colony.getObligation(USER1, USER0, 1);
@@ -80,7 +85,8 @@ contract("Colony Staking", (accounts) => {
       expect(obligation).to.eq.BN(WAD);
       expect(tokenLockingObligation).to.eq.BN(WAD);
 
-      await colony.deobligateStake(USER1, 1, WAD, { from: USER0 });
+      tx = await colony.deobligateStake(USER1, 1, WAD, { from: USER0 });
+      await expectEvent(tx, "UserTokenDeobligated(address,address,address,uint256)", [tokenAddress, USER1, colony.address, WAD]);
 
       obligation = await colony.getObligation(USER1, USER0, 1);
       expect(obligation).to.be.zero;
@@ -91,6 +97,7 @@ contract("Colony Staking", (accounts) => {
       let obligation;
 
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
+      const tokenAddress = await colony.getToken();
 
       approval = await colony.getApproval(USER1, USER0, 1);
       expect(approval).to.eq.BN(WAD);
@@ -102,7 +109,14 @@ contract("Colony Staking", (accounts) => {
       expect(approval).to.be.zero;
       expect(obligation).to.eq.BN(WAD);
 
-      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
+      const tx = await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
+      await expectEvent(tx, "StakeTransferred(address,address,address,address,uint256)", [
+        tokenAddress,
+        colony.address,
+        USER1,
+        ethers.constants.AddressZero,
+        WAD,
+      ]);
 
       obligation = await colony.getObligation(USER1, USER0, 1);
       expect(obligation).to.be.zero;
