@@ -29,7 +29,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   // V8: Ebony Lightweight Spaceship
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 8; }
+  function version() public pure returns (uint256 colonyVersion) { return 9; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
