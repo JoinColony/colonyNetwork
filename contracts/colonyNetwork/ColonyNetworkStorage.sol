@@ -106,6 +106,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
 
   modifier calledByColony() {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");
+    assert(msgSender() == msg.sender);
     _;
   }
 
@@ -116,6 +117,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
 
   modifier calledByMetaColony() {
     require(msgSender() == metaColony, "colony-caller-must-be-meta-colony");
+    assert(msgSender() == msg.sender);
     _;
   }
 }

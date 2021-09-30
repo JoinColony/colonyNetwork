@@ -243,6 +243,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   modifier onlyOwnExtension() {
     require(isOwnExtension(msgSender()), "colony-must-be-own-extension");
+    assert(msgSender() == msg.sender);
     _;
   }
 

@@ -34,7 +34,7 @@ abstract contract BasicMetaTransaction is DSMath, MetaTransactionMsgSender, Mult
       (bool success, bytes memory returnData) = address(this).call(abi.encodePacked(_payload, METATRANSACTION_FLAG, _user));
       require(success, "colony-metatx-function-call-unsuccessful");
 
-      emit MetaTransactionExecuted(_user, msg.sender, _payload);
+      emit MetaTransactionExecuted(_user, msgSender(), _payload);
       return returnData;
   }
 
