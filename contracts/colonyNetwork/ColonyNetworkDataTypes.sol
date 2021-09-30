@@ -141,6 +141,10 @@ interface ColonyNetworkDataTypes {
   /// @param tokenAddress The address of the token deployed
   event TokenDeployed(address tokenAddress);
 
+  /// @notice Event logged when a token authority is deployed via transaction through the colony network
+  /// @param tokenAuthorityAddress The address of the token authority deployed
+  event TokenAuthorityDeployed(address tokenAuthorityAddress);
+
   struct Skill {
     // total number of parent skills
     uint128 nParents;

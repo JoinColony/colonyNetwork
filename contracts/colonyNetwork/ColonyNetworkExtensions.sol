@@ -23,6 +23,7 @@ import "../colonyNetwork/IColonyNetwork.sol";
 import "../extensions/ColonyExtension.sol";
 import "./ColonyNetworkStorage.sol";
 import "./../metaTxToken/MetaTxToken.sol";
+import "./../common/TokenAuthority.sol";
 
 
 contract ColonyNetworkExtensions is ColonyNetworkStorage {
@@ -148,6 +149,15 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     token.setOwner(msgSender());
 
     emit TokenDeployed(address(token));
+  }
+
+  function deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer) public
+  stoppable
+  returns (address)
+  {
+    TokenAuthority tokenAuthority = new TokenAuthority(_token, _colony, allowedToTransfer);
+
+    emit TokenAuthorityDeployed(address(tokenAuthority));
   }
 
 

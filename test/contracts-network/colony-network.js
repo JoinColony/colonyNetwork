@@ -2,6 +2,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 
 import {
   getTokenArgs,
@@ -32,6 +33,7 @@ const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
+const TokenAuthority = artifacts.require("TokenAuthority");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
@@ -354,6 +356,23 @@ contract("Colony Network", (accounts) => {
       const token = await MetaTxToken.at(address);
       const owner = await token.owner();
       expect(owner).to.equal(accounts[0]);
+    });
+
+    it("should allow users to create new token authorities", async () => {
+      let tx = await colonyNetwork.deployToken("TEST", "TST", 18);
+      const { tokenAddress } = tx.logs[0].args;
+      tx = await colonyNetwork.deployTokenAuthority(tokenAddress, metaColony.address, [accounts[0]]);
+      await expectEvent(tx, "TokenAuthorityDeployed", []);
+      const authorityAddress = tx.logs[0].args.tokenAuthorityAddress;
+      const authority = await TokenAuthority.at(authorityAddress);
+
+      const transferSig = soliditySha3("transfer(address,uint256)").slice(0, 10);
+      let ableToTransfer = await authority.canCall(metaColony.address, tokenAddress, transferSig);
+      expect(ableToTransfer).to.be.true;
+      ableToTransfer = await authority.canCall(accounts[0], tokenAddress, transferSig);
+      expect(ableToTransfer).to.be.true;
+      ableToTransfer = await authority.canCall(accounts[1], tokenAddress, transferSig);
+      expect(ableToTransfer).to.be.false;
     });
   });
 
