@@ -346,12 +346,12 @@ contract("Colony Network", (accounts) => {
 
   describe("when users create tokens", () => {
     it("should allow users to create new tokens", async () => {
-      const tx = await colonyNetwork.deployToken("TEST", "TST", 18);
+      const tx = await colonyNetwork.deployTokenViaNetwork("TEST", "TST", 18);
       await expectEvent(tx, "TokenDeployed", []);
     });
 
     it("should have the user as the owner of the token", async () => {
-      const tx = await colonyNetwork.deployToken("TEST", "TST", 18);
+      const tx = await colonyNetwork.deployTokenViaNetwork("TEST", "TST", 18);
       const address = tx.logs[0].args.tokenAddress;
       const token = await MetaTxToken.at(address);
       const owner = await token.owner();
@@ -359,7 +359,7 @@ contract("Colony Network", (accounts) => {
     });
 
     it("should allow users to create new token authorities", async () => {
-      let tx = await colonyNetwork.deployToken("TEST", "TST", 18);
+      let tx = await colonyNetwork.deployTokenViaNetwork("TEST", "TST", 18);
       const { tokenAddress } = tx.logs[0].args;
       tx = await colonyNetwork.deployTokenAuthority(tokenAddress, metaColony.address, [accounts[0]]);
       await expectEvent(tx, "TokenAuthorityDeployed", []);
@@ -728,7 +728,7 @@ contract("Colony Network", (accounts) => {
     });
 
     it("should have the user as the owner of a token deployed through ColonyNetwork via metatransaction", async () => {
-      const txData = await colonyNetwork.contract.methods["deployToken(string,string,uint8)"]("Test token", "TST", 18).encodeABI();
+      const txData = await colonyNetwork.contract.methods["deployTokenViaNetwork(string,string,uint8)"]("Test token", "TST", 18).encodeABI();
       const { r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colonyNetwork.address);
 
       const tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });

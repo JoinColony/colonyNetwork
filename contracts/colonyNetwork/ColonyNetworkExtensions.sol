@@ -141,7 +141,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     return ColonyExtension(extension).version();
   }
 
-  function deployToken(string memory _name, string memory _symbol, uint8 _decimals) public
+  function deployTokenViaNetwork(string memory _name, string memory _symbol, uint8 _decimals) public
   stoppable
   returns (address)
   {
