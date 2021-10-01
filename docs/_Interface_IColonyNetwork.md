@@ -221,7 +221,27 @@ Create the Meta Colony, same as a normal colony plus the root skill.
 |_tokenAddress|address|Address of the CLNY token
 
 
-### `deployToken`
+### `deployTokenAuthority`
+
+Called to deploy a token authority
+
+*Note: This is more expensive than deploying a token directly, but is able to be done via a metatransaction*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|The address of the otken
+|_colony|address|The address of the colony in control of the token
+|allowedToTransfer|address[]|An array of addresses that are allowed to transfer the token even if it's locked
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|address|address|
+
+### `deployTokenViaNetwork`
 
 Called to deploy a token.
 

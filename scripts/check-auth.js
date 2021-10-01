@@ -84,6 +84,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/EtherRouter.sol",
       "contracts/common/IRecovery.sol",
       "contracts/common/Resolver.sol",
+      "contracts/common/TokenAuthority.sol", // Imported from colonyToken repo
       "contracts/ens/ENS.sol",
       "contracts/ens/ENSRegistry.sol",
       "contracts/gnosis/MultiSigWallet.sol",
