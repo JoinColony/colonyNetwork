@@ -187,6 +187,8 @@ class ReputationMiner {
        AND users.address=?
        ORDER BY reputations.value DESC`
     );
+
+    this.queries.getReputationStateCount = this.db.prepare(`SELECT COUNT ( * ) AS "n" FROM reputation_states WHERE root_hash=? AND n_leaves=?`);
   }
 
   /**
@@ -1229,7 +1231,7 @@ class ReputationMiner {
       const hash = event.data.slice(0, 66);
       const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
       // Do we have such a state?
-      const res = await this.db.prepare(`SELECT COUNT ( * ) AS "n" FROM reputation_states WHERE root_hash='${hash}' AND n_leaves='${nLeaves}'`).get()
+      const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
       if (res.n === 1){
         // We know that state! We can just sync from the next one...
         syncFromIndex = i + 1;
