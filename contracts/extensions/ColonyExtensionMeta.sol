@@ -33,4 +33,36 @@ abstract contract ColonyExtensionMeta is ColonyExtension, BasicMetaTransaction {
     metatransactionNonces[_user] += 1;
   }
 
+  uint256 placeholder00;
+  uint256 placeholder01;
+  uint256 placeholder02;
+  uint256 placeholder03;
+  uint256 placeholder04;
+  uint256 placeholder05;
+  uint256 placeholder06;
+  uint256 placeholder07;
+  uint256 placeholder08;
+  uint256 placeholder09;
+  uint256 placeholder10;
+  uint256 placeholder11;
+  uint256 placeholder12;
+  uint256 placeholder13;
+  uint256 placeholder14;
+  uint256 placeholder15;
+  uint256 placeholder16;
+  uint256 placeholder17;
+  uint256 placeholder18;
+  uint256 placeholder19;
+  uint256 placeholder20;
+  uint256 placeholder21;
+  uint256 placeholder22;
+  uint256 placeholder23;
+  uint256 placeholder24;
+  uint256 placeholder25;
+  uint256 placeholder26;
+  uint256 placeholder27;
+  uint256 placeholder28;
+  uint256 placeholder29;
+  uint256 placeholder30;
+  uint256 placeholder31;
 }
