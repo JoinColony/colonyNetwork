@@ -16,7 +16,7 @@ import {
   WAD,
 } from "../../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } from "../../helpers/test-helper";
-import { makeTask, setupRandomColony } from "../../helpers/test-data-generator";
+import { makeTask, setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -324,6 +324,18 @@ contract("Colony", (accounts) => {
       const tx1 = await colony.addDomain(1, UINT256_MAX, 1);
       const tx2 = await colony.annotateTransaction(tx1.tx, "annotation");
       await expectEvent(tx2, "Annotation", [USER0, tx1.tx, "annotation"]);
+    });
+  });
+
+  describe("when executing metatransactions", () => {
+    it("should allow a metatransaction to occur", async () => {
+      const txData = await colony.contract.methods.mintTokens(100).encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
+
+      const tx = await colony.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
+
+      await expectEvent(tx, "TokensMinted(address,address,uint256)", [USER0, colony.address, 100]);
     });
   });
 

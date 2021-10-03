@@ -13,8 +13,15 @@ import {
   getBlockTime,
   getColonyEditable,
 } from "../../helpers/test-helper";
+
 import { WAD, SECONDS_PER_DAY } from "../../helpers/constants";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken, giveUserCLNYTokens } from "../../helpers/test-data-generator";
+import {
+  getMetaTransactionParameters,
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  unlockCLNYToken,
+  giveUserCLNYTokens,
+} from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -255,6 +262,22 @@ contract("Colony Network Auction", (accounts) => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, WAD);
       await clnyToken.approve(tokenAuction.address, WAD, { from: BIDDER_1 });
       await tokenAuction.bid(WAD, { from: BIDDER_1 });
+      const bid = await tokenAuction.bids(BIDDER_1);
+      expect(bid).to.eq.BN(WAD);
+      const bidCount = await tokenAuction.bidCount();
+      expect(bidCount).to.eq.BN(1);
+    });
+
+    it("can bid via metatransaction", async () => {
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, WAD);
+      await clnyToken.approve(tokenAuction.address, WAD, { from: BIDDER_1 });
+      // await tokenAuction.bid(WAD, { from: BIDDER_1 });
+      const txData = await tokenAuction.contract.methods.bid(WAD.toString()).encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, BIDDER_1, tokenAuction.address);
+
+      await tokenAuction.executeMetaTransaction(BIDDER_1, txData, r, s, v, { from: accounts[0] });
+
       const bid = await tokenAuction.bids(BIDDER_1);
       expect(bid).to.eq.BN(WAD);
       const bidCount = await tokenAuction.bidCount();

@@ -23,6 +23,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/DomainRoles.sol",
       "contracts/common/EtherRouter.sol",
       "contracts/common/Resolver.sol",
+      "contracts/common/TokenAuthority.sol", // Imported from colonyToken repo
       "contracts/ens/ENSRegistry.sol", // Not directly used by any colony contracts
       "contracts/extensions/CoinMachine.sol",
       "contracts/extensions/EvaluatedExpenditure.sol",
@@ -36,10 +37,14 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/patriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
       "contracts/reputationMiningCycle/ReputationMiningCycleStorage.sol",
       "contracts/testHelpers/ToggleableToken.sol",
+      "contracts/testHelpers/TestExtensions.sol",
       "contracts/tokenLocking/TokenLockingStorage.sol",
       "contracts/Migrations.sol",
       "contracts/Token.sol", // Imported from colonyToken repo
       "contracts/TokenAuthority.sol", // Imported from colonyToken repo
+      "contracts/metaTxToken/MetaTxToken.sol",
+      "contracts/metaTxToken/DSAuthMeta.sol",
+      "contracts/metaTxToken/DSTokenBaseMeta.sol",
     ].indexOf(contractName) > -1
   ) {
     return;

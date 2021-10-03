@@ -29,9 +29,9 @@ contract ColonyTask is ColonyStorage {
     // Manager rated by worker
     // Worker rated by evaluator
     if (_role == TaskRole.Manager) {
-      require(tasks[_id].roles[uint8(TaskRole.Worker)].user == msg.sender, "colony-user-cannot-rate-task-manager");
+      require(tasks[_id].roles[uint8(TaskRole.Worker)].user == msgSender(), "colony-user-cannot-rate-task-manager");
     } else if (_role == TaskRole.Worker) {
-      require(tasks[_id].roles[uint8(TaskRole.Evaluator)].user == msg.sender, "colony-user-cannot-rate-task-worker");
+      require(tasks[_id].roles[uint8(TaskRole.Evaluator)].user == msgSender(), "colony-user-cannot-rate-task-worker");
     } else {
       revert("colony-unsupported-role-to-rate");
     }
@@ -111,8 +111,8 @@ contract ColonyTask is ColonyStorage {
     tasks[taskCount].fundingPotId = fundingPotCount;
     tasks[taskCount].domainId = _domainId;
     tasks[taskCount].skills = new uint256[](1);
-    tasks[taskCount].roles[uint8(TaskRole.Manager)].user = msg.sender;
-    tasks[taskCount].roles[uint8(TaskRole.Evaluator)].user = msg.sender;
+    tasks[taskCount].roles[uint8(TaskRole.Manager)].user = msgSender();
+    tasks[taskCount].roles[uint8(TaskRole.Evaluator)].user = msgSender();
 
     if (_skillId > 0) {
       this.setTaskSkill(taskCount, _skillId);
@@ -127,7 +127,7 @@ contract ColonyTask is ColonyStorage {
     this.setTaskDueDate(taskCount, dueDate);
 
     emit FundingPotAdded(fundingPotCount);
-    emit TaskAdded(msg.sender, taskCount);
+    emit TaskAdded(msgSender(), taskCount);
   }
 
   function getTaskCount() public view returns (uint256) {
@@ -289,7 +289,7 @@ contract ColonyTask is ColonyStorage {
     require(rating != TaskRatings.None, "colony-task-rating-missing");
     tasks[_id].roles[uint8(_role)].rating = rating;
 
-    emit TaskWorkRatingRevealed(msg.sender, _id, _role, _rating);
+    emit TaskWorkRatingRevealed(msgSender(), _id, _role, _rating);
   }
 
   function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32) {
@@ -380,7 +380,7 @@ contract ColonyTask is ColonyStorage {
   {
     tasks[_id].deliverableHash = _deliverableHash;
     markTaskCompleted(_id);
-    emit TaskDeliverableSubmitted(msg.sender, _id, _deliverableHash);
+    emit TaskDeliverableSubmitted(msgSender(), _id, _deliverableHash);
   }
 
   function submitTaskDeliverableAndRating(uint256 _id, bytes32 _deliverableHash, bytes32 _ratingSecret) public
@@ -424,7 +424,7 @@ contract ColonyTask is ColonyStorage {
       }
     }
 
-    emit TaskFinalized(msg.sender, _id);
+    emit TaskFinalized(msgSender(), _id);
   }
 
   function cancelTask(uint256 _id) public
@@ -467,7 +467,7 @@ contract ColonyTask is ColonyStorage {
 
   function markTaskCompleted(uint256 _id) internal {
     tasks[_id].completionTimestamp = block.timestamp;
-    emit TaskCompleted(msg.sender, _id);
+    emit TaskCompleted(msgSender(), _id);
   }
 
   function updateReputation(TaskRole taskRole, Task storage task) internal {

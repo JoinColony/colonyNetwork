@@ -20,7 +20,7 @@ pragma experimental "ABIEncoderV2";
 
 import "./../common/EtherRouter.sol";
 import "./../common/ERC20Extended.sol";
-import "./../common/MultiChain.sol";
+import "./../common/BasicMetaTransaction.sol";
 import "./../colony/ColonyAuthority.sol";
 import "./../colony/IColony.sol";
 import "./../colony/IMetaColony.sol";
@@ -28,14 +28,14 @@ import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
 
 
-contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
+contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
   // Meta Colony allowed to manage Global skills
   // All colonies are able to manage their Local (domain associated) skills
   modifier allowedToAddSkill(bool globalSkill) {
     if (globalSkill) {
-      require(msg.sender == metaColony, "colony-must-be-meta-colony");
+      require(msgSender() == metaColony, "colony-must-be-meta-colony");
     } else {
-      require(_isColony[msg.sender] || msg.sender == address(this), "colony-caller-must-be-colony");
+      require(_isColony[msgSender()] || msgSender() == address(this), "colony-caller-must-be-colony");
     }
     _;
   }
@@ -105,21 +105,6 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
 
   function getTokenLocking() public view returns (address) {
     return tokenLocking;
-  }
-
-  function setMiningResolver(address _miningResolver) public
-  stoppable
-  auth
-  {
-    require(_miningResolver != address(0x0), "colony-mining-resolver-cannot-be-zero");
-
-    miningCycleResolver = _miningResolver;
-
-    emit MiningCycleResolverSet(_miningResolver);
-  }
-
-  function getMiningResolver() public view returns (address) {
-    return miningCycleResolver;
   }
 
   function createMetaColony(address _tokenAddress) public
@@ -315,7 +300,7 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
       _user,
       _amount,
       _skillId,
-      msg.sender,
+      msgSender(),
       nParents,
       nChildren
     );
@@ -347,6 +332,20 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
     payoutWhitelist[_token] = _status;
 
     emit TokenWhitelisted(_token, _status);
+  }
+
+  function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
+    return metatransactionNonces[_user];
+  }
+
+  function incrementMetatransactionNonce(address _user) override internal {
+    // We need to protect the metatransaction nonce slots, otherwise those with recovery
+    // permissions could replay metatransactions, which would be a disaster.
+    // What slot are we setting?
+    // This mapping is in slot 41 (see ColonyNetworkStorage.sol);
+    uint256 slot = uint256(keccak256(abi.encode(uint256(_user), uint256(METATRANSACTION_NONCES_SLOT))));
+    protectSlot(slot);
+    metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
   }
 
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {
@@ -385,12 +384,12 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
 
     // Assign all permissions in root domain
     IColony colony = IColony(_colonyAddress);
-    colony.setRecoveryRole(msg.sender);
-    colony.setRootRole(msg.sender, true);
-    colony.setArbitrationRole(1, UINT256_MAX, msg.sender, 1, true);
-    colony.setArchitectureRole(1, UINT256_MAX, msg.sender, 1, true);
-    colony.setFundingRole(1, UINT256_MAX, msg.sender, 1, true);
-    colony.setAdministrationRole(1, UINT256_MAX, msg.sender, 1, true);
+    colony.setRecoveryRole(msgSender());
+    colony.setRootRole(msgSender(), true);
+    colony.setArbitrationRole(1, UINT256_MAX, msgSender(), 1, true);
+    colony.setArchitectureRole(1, UINT256_MAX, msgSender(), 1, true);
+    colony.setFundingRole(1, UINT256_MAX, msgSender(), 1, true);
+    colony.setAdministrationRole(1, UINT256_MAX, msgSender(), 1, true);
 
     // Colony will not have owner
     DSAuth dsauth = DSAuth(_colonyAddress);

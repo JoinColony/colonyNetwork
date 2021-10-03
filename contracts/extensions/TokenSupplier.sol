@@ -39,6 +39,14 @@ contract TokenSupplier is ColonyExtension {
   uint256 tokenIssuanceRate;
   uint256 lastIssue;
   uint256 lastRateUpdate;
+  mapping(address => uint256) metatransactionNonces;
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
+  }
+
+  function incrementMetatransactionNonce(address user) override internal {
+    metatransactionNonces[user]++;
+  }
 
   // Modifiers
 
@@ -168,11 +176,11 @@ contract TokenSupplier is ColonyExtension {
   // Internal functions
 
   function isRoot() internal view returns (bool) {
-    return colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root);
+    return colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root);
   }
 
   function isRootFunding() internal view returns (bool) {
-    return colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Funding);
+    return colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Funding);
   }
 
 }

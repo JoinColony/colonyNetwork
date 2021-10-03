@@ -37,6 +37,16 @@ abstract contract TestExtension is ColonyExtension {
   function uninstall() public override auth {
     selfdestruct(address(uint160(address(colony))));
   }
+
+  mapping(address => uint256) metatransactionNonces;
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
+  }
+
+  function incrementMetatransactionNonce(address user) override internal {
+    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+  }
+
 }
 
 

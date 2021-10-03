@@ -7,7 +7,13 @@ import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID, FUNDING_ROLE, ADMINISTRATION_ROLE } from "../../helpers/constants";
 import { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent } from "../../helpers/test-helper";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
+import {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  setupRandomColony,
+  fundColonyWithTokens,
+  getMetaTransactionParameters,
+} from "../../helpers/test-data-generator";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
 const { expect } = chai;
@@ -105,6 +111,33 @@ contract("One transaction payments", (accounts) => {
       expect(balanceBefore).to.be.zero;
 
       const tx = await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID);
+
+      const balanceAfter = await token.balanceOf(USER1);
+      expect(balanceAfter).to.eq.BN(9);
+
+      await expectEvent(tx, "OneTxPaymentMade", [accounts[0], 1, 1]);
+    });
+
+    it("should allow a single-transaction payment of tokens to occur via metatransaction", async () => {
+      const balanceBefore = await token.balanceOf(USER1);
+      expect(balanceBefore).to.be.zero;
+
+      const txData = await oneTxPayment.contract.methods
+        .makePaymentFundedFromDomain(
+          1,
+          UINT256_MAX.toString(),
+          1,
+          UINT256_MAX.toString(),
+          [USER1],
+          [token.address],
+          [10],
+          1,
+          GLOBAL_SKILL_ID.toString()
+        )
+        .encodeABI();
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[0], oneTxPayment.address);
+
+      const tx = await oneTxPayment.executeMetaTransaction(accounts[0], txData, r, s, v, { from: USER2 });
 
       const balanceAfter = await token.balanceOf(USER1);
       expect(balanceAfter).to.eq.BN(9);

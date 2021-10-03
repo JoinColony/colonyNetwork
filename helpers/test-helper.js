@@ -118,6 +118,22 @@ export function web3GetChainId() {
   });
 }
 
+export function web3SignTypedData(address, typedData) {
+  const packet = {
+    jsonrpc: "2.0",
+    method: "eth_signTypedData",
+    params: [address, typedData],
+    id: new Date().getTime(),
+  };
+
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(packet, (err, res) => {
+      if (err !== null) return reject(err);
+      return resolve(res.result);
+    });
+  });
+}
+
 export function web3GetRawCall(params) {
   const packet = {
     jsonrpc: "2.0",
