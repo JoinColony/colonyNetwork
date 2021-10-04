@@ -35,7 +35,7 @@ class ReputationMiner {
         network_id: 515,
         vmErrorsOnRPCResponse: false,
         locked: false,
-        verbose: true,
+        logger: console,
         accounts: [
           {
             balance: "0x10000000000000000000000000",
