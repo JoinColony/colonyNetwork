@@ -40,7 +40,9 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   uint256 tokenIssuanceRate;
   uint256 lastIssue;
   uint256 lastRateUpdate;
+
   mapping(address => uint256) metatransactionNonces;
+
   function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
     return metatransactionNonces[userAddress];
   }
