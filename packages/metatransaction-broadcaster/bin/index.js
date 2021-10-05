@@ -3,7 +3,8 @@ require("@babel/register")({
 });
 require("@babel/polyfill");
 
-const { argv } = require("yargs");
+const { argv } = require("yargs").option("privateKey", { string: true }).option("colonyNetworkAddress", { string: true });
+
 const path = require("path");
 
 const { colonyNetworkAddress, gasPrice, privateKey } = argv;
