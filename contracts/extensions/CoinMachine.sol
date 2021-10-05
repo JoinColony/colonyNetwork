@@ -210,7 +210,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       "coin-machine-unauthorised"
     );
 
-    uint256 maxPurchase = getMaxPurchase(msg.sender);
+    uint256 maxPurchase = getMaxPurchase(msgSender());
     uint256 numTokens = min(maxPurchase, _numTokens);
     uint256 totalCost = wmul(numTokens, activePrice);
 
@@ -224,7 +224,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     // Do userLimitFraction bookkeeping (only if needed)
     if (userLimitFraction < WAD) {
       soldTotal = add(soldTotal, numTokens);
-      soldUser[msg.sender] = add(soldUser[msg.sender], numTokens);
+      soldUser[msgSender()] = add(soldUser[msgSender()], numTokens);
     }
 
     // Check if we've sold out
