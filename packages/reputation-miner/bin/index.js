@@ -35,7 +35,7 @@ const {
   adapterLabel,
 } = argv;
 
-class RetryProvider extends ethers.providers.JsonRpcProvider {
+class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
   constructor(url, adapterObject){
     super(url);
     this.adapter = adapterObject;

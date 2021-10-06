@@ -330,8 +330,8 @@ class ReputationMinerClient {
       const block = await this._miner.realProvider.getBlock(blockNumber);
       const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
 
-      repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
       if (addr !== this.miningCycleAddress) {
+        repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
         // Then the cycle has completed since we last checked.
         if (this.confirmTimeoutCheck) {
           clearTimeout(this.confirmTimeoutCheck);
@@ -378,6 +378,9 @@ class ReputationMinerClient {
       const hash = await this._miner.getRootHash();
       const NLeaves = await this._miner.getRootHashNLeaves();
       const jrh = await this._miner.justificationTree.getRootHash();
+      if (!repCycle) {
+        repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
+      }
       const nHashSubmissions = await repCycle.getNSubmissionsForHash(hash, NLeaves, jrh);
 
       // If less than 12 submissions have been made, submit at our next best possible time
