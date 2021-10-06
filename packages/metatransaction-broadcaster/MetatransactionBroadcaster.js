@@ -102,8 +102,8 @@ class MetatransactionBroadcaster {
   }
 
   /**
-   * Initialises the Kyc Oracle so that it knows where to find the `Whitelist` contract
-   * @param  {string}  colonyNetworkAddress The address of the current `Whitelist` contract
+   * Initialises the metatransaction broadcaster so that it knows where to find the colonyNetwork contract
+   * @param  {string}  colonyNetworkAddress The address of the current `colonyNetwork` contract
    * @return {Promise}
    */
   async initialise(colonyNetworkAddress) {

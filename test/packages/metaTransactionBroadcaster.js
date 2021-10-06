@@ -104,6 +104,11 @@ contract("Metatransaction broadcaster", (accounts) => {
       expect(valid).to.be.equal(false);
     });
 
+    it("transactions to a user's address are invalid", async function () {
+      const valid = await broadcaster.isAddressValid(USER0);
+      expect(valid).to.be.equal(false);
+    });
+
     it("transactions to a token are accepted base on destination address for transfer", async function () {
       // A random user address is rejected
       let txData = await metaTxToken.contract.methods.transfer(USER1, 300000).encodeABI();
