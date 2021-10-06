@@ -10,8 +10,7 @@ client.login(process.env.DISCORD_BOT_TOKEN);
 
 const DiscordAdapter = {
   async log(output) {
-    console.log(output);
-    // channel.send(output);
+    channel.send(output);
   },
 
   async error(output) {
