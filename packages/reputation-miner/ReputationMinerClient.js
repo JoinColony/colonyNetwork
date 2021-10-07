@@ -147,6 +147,31 @@ class ReputationMinerClient {
         }
       });
 
+      // Query specific reputation values, but without proofs
+      this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress/noProof", cache('1 hour'), async (req, res) => {
+        if (
+          !ethers.utils.isHexString(req.params.rootHash) ||
+          !ethers.utils.isHexString(req.params.colonyAddress) ||
+          !ethers.utils.isHexString(req.params.userAddress) ||
+          !ethers.BigNumber.from(req.params.skillId)
+        ) {
+          return res.status(400).send({ message: "One of the parameters was incorrect" });
+        }
+
+        try {
+          const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
+          const value = await this._miner.getHistoricalValue(req.params.rootHash, key);
+          if (value instanceof Error) {
+            return res.status(400).send({ message: value.message.replace("Error: ") });
+          }
+          const proof = { key, value };
+          proof.reputationAmount = ethers.BigNumber.from(`0x${proof.value.slice(2, 66)}`).toString();
+          return res.status(200).send(proof);
+        } catch (err) {
+          return res.status(500).send({ message: "An error occurred querying the reputation" });
+        }
+      });
+
       // Query specific reputation values
       this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", cache('1 hour'), async (req, res) => {
         if (

@@ -129,6 +129,25 @@ process.env.SOLIDITY_COVERAGE
           expect(value).to.equal(oracleProofObject.value);
         });
 
+        it("should correctly respond to a request for a reputation state in a previous state with no proof", async () => {
+          const rootHash = await reputationMiner.getRootHash();
+          const key = makeReputationKey(metaColony.address, new BN(2), MINER1);
+          const value = reputationMiner.reputations[key];
+
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MINER1}/noProof`;
+          const res = await request(url);
+          expect(res.statusCode).to.equal(200);
+
+          const oracleProofObject = JSON.parse(res.body);
+          expect(undefined).to.equal(oracleProofObject.branchMask);
+          expect(undefined).to.equal(oracleProofObject.siblings);
+
+          expect(key).to.equal(oracleProofObject.key);
+          expect(value).to.equal(oracleProofObject.value);
+        });
+
         it("should correctly respond to a request for a valid key in a reputation state that never existed", async () => {
           const rootHash = await reputationMiner.getRootHash();
           const url = `http://127.0.0.1:3000/0x${rootHash.slice(8)}000000/${metaColony.address}/2/${MINER1}`;

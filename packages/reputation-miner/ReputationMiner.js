@@ -873,6 +873,28 @@ class ReputationMiner {
     return [retBranchMask, siblings, res[0].value];
   }
 
+  async getHistoricalValue(rootHash, key) {
+
+    let res = await this.queries.getAllReputationsInHash.all(rootHash);
+    if (res.length === 0) {
+      return new Error("No such reputation state");
+    }
+    const keyElements = ReputationMiner.breakKeyInToElements(key);
+    const [colonyAddress, , userAddress] = keyElements;
+    const skillId = parseInt(keyElements[1], 16);
+
+    res = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
+
+    if (res.length === 0) {
+      return new Error("No such reputation");
+    }
+
+    if (res.length > 1) {
+      return new Error("Multiple such reputations found. Something is wrong!");
+    }
+    return res[0].value;
+  }
+
   /**
    * Submit the Justification Root Hash (JRH) for the hash that (presumably) we submitted this round
    * @return {Promise}
