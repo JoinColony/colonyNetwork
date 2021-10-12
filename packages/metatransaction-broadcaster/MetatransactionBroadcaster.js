@@ -31,13 +31,21 @@ class MetatransactionBroadcaster {
     this.app = express();
 
     this.app.use(function (req, res, next) {
-      const regex = /.*colony\.io/;
       const origin = req.get("origin");
-      const matches = regex.exec(origin);
 
-      if (matches) {
-        res.header("Access-Control-Allow-Origin", matches[0]);
+      const colonyRegex = /.*colony\.io/;
+      const colonyMatches = colonyRegex.exec(origin);
+
+      const localRegex = /http:\/\/(127(\.\d+){1,3}|[0:]+1|localhost)/;
+
+      const localMatches = localRegex.exec(origin);
+
+      if (colonyMatches) {
+        res.header("Access-Control-Allow-Origin", colonyMatches[0]);
+      } else if (localMatches) {
+        res.header("Access-Control-Allow-Origin", "*");
       }
+      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Synaps-Session-Id");
       next();
     });
 
