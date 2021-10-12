@@ -194,9 +194,9 @@ class MetatransactionBroadcaster {
        WHERE addresses.address="${checksummedAddress}"`
     );
     await db.close();
-    const valid = res.map((x) => x.session_id);
+    const valid = res.map((x) => x.validForMtx);
     if (valid.length === 1) {
-      return valid[0];
+      return valid[0] === 1; // Effectively converting Tinyint(1) to Boolean
     }
 
     if (valid.length > 1) {

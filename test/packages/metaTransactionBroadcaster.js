@@ -69,7 +69,9 @@ contract("Metatransaction broadcaster", (accounts) => {
     });
 
     it("transactions to a colony are accepted", async function () {
-      const valid = await broadcaster.isAddressValid(colony.address);
+      let valid = await broadcaster.isAddressValid(colony.address);
+      expect(valid).to.be.equal(true);
+      valid = await broadcaster.isAddressValid(colony.address);
       expect(valid).to.be.equal(true);
     });
 
