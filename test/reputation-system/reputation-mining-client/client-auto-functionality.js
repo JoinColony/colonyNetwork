@@ -93,8 +93,8 @@ process.env.SOLIDITY_COVERAGE
 
       beforeEach(async function () {
         repCycle = await getActiveRepCycle(colonyNetwork);
-        await goodClient.resetDB();
         await goodClient.initialise(colonyNetwork.address);
+        await goodClient.resetDB();
         await goodClient.sync(startingBlockNumber);
         await goodClient.saveCurrentState();
         await reputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber);

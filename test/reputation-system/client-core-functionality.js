@@ -68,14 +68,13 @@ process.env.SOLIDITY_COVERAGE
         const repCycle = await getActiveRepCycle(colonyNetwork);
         const activeLogEntries = await repCycle.getReputationUpdateLogLength();
         expect(activeLogEntries).to.eq.BN(1);
-
-        await reputationMiner.resetDB();
         await reputationMiner.initialise(colonyNetwork.address);
+        await reputationMiner.resetDB();
         await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
         await reputationMiner.saveCurrentState();
 
         client = new ReputationMinerClient({ loader, realProviderPort, minerAddress: MINER1, useJsTree: true, auto: false });
-        await client.initialise(colonyNetwork.address);
+        await client.initialise(colonyNetwork.address, 1);
       });
 
       afterEach(async () => {
@@ -125,6 +124,25 @@ process.env.SOLIDITY_COVERAGE
           for (let i = 0; i < oracleProofObject.siblings.length; i += 1) {
             expect(siblings[i]).to.equal(oracleProofObject.siblings[i]);
           }
+
+          expect(key).to.equal(oracleProofObject.key);
+          expect(value).to.equal(oracleProofObject.value);
+        });
+
+        it("should correctly respond to a request for a reputation state in a previous state with no proof", async () => {
+          const rootHash = await reputationMiner.getRootHash();
+          const key = makeReputationKey(metaColony.address, new BN(2), MINER1);
+          const value = reputationMiner.reputations[key];
+
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MINER1}/noProof`;
+          const res = await request(url);
+          expect(res.statusCode).to.equal(200);
+
+          const oracleProofObject = JSON.parse(res.body);
+          expect(undefined).to.equal(oracleProofObject.branchMask);
+          expect(undefined).to.equal(oracleProofObject.siblings);
 
           expect(key).to.equal(oracleProofObject.key);
           expect(value).to.equal(oracleProofObject.value);
@@ -202,6 +220,36 @@ process.env.SOLIDITY_COVERAGE
           expect(addresses.length).to.equal(2);
           expect(addresses[0]).to.equal(accounts[6].toLowerCase());
           expect(addresses[1]).to.equal(MINER1.toLowerCase());
+        });
+
+        it("should correctly respond to a request for all reputation a single user has in a colony", async () => {
+          await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+
+          let rootHash = await reputationMiner.getRootHash();
+          await reputationMiner.saveCurrentState();
+
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${MINER1}/all`;
+          let res = await request(url);
+          expect(res.statusCode).to.equal(200);
+          let { reputations } = JSON.parse(res.body);
+          expect(reputations.length).to.equal(3);
+
+          // More people get reputation doesn't change anything
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: accounts[6], manager: accounts[6] });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          rootHash = await reputationMiner.reputationTree.getRootHash();
+          await reputationMiner.saveCurrentState();
+
+          res = await request(url);
+          expect(res.statusCode).to.equal(200);
+
+          ({ reputations } = JSON.parse(res.body));
+          expect(reputations.length).to.equal(3);
         });
       });
     });

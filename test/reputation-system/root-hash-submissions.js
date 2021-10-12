@@ -95,13 +95,13 @@ contract("Reputation mining - root hash submissions", (accounts) => {
   });
 
   beforeEach(async () => {
-    await goodClient.resetDB();
-    await badClient.resetDB();
-    await badClient2.resetDB();
-
     await goodClient.initialise(colonyNetwork.address);
     await badClient.initialise(colonyNetwork.address);
     await badClient2.initialise(colonyNetwork.address);
+
+    await goodClient.resetDB();
+    await badClient.resetDB();
+    await badClient2.resetDB();
 
     // Advance two cycles to clear active and inactive state.
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -835,8 +835,8 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     it("should update disputeRewardSize as multiple submissions are made", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       // This is the only test that needs a third bad client, so initialise here rather than in beforeEach
-      await badClient3.resetDB();
       await badClient3.initialise(colonyNetwork.address);
+      await badClient3.resetDB();
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await goodClient.addLogContentsToReputationTree();

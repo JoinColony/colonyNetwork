@@ -75,8 +75,8 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
   });
 
   beforeEach(async () => {
-    await goodClient.resetDB();
     await goodClient.initialise(colonyNetwork.address);
+    await goodClient.resetDB();
 
     // Advance two cycles to clear active and inactive state.
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });

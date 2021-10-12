@@ -2,12 +2,10 @@
 import { BN } from "bn.js";
 import { soliditySha3, isAddress } from "web3-utils";
 import { ethers } from "ethers";
-import sqlite3 from 'sqlite3';
+import Database from "better-sqlite3";
 
 import PatriciaTreeNoHash from "./patriciaNoHashKey";
 import PatriciaTree from "./patricia";
-
-const sqlite = require("sqlite");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.
@@ -37,7 +35,7 @@ class ReputationMiner {
         network_id: 515,
         vmErrorsOnRPCResponse: false,
         locked: false,
-        verbose: true,
+        logger: console,
         accounts: [
           {
             balance: "0x10000000000000000000000000",
@@ -106,6 +104,91 @@ class ReputationMiner {
     this.gasPrice = ethers.utils.hexlify(20000000000);
     const repCycle = await this.getActiveRepCycle();
     await this.updatePeriodLength(repCycle);
+    this.db = new Database(this.dbPath, { });
+    // this.db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
+    await this.createDB();
+    process.on('exit', () => this.db.close());
+    process.on('SIGHUP', () => process.exit(128 + 1));
+    process.on('SIGINT', () => process.exit(128 + 2));
+    process.on('SIGTERM', () => process.exit(128 + 15));
+  }
+
+  prepareQueries() {
+    this.queries = {}
+    this.queries.saveHashAndLeaves = this.db.prepare(`INSERT OR IGNORE INTO reputation_states (root_hash, n_leaves) VALUES (?, ?)`);
+    this.queries.saveColony = this.db.prepare(`INSERT OR IGNORE INTO colonies (address) VALUES (?)`);
+    this.queries.saveUser = this.db.prepare(`INSERT OR IGNORE INTO users (address) VALUES (?)`);
+    this.queries.saveSkill = this.db.prepare(`INSERT OR IGNORE INTO skills (skill_id) VALUES (?)`);
+
+    this.queries.getReputationCount = this.db.prepare(
+      `SELECT COUNT ( * ) AS "n"
+      FROM reputations
+      INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+      INNER JOIN users ON users.rowid=reputations.user_rowid
+      INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+      WHERE reputation_states.root_hash=?
+      AND colonies.address=?
+      AND reputations.skill_id=?
+      AND users.address=?`
+    );
+
+    this.queries.insertReputation = this.db.prepare(
+      `INSERT INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
+      SELECT
+      (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash=?),
+      (SELECT colonies.rowid FROM colonies WHERE colonies.address=?),
+      ?,
+      (SELECT users.rowid FROM users WHERE users.address=?),
+      ?`
+    );
+
+    this.queries.getAllReputationsInHash = this.db.prepare(
+      `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
+       FROM reputations
+       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+       INNER JOIN users ON users.rowid=reputations.user_rowid
+       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       WHERE reputation_states.root_hash=?`
+    );
+
+    this.queries.getReputationValue = this.db.prepare(
+      `SELECT reputations.value
+      FROM reputations
+      INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+      INNER JOIN users ON users.rowid=reputations.user_rowid
+      INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+      WHERE reputation_states.root_hash=?
+      AND users.address=?
+      AND reputations.skill_id=?
+      AND colonies.address=?`
+    );
+
+    this.queries.getAddressesWithReputation = this.db.prepare(
+      `SELECT DISTINCT users.address as user_address, reputations.value as value
+       FROM reputations
+       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+       INNER JOIN users ON users.rowid=reputations.user_rowid
+       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       WHERE reputation_states.root_hash=?
+       AND colonies.address=?
+       AND reputations.skill_id=?
+       AND users.address!='0x0000000000000000000000000000000000000000'
+       ORDER BY reputations.value DESC`
+    );
+
+    this.queries.getReputationsForAddress = this.db.prepare(
+      `SELECT DISTINCT reputations.skill_id as skill_id, reputations.value as value
+       FROM reputations
+       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+       INNER JOIN users ON users.rowid=reputations.user_rowid
+       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       WHERE reputation_states.root_hash=?
+       AND colonies.address=?
+       AND users.address=?
+       ORDER BY reputations.value DESC`
+    );
+
+    this.queries.getReputationStateCount = this.db.prepare(`SELECT COUNT ( * ) AS "n" FROM reputation_states WHERE root_hash=? AND n_leaves=?`);
   }
 
   /**
@@ -762,16 +845,7 @@ class ReputationMiner {
     const tree = new PatriciaTree();
     // Load all reputations from that state.
 
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
-
-    let res = await db.all(
-      `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
-       FROM reputations
-       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-       INNER JOIN users ON users.rowid=reputations.user_rowid
-       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-       WHERE reputation_states.root_hash="${rootHash}"`
-    );
+    let res = await this.queries.getAllReputationsInHash.all(rootHash);
     if (res.length === 0) {
       return new Error("No such reputation state");
     }
@@ -784,18 +858,7 @@ class ReputationMiner {
     const keyElements = ReputationMiner.breakKeyInToElements(key);
     const [colonyAddress, , userAddress] = keyElements;
     const skillId = parseInt(keyElements[1], 16);
-    res = await db.all(
-      `SELECT reputations.value
-      FROM reputations
-      INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-      INNER JOIN users ON users.rowid=reputations.user_rowid
-      INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-      WHERE reputation_states.root_hash="${rootHash}"
-      AND users.address="${userAddress}"
-      AND reputations.skill_id="${skillId}"
-      AND colonies.address="${colonyAddress}"`
-    );
-    await db.close();
+    res = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
 
     if (res.length === 0) {
       return new Error("No such reputation");
@@ -808,6 +871,28 @@ class ReputationMiner {
     const [branchMask, siblings] = await tree.getProof(key);
     const retBranchMask = ReputationMiner.getHexString(branchMask);
     return [retBranchMask, siblings, res[0].value];
+  }
+
+  async getHistoricalValue(rootHash, key) {
+
+    let res = await this.queries.getAllReputationsInHash.all(rootHash);
+    if (res.length === 0) {
+      return new Error("No such reputation state");
+    }
+    const keyElements = ReputationMiner.breakKeyInToElements(key);
+    const [colonyAddress, , userAddress] = keyElements;
+    const skillId = parseInt(keyElements[1], 16);
+
+    res = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
+
+    if (res.length === 0) {
+      return new Error("No such reputation");
+    }
+
+    if (res.length > 1) {
+      return new Error("Multiple such reputations found. Something is wrong!");
+    }
+    return res[0].value;
   }
 
   /**
@@ -867,7 +952,7 @@ class ReputationMiner {
       round = round.add(1);
       disputeRound = await repCycle.getDisputeRound(round);
     }
-    return [ethers.constants.negativeOne, ethers.constants.negativeOne];
+    return [ethers.constants.NegativeOne, ethers.constants.NegativeOne];
   }
 
   /**
@@ -1161,13 +1246,31 @@ class ReputationMiner {
     let localHash = await this.reputationTree.getRootHash();
     let applyLogs = false;
 
+    // Run through events backwards find the most recent one that we know...
+    let syncFromIndex = 0;
+    for (let i = events.length - 1 ; i >= 0 ; i -= 1){
+      const event = events[i];
+      const hash = event.data.slice(0, 66);
+      const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
+      // Do we have such a state?
+      const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
+      if (res.n === 1){
+        // We know that state! We can just sync from the next one...
+        syncFromIndex = i + 1;
+        await this.loadState(hash);
+        applyLogs = true;
+        break;
+      }
+    }
+
     // We're not going to apply the logs unless we're syncing from scratch (which is this if statement)
     // or we find a hash that we recognise as our current state, and we're going to sync from there (which
     // is the if statement at the end of the loop below
     if (localHash === `0x${new BN(0).toString(16, 64)}`) {
       applyLogs = true;
     }
-    for (let i = 0; i < events.length; i += 1) {
+
+    for (let i = syncFromIndex; i < events.length; i += 1) {
       console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
       const event = events[i];
       if (i === 0) {
@@ -1194,7 +1297,7 @@ class ReputationMiner {
           console.log("WARNING: Either sync has failed, or some log entries have been replaced. Continuing sync, as we might recover");
         }
         if (saveHistoricalStates) {
-          await this.saveCurrentState(event.blockNumber);
+          await this.saveCurrentState();
         }
       }
       if (applyLogs === false && localHash === hash) {
@@ -1231,51 +1334,29 @@ class ReputationMiner {
     }
   }
 
+
   async saveCurrentState() {
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
 
     const currentRootHash = await this.getRootHash();
-    let res = await db.run(`INSERT OR IGNORE INTO reputation_states (root_hash, n_leaves) VALUES ('${currentRootHash}', ${this.nReputations})`);
-
+    let res = await this.queries.saveHashAndLeaves.run(currentRootHash, this.nReputations.toString());
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
       const key = Object.keys(this.reputations)[i];
       const value = this.reputations[key];
       const keyElements = ReputationMiner.breakKeyInToElements(key);
       const [colonyAddress, , userAddress] = keyElements;
       const skillId = parseInt(keyElements[1], 16);
+      this.queries.saveColony.run(colonyAddress);
+      this.queries.saveUser.run(userAddress);
+      this.queries.saveSkill.run(skillId);
 
-      res = await db.run(`INSERT OR IGNORE INTO colonies (address) VALUES ('${colonyAddress}')`);
-      res = await db.run(`INSERT OR IGNORE INTO users (address) VALUES ('${userAddress}')`);
-      res = await db.run(`INSERT OR IGNORE INTO skills (skill_id) VALUES ('${skillId}')`);
-
-      let query;
-      query = `SELECT COUNT ( * ) AS "n"
-        FROM reputations
-        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-        INNER JOIN users ON users.rowid=reputations.user_rowid
-        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-        WHERE reputation_states.root_hash="${currentRootHash}"
-        AND colonies.address="${colonyAddress}"
-        AND reputations.skill_id="${skillId}"
-        AND users.address="${userAddress}"`;
-      res = await db.get(query);
-
+      res = this.queries.getReputationCount.get(currentRootHash, colonyAddress, skillId, userAddress);
       if (res.n === 0) {
-        query = `INSERT INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
-          SELECT
-          (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash='${currentRootHash}'),
-          (SELECT colonies.rowid FROM colonies WHERE colonies.address='${colonyAddress}'),
-          ${skillId},
-          (SELECT users.rowid FROM users WHERE users.address='${userAddress}'),
-          '${value}'`;
-        await db.run(query);
+        this.queries.insertReputation.run(currentRootHash, colonyAddress, skillId, userAddress, value);
       }
     }
-    await db.close();
   }
 
   async loadState(reputationRootHash) {
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
 
@@ -1291,14 +1372,7 @@ class ReputationMiner {
       this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
 
-    const res = await db.all(
-      `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
-       FROM reputations
-       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-       INNER JOIN users ON users.rowid=reputations.user_rowid
-       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-       WHERE reputation_states.root_hash="${reputationRootHash}"`
-    );
+    const res = await this.queries.getAllReputationsInHash.all(reputationRootHash);
     this.nReputations = ethers.BigNumber.from(res.length);
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
@@ -1313,35 +1387,29 @@ class ReputationMiner {
     if (currentStateHash !== reputationRootHash) {
       console.log("WARNING: The supplied state failed to be recreated successfully. Are you sure it was saved?");
     }
-    await db.close();
   }
 
   async getAddressesWithReputation(reputationRootHash, colonyAddress, skillId) {
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
-    const res = await db.all(
-      `SELECT DISTINCT users.address as user_address, reputations.value as value
-       FROM reputations
-       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-       INNER JOIN users ON users.rowid=reputations.user_rowid
-       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-       WHERE reputation_states.root_hash="${reputationRootHash}"
-       AND colonies.address="${colonyAddress.toLowerCase()}"
-       AND reputations.skill_id="${skillId}"
-       AND users.address!="0x0000000000000000000000000000000000000000"
-       ORDER BY reputations.value DESC`
-    );
-    await db.close();
+    const res = await this.queries.getAddressesWithReputation.all(reputationRootHash, colonyAddress.toLowerCase(), skillId);
     const addresses = res.map(x => x.user_address)
     return addresses;
   }
 
+  async getReputationsForAddress(reputationRootHash, colonyAddress, userAddress) {
+    const res = await this.queries.getReputationsForAddress.all(reputationRootHash, colonyAddress.toLowerCase(), userAddress.toLowerCase());
+    return res.map(function(x){ return {
+      skill_id: x.skill_id,
+      reputationAmount: ethers.BigNumber.from(`0x${x.value.slice(2, 66)}`).toString()
+    }});
+  }
+
   async createDB() {
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
-    await db.run("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE )");
-    await db.run("CREATE TABLE IF NOT EXISTS reputation_states ( root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)");
-    await db.run("CREATE TABLE IF NOT EXISTS colonies ( address text NOT NULL UNIQUE )");
-    await db.run("CREATE TABLE IF NOT EXISTS skills ( skill_id INTEGER PRIMARY KEY )");
-    await db.run(
+    // Not regularly used, so not preparing them and saving the statement for reuse
+    await this.db.prepare("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE )").run();
+    await this.db.prepare("CREATE TABLE IF NOT EXISTS reputation_states ( root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)").run();
+    await this.db.prepare("CREATE TABLE IF NOT EXISTS colonies ( address text NOT NULL UNIQUE )").run();
+    await this.db.prepare("CREATE TABLE IF NOT EXISTS skills ( skill_id INTEGER PRIMARY KEY )").run();
+    await this.db.prepare(
       `CREATE TABLE IF NOT EXISTS reputations (
         reputation_rowid text NOT NULL,
         colony_rowid INTEGER NOT NULL,
@@ -1349,31 +1417,31 @@ class ReputationMiner {
         user_rowid INTEGER NOT NULL,
         value text NOT NULL
       )`
-    );
+    ).run();
 
     // Do we have to do a database upgrade, from when we renamed n_nodes to n_leaves?
-    const nNodesColumn = await db.all("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') WHERE name='n_nodes';")
+    const nNodesColumn = await this.db.prepare("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') WHERE name='n_nodes';").all()
     if (nNodesColumn.length === 1) {
-      await db.run("ALTER TABLE 'reputation_states' RENAME COLUMN n_nodes to n_leaves");
-      const check1 = await db.all("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') where name='n_nodes'")
-      const check2 = await db.all("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') where name='n_leaves'")
+      await this.db.prepare("ALTER TABLE 'reputation_states' RENAME COLUMN n_nodes to n_leaves").run();
+      const check1 = await this.db.prepare("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') where name='n_nodes'").all()
+      const check2 = await this.db.prepare("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') where name='n_leaves'").all()
       if (check1.length !== 0 || check2.length !== 1){
         console.log('Unexpected result of DB upgrade');
         process.exit();
       }
       console.log('n_nodes -> n_leaves database upgrade complete');
     }
-    await db.close();
+
+    this.prepareQueries()
   }
 
   async resetDB() {
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
-    await db.run(`DROP TABLE IF EXISTS users`);
-    await db.run(`DROP TABLE IF EXISTS colonies`);
-    await db.run(`DROP TABLE IF EXISTS skills`);
-    await db.run(`DROP TABLE IF EXISTS reputations`);
-    await db.run(`DROP TABLE IF EXISTS reputation_states`);
-    await db.close();
+    // Again, not regularly used, so not preparing and saving the statements for reuse.
+    await this.db.prepare(`DROP TABLE IF EXISTS users`).run();
+    await this.db.prepare(`DROP TABLE IF EXISTS colonies`).run();
+    await this.db.prepare(`DROP TABLE IF EXISTS skills`).run();
+    await this.db.prepare(`DROP TABLE IF EXISTS reputations`).run();
+    await this.db.prepare(`DROP TABLE IF EXISTS reputation_states`).run();
     await this.createDB();
   }
 }
