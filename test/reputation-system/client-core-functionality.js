@@ -222,6 +222,14 @@ process.env.SOLIDITY_COVERAGE
           expect(addresses[1]).to.equal(MINER1.toLowerCase());
         });
 
+        it("should correctly respond to a request for users that have a particular reputation in a colony that has an invalid address", async () => {
+          const url = `http://127.0.0.1:3000/0x0000/NotAValidAddress/1`;
+          const res = await request(url);
+          expect(res.statusCode).to.equal(400);
+          expect(res.statusCode).to.equal(400);
+          expect(JSON.parse(res.body).message).to.equal("One of the parameters was incorrect");
+        });
+
         it("should correctly respond to a request for all reputation a single user has in a colony", async () => {
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
           await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
@@ -250,6 +258,14 @@ process.env.SOLIDITY_COVERAGE
 
           ({ reputations } = JSON.parse(res.body));
           expect(reputations.length).to.equal(3);
+        });
+
+        it("should correctly respond to a request for all reputation a single user has in a colony that has an invalid address", async () => {
+          const url = `http://127.0.0.1:3000/0x0000/NotAValidAddress/1/all`;
+          const res = await request(url);
+          expect(res.statusCode).to.equal(400);
+          expect(res.statusCode).to.equal(400);
+          expect(JSON.parse(res.body).message).to.equal("One of the parameters was incorrect");
         });
       });
     });
