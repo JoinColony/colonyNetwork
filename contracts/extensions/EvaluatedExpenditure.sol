@@ -19,11 +19,12 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyExtension.sol";
+import "./../common/BasicMetaTransaction.sol";
 
 // ignore-file-swc-108
 
 
-contract EvaluatedExpenditure is ColonyExtension {
+contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
 
   uint256 constant EXPENDITURESLOTS_SLOT = 26;
   uint256 constant PAYOUT_MODIFIER_OFFSET = 2;
@@ -86,7 +87,7 @@ contract EvaluatedExpenditure is ColonyExtension {
     public
   {
     require(_slots.length == _payoutModifiers.length, "evaluated-expenditure-bad-slots");
-    require(colony.getExpenditure(_id).owner == msg.sender, "evaluated-expenditure-not-owner");
+    require(colony.getExpenditure(_id).owner == msgSender(), "evaluated-expenditure-not-owner");
 
     bool[] memory mask = new bool[](2);
     bytes32[] memory keys = new bytes32[](2);

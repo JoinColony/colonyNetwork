@@ -18,10 +18,10 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "../extensions/ColonyExtension.sol";
+import "../extensions/ColonyExtensionMeta.sol";
 
 
-abstract contract TestExtension is ColonyExtension {
+abstract contract TestExtension is ColonyExtensionMeta {
   function install(address _colony) public override auth {
     require(address(colony) == address(0x0), "extension-already-installed");
 
@@ -37,16 +37,6 @@ abstract contract TestExtension is ColonyExtension {
   function uninstall() public override auth {
     selfdestruct(address(uint160(address(colony))));
   }
-
-  mapping(address => uint256) metatransactionNonces;
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
-  }
-
-  function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
-  }
-
 }
 
 

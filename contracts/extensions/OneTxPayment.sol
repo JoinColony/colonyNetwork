@@ -19,11 +19,12 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyExtension.sol";
+import "./../common/BasicMetaTransaction.sol";
 
 // ignore-file-swc-108
 
 
-contract OneTxPayment is ColonyExtension {
+contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   event OneTxPaymentMade(address agent, uint256 fundamentalId, uint256 nPayouts);
 
   ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;

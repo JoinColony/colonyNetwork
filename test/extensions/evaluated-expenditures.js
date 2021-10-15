@@ -8,7 +8,13 @@ import { soliditySha3 } from "web3-utils";
 import { UINT256_MAX, WAD } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { checkErrorRevert, web3GetCode } from "../../helpers/test-helper";
-import { setupColonyNetwork, setupRandomColony, setupMetaColonyWithLockedCLNYToken } from "../../helpers/test-data-generator";
+
+import {
+  setupColonyNetwork,
+  setupRandomColony,
+  setupMetaColonyWithLockedCLNYToken,
+  getMetaTransactionParameters,
+} from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -126,6 +132,23 @@ contract("EvaluatedExpenditure", (accounts) => {
         evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [WAD], { from: USER1 }),
         "evaluated-expenditure-not-owner"
       );
+    });
+
+    it("can set the payout modifier via metatransaction", async () => {
+      const txData = await evaluatedExpenditure.contract.methods
+        .setExpenditurePayoutModifiers(1, UINT256_MAX.toString(), expenditureId.toString(), [0], [WAD.toString()])
+        .encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, evaluatedExpenditure.address);
+
+      let expenditureSlot;
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.payoutModifier).to.be.zero;
+
+      await evaluatedExpenditure.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD);
     });
   });
 });

@@ -19,13 +19,14 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/erc20.sol";
+import "./../common/BasicMetaTransaction.sol";
 import "./ColonyExtension.sol";
 import "./Whitelist.sol";
 
 // ignore-file-swc-108
 
 
-contract CoinMachine is ColonyExtension {
+contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
   // Events
 
@@ -209,7 +210,7 @@ contract CoinMachine is ColonyExtension {
       "coin-machine-unauthorised"
     );
 
-    uint256 maxPurchase = getMaxPurchase(msg.sender);
+    uint256 maxPurchase = getMaxPurchase(msgSender());
     uint256 numTokens = min(maxPurchase, _numTokens);
     uint256 totalCost = wmul(numTokens, activePrice);
 
@@ -223,7 +224,7 @@ contract CoinMachine is ColonyExtension {
     // Do userLimitFraction bookkeeping (only if needed)
     if (userLimitFraction < WAD) {
       soldTotal = add(soldTotal, numTokens);
-      soldUser[msg.sender] = add(soldUser[msg.sender], numTokens);
+      soldUser[msgSender()] = add(soldUser[msgSender()], numTokens);
     }
 
     // Check if we've sold out
