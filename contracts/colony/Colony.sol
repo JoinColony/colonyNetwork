@@ -50,7 +50,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     require(domainExists(_domainId), "colony-domain-does-not-exist");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, domains[_domainId].skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
 
   function emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount)
@@ -59,7 +59,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     require(_amount > 0, "colony-reward-must-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, _skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
   }
 
   function emitDomainReputationPenalty(
@@ -73,7 +73,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, domains[_domainId].skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
 
   function emitSkillReputationPenalty(uint256 _skillId, address _user, int256 _amount)
@@ -82,7 +82,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, _skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
   }
 
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
@@ -318,7 +318,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     if (domains[_domainId].deprecated != _deprecated) {
       domains[_domainId].deprecated = _deprecated;
 
-      emit DomainDeprecated(msg.sender, _domainId, _deprecated);
+      emit DomainDeprecated(msgSender(), _domainId, _deprecated);
     }
 
   }
