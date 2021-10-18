@@ -379,22 +379,13 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     emit ColonyUpgraded(msgSender(), currentVersion, _newVersion);
   }
 
-  // v7 to v8
+  // v8 to v9
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
     sig = bytes4(keccak256("deprecateDomain(uint256,uint256,uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
-
-    sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
   }
 
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
