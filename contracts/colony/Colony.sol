@@ -50,7 +50,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     require(domainExists(_domainId), "colony-domain-does-not-exist");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, domains[_domainId].skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
 
   function emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount)
@@ -59,7 +59,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     require(_amount > 0, "colony-reward-must-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, _skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
   }
 
   function emitDomainReputationPenalty(
@@ -73,7 +73,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, domains[_domainId].skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
 
   function emitSkillReputationPenalty(uint256 _skillId, address _user, int256 _amount)
@@ -82,7 +82,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, _skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
   }
 
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
@@ -274,6 +274,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
+  domainNotDeprecated(_parentDomainId)
   authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
   {
     addDomain(_permissionDomainId, _childSkillIndex, _parentDomainId, "");
@@ -310,8 +311,20 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     }
   }
 
-  function getDomain(uint256 _id) public view returns (Domain memory domain) {
-    domain = domains[_id];
+  function deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated) public
+  stoppable
+  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    if (domains[_domainId].deprecated != _deprecated) {
+      domains[_domainId].deprecated = _deprecated;
+
+      emit DomainDeprecated(msgSender(), _domainId, _deprecated);
+    }
+
+  }
+
+  function getDomain(uint256 _domainId) public view returns (Domain memory domain) {
+    domain = domains[_domainId];
   }
 
   function getDomainCount() public view returns (uint256) {
@@ -366,19 +379,13 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     emit ColonyUpgraded(msgSender(), currentVersion, _newVersion);
   }
 
-  // v7 to v8
+  // v8 to v9
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+    sig = bytes4(keccak256("deprecateDomain(uint256,uint256,uint256,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
   }
 
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
@@ -465,7 +472,8 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     // Create a new domain with the given skill and new funding pot
     domains[domainCount] = Domain({
       skillId: _skillId,
-      fundingPotId: fundingPotCount
+      fundingPotId: fundingPotCount,
+      deprecated: false
     });
 
     emit DomainAdded(msgSender(), domainCount);

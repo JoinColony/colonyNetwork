@@ -115,6 +115,11 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   // Modifiers
 
+  modifier domainNotDeprecated(uint256 _id) {
+    require(!domains[_id].deprecated, "colony-domain-deprecated");
+    _;
+  }
+
   modifier validPayoutAmount(uint256 _amount) {
     require(_amount <= MAX_PAYOUT, "colony-payout-too-large");
     _;

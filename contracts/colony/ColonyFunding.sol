@@ -218,6 +218,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   )
   public
   stoppable
+  domainNotDeprecated(getDomainFromFundingPot(_toPot))
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   validFundingTransfer(_fromPot, _toPot)
   {
@@ -238,6 +239,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   )
   public
   stoppable
+  domainNotDeprecated(getDomainFromFundingPot(_toPot))
   authDomain(_permissionDomainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot))
   authDomain(_permissionDomainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot))
   validFundingTransfer(_fromPot, _toPot)
