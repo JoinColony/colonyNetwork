@@ -193,26 +193,26 @@ contract("Voting Token", (accounts) => {
       await voting.install(colony.address);
 
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-      await checkErrorRevert(voting.createMotion(ADDRESS_ZERO, action), "voting-base-not-active");
+      await checkErrorRevert(voting.createMotion(ADDRESS_ZERO, action), "voting-not-active");
     });
 
     it("cannot initialise twice or more if not root", async () => {
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-base-already-initialised");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR, { from: USER2 }), "voting-base-caller-not-root");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-already-initialised");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR, { from: USER2 }), "voting-not-root");
     });
 
     it("cannot initialise with invalid values", async () => {
       voting = await VotingToken.new();
       await voting.install(colony.address);
 
-      await checkErrorRevert(voting.initialise(HALF.addn(1), HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-base-greater-than-half-wad");
-      await checkErrorRevert(voting.initialise(HALF, HALF.addn(1), WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-base-greater-than-half-wad");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD.addn(1), WAD, YEAR, YEAR, YEAR, YEAR), "voting-base-greater-than-wad");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD.addn(1), YEAR, YEAR, YEAR, YEAR), "voting-base-greater-than-wad");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR + 1, YEAR, YEAR, YEAR), "voting-base-period-too-long");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR + 1, YEAR, YEAR), "voting-base-period-too-long");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR + 1, YEAR), "voting-base-period-too-long");
-      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR + 1), "voting-base-period-too-long");
+      await checkErrorRevert(voting.initialise(HALF.addn(1), HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-invalid-value");
+      await checkErrorRevert(voting.initialise(HALF, HALF.addn(1), WAD, WAD, YEAR, YEAR, YEAR, YEAR), "voting-invalid-value");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD.addn(1), WAD, YEAR, YEAR, YEAR, YEAR), "voting-invalid-value");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD.addn(1), YEAR, YEAR, YEAR, YEAR), "voting-invalid-value");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR + 1, YEAR, YEAR, YEAR), "voting-invalid-value");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR + 1, YEAR, YEAR), "voting-invalid-value");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR + 1, YEAR), "voting-invalid-value");
+      await checkErrorRevert(voting.initialise(HALF, HALF, WAD, WAD, YEAR, YEAR, YEAR, YEAR + 1), "voting-invalid-value");
     });
 
     it("can initialised with valid values and emit expected event", async () => {
@@ -266,12 +266,6 @@ contract("Voting Token", (accounts) => {
       const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
       await voting.createMotion(voting.address, action);
     });
-
-    it("cannot create a motion with the colony as the alternative target", async () => {
-      const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
-
-      await checkErrorRevert(voting.createMotion(colony.address, action), "voting-base-alt-target-cannot-be-base-colony");
-    });
   });
 
   describe("staking on motions", async () => {
@@ -313,17 +307,17 @@ contract("Voting Token", (accounts) => {
     });
 
     it("cannot stake 0", async () => {
-      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, 0, { from: USER0 }), "voting-base-bad-amount");
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, 0, { from: USER0 }), "voting-bad-amount");
     });
 
     it("cannot stake a nonexistent side", async () => {
-      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, 2, requiredStake, { from: USER0 }), "voting-base-bad-vote");
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, 2, requiredStake, { from: USER0 }), "voting-bad-vote");
     });
 
     it("cannot stake less than the minStake, unless there is less than minStake to go", async () => {
       const minStake = requiredStake.divn(10);
 
-      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake.subn(1), { from: USER0 }), "voting-base-insufficient-stake");
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake.subn(1), { from: USER0 }), "voting-insufficient-stake");
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake, { from: USER0 });
 
@@ -345,21 +339,14 @@ contract("Voting Token", (accounts) => {
       await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
-      let expenditureMotionCount;
-      expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
-      expect(expenditureMotionCount).to.be.zero;
-
       let expenditure;
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.globalClaimDelay).to.be.zero;
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
-      expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
-      expect(expenditureMotionCount).to.eq.BN(1);
-
       expenditure = await colony.getExpenditure(expenditureId);
-      expect(expenditure.globalClaimDelay).to.eq.BN(UINT256_MAX.divn(3));
+      expect(expenditure.globalClaimDelay).to.eq.BN(SECONDS_PER_DAY * 365);
 
       await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
     });
@@ -386,9 +373,6 @@ contract("Voting Token", (accounts) => {
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
-      const expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId));
-      expect(expenditureMotionCount).to.be.zero;
-
       const expenditure = await otherColony.getExpenditure(expenditureId);
       expect(expenditure.globalClaimDelay).to.be.zero;
     });
@@ -412,21 +396,14 @@ contract("Voting Token", (accounts) => {
       await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
-      let expenditureMotionCount;
-      expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
-      expect(expenditureMotionCount).to.be.zero;
-
       let expenditureSlot;
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.be.zero;
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
-      expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
-      expect(expenditureMotionCount).to.eq.BN(1);
-
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX.divn(3));
+      expect(expenditureSlot.claimDelay).to.eq.BN(SECONDS_PER_DAY * 365);
 
       await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
     });
@@ -450,21 +427,14 @@ contract("Voting Token", (accounts) => {
       await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
-      let expenditureMotionCount;
-      expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
-      expect(expenditureMotionCount).to.be.zero;
-
       let expenditureSlot;
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.be.zero;
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
-      expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
-      expect(expenditureMotionCount).to.eq.BN(1);
-
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX.divn(3));
+      expect(expenditureSlot.claimDelay).to.eq.BN(SECONDS_PER_DAY * 365);
 
       await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
     });
@@ -500,7 +470,7 @@ contract("Voting Token", (accounts) => {
       motionId = await voting.getMotionCount();
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
-      // Motion 2
+      // Motion 3
       // Set payout to WAD for expenditure slot 0, internal token
       action = await encodeTxData(colony, "setExpenditureState", [
         1,
@@ -517,10 +487,10 @@ contract("Voting Token", (accounts) => {
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      expect(expenditure.globalClaimDelay).to.eq.BN(UINT256_MAX.divn(3));
+      expect(expenditure.globalClaimDelay).to.eq.BN(SECONDS_PER_DAY * 365);
 
       const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX.divn(3));
+      expect(expenditureSlot.claimDelay).to.eq.BN(SECONDS_PER_DAY * 365 * 2);
 
       await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
     });
@@ -532,16 +502,12 @@ contract("Voting Token", (accounts) => {
       await voting.createMotion(ADDRESS_ZERO, action);
       motionId = await voting.getMotionCount();
 
-      await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 }),
-        "voting-base-expenditure-lock-failed"
-      );
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 }), "voting-lock-failed");
     });
 
     it("can accurately track the number of motions for a single expenditure", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
-      const expenditureHash = soliditySha3(expenditureId, 0);
 
       // Set payoutModifier to 1 for expenditure slot 0
       const action1 = await encodeTxData(colony, "setExpenditureState", [
@@ -571,10 +537,6 @@ contract("Voting Token", (accounts) => {
       await voting.createMotion(ADDRESS_ZERO, action2);
       const motionId2 = await voting.getMotionCount();
 
-      let expenditureMotionCount;
-      expenditureMotionCount = await voting.getExpenditureMotionCount(expenditureHash);
-      expect(expenditureMotionCount).to.be.zero;
-
       let expenditureSlot;
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.be.zero;
@@ -582,25 +544,16 @@ contract("Voting Token", (accounts) => {
       await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
       await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 });
 
-      expenditureMotionCount = await voting.getExpenditureMotionCount(expenditureHash);
-      expect(expenditureMotionCount).to.eq.BN(2);
-
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX.divn(3));
+      expect(expenditureSlot.claimDelay).to.eq.BN(SECONDS_PER_DAY * 365 * 2);
 
       await forwardTime(STAKE_PERIOD, this);
       await voting.finalizeMotion(motionId1);
 
-      expenditureMotionCount = await voting.getExpenditureMotionCount(expenditureHash);
-      expect(expenditureMotionCount).to.eq.BN(1);
-
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX.divn(3));
+      expect(expenditureSlot.claimDelay).to.eq.BN(SECONDS_PER_DAY * 365);
 
       await voting.finalizeMotion(motionId2);
-
-      expenditureMotionCount = await voting.getExpenditureMotionCount(expenditureHash);
-      expect(expenditureMotionCount).to.be.zero;
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.claimDelay).to.be.zero;
@@ -618,13 +571,13 @@ contract("Voting Token", (accounts) => {
       const totalSupply = await token.totalSupply();
       requiredStake = totalSupply.divn(1000);
 
-      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: user3 }), "voting-base-insufficient-influence");
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: user3 }), "voting-insufficient-influence");
     });
 
     it("cannot stake once time runs out", async () => {
       await forwardTime(STAKE_PERIOD, this);
 
-      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 }), "voting-base-motion-not-staking");
+      await checkErrorRevert(voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, requiredStake, { from: USER0 }), "voting-not-staking");
     });
   });
 
@@ -696,7 +649,7 @@ contract("Voting Token", (accounts) => {
       await forwardTime(SUBMIT_PERIOD, this);
 
       // Revealing first vote fails
-      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, { from: USER0 }), "voting-base-secret-no-match");
+      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, { from: USER0 }), "voting-secret-no-match");
 
       // Revealing second succeeds
       await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
@@ -722,7 +675,7 @@ contract("Voting Token", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await checkErrorRevert(voting.revealVote(motionId, SALT, 2, { from: USER0 }), "voting-base-bad-vote");
+      await checkErrorRevert(voting.revealVote(motionId, SALT, 2, { from: USER0 }), "voting-bad-vote");
     });
 
     it("cannot reveal a vote twice, and so cannot vote twice", async () => {
@@ -733,7 +686,7 @@ contract("Voting Token", (accounts) => {
 
       await voting.revealVote(motionId, SALT, YAY, { from: USER0 });
 
-      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, { from: USER0 }), "voting-base-secret-no-match");
+      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, { from: USER0 }), "voting-secret-no-match");
     });
 
     it("can vote in two motions with two different locks", async () => {
@@ -755,24 +708,24 @@ contract("Voting Token", (accounts) => {
     });
 
     it("cannot submit a null vote", async () => {
-      await checkErrorRevert(voting.submitVote(motionId, "0x0", { from: USER0 }), "voting-base-invalid-secret");
+      await checkErrorRevert(voting.submitVote(motionId, "0x0", { from: USER0 }), "voting-invalid-secret");
     });
 
     it("cannot submit a vote if voting is closed", async () => {
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await checkErrorRevert(voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 }), "voting-base-motion-not-open");
+      await checkErrorRevert(voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 }), "voting-not-open");
     });
 
     it("cannot reveal a vote on a non-existent motion", async () => {
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await checkErrorRevert(voting.revealVote(0, SALT, YAY, { from: USER0 }), "voting-base-motion-not-reveal");
+      await checkErrorRevert(voting.revealVote(0, SALT, YAY, { from: USER0 }), "voting-not-reveal");
     });
 
     it("cannot reveal a vote during the submit period", async () => {
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), { from: USER0 });
-      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, { from: USER0 }), "voting-base-motion-not-reveal");
+      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, { from: USER0 }), "voting-not-reveal");
     });
 
     it("cannot reveal a vote after the reveal period ends", async () => {
@@ -781,7 +734,7 @@ contract("Voting Token", (accounts) => {
       await forwardTime(SUBMIT_PERIOD, this);
       await forwardTime(REVEAL_PERIOD, this);
 
-      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, { from: USER0 }), "voting-base-motion-not-reveal");
+      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, { from: USER0 }), "voting-not-reveal");
     });
 
     it("cannot reveal a vote with a bad secret", async () => {
@@ -789,7 +742,7 @@ contract("Voting Token", (accounts) => {
 
       await forwardTime(SUBMIT_PERIOD, this);
 
-      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, { from: USER0 }), "voting-base-secret-no-match");
+      await checkErrorRevert(voting.revealVote(motionId, SALT, YAY, { from: USER0 }), "voting-secret-no-match");
     });
   });
 
@@ -803,7 +756,7 @@ contract("Voting Token", (accounts) => {
     });
 
     it("cannot execute a non-existent motion", async () => {
-      await checkErrorRevert(voting.finalizeMotion(0), "voting-base-motion-not-finalizable");
+      await checkErrorRevert(voting.finalizeMotion(0), "voting-not-finalizable");
     });
 
     it("motion has no effect if extension does not have permissions", async () => {
@@ -826,7 +779,7 @@ contract("Voting Token", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-base-motion-not-finalizable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-not-finalizable");
     });
 
     it("can take an action if there is insufficient opposition", async () => {
@@ -893,13 +846,13 @@ contract("Voting Token", (accounts) => {
 
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(STAKING);
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-base-motion-not-finalizable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-not-finalizable");
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, requiredStake, { from: USER1 });
 
       motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(SUBMIT);
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-base-motion-not-finalizable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-not-finalizable");
     });
 
     it("cannot take an action twice", async () => {
@@ -910,7 +863,7 @@ contract("Voting Token", (accounts) => {
       const { logs } = await voting.finalizeMotion(motionId);
       expect(logs[0].args.executed).to.be.true;
 
-      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-base-motion-not-finalizable");
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-not-finalizable");
     });
 
     it("can take an action if the motion passes", async () => {
@@ -1087,7 +1040,7 @@ contract("Voting Token", (accounts) => {
     });
 
     it("cannot claim rewards from a non-existent motion", async () => {
-      await checkErrorRevert(voting.claimReward(0, 1, UINT256_MAX, USER0, YAY), "voting-base-motion-not-claimable");
+      await checkErrorRevert(voting.claimReward(0, 1, UINT256_MAX, USER0, YAY), "voting-not-claimable");
     });
 
     it("can let stakers claim rewards, based on the stake outcome", async () => {
@@ -1298,11 +1251,11 @@ contract("Voting Token", (accounts) => {
 
       await voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY);
 
-      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-base-nothing-to-claim");
+      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-nothing-to-claim");
     });
 
     it("cannot claim rewards before a motion is finalized", async () => {
-      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-base-motion-not-claimable");
+      await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-not-claimable");
     });
 
     it("can unlock the token after claiming", async () => {

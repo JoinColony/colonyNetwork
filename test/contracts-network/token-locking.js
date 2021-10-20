@@ -337,7 +337,7 @@ contract("Token Locking", (addresses) => {
       const testVotingTokenResolver = await Resolver.new();
       const testVotingToken = await TestVotingToken.new();
       await setupEtherRouter("TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
-      TEST_VOTING_TOKEN = soliditySha3("VotingToken");
+      TEST_VOTING_TOKEN = soliditySha3("TestVotingToken");
       const metaColonyAddress = await colonyNetwork.getMetaColony();
       const metaColony = await IMetaColony.at(metaColonyAddress);
 

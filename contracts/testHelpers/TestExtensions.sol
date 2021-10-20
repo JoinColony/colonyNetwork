@@ -66,7 +66,7 @@ contract TestExtension3 is TestExtension {
 }
 
 contract TestVotingToken is TestExtension {
-  function identifier() public pure override returns (bytes32) { return keccak256("VotingToken"); }
+  function identifier() public pure override returns (bytes32) { return keccak256("TestVotingToken"); }
   function version() public pure override returns (uint256) { return 1; }
   function lockToken() public returns (uint256) {
     return colony.lockToken();

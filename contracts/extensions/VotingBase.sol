@@ -79,9 +79,9 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
     uint256[2][] votes; // [nay, yay]
     uint256[] totalVotes;
     uint256[] maxVotes;
+    address target;
     bool escalated;
     bool finalized;
-    address altTarget;
     bytes action;
   }
 
@@ -120,17 +120,11 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
   mapping (uint256 => mapping (address => bytes32)) voteSecrets;
 
   mapping (bytes32 => uint256) expenditurePastVotes; // expenditure slot signature => voting power
-  mapping (bytes32 => uint256) expenditureMotionCounts; // expenditure struct signature => count
 
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-base-caller-not-root");
-    _;
-  }
-
-  modifier motionExists(uint256 _id) {
-    require(_id > 0 && _id <= motionCount, "voting-base-motion-does-not-exist");
+    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-not-root");
     _;
   }
 
@@ -188,18 +182,20 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
     public
     onlyRoot
   {
-    require(state == ExtensionState.Deployed, "voting-base-already-initialised");
+    require(state == ExtensionState.Deployed, "voting-already-initialised");
 
-    require(_totalStakeFraction <= WAD / 2, "voting-base-greater-than-half-wad");
-    require(_voterRewardFraction <= WAD / 2, "voting-base-greater-than-half-wad");
+    string memory valueError = "voting-invalid-value";
 
-    require(_userMinStakeFraction <= WAD, "voting-base-greater-than-wad");
-    require(_maxVoteFraction <= WAD, "voting-base-greater-than-wad");
+    require(_totalStakeFraction <= WAD / 2, valueError);
+    require(_voterRewardFraction <= WAD / 2, valueError);
 
-    require(_stakePeriod <= 365 days, "voting-base-period-too-long");
-    require(_submitPeriod <= 365 days, "voting-base-period-too-long");
-    require(_revealPeriod <= 365 days, "voting-base-period-too-long");
-    require(_escalationPeriod <= 365 days, "voting-base-period-too-long");
+    require(_userMinStakeFraction <= WAD, valueError);
+    require(_maxVoteFraction <= WAD, valueError);
+
+    require(_stakePeriod <= 365 days, valueError);
+    require(_submitPeriod <= 365 days, valueError);
+    require(_revealPeriod <= 365 days, valueError);
+    require(_escalationPeriod <= 365 days, valueError);
 
     state = ExtensionState.Active;
 
@@ -225,15 +221,15 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
 
     Motion storage motion = motions[_motionId];
 
-    require(getMotionState(_motionId) == MotionState.Reveal, "voting-base-motion-not-reveal");
-    require(_vote <= 1, "voting-base-bad-vote");
+    require(getMotionState(_motionId) == MotionState.Reveal, "voting-not-reveal");
+    require(_vote <= 1, "voting-bad-vote");
 
     for (uint256 i; i < motion.votes.length; i++) {
       motion.votes[i][_vote] = add(motion.votes[i][_vote], _influence[i]);
     }
 
     bytes32 voteSecret = voteSecrets[_motionId][msg.sender];
-    require(voteSecret == getVoteSecret(_salt, _vote), "voting-base-secret-no-match");
+    require(voteSecret == getVoteSecret(_salt, _vote), "voting-secret-no-match");
     delete voteSecrets[_motionId][msg.sender];
 
     uint256 voterReward = getVoterReward(_motionId, msg.sender, _influence);
@@ -243,13 +239,13 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
 
     postReveal(_motionId, msg.sender);
 
-    tokenLocking.transfer(token, voterReward, msg.sender, true);
+    tokenLockingTransfer(voterReward, msg.sender);
   }
 
   function finalizeMotion(uint256 _motionId) public {
     Motion storage motion = motions[_motionId];
 
-    require(getMotionState(_motionId) == MotionState.Finalizable, "voting-base-motion-not-finalizable");
+    require(getMotionState(_motionId) == MotionState.Finalizable, "voting-not-finalizable");
 
     motion.finalized = true;
 
@@ -276,17 +272,11 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
     // Handle expenditure-related bookkeeping (claim delays, repeated vote checks)
     if (
       getSig(motion.action) == CHANGE_FUNCTION_SIG &&
-      getTarget(motion.altTarget) == address(colony)
+      motion.target == address(colony)
     ) {
-      bytes32 structHash = hashExpenditureActionStruct(motion.action);
-      expenditureMotionCounts[structHash] = sub(expenditureMotionCounts[structHash], 1);
-
-      // Release the claimDelay if this is the last active motion
-      if (expenditureMotionCounts[structHash] == 0) {
-        bytes memory claimDelayAction = createClaimDelayAction(motion.action, 0);
-        // No require this time, since we don't want stakes to be permanently locked
-        executeCall(_motionId, claimDelayAction);
-      }
+      bytes memory claimDelayAction = createClaimDelayAction(motion.action, false);
+      // No require this time, since we don't want stakes to be permanently locked
+      executeCall(address(colony), claimDelayAction);
 
       bytes32 actionHash = hashExpenditureAction(motion.action);
       uint256 votePower = (sumVotes > 0) ? yayVotes : motion.stakes[YAY];
@@ -304,7 +294,7 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
     bool executed;
 
     if (canExecute) {
-      executed = executeCall(_motionId, motion.action);
+      executed = executeCall(motion.target, motion.action);
     }
 
     emit MotionFinalized(_motionId, motion.action, executed);
@@ -325,28 +315,26 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
   )
     public
   {
-    Motion storage motion = motions[_motionId];
-
     require(
       getMotionState(_motionId) == MotionState.Finalized ||
       getMotionState(_motionId) == MotionState.Failed,
-      "voting-base-motion-not-claimable"
+      "voting-not-claimable"
     );
 
     (uint256 stakerReward, uint256 repPenalty) = getStakerReward(_motionId, _staker, _vote);
 
-    require(stakes[_motionId][_staker][_vote] > 0, "voting-base-nothing-to-claim");
+    require(stakes[_motionId][_staker][_vote] > 0, "voting-nothing-to-claim");
     delete stakes[_motionId][_staker][_vote];
 
     postClaim(_motionId, _staker);
 
-    tokenLocking.transfer(token, stakerReward, _staker, true);
+    tokenLockingTransfer(stakerReward, _staker);
 
     if (repPenalty > 0) {
       colony.emitDomainReputationPenalty(
         _permissionDomainId,
         _childSkillIndex,
-        motion.domainId,
+        motions[_motionId].domainId,
         _staker,
         -int256(repPenalty)
       );
@@ -425,13 +413,6 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
   /// @return The user's stake
   function getStake(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256) {
     return stakes[_motionId][_staker][_vote];
-  }
-
-  /// @notice Get the number of ongoing motions for a single expenditure / expenditure slot
-  /// @param _structHash The hash of the expenditureId or expenditureId*expenditureSlot
-  /// @return The number of ongoing motions
-  function getExpenditureMotionCount(bytes32 _structHash) public view returns (uint256) {
-    return expenditureMotionCounts[_structHash];
   }
 
   /// @notice Get the largest past vote on a single expenditure variable
@@ -520,8 +501,7 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
 
     fractionUserInfluence = fractionUserInfluence / _influence.length;
 
-    uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
-    return wmul(wmul(fractionUserInfluence, totalStake), voterRewardFraction);
+    return wmul(wmul(fractionUserInfluence, add(motion.stakes[YAY], motion.stakes[NAY])), voterRewardFraction);
   }
 
   /// @notice Get the range of potential rewards for a voter on a specific motion, intended to be
@@ -557,11 +537,10 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
 
     minFractionUserInfluence = minFractionUserInfluence / _influence.length;
     maxFractionUserInfluence = maxFractionUserInfluence / _influence.length;
-    uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
 
     return (
-      wmul(wmul(minFractionUserInfluence, totalStake), voterRewardFraction),
-      wmul(wmul(maxFractionUserInfluence, totalStake), voterRewardFraction)
+      wmul(wmul(minFractionUserInfluence, add(motion.stakes[YAY], motion.stakes[NAY])), voterRewardFraction),
+      wmul(wmul(maxFractionUserInfluence, add(motion.stakes[YAY], motion.stakes[NAY])), voterRewardFraction)
     );
   }
 
@@ -612,39 +591,35 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
   function createMotionInternal(
     uint256 _domainId,
     uint256 _childSkillIndex,
-    address _altTarget,
+    address _target,
     bytes memory _action,
     uint256 _numInfluences
   )
     internal
   {
-    require(state == ExtensionState.Active, "voting-base-not-active");
-    require(_altTarget != address(colony), "voting-base-alt-target-cannot-be-base-colony");
+    require(state == ExtensionState.Active, "voting-not-active");
 
-    address target = getTarget(_altTarget);
-    bytes4 action = getSig(_action);
+    address target = (_target == address(0x0)) ? address(colony) : _target;
+    bytes4 actionSig = getSig(_action);
+    uint256 skillId = getDomainSkillId(_domainId);
 
-    require(action != OLD_MOVE_FUNDS_SIG, "voting-base-disallowed-function");
+    require(actionSig != OLD_MOVE_FUNDS_SIG, "voting-bad-function");
 
-    uint256 skillId;
-
-    if (ColonyRoles(target).getCapabilityRoles(action) | ROOT_ROLES == ROOT_ROLES) {
+    if (ColonyRoles(target).getCapabilityRoles(actionSig) | ROOT_ROLES == ROOT_ROLES) {
 
       // A root or unpermissioned function
-      require(_domainId == 1 && _childSkillIndex == UINT256_MAX, "voting-base-invalid-domain-id");
-      skillId = colony.getDomain(1).skillId;
+      require(_domainId == 1 && _childSkillIndex == UINT256_MAX, "voting-invalid-domain");
 
     } else {
 
       // A domain permissioned function
-      skillId = colony.getDomain(_domainId).skillId;
       uint256 actionDomainSkillId = getActionDomainSkillId(_action);
 
       if (skillId != actionDomainSkillId) {
-        uint256 childSkillId = colonyNetwork.getChildSkillId(skillId, _childSkillIndex);
-        require(childSkillId == actionDomainSkillId, "voting-base-invalid-domain-id");
+        uint256 childSkillId = getChildSkillId(skillId, _childSkillIndex);
+        require(childSkillId == actionDomainSkillId, "voting-invalid-domain");
       } else {
-        require(_childSkillIndex == UINT256_MAX, "voting-base-invalid-domain-id");
+        require(_childSkillIndex == UINT256_MAX, "voting-invalid-domain");
       }
     }
 
@@ -659,7 +634,7 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
     motion.domainId = _domainId;
     motion.skillId = skillId;
 
-    motion.altTarget = _altTarget;
+    motion.target = target;
     motion.action = _action;
 
     motion.votes = new uint256[2][](_numInfluences);
@@ -681,28 +656,29 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
   {
     Motion storage motion = motions[_motionId];
 
-    require(_vote <= 1, "voting-base-bad-vote");
-    require(getMotionState(_motionId) == MotionState.Staking, "voting-base-motion-not-staking");
+    require(_vote <= 1, "voting-bad-vote");
+    require(getMotionState(_motionId) == MotionState.Staking, "voting-not-staking");
 
     uint256 requiredStake = getRequiredStake(_motionId);
     uint256 amount = min(_amount, sub(requiredStake, motion.stakes[_vote]));
-    require(amount > 0, "voting-base-bad-amount");
+    require(amount > 0, "voting-bad-amount");
 
     uint256 stakerTotalAmount = add(stakes[_motionId][msg.sender][_vote], amount);
 
     uint256 sumInfluence;
+
     for (uint256 i; i < _influence.length; i++) {
       sumInfluence = add(sumInfluence, _influence[i]);
     }
 
     require(
       stakerTotalAmount <= sumInfluence,
-      "voting-base-insufficient-influence"
+      "voting-insufficient-influence"
     );
     require(
       stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction) ||
       add(motion.stakes[_vote], amount) == requiredStake, // To prevent a residual stake from being un-stakable
-      "voting-base-insufficient-stake"
+      "voting-insufficient-stake"
     );
 
     // Update the stake
@@ -715,13 +691,10 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
       !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
       getSig(motion.action) == CHANGE_FUNCTION_SIG &&
-      motion.altTarget == address(0x0)
+      motion.target == address(colony)
     ) {
-      bytes32 structHash = hashExpenditureActionStruct(motion.action);
-      expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
-      // Set to UINT256_MAX / 3 to avoid overflow (finalizedTimestamp + globalClaimDelay + claimDelay)
-      bytes memory claimDelayAction = createClaimDelayAction(motion.action, UINT256_MAX / 3);
-      require(executeCall(_motionId, claimDelayAction), "voting-base-expenditure-lock-failed");
+      bytes memory claimDelayAction = createClaimDelayAction(motion.action, true);
+      require(executeCall(address(colony), claimDelayAction), "voting-lock-failed");
     }
 
     emit MotionStaked(_motionId, msg.sender, _vote, amount);
@@ -764,8 +737,8 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
   function internalSubmitVote(uint256 _motionId, bytes32 _voteSecret, uint256[] memory _influence) internal {
     Motion storage motion = motions[_motionId];
 
-    require(getMotionState(_motionId) == MotionState.Submit, "voting-base-motion-not-open");
-    require(_voteSecret != bytes32(0), "voting-base-invalid-secret");
+    require(getMotionState(_motionId) == MotionState.Submit, "voting-not-open");
+    require(_voteSecret != bytes32(0), "voting-invalid-secret");
 
     // Add influence to totals if first submission
     if (voteSecrets[_motionId][msg.sender] == bytes32(0)) {
@@ -897,12 +870,20 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
     return wmul(sumMaxVotes, totalStakeFraction);
   }
 
-  function getTarget(address _target) internal view returns (address) {
-    return (_target == address(0x0)) ? address(colony) : _target;
-  }
-
   function flip(uint256 _vote) internal pure returns (uint256) {
     return sub(1, _vote);
+  }
+
+  function getDomainSkillId(uint256 _domainId) internal view returns (uint256) {
+    return colony.getDomain(_domainId).skillId;
+  }
+
+  function getChildSkillId(uint256 _skillId, uint256 _index) internal view returns (uint256) {
+    return colonyNetwork.getChildSkillId(_skillId, _index);
+  }
+
+  function tokenLockingTransfer(uint256 _amount, address _recipient) internal {
+    tokenLocking.transfer(token, _amount, _recipient, true);
   }
 
   function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
@@ -915,20 +896,18 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
       childSkillIndex := mload(add(_action, 0x44))
     }
 
-    uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
-    return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
+    uint256 permissionSkillId = getDomainSkillId(permissionDomainId);
+    return getChildSkillId(permissionSkillId, childSkillIndex);
   }
 
-  function executeCall(uint256 motionId, bytes memory action) internal returns (bool success) {
-    address to = getTarget(motions[motionId].altTarget);
-
+  function executeCall(address target, bytes memory action) internal returns (bool success) {
     assembly {
               // call contract at address a with input mem[in…(in+insize))
               //   providing g gas and v wei and output area mem[out…(out+outsize))
               //   returning 0 on error (eg. out of gas) and 1 on success
 
-              // call(g,   a,  v, in,                insize,        out, outsize)
-      success := call(gas(), to, 0, add(action, 0x20), mload(action), 0, 0)
+              // call(g,     a,      v, in,                insize,        out, outsize)
+      success := call(gas(), target, 0, add(action, 0x20), mload(action), 0, 0)
     }
   }
 
@@ -951,27 +930,7 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
     }
   }
 
-  function hashExpenditureActionStruct(bytes memory action) internal returns (bytes32 hash) {
-    assert(getSig(action) == CHANGE_FUNCTION_SIG);
-
-    uint256 expenditureId;
-    uint256 storageSlot;
-    uint256 expenditureSlot;
-
-    assembly {
-      expenditureId := mload(add(action, 0x64))
-      storageSlot := mload(add(action, 0x84))
-      expenditureSlot := mload(add(action, 0x184))
-    }
-
-    if (storageSlot == 25) {
-      hash = keccak256(abi.encodePacked(expenditureId));
-    } else {
-      hash = keccak256(abi.encodePacked(expenditureId, expenditureSlot));
-    }
-  }
-
-  function createClaimDelayAction(bytes memory action, uint256 value)
+  function createClaimDelayAction(bytes memory action, bool increment)
     public
     returns (bytes memory)
   {
@@ -1000,7 +959,11 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
     // If we are editing the main expenditure struct
     if (storageSlot == 25) {
 
+      uint256 claimDelay = colony.getExpenditure(expenditureId).globalClaimDelay;
+      claimDelay = increment ? add(claimDelay, 365 days) : sub(claimDelay, 365 days);
+
       bytes memory mainClaimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
+
       assembly {
           mstore(add(mainClaimDelayAction, 0x20), functionSignature)
           mstore(add(mainClaimDelayAction, 0x24), permissionDomainId)
@@ -1009,7 +972,7 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
           mstore(add(mainClaimDelayAction, 0x84), 25)     // expenditure storage slot
           mstore(add(mainClaimDelayAction, 0xa4), 0xe0)   // mask location
           mstore(add(mainClaimDelayAction, 0xc4), 0x120)  // keys location
-          mstore(add(mainClaimDelayAction, 0xe4), value)
+          mstore(add(mainClaimDelayAction, 0xe4), claimDelay)
           mstore(add(mainClaimDelayAction, 0x104), 1)     // mask length
           mstore(add(mainClaimDelayAction, 0x124), 1)     // offset
           mstore(add(mainClaimDelayAction, 0x144), 1)     // keys length
@@ -1020,12 +983,18 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
     // If we are editing an expenditure slot
     } else {
 
-      bytes memory slotClaimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
       uint256 expenditureSlot;
 
       assembly {
           expenditureSlot := mload(add(action, 0x184))
+      }
 
+      uint256 claimDelay = colony.getExpenditureSlot(expenditureId, expenditureSlot).claimDelay;
+      claimDelay = increment ? add(claimDelay, 365 days) : sub(claimDelay, 365 days);
+
+      bytes memory slotClaimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
+
+      assembly {
           mstore(add(slotClaimDelayAction, 0x20), functionSignature)
           mstore(add(slotClaimDelayAction, 0x24), permissionDomainId)
           mstore(add(slotClaimDelayAction, 0x44), childSkillIndex)
@@ -1033,7 +1002,7 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
           mstore(add(slotClaimDelayAction, 0x84), 26)     // expenditureSlot storage slot
           mstore(add(slotClaimDelayAction, 0xa4), 0xe0)   // mask location
           mstore(add(slotClaimDelayAction, 0xc4), 0x140)  // keys location
-          mstore(add(slotClaimDelayAction, 0xe4), value)
+          mstore(add(slotClaimDelayAction, 0xe4), claimDelay)
           mstore(add(slotClaimDelayAction, 0x104), 2)     // mask length
           mstore(add(slotClaimDelayAction, 0x124), 0)     // mapping
           mstore(add(slotClaimDelayAction, 0x144), 1)     // offset
@@ -1057,7 +1026,7 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
     internal view returns (uint256)
   {
     bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
-    require(motions[_motionId].rootHash == impliedRoot, "voting-base-invalid-root-hash");
+    require(motions[_motionId].rootHash == impliedRoot, "voting-invalid-root-hash");
 
     uint256 reputationValue;
     address keyColonyAddress;
@@ -1071,9 +1040,9 @@ abstract contract VotingBase is ColonyExtensionMeta, PatriciaTreeProofs {
       keyUserAddress := mload(add(_key, 72))
     }
 
-    require(keyColonyAddress == address(colony), "voting-base-invalid-colony-address");
-    require(keySkill == motions[_motionId].skillId, "voting-base-invalid-skill-id");
-    require(keyUserAddress == _who, "voting-base-invalid-user-address");
+    require(keyColonyAddress == address(colony), "voting-invalid-colony");
+    require(keySkill == motions[_motionId].skillId, "voting-invalid-skill");
+    require(keyUserAddress == _who, "voting-invalid-user");
 
     return reputationValue;
   }

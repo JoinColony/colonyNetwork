@@ -261,11 +261,11 @@ contract VotingReputation2 is VotingBase {
   {
     Motion storage motion = motions[_motionId];
 
-    require(getMotionState(_motionId) == MotionState.Closed, "voting-base-motion-not-closed");
+    require(getMotionState(_motionId) == MotionState.Closed, "voting-not-closed");
 
-    uint256 newDomainSkillId = colony.getDomain(_newDomainId).skillId;
-    uint256 childSkillId = colonyNetwork.getChildSkillId(newDomainSkillId, _childSkillIndex);
-    require(childSkillId == motion.skillId, "voting-base-invalid-domain-proof");
+    uint256 newDomainSkillId = getDomainSkillId(_newDomainId);
+    uint256 childSkillId = getChildSkillId(newDomainSkillId, _childSkillIndex);
+    require(childSkillId == motion.skillId, "voting-invalid-domain-proof");
 
     uint256 domainId = motion.domainId;
     motion.domainId = _newDomainId;
