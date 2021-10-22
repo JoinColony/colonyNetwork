@@ -1392,7 +1392,8 @@ class ReputationMiner {
   async getAddressesWithReputation(reputationRootHash, colonyAddress, skillId) {
     const res = await this.queries.getAddressesWithReputation.all(reputationRootHash, colonyAddress.toLowerCase(), skillId);
     const addresses = res.map(x => x.user_address)
-    return addresses;
+    const reputations = res.map(x => new BN(x.value.slice(2, 66), 16).toString())
+    return { addresses, reputations };
   }
 
   async getReputationsForAddress(reputationRootHash, colonyAddress, userAddress) {

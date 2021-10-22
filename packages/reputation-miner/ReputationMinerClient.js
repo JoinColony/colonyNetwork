@@ -122,9 +122,13 @@ class ReputationMinerClient {
         ) {
           return res.status(400).send({ message: "One of the parameters was incorrect" });
         }
-        const addresses = await this._miner.getAddressesWithReputation(req.params.rootHash, req.params.colonyAddress, req.params.skillId);
+        const {
+          addresses,
+          reputations
+        } = await this._miner.getAddressesWithReputation(req.params.rootHash, req.params.colonyAddress, req.params.skillId);
+
         try {
-          return res.status(200).send({ addresses });
+          return res.status(200).send({ addresses, reputations });
         } catch (err) {
           return res.status(500).send({ message: "An error occurred querying the reputation" });
         }
