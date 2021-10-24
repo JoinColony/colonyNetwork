@@ -1345,9 +1345,9 @@ class ReputationMiner {
       const keyElements = ReputationMiner.breakKeyInToElements(key);
       const [colonyAddress, , userAddress] = keyElements;
       const skillId = parseInt(keyElements[1], 16);
-      this.queries.saveColony.run(colonyAddress);
-      this.queries.saveUser.run(userAddress);
-      this.queries.saveSkill.run(skillId);
+      await this.queries.saveColony.run(colonyAddress);
+      await this.queries.saveUser.run(userAddress);
+      await this.queries.saveSkill.run(skillId);
 
       res = this.queries.getReputationCount.get(currentRootHash, colonyAddress, skillId, userAddress);
       if (res.n === 0) {
@@ -1392,7 +1392,8 @@ class ReputationMiner {
   async getAddressesWithReputation(reputationRootHash, colonyAddress, skillId) {
     const res = await this.queries.getAddressesWithReputation.all(reputationRootHash, colonyAddress.toLowerCase(), skillId);
     const addresses = res.map(x => x.user_address)
-    return addresses;
+    const reputations = res.map(x => new BN(x.value.slice(2, 66), 16).toString())
+    return { addresses, reputations };
   }
 
   async getReputationsForAddress(reputationRootHash, colonyAddress, userAddress) {
@@ -1431,6 +1432,11 @@ class ReputationMiner {
       }
       console.log('n_nodes -> n_leaves database upgrade complete');
     }
+    await this.db.pragma('journal_mode = WAL');
+    await this.db.prepare('CREATE INDEX IF NOT EXISTS reputation_states_root_hash ON reputation_states (root_hash)').run();
+    await this.db.prepare('CREATE INDEX IF NOT EXISTS users_address ON users (address)').run();
+    await this.db.prepare('CREATE INDEX IF NOT EXISTS reputation_skill_id ON reputations (skill_id)').run();
+    await this.db.prepare('CREATE INDEX IF NOT EXISTS colonies_address ON colonies (address)').run();
 
     this.prepareQueries()
   }

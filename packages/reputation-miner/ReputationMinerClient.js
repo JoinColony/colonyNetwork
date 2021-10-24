@@ -114,7 +114,7 @@ class ReputationMinerClient {
       });
 
       // Query users who have given reputation in colony
-      this._app.get("/:rootHash/:colonyAddress/:skillId/", async (req, res) => {
+      this._app.get("/:rootHash/:colonyAddress/:skillId/", cache('1 hour'), async (req, res) => {
         if (
           !ethers.utils.isHexString(req.params.rootHash) ||
           !ethers.utils.isHexString(req.params.colonyAddress) ||
@@ -122,9 +122,13 @@ class ReputationMinerClient {
         ) {
           return res.status(400).send({ message: "One of the parameters was incorrect" });
         }
-        const addresses = await this._miner.getAddressesWithReputation(req.params.rootHash, req.params.colonyAddress, req.params.skillId);
+        const {
+          addresses,
+          reputations
+        } = await this._miner.getAddressesWithReputation(req.params.rootHash, req.params.colonyAddress, req.params.skillId);
+
         try {
-          return res.status(200).send({ addresses });
+          return res.status(200).send({ addresses, reputations });
         } catch (err) {
           return res.status(500).send({ message: "An error occurred querying the reputation" });
         }

@@ -199,10 +199,12 @@ process.env.SOLIDITY_COVERAGE
           let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/1`;
           let res = await request(url);
           expect(res.statusCode).to.equal(200);
-          let { addresses } = JSON.parse(res.body);
+          let { addresses, reputations } = JSON.parse(res.body);
           expect(addresses.length).to.equal(2);
           expect(addresses[0]).to.equal(MINER1.toLowerCase());
           expect(addresses[1]).to.equal(accounts[6].toLowerCase());
+
+          expect(reputations.length).to.equal(2);
 
           // Let's check that once accounts[6] has more reputation again, it's listed first.
           await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: accounts[6], manager: accounts[6] });
@@ -216,10 +218,12 @@ process.env.SOLIDITY_COVERAGE
           res = await request(url);
           expect(res.statusCode).to.equal(200);
 
-          ({ addresses } = JSON.parse(res.body));
+          ({ addresses, reputations } = JSON.parse(res.body));
           expect(addresses.length).to.equal(2);
           expect(addresses[0]).to.equal(accounts[6].toLowerCase());
           expect(addresses[1]).to.equal(MINER1.toLowerCase());
+
+          expect(reputations.length).to.equal(2);
         });
 
         it("should correctly respond to a request for users that have a particular reputation in a colony that has an invalid address", async () => {
