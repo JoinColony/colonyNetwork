@@ -21,6 +21,8 @@ ganache-accounts.json
 yarn-error.log
 reputations.json
 reputationStates.sqlite
+reputationStates.sqlite-shm
+reputationStates.sqlite-wal
 truffle-security-output.json
 .coverage_contracts
 etherrouter-address.json
