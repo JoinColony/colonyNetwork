@@ -107,6 +107,14 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     emit ExtensionUninstalled(_extensionId, msgSender());
   }
 
+  function setPayoutWhitelist(address _token, bool _status) public stoppable
+  calledByMetaColony
+  {
+    payoutWhitelist[_token] = _status;
+
+    emit TokenWhitelisted(_token, _status);
+  }
+
   // Public view functions
 
   function getExtensionResolver(bytes32 _extensionId, uint256 _version)
@@ -123,6 +131,10 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     returns (address)
   {
     return installations[_extensionId][_colony];
+  }
+
+  function getPayoutWhitelist(address _token) public view returns (bool) {
+    return payoutWhitelist[_token];
   }
 
   // Internal functions

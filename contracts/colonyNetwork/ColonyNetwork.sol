@@ -29,21 +29,6 @@ import "./ColonyNetworkStorage.sol";
 
 
 contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
-  // Meta Colony allowed to manage Global skills
-  // All colonies are able to manage their Local (domain associated) skills
-  modifier allowedToAddSkill(bool globalSkill) {
-    if (globalSkill) {
-      require(msgSender() == metaColony, "colony-must-be-meta-colony");
-    } else {
-      require(_isColony[msgSender()] || msgSender() == address(this), "colony-caller-must-be-colony");
-    }
-    _;
-  }
-
-  modifier skillExists(uint skillId) {
-    require(skillCount >= skillId, "colony-invalid-skill-id");
-    _;
-  }
 
   function isColony(address _colony) public view returns (bool) {
     return _isColony[_colony];
@@ -328,18 +313,6 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
     feeInverse = _feeInverse;
 
     emit NetworkFeeInverseSet(_feeInverse);
-  }
-
-  function getPayoutWhitelist(address _token) public view returns (bool) {
-    return payoutWhitelist[_token];
-  }
-
-  function setPayoutWhitelist(address _token, bool _status) public stoppable
-  calledByMetaColony
-  {
-    payoutWhitelist[_token] = _status;
-
-    emit TokenWhitelisted(_token, _status);
   }
 
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
