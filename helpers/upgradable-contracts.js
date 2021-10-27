@@ -72,6 +72,7 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
 
 export async function setupColonyVersionResolver(
   colony,
+  colonyDomains,
   colonyExpenditure,
   colonyTask,
   colonyPayment,
@@ -83,6 +84,7 @@ export async function setupColonyVersionResolver(
 ) {
   const deployedImplementations = {};
   deployedImplementations.Colony = colony.address;
+  deployedImplementations.ColonyDomains = colonyDomains.address;
   deployedImplementations.ColonyExpenditure = colonyExpenditure.address;
   deployedImplementations.ColonyTask = colonyTask.address;
   deployedImplementations.ColonyRoles = colonyRoles.address;

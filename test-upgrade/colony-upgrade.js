@@ -8,6 +8,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
+const ColonyDomains = artifacts.require("ColonyDomains");
 const ColonyExpenditure = artifacts.require("ColonyExpenditure");
 const ColonyTask = artifacts.require("ColonyTask");
 const ColonyPayment = artifacts.require("ColonyPayment");
@@ -39,6 +40,7 @@ contract("Colony contract upgrade", (accounts) => {
 
     ({ colony, token } = await setupRandomColony(colonyNetwork));
 
+    const colonyDomains = await ColonyDomains.new();
     const colonyExpenditure = await ColonyExpenditure.new();
     const colonyTask = await ColonyTask.new();
     const colonyPayment = await ColonyPayment.new();
@@ -57,6 +59,7 @@ contract("Colony contract upgrade", (accounts) => {
     await resolver.register("isUpdated()", updatedColonyContract.address);
     await setupColonyVersionResolver(
       updatedColonyContract,
+      colonyDomains,
       colonyExpenditure,
       colonyTask,
       colonyPayment,

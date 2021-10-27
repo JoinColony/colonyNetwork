@@ -1073,6 +1073,13 @@ Called once when the colony is created to initialise certain storage slot values
 |_token|address|Address of the colony ERC20 Token
 
 
+### `initialiseRootLocalSkill`
+
+Initialise the local skill tree for the colony.
+
+
+
+
 ### `installExtension`
 
 Install an extension to the colony. Secured function to authorised members.
