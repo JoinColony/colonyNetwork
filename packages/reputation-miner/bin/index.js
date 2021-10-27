@@ -95,7 +95,12 @@ if (network) {
   const providers = providerAddress.map(endpoint => new RetryProvider(endpoint, adapterObject));
   // This is, at best, a huge hack...
   providers.forEach(x => x.getNetwork());
-  provider = new ethers.providers.FallbackProvider(providers, 1)
+
+  // The Fallback provider somehow strips out blockTag, so isn't suitable for use during syncing.
+  // See https://github.com/ethers-io/ethers.js/discussions/1960
+  // When sorted, use this line instead.
+  // provider = new ethers.providers.FallbackProvider(providers, 1)
+  [ provider ] = providers;
 }
 
 const client = new ReputationMinerClient({
