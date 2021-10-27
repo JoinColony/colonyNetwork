@@ -1,3 +1,4 @@
+
 /*
   This file is part of The Colony Network.
 
@@ -62,23 +63,6 @@ contract ColonyDomains is ColonyStorage {
     emit ColonyInitialised(msgSender(), _colonyNetworkAddress, _token);
   }
 
-  function addLocalSkill() public stoppable auth {
-    uint256 newLocalSkill = IColonyNetwork(colonyNetworkAddress).addSkill(rootLocalSkill);
-    localSkills[newLocalSkill] = LocalSkill({ exists: true, deprecated: false });
-
-    emit LocalSkillAdded(msg.sender, newLocalSkill);
-  }
-
-  function deprecateLocalSkill(uint256 _localSkillId, bool _deprecated) public stoppable auth {
-    localSkills[_localSkillId].deprecated = _deprecated;
-
-    emit LocalSkillDeprecated(msg.sender, _localSkillId, _deprecated);
-  }
-
-  function getRootLocalSkill() public view returns (uint256) {
-    return rootLocalSkill;
-  }
-
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
   domainNotDeprecated(_parentDomainId)
@@ -127,7 +111,6 @@ contract ColonyDomains is ColonyStorage {
 
       emit DomainDeprecated(msgSender(), _domainId, _deprecated);
     }
-
   }
 
   function getDomain(uint256 _domainId) public view returns (Domain memory domain) {
@@ -170,5 +153,4 @@ contract ColonyDomains is ColonyStorage {
   function setRoleAssignmentFunction(bytes4 _sig) private {
     roleAssignmentSigs[_sig] = true;
   }
-
 }

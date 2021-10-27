@@ -234,6 +234,25 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId);
   }
 
+  function addLocalSkill() public stoppable auth {
+    require(rootLocalSkill != 0, "colony-local-skill-tree-not-initialised");
+
+    uint256 newLocalSkill = IColonyNetwork(colonyNetworkAddress).addSkill(rootLocalSkill);
+    localSkills[newLocalSkill] = LocalSkill({ exists: true, deprecated: false });
+
+    emit LocalSkillAdded(msg.sender, newLocalSkill);
+  }
+
+  function deprecateLocalSkill(uint256 _localSkillId, bool _deprecated) public stoppable auth {
+    localSkills[_localSkillId].deprecated = _deprecated;
+
+    emit LocalSkillDeprecated(msg.sender, _localSkillId, _deprecated);
+  }
+
+  function getRootLocalSkill() public view returns (uint256) {
+    return rootLocalSkill;
+  }
+
   function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
   public view
   stoppable
@@ -292,8 +311,6 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
     sig = bytes4(keccak256("deprecateLocalSkill(uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    if (rootLocalSkill == 0) initialiseRootLocalSkill();
 
     sig = bytes4(keccak256("deprecateDomain(uint256,uint256,uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
