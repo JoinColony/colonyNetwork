@@ -4,6 +4,7 @@ import path from "path";
 import request from "async-request";
 import chai from "chai";
 import bnChai from "bn-chai";
+import BN from "bn.js";
 
 import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
