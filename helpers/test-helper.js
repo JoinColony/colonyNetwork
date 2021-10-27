@@ -17,7 +17,7 @@ const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 const Resolver = artifacts.require("Resolver");
 const ContractEditing = artifacts.require("ContractEditing");
-const Colony = artifacts.require("Colony");
+const ColonyDomains = artifacts.require("ColonyDomains");
 
 const { expect } = chai;
 
@@ -905,7 +905,7 @@ export async function removeSubdomainLimit(colonyNetwork) {
 }
 
 export async function restoreSubdomainLimit(colonyNetwork) {
-  const originalSubdomains = await Colony.new();
+  const originalSubdomains = await ColonyDomains.new();
   const latestVersion = await colonyNetwork.getCurrentColonyVersion();
   const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
   const resolver = await Resolver.at(resolverAddress);

@@ -56,6 +56,7 @@ module.exports = async function (deployer, network, accounts) {
 
   // Set up functional resolvers that identify correctly as previous versions.
   const Colony = artifacts.require("./Colony");
+  const ColonyDomains = artifacts.require("./ColonyDomains");
   const ColonyFunding = artifacts.require("./ColonyFunding");
   const ColonyExpenditure = artifacts.require("./ColonyExpenditure");
   const ColonyRoles = artifacts.require("./ColonyRoles");
@@ -65,6 +66,7 @@ module.exports = async function (deployer, network, accounts) {
   const ColonyArbitraryTransaction = artifacts.require("./ColonyArbitraryTransaction");
 
   const colony = await Colony.new();
+  const colonyDomains = await ColonyDomains.new();
   const colonyFunding = await ColonyFunding.new();
   const colonyExpenditure = await ColonyExpenditure.new();
   const colonyRoles = await ColonyRoles.new();
@@ -76,6 +78,7 @@ module.exports = async function (deployer, network, accounts) {
   const resolver3 = await Resolver.new();
   await setupColonyVersionResolver(
     colony,
+    colonyDomains,
     colonyExpenditure,
     colonyTask,
     colonyPayment,
@@ -92,6 +95,7 @@ module.exports = async function (deployer, network, accounts) {
   const resolver4 = await Resolver.new();
   await setupColonyVersionResolver(
     colony,
+    colonyDomains,
     colonyExpenditure,
     colonyTask,
     colonyPayment,
