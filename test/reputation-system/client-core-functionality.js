@@ -4,7 +4,6 @@ import path from "path";
 import request from "async-request";
 import chai from "chai";
 import bnChai from "bn-chai";
-import BN from "bn.js";
 
 import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
@@ -132,12 +131,12 @@ process.env.SOLIDITY_COVERAGE
 
         it("should correctly respond to a request for a reputation state in a previous state with no proof", async () => {
           const rootHash = await reputationMiner.getRootHash();
-          const key = makeReputationKey(metaColony.address, new BN(2), MINER1);
+          const key = makeReputationKey(metaColony.address, MINING_SKILL_ID, MINER1);
           const value = reputationMiner.reputations[key];
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
 
-          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MINER1}/noProof`;
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}/noProof`;
           const res = await request(url);
           expect(res.statusCode).to.equal(200);
 
@@ -151,7 +150,7 @@ process.env.SOLIDITY_COVERAGE
 
         it("should correctly respond to a request for a valid key in a reputation state that never existed", async () => {
           const rootHash = await reputationMiner.getRootHash();
-          const url = `http://127.0.0.1:3000/0x${rootHash.slice(8)}000000/${metaColony.address}/2/${MINER1}`;
+          const url = `http://127.0.0.1:3000/0x${rootHash.slice(8)}000000/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);
           expect(JSON.parse(res.body).message).to.equal("No such reputation state");

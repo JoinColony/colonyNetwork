@@ -63,11 +63,11 @@ contract("Meta Colony", (accounts) => {
   });
 
   describe("when adding skills to the tree by adding domains", () => {
-    before(async () => {
+    beforeEach(async () => {
       await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
     });
 
-    after(async () => {
+    afterEach(async () => {
       await restoreSubdomainLimit(colonyNetwork);
     });
 
