@@ -49,7 +49,7 @@ contract("Colony Network Extensions", (accounts) => {
   const USER = accounts[2];
 
   const TEST_EXTENSION = soliditySha3("TestExtension");
-  const TEST_VOTING_TOKEN = soliditySha3("VotingToken");
+  const TEST_VOTING_TOKEN = soliditySha3("TestVotingToken");
 
   before(async () => {
     testExtension0Resolver = await Resolver.new();

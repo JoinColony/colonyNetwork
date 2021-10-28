@@ -9,6 +9,9 @@ const EvaluatedExpenditure = artifacts.require("./EvaluatedExpenditure");
 const FundingQueue = artifacts.require("./FundingQueue");
 const OneTxPayment = artifacts.require("./OneTxPayment");
 const VotingReputation = artifacts.require("./VotingReputation");
+const VotingReputation2 = artifacts.require("./VotingReputation2");
+const VotingToken = artifacts.require("./VotingToken");
+const VotingHybrid = artifacts.require("./VotingHybrid");
 const TokenSupplier = artifacts.require("./TokenSupplier");
 const Whitelist = artifacts.require("./Whitelist");
 
@@ -40,6 +43,9 @@ module.exports = async function (deployer, network, accounts) {
   await addExtension(colonyNetwork, "FundingQueue", FundingQueue);
   await addExtension(colonyNetwork, "OneTxPayment", OneTxPayment);
   await addExtension(colonyNetwork, "VotingReputation", VotingReputation);
+  await addExtension(colonyNetwork, "VotingReputation2", VotingReputation2);
+  await addExtension(colonyNetwork, "VotingToken", VotingToken);
+  await addExtension(colonyNetwork, "VotingHybrid", VotingHybrid);
   await addExtension(colonyNetwork, "TokenSupplier", TokenSupplier);
   await addExtension(colonyNetwork, "Whitelist", Whitelist);
 };
