@@ -121,11 +121,6 @@ contract ColonyDomains is ColonyStorage {
     return domainCount;
   }
 
-  function initialiseRootLocalSkill() internal {
-    assert(rootLocalSkill == 0);
-    rootLocalSkill = IColonyNetwork(colonyNetworkAddress).initialiseRootLocalSkill();
-  }
-
   function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {
     domainCount += 1;
     // Create a new funding pot
@@ -142,6 +137,12 @@ contract ColonyDomains is ColonyStorage {
 
     emit DomainAdded(msgSender(), domainCount);
     emit FundingPotAdded(fundingPotCount);
+  }
+
+  // Internal
+  function initialiseRootLocalSkill() internal {
+    require(rootLocalSkill == 0, "colony-root-local-skill-initialised");
+    rootLocalSkill = IColonyNetwork(colonyNetworkAddress).initialiseRootLocalSkill();
   }
 
   function setFunctionReviewers(bytes4 _sig, TaskRole _firstReviewer, TaskRole _secondReviewer)
