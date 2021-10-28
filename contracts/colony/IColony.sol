@@ -282,9 +282,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   function uninstallExtension(bytes32 extensionId) external;
 
-  /// @notice Initialise the local skill tree for the colony.
-  function initialiseRootLocalSkill() external;
-
   /// @notice Add a new local skill for the colony. Secured function to authorised members.
   function addLocalSkill() external;
 

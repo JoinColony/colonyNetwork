@@ -138,12 +138,12 @@ contract ColonyDomains is ColonyStorage {
     emit FundingPotAdded(fundingPotCount);
   }
 
-  function initialiseRootLocalSkill() public {
+  // Internal
+
+  function initialiseRootLocalSkill() internal {
     require(rootLocalSkill == 0, "colony-root-local-skill-initialised");
     rootLocalSkill = IColonyNetwork(colonyNetworkAddress).initialiseRootLocalSkill();
   }
-
-  // Internal
 
   function setFunctionReviewers(bytes4 _sig, TaskRole _firstReviewer, TaskRole _secondReviewer)
   private
