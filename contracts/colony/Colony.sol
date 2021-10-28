@@ -314,6 +314,8 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
     sig = bytes4(keccak256("deprecateDomain(uint256,uint256,uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
+
+    IColony(address(this)).initialiseRootLocalSkill();
   }
 
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
