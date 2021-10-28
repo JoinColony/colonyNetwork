@@ -112,6 +112,11 @@ contract ColonyDomains is ColonyStorage {
     }
   }
 
+  function initialiseRootLocalSkill() public stoppable {
+    require(rootLocalSkill == 0, "colony-root-local-skill-initialised");
+    rootLocalSkill = IColonyNetwork(colonyNetworkAddress).initialiseRootLocalSkill();
+  }
+
   function getDomain(uint256 _domainId) public view returns (Domain memory domain) {
     domain = domains[_domainId];
   }
@@ -119,6 +124,8 @@ contract ColonyDomains is ColonyStorage {
   function getDomainCount() public view returns (uint256) {
     return domainCount;
   }
+
+  // Internal
 
   function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {
     domainCount += 1;
@@ -136,13 +143,6 @@ contract ColonyDomains is ColonyStorage {
 
     emit DomainAdded(msgSender(), domainCount);
     emit FundingPotAdded(fundingPotCount);
-  }
-
-  // Internal
-
-  function initialiseRootLocalSkill() internal {
-    require(rootLocalSkill == 0, "colony-root-local-skill-initialised");
-    rootLocalSkill = IColonyNetwork(colonyNetworkAddress).initialiseRootLocalSkill();
   }
 
   function setFunctionReviewers(bytes4 _sig, TaskRole _firstReviewer, TaskRole _secondReviewer)

@@ -37,6 +37,12 @@ const TokenAuthority = artifacts.require("TokenAuthority");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
+const copyWiring = async function (resolverFrom, resolverTo, functionSig) {
+  const sig = await resolverFrom.stringToSig(functionSig);
+  const functionLocation = await resolverFrom.lookup(sig);
+  await resolverTo.register(functionSig, functionLocation);
+};
+
 contract("Colony Network", (accounts) => {
   let newResolverAddress;
   const TOKEN_ARGS = getTokenArgs();
@@ -58,13 +64,15 @@ contract("Colony Network", (accounts) => {
     // For upgrade tests, we need a resolver...
     const r = await Resolver.new();
     newResolverAddress = r.address.toLowerCase();
+    const newResolver = await Resolver.at(newResolverAddress);
     // ... that knows the .finishUpgrade() function
-    const sig = await r.stringToSig("finishUpgrade()");
     const metaColonyAsEtherRouter = await EtherRouter.at(metaColony.address);
     const wiredResolverAddress = await metaColonyAsEtherRouter.resolver();
     const wiredResolver = await Resolver.at(wiredResolverAddress);
-    const finishUpgradeFunctionLocation = await wiredResolver.lookup(sig);
-    await r.register("finishUpgrade()", finishUpgradeFunctionLocation);
+    await copyWiring(wiredResolver, newResolver, "finishUpgrade()");
+
+    // While v9 the latest, need to also know initialiseRootLocalSkill()`
+    await copyWiring(wiredResolver, newResolver, "initialiseRootLocalSkill()");
   });
 
   describe("when initialised", () => {
@@ -172,11 +180,6 @@ contract("Colony Network", (accounts) => {
   describe("when creating new colonies at a specific version", () => {
     beforeEach(async () => {
       // The new resolver also needs to know a load of functions to let createColony work...
-      const copyWiring = async function (resolverFrom, resolverTo, functionSig) {
-        const sig = await resolverFrom.stringToSig(functionSig);
-        const functionLocation = await resolverFrom.lookup(sig);
-        await resolverTo.register(functionSig, functionLocation);
-      };
 
       const metaColonyAsEtherRouter = await EtherRouter.at(metaColony.address);
       const wiredResolverAddress = await metaColonyAsEtherRouter.resolver();
@@ -406,6 +409,11 @@ contract("Colony Network", (accounts) => {
     it("should be able to upgrade a colony, if a sender has root role", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       const colonyEtherRouter = await EtherRouter.at(colony.address);
+
+      // 8->9 upgrade, unlike other upgrades to date, not idempotent, so have to delete
+      // the local root skill id
+      const editableColony = await getColonyEditable(colony, colonyNetwork);
+      await editableColony.setStorageSlot(36, "0x0000000000000000000000000000000000000000000000000000000000000000");
 
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1);
