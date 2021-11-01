@@ -90,7 +90,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 2;
+    return 3;
   }
 
   /// @notice Configures the extension
