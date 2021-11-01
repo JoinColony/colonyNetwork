@@ -213,7 +213,7 @@ class ReputationMiner {
     }
     this.justificationHashes = {};
     this.reverseReputationHashLookup = {};
-    const repCycle = await this.getActiveRepCycle(blockNumber)
+    const repCycle = await this.getActiveRepCycle(blockNumber);
     // Update fractions
     const decayFraction = await repCycle.getDecayConstant({ blockTag: blockNumber });
     this.decayNumerator = decayFraction.numerator;
@@ -700,7 +700,6 @@ class ReputationMiner {
    */
   async getActiveRepCycle(blockNumber = "latest") {
     const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
-
     if (addr === ethers.constants.AddressZero) {
       throw new Error(`No active mining cycle found for block number ${blockNumber}`);
     }

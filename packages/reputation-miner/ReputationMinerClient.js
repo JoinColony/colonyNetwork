@@ -229,7 +229,7 @@ class ReputationMinerClient {
     await this._miner.createDB();
     await this._miner.loadState(latestReputationHash);
     if (this._miner.nReputations.eq(0)) {
-      this._adapter.log("No existing reputations found - need to sync");
+      this._adapter.log("Latest state not found - need to sync");
       await this._miner.sync(startingBlock, true);
     }
 
