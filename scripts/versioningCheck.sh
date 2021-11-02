@@ -10,6 +10,15 @@ version_from_commit() {
 	echo $VERSION
 }
 
+version_from_commit_extensions() {
+	COMMIT=$1;
+	FILE=$2;
+	VERSION="$(git show $COMMIT:$FILE | grep -A1 'function version() public' | tail -n 1 | sed 's/return //g' | sed 's/;//g' )"
+	echo $VERSION
+}
+
+STATUS=0
+
 if [ $N -ne 0 ]; then
 	# We need to check if we've bumped the version
 	# What version does the latest release have
@@ -20,25 +29,31 @@ if [ $N -ne 0 ]; then
 
 	if [ $newVersion -eq $oldVersion ]; then
 		echo "Version not bumped for Colony.sol when it should be"
-		exit 1;
+		STATUS=1;
 	fi
 fi
 
 # Now the same for the extensions
-for file in $(git diff --cached --name-only | grep -E 'contracts/extensions/')
+for file in $(git diff --cached --name-only $LATEST_RELEASE | grep -E 'contracts/extensions/')
 do
 	if [ $file = "contracts/extensions/ColonyExtension.sol" ]; then
 		continue
 	fi
 
-	oldVersion="$(version_from_commit $LATEST_RELEASE $file)"
+	if [ $file = "contracts/extensions/ColonyExtensionMeta.sol" ]; then
+		continue
+	fi
+
+	oldVersion="$(version_from_commit_extensions $LATEST_RELEASE $file)"
 
 	# What version does the staged version have?
-	newVersion="$(version_from_commit '' $file)"
+	newVersion="$(version_from_commit_extensions '' $file)"
 
 	if [ $newVersion -eq $oldVersion ]; then
 		echo "Version not bumped for $file when it should be"
-		exit 1;
+		STATUS=1;
 	fi
 
 done
+
+exit $STATUS
