@@ -485,12 +485,12 @@ contract("Meta Colony", (accounts) => {
 
     it("should NOT be able to set nonexistent skill on task", async () => {
       const taskId = await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(taskId, 100), "colony-skill-does-not-exist");
+      await checkErrorRevert(colony.setTaskSkill(taskId, 100), "colony-not-valid-skill");
     });
 
     it("should NOT be able to set local skill on task", async () => {
       const taskId = await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(taskId, 1), "colony-not-global-skill");
+      await checkErrorRevert(colony.setTaskSkill(taskId, 1), "colony-not-valid-skill");
     });
 
     it("should NOT be able to set a deprecated skill on task", async () => {
@@ -499,7 +499,7 @@ contract("Meta Colony", (accounts) => {
       const skillId = await colonyNetwork.getSkillCount();
       await metaColony.deprecateGlobalSkill(skillId);
 
-      await checkErrorRevert(colony.setTaskSkill(taskId, skillId), "colony-deprecated-global-skill");
+      await checkErrorRevert(colony.setTaskSkill(taskId, skillId), "colony-not-valid-skill");
     });
   });
 

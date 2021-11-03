@@ -338,9 +338,8 @@ contract ColonyTask is ColonyStorage {
   function setTaskSkill(uint256 _id, uint256 _skillId) public
   stoppable
   taskExists(_id)
-  skillExists(_skillId)
   taskNotComplete(_id)
-  validGlobalSkill(_skillId)
+  validSkill(_skillId)
   self()
   {
     tasks[_id].skills[0] = _skillId;

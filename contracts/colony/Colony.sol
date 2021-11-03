@@ -54,7 +54,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
   }
 
   function emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount)
-  public stoppable auth validGlobalSkill(_skillId)
+  public stoppable auth validSkill(_skillId)
   {
     require(_amount > 0, "colony-reward-must-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
@@ -77,7 +77,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
   }
 
   function emitSkillReputationPenalty(uint256 _skillId, address _user, int256 _amount)
-  public stoppable auth validGlobalSkill(_skillId)
+  public stoppable auth validSkill(_skillId)
   {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);

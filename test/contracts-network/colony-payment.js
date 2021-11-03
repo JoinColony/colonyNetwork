@@ -105,7 +105,7 @@ contract("Colony Payment", (accounts) => {
 
       await checkErrorRevert(
         colony.addPayment(1, UINT256_MAX, RECIPIENT, token.address, 0, 1, skillId, { from: COLONY_ADMIN }),
-        "colony-deprecated-global-skill"
+        "colony-not-valid-skill"
       );
     });
 
@@ -163,7 +163,7 @@ contract("Colony Payment", (accounts) => {
       const skillId = await colonyNetwork.getSkillCount();
       await metaColony.deprecateGlobalSkill(skillId);
 
-      await checkErrorRevert(colony.setPaymentSkill(1, UINT256_MAX, paymentId, skillId, { from: COLONY_ADMIN }), "colony-deprecated-global-skill");
+      await checkErrorRevert(colony.setPaymentSkill(1, UINT256_MAX, paymentId, skillId, { from: COLONY_ADMIN }), "colony-not-valid-skill");
     });
 
     it("should not allow non-admins to update recipient", async () => {

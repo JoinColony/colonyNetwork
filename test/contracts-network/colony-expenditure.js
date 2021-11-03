@@ -252,11 +252,11 @@ contract("Colony Expenditure", (accounts) => {
       const localSkillId = await colonyNetwork.getSkillCount();
       await colony.deprecateLocalSkill(localSkillId, true);
 
-      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, localSkillId, { from: ADMIN }), "colony-deprecated-local-skill");
+      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, localSkillId, { from: ADMIN }), "colony-not-valid-skill");
     });
 
     it("should not allow owners to update many slot skills with nonexistent skills", async () => {
-      await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [100], { from: ADMIN }), "colony-expenditure-skill-does-not-exist");
+      await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [100], { from: ADMIN }), "colony-not-valid-skill");
     });
 
     it("should allow owners to update a slot claim delay", async () => {
@@ -325,7 +325,7 @@ contract("Colony Expenditure", (accounts) => {
       const skillId = await colonyNetwork.getSkillCount();
       await metaColony.deprecateGlobalSkill(skillId);
 
-      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, skillId, { from: ADMIN }), "colony-deprecated-global-skill");
+      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, skillId, { from: ADMIN }), "colony-not-valid-skill");
     });
 
     it("should not allow non-owners to update skills or payouts", async () => {
