@@ -36,7 +36,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
 
     // Add the special mining skill
-    reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(skillCount);
+    reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(skillCount - 1);
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
@@ -111,7 +111,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     colonyAuthority.setOwner(address(etherRouter));
 
-    // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
+    // Initialise the domain tree with defaults by just incrementing the skillCount
     skillCount += 1;
     colonyCount += 1;
     colonies[colonyCount] = address(colony);
