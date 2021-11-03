@@ -108,7 +108,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   mapping(address => uint256) metatransactionNonces; // Storage slot 35
 
   uint256 rootLocalSkill; // Storage slot 36
-  mapping (uint256 => LocalSkill) localSkills; // Storage slot 37
+  mapping (uint256 => bool) localSkills; // Storage slot 37
 
   // Constants
 
@@ -119,7 +119,10 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   // Modifiers
 
   modifier domainNotDeprecated(uint256 _id) {
-    require(!domains[_id].deprecated, "colony-domain-deprecated");
+    require(
+      !IColonyNetwork(colonyNetworkAddress).getSkill(domains[_id].skillId).deprecated,
+      "colony-domain-deprecated"
+    );
     _;
   }
 

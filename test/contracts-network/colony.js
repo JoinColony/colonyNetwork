@@ -223,11 +223,6 @@ contract("Colony", (accounts) => {
       await expectEvent(colony.deprecateDomain(1, 0, 2, true), "DomainDeprecated", [USER0, 2, true]);
     });
 
-    it("should not log the DomainDeprecated event if the state did not change", async () => {
-      await colony.addDomain(1, UINT256_MAX, 1);
-      await expectNoEvent(colony.deprecateDomain(1, 0, 2, false), "DomainDeprecated");
-    });
-
     it("should not be able to perform prohibited actions in the domain", async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
       await colony.deprecateDomain(1, 0, 2, true);

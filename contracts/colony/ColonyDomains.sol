@@ -101,15 +101,14 @@ contract ColonyDomains is ColonyStorage {
     }
   }
 
+  // TODO: add de-deprecation once network support is added
   function deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated) public
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   {
-    if (domains[_domainId].deprecated != _deprecated) {
-      domains[_domainId].deprecated = _deprecated;
+    IColonyNetwork(colonyNetworkAddress).deprecateSkill(domains[_domainId].skillId);
 
-      emit DomainDeprecated(msgSender(), _domainId, _deprecated);
-    }
+    emit DomainDeprecated(msgSender(), _domainId, true);
   }
 
   function initialiseRootLocalSkill() public stoppable {
@@ -137,8 +136,7 @@ contract ColonyDomains is ColonyStorage {
     // Create a new domain with the given skill and new funding pot
     domains[domainCount] = Domain({
       skillId: _skillId,
-      fundingPotId: fundingPotCount,
-      deprecated: false
+      fundingPotId: fundingPotCount
     });
 
     emit DomainAdded(msgSender(), domainCount);

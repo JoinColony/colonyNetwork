@@ -238,15 +238,16 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     require(rootLocalSkill != 0, "colony-local-skill-tree-not-initialised");
 
     uint256 newLocalSkill = IColonyNetwork(colonyNetworkAddress).addSkill(rootLocalSkill);
-    localSkills[newLocalSkill] = LocalSkill({ exists: true, deprecated: false });
+    localSkills[newLocalSkill] = true;
 
-    emit LocalSkillAdded(msg.sender, newLocalSkill);
+    emit LocalSkillAdded(msgSender(), newLocalSkill);
   }
 
+  // TODO: add de-deprecation once network support is added
   function deprecateLocalSkill(uint256 _localSkillId, bool _deprecated) public stoppable auth {
-    localSkills[_localSkillId].deprecated = _deprecated;
+    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_localSkillId);
 
-    emit LocalSkillDeprecated(msg.sender, _localSkillId, _deprecated);
+    emit LocalSkillDeprecated(msgSender(), _localSkillId, true);
   }
 
   function getRootLocalSkill() public view returns (uint256) {

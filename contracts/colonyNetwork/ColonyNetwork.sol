@@ -260,7 +260,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
   }
 
   function deprecateSkill(uint256 _skillId) public stoppable
-  allowedToAddSkill(true)
+  allowedToAddSkill(skills[_skillId].nParents == 0)
   {
     skills[_skillId].deprecated = true;
   }
