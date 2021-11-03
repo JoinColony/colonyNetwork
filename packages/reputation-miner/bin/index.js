@@ -15,6 +15,8 @@ const backoff = require("exponential-backoff").backOff;
 const ReputationMinerClient = require("../ReputationMinerClient");
 const TruffleLoader = require("../TruffleLoader").default;
 
+const { ConsoleAdapter, SlackAdapter, DiscordAdapter } = require("../../package-utils");
+
 const supportedInfuraNetworks = ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"];
 const {
   minerAddress,
@@ -70,12 +72,11 @@ if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
 let adapterObject;
 
 if (adapter === 'slack') {
-  adapterObject = require('../adapters/slack').default; // eslint-disable-line global-require
+  adapterObject = new SlackAdapter();
 } else if (adapter === 'discord'){
-  const DiscordAdapter = require('../adapters/discord').default; // eslint-disable-line global-require
   adapterObject = new DiscordAdapter(adapterLabel);
 } else {
-  adapterObject = require('../adapters/console').default; // eslint-disable-line global-require
+  adapterObject = new ConsoleAdapter();
 }
 
 const loader = new TruffleLoader({

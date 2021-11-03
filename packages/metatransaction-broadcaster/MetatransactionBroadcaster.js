@@ -2,9 +2,8 @@ import sqlite3 from "sqlite3";
 
 const ethers = require("ethers");
 const express = require("express");
-const request = require("request-promise");
 const sqlite = require("sqlite");
-const ConsoleAdapter = require("./adapters/console").default;
+const { colonyIOCors, ConsoleAdapter, updateGasEstimate } = require("../package-utils");
 
 class MetatransactionBroadcaster {
   /**
@@ -25,29 +24,12 @@ class MetatransactionBroadcaster {
 
     this.adapter = adapter;
     if (typeof this.adapter === "undefined") {
-      this.adapter = ConsoleAdapter;
+      this.adapter = new ConsoleAdapter();
     }
 
     this.app = express();
 
-    this.app.use(function (req, res, next) {
-      const origin = req.get("origin");
-
-      const colonyRegex = /.*colony\.io/;
-      const colonyMatches = colonyRegex.exec(origin);
-
-      const localRegex = /http:\/\/(127(\.\d+){1,3}|[0:]+1|localhost)/;
-
-      const localMatches = localRegex.exec(origin);
-
-      if (colonyMatches) {
-        res.header("Access-Control-Allow-Origin", colonyMatches[0]);
-      } else if (localMatches) {
-        res.header("Access-Control-Allow-Origin", "*");
-      }
-      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Synaps-Session-Id");
-      next();
-    });
+    this.app.use(colonyIOCors);
 
     this.app.use(express.json());
 
@@ -77,7 +59,7 @@ class MetatransactionBroadcaster {
         }
 
         const contract = new ethers.Contract(target, this.metaTxDef.abi, this.wallet);
-        await this.updateGasEstimate("safeLow");
+        this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
 
         const tx = await contract.executeMetaTransaction(userAddress, payload, r, s, v, { gasPrice: this.gasPrice });
 
@@ -115,7 +97,7 @@ class MetatransactionBroadcaster {
     const colonyNetworkDef = await this.loader.load({ contractName: "IColonyNetwork" }, { abi: true, address: false });
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, colonyNetworkDef.abi, this.wallet);
 
-    await this.updateGasEstimate("safeLow");
+    this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
     this.tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
 
     this.metaTxDef = await this.loader.load({ contractName: "IBasicMetaTransaction" }, { abi: true, address: false });
@@ -123,55 +105,6 @@ class MetatransactionBroadcaster {
 
   async close() {
     this.server.close();
-  }
-
-  /**
-   * Update the gas estimate
-   * @param  {string}  Transaction speed (fastest, fast, safeLow)
-   * @return {Promise}
-   */
-  async updateGasEstimate(_type) {
-    let type = _type;
-    const options = {
-      headers: {
-        "User-Agent": "Request-Promise",
-      },
-      json: true, // Automatically parses the JSON string in the response
-    };
-    let defaultGasPrice;
-    let factor;
-
-    if (this.chainId === 100) {
-      options.uri = "https://blockscout.com/xdai/mainnet/api/v1/gas-price-oracle";
-      defaultGasPrice = ethers.utils.hexlify(1000000000);
-      factor = 1;
-      // This oracle presents the information slightly differently from ethgasstation.
-      if (_type === "safeLow") {
-        type = "slow";
-      }
-    } else if (this.chainId === 1) {
-      options.uri = "https://ethgasstation.info/json/ethgasAPI.json";
-      defaultGasPrice = ethers.utils.hexlify(20000000000);
-      factor = 10;
-    } else {
-      this.adapter.error(`Error during gas estimation: unknown chainid ${this.chainId}`);
-      this.gasPrice = ethers.utils.hexlify(20000000000);
-      return;
-    }
-
-    // Get latest from whichever oracle
-    try {
-      const gasEstimates = await request(options);
-
-      if (gasEstimates[type]) {
-        this.gasPrice = ethers.utils.hexlify((gasEstimates[type] / factor) * 1e9);
-      } else {
-        this.gasPrice = defaultGasPrice;
-      }
-    } catch (err) {
-      this.adapter.error(`Error during gas estimation: ${err}`);
-      this.gasPrice = defaultGasPrice;
-    }
   }
 
   async createDB() {
