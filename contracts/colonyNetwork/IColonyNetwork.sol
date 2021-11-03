@@ -96,7 +96,12 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return skill The Skill struct
   function getSkill(uint256 _skillId) external view returns (Skill memory skill);
 
-  /// @notice Mark a global skill as deprecated which stops new tasks and payments from using it.
+  /// @notice Set deprecation status for a skill
+  /// @param _skillId Id of the skill
+  /// @param _deprecated Deprecation status
+  function deprecateSkill(uint256 _skillId, bool _deprecated) external;
+
+  /// @notice Mark a skill as deprecated which stops new tasks and payments from using it.
   /// @param _skillId Id of the skill
   function deprecateSkill(uint256 _skillId) external;
 

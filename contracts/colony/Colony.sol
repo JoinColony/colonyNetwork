@@ -173,7 +173,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
   stoppable
   auth
   {
-    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_skillId);
+    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_skillId, true);
   }
 
   function setNetworkFeeInverse(uint256 _feeInverse) public
@@ -243,11 +243,10 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     emit LocalSkillAdded(msgSender(), newLocalSkill);
   }
 
-  // TODO: add de-deprecation once network support is added
   function deprecateLocalSkill(uint256 _localSkillId, bool _deprecated) public stoppable auth {
-    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_localSkillId);
+    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_localSkillId, _deprecated);
 
-    emit LocalSkillDeprecated(msgSender(), _localSkillId, true);
+    emit LocalSkillDeprecated(msgSender(), _localSkillId, _deprecated);
   }
 
   function getRootLocalSkill() public view returns (uint256) {
