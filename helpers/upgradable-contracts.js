@@ -100,6 +100,7 @@ export async function setupUpgradableColonyNetwork(
   etherRouter,
   resolver,
   colonyNetwork,
+  colonyNetworkDeployer,
   colonyNetworkMining,
   colonyNetworkAuction,
   colonyNetworkENS,
@@ -108,6 +109,7 @@ export async function setupUpgradableColonyNetwork(
 ) {
   const deployedImplementations = {};
   deployedImplementations.ColonyNetwork = colonyNetwork.address;
+  deployedImplementations.ColonyNetworkDeployer = colonyNetworkDeployer.address;
   deployedImplementations.ColonyNetworkMining = colonyNetworkMining.address;
   deployedImplementations.ColonyNetworkAuction = colonyNetworkAuction.address;
   deployedImplementations.ColonyNetworkENS = colonyNetworkENS.address;
