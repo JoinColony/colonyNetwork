@@ -202,17 +202,8 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
-  modifier validGlobalSkill(uint256 _skillId) {
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    Skill memory skill = colonyNetworkContract.getSkill(_skillId);
-    require(skill.globalSkill, "colony-not-global-skill");
-    require(!skill.deprecated, "colony-deprecated-global-skill");
-    _;
-  }
-
-  modifier skillExists(uint256 _skillId) {
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    require(_skillId > 0 && _skillId <= colonyNetworkContract.getSkillCount(), "colony-skill-does-not-exist");
+  modifier validSkill(uint256 _skillId) {
+    require(isValidSkill(_skillId), "colony-not-valid-skill");
     _;
   }
 
@@ -334,6 +325,10 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     }
   }
 
+  function isValidSkill(uint256 skillId) internal view returns (bool) {
+    Skill memory skill = IColonyNetwork(colonyNetworkAddress).getSkill(skillId);
+    return (skill.globalSkill || localSkills[skillId]) && !skill.deprecated;
+  }
 
   function domainExists(uint256 domainId) internal view returns (bool) {
     return domainId > 0 && domainId <= domainCount;

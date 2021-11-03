@@ -126,7 +126,7 @@ contract ColonyDomains is ColonyStorage {
 
   // Internal
 
-  function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {
+  function initialiseDomain(uint256 _skillId) internal {
     domainCount += 1;
     // Create a new funding pot
     fundingPotCount += 1;
