@@ -6,6 +6,7 @@ const { setupUpgradableColonyNetwork } = require("../helpers/upgradable-contract
 const ColonyNetworkAuthority = artifacts.require("./ColonyNetworkAuthority");
 const ContractRecovery = artifacts.require("./ContractRecovery");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
+const ColonyNetworkDeployer = artifacts.require("./ColonyNetworkDeployer");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("./ColonyNetworkAuction");
 const ColonyNetworkENS = artifacts.require("./ColonyNetworkENS");
@@ -16,6 +17,7 @@ const Resolver = artifacts.require("./Resolver");
 // eslint-disable-next-line no-unused-vars
 module.exports = async function (deployer) {
   const colonyNetwork = await ColonyNetwork.deployed();
+  const colonyNetworkDeployer = await ColonyNetworkDeployer.deployed();
   const colonyNetworkMining = await ColonyNetworkMining.deployed();
   const colonyNetworkAuction = await ColonyNetworkAuction.deployed();
   const colonyNetworkENS = await ColonyNetworkENS.deployed();
@@ -28,6 +30,7 @@ module.exports = async function (deployer) {
     etherRouter,
     resolver,
     colonyNetwork,
+    colonyNetworkDeployer,
     colonyNetworkMining,
     colonyNetworkAuction,
     colonyNetworkENS,

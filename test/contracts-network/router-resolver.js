@@ -11,7 +11,7 @@ chai.use(bnChai(web3.utils.BN));
 const MultiSigWallet = artifacts.require("gnosis/MultiSigWallet");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
-const ColonyNetwork = artifacts.require("ColonyNetwork");
+const ColonyNetworkDeployer = artifacts.require("ColonyNetworkDeployer");
 
 contract("EtherRouter / Resolver", (accounts) => {
   const COINBASE_ACCOUNT = accounts[0];
@@ -68,7 +68,7 @@ contract("EtherRouter / Resolver", (accounts) => {
 
   describe("Resolver", () => {
     it("should return correct destination for given function, including overloads", async () => {
-      const deployedColonyNetwork = await ColonyNetwork.deployed();
+      const deployedColonyNetwork = await ColonyNetworkDeployer.deployed();
       const signature = await resolver.stringToSig("createColony(address)");
       const overloadedSignature = await resolver.stringToSig("createColony(address,uint256,string,string)");
       const destination = await resolver.lookup(signature);
