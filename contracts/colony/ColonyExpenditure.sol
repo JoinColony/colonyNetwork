@@ -192,11 +192,8 @@ contract ColonyExpenditure is ColonyStorage {
       );
 
       Skill memory skill = colonyNetworkContract.getSkill(_skillIds[i]);
-      LocalSkill memory localSkill = localSkills[_skillIds[i]];
-
-      require(skill.globalSkill || localSkill.exists, "colony-not-valid-skill");
-      require(!skill.globalSkill || !skill.deprecated, "colony-deprecated-global-skill");
-      require(!localSkill.exists || !localSkill.deprecated, "colony-deprecated-local-skill");
+      require(skill.globalSkill || localSkills[_skillIds[i]], "colony-not-valid-skill");
+      require(!skill.deprecated, "colony-deprecated-skill");
 
       // We only allow setting of the first skill here.
       // If we allow more in the future, make sure to have a hard limit that
