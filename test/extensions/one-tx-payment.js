@@ -7,21 +7,15 @@ import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID, FUNDING_ROLE, ADMINISTRATION_ROLE } from "../../helpers/constants";
 import { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent } from "../../helpers/test-helper";
-import {
-  setupColonyNetwork,
-  setupMetaColonyWithLockedCLNYToken,
-  setupRandomColony,
-  fundColonyWithTokens,
-  getMetaTransactionParameters,
-} from "../../helpers/test-data-generator";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+import { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
+const EtherRouter = artifacts.require("EtherRouter");
 const OneTxPayment = artifacts.require("OneTxPayment");
-const ColonyExtension = artifacts.require("ColonyExtension");
-const Resolver = artifacts.require("Resolver");
 
 const ONE_TX_PAYMENT = soliditySha3("OneTxPayment");
 
@@ -31,29 +25,21 @@ contract("One transaction payments", (accounts) => {
   let colonyNetwork;
   let metaColony;
   let oneTxPayment;
-  let oneTxPaymentVersion;
 
   const USER1 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[1] : accounts[2];
   const USER2 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[2] : accounts[1];
+
+  const VERSION = 3;
 
   const ROLES = rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]);
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    const oneTxPaymentImplementation = await OneTxPayment.new();
-    const resolver = await Resolver.new();
-    await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPaymentImplementation.address }, resolver);
-    await metaColony.addExtensionToNetwork(ONE_TX_PAYMENT, resolver.address);
-
-    const versionSig = await resolver.stringToSig("version()");
-    const target = await resolver.lookup(versionSig);
-    const extensionImplementation = await ColonyExtension.at(target);
-    oneTxPaymentVersion = await extensionImplementation.version();
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
   });
 
   beforeEach(async () => {
@@ -63,7 +49,7 @@ contract("One transaction payments", (accounts) => {
 
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-    await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
+    await colony.installExtension(ONE_TX_PAYMENT, VERSION);
     const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
     oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
 
@@ -81,7 +67,7 @@ contract("One transaction payments", (accounts) => {
       const identifier = await oneTxPayment.identifier();
       const version = await oneTxPayment.version();
       expect(identifier).to.equal(ONE_TX_PAYMENT);
-      expect(version).to.eq.BN(oneTxPaymentVersion);
+      expect(version).to.eq.BN(VERSION);
 
       const capabilityRoles = await oneTxPayment.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -96,9 +82,9 @@ contract("One transaction payments", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
+      await colony.installExtension(ONE_TX_PAYMENT, VERSION);
 
-      await checkErrorRevert(colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.installExtension(ONE_TX_PAYMENT, VERSION), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(ONE_TX_PAYMENT, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(ONE_TX_PAYMENT);

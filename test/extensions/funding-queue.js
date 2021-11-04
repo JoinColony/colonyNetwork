@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, DEFAULT_STAKE, SECONDS_PER_DAY, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
+import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
 
 import {
   checkErrorRevert,
@@ -19,25 +19,17 @@ import {
   removeSubdomainLimit,
 } from "../../helpers/test-helper";
 
-import {
-  setupColonyNetwork,
-  setupRandomColony,
-  giveUserCLNYTokensAndStake,
-  setupMetaColonyWithLockedCLNYToken,
-  getMetaTransactionParameters,
-} from "../../helpers/test-data-generator";
-
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 import PatriciaTree from "../../packages/reputation-miner/patricia";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const EtherRouter = artifacts.require("EtherRouter");
 const TokenLocking = artifacts.require("TokenLocking");
 const FundingQueue = artifacts.require("FundingQueue");
-const Resolver = artifacts.require("Resolver");
-const ColonyExtension = artifacts.require("ColonyExtension");
 
 const FUNDING_QUEUE = soliditySha3("FundingQueue");
 
@@ -46,11 +38,10 @@ contract("Funding Queues", (accounts) => {
   let token;
   let domain1;
   let domain2;
-  let metaColony;
+  let metaColonyAddress;
   let colonyNetwork;
   let tokenLocking;
   let fundingQueue;
-  let fundingQueueVersion;
 
   let reputationTree;
 
@@ -73,6 +64,8 @@ contract("Funding Queues", (accounts) => {
   const USER1 = accounts[1];
   const MINER = accounts[5];
 
+  const VERSION = 3;
+
   const WAD2 = WAD.muln(2);
 
   const HEAD = 0;
@@ -83,25 +76,14 @@ contract("Funding Queues", (accounts) => {
   const STATE_CANCELLED = 3;
 
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER, DEFAULT_STAKE);
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    metaColonyAddress = await colonyNetwork.getMetaColony();
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await TokenLocking.at(tokenLockingAddress);
 
-    const fundingQueueImplementation = await FundingQueue.new();
-    const resolver = await Resolver.new();
-    await setupEtherRouter("FundingQueue", { FundingQueue: fundingQueueImplementation.address }, resolver);
-    await metaColony.addExtensionToNetwork(FUNDING_QUEUE, resolver.address);
     await removeSubdomainLimit(colonyNetwork);
-
-    const versionSig = await resolver.stringToSig("version()");
-    const target = await resolver.lookup(versionSig);
-    const extensionImplementation = await ColonyExtension.at(target);
-    fundingQueueVersion = await extensionImplementation.version();
   });
 
   beforeEach(async () => {
@@ -113,7 +95,7 @@ contract("Funding Queues", (accounts) => {
     await colony.addDomain(1, 0, 2);
     domain1 = await colony.getDomain(1);
     domain2 = await colony.getDomain(2);
-    await colony.installExtension(FUNDING_QUEUE, fundingQueueVersion);
+    await colony.installExtension(FUNDING_QUEUE, VERSION);
 
     const fundingQueueAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
     fundingQueue = await FundingQueue.at(fundingQueueAddress);
@@ -139,7 +121,7 @@ contract("Funding Queues", (accounts) => {
       makeReputationValue(WAD, 2)
     );
     await reputationTree.insert(
-      makeReputationKey(metaColony.address, domain1.skillId, USER0), // Wrong colony
+      makeReputationKey(metaColonyAddress, domain1.skillId, USER0), // Wrong colony
       makeReputationValue(WAD, 3)
     );
     await reputationTree.insert(
@@ -192,7 +174,7 @@ contract("Funding Queues", (accounts) => {
       const identifier = await fundingQueue.identifier();
       const version = await fundingQueue.version();
       expect(identifier).to.equal(FUNDING_QUEUE);
-      expect(version).to.eq.BN(fundingQueueVersion);
+      expect(version).to.eq.BN(VERSION);
 
       const capabilityRoles = await fundingQueue.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -207,12 +189,9 @@ contract("Funding Queues", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(FUNDING_QUEUE, fundingQueueVersion, { from: USER0 });
+      await colony.installExtension(FUNDING_QUEUE, VERSION, { from: USER0 });
 
-      await checkErrorRevert(
-        colony.installExtension(FUNDING_QUEUE, fundingQueueVersion, { from: USER0 }),
-        "colony-network-extension-already-installed"
-      );
+      await checkErrorRevert(colony.installExtension(FUNDING_QUEUE, VERSION, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });
@@ -405,7 +384,7 @@ contract("Funding Queues", (accounts) => {
     });
 
     it("cannot back a basic proposal with the wrong colony address", async () => {
-      const key = makeReputationKey(metaColony.address, domain1.skillId, USER0);
+      const key = makeReputationKey(metaColonyAddress, domain1.skillId, USER0);
       const value = makeReputationValue(WAD, 3);
       const [mask, siblings] = await reputationTree.getProof(key);
 

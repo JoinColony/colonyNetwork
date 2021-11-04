@@ -6,21 +6,15 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, IPFS_HASH } from "../../helpers/constants";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { checkErrorRevert, web3GetCode } from "../../helpers/test-helper";
-import {
-  setupColonyNetwork,
-  setupRandomColony,
-  setupMetaColonyWithLockedCLNYToken,
-  getMetaTransactionParameters,
-} from "../../helpers/test-data-generator";
+import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const EtherRouter = artifacts.require("EtherRouter");
 const Whitelist = artifacts.require("Whitelist");
-const Resolver = artifacts.require("Resolver");
-const ColonyExtension = artifacts.require("ColonyExtension");
 
 const WHITELIST = soliditySha3("Whitelist");
 
@@ -28,30 +22,21 @@ contract("Whitelist", (accounts) => {
   let colonyNetwork;
   let colony;
   let whitelist;
-  let whitelistVersion;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
 
+  const VERSION = 2;
+
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    const { metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-
-    const whitelistImplementation = await Whitelist.new();
-    const resolver = await Resolver.new();
-    await setupEtherRouter("Whitelist", { Whitelist: whitelistImplementation.address }, resolver);
-    await metaColony.addExtensionToNetwork(WHITELIST, resolver.address);
-
-    const versionSig = await resolver.stringToSig("version()");
-    const target = await resolver.lookup(versionSig);
-    const extensionImplementation = await ColonyExtension.at(target);
-    whitelistVersion = await extensionImplementation.version();
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
 
-    await colony.installExtension(WHITELIST, whitelistVersion);
+    await colony.installExtension(WHITELIST, VERSION);
 
     const whitelistAddress = await colonyNetwork.getExtensionInstallation(WHITELIST, colony.address);
     whitelist = await Whitelist.at(whitelistAddress);
@@ -67,9 +52,7 @@ contract("Whitelist", (accounts) => {
       await checkErrorRevert(whitelist.install(colony.address), "extension-already-installed");
 
       const identifier = await whitelist.identifier();
-      const version = await whitelist.version();
       expect(identifier).to.equal(WHITELIST);
-      expect(version).to.eq.BN(whitelistVersion);
 
       const capabilityRoles = await whitelist.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -84,9 +67,9 @@ contract("Whitelist", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(WHITELIST, whitelistVersion, { from: USER0 });
+      await colony.installExtension(WHITELIST, VERSION, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(WHITELIST, whitelistVersion, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.installExtension(WHITELIST, VERSION, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(WHITELIST, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(WHITELIST, { from: USER0 });
