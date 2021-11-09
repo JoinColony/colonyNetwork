@@ -10,8 +10,6 @@ import {
   setupRatedTask,
   setupFundedTask,
   setupFinalizedTask,
-  setupColonyNetwork,
-  setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
 } from "../../helpers/test-data-generator";
 
@@ -52,6 +50,9 @@ const ADDRESS_ZERO = ethers.constants.AddressZero;
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const EtherRouter = artifacts.require("EtherRouter");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const Token = artifacts.require("Token");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
@@ -69,13 +70,14 @@ contract("Reputation Updates", (accounts) => {
   let inactiveReputationMiningCycle;
 
   before(async () => {
-    // Setup a new network instance as we'll be modifying the global skills tree
-    colonyNetwork = await setupColonyNetwork();
-    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
+
+    const clnyTokenAddress = await metaColony.getToken();
+    clnyToken = await Token.at(clnyTokenAddress);
   });
 
   beforeEach(async function () {

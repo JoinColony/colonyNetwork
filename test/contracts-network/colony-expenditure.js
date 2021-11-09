@@ -54,10 +54,12 @@ contract("Colony Expenditure", (accounts) => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
 
     ({ colony, token } = await setupRandomColony(colonyNetwork));
+
     await colony.setRewardInverse(100);
     await colony.setAdministrationRole(1, UINT256_MAX, ADMIN, 1, true);
     await colony.setArbitrationRole(1, UINT256_MAX, ARBITRATOR, 1, true);

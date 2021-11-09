@@ -36,7 +36,7 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
-const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("ReputationMiningCycleRespond");
@@ -60,8 +60,10 @@ contract("Colony Network Recovery", (accounts) => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
     const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IColony.at(metaColonyAddress);
+    metaColony = await IMetaColony.at(metaColonyAddress);
+
     const clnyAddress = await metaColony.getToken();
     clny = await Token.at(clnyAddress);
 
@@ -447,7 +449,7 @@ contract("Colony Network Recovery", (accounts) => {
           const colonyNetworkAddress = colonyNetwork.address;
           const tokenLockingAddress = await colonyNetwork.getTokenLocking();
           const metaColonyAddress = await colonyNetwork.getMetaColony();
-          const myMetaColony = await IColony.at(metaColonyAddress);
+          const myMetaColony = await IMetaColony.at(metaColonyAddress);
           const myClnyAddress = await myMetaColony.getToken();
 
           // slot 3: colonyNetworkAddress
