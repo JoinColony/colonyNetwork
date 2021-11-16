@@ -7,7 +7,7 @@ const { getChallenge, verifyEthSignature } = etherpass;
 const sqlite3 = require("sqlite3");
 const sqlite = require("sqlite");
 const bodyParser = require("body-parser");
-const { colonyIOCors } = require("../package-utils");
+const { colonyIOCors, ConsoleAdapter, updateGasEstimate } = require("../package-utils");
 
 class KycOracle {
   /**
@@ -20,7 +20,9 @@ class KycOracle {
    * @param {Object} provider                Ethers provider that allows access to an ethereum node.
    * @param {Number} port                    The port the oracle will serve on
    */
-  constructor({ privateKey, adminAddress, apiKey, loader, provider, dbPath, port = 3003 }) {
+  constructor({ privateKey, adminAddress, apiKey, loader, provider, adapter, dbPath, port = 3003 }) {
+    this.provider = provider;
+
     if (privateKey) {
       this.wallet = new ethers.Wallet(privateKey, this.provider);
       this.adminAddress = this.wallet.address;
@@ -28,6 +30,12 @@ class KycOracle {
       this.wallet = provider.getSigner(adminAddress);
       this.adminAddress = adminAddress;
     }
+
+    this.adapter = adapter;
+    if (typeof this.adapter === "undefined") {
+      this.adapter = new ConsoleAdapter();
+    }
+
     console.log("Transactions will be signed from ", this.adminAddress);
 
     this.apiKey = apiKey;
@@ -38,7 +46,6 @@ class KycOracle {
     }
 
     this.loader = loader;
-    this.provider = provider;
 
     this.app = express();
 
@@ -119,7 +126,7 @@ class KycOracle {
         if (validated) {
           const alreadyApproved = await this.whitelist.getApproval(userAddress);
           if (!alreadyApproved) {
-            await this.updateGasEstimate("safeLow");
+            await updateGasEstimate("safeLow", this.chainId, this.adapter);
             const gasEstimate = await this.whitelist.estimateGas.approveUsers([userAddress], true);
             this.whitelist.approveUsers([userAddress], true, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
           }
@@ -171,34 +178,8 @@ class KycOracle {
     this.whitelistContractDef = await this.loader.load({ contractName: "Whitelist" }, { abi: true, address: false });
     this.whitelist = new ethers.Contract(whitelistAddress, this.whitelistContractDef.abi, this.wallet);
 
-    await this.updateGasEstimate("safeLow");
+    await updateGasEstimate("safeLow", this.chainId, this.adapter);
     await this.createDB();
-  }
-
-  /**
-   * Update the gas estimate
-   * @param  {string}  Transaction speed (fastest, fast, safeLow)
-   * @return {Promise}
-   */
-  async updateGasEstimate(type) {
-    if (this.chainId === 100) {
-      this.gasPrice = ethers.utils.hexlify(1000000000);
-      return;
-    }
-
-    try {
-      // Get latest from ethGasStation
-      const { data } = await axios.get("https://ethgasstation.info/json/ethgasAPI.json");
-
-      if (data[type]) {
-        this.gasPrice = ethers.utils.hexlify((data[type] / 10) * 1e9);
-      } else {
-        this.gasPrice = ethers.utils.hexlify(20000000000);
-      }
-    } catch (err) {
-      console.log(`Error during gas estimation: ${err}`);
-      this.gasPrice = ethers.utils.hexlify(20000000000);
-    }
   }
 
   async createDB() {
