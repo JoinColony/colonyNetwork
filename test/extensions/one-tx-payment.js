@@ -25,11 +25,10 @@ contract("One transaction payments", (accounts) => {
   let colonyNetwork;
   let metaColony;
   let oneTxPayment;
+  let version;
 
   const USER1 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[1] : accounts[2];
   const USER2 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[2] : accounts[1];
-
-  const VERSION = 3;
 
   const ROLES = rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]);
   const ADDRESS_ZERO = ethers.constants.AddressZero;
@@ -40,6 +39,9 @@ contract("One transaction payments", (accounts) => {
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
+
+    const extension = await OneTxPayment.new();
+    version = await extension.version();
   });
 
   beforeEach(async () => {
@@ -49,7 +51,7 @@ contract("One transaction payments", (accounts) => {
 
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-    await colony.installExtension(ONE_TX_PAYMENT, VERSION);
+    await colony.installExtension(ONE_TX_PAYMENT, version);
     const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
     oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
 
@@ -65,9 +67,7 @@ contract("One transaction payments", (accounts) => {
       await checkErrorRevert(oneTxPayment.install(colony.address), "extension-already-installed");
 
       const identifier = await oneTxPayment.identifier();
-      const version = await oneTxPayment.version();
       expect(identifier).to.equal(ONE_TX_PAYMENT);
-      expect(version).to.eq.BN(VERSION);
 
       const capabilityRoles = await oneTxPayment.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -82,9 +82,9 @@ contract("One transaction payments", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(ONE_TX_PAYMENT, VERSION);
+      await colony.installExtension(ONE_TX_PAYMENT, version);
 
-      await checkErrorRevert(colony.installExtension(ONE_TX_PAYMENT, VERSION), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.installExtension(ONE_TX_PAYMENT, version), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(ONE_TX_PAYMENT, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(ONE_TX_PAYMENT);

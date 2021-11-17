@@ -22,21 +22,23 @@ contract("EvaluatedExpenditure", (accounts) => {
   let colonyNetwork;
   let colony;
   let evaluatedExpenditure;
+  let version;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
 
-  const VERSION = 2;
-
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
+    const extension = await EvaluatedExpenditure.new();
+    version = await extension.version();
   });
 
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
 
-    await colony.installExtension(EVALUATED_EXPENDITURE, VERSION);
+    await colony.installExtension(EVALUATED_EXPENDITURE, version);
 
     const evaluatedExpenditureAddress = await colonyNetwork.getExtensionInstallation(EVALUATED_EXPENDITURE, colony.address);
     evaluatedExpenditure = await EvaluatedExpenditure.at(evaluatedExpenditureAddress);
@@ -67,9 +69,9 @@ contract("EvaluatedExpenditure", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(EVALUATED_EXPENDITURE, VERSION, { from: USER0 });
+      await colony.installExtension(EVALUATED_EXPENDITURE, version, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(EVALUATED_EXPENDITURE, VERSION, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.installExtension(EVALUATED_EXPENDITURE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER0 });

@@ -42,6 +42,7 @@ contract("Funding Queues", (accounts) => {
   let colonyNetwork;
   let tokenLocking;
   let fundingQueue;
+  let version;
 
   let reputationTree;
 
@@ -64,8 +65,6 @@ contract("Funding Queues", (accounts) => {
   const USER1 = accounts[1];
   const MINER = accounts[5];
 
-  const VERSION = 3;
-
   const WAD2 = WAD.muln(2);
 
   const HEAD = 0;
@@ -84,6 +83,9 @@ contract("Funding Queues", (accounts) => {
     tokenLocking = await TokenLocking.at(tokenLockingAddress);
 
     await removeSubdomainLimit(colonyNetwork);
+
+    const extension = await FundingQueue.new();
+    version = await extension.version();
   });
 
   beforeEach(async () => {
@@ -95,7 +97,7 @@ contract("Funding Queues", (accounts) => {
     await colony.addDomain(1, 0, 2);
     domain1 = await colony.getDomain(1);
     domain2 = await colony.getDomain(2);
-    await colony.installExtension(FUNDING_QUEUE, VERSION);
+    await colony.installExtension(FUNDING_QUEUE, version);
 
     const fundingQueueAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
     fundingQueue = await FundingQueue.at(fundingQueueAddress);
@@ -172,9 +174,7 @@ contract("Funding Queues", (accounts) => {
       await checkErrorRevert(fundingQueue.install(colony.address), "extension-already-installed");
 
       const identifier = await fundingQueue.identifier();
-      const version = await fundingQueue.version();
       expect(identifier).to.equal(FUNDING_QUEUE);
-      expect(version).to.eq.BN(VERSION);
 
       const capabilityRoles = await fundingQueue.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -189,9 +189,9 @@ contract("Funding Queues", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(FUNDING_QUEUE, VERSION, { from: USER0 });
+      await colony.installExtension(FUNDING_QUEUE, version, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(FUNDING_QUEUE, VERSION, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.installExtension(FUNDING_QUEUE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });

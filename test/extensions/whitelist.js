@@ -22,21 +22,23 @@ contract("Whitelist", (accounts) => {
   let colonyNetwork;
   let colony;
   let whitelist;
+  let version;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
 
-  const VERSION = 2;
-
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
+    const extension = await Whitelist.new();
+    version = await extension.version();
   });
 
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
 
-    await colony.installExtension(WHITELIST, VERSION);
+    await colony.installExtension(WHITELIST, version);
 
     const whitelistAddress = await colonyNetwork.getExtensionInstallation(WHITELIST, colony.address);
     whitelist = await Whitelist.at(whitelistAddress);
@@ -67,9 +69,9 @@ contract("Whitelist", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(WHITELIST, VERSION, { from: USER0 });
+      await colony.installExtension(WHITELIST, version, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(WHITELIST, VERSION, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.installExtension(WHITELIST, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(WHITELIST, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(WHITELIST, { from: USER0 });

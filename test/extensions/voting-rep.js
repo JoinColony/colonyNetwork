@@ -49,6 +49,7 @@ contract("Voting Reputation", (accounts) => {
   let tokenLocking;
 
   let voting;
+  let version;
 
   let reputationTree;
 
@@ -84,8 +85,6 @@ contract("Voting Reputation", (accounts) => {
   const USER2 = accounts[2];
   const MINER = accounts[5];
 
-  const VERSION = 4;
-
   const SALT = soliditySha3({ type: "string", value: shortid.generate() });
   const FAKE = soliditySha3({ type: "string", value: shortid.generate() });
 
@@ -117,6 +116,9 @@ contract("Voting Reputation", (accounts) => {
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await TokenLocking.at(tokenLockingAddress);
+
+    const extension = await VotingReputation.new();
+    version = await extension.version();
   });
 
   beforeEach(async () => {
@@ -129,7 +131,7 @@ contract("Voting Reputation", (accounts) => {
     domain2 = await colony.getDomain(2);
     domain3 = await colony.getDomain(3);
 
-    await colony.installExtension(VOTING_REPUTATION, VERSION);
+    await colony.installExtension(VOTING_REPUTATION, version);
     const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
     voting = await VotingReputation.at(votingAddress);
 
@@ -244,9 +246,7 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(voting.install(colony.address), "extension-already-installed");
 
       const identifier = await voting.identifier();
-      const version = await voting.version();
       expect(identifier).to.equal(VOTING_REPUTATION);
-      expect(version).to.eq.BN(VERSION);
 
       const capabilityRoles = await voting.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -261,9 +261,9 @@ contract("Voting Reputation", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(VOTING_REPUTATION, VERSION, { from: USER0 });
+      await colony.installExtension(VOTING_REPUTATION, version, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(VOTING_REPUTATION, VERSION, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.installExtension(VOTING_REPUTATION, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(VOTING_REPUTATION, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(VOTING_REPUTATION, { from: USER0 });
