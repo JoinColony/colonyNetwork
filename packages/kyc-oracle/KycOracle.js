@@ -82,12 +82,11 @@ class KycOracle {
         if (!sessionId) {
           // Create a session for them
           const { data } = await axios.post(
-            "https://workflow-api.synaps.io/v2/session/init",
+            `https://workflow-api.synaps.io/v2/session/init?alias=${address}`,
             {}, // No data
             {
               headers: {
                 "Api-Key": this.apiKey,
-                alias: address,
               },
             }
           );
@@ -193,45 +192,132 @@ class KycOracle {
     await db.close();
   }
 
+  // async getSessionForAddress(address) {
+  //   const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
+  //   const res = await db.all(
+  //     `SELECT DISTINCT users.session_id as session_id
+  //      FROM users
+  //      WHERE users.address="${address}"`
+  //   );
+  //   await db.close();
+  //   const sessionIds = res.map((x) => x.session_id);
+  //   if (sessionIds.length > 1) {
+  //     throw new Error("More than one matching address");
+  //   }
+  //   return sessionIds[0];
+  // }
+
   async getSessionForAddress(address) {
-    const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
-    const res = await db.all(
+    await this.checkDBOpen();
+    let res = await this.db.all(
       `SELECT DISTINCT users.session_id as session_id
        FROM users
        WHERE users.address="${address}"`
     );
-    await db.close();
     const sessionIds = res.map((x) => x.session_id);
     if (sessionIds.length > 1) {
       throw new Error("More than one matching address");
     }
-    return sessionIds[0];
+    if (sessionIds.length === 1) {
+      return sessionIds[0];
+    }
+
+    let { data } = await axios.get(`https://workflow-api.synaps.io/v2/session/list/FINISHED?alias=${address}`, {
+      headers: {
+        "Api-Key": this.apiKey,
+      },
+    });
+    if (data.length === 1) {
+      return data[0].session_id;
+    }
+
+    // Is it pending?
+    res = await axios.get(`https://workflow-api.synaps.io/v2/session/list/PENDING?alias=${address}`, {
+      headers: {
+        "Api-Key": this.apiKey,
+      },
+    });
+
+    data = res.data;
+
+    if (data.length === 1) {
+      return data[0].session_id;
+    }
+
+    res = await axios.get(`https://workflow-api.synaps.io/v2/session/list/CANCELLED?alias=${address}`, {
+      headers: {
+        "Api-Key": this.apiKey,
+      },
+    });
+    data = res.data;
+    if (data.length === 1) {
+      await this.setSessionForAddress(address, data[0].session_id);
+      return data[0].session_id;
+    }
+
+    return undefined;
   }
 
   async setSessionForAddress(address, session) {
-    const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
-    await db.run(
+    await this.checkDBOpen();
+    await this.db.run(
       `INSERT INTO users (address, session_id)
        VALUES ("${address}", "${session}")
        ON CONFLICT(address) DO
        UPDATE SET session_id = "${session}"`
     );
-    await db.close();
   }
 
+  // async getAddressForSession(sessionId) {
+  //   const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
+  //   const res = await db.all(
+  //     `SELECT DISTINCT users.address as address
+  //      FROM users
+  //      WHERE users.session_id="${sessionId}"`
+  //   );
+  //   await db.close();
+  //   const addresses = res.map((x) => x.address);
+  //   if (addresses.length > 1) {
+  //     throw new Error("More than one matching address");
+  //   }
+  //   return addresses[0];
+  // }
+
   async getAddressForSession(sessionId) {
-    const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
-    const res = await db.all(
+    await this.checkDBOpen();
+    const res = await this.db.all(
       `SELECT DISTINCT users.address as address
        FROM users
        WHERE users.session_id="${sessionId}"`
     );
-    await db.close();
     const addresses = res.map((x) => x.address);
     if (addresses.length > 1) {
       throw new Error("More than one matching address");
     }
-    return addresses[0];
+    if (addresses.length === 1) {
+      return addresses[0];
+    }
+
+    const { data } = await axios.get("https://workflow-api.synaps.io/v2/session/info", {
+      headers: {
+        "Api-Key": this.apiKey,
+        "Session-Id": sessionId,
+      },
+    });
+
+    if (data.alias) {
+      await this.setSessionForAddress(data.alias, sessionId);
+      return data.alias;
+    }
+
+    return undefined;
+  }
+
+  async checkDBOpen() {
+    if (this.db) {
+      return;
+    }
+    this.db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
   }
 }
 
