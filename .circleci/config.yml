@@ -312,13 +312,13 @@ workflows:
             - test-contracts-extensions-coverage
             - test-reputation-coverage
             - test-chainid-coverage
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 1 * * *" # 1am UTC
-          filters:
-            branches:
-              only:
-                - develop
-    jobs:
-      - end-to-end-tests
+ # nightly:
+ #   triggers:
+ #     - schedule:
+ #         cron: "0 1 * * *" # 1am UTC
+ #         filters:
+ #           branches:
+ #             only:
+ #               - develop
+ #   jobs:
+ #     - end-to-end-tests
