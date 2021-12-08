@@ -361,7 +361,7 @@ contract CoinMachine is ColonyExtension {
     return
       (userLimitFraction == WAD || whitelist == address(0x0)) ?
       UINT256_MAX :
-      sub(wmul(add(ERC20(token).balanceOf(address(this)), soldTotal), userLimitFraction), soldUser[_user])
+      sub(wmul(add(getTokenBalance(), soldTotal), userLimitFraction), soldUser[_user])
     ;
   }
 
