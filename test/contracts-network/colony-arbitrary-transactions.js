@@ -206,7 +206,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
   it("should not be able to make arbitrary transactions to the colony's own extensions", async () => {
     const COIN_MACHINE = soliditySha3("CoinMachine");
-    await colony.installExtension(COIN_MACHINE, 2);
+    await colony.installExtension(COIN_MACHINE, 3);
 
     const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
     const coinMachine = await CoinMachine.at(coinMachineAddress);

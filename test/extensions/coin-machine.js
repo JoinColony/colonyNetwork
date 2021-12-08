@@ -812,62 +812,64 @@ contract("Coin Machine", (accounts) => {
         60 * 60,
         10,
         WAD.muln(100),
-        WAD.muln(200),
-        WAD.divn(2),
+        WAD.muln(1000),
+        WAD.divn(4),
         WAD,
         whitelist.address
       );
 
       const periodLength = await coinMachine.getPeriodLength();
 
-      await purchaseToken.mint(USER0, WAD.muln(500), { from: USER0 });
-      await purchaseToken.approve(coinMachine.address, WAD.muln(500), { from: USER0 });
+      await purchaseToken.mint(USER0, WAD.muln(5000), { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, WAD.muln(5000), { from: USER0 });
 
-      await purchaseToken.mint(USER1, WAD.muln(500), { from: USER0 });
-      await purchaseToken.approve(coinMachine.address, WAD.muln(500), { from: USER1 });
+      await purchaseToken.mint(USER1, WAD.muln(5000), { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, WAD.muln(5000), { from: USER1 });
 
-      await purchaseToken.mint(USER2, WAD.muln(500), { from: USER0 });
-      await purchaseToken.approve(coinMachine.address, WAD.muln(500), { from: USER2 });
+      await purchaseToken.mint(USER2, WAD.muln(5000), { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, WAD.muln(5000), { from: USER2 });
 
       let userLimit;
       let balance;
 
-      // totalSold is 0, so we use targetPerPeriod (100) as a pseudo-total
-      // The user can buy 100 tokens, because it thinks the total will be 200
+      // The user can buy 250 tokens, as the contract has 1000 tokens and the per user
+      // limit is 25%
       userLimit = await coinMachine.getUserLimit(USER0);
-      expect(userLimit).to.eq.BN(WAD.muln(100));
+      expect(userLimit).to.eq.BN(WAD.muln(250));
 
-      await coinMachine.buyTokens(WAD.muln(500), { from: USER0 });
-      await coinMachine.buyTokens(WAD.muln(500), { from: USER1 });
+      await coinMachine.buyTokens(WAD.muln(300), { from: USER0 });
+      await coinMachine.buyTokens(WAD.muln(300), { from: USER1 });
 
       // Only buys up to limit
       balance = await token.balanceOf(USER0);
-      expect(balance).to.eq.BN(WAD.muln(100));
+      expect(balance).to.eq.BN(WAD.muln(250));
       balance = await token.balanceOf(USER1);
-      expect(balance).to.eq.BN(WAD.muln(100));
+      expect(balance).to.eq.BN(WAD.muln(250));
 
       await forwardTime(periodLength.toNumber(), this);
 
-      // Now totalSold is 200
-      // Since each owns half already, neither can buy, only a new user can
-      // The new user can buy 200 tokens, half of 400
+      // Since each owns 25% of the total tokens already, neither can buy, only a new user can
+      // The new user can buy 250 tokens, 25% of the full 1000, which is now split between the
+      // first two users and the remainder still in coin machine
       userLimit = await coinMachine.getUserLimit(USER0);
       expect(userLimit).to.be.zero;
       userLimit = await coinMachine.getUserLimit(USER2);
-      expect(userLimit).to.eq.BN(WAD.muln(200));
+      expect(userLimit).to.eq.BN(WAD.muln(250));
 
       await coinMachine.buyTokens(WAD.muln(500), { from: USER2 });
 
       // Only buys up to limit
       balance = await token.balanceOf(USER2);
-      expect(balance).to.eq.BN(WAD.muln(200));
+      expect(balance).to.eq.BN(WAD.muln(250));
 
       await forwardTime(periodLength.toNumber(), this);
 
-      // Now totalSold is 400
-      // Original users can buy 200 tokens, owning half (300) of 600
+      // If more tokens are added, original users can buy again.
+      await token.mint(coinMachine.address, WAD.muln(1000));
+
+      // Original users can buy 250 more tokens, owning 25% of 2000
       userLimit = await coinMachine.getUserLimit(USER0);
-      expect(userLimit).to.eq.BN(WAD.muln(200));
+      expect(userLimit).to.eq.BN(WAD.muln(250));
     });
 
     it("cannot set a user limit without a whitelist", async () => {
@@ -916,9 +918,9 @@ contract("Coin Machine", (accounts) => {
 
       let maxPurchase;
 
-      // User0 limited by user limit (100)
+      // User0 limited by user limit (125)
       maxPurchase = await coinMachine.getMaxPurchase(USER0);
-      expect(maxPurchase).to.eq.BN(WAD.muln(100));
+      expect(maxPurchase).to.eq.BN(WAD.muln(125));
 
       // 100 sold, 150 remaining
       await coinMachine.buyTokens(WAD.muln(100), { from: USER0 });
@@ -939,7 +941,7 @@ contract("Coin Machine", (accounts) => {
       // New supply of 250 tokens
       await token.mint(coinMachine.address, WAD.muln(250));
 
-      // User2 limited by user limit (200 of what will be 400 tokens)
+      // User2 limited by user limit
       maxPurchase = await coinMachine.getMaxPurchase(USER2);
       expect(maxPurchase).to.eq.BN(WAD.muln(200));
 
