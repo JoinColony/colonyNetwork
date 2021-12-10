@@ -24,6 +24,7 @@ import {
   setupRandomColony,
   giveUserCLNYTokensAndStake,
   setupMetaColonyWithLockedCLNYToken,
+  getMetaTransactionParameters,
 } from "../../helpers/test-data-generator";
 
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
@@ -221,6 +222,23 @@ contract("Funding Queues", (accounts) => {
   describe("creating funding proposals", async () => {
     it("can create a basic proposal", async () => {
       await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
+      const proposalId = await fundingQueue.getProposalCount();
+
+      const proposal = await fundingQueue.getProposal(proposalId);
+      expect(proposal.domainId).to.eq.BN(1);
+      expect(proposal.state).to.eq.BN(STATE_INACTIVE);
+    });
+
+    it("can create a basic proposal via metatransaction", async () => {
+      await fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 });
+      const txData = await fundingQueue.contract.methods
+        .createProposal(1, UINT256_MAX.toString(), 0, 1, 2, WAD.toString(), token.address)
+        .encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, fundingQueue.address);
+
+      await fundingQueue.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
+
       const proposalId = await fundingQueue.getProposalCount();
 
       const proposal = await fundingQueue.getProposal(proposalId);

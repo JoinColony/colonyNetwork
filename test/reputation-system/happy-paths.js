@@ -101,8 +101,8 @@ contract("Reputation Mining - happy paths", (accounts) => {
   });
 
   beforeEach(async () => {
-    await goodClient.resetDB();
     await goodClient.initialise(colonyNetwork.address);
+    await goodClient.resetDB();
 
     // Advance two cycles to clear active and inactive state.
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -251,8 +251,8 @@ contract("Reputation Mining - happy paths", (accounts) => {
       // Complete two reputation cycles to process the log
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree: false, minerAddress: MINER1 });
-      await goodClient.resetDB();
       await goodClient.initialise(colonyNetwork.address);
+      await goodClient.resetDB();
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
     });
@@ -933,8 +933,8 @@ contract("Reputation Mining - happy paths", (accounts) => {
       ).to.equal(goodClient.reputations[userKey]);
 
       // If we use the existing badClient we get `Error: invalid BigNumber value`, not sure why.
-      await badClient.resetDB();
       await badClient.initialise(colonyNetwork.address);
+      await badClient.resetDB();
 
       const keys = Object.keys(goodClient.reputations);
       for (let i = 0; i < keys.length; i += 1) {

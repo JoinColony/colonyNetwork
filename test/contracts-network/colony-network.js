@@ -2,6 +2,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 
 import {
   getTokenArgs,
@@ -13,7 +14,12 @@ import {
   getColonyEditable,
 } from "../../helpers/test-helper";
 import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } from "../../helpers/constants";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
+import {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  setupRandomColony,
+  getMetaTransactionParameters,
+} from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
 const namehash = require("eth-ens-namehash");
@@ -25,7 +31,10 @@ const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
+const TokenAuthority = artifacts.require("TokenAuthority");
+const MetaTxToken = artifacts.require("MetaTxToken");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
 contract("Colony Network", (accounts) => {
@@ -335,6 +344,38 @@ contract("Colony Network", (accounts) => {
     });
   });
 
+  describe("when users create tokens", () => {
+    it("should allow users to create new tokens", async () => {
+      const tx = await colonyNetwork.deployTokenViaNetwork("TEST", "TST", 18);
+      await expectEvent(tx, "TokenDeployed", []);
+    });
+
+    it("should have the user as the owner of the token", async () => {
+      const tx = await colonyNetwork.deployTokenViaNetwork("TEST", "TST", 18);
+      const address = tx.logs[0].args.tokenAddress;
+      const token = await MetaTxToken.at(address);
+      const owner = await token.owner();
+      expect(owner).to.equal(accounts[0]);
+    });
+
+    it("should allow users to create new token authorities", async () => {
+      let tx = await colonyNetwork.deployTokenViaNetwork("TEST", "TST", 18);
+      const { tokenAddress } = tx.logs[0].args;
+      tx = await colonyNetwork.deployTokenAuthority(tokenAddress, metaColony.address, [accounts[0]]);
+      await expectEvent(tx, "TokenAuthorityDeployed", []);
+      const authorityAddress = tx.logs[0].args.tokenAuthorityAddress;
+      const authority = await TokenAuthority.at(authorityAddress);
+
+      const transferSig = soliditySha3("transfer(address,uint256)").slice(0, 10);
+      let ableToTransfer = await authority.canCall(metaColony.address, tokenAddress, transferSig);
+      expect(ableToTransfer).to.be.true;
+      ableToTransfer = await authority.canCall(accounts[0], tokenAddress, transferSig);
+      expect(ableToTransfer).to.be.true;
+      ableToTransfer = await authority.canCall(accounts[1], tokenAddress, transferSig);
+      expect(ableToTransfer).to.be.false;
+    });
+  });
+
   describe("when getting existing colonies", () => {
     it("should allow users to get the address of a colony by its index", async () => {
       const token = await Token.new(...TOKEN_ARGS);
@@ -638,6 +679,64 @@ contract("Colony Network", (accounts) => {
     it("should not allow a colony to change its orbitDBAddress without having registered a label", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       await checkErrorRevert(colony.updateColonyOrbitDB("anotherstring", { from: accounts[0] }), "colony-colony-not-labeled");
+    });
+  });
+
+  describe("when executing metatransactions", () => {
+    beforeEach(async () => {
+      const ensRegistry = await ENSRegistry.new();
+      await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
+    });
+
+    it("should allow colony creation via metatransactions, with ENS registration afterwards", async () => {
+      const tokenArgs = getTokenArgs();
+      const token = await Token.new(...tokenArgs);
+
+      let txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "").encodeABI();
+
+      let { r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colonyNetwork.address);
+
+      let tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      const colonyCount = await colonyNetwork.getColonyCount();
+      const colonyAddress = await colonyNetwork.getColony(colonyCount);
+      await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
+
+      const colony = await IColony.at(colonyAddress);
+      txData = await colony.contract.methods.registerColonyLabel("someColonyName", "").encodeABI();
+
+      ({ r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colony.address));
+
+      tx = await colony.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+    });
+
+    it("should allow colony creation via metatransactions, with ENS registration at the time", async () => {
+      const tokenArgs = getTokenArgs();
+      const token = await Token.new(...tokenArgs);
+
+      let txData = await colonyNetwork.contract.methods["createColony(address,uint256,string)"](token.address, CURR_VERSION, "").encodeABI();
+
+      txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "someColonyName").encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colonyNetwork.address);
+
+      const tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      const colonyCount = await colonyNetwork.getColonyCount();
+      const colonyAddress = await colonyNetwork.getColony(colonyCount);
+      await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
+    });
+
+    it("should have the user as the owner of a token deployed through ColonyNetwork via metatransaction", async () => {
+      const txData = await colonyNetwork.contract.methods["deployTokenViaNetwork(string,string,uint8)"]("Test token", "TST", 18).encodeABI();
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colonyNetwork.address);
+
+      const tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      const address = tx.logs[0].args.tokenAddress;
+      const token = await MetaTxToken.at(address);
+      const owner = await token.owner();
+      expect(owner).to.equal(accounts[1]);
     });
   });
 });

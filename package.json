@@ -13,6 +13,7 @@
     "check:recoverymods": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-recovery.js",
     "check:coverage": "yarn istanbul-combine -d coverage-merged -p detail -r html -r json coverage-*/coverage-final.json && istanbul check-coverage ./coverage-merged/coverage-final.json --statements 99 --branches 94 --functions 99 --lines 99",
     "check:auth": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-auth.js",
+    "check:versioning": "bash ./scripts/versioningCheck.sh",
     "version:contracts": "bash ./scripts/version-contracts.sh",
     "generate:test:contracts": "bash ./scripts/generate-test-contracts.sh",
     "clean:test:contracts": "rimraf ./contracts/*Updated*.*",
@@ -60,7 +61,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn eslint-staged && yarn solhint-staged && yarn build:docs && git add docs"
+      "pre-commit": "yarn check:versioning && yarn eslint-staged && yarn solhint-staged && yarn build:docs && git add docs"
     }
   },
   "repository": {
@@ -98,7 +99,7 @@
     "eth-gas-reporter": "^0.2.15",
     "ethereumjs-account": "^3.0.0",
     "ethereumjs-util": "^7.0.0",
-    "ethers": "^5.0.0",
+    "ethers": "5.4.6",
     "ethlint": "^1.2.5",
     "find-in-files": "^0.5.0",
     "ganache-cli": "^6.10.1",

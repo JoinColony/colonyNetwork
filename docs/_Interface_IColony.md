@@ -248,6 +248,21 @@ Deobligate the user some amount of tokens, releasing the stake.
 |_amount|uint256|Amount of internal token we are deobligating.
 
 
+### `deprecateDomain`
+
+Deprecate a domain, preventing certain actions from happening there
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_domainId|uint256|Id of the domain being deprecated
+|_deprecated|bool|Whether or not the domain is deprecated
+
+
 ### `deprecateExtension`
 
 Set the deprecation of an extension in a colony. Secured function to authorised members.

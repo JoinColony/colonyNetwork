@@ -19,12 +19,13 @@ pragma solidity >=0.7.3; // ignore-swc-103
 pragma experimental ABIEncoderV2;
 
 import "./../common/IRecovery.sol";
+import "./../common/IBasicMetaTransaction.sol";
 import "./ColonyDataTypes.sol";
 
 
 /// @title Colony interface
 /// @notice All externally available functions are available here and registered to work with EtherRouter Network contract
-interface IColony is ColonyDataTypes, IRecovery {
+interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   // Implemented in DSAuth.sol
   /// @notice Get the `ColonyAuthority` for the colony.
   /// @return colonyAuthority The `ColonyAuthority` contract address
@@ -306,6 +307,13 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _domainId Id of the domain being edited
   /// @param _metadata Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
   function editDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, string memory _metadata) external;
+
+  /// @notice Deprecate a domain, preventing certain actions from happening there
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _domainId Id of the domain being deprecated
+  /// @param _deprecated Whether or not the domain is deprecated
+  function deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated) external;
 
   /// @notice Get a domain by id.
   /// @param _id Id of the domain which details to get

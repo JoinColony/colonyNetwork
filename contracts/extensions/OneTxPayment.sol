@@ -19,15 +19,25 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyExtension.sol";
+import "./../common/BasicMetaTransaction.sol";
 
 // ignore-file-swc-108
 
 
-contract OneTxPayment is ColonyExtension {
+contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   event OneTxPaymentMade(address agent, uint256 fundamentalId, uint256 nPayouts);
 
   ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
   ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
+
+  mapping(address => uint256) metatransactionNonces;
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
+  }
+
+  function incrementMetatransactionNonce(address user) override internal {
+    metatransactionNonces[user]++;
+  }
 
   /// @notice Returns the identifier of the extension
   function identifier() public override pure returns (bytes32) {
@@ -36,7 +46,7 @@ contract OneTxPayment is ColonyExtension {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 2;
+    return 3;
   }
 
   /// @notice Configures the extension
@@ -109,8 +119,8 @@ contract OneTxPayment is ColonyExtension {
     require(_workers.length == _tokens.length && _workers.length == _amounts.length, "one-tx-payment-invalid-input");
 
     require(
-      colony.hasInheritedUserRole(msg.sender, 1, FUNDING, _childSkillIndex, _domainId) &&
-      colony.hasInheritedUserRole(msg.sender, _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
+      colony.hasInheritedUserRole(msgSender(), 1, FUNDING, _childSkillIndex, _domainId) &&
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
       "one-tx-payment-not-authorized"
     );
 
@@ -125,7 +135,7 @@ contract OneTxPayment is ColonyExtension {
       colony.finalizePayment(1, _childSkillIndex, paymentId);
       colony.claimPayment(paymentId, _tokens[0]);
 
-      emit OneTxPaymentMade(msg.sender, paymentId, _workers.length);
+      emit OneTxPaymentMade(msgSender(), paymentId, _workers.length);
     } else {
 
       uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
@@ -157,7 +167,7 @@ contract OneTxPayment is ColonyExtension {
 
       finalizeAndClaim(expenditureId, _workers, _tokens);
 
-      emit OneTxPaymentMade(msg.sender, expenditureId, _workers.length);
+      emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
     }
   }
 
@@ -190,8 +200,8 @@ contract OneTxPayment is ColonyExtension {
     require(_workers.length == _tokens.length && _workers.length == _amounts.length, "one-tx-payment-invalid-input");
 
     require(
-      colony.hasInheritedUserRole(msg.sender, _callerPermissionDomainId, FUNDING, _callerChildSkillIndex, _domainId) &&
-      colony.hasInheritedUserRole(msg.sender, _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, FUNDING, _callerChildSkillIndex, _domainId) &&
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
       "one-tx-payment-not-authorized"
     );
 
@@ -207,7 +217,7 @@ contract OneTxPayment is ColonyExtension {
       colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
       colony.claimPayment(paymentId, _tokens[0]);
 
-      emit OneTxPaymentMade(msg.sender, paymentId, _workers.length);
+      emit OneTxPaymentMade(msgSender(), paymentId, _workers.length);
     } else {
 
       uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
@@ -240,7 +250,7 @@ contract OneTxPayment is ColonyExtension {
 
       finalizeAndClaim(expenditureId, _workers, _tokens);
 
-      emit OneTxPaymentMade(msg.sender, expenditureId, _workers.length);
+      emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
     }
   }
 

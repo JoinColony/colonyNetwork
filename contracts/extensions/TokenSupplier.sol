@@ -18,11 +18,12 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
+import "./../common/BasicMetaTransaction.sol";
 import "./../common/ERC20Extended.sol";
 import "./ColonyExtension.sol";
 
 
-contract TokenSupplier is ColonyExtension {
+contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
 
   uint256 constant ISSUANCE_PERIOD = 1 days;
 
@@ -40,6 +41,16 @@ contract TokenSupplier is ColonyExtension {
   uint256 lastIssue;
   uint256 lastRateUpdate;
 
+  mapping(address => uint256) metatransactionNonces;
+
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
+  }
+
+  function incrementMetatransactionNonce(address user) override internal {
+    metatransactionNonces[user]++;
+  }
+
   // Modifiers
 
   modifier initialised() {
@@ -56,7 +67,7 @@ contract TokenSupplier is ColonyExtension {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 2;
+    return 3;
   }
 
   /// @notice Configures the extension
@@ -168,11 +179,11 @@ contract TokenSupplier is ColonyExtension {
   // Internal functions
 
   function isRoot() internal view returns (bool) {
-    return colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root);
+    return colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root);
   }
 
   function isRootFunding() internal view returns (bool) {
-    return colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Funding);
+    return colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Funding);
   }
 
 }

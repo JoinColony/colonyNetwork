@@ -14,6 +14,7 @@ const ColonyPayment = artifacts.require("ColonyPayment");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyRoles = artifacts.require("ColonyRoles");
 const ContractRecovery = artifacts.require("ContractRecovery");
+const ColonyArbitraryTransaction = artifacts.require("ColonyArbitraryTransaction");
 const UpdatedColony = artifacts.require("UpdatedColony");
 const IUpdatedColony = artifacts.require("IUpdatedColony");
 
@@ -44,6 +45,7 @@ contract("Colony contract upgrade", (accounts) => {
     const colonyFunding = await ColonyFunding.new();
     const colonyRoles = await ColonyRoles.new();
     const contractRecovery = await ContractRecovery.new();
+    const colonyArbitraryTransaction = await ColonyArbitraryTransaction.new();
 
     dueDate = await currentBlockTime();
     await makeTask({ colony, dueDate });
@@ -61,6 +63,7 @@ contract("Colony contract upgrade", (accounts) => {
       colonyFunding,
       colonyRoles,
       contractRecovery,
+      colonyArbitraryTransaction,
       resolver
     );
 

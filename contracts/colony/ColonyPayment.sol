@@ -56,16 +56,16 @@ contract ColonyPayment is ColonyStorage {
     payments[paymentCount] = payment;
 
     emit FundingPotAdded(fundingPotCount);
-    emit PaymentAdded(msg.sender, paymentCount);
+    emit PaymentAdded(msgSender(), paymentCount);
 
     if (_skillId > 0) {
       setPaymentSkill(_permissionDomainId, _childSkillIndex, paymentCount, _skillId);
 
-      emit PaymentSkillSet(msg.sender, paymentCount, _skillId);
+      emit PaymentSkillSet(msgSender(), paymentCount, _skillId);
     }
 
-    emit PaymentRecipientSet(msg.sender, paymentCount, _recipient);
-    emit PaymentPayoutSet(msg.sender, paymentCount, _token, _amount);
+    emit PaymentRecipientSet(msgSender(), paymentCount, _recipient);
+    emit PaymentPayoutSet(msgSender(), paymentCount, _token, _amount);
 
     return paymentCount;
   }
@@ -92,7 +92,7 @@ contract ColonyPayment is ColonyStorage {
       }
     }
 
-    emit PaymentFinalized(msg.sender, _id);
+    emit PaymentFinalized(msgSender(), _id);
   }
 
   function setPaymentRecipient(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address payable _recipient) public
@@ -103,7 +103,7 @@ contract ColonyPayment is ColonyStorage {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
     payments[_id].recipient = _recipient;
 
-    emit PaymentRecipientSet(msg.sender, _id, _recipient);
+    emit PaymentRecipientSet(msgSender(), _id, _recipient);
   }
 
   function setPaymentSkill(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _skillId) public
@@ -115,7 +115,7 @@ contract ColonyPayment is ColonyStorage {
   {
     payments[_id].skills[0] = _skillId;
 
-    emit PaymentSkillSet(msg.sender, _id, _skillId);
+    emit PaymentSkillSet(msgSender(), _id, _skillId);
   }
 
   function getPayment(uint256 _id) public view returns (Payment memory) {

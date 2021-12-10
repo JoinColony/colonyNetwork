@@ -26,6 +26,7 @@ import {
   setupMetaColonyWithLockedCLNYToken,
   setupRandomColony,
   giveUserCLNYTokensAndStake,
+  getMetaTransactionParameters,
 } from "../../helpers/test-data-generator";
 
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
@@ -356,6 +357,21 @@ contract("Voting Reputation", (accounts) => {
     it("can create a root motion", async () => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+
+      const motionId = await voting.getMotionCount();
+      const motion = await voting.getMotion(motionId);
+      expect(motion.skillId).to.eq.BN(domain1.skillId);
+    });
+
+    it("can create a root motion via metatransaction", async () => {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      const txData = await voting.contract.methods
+        .createMotion(1, UINT256_MAX.toString(), ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings)
+        .encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER2, voting.address);
+
+      await voting.executeMetaTransaction(USER2, txData, r, s, v, { from: USER1 });
 
       const motionId = await voting.getMotionCount();
       const motion = await voting.getMotion(motionId);

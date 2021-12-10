@@ -8,8 +8,14 @@ import { soliditySha3 } from "web3-utils";
 
 import { checkErrorRevert, web3GetBalance, encodeTxData } from "../../helpers/test-helper";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 import { UINT256_MAX } from "../../helpers/constants";
+
+import {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  setupRandomColony,
+  getMetaTransactionParameters,
+} from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -354,6 +360,25 @@ contract("Colony Network Extensions", (accounts) => {
 
       const action = await encodeTxData(tokenLocking, "unlockTokenForUser", [token.address, USER, lockId]);
       await checkErrorRevert(otherColonyExecuteCall.executeCall(tokenLocking.address, action), "colony-token-locking-not-locker");
+    });
+
+    it("allows extensions to use metatransactions", async () => {
+      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
+      await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
+
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
+      const extension = await TestExtension1.at(extensionAddress);
+
+      let nonce;
+      nonce = await extension.getMetatransactionNonce(ROOT);
+      expect(nonce).to.be.zero;
+
+      const txData = await extension.contract.methods.foo().encodeABI();
+      const { r, s, v } = await getMetaTransactionParameters(txData, ROOT, extension.address);
+      await extension.executeMetaTransaction(ROOT, txData, r, s, v, { from: USER });
+
+      nonce = await extension.getMetatransactionNonce(ROOT);
+      expect(nonce).to.eq.BN(1);
     });
   });
 });

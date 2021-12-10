@@ -16,7 +16,7 @@ import {
   WAD,
 } from "../../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } from "../../helpers/test-helper";
-import { makeTask, setupRandomColony } from "../../helpers/test-data-generator";
+import { makeTask, setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -200,6 +200,27 @@ contract("Colony", (accounts) => {
     });
   });
 
+  describe("when deprecating domains", () => {
+    it("should log the DomainDeprecated event", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await expectEvent(colony.deprecateDomain(1, 0, 2, true), "DomainDeprecated", [USER0, 2, true]);
+    });
+
+    it("should not log the DomainDeprecated event if the state did not change", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await expectNoEvent(colony.deprecateDomain(1, 0, 2, false), "DomainDeprecated");
+    });
+
+    it("should not be able to perform prohibited actions in the domain", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await colony.deprecateDomain(1, 0, 2, true);
+
+      await checkErrorRevert(colony.addDomain(1, 0, 2), "colony-domain-deprecated");
+      await checkErrorRevert(colony.makeExpenditure(1, 0, 2), "colony-domain-deprecated");
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, 1, 2, 100, token.address), "colony-domain-deprecated");
+    });
+  });
+
   describe("when bootstrapping the colony", () => {
     const INITIAL_REPUTATIONS = [WAD.muln(5), WAD.muln(4), WAD.muln(3), WAD.muln(2)];
     const INITIAL_ADDRESSES = accounts.slice(0, 4);
@@ -324,6 +345,18 @@ contract("Colony", (accounts) => {
       const tx1 = await colony.addDomain(1, UINT256_MAX, 1);
       const tx2 = await colony.annotateTransaction(tx1.tx, "annotation");
       await expectEvent(tx2, "Annotation", [USER0, tx1.tx, "annotation"]);
+    });
+  });
+
+  describe("when executing metatransactions", () => {
+    it("should allow a metatransaction to occur", async () => {
+      const txData = await colony.contract.methods.mintTokens(100).encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
+
+      const tx = await colony.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
+
+      await expectEvent(tx, "TokensMinted(address,address,uint256)", [USER0, colony.address, 100]);
     });
   });
 

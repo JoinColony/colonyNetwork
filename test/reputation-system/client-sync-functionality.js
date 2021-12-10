@@ -55,8 +55,8 @@ process.env.SOLIDITY_COVERAGE
       });
 
       beforeEach(async () => {
-        await reputationMiner1.resetDB();
         await reputationMiner1.initialise(colonyNetwork.address);
+        await reputationMiner1.resetDB();
 
         const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
         expect(lock.balance).to.eq.BN(MIN_STAKE);
@@ -105,8 +105,8 @@ process.env.SOLIDITY_COVERAGE
         await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
         await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 
-        await reputationMiner2.resetDB();
         await reputationMiner2.initialise(colonyNetwork.address);
+        await reputationMiner2.resetDB();
       });
 
       describe("when synchronising reputation mining client", () => {
@@ -173,9 +173,17 @@ process.env.SOLIDITY_COVERAGE
           // updates that it already knew about.
           await reputationMiner2.sync(startingBlockNumber);
 
+          // And load a state on a client that's not using the JS Tree
+          const reputationMiner3 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER2, realProviderPort, useJsTree: !useJsTree });
+          await reputationMiner3.initialise(colonyNetwork.address);
+          await reputationMiner3.loadState(savedHash);
+          await reputationMiner3.sync(startingBlockNumber);
+
           const client1Hash = await reputationMiner1.reputationTree.getRootHash();
           const client2Hash = await reputationMiner2.reputationTree.getRootHash();
+          const client3Hash = await reputationMiner3.reputationTree.getRootHash();
           expect(client1Hash).to.equal(client2Hash);
+          expect(client1Hash).to.equal(client3Hash);
         });
 
         it("should be able to successfully save the current state to the database and then load it", async () => {

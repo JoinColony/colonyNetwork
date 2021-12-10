@@ -20,16 +20,16 @@ pragma experimental ABIEncoderV2;
 
 import "./../common/ERC20Extended.sol";
 import "./../common/IEtherRouter.sol";
-import "./../common/MultiChain.sol";
+import "./../common/BasicMetaTransaction.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
-contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
+contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
   // V8: Ebony Lightweight Spaceship
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 8; }
+  function version() public pure returns (uint256 colonyVersion) { return 9; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
@@ -39,144 +39,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     return token;
   }
 
-  bytes4 constant APPROVE_SIG = bytes4(keccak256("approve(address,uint256)"));
-  bytes4 constant TRANSFER_SIG = bytes4(keccak256("transfer(address,uint256)"));
-  bytes4 constant TRANSFER_FROM_SIG = bytes4(keccak256("transferFrom(address,address,uint256)"));
-  bytes4 constant BURN_SIG = bytes4(keccak256("burn(uint256)"));
-  bytes4 constant BURN_GUY_SIG = bytes4(keccak256("burn(address,uint256)"));
-
-  function makeArbitraryTransaction(address _to, bytes memory _action)
-  public stoppable auth
-  returns (bool)
-  {
-    return this.makeSingleArbitraryTransaction(_to, _action);
-  }
-
-  function makeArbitraryTransactions(address[] memory _targets, bytes[] memory _actions, bool _strict)
-  public stoppable auth
-  returns (bool)
-  {
-    require(_targets.length == _actions.length, "colony-targets-and-actions-length-mismatch");
-    for (uint256 i; i < _targets.length; i += 1){
-      bool success = true;
-      // slither-disable-next-line unused-return
-      try this.makeSingleArbitraryTransaction(_targets[i], _actions[i]) returns (bool ret){
-        if (_strict){
-          success = ret;
-        }
-      } catch {
-        // We failed in a require, which is only okay if we're not in strict mode
-        if (_strict){
-          success = false;
-        }
-      }
-      require(success, "colony-arbitrary-transaction-failed");
-    }
-    return true;
-  }
-
-  function makeSingleArbitraryTransaction(address _to, bytes memory _action)
-  external stoppable self
-  returns (bool)
-  {
-    // Prevent transactions to network contracts
-    require(_to != address(this), "colony-cannot-target-self");
-    require(_to != colonyNetworkAddress, "colony-cannot-target-network");
-    require(_to != tokenLockingAddress, "colony-cannot-target-token-locking");
-
-    // Prevent transactions to transfer held tokens
-    bytes4 sig;
-    assembly { sig := mload(add(_action, 0x20)) }
-
-    if (sig == APPROVE_SIG) { approveTransactionPreparation(_to, _action); }
-    else if (sig == BURN_SIG) { burnTransactionPreparation(_to, _action); }
-    else if (sig == TRANSFER_SIG) { transferTransactionPreparation(_to, _action); }
-    else if (sig == BURN_GUY_SIG || sig == TRANSFER_FROM_SIG) { burnGuyOrTransferFromTransactionPreparation(_action); }
-
-    // Prevent transactions to network-managed extensions installed in this colony
-    require(isContract(_to), "colony-to-must-be-contract");
-    // slither-disable-next-line unused-return
-    try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
-      require(
-        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) != _to,
-        "colony-cannot-target-extensions"
-      );
-    } catch {}
-
-    bool res = executeCall(_to, 0, _action);
-
-    if (sig == APPROVE_SIG) { approveTransactionCleanup(_to, _action); }
-
-    return res;
-  }
-
-  function approveTransactionPreparation(address _to, bytes memory _action) internal {
-    address spender;
-    assembly {
-      spender := mload(add(_action, 0x24))
-    }
-    updateApprovalAmountInternal(_to, spender, false);
-  }
-
-  function approveTransactionCleanup(address _to, bytes memory _action) internal {
-    address spender;
-    assembly {
-      spender := mload(add(_action, 0x24))
-    }
-    updateApprovalAmountInternal(_to, spender, true);
-  }
-
-  function burnTransactionPreparation(address _to, bytes memory _action) internal {
-    uint256 amount;
-    assembly {
-      amount := mload(add(_action, 0x24))
-    }
-    fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
-    require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
-  }
-
-  function transferTransactionPreparation(address _to, bytes memory _action) internal {
-    uint256 amount;
-    assembly {
-      amount := mload(add(_action, 0x44))
-    }
-    fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
-    require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
-  }
-
-  function burnGuyOrTransferFromTransactionPreparation(bytes memory _action) internal {
-    address spender;
-    assembly {
-      spender := mload(add(_action, 0x24))
-    }
-    require(spender != address(this), "colony-cannot-spend-own-allowance");
-  }
-
-  function updateApprovalAmount(address _token, address _spender) stoppable public {
-    updateApprovalAmountInternal(_token, _spender, false);
-  }
-
-  function updateApprovalAmountInternal(address _token, address _spender, bool _postApproval) internal {
-    uint256 recordedApproval = tokenApprovals[_token][_spender];
-    uint256 actualApproval = ERC20Extended(_token).allowance(address(this), _spender);
-    if (recordedApproval == actualApproval) {
-      return;
-    }
-
-    if (recordedApproval > actualApproval && !_postApproval){
-      // They've spend some tokens out of root. Adjust balances accordingly
-      // If we are post approval, then they have not spent tokens
-      fundingPots[1].balance[_token] = add(sub(fundingPots[1].balance[_token], recordedApproval), actualApproval);
-    }
-
-    tokenApprovalTotals[_token] = add(sub(tokenApprovalTotals[_token], recordedApproval), actualApproval);
-    require(fundingPots[1].balance[_token] >= tokenApprovalTotals[_token], "colony-approval-exceeds-balance");
-
-    tokenApprovals[_token][_spender] = actualApproval;
-  }
-
   function annotateTransaction(bytes32 _txHash, string memory _metadata) public always {
-    emit Annotation(msg.sender, _txHash, _metadata);
+    emit Annotation(msgSender(), _txHash, _metadata);
   }
 
   function emitDomainReputationReward(uint256 _domainId, address _user, int256 _amount)
@@ -186,7 +50,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     require(domainExists(_domainId), "colony-domain-does-not-exist");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, domains[_domainId].skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
 
   function emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount)
@@ -195,7 +59,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     require(_amount > 0, "colony-reward-must-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, _skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
   }
 
   function emitDomainReputationPenalty(
@@ -209,7 +73,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, domains[_domainId].skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
 
   function emitSkillReputationPenalty(uint256 _skillId, address _user, int256 _amount)
@@ -218,7 +82,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
-    emit ArbitraryReputationUpdate(msg.sender, _user, _skillId, _amount);
+    emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
   }
 
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
@@ -256,19 +120,13 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
     rewardInverse = 2**256 - 1;
 
-    emit ColonyInitialised(msg.sender, _colonyNetworkAddress, _token);
-  }
-
-  function initialiseColony(address _colonyNetworkAddress, address _token, string memory _metadata) public stoppable {
-    initialiseColony(_colonyNetworkAddress, _token);
-
-    emit ColonyMetadata(msg.sender, _metadata);
+    emit ColonyInitialised(msgSender(), _colonyNetworkAddress, _token);
   }
 
   function editColony(string memory _metadata) public
   stoppable
   auth {
-    emit ColonyMetadata(msg.sender, _metadata);
+    emit ColonyMetadata(msgSender(), _metadata);
   }
 
   function bootstrapColony(address[] memory _users, int[] memory _amounts) public
@@ -288,7 +146,17 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
     }
 
-    emit ColonyBootstrapped(msg.sender, _users, _amounts);
+    emit ColonyBootstrapped(msgSender(), _users, _amounts);
+  }
+
+  function burnTokens(address _token, uint256 _amount) public stoppable auth {
+    // Check the root funding pot has enought
+    require(fundingPots[1].balance[_token] >= _amount, "colony-not-enough-tokens");
+    fundingPots[1].balance[_token] -= _amount;
+
+    ERC20Extended(_token).burn(_amount);
+
+    emit TokensBurned(msgSender(), _token, _amount);
   }
 
   function mintTokens(uint _wad) public
@@ -297,7 +165,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   {
     ERC20Extended(token).mint(address(this), _wad); // ignore-swc-107
 
-    emit TokensMinted(msg.sender, address(this), _wad);
+    emit TokensMinted(msgSender(), address(this), _wad);
   }
 
   function mintTokensFor(address _guy, uint _wad) public
@@ -306,12 +174,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   {
     ERC20Extended(token).mint(_guy, _wad); // ignore-swc-107
 
-    emit TokensMinted(msg.sender, _guy, _wad);
+    emit TokensMinted(msgSender(), _guy, _wad);
   }
 
   function mintTokensForColonyNetwork(uint _wad) public stoppable {
     // Only the colony Network can call this function
-    require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
+    require(msgSender() == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
     // Function only valid on the Meta Colony
     require(address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
     // Not callable on Xdai
@@ -320,7 +188,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     ERC20Extended(token).mint(_wad);
     assert(ERC20Extended(token).transfer(colonyNetworkAddress, _wad));
 
-    emit TokensMinted(msg.sender, colonyNetworkAddress, _wad);
+    emit TokensMinted(msgSender(), colonyNetworkAddress, _wad);
   }
 
   function registerColonyLabel(string memory colonyName, string memory orbitdb) public stoppable auth {
@@ -406,6 +274,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
 
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
+  domainNotDeprecated(_parentDomainId)
   authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
   {
     addDomain(_permissionDomainId, _childSkillIndex, _parentDomainId, "");
@@ -429,7 +298,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     initialiseDomain(newLocalSkill);
 
     if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
-      emit DomainMetadata(msg.sender, domainCount, _metadata);
+      emit DomainMetadata(msgSender(), domainCount, _metadata);
     }
   }
 
@@ -438,12 +307,24 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   {
     if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
-      emit DomainMetadata(msg.sender, _domainId, _metadata);
+      emit DomainMetadata(msgSender(), _domainId, _metadata);
     }
   }
 
-  function getDomain(uint256 _id) public view returns (Domain memory domain) {
-    domain = domains[_id];
+  function deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated) public
+  stoppable
+  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    if (domains[_domainId].deprecated != _deprecated) {
+      domains[_domainId].deprecated = _deprecated;
+
+      emit DomainDeprecated(msgSender(), _domainId, _deprecated);
+    }
+
+  }
+
+  function getDomain(uint256 _domainId) public view returns (Domain memory domain) {
+    domain = domains[_domainId];
   }
 
   function getDomainCount() public view returns (uint256) {
@@ -467,7 +348,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     userAddress >>= 96;
 
     // Require that the user is proving their own reputation in this colony.
-    if (address(colonyAddress) != address(this) || address(userAddress) != msg.sender) {
+    if (address(colonyAddress) != address(this) || address(userAddress) != msgSender()) {
       return false;
     }
 
@@ -495,22 +376,30 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     // we need to do once we know what's in it!
     this.finishUpgrade();
 
-    emit ColonyUpgraded(msg.sender, currentVersion, _newVersion);
+    emit ColonyUpgraded(msgSender(), currentVersion, _newVersion);
   }
 
-  // v7 to v8
+  // v8 to v9
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    sig = bytes4(keccak256("deprecateDomain(uint256,uint256,uint256,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
+  }
 
-    sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+  function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
+    return metatransactionNonces[_user];
+  }
 
-    sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+  function incrementMetatransactionNonce(address _user) override internal {
+    // We need to protect the metatransaction nonce slots, otherwise those with recovery
+    // permissions could replay metatransactions, which would be a disaster.
+    // What slot are we setting?
+    // This mapping is in slot 34 (see ColonyStorage.sol);
+    uint256 slot = uint256(keccak256(abi.encode(uint256(_user), uint256(METATRANSACTION_NONCES_SLOT))));
+    protectSlot(slot);
+    metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
@@ -518,20 +407,20 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
   }
 
   function approveStake(address _approvee, uint256 _domainId, uint256 _amount) public stoppable {
-    approvals[msg.sender][_approvee][_domainId] = add(approvals[msg.sender][_approvee][_domainId], _amount);
+    approvals[msgSender()][_approvee][_domainId] = add(approvals[msgSender()][_approvee][_domainId], _amount);
 
-    ITokenLocking(tokenLockingAddress).approveStake(msg.sender, _amount, token);
+    ITokenLocking(tokenLockingAddress).approveStake(msgSender(), _amount, token);
   }
 
   function obligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
-    approvals[_user][msg.sender][_domainId] = sub(approvals[_user][msg.sender][_domainId], _amount);
-    obligations[_user][msg.sender][_domainId] = add(obligations[_user][msg.sender][_domainId], _amount);
+    approvals[_user][msgSender()][_domainId] = sub(approvals[_user][msgSender()][_domainId], _amount);
+    obligations[_user][msgSender()][_domainId] = add(obligations[_user][msgSender()][_domainId], _amount);
 
     ITokenLocking(tokenLockingAddress).obligateStake(_user, _amount, token);
   }
 
   function deobligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
-    obligations[_user][msg.sender][_domainId] = sub(obligations[_user][msg.sender][_domainId], _amount);
+    obligations[_user][msgSender()][_domainId] = sub(obligations[_user][msgSender()][_domainId], _amount);
 
     ITokenLocking(tokenLockingAddress).deobligateStake(_user, _amount, token);
   }
@@ -583,10 +472,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs, MultiChain {
     // Create a new domain with the given skill and new funding pot
     domains[domainCount] = Domain({
       skillId: _skillId,
-      fundingPotId: fundingPotCount
+      fundingPotId: fundingPotCount,
+      deprecated: false
     });
 
-    emit DomainAdded(msg.sender, domainCount);
+    emit DomainAdded(msgSender(), domainCount);
     emit FundingPotAdded(fundingPotCount);
   }
 

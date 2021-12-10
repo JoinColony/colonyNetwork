@@ -122,6 +122,9 @@ jobs:
           name: "Checking contract recovery modifiers"
           command: yarn run check:recoverymods
       - run:
+          name: "Checking contract versions"
+          command: yarn run check:versioning
+      - run:
           name: "Checking contract authDomain modifiers"
           command: yarn run check:auth
       - run:

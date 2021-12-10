@@ -30,6 +30,8 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/colonyNetwork/ColonyNetworkAuthority.sol",
       "contracts/colonyNetwork/ColonyNetworkStorage.sol",
       "contracts/colonyNetwork/IColonyNetwork.sol",
+      "contracts/common/BasicMetaTransaction.sol",
+      "contracts/common/IBasicMetaTransaction.sol",
       "contracts/common/CommonAuthority.sol",
       "contracts/common/DomainRoles.sol",
       "contracts/common/ERC20Extended.sol",
@@ -37,10 +39,12 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/IEtherRouter.sol",
       "contracts/common/IRecovery.sol",
       "contracts/common/Resolver.sol",
+      "contracts/common/TokenAuthority.sol", // Imported from colonyToken repo
       "contracts/ens/ENS.sol",
       "contracts/ens/ENSRegistry.sol",
       "contracts/extensions/CoinMachine.sol",
       "contracts/extensions/ColonyExtension.sol",
+      "contracts/extensions/ColonyExtensionMeta.sol",
       "contracts/extensions/EvaluatedExpenditure.sol",
       "contracts/extensions/FundingQueue.sol",
       "contracts/extensions/OneTxPayment.sol",
@@ -75,6 +79,9 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/Migrations.sol",
       "contracts/Token.sol", // Imported from colonyToken repo
       "contracts/TokenAuthority.sol", // Imported from colonyToken repo
+      "contracts/metaTxToken/MetaTxToken.sol",
+      "contracts/metaTxToken/DSAuthMeta.sol",
+      "contracts/metaTxToken/DSTokenBaseMeta.sol",
     ].indexOf(contractName) > -1
   ) {
     return;

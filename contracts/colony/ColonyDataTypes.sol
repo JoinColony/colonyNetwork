@@ -252,6 +252,12 @@ interface ColonyDataTypes {
   /// @param metadata IPFS hash of the metadata
   event DomainMetadata(address agent, uint256 indexed domainId, string metadata);
 
+  /// @notice Event logged when domain metadata is updated
+  /// @param agent The address that is responsible for triggering this event
+  /// @param domainId Id of the domain
+  /// @param deprecated Whether or not the domain is deprecated
+  event DomainDeprecated(address agent, uint256 indexed domainId, bool deprecated);
+
   /// @notice Event logged when Colony metadata is updated
   /// @param agent The address that is responsible for triggering this event
   /// @param metadata IPFS hash of the metadata
@@ -410,5 +416,6 @@ interface ColonyDataTypes {
   struct Domain {
     uint256 skillId;
     uint256 fundingPotId;
+    bool deprecated;
   }
 }
