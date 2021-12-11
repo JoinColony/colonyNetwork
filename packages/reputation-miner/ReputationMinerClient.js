@@ -139,11 +139,11 @@ class ReputationMinerClient {
 
         try {
           const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
-          const value = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
-          if (value instanceof Error) {
-            return res.status(400).send({ message: value.message.replace("Error: ") });
+          const historicalProof = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
+          if (historicalProof instanceof Error) {
+            return res.status(400).send({ message: historicalProof.message.replace("Error: ") });
           }
-          const proof = { key, value };
+          const proof = { key, value: historicalProof.value };
           proof.reputationAmount = ethers.BigNumber.from(`0x${proof.value.slice(2, 66)}`).toString();
           return res.status(200).send(proof);
         } catch (err) {
