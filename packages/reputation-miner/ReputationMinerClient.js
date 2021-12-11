@@ -139,7 +139,7 @@ class ReputationMinerClient {
 
         try {
           const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
-          const value = await this._miner.getHistoricalValue(req.params.rootHash, key);
+          const value = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
           if (value instanceof Error) {
             return res.status(400).send({ message: value.message.replace("Error: ") });
           }
