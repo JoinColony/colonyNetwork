@@ -143,7 +143,7 @@ class ReputationMinerClient {
           if (historicalProof instanceof Error) {
             return res.status(400).send({ message: historicalProof.message.replace("Error: ") });
           }
-          const proof = { key, value: historicalProof.value };
+          const proof = { key, value: historicalProof[2] };
           proof.reputationAmount = ethers.BigNumber.from(`0x${proof.value.slice(2, 66)}`).toString();
           return res.status(200).send(proof);
         } catch (err) {
