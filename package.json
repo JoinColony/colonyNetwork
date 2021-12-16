@@ -130,6 +130,7 @@
     "packages/*"
   ],
   "dependencies": {
+    "@chainlink/contracts": "^0.3.0",
     "eslint-plugin-no-only-tests": "^2.4.0"
   }
 }
