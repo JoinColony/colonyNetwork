@@ -81,7 +81,7 @@ contract CoinMachine is ColonyExtension {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 3;
+    return 4;
   }
 
   /// @notice Configures the extension
@@ -204,7 +204,10 @@ contract CoinMachine is ColonyExtension {
     uint256 numTokens = min(maxPurchase, _numTokens);
     uint256 totalCost = wmul(numTokens, activePrice);
 
-    if (numTokens <= 0) { return; }
+    if (numTokens <= 0) {
+      if (msg.value > 0) { msg.sender.transfer(msg.value); } // Refund any balance
+      return;
+    }
 
     activeIntake = add(activeIntake, totalCost);
     activeSold = add(activeSold, numTokens);
