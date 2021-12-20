@@ -43,13 +43,19 @@ module.exports = {
     },
     goerli: {
       provider: () => {
-        return new HDWalletProvider("replace-with-private-key-when-using", "https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d");
+        return new HDWalletProvider("private-key", "https://goerli.infura.io/v3/infura-key");
       },
       network_id: "5",
     },
+    rinkeby: {
+      provider: () => {
+        return new HDWalletProvider("private-key", "https://rinkeby.infura.io/v3/infura-key");
+      },
+      network_id: "4",
+    },
     mainnet: {
       provider: () => {
-        return new HDWalletProvider("replace-with-private-key-when-using", "https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d");
+        return new HDWalletProvider("private-key", "https://mainnet.infura.io/v3/infura-key");
       },
       network_id: "1",
     },
