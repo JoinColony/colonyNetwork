@@ -31,6 +31,17 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   // in reputationMiningCycleRespond. If you change one, you should change the other.
   uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 1; // 1 hour
 
+  function getMinerAddress() internal view returns(address){
+    // Is msg.sender a delegated miner?
+    // See if this address is claiming to be a delegate
+    address delegator = IColonyNetwork(colonyNetworkAddress).getMiningDelegator(msg.sender);
+    if (delegator != address(0x00)){
+      return delegator;
+    }
+    // Otherwise, return msg.sender
+    return msg.sender;
+  }
+
   function expectedBranchMask(uint256 _nLeaves, uint256 _leaf) public pure returns (uint256) {
     // Gets the expected branchmask for a patricia tree which has nLeaves, with keys from 0 to nLeaves -1
     // i.e. the tree is 'full' - there are no missing leaves
@@ -135,15 +146,17 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
       return false;
     }
 
+    address minerAddress = getMinerAddress();
+
     uint256 windowOpenFor = block.timestamp - _responseWindowOpened;
 
     if (windowOpenFor <= SUBMITTER_ONLY_WINDOW_DURATION) {
       // require user made a submission
-      if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0x00)) {
+      if (reputationHashSubmissions[minerAddress].proposedNewRootHash == bytes32(0x00)) {
         return false;
       }
       uint256 target = windowOpenFor * Y;
-      if (uint256(keccak256(abi.encodePacked(msg.sender, _stage))) > target) {
+      if (uint256(keccak256(abi.encodePacked(minerAddress, _stage))) > target) {
         return false;
       }
     }

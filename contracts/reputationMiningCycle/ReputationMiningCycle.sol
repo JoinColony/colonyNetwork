@@ -47,26 +47,25 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   /// @param _nLeaves The number of leaves in the reputation tree that `newHash` is the root hash of
   /// @param _jrh The justification root hash for the application of the log being processed.
   /// @param _entryIndex The number of the entry the submitter hash asked us to consider.
-  modifier entryQualifies(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex) {
-    uint256 lockBalance = ITokenLocking(tokenLockingAddress).getObligation(msg.sender, clnyTokenAddress, colonyNetworkAddress);
+  function checkEntryQualifies(address minerAddress, bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex) internal {
+    uint256 lockBalance = ITokenLocking(tokenLockingAddress).getObligation(minerAddress, clnyTokenAddress, colonyNetworkAddress);
     require(_entryIndex <= lockBalance / MIN_STAKE, "colony-reputation-mining-stake-minimum-not-met-for-index");
     require(_entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
 
-    uint256 stakeTimestamp = IColonyNetwork(colonyNetworkAddress).getMiningStake(msg.sender).timestamp;
+    uint256 stakeTimestamp = IColonyNetwork(colonyNetworkAddress).getMiningStake(minerAddress).timestamp;
     require(reputationMiningWindowOpenTimestamp >= stakeTimestamp, "colony-reputation-mining-stake-too-recent");
 
     // If this user has submitted before during this round...
-    if (reputationHashSubmissions[msg.sender].proposedNewRootHash != bytes32(0)) {
+    if (reputationHashSubmissions[minerAddress].proposedNewRootHash != bytes32(0)) {
       // ...require that they are submitting the same hash ...
-      require(_newHash == reputationHashSubmissions[msg.sender].proposedNewRootHash, "colony-reputation-mining-submitting-different-hash");
+      require(_newHash == reputationHashSubmissions[minerAddress].proposedNewRootHash, "colony-reputation-mining-submitting-different-hash");
       // ...require that they are submitting the same number of leaves for that hash ...
-      require(_nLeaves == reputationHashSubmissions[msg.sender].nLeaves, "colony-reputation-mining-submitting-different-nleaves");
+      require(_nLeaves == reputationHashSubmissions[minerAddress].nLeaves, "colony-reputation-mining-submitting-different-nleaves");
       // ...require that they are submitting the same jrh for that hash ...
-      require(_jrh == reputationHashSubmissions[msg.sender].jrh, "colony-reputation-mining-submitting-different-jrh");
+      require(_jrh == reputationHashSubmissions[minerAddress].jrh, "colony-reputation-mining-submitting-different-jrh");
        // ... but not this exact entry
-      require(submittedEntries[msg.sender][_entryIndex] == false, "colony-reputation-mining-submitting-same-entry-index");
+      require(submittedEntries[minerAddress][_entryIndex] == false, "colony-reputation-mining-submitting-same-entry-index");
     }
-    _;
   }
 
   uint256 constant X = UINT256_MAX / MINING_WINDOW_SIZE;
@@ -74,14 +73,13 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   /// @notice A modifier that checks if the proposed entry is within the current allowable submission window
   /// @dev A submission will only be accepted from a reputation miner if `keccak256(address, N, hash) < target`
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1.
-  modifier withinTarget(bytes32 _newHash, uint256 _entryIndex) {
+  function checkWithinTarget (address minerAddress, bytes32 _newHash, uint256 _entryIndex) internal {
     // Check the ticket is a winning one.
     // All entries are acceptable if the 24 hour-long window is closed, so skip this check if that's the case
     if (!submissionWindowClosed()) {
       uint256 target = (block.timestamp - reputationMiningWindowOpenTimestamp) * X;
-      require(uint256(getEntryHash(msg.sender, _entryIndex, _newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
+      require(uint256(getEntryHash(minerAddress, _entryIndex, _newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
     }
-    _;
   }
 
   modifier submissionPossible() {
@@ -156,9 +154,11 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
   function submitRootHash(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex) public
   submissionPossible()
-  entryQualifies(_newHash, _nLeaves, _jrh, _entryIndex)
-  withinTarget(_newHash, _entryIndex)
   {
+    address minerAddress = getMinerAddress();
+    checkEntryQualifies(minerAddress, _newHash, _nLeaves, _jrh, _entryIndex);
+    checkWithinTarget(minerAddress, _newHash, _entryIndex);
+
     // Limit the total number of miners allowed to submit a specific hash to 12
     require(submittedHashes[_newHash][_nLeaves][_jrh].length < 12, "colony-reputation-mining-max-number-miners-reached");
 
@@ -169,7 +169,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       // NB if no other hash is submitted, no dispute resolution will be required.
       // slither-disable-next-line controlled-array-length
       disputeRounds[0].push(DisputedEntry({
-        firstSubmitter: msg.sender,
+        firstSubmitter: minerAddress,
         lastResponseTimestamp: reputationMiningWindowOpenTimestamp + MINING_WINDOW_SIZE,
         challengeStepCompleted: 0,
         lowerBound: 0,
@@ -182,8 +182,8 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       }));
     }
 
-    if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0)) {
-      reputationHashSubmissions[msg.sender] = Submission({
+    if (reputationHashSubmissions[minerAddress].proposedNewRootHash == bytes32(0)) {
+      reputationHashSubmissions[minerAddress] = Submission({
         proposedNewRootHash: _newHash,
         nLeaves: _nLeaves,
         jrh: _jrh,
@@ -193,11 +193,11 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
     // And add the miner to the array list of submissions here
     // slither-disable-next-line controlled-array-length
-    submittedHashes[_newHash][_nLeaves][_jrh].push(msg.sender);
+    submittedHashes[_newHash][_nLeaves][_jrh].push(minerAddress);
     // Note that they submitted it.
-    submittedEntries[msg.sender][_entryIndex] = true;
+    submittedEntries[minerAddress][_entryIndex] = true;
 
-    emit ReputationRootHashSubmitted(msg.sender, _newHash, _nLeaves, _jrh, _entryIndex);
+    emit ReputationRootHashSubmitted(minerAddress, _newHash, _nLeaves, _jrh, _entryIndex);
   }
 
   // slither-disable-next-line suicidal
@@ -331,7 +331,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
       emit HashInvalidated(submission.proposedNewRootHash, submission.nLeaves, submission.jrh);
     }
-    rewardResponder(msg.sender);
+    rewardResponder(getMinerAddress());
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
 
@@ -385,7 +385,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     // Set bounds for first binary search if it's going to be needed
     disputeRounds[_round][_index].upperBound = submission.jrhNLeaves - 1;
 
-    rewardResponder(msg.sender);
+    rewardResponder(getMinerAddress());
 
     emit JustificationRootHashConfirmed(submission.proposedNewRootHash, submission.nLeaves, submission.jrh);
   }

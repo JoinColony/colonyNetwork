@@ -57,13 +57,9 @@ class ReputationMiner {
     }
 
     if (minerAddress) {
-      this.minerAddress = minerAddress;
       this.realWallet = this.realProvider.getSigner(minerAddress);
     } else {
       this.realWallet = new ethers.Wallet(privateKey, this.realProvider);
-      this.minerAddress = this.realWallet.address;
-      // TODO: Check that this wallet can stake?
-      this.minerAddress = this.realWallet.address;
       console.log("Transactions will be signed from ", this.realWallet.address);
     }
   }
@@ -106,6 +102,18 @@ class ReputationMiner {
     this.gasPrice = ethers.utils.hexlify(20000000000);
     const repCycle = await this.getActiveRepCycle();
     await this.updatePeriodLength(repCycle);
+
+    // NB some technical debt here with names. The minerAddress arg passed in on the command line, which
+    // has been used for realWallet and is where transactions will be signed from may or may not be acting
+    // on behalf of another address via delegate mining. So check which address we're actually mining for.
+    const signingAddress = await this.realWallet.getAddress();
+    const delegator = await this.colonyNetwork.getMiningDelegator(signingAddress);
+    if (delegator === ethers.constants.AddressZero){
+      this.minerAddress = signingAddress;
+    } else {
+      this.minerAddress = delegator;
+    }
+    console.log("Mining on behalf of ", this.minerAddress)
   }
 
   /**

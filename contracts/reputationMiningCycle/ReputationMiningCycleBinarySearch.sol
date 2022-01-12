@@ -66,7 +66,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     // Process the consequences
     processBinaryChallengeSearchResponse(_round, _idx, _jhIntermediateValue, lastSiblings);
     // Reward the user
-    rewardResponder(msg.sender);
+    rewardResponder(getMinerAddress());
 
     emit BinarySearchStep(submission.proposedNewRootHash, submission.nLeaves, submission.jrh);
   }
@@ -108,7 +108,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     }
     disputeRounds[_round][_idx].lastResponseTimestamp = block.timestamp;
 
-    rewardResponder(msg.sender);
+    rewardResponder(getMinerAddress());
 
     emit BinarySearchConfirmed(submission.proposedNewRootHash, submission.nLeaves, submission.jrh, disputeRounds[_round][_idx].lowerBound);
   }

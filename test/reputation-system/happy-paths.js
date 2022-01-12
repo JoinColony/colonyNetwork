@@ -958,5 +958,51 @@ contract("Reputation Mining - happy paths", (accounts) => {
         "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002"
       ).to.equal(goodClient.reputations[userKey]);
     });
+
+    it("a miner using delegated mining should be able to go through the whole process", async () => {
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      await badClient.initialise(colonyNetwork.address);
+      const delegatedClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: WORKER });
+      await colonyNetwork.setMiningDelegate(WORKER, true, { from: MINER1 });
+      await delegatedClient.initialise(colonyNetwork.address);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      const addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, this);
+      await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: WORKER });
+      await repCycle.confirmNewHash(0);
+
+      repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await delegatedClient.addLogContentsToReputationTree();
+      await delegatedClient.submitRootHash();
+      await badClient.addLogContentsToReputationTree();
+      await badClient.submitRootHash();
+
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
+
+      await delegatedClient.confirmJustificationRootHash();
+      await badClient.confirmJustificationRootHash();
+
+      await delegatedClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      await runBinarySearch(delegatedClient, badClient);
+
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
+      await delegatedClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      // Cleanup
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
+      await delegatedClient.respondToChallenge();
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
+      await repCycle.invalidateHash(0, 1);
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
+      await repCycle.confirmNewHash(1);
+    });
   });
 });

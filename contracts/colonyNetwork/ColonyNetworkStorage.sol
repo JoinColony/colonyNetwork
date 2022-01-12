@@ -100,6 +100,9 @@ contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   // Used for whitelisting payout tokens
   mapping (address => bool) payoutWhitelist; // Storage slot 40
 
+  // Mining delegation mapping
+  mapping(address => address) miningDelegator; // Storage slot 41
+
   modifier calledByColony() {
     require(_isColony[msg.sender], "colony-caller-must-be-colony");
     _;

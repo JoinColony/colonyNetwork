@@ -403,4 +403,15 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Called to get the total per-cycle reputation mining reward.
   /// @return The CLNY awarded per mining cycle to the miners.
   function getReputationMiningCycleReward() external view returns (uint256);
+
+  /// @notice Called to give or remove another address's permission to mine on your behalf
+  /// @param _delegate The address you're giving or removing permission from
+  /// @param _allowed Whether they are allowed (true) or not (false) to mine on your behalf
+  function setMiningDelegate(address _delegate, bool _allowed) external;
+
+  /// @notice Called to get the address _delegate is allowed to mine for
+  /// @param _delegate The address that wants to mine
+  /// @return The address they are allowed to mine on behalf of
+  function getMiningDelegator(address _delegate) external view returns (address);
+
 }
