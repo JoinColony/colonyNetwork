@@ -42,7 +42,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
 
     // Return any delegator they are acting on behalf of
     address delegator = IColonyNetwork(colonyNetworkAddress).getMiningDelegator(msg.sender);
-    require(delegator != address(0x00), 'colony-reputation-mining-no-stake-or-delegator');
+    require(delegator != address(0x00), "colony-reputation-mining-no-stake-or-delegator");
     return delegator;
   }
 

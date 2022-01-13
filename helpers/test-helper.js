@@ -630,7 +630,7 @@ export async function advanceMiningCycleNoContest({ colonyNetwork, client, miner
       console.log("advanceMiningCycleNoContest error thrown by .submitRootHash", err);
     }
   }
-  await repCycle.confirmNewHash(0);
+  await repCycle.confirmNewHash(0, { from: minerAddress });
 }
 
 export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, test, client1) {
