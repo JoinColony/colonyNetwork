@@ -37,48 +37,49 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     _;
   }
 
-  /// @notice A modifier that checks if the proposed entry is eligible. The more CLNY a user stakes, the more
+  /// @notice A function that checks if the proposed entry is eligible. The more CLNY a user stakes, the more
   /// potential entries they have in a reputation mining cycle. This is effectively restricting the nonce range
   /// that is allowable from a given user when searching for a submission that will pass `withinTarget`. A user
   /// is allowed to use multiple entries in a single cycle, but each entry can only be used once per cycle, and
   /// if there are multiple entries they must all be for the same proposed Reputation State Root Hash with the
   /// same number of leaves.
+  /// @param _minerAddress The address of the miner making a submission
   /// @param _newHash The hash being submitted
   /// @param _nLeaves The number of leaves in the reputation tree that `newHash` is the root hash of
   /// @param _jrh The justification root hash for the application of the log being processed.
   /// @param _entryIndex The number of the entry the submitter hash asked us to consider.
-  function checkEntryQualifies(address minerAddress, bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex) internal {
-    uint256 lockBalance = ITokenLocking(tokenLockingAddress).getObligation(minerAddress, clnyTokenAddress, colonyNetworkAddress);
+  function checkEntryQualifies(address _minerAddress, bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex) internal {
+    uint256 lockBalance = ITokenLocking(tokenLockingAddress).getObligation(_minerAddress, clnyTokenAddress, colonyNetworkAddress);
     require(_entryIndex <= lockBalance / MIN_STAKE, "colony-reputation-mining-stake-minimum-not-met-for-index");
     require(_entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
 
-    uint256 stakeTimestamp = IColonyNetwork(colonyNetworkAddress).getMiningStake(minerAddress).timestamp;
+    uint256 stakeTimestamp = IColonyNetwork(colonyNetworkAddress).getMiningStake(_minerAddress).timestamp;
     require(reputationMiningWindowOpenTimestamp >= stakeTimestamp, "colony-reputation-mining-stake-too-recent");
 
     // If this user has submitted before during this round...
-    if (reputationHashSubmissions[minerAddress].proposedNewRootHash != bytes32(0)) {
+    if (reputationHashSubmissions[_minerAddress].proposedNewRootHash != bytes32(0)) {
       // ...require that they are submitting the same hash ...
-      require(_newHash == reputationHashSubmissions[minerAddress].proposedNewRootHash, "colony-reputation-mining-submitting-different-hash");
+      require(_newHash == reputationHashSubmissions[_minerAddress].proposedNewRootHash, "colony-reputation-mining-submitting-different-hash");
       // ...require that they are submitting the same number of leaves for that hash ...
-      require(_nLeaves == reputationHashSubmissions[minerAddress].nLeaves, "colony-reputation-mining-submitting-different-nleaves");
+      require(_nLeaves == reputationHashSubmissions[_minerAddress].nLeaves, "colony-reputation-mining-submitting-different-nleaves");
       // ...require that they are submitting the same jrh for that hash ...
-      require(_jrh == reputationHashSubmissions[minerAddress].jrh, "colony-reputation-mining-submitting-different-jrh");
+      require(_jrh == reputationHashSubmissions[_minerAddress].jrh, "colony-reputation-mining-submitting-different-jrh");
        // ... but not this exact entry
-      require(submittedEntries[minerAddress][_entryIndex] == false, "colony-reputation-mining-submitting-same-entry-index");
+      require(submittedEntries[_minerAddress][_entryIndex] == false, "colony-reputation-mining-submitting-same-entry-index");
     }
   }
 
   uint256 constant X = UINT256_MAX / MINING_WINDOW_SIZE;
 
-  /// @notice A modifier that checks if the proposed entry is within the current allowable submission window
+  /// @notice A function that checks if the proposed entry is within the current allowable submission window
   /// @dev A submission will only be accepted from a reputation miner if `keccak256(address, N, hash) < target`
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1.
-  function checkWithinTarget (address minerAddress, bytes32 _newHash, uint256 _entryIndex) internal {
+  function checkWithinTarget (address _minerAddress, bytes32 _newHash, uint256 _entryIndex) internal {
     // Check the ticket is a winning one.
     // All entries are acceptable if the 24 hour-long window is closed, so skip this check if that's the case
     if (!submissionWindowClosed()) {
       uint256 target = (block.timestamp - reputationMiningWindowOpenTimestamp) * X;
-      require(uint256(getEntryHash(minerAddress, _entryIndex, _newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
+      require(uint256(getEntryHash(_minerAddress, _entryIndex, _newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
     }
   }
 
