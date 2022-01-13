@@ -34,7 +34,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     _;
   }
 
-  function setMiningDelegate(address _delegate, bool _allowed) public {
+  function setMiningDelegate(address _delegate, bool _allowed) public stoppable {
     if (miningDelegator[_delegate] != address(0x00)){
       require(msg.sender == miningDelegator[_delegate], "colony-reputation-mining-not-your-delegate");
     }

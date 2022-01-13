@@ -965,7 +965,6 @@ contract("Reputation Mining - happy paths", (accounts) => {
       const delegatedClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: WORKER });
       await colonyNetwork.setMiningDelegate(WORKER, true, { from: MINER1 });
       await delegatedClient.initialise(colonyNetwork.address);
-
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
@@ -986,6 +985,8 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       await delegatedClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
+
+      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
       await delegatedClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
