@@ -175,7 +175,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
 
       // Cleanup
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(0);
+      await repCycle.confirmNewHash(0, { from: MINER1 });
     });
   });
 

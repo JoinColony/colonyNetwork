@@ -243,7 +243,7 @@ contract("Voting Reputation", (accounts) => {
     await forwardTime(MINING_CYCLE_DURATION, this);
     await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
     await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-    await repCycle.confirmNewHash(0);
+    await repCycle.confirmNewHash(0, { from: MINER });
   });
 
   function hashExpenditureSlot(action) {
@@ -1063,7 +1063,7 @@ contract("Voting Reputation", (accounts) => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(0);
+      await repCycle.confirmNewHash(0, { from: MINER });
 
       // Create new motion with new reputation state
       const action = await encodeTxData(colony, "mintTokens", [WAD]);

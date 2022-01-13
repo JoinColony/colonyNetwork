@@ -178,7 +178,7 @@ contract("Funding Queues", (accounts) => {
     const repCycle = await getActiveRepCycle(colonyNetwork);
     await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, this);
     await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
-    await repCycle.confirmNewHash(0);
+    await repCycle.confirmNewHash(0, { from: MINER });
   });
 
   describe("managing the extension", async () => {
