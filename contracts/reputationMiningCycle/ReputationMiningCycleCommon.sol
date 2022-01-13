@@ -21,6 +21,7 @@ pragma experimental "ABIEncoderV2";
 import "./../../lib/dappsys/math.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../tokenLocking/ITokenLocking.sol";
 import "./ReputationMiningCycleStorage.sol";
 
 
@@ -32,14 +33,17 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 1; // 1 hour
 
   function getMinerAddress() internal view returns(address){
-    // Is msg.sender a delegated miner?
-    // See if this address is claiming to be a delegate
-    address delegator = IColonyNetwork(colonyNetworkAddress).getMiningDelegator(msg.sender);
-    if (delegator != address(0x00)){
-      return delegator;
+    // Is msg.sender a miner themselves? See if they have stake.
+    uint256 lockBalance = ITokenLocking(tokenLockingAddress).getObligation(msg.sender, clnyTokenAddress, colonyNetworkAddress);
+    if (lockBalance > 0){
+      // If so, they we don't let them mine on someone else's behalf
+      return msg.sender;
     }
-    // Otherwise, return msg.sender
-    return msg.sender;
+
+    // Return any delegator they are acting on behalf of
+    address delegator = IColonyNetwork(colonyNetworkAddress).getMiningDelegator(msg.sender);
+    require(delegator != address(0x00), 'colony-reputation-mining-no-stake-or-delegator');
+    return delegator;
   }
 
   function expectedBranchMask(uint256 _nLeaves, uint256 _leaf) public pure returns (uint256) {
