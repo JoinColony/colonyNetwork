@@ -126,7 +126,22 @@ contract("Reputation mining - basic functionality", (accounts) => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION, this);
 
-      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, "0x00", 0), "colony-reputation-mining-zero-entry-index-passed");
+      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, "0x00", 0), "colony-reputation-mining-no-stake-or-delegator");
+
+      const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+      expect(nUniqueSubmittedHashes).to.be.zero;
+    });
+
+    it("should not allow someone to submit a new reputation hash with an entry index of 0, even if they're mining", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, 9000);
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+
+      await checkErrorRevert(
+        repCycle.submitRootHash("0x12345678", 10, "0x00", 0, { from: MINER2 }),
+        "colony-reputation-mining-zero-entry-index-passed"
+      );
 
       const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
       expect(nUniqueSubmittedHashes).to.be.zero;

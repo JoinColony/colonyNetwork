@@ -1070,6 +1070,24 @@ class ReputationMiner {
     );
   }
 
+  /**
+   * Confirm the new reputation hash after all dispute resolution (if any) has occurred.
+   * @return {Promise} Resolves to tx hash of the response
+   */
+  async confirmNewHash() {
+    const repCycle = await this.getActiveRepCycle();
+    const [round] = await this.getMySubmissionRoundAndIndex();
+
+    let gasEstimate = ethers.BigNumber.from(4000000);
+    try {
+      gasEstimate = await repCycle.estimateGas.confirmNewHash(round);
+    } catch (err){ // eslint-disable-line no-empty
+
+    }
+    return repCycle.confirmNewHash(round, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+  }
+
+
   async updatePeriodLength(repCycle) {
     const { numerator, denominator } = await repCycle.getDecayConstant();
 

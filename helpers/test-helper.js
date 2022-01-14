@@ -621,7 +621,7 @@ export async function advanceMiningCycleNoContest({ colonyNetwork, client, miner
   if (client !== undefined) {
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
-    await client.confirmEntry();
+    await client.confirmNewHash();
   } else {
     const accounts = await web3GetAccounts();
     minerAddress = minerAddress || accounts[5]; // eslint-disable-line no-param-reassign
