@@ -19,6 +19,7 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "@chainlink/contracts/src/v0.7/ChainlinkClient.sol";
+import "./../../lib/dappsys/erc20.sol";
 
 
 contract Snaplink is ChainlinkClient {
@@ -33,11 +34,11 @@ contract Snaplink is ChainlinkClient {
     uint256 constant WAD = 10 ** 18;
     bytes4 constant SELECTOR = bytes4(keccak256("fulfill(bytes32,uint256"));
 
-    constructor(address _oracle, bytes32 _jobId, uint256 _fee) public {
+    constructor() public {
         setPublicChainlinkToken();
-        oracle = _oracle; // 0xc57B33452b4F7BB189bB5AfaE9cc4aBa1f7a4FD8;
-        jobId = _jobId; // "d5270d1c311941d0b08bead21fea7747";
-        fee = _fee; // 0.1 * WAD
+        oracle = 0x3A56aE4a2831C3d3514b5D7Af5578E45eBDb7a40;
+        jobId = "b7ca0d48c7a4b2da9268456665d11ae";
+        fee = WAD / 10;
     }
 
     function requestVolumeData() public returns (bytes32 requestId) {
@@ -47,7 +48,8 @@ contract Snaplink is ChainlinkClient {
         request.add("path", "RAW.ETH.USD.VOLUME24HOUR");
         request.addInt("times", int256(WAD));
 
-        return sendChainlinkRequestTo(oracle, request, fee);
+        require(ERC20(chainlinkTokenAddress()).balanceOf(address(this)) >= fee, "insufficient-balance");
+        requestId = sendChainlinkRequestTo(oracle, request, fee);
     }
 
     function fulfill(bytes32 _requestId, uint256 _volume)
