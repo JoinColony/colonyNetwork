@@ -215,6 +215,10 @@ class ReputationMinerClient {
     this.resolveBlockChecksFinished = undefined;
     await this._miner.initialise(colonyNetworkAddress);
 
+    const minerStake = await this._miner.getMiningStake();
+    const numEntries = minerStake.amount.div(this._miner.getMinStake());
+    this._adapter.log(`Miner has staked ${minerStake.amount} CLNY, allowing up to ${numEntries} entries per cycle`);
+
     let resumedSuccessfully = false;
     // If we have a JRH saved, and it goes from the current (on chain) state to
     // a state that we know, then let's assume it's correct

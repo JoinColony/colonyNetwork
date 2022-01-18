@@ -757,9 +757,9 @@ class ReputationMiner {
 
   async getEntryIndex(startIndex = 1) {
     // Get how much we've staked, and thefore how many entries we have
-    const [stakeAmount] = await this.colonyNetwork.getMiningStake(this.minerAddress);
+    const minerStake = await this.getMiningStake();
 
-    for (let i = ethers.BigNumber.from(startIndex); i.lte(stakeAmount.div(minStake)); i = i.add(1)) {
+    for (let i = ethers.BigNumber.from(startIndex); i.lte(minerStake.amount.div(minStake)); i = i.add(1)) {
       const submissionPossible = await this.submissionPossible(i);
       if (submissionPossible) {
         return i;
@@ -792,13 +792,13 @@ class ReputationMiner {
     }
 
     // Check the proposed entry is eligible (emulates entryQualifies modifier behaviour)
-    const [stakeAmount, stakeTimestamp] = await this.colonyNetwork.getMiningStake(this.minerAddress);
+    const minerStake = await this.getMiningStake();
 
-    if (ethers.BigNumber.from(entryIndex).gt(stakeAmount.div(minStake))) {
+    if (ethers.BigNumber.from(entryIndex).gt(minerStake.amount.div(minStake))) {
       return false;
     }
 
-    if(reputationMiningWindowOpenTimestamp.lt(stakeTimestamp)) {
+    if(reputationMiningWindowOpenTimestamp.lt(minerStake.timestamp)) {
       return false;
     }
 
@@ -820,6 +820,22 @@ class ReputationMiner {
     }
 
     return true;
+  }
+
+  /**
+   * Get the stake for the miner
+   * @return {Promise}      Resolves to the mining stake, {amount, timestamp}
+   */
+  getMiningStake() {
+    return this.colonyNetwork.getMiningStake(this.minerAddress);
+  }
+
+  /**
+   * Get the minimum stake for reputation mining
+   * @return {integer}      The minimum stake
+   */
+  getMinStake() {
+    return minStake;
   }
 
   /**
@@ -1367,7 +1383,7 @@ class ReputationMiner {
     }
 
     for (let i = syncFromIndex; i < events.length; i += 1) {
-      console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
+      console.log(`${new Date().toLocaleTimeString()}: Syncing mining cycle ${i + 1} of ${events.length}...`)
       const event = events[i];
       if (i === 0) {
         // If we are syncing from the very start of the reputation history, the block
