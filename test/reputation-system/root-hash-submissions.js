@@ -618,6 +618,8 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const userLockMiner1Before = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       const userLockMiner2Before = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       const userLockMiner3Before = await tokenLocking.getUserLock(clnyToken.address, MINER3);
+      const user2MiningBalanceBefore = await colonyNetwork.getMiningStake(MINER2);
+      const user3MiningBalanceBefore = await colonyNetwork.getMiningStake(MINER3);
 
       // We want badClient2 to submit the same hash as badClient for this test.
       badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, "0xfffffffff");
@@ -673,8 +675,15 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const userLockMiner2 = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       expect(userLockMiner2.balance, "Account was not punished properly").to.eq.BN(new BN(userLockMiner2Before.balance).sub(miner2Loss));
 
+      // Rewards for defences, however, aren't automatically staked, so they should have lost MIN_STAKE from mining stake
+      const userMiningBalance2 = await colonyNetwork.getMiningStake(MINER2);
+      expect(userMiningBalance2.amount, "Mining stake was not docked properly").to.eq.BN(new BN(user2MiningBalanceBefore.amount).sub(MIN_STAKE));
+
       const userLockMiner3 = await tokenLocking.getUserLock(clnyToken.address, MINER3);
       expect(userLockMiner3.balance, "Account was not punished properly").to.eq.BN(new BN(userLockMiner3Before.balance).sub(miner3Loss));
+
+      const userMiningBalance3 = await colonyNetwork.getMiningStake(MINER3);
+      expect(userMiningBalance3.amount, "Mining stake was not docked properly").to.eq.BN(new BN(user3MiningBalanceBefore.amount).sub(MIN_STAKE));
 
       // Reset badClient2 to its default behaviour.
       badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, "0xeeeeeeeee");
