@@ -28,3 +28,5 @@ truffle-security-output.json
 .coverage_contracts
 etherrouter-address.json
 ganache-chain-db
+.DS_Store
+*.sqlite*

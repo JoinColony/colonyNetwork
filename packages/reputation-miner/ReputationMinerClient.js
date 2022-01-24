@@ -211,13 +211,17 @@ class ReputationMinerClient {
    * @param  {string}  colonyNetworkAddress The address of the current `ColonyNetwork` contract
    * @return {Promise}
    */
-  async initialise(colonyNetworkAddress, startingBlock) {
+  async initialise(colonyNetworkAddress, startingBlock, startingHash) {
     this.resolveBlockChecksFinished = undefined;
     await this._miner.initialise(colonyNetworkAddress);
 
     const minerStake = await this._miner.getMiningStake();
     const numEntries = minerStake.amount.div(this._miner.getMinStake());
     this._adapter.log(`Miner has staked ${minerStake.amount} CLNY, allowing up to ${numEntries} entries per cycle`);
+
+    if (minerStake.amount.eq(0)) {
+      this._adapter.log(`Stake for mining by depositing ${minStake} in tokenLocking then calling stakeForMining on the network`);
+    }
 
     let resumedSuccessfully = false;
     // If we have a JRH saved, and it goes from the current (on chain) state to
@@ -268,9 +272,14 @@ class ReputationMinerClient {
 
       // Get latest state from database if available, otherwise sync to current state on-chain
       await this._miner.createDB();
+      this._adapter.log(`Attempting to load latest on-chain state ${latestConfirmedReputationHash}`);
       await this._miner.loadState(latestConfirmedReputationHash);
       if (this._miner.nReputations.eq(0)) {
         this._adapter.log("Latest state not found - need to sync");
+        if (startingHash !== undefined) {
+          this._adapter.log(`Loading starting hash ${startingHash}`);
+          await this._miner.loadState(startingHash);
+        }
         await this._miner.sync(startingBlock, true);
       }
 
@@ -460,7 +469,7 @@ class ReputationMinerClient {
           const {entryIndex} = this.best12Submissions[this.submissionIndex];
           const canSubmit = await this._miner.submissionPossible(entryIndex);
           if (canSubmit) {
-            this._adapter.log("⏰ Looks like it's time to submit an entry to the current cycle");
+            this._adapter.log(`⏰ ${new Date().toLocaleTimeString()}: Looks like it's time to submit an entry to the current cycle`);
             this.submissionIndex += 1;
             await this.updateGasEstimate('average');
             await this.submitEntry(entryIndex);
@@ -730,7 +739,7 @@ class ReputationMinerClient {
 
   async submitEntry(entryIndex) {
     const rootHash = await this._miner.getRootHash();
-    this._adapter.log(`#️⃣ Miner ${this._miner.minerAddress} submitting new reputation hash ${rootHash} at entry index ${entryIndex.toNumber()}`);
+    this._adapter.log(`#️⃣ Submitting new reputation hash ${rootHash} at entry index ${entryIndex.toNumber()}`);
 
     // Submit hash
     let submitRootHashTx = await this._miner.submitRootHash(entryIndex);
@@ -745,8 +754,9 @@ class ReputationMinerClient {
   }
 
   async confirmEntry() {
-    this._adapter.log("⏰ Looks like it's time to confirm the new hash");
+    this._adapter.log(`⏰ ${new Date().toLocaleTimeString()}: Looks like it's time to confirm the new hash`);
     // Confirm hash if possible
+
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
       await this.updateGasEstimate('average');
