@@ -389,14 +389,16 @@ process.env.SOLIDITY_COVERAGE
 
           let badEntry = disputeRound[badIndex];
           let goodEntry = disputeRound[goodIndex];
-
           // Forward time again so clients can start responding to challenges
           await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
           await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
 
           await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
+          await mineBlock();
           await goodClientConfirmedJRH;
+
+          await mineBlock();
           await badClient.confirmJustificationRootHash();
 
           disputeRound = await repCycle.getDisputeRound(0);
@@ -420,10 +422,12 @@ process.env.SOLIDITY_COVERAGE
           }
 
           while (badEntry.upperBound !== badEntry.lowerBound) {
+            await mineBlock();
             const goodClientSearchStepPromise = getGoodClientBinarySearchStepPromise();
             await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + SUBMITTER_ONLY_WINDOW);
             await goodClientSearchStepPromise;
             if (parseInt(badEntry.challengeStepCompleted, 10) <= parseInt(goodEntry.challengeStepCompleted, 10)) {
+              await mineBlock();
               await badClient.respondToBinarySearchForChallenge();
             }
             disputeRound = await repCycle.getDisputeRound(0);
@@ -439,7 +443,9 @@ process.env.SOLIDITY_COVERAGE
 
           await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + SUBMITTER_ONLY_WINDOW);
 
+          await mineBlock();
           await goodClientConfirmedBinarySearch;
+          await mineBlock();
           await badClient.confirmBinarySearchResult();
 
           disputeRound = await repCycle.getDisputeRound(0);
@@ -447,6 +453,7 @@ process.env.SOLIDITY_COVERAGE
 
           await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + SUBMITTER_ONLY_WINDOW);
 
+          await mineBlock();
           await goodClientCompleteChallenge;
 
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
@@ -479,6 +486,7 @@ process.env.SOLIDITY_COVERAGE
 
           // Good client should now realise it can timeout bad submission
           await goodClientInvalidateOpponent;
+          await mineBlock();
           // Add a listener to process log for when a new cycle starts, which won't happen yet because the submission window is still open
 
           const newCycleStart = new Promise(function (resolve, reject) {

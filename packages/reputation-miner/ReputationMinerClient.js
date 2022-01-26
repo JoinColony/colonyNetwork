@@ -465,7 +465,8 @@ class ReputationMinerClient {
               return;
             }
           }
-          await this.updateGasEstimate('average');
+          await this.updateGasEstimate('fast');
+          this._adapter.log("Invalidating pseudo-opponent in dispute");
           await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
           this.endDoBlockChecks();
           return;
@@ -483,7 +484,8 @@ class ReputationMinerClient {
           );
           if (responsePossible) {
             // If so, invalidate them.
-            await this.updateGasEstimate('average');
+            await this.updateGasEstimate('fast');
+            this._adapter.log("Invalidating opponent in dispute");
             await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
             this.endDoBlockChecks();
             return;
@@ -497,7 +499,9 @@ class ReputationMinerClient {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
           if (responsePossible){
             await this.updateGasEstimate('fast');
-            await this._miner.confirmJustificationRootHash();
+            this._adapter.log("Confirming JRH in dispute");
+            const tx = await this._miner.confirmJustificationRootHash();
+            await tx.wait();
           }
         // 2. Are we in the middle of a binary search?
         // Check our opponent has confirmed their JRH, and the binary search is ongoing.
@@ -509,7 +513,9 @@ class ReputationMinerClient {
             const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_RESPONSE, entry.lastResponseTimestamp);
             if (responsePossible){
               await this.updateGasEstimate('fast');
-              await this._miner.respondToBinarySearchForChallenge();
+              this._adapter.log("Responding to binary search in dispute");
+              const tx = await this._miner.respondToBinarySearchForChallenge();
+              await tx.wait();
             }
           }
         // 3. Are we at the end of a binary search and need to confirm?
@@ -517,18 +523,23 @@ class ReputationMinerClient {
         } else if (
           oppEntry.upperBound.eq(oppEntry.lowerBound) &&
           entry.upperBound.eq(entry.lowerBound) &&
+          entry.challengeStepCompleted.gte(2) &&
           ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNLeaves)
         )
         {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
           if (responsePossible){
             await this.updateGasEstimate('fast');
-            await this._miner.confirmBinarySearchResult();
+            this._adapter.log("Confirming binary search in dispute");
+            const tx = await this._miner.confirmBinarySearchResult();
+            await tx.wait();
           }
         // 4. Is the binary search confirmed, and we need to respond to challenge?
         // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
         } else if (
+            oppEntry.challengeStepCompleted.gte(2) &&
             ethers.BigNumber.from(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNLeaves) &&
+            entry.challengeStepCompleted.gte(3) &&
             ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNLeaves) &&
             ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNLeaves)
           )
@@ -536,7 +547,9 @@ class ReputationMinerClient {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
           if (responsePossible){
             await this.updateGasEstimate('fast');
-            await this._miner.respondToChallenge();
+            this._adapter.log("Responding to challenge in dispute");
+            const tx = await this._miner.respondToChallenge();
+            await tx.wait();
           }
         }
       }
