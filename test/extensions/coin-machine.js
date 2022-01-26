@@ -404,6 +404,34 @@ contract("Coin Machine", (accounts) => {
       expect(new BN((balanceAfter - balanceBefore).toString())).to.eq.BN(currentPrice);
     });
 
+    it("can refund eth if no tokens are purchased", async () => {
+      await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      coinMachine = await CoinMachine.at(coinMachineAddress);
+
+      await token.mint(coinMachine.address, UINT128_MAX);
+
+      await coinMachine.initialise(token.address, ADDRESS_ZERO, 60 * 60, 10, WAD, WAD, WAD, WAD, ADDRESS_ZERO);
+
+      await coinMachine.buyTokens(WAD, { from: USER0, value: WAD });
+
+      const maxPurchase = await coinMachine.getMaxPurchase(USER1);
+      expect(maxPurchase).to.be.zero;
+
+      // Eth is returned to the user, not sent to the colony or held by the contract
+      const coinMachinePre = await web3GetBalance(coinMachine.address);
+      const colonyPre = await web3GetBalance(colony.address);
+      await coinMachine.buyTokens(WAD, { from: USER1, value: WAD });
+      const coinMachinePost = await web3GetBalance(coinMachine.address);
+      const colonyPost = await web3GetBalance(colony.address);
+      const tokenBalance = await token.balanceOf(USER1);
+
+      expect(new BN((coinMachinePre - coinMachinePost).toString())).to.be.zero;
+      expect(new BN((colonyPre - colonyPost).toString())).to.be.zero;
+      expect(tokenBalance).to.be.zero;
+    });
+
     it("can buy up to the maximum amount of tokens per period", async () => {
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
       const tokensToBuy = maxPerPeriod.add(WAD);
@@ -415,6 +443,9 @@ contract("Coin Machine", (accounts) => {
 
       const balance = await token.balanceOf(USER0);
       expect(balance).to.eq.BN(maxPerPeriod);
+
+      const purchaseBalance = await purchaseToken.balanceOf(USER0);
+      expect(purchaseBalance).to.eq.BN(WAD);
     });
 
     it("can buy tokens over multiple periods", async () => {
