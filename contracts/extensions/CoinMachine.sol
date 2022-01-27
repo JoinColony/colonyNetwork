@@ -91,7 +91,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 3;
+    return 4;
   }
 
   /// @notice Configures the extension
@@ -214,7 +214,10 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     uint256 numTokens = min(maxPurchase, _numTokens);
     uint256 totalCost = wmul(numTokens, activePrice);
 
-    if (numTokens <= 0) { return; }
+    if (numTokens <= 0) {
+      if (msg.value > 0) { msg.sender.transfer(msg.value); } // Refund any balance
+      return;
+    }
 
     activeIntake = add(activeIntake, totalCost);
     activeSold = add(activeSold, numTokens);
@@ -368,11 +371,11 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Get the maximum amount of tokens a user can purchase in total
   function getUserLimit(address _user) public view returns (uint256) {
-    // ((max(soldTotal, targetPerPeriod) * userLimitFraction) - soldUser) / (1 - userLimitFraction)
-    return (userLimitFraction == WAD || whitelist == address(0x0)) ? UINT256_MAX : wdiv(
-      sub(wmul(max(soldTotal, targetPerPeriod), userLimitFraction), soldUser[_user]),
-      sub(WAD, userLimitFraction)
-    );
+    return
+      (userLimitFraction == WAD || whitelist == address(0x0)) ?
+      UINT256_MAX :
+      sub(wmul(add(getTokenBalance(), soldTotal), userLimitFraction), soldUser[_user])
+    ;
   }
 
   /// @notice Get the maximum amount of tokens a user can purchase in a period
