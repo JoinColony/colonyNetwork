@@ -7,6 +7,7 @@ const { getChallenge, verifyEthSignature } = etherpass;
 const sqlite3 = require("sqlite3");
 const sqlite = require("sqlite");
 const bodyParser = require("body-parser");
+const { colonyIOCors, ConsoleAdapter, updateGasEstimate } = require("../package-utils");
 
 class KycOracle {
   /**
@@ -19,7 +20,9 @@ class KycOracle {
    * @param {Object} provider                Ethers provider that allows access to an ethereum node.
    * @param {Number} port                    The port the oracle will serve on
    */
-  constructor({ privateKey, adminAddress, apiKey, loader, provider, dbPath, port = 3003 }) {
+  constructor({ privateKey, adminAddress, apiKey, loader, provider, adapter, dbPath, port = 3003 }) {
+    this.provider = provider;
+
     if (privateKey) {
       this.wallet = new ethers.Wallet(privateKey, this.provider);
       this.adminAddress = this.wallet.address;
@@ -27,6 +30,12 @@ class KycOracle {
       this.wallet = provider.getSigner(adminAddress);
       this.adminAddress = adminAddress;
     }
+
+    this.adapter = adapter;
+    if (typeof this.adapter === "undefined") {
+      this.adapter = new ConsoleAdapter();
+    }
+
     console.log("Transactions will be signed from ", this.adminAddress);
 
     this.apiKey = apiKey;
@@ -37,28 +46,10 @@ class KycOracle {
     }
 
     this.loader = loader;
-    this.provider = provider;
 
     this.app = express();
 
-    this.app.use(function (req, res, next) {
-      const origin = req.get("origin");
-
-      const colonyRegex = /.*colony\.io/;
-      const colonyMatches = colonyRegex.exec(origin);
-
-      const localRegex = /http:\/\/(127(\.\d+){1,3}|[0:]+1|localhost)/;
-
-      const localMatches = localRegex.exec(origin);
-
-      if (colonyMatches) {
-        res.header("Access-Control-Allow-Origin", colonyMatches[0]);
-      } else if (localMatches) {
-        res.header("Access-Control-Allow-Origin", "*");
-      }
-      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Synaps-Session-Id");
-      next();
-    });
+    this.app.use(colonyIOCors);
 
     this.app.use(bodyParser.json());
 
@@ -91,12 +82,11 @@ class KycOracle {
         if (!sessionId) {
           // Create a session for them
           const { data } = await axios.post(
-            "https://workflow-api.synaps.io/v2/session/init",
+            `https://workflow-api.synaps.io/v2/session/init?alias=${address}`,
             {}, // No data
             {
               headers: {
                 "Api-Key": this.apiKey,
-                alias: address,
               },
             }
           );
@@ -135,7 +125,7 @@ class KycOracle {
         if (validated) {
           const alreadyApproved = await this.whitelist.getApproval(userAddress);
           if (!alreadyApproved) {
-            await this.updateGasEstimate("safeLow");
+            await updateGasEstimate("safeLow", this.chainId, this.adapter);
             const gasEstimate = await this.whitelist.estimateGas.approveUsers([userAddress], true);
             this.whitelist.approveUsers([userAddress], true, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
           }
@@ -187,34 +177,8 @@ class KycOracle {
     this.whitelistContractDef = await this.loader.load({ contractName: "Whitelist" }, { abi: true, address: false });
     this.whitelist = new ethers.Contract(whitelistAddress, this.whitelistContractDef.abi, this.wallet);
 
-    await this.updateGasEstimate("safeLow");
+    await updateGasEstimate("safeLow", this.chainId, this.adapter);
     await this.createDB();
-  }
-
-  /**
-   * Update the gas estimate
-   * @param  {string}  Transaction speed (fastest, fast, safeLow)
-   * @return {Promise}
-   */
-  async updateGasEstimate(type) {
-    if (this.chainId === 100) {
-      this.gasPrice = ethers.utils.hexlify(1000000000);
-      return;
-    }
-
-    try {
-      // Get latest from ethGasStation
-      const { data } = await axios.get("https://ethgasstation.info/json/ethgasAPI.json");
-
-      if (data[type]) {
-        this.gasPrice = ethers.utils.hexlify((data[type] / 10) * 1e9);
-      } else {
-        this.gasPrice = ethers.utils.hexlify(20000000000);
-      }
-    } catch (err) {
-      console.log(`Error during gas estimation: ${err}`);
-      this.gasPrice = ethers.utils.hexlify(20000000000);
-    }
   }
 
   async createDB() {
@@ -228,45 +192,132 @@ class KycOracle {
     await db.close();
   }
 
+  // async getSessionForAddress(address) {
+  //   const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
+  //   const res = await db.all(
+  //     `SELECT DISTINCT users.session_id as session_id
+  //      FROM users
+  //      WHERE users.address="${address}"`
+  //   );
+  //   await db.close();
+  //   const sessionIds = res.map((x) => x.session_id);
+  //   if (sessionIds.length > 1) {
+  //     throw new Error("More than one matching address");
+  //   }
+  //   return sessionIds[0];
+  // }
+
   async getSessionForAddress(address) {
-    const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
-    const res = await db.all(
+    await this.checkDBOpen();
+    let res = await this.db.all(
       `SELECT DISTINCT users.session_id as session_id
        FROM users
        WHERE users.address="${address}"`
     );
-    await db.close();
     const sessionIds = res.map((x) => x.session_id);
     if (sessionIds.length > 1) {
       throw new Error("More than one matching address");
     }
-    return sessionIds[0];
+    if (sessionIds.length === 1) {
+      return sessionIds[0];
+    }
+
+    let { data } = await axios.get(`https://workflow-api.synaps.io/v2/session/list/FINISHED?alias=${address}`, {
+      headers: {
+        "Api-Key": this.apiKey,
+      },
+    });
+    if (data.length === 1) {
+      return data[0].session_id;
+    }
+
+    // Is it pending?
+    res = await axios.get(`https://workflow-api.synaps.io/v2/session/list/PENDING?alias=${address}`, {
+      headers: {
+        "Api-Key": this.apiKey,
+      },
+    });
+
+    data = res.data;
+
+    if (data.length === 1) {
+      return data[0].session_id;
+    }
+
+    res = await axios.get(`https://workflow-api.synaps.io/v2/session/list/CANCELLED?alias=${address}`, {
+      headers: {
+        "Api-Key": this.apiKey,
+      },
+    });
+    data = res.data;
+    if (data.length === 1) {
+      await this.setSessionForAddress(address, data[0].session_id);
+      return data[0].session_id;
+    }
+
+    return undefined;
   }
 
   async setSessionForAddress(address, session) {
-    const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
-    await db.run(
+    await this.checkDBOpen();
+    await this.db.run(
       `INSERT INTO users (address, session_id)
        VALUES ("${address}", "${session}")
        ON CONFLICT(address) DO
        UPDATE SET session_id = "${session}"`
     );
-    await db.close();
   }
 
+  // async getAddressForSession(sessionId) {
+  //   const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
+  //   const res = await db.all(
+  //     `SELECT DISTINCT users.address as address
+  //      FROM users
+  //      WHERE users.session_id="${sessionId}"`
+  //   );
+  //   await db.close();
+  //   const addresses = res.map((x) => x.address);
+  //   if (addresses.length > 1) {
+  //     throw new Error("More than one matching address");
+  //   }
+  //   return addresses[0];
+  // }
+
   async getAddressForSession(sessionId) {
-    const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
-    const res = await db.all(
+    await this.checkDBOpen();
+    const res = await this.db.all(
       `SELECT DISTINCT users.address as address
        FROM users
        WHERE users.session_id="${sessionId}"`
     );
-    await db.close();
     const addresses = res.map((x) => x.address);
     if (addresses.length > 1) {
       throw new Error("More than one matching address");
     }
-    return addresses[0];
+    if (addresses.length === 1) {
+      return addresses[0];
+    }
+
+    const { data } = await axios.get("https://workflow-api.synaps.io/v2/session/info", {
+      headers: {
+        "Api-Key": this.apiKey,
+        "Session-Id": sessionId,
+      },
+    });
+
+    if (data.alias) {
+      await this.setSessionForAddress(data.alias, sessionId);
+      return data.alias;
+    }
+
+    return undefined;
+  }
+
+  async checkDBOpen() {
+    if (this.db) {
+      return;
+    }
+    this.db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
   }
 }
 
