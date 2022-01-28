@@ -7,21 +7,15 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, SECONDS_PER_DAY } from "../../helpers/constants";
+import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 import { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, getBlockTime, forwardTime } from "../../helpers/test-helper";
-import {
-  setupColonyNetwork,
-  setupRandomColony,
-  setupMetaColonyWithLockedCLNYToken,
-  getMetaTransactionParameters,
-} from "../../helpers/test-data-generator";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const EtherRouter = artifacts.require("EtherRouter");
 const TokenSupplier = artifacts.require("TokenSupplier");
-const ColonyExtension = artifacts.require("ColonyExtension");
-const Resolver = artifacts.require("Resolver");
 
 const TOKEN_SUPPLIER = soliditySha3("TokenSupplier");
 
@@ -29,9 +23,8 @@ contract("Token Supplier", (accounts) => {
   let colony;
   let token;
   let colonyNetwork;
-
   let tokenSupplier;
-  let tokenSupplierVersion;
+  let version;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
@@ -40,22 +33,16 @@ contract("Token Supplier", (accounts) => {
   const SUPPLY_CEILING = WAD.muln(10);
 
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    const { metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    const tokenSupplierImplementation = await TokenSupplier.new();
-    const resolver = await Resolver.new();
-    await setupEtherRouter("TokenSupplier", { TokenSupplier: tokenSupplierImplementation.address }, resolver);
-    await metaColony.addExtensionToNetwork(TOKEN_SUPPLIER, resolver.address);
-    const versionSig = await resolver.stringToSig("version()");
-    const target = await resolver.lookup(versionSig);
-    const extensionImplementation = await ColonyExtension.at(target);
-    tokenSupplierVersion = await extensionImplementation.version();
+    const extension = await TokenSupplier.new();
+    version = await extension.version();
   });
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
-    await colony.installExtension(TOKEN_SUPPLIER, tokenSupplierVersion);
+    await colony.installExtension(TOKEN_SUPPLIER, version);
     await colony.addDomain(1, UINT256_MAX, 1);
 
     const tokenSupplierAddress = await colonyNetwork.getExtensionInstallation(TOKEN_SUPPLIER, colony.address);
@@ -81,12 +68,9 @@ contract("Token Supplier", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(TOKEN_SUPPLIER, tokenSupplierVersion, { from: USER0 });
+      await colony.installExtension(TOKEN_SUPPLIER, version, { from: USER0 });
 
-      await checkErrorRevert(
-        colony.installExtension(TOKEN_SUPPLIER, tokenSupplierVersion, { from: USER0 }),
-        "colony-network-extension-already-installed"
-      );
+      await checkErrorRevert(colony.installExtension(TOKEN_SUPPLIER, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(TOKEN_SUPPLIER, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(TOKEN_SUPPLIER, { from: USER0 });

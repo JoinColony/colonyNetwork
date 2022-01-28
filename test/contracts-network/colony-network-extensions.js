@@ -6,16 +6,10 @@ import { BN } from "bn.js";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
+import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 import { checkErrorRevert, web3GetBalance, encodeTxData } from "../../helpers/test-helper";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { UINT256_MAX } from "../../helpers/constants";
-
-import {
-  setupColonyNetwork,
-  setupMetaColonyWithLockedCLNYToken,
-  setupRandomColony,
-  getMetaTransactionParameters,
-} from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -23,6 +17,7 @@ chai.use(bnChai(web3.utils.BN));
 const ColonyExtension = artifacts.require("ColonyExtension");
 const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const TestExtension0 = artifacts.require("TestExtension0");
 const TestExtension1 = artifacts.require("TestExtension1");
@@ -52,6 +47,12 @@ contract("Colony Network Extensions", (accounts) => {
   const TEST_VOTING_TOKEN = soliditySha3("VotingToken");
 
   before(async () => {
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
+
     testExtension0Resolver = await Resolver.new();
     const testExtension0 = await TestExtension0.new();
     await setupEtherRouter("TestExtension0", { TestExtension0: testExtension0.address }, testExtension0Resolver);
@@ -71,12 +72,14 @@ contract("Colony Network Extensions", (accounts) => {
     testVotingTokenResolver = await Resolver.new();
     const testVotingToken = await TestVotingToken.new();
     await setupEtherRouter("TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
+
+    await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
+    await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address);
+    await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension3Resolver.address);
+    await metaColony.addExtensionToNetwork(TEST_VOTING_TOKEN, testVotingTokenResolver.address);
   });
 
   beforeEach(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.addDomain(1, UINT256_MAX, 1); // Domain 2
 
@@ -111,9 +114,6 @@ contract("Colony Network Extensions", (accounts) => {
 
   describe("adding extensions", () => {
     it("allows the meta colony to add new extensions", async () => {
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address);
-
       const resolverAddress = await colonyNetwork.getExtensionResolver(TEST_EXTENSION, 1);
       expect(resolverAddress).to.equal(testExtension1Resolver.address);
     });
@@ -123,8 +123,6 @@ contract("Colony Network Extensions", (accounts) => {
     });
 
     it("does not allow the meta colony to overwrite existing extensions", async () => {
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
-
       await checkErrorRevert(
         metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address),
         "colony-network-extension-already-set"
@@ -146,11 +144,6 @@ contract("Colony Network Extensions", (accounts) => {
   });
 
   describe("installing extensions", () => {
-    beforeEach(async () => {
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address);
-    });
-
     it("allows a root user to install an extension with any version", async () => {
       await colony.installExtension(TEST_EXTENSION, 2, { from: ROOT });
 
@@ -182,12 +175,6 @@ contract("Colony Network Extensions", (accounts) => {
   });
 
   describe("upgrading extensions", () => {
-    beforeEach(async () => {
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address);
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension3Resolver.address);
-    });
-
     it("allows root users to upgrade an extension", async () => {
       await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
@@ -231,10 +218,6 @@ contract("Colony Network Extensions", (accounts) => {
   });
 
   describe("deprecating extensions", () => {
-    beforeEach(async () => {
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
-    });
-
     it("allows root users to deprecate and undeprecate an extension", async () => {
       await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
@@ -260,10 +243,6 @@ contract("Colony Network Extensions", (accounts) => {
   });
 
   describe("uninstalling extensions", () => {
-    beforeEach(async () => {
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
-    });
-
     it("allows root users to uninstall an extension and send ether to the beneficiary", async () => {
       await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
@@ -292,10 +271,6 @@ contract("Colony Network Extensions", (accounts) => {
   });
 
   describe("using extensions", () => {
-    beforeEach(async () => {
-      await metaColony.addExtensionToNetwork(TEST_VOTING_TOKEN, testVotingTokenResolver.address);
-    });
-
     it("allows network-managed extensions to lock and unlock tokens", async () => {
       const tokenLockingAddress = await colonyNetwork.getTokenLocking();
       const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
@@ -363,7 +338,6 @@ contract("Colony Network Extensions", (accounts) => {
     });
 
     it("allows extensions to use metatransactions", async () => {
-      await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
       await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
       const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);

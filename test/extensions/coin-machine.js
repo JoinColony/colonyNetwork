@@ -7,7 +7,6 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, UINT128_MAX, WAD } from "../../helpers/constants";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
 import {
   checkErrorRevert,
@@ -20,24 +19,17 @@ import {
   expectEvent,
 } from "../../helpers/test-helper";
 
-import {
-  setupColonyNetwork,
-  setupRandomToken,
-  setupRandomColony,
-  setupColony,
-  setupMetaColonyWithLockedCLNYToken,
-  getMetaTransactionParameters,
-} from "../../helpers/test-data-generator";
+import { setupRandomToken, setupRandomColony, setupColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
 const TokenAuthority = artifacts.require("TokenAuthority");
 const CoinMachine = artifacts.require("CoinMachine");
 const Whitelist = artifacts.require("Whitelist");
-const Resolver = artifacts.require("Resolver");
-const ColonyExtension = artifacts.require("ColonyExtension");
 
 const COIN_MACHINE = soliditySha3("CoinMachine");
 
@@ -47,7 +39,7 @@ contract("Coin Machine", (accounts) => {
   let purchaseToken;
   let colonyNetwork;
   let coinMachine;
-  let coinMachineVersion;
+  let version;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
@@ -56,25 +48,18 @@ contract("Coin Machine", (accounts) => {
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    const { metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    const coinMachineImplementation = await CoinMachine.new();
-    const resolver = await Resolver.new();
-    await setupEtherRouter("CoinMachine", { CoinMachine: coinMachineImplementation.address }, resolver);
-    await metaColony.addExtensionToNetwork(COIN_MACHINE, resolver.address);
-
-    const versionSig = await resolver.stringToSig("version()");
-    const target = await resolver.lookup(versionSig);
-    const extensionImplementation = await ColonyExtension.at(target);
-    coinMachineVersion = await extensionImplementation.version();
+    const extension = await CoinMachine.new();
+    version = await extension.version();
   });
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     purchaseToken = await setupRandomToken();
 
-    await colony.installExtension(COIN_MACHINE, coinMachineVersion);
+    await colony.installExtension(COIN_MACHINE, version);
 
     const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
     coinMachine = await CoinMachine.at(coinMachineAddress);
@@ -93,9 +78,7 @@ contract("Coin Machine", (accounts) => {
       await checkErrorRevert(coinMachine.install(colony.address), "extension-already-installed");
 
       const identifier = await coinMachine.identifier();
-      const version = await coinMachine.version();
       expect(identifier).to.equal(COIN_MACHINE);
-      expect(version).to.eq.BN(coinMachineVersion);
 
       const capabilityRoles = await coinMachine.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -110,13 +93,9 @@ contract("Coin Machine", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
 
-      await checkErrorRevert(
-        colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 }),
-        "colony-network-extension-already-installed"
-      );
-
+      await checkErrorRevert(colony.installExtension(COIN_MACHINE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(COIN_MACHINE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
@@ -293,7 +272,7 @@ contract("Coin Machine", (accounts) => {
       await otherToken.unlock();
 
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -312,7 +291,7 @@ contract("Coin Machine", (accounts) => {
 
     it("cannot buy more than the balance of tokens", async () => {
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -340,7 +319,7 @@ contract("Coin Machine", (accounts) => {
       expect(locked).to.equal(true);
 
       colony = await setupColony(colonyNetwork, token.address);
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion);
+      await colony.installExtension(COIN_MACHINE, version);
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -376,7 +355,7 @@ contract("Coin Machine", (accounts) => {
 
     it("can buy tokens with eth", async () => {
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -406,7 +385,7 @@ contract("Coin Machine", (accounts) => {
 
     it("can refund eth if no tokens are purchased", async () => {
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -514,7 +493,7 @@ contract("Coin Machine", (accounts) => {
 
     it("cannot adjust prices while the token balance is zero", async () => {
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -758,7 +737,7 @@ contract("Coin Machine", (accounts) => {
       colony = await setupColony(colonyNetwork, token.address);
       await token.unlock();
 
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -780,7 +759,7 @@ contract("Coin Machine", (accounts) => {
       await purchaseToken.unlock();
 
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -850,7 +829,7 @@ contract("Coin Machine", (accounts) => {
 
     it("cannot buy more than their user limit allows", async () => {
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -926,7 +905,7 @@ contract("Coin Machine", (accounts) => {
 
     it("cannot set a user limit without a whitelist", async () => {
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 
@@ -938,7 +917,7 @@ contract("Coin Machine", (accounts) => {
 
     it("can calculate the max purchase at any given time", async () => {
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
-      await colony.installExtension(COIN_MACHINE, coinMachineVersion, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
       const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
       coinMachine = await CoinMachine.at(coinMachineAddress);
 

@@ -7,7 +7,7 @@ import shortid from "shortid";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
+import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
 
 import {
   checkErrorRevert,
@@ -21,27 +21,20 @@ import {
   expectEvent,
 } from "../../helpers/test-helper";
 
-import {
-  setupColonyNetwork,
-  setupMetaColonyWithLockedCLNYToken,
-  setupRandomColony,
-  giveUserCLNYTokensAndStake,
-  getMetaTransactionParameters,
-} from "../../helpers/test-data-generator";
-
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 import PatriciaTree from "../../packages/reputation-miner/patricia";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
+const EtherRouter = artifacts.require("EtherRouter");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TokenLocking = artifacts.require("TokenLocking");
 const VotingReputation = artifacts.require("VotingReputation");
 const OneTxPayment = artifacts.require("OneTxPayment");
-const Resolver = artifacts.require("Resolver");
-const ColonyExtension = artifacts.require("ColonyExtension");
 
 const VOTING_REPUTATION = soliditySha3("VotingReputation");
 
@@ -54,9 +47,9 @@ contract("Voting Reputation", (accounts) => {
   let metaColony;
   let colonyNetwork;
   let tokenLocking;
-  let reputationVotingVersion;
 
   let voting;
+  let version;
 
   let reputationTree;
 
@@ -115,24 +108,17 @@ contract("Voting Reputation", (accounts) => {
   const YEAR = SECONDS_PER_DAY * 365;
 
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER, DEFAULT_STAKE);
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await TokenLocking.at(tokenLockingAddress);
 
-    const votingImplementation = await VotingReputation.new();
-    const resolver = await Resolver.new();
-    await setupEtherRouter("VotingReputation", { VotingReputation: votingImplementation.address }, resolver);
-    await metaColony.addExtensionToNetwork(VOTING_REPUTATION, resolver.address);
-    const versionSig = await resolver.stringToSig("version()");
-    const target = await resolver.lookup(versionSig);
-    const extensionImplementation = await ColonyExtension.at(target);
-    reputationVotingVersion = await extensionImplementation.version();
+    const extension = await VotingReputation.new();
+    version = await extension.version();
   });
 
   beforeEach(async () => {
@@ -145,7 +131,7 @@ contract("Voting Reputation", (accounts) => {
     domain2 = await colony.getDomain(2);
     domain3 = await colony.getDomain(3);
 
-    await colony.installExtension(VOTING_REPUTATION, reputationVotingVersion);
+    await colony.installExtension(VOTING_REPUTATION, version);
     const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
     voting = await VotingReputation.at(votingAddress);
 
@@ -260,9 +246,7 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(voting.install(colony.address), "extension-already-installed");
 
       const identifier = await voting.identifier();
-      const version = await voting.version();
       expect(identifier).to.equal(VOTING_REPUTATION);
-      expect(version).to.eq.BN(reputationVotingVersion);
 
       const capabilityRoles = await voting.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -277,12 +261,9 @@ contract("Voting Reputation", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(VOTING_REPUTATION, reputationVotingVersion, { from: USER0 });
+      await colony.installExtension(VOTING_REPUTATION, version, { from: USER0 });
 
-      await checkErrorRevert(
-        colony.installExtension(VOTING_REPUTATION, reputationVotingVersion, { from: USER0 }),
-        "colony-network-extension-already-installed"
-      );
+      await checkErrorRevert(colony.installExtension(VOTING_REPUTATION, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(VOTING_REPUTATION, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(VOTING_REPUTATION, { from: USER0 });
@@ -1253,17 +1234,13 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can take an action to install an extension", async () => {
-      let installation = await colonyNetwork.getExtensionInstallation(soliditySha3("OneTxPayment"), colony.address);
+      const oneTxPayment = soliditySha3("OneTxPayment");
+      const oneTxPaymentVersion = 3;
+
+      let installation = await colonyNetwork.getExtensionInstallation(oneTxPayment, colony.address);
       expect(installation).to.be.equal(ADDRESS_ZERO);
 
-      const oneTxPaymentImplementation = await OneTxPayment.new();
-      const resolver = await Resolver.new();
-      await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPaymentImplementation.address }, resolver);
-      await metaColony.addExtensionToNetwork(soliditySha3("OneTxPayment"), resolver.address);
-
-      const oneTxPaymentVersion = await oneTxPaymentImplementation.version();
-
-      const action = await encodeTxData(colony, "installExtension", [soliditySha3("OneTxPayment"), oneTxPaymentVersion]);
+      const action = await encodeTxData(colony, "installExtension", [oneTxPayment, oneTxPaymentVersion]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
@@ -1274,7 +1251,7 @@ contract("Voting Reputation", (accounts) => {
       const { logs } = await voting.finalizeMotion(motionId);
       expect(logs[1].args.executed).to.be.true;
 
-      installation = await colonyNetwork.getExtensionInstallation(soliditySha3("OneTxPayment"), colony.address);
+      installation = await colonyNetwork.getExtensionInstallation(oneTxPayment, colony.address);
       expect(installation).to.not.be.equal(ADDRESS_ZERO);
     });
 

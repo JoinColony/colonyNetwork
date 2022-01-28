@@ -33,12 +33,15 @@ contract("Reputation mining - basic functionality", (accounts) => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
+
     const clnyAddress = await metaColony.getToken();
     clnyToken = await Token.at(clnyAddress);
+
+    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   });
 
   afterEach(async () => {
