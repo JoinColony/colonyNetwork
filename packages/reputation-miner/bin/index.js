@@ -42,6 +42,7 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
   }
 
   static attemptCheck(err, attemptNumber){
+    console.log("Retrying RPC request #", attemptNumber);
     if (attemptNumber === 10){
       return false;
     }
@@ -56,7 +57,7 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
   // method is the method name (e.g. getBalance) and params is an
   // object with normalized values passed in, depending on the method
   perform(method, params) {
-    return backoff(() => super.perform(method, params), {retry: RetryProvider.attemptCheck});
+    return backoff(() => super.perform(method, params), {retry: RetryProvider.attemptCheck, startingDelay: 1000});
   }
 }
 
