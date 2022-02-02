@@ -511,6 +511,45 @@ process.env.SOLIDITY_COVERAGE
           assert.equal(acceptedRootHash, rootHash);
         });
 
+        it("should load the reputation state and JRH from disk if available", async function () {
+          const rootHash = await reputationMinerClient._miner.getRootHash();
+          const nLeaves = await reputationMinerClient._miner.getRootHashNLeaves();
+          const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
+
+          const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+          const receive2Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 2);
+
+          // Forward through half of the cycle duration and wait for the client to submit some entries
+          await forwardTime(MINING_CYCLE_DURATION / 2, this);
+          await receive2Submissions; // It might submit a couple more, but that's fine for the purposes of this test.
+          await reputationMinerClient.close();
+
+          class TestAdapter {
+            constructor() {
+              this.outputs = [];
+            }
+
+            log(line) {
+              this.outputs.push(line);
+            }
+          }
+
+          const adapter = new TestAdapter();
+
+          // start up another one.
+          const reputationMinerClient2 = new ReputationMinerClient({
+            loader,
+            realProviderPort,
+            minerAddress: MINER1,
+            useJsTree: true,
+            auto: true,
+            adapter,
+          });
+          await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
+          expect(adapter.outputs[0]).to.equal("Successfully resumed mid-submission", "The client didn't resume mid-submission");
+          await reputationMinerClient2.close();
+        });
+
         function noEventSeen(contract, event) {
           return new Promise(function (resolve, reject) {
             contract.on(event, async () => {
