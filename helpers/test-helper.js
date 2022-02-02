@@ -621,6 +621,7 @@ export async function advanceMiningCycleNoContest({ colonyNetwork, client, miner
   if (client !== undefined) {
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
+    await client.confirmNewHash();
   } else {
     const accounts = await web3GetAccounts();
     minerAddress = minerAddress || accounts[5]; // eslint-disable-line no-param-reassign
@@ -629,8 +630,8 @@ export async function advanceMiningCycleNoContest({ colonyNetwork, client, miner
     } catch (err) {
       console.log("advanceMiningCycleNoContest error thrown by .submitRootHash", err);
     }
+    await repCycle.confirmNewHash(0, { from: minerAddress });
   }
-  await repCycle.confirmNewHash(0);
 }
 
 export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, test, client1) {
@@ -652,8 +653,10 @@ export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetw
   await forwardTime(SUBMITTER_ONLY_WINDOW + 600, this);
 
   const toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
+  const accounts = await web3GetAccounts();
+  const minerAddress = accounts[5];
 
-  return repCycle.invalidateHash(round1, toInvalidateIdx);
+  return repCycle.invalidateHash(round1, toInvalidateIdx, { from: minerAddress });
 }
 
 export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test, client1, client2, _errors) {
@@ -703,7 +706,8 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
   }
   await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
-  return repCycle.invalidateHash(round1, toInvalidateIdx);
+  const signingAddress = await client1.realWallet.getAddress();
+  return repCycle.invalidateHash(round1, toInvalidateIdx, { from: signingAddress });
 }
 
 async function navigateChallenge(colonyNetwork, client1, client2, errors) {
@@ -825,7 +829,11 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
       const disputeRound = await repCycle.getDisputeRound(roundNumber);
       const timestamp = disputeRound[0].lastResponseTimestamp;
       await forwardTimeTo(parseInt(timestamp, 10) + MINING_CYCLE_DURATION, test);
-      await repCycle.confirmNewHash(roundNumber);
+
+      const accounts = await web3GetAccounts();
+      const minerAddress = accounts[5];
+
+      await repCycle.confirmNewHash(roundNumber, { from: minerAddress });
       // But for now, that's okay.
     } else {
       // We shouldn't get here. If this fires during a test, you haven't finished writing the test.

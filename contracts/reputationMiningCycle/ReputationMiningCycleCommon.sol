@@ -21,6 +21,7 @@ pragma experimental "ABIEncoderV2";
 import "./../../lib/dappsys/math.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../tokenLocking/ITokenLocking.sol";
 import "./ReputationMiningCycleStorage.sol";
 
 
@@ -30,6 +31,20 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   // Size of mining window in seconds. Should be consistent with decay constant
   // in reputationMiningCycleRespond. If you change one, you should change the other.
   uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 1; // 1 hour
+
+  function getMinerAddressIfStaked() internal view returns (address) {
+    // Is msg.sender a miner themselves? See if they have stake.
+    uint256 lockBalance = ITokenLocking(tokenLockingAddress).getObligation(msg.sender, clnyTokenAddress, colonyNetworkAddress);
+    if (lockBalance > 0) {
+      // If so, they we don't let them mine on someone else's behalf
+      return msg.sender;
+    }
+
+    // Return any delegator they are acting on behalf of
+    address delegator = IColonyNetwork(colonyNetworkAddress).getMiningDelegator(msg.sender);
+    require(delegator != address(0x00), "colony-reputation-mining-no-stake-or-delegator");
+    return delegator;
+  }
 
   function expectedBranchMask(uint256 _nLeaves, uint256 _leaf) public pure returns (uint256) {
     // Gets the expected branchmask for a patricia tree which has nLeaves, with keys from 0 to nLeaves -1
@@ -135,15 +150,17 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
       return false;
     }
 
+    address minerAddress = getMinerAddressIfStaked();
+
     uint256 windowOpenFor = block.timestamp - _responseWindowOpened;
 
     if (windowOpenFor <= SUBMITTER_ONLY_WINDOW_DURATION) {
       // require user made a submission
-      if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0x00)) {
+      if (reputationHashSubmissions[minerAddress].proposedNewRootHash == bytes32(0x00)) {
         return false;
       }
       uint256 target = windowOpenFor * Y;
-      if (uint256(keccak256(abi.encodePacked(msg.sender, _stage))) > target) {
+      if (uint256(keccak256(abi.encodePacked(minerAddress, _stage))) > target) {
         return false;
       }
     }

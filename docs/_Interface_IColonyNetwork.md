@@ -394,6 +394,23 @@ Get the Meta Colony address.
 |---|---|---|
 |colonyAddress|address|The Meta colony address, if no colony was found, returns 0x0
 
+### `getMiningDelegator`
+
+Called to get the address _delegate is allowed to mine for
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_delegate|address|The address that wants to mine
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|address|address|
+
 ### `getMiningResolver`
 
 Get the resolver to be used by new instances of ReputationMiningCycle.
@@ -762,6 +779,19 @@ Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as 
 |Name|Type|Description|
 |---|---|---|
 |_feeInverse|uint256|The inverse of the network fee to set
+
+
+### `setMiningDelegate`
+
+Called to give or remove another address's permission to mine on your behalf
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_delegate|address|The address you're giving or removing permission from
+|_allowed|bool|Whether they are allowed (true) or not (false) to mine on your behalf
 
 
 ### `setMiningResolver`

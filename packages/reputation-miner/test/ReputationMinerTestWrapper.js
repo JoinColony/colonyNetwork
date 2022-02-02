@@ -25,6 +25,11 @@ class ReputationMinerTestWrapper extends ReputationMiner {
     const tx = await super.respondToChallenge();
     return tx.wait();
   }
+
+  async confirmNewHash() {
+    const tx = await super.confirmNewHash();
+    return tx.wait();
+  }
 }
 
 export default ReputationMinerTestWrapper;

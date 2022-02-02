@@ -109,7 +109,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
         client2: { respondToChallenge: "colony-reputation-mining-adjacent-disagree-state-disagreement" },
       });
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
     it("should allow a user to confirm a submitted JRH with proofs for a submission", async () => {
@@ -160,7 +160,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
     it("should cope if the wrong reputation transition is the first transition", async () => {
@@ -182,7 +182,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
         client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
     it("should allow a binary search between opponents to take place to find their first disagreement", async () => {
@@ -311,7 +311,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       // checks that challengeStepCompleted is one more for the good submission than the bad one.
 
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.invalidateHash(0, 1);
+      await repCycle.invalidateHash(0, 1, { from: MINER1 });
     });
 
     it("if respondToChallenge is attempted to be called multiple times, it should fail", async () => {
@@ -348,13 +348,13 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-challenge-already-responded");
       await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-increased-reputation-value-incorrect");
 
-      await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-less-challenge-rounds-completed", { from: MINER1 });
+      await checkErrorRevert(repCycle.invalidateHash(0, 0, { from: MINER1 }), "colony-reputation-mining-less-challenge-rounds-completed");
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
-      await repCycle.invalidateHash(0, 1);
+      await repCycle.invalidateHash(0, 1, { from: MINER1 });
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
 
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
 
       const rightHash = await goodClient.getRootHash();
       const confirmedHash = await colonyNetwork.getReputationRootHash();
@@ -384,7 +384,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
       // Cleanup
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
   });
 
@@ -410,7 +410,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
       // Cleanup
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
     it("where the number of leaves has been incremented incorrectly when adding a new reputation", async () => {
@@ -427,7 +427,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       });
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
     it("where the number of leaves has been incremented during an update of an existing reputation", async () => {
@@ -450,7 +450,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       });
 
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
   });
 
@@ -476,7 +476,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
       // Cleanup
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
     it("with an extra leaf causing proof 1 to be too long", async () => {
@@ -501,9 +501,9 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
       // Cleanup
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
-      await repCycle.invalidateHash(0, 1);
+      await repCycle.invalidateHash(0, 1, { from: MINER1 });
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
     it("with an extra leaf inserted and a leaf removed causing proof lengths to be right, but JT wrong", async () => {
@@ -532,9 +532,9 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
       // Cleanup
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
-      await repCycle.invalidateHash(0, 1);
+      await repCycle.invalidateHash(0, 1, { from: MINER1 });
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
     it("with an extra leaf causing proof 2 to be too long", async () => {
@@ -603,9 +603,9 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       expect(delta).to.eq.BN(1);
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
-      await repCycle.invalidateHash(0, 1);
+      await repCycle.invalidateHash(0, 1, { from: MINER1 });
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
     it("if a new reputation's uniqueID is wrong", async () => {
@@ -648,7 +648,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
 
       await badClient.resetDB();
       await badClient.initialise(colonyNetwork.address);
@@ -668,7 +668,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       });
       repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
     it("if an update makes reputation amount go over the max, in a dispute, it should be limited to the max value", async () => {
@@ -731,7 +731,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
         client2: { respondToChallenge: "colony-reputation-mining-reputation-not-max-int128" },
       });
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(1);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
     });
   });
 });
