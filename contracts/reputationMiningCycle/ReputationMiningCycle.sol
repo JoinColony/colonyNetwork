@@ -156,7 +156,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   function submitRootHash(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex) public
   submissionPossible()
   {
-    address minerAddress = getMinerAddress();
+    address minerAddress = getMinerAddressIfStaked();
     checkEntryQualifies(minerAddress, _newHash, _nLeaves, _jrh, _entryIndex);
     checkWithinTarget(minerAddress, _newHash, _entryIndex);
 
@@ -332,7 +332,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
       emit HashInvalidated(submission.proposedNewRootHash, submission.nLeaves, submission.jrh);
     }
-    rewardResponder(getMinerAddress());
+    rewardResponder(getMinerAddressIfStaked());
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
 
@@ -386,7 +386,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     // Set bounds for first binary search if it's going to be needed
     disputeRounds[_round][_index].upperBound = submission.jrhNLeaves - 1;
 
-    rewardResponder(getMinerAddress());
+    rewardResponder(getMinerAddressIfStaked());
 
     emit JustificationRootHashConfirmed(submission.proposedNewRootHash, submission.nLeaves, submission.jrh);
   }

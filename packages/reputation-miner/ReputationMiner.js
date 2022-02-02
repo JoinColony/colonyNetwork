@@ -113,7 +113,7 @@ class ReputationMiner {
     } else {
       this.minerAddress = delegator;
     }
-    console.log("Mining on behalf of ", this.minerAddress)
+    console.log(`Mining on behalf of ${this.minerAddress}`)
   }
 
   /**

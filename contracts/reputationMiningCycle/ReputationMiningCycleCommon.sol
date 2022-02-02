@@ -32,7 +32,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   // in reputationMiningCycleRespond. If you change one, you should change the other.
   uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 1; // 1 hour
 
-  function getMinerAddress() internal view returns (address) {
+  function getMinerAddressIfStaked() internal view returns (address) {
     // Is msg.sender a miner themselves? See if they have stake.
     uint256 lockBalance = ITokenLocking(tokenLockingAddress).getObligation(msg.sender, clnyTokenAddress, colonyNetworkAddress);
     if (lockBalance > 0) {
@@ -150,7 +150,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
       return false;
     }
 
-    address minerAddress = getMinerAddress();
+    address minerAddress = getMinerAddressIfStaked();
 
     uint256 windowOpenFor = block.timestamp - _responseWindowOpened;
 

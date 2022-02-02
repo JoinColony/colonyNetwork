@@ -338,7 +338,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     Submission storage submission = reputationHashSubmissions[disputeRounds[_u[U_ROUND]][_u[U_IDX]].firstSubmitter];
 
     // And reward the user
-    rewardResponder(getMinerAddress());
+    rewardResponder(getMinerAddressIfStaked());
 
     emit ChallengeCompleted(submission.proposedNewRootHash, submission.nLeaves, submission.jrh);
   }
