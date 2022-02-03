@@ -557,11 +557,11 @@ class ReputationMinerClient {
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
-    const balance = await this._miner.tokenLocking.getObligation(
+    const miningStake = await this._miner.colonyNetwork.getMiningStake(
       this._miner.minerAddress,
-      this._miner.clnyAddress,
-      this._miner.colonyNetwork.address
     );
+
+    const balance = miningStake.amount;
 
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
     const rootHash = await this._miner.getRootHash();
