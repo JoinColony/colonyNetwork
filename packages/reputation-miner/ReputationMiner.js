@@ -1442,7 +1442,7 @@ class ReputationMiner {
     }
 
     const currentJRH = await this.justificationTree.getRootHash();
-    if (currentJRH !== justificationRootHash) {
+    if (justificationRootHash && currentJRH !== justificationRootHash) {
       console.log("WARNING: The supplied JRH failed to be recreated successfully. Are you sure it was saved?");
     }
   }
