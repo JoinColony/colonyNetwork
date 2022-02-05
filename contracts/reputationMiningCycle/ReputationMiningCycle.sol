@@ -49,8 +49,8 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   /// @param _jrh The justification root hash for the application of the log being processed.
   /// @param _entryIndex The number of the entry the submitter hash asked us to consider.
   function checkEntryQualifies(address _minerAddress, bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex) internal {
-    uint256 lockBalance = ITokenLocking(tokenLockingAddress).getObligation(_minerAddress, clnyTokenAddress, colonyNetworkAddress);
-    require(_entryIndex <= lockBalance / MIN_STAKE, "colony-reputation-mining-stake-minimum-not-met-for-index");
+    uint256 stakedForMining = IColonyNetwork(colonyNetworkAddress).getMiningStake(_minerAddress).amount;
+    require(_entryIndex <= stakedForMining / MIN_STAKE, "colony-reputation-mining-stake-minimum-not-met-for-index");
     require(_entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
 
     uint256 stakeTimestamp = IColonyNetwork(colonyNetworkAddress).getMiningStake(_minerAddress).timestamp;

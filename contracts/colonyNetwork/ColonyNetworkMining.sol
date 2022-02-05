@@ -222,7 +222,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
 
     ITokenLocking(tokenLocking).deposit(clnyToken, 0, true); // Faux deposit to clear any locks
     for (uint256 i = 0; i < _stakers.length; i++) {
-      lostStake = min(ITokenLocking(tokenLocking).getObligation(_stakers[i], clnyToken, address(this)), _amount);
+      lostStake = min(miningStakes[_stakers[i]].amount, _amount);
+      miningStakes[_stakers[i]].amount = sub(miningStakes[_stakers[i]].amount, lostStake);
       ITokenLocking(tokenLocking).transferStake(_stakers[i], lostStake, clnyToken, address(this));
       // TODO: Lose rep?
       emit ReputationMinerPenalised(_stakers[i], lostStake);
@@ -243,12 +244,11 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
 
   function stakeForMining(uint256 _amount) public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
-    uint256 existingObligation = ITokenLocking(tokenLocking).getObligation(msg.sender, clnyToken, address(this));
 
     ITokenLocking(tokenLocking).approveStake(msg.sender, _amount, clnyToken);
     ITokenLocking(tokenLocking).obligateStake(msg.sender, _amount, clnyToken);
 
-    miningStakes[msg.sender].timestamp = getNewTimestamp(existingObligation, _amount, miningStakes[msg.sender].timestamp, block.timestamp);
+    miningStakes[msg.sender].timestamp = getNewTimestamp(miningStakes[msg.sender].amount, _amount, miningStakes[msg.sender].timestamp, block.timestamp);
     miningStakes[msg.sender].amount = add(miningStakes[msg.sender].amount, _amount);
   }
 

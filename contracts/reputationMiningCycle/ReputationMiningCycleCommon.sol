@@ -34,8 +34,8 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
 
   function getMinerAddressIfStaked() internal view returns (address) {
     // Is msg.sender a miner themselves? See if they have stake.
-    uint256 lockBalance = ITokenLocking(tokenLockingAddress).getObligation(msg.sender, clnyTokenAddress, colonyNetworkAddress);
-    if (lockBalance > 0) {
+    uint256 stakedForMining = IColonyNetwork(colonyNetworkAddress).getMiningStake(msg.sender).amount;
+    if (stakedForMining > 0) {
       // If so, they we don't let them mine on someone else's behalf
       return msg.sender;
     }
