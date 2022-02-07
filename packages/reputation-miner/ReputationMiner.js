@@ -202,29 +202,18 @@ class ReputationMiner {
    * @return {Promise}
    */
   async addLogContentsToReputationTree(blockNumber = "latest", buildJustificationTree = true) {
+    let jtType;
     if (buildJustificationTree){
       if (this.useJsTree) {
-        this.justificationTree = new PatriciaTreeNoHash();
+        jtType = "js";
       } else {
-        const contractFactory = new ethers.ContractFactory(
-          this.patriciaTreeNoHashContractDef.abi,
-          this.patriciaTreeNoHashContractDef.bytecode,
-          this.ganacheWallet
-        );
-
-        const contract = await contractFactory.deploy();
-        await contract.deployed();
-
-        this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeNoHashContractDef.abi, this.ganacheWallet);
+        jtType = "solidity";
       }
     } else {
-      this.justificationTree = {
-        insert: () => {return { wait: () => {}}},
-        getRootHash: () => {},
-        getImpliedRoot: () => {},
-        getProof: () => {},
-      }
+        jtType = "noop"
     }
+
+    await this.instantiateJustificationTree(jtType);
 
     this.justificationHashes = {};
     this.reverseReputationHashLookup = {};
@@ -1405,21 +1394,14 @@ class ReputationMiner {
 
   async loadJustificationTree(justificationRootHash) {
     this.justificationHashes = {};
-
+    let jtType;
     if (this.useJsTree) {
-      this.justificationTree = new PatriciaTreeNoHash();
+      jtType = "js"
     } else {
-      const contractFactory = new ethers.ContractFactory(
-        this.patriciaTreeNoHashContractDef.abi,
-        this.patriciaTreeNoHashContractDef.bytecode,
-        this.ganacheWallet
-      );
-
-      const contract = await contractFactory.deploy();
-      await contract.deployed();
-
-      this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeNoHashContractDef.abi, this.ganacheWallet);
+      jtType = "solidity"
     }
+
+    await this.instantiateJustificationTree(jtType);
 
     try {
 
@@ -1444,6 +1426,32 @@ class ReputationMiner {
     const currentJRH = await this.justificationTree.getRootHash();
     if (justificationRootHash && currentJRH !== justificationRootHash) {
       console.log("WARNING: The supplied JRH failed to be recreated successfully. Are you sure it was saved?");
+    }
+  }
+
+  async instantiateJustificationTree(type = "js") {
+    if (type === "js") {
+      this.justificationTree = new PatriciaTreeNoHash();
+    } else if (type === "solidity") {
+      const contractFactory = new ethers.ContractFactory(
+        this.patriciaTreeNoHashContractDef.abi,
+        this.patriciaTreeNoHashContractDef.bytecode,
+        this.ganacheWallet
+      );
+
+      const contract = await contractFactory.deploy();
+      await contract.deployed();
+
+      this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeNoHashContractDef.abi, this.ganacheWallet);
+    } else if (type === "noop") {
+      this.justificationTree = {
+        insert: () => {return { wait: () => {}}},
+        getRootHash: () => {},
+        getImpliedRoot: () => {},
+        getProof: () => {},
+      }
+    } else {
+      console.log(`UNKNOWN TYPE for justification tree instantiation: ${type}`)
     }
   }
 
