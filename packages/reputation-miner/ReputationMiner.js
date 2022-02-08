@@ -7,6 +7,9 @@ import Database from "better-sqlite3";
 import PatriciaTreeNoHash from "./patriciaNoHashKey";
 import PatriciaTree from "./patricia";
 
+const fs = require('fs').promises;
+const path = require('path');
+
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.
 // const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
@@ -24,6 +27,8 @@ class ReputationMiner {
   constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false, dbPath = "./reputationStates.sqlite" }) {
     this.loader = loader;
     this.dbPath = dbPath;
+    this.justificationCachePath = `${path.dirname(dbPath)}/justificationTreeCache.json`
+    this.justificationHashes = {}
 
     this.useJsTree = useJsTree;
     if (!this.useJsTree) {
@@ -192,25 +197,24 @@ class ReputationMiner {
   }
 
   /**
-   * When called, adds the entire contents of the current (active) log to its reputation tree. It also builds a Justification Tree as it does so
-   * in case a dispute is called which would require it.
+   * When called, adds the entire contents of the current (active) log to its reputation tree. It also optionally
+   * builds a Justification Tree as it does so in case a dispute is called which would require it.
    * @return {Promise}
    */
-  async addLogContentsToReputationTree(blockNumber = "latest") {
-    if (this.useJsTree) {
-      this.justificationTree = new PatriciaTreeNoHash();
+  async addLogContentsToReputationTree(blockNumber = "latest", buildJustificationTree = true) {
+    let jtType;
+    if (buildJustificationTree){
+      if (this.useJsTree) {
+        jtType = "js";
+      } else {
+        jtType = "solidity";
+      }
     } else {
-      const contractFactory = new ethers.ContractFactory(
-        this.patriciaTreeNoHashContractDef.abi,
-        this.patriciaTreeNoHashContractDef.bytecode,
-        this.ganacheWallet
-      );
-
-      const contract = await contractFactory.deploy();
-      await contract.deployed();
-
-      this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeNoHashContractDef.abi, this.ganacheWallet);
+        jtType = "noop"
     }
+
+    await this.instantiateJustificationTree(jtType);
+
     this.justificationHashes = {};
     this.reverseReputationHashLookup = {};
     const repCycle = await this.getActiveRepCycle(blockNumber);
@@ -1289,7 +1293,7 @@ class ReputationMiner {
       if (applyLogs) {
         const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
         const previousBlock = event.blockNumber - 1;
-        await this.addLogContentsToReputationTree(previousBlock);
+        await this.addLogContentsToReputationTree(previousBlock, false);
         localHash = await this.reputationTree.getRootHash();
         const localNLeaves = this.nReputations;
         if (localHash !== hash || !localNLeaves.eq(nLeaves)) {
@@ -1386,6 +1390,73 @@ class ReputationMiner {
     if (currentStateHash !== reputationRootHash) {
       console.log("WARNING: The supplied state failed to be recreated successfully. Are you sure it was saved?");
     }
+  }
+
+  async loadJustificationTree(justificationRootHash) {
+    this.justificationHashes = {};
+    let jtType;
+    if (this.useJsTree) {
+      jtType = "js"
+    } else {
+      jtType = "solidity"
+    }
+
+    await this.instantiateJustificationTree(jtType);
+
+    try {
+
+      const justificationHashFile = await fs.readFile(this.justificationCachePath, 'utf8')
+      this.justificationHashes = JSON.parse(justificationHashFile);
+
+      for (let i = 0; i < Object.keys(this.justificationHashes).length; i += 1) {
+        const hash = Object.keys(this.justificationHashes)[i];
+        const tx = await this.justificationTree.insert(
+          hash,
+          this.justificationHashes[hash].jhLeafValue,
+          { gasLimit: 4000000 }
+        );
+        if (!this.useJsTree) {
+          await tx.wait();
+        }
+      }
+    } catch (err) {
+      console.log(err);
+    }
+
+    const currentJRH = await this.justificationTree.getRootHash();
+    if (justificationRootHash && currentJRH !== justificationRootHash) {
+      console.log("WARNING: The supplied JRH failed to be recreated successfully. Are you sure it was saved?");
+    }
+  }
+
+  async instantiateJustificationTree(type = "js") {
+    if (type === "js") {
+      this.justificationTree = new PatriciaTreeNoHash();
+    } else if (type === "solidity") {
+      const contractFactory = new ethers.ContractFactory(
+        this.patriciaTreeNoHashContractDef.abi,
+        this.patriciaTreeNoHashContractDef.bytecode,
+        this.ganacheWallet
+      );
+
+      const contract = await contractFactory.deploy();
+      await contract.deployed();
+
+      this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeNoHashContractDef.abi, this.ganacheWallet);
+    } else if (type === "noop") {
+      this.justificationTree = {
+        insert: () => {return { wait: () => {}}},
+        getRootHash: () => {},
+        getImpliedRoot: () => {},
+        getProof: () => {},
+      }
+    } else {
+      console.log(`UNKNOWN TYPE for justification tree instantiation: ${type}`)
+    }
+  }
+
+  async saveJustificationTree(){
+    await fs.writeFile(this.justificationCachePath, JSON.stringify(this.justificationHashes));
   }
 
   async getAddressesWithReputation(reputationRootHash, colonyAddress, skillId) {

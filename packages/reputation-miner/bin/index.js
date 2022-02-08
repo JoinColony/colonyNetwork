@@ -36,14 +36,14 @@ const {
 } = argv;
 
 class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
-  constructor(url, adapterObject){
-    super(url);
+  constructor(connectionInfo, adapterObject){
+    super(connectionInfo);
     this.adapter = adapterObject;
   }
 
   static attemptCheck(err, attemptNumber){
     console.log("Retrying RPC request #", attemptNumber);
-    if (attemptNumber === 10){
+    if (attemptNumber === 5){
       return false;
     }
     return true;
@@ -93,7 +93,15 @@ if (network) {
   const rpcEndpoint = `${localProviderAddress || "http://localhost"}:${localPort || "8545"}`;
   provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
 } else {
-  const providers = providerAddress.map(endpoint => new RetryProvider(endpoint, adapterObject));
+  const providers = providerAddress.map(endpoint => {
+    const {protocol, username, password, host, pathname} = new URL(endpoint);
+    const connectionInfo = {
+      url: `${protocol}//${host}${pathname}`,
+      user: decodeURI(username),
+      password: decodeURI(password.replace(/%23/, '#')),
+    }
+    return new RetryProvider(connectionInfo, adapterObject);
+  })
   // This is, at best, a huge hack...
   providers.forEach(x => x.getNetwork());
 

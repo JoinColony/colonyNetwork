@@ -23,6 +23,7 @@ reputations.json
 reputationStates.sqlite
 reputationStates.sqlite-shm
 reputationStates.sqlite-wal
+justificationTreeCache.json
 truffle-security-output.json
 .coverage_contracts
 etherrouter-address.json

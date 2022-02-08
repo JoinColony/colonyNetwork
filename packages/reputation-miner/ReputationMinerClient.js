@@ -224,26 +224,64 @@ class ReputationMinerClient {
     this.resolveBlockChecksFinished = undefined;
     await this._miner.initialise(colonyNetworkAddress);
 
-    // Get latest state from database if available, otherwise sync to current state on-chain
-    const latestReputationHash = await this._miner.colonyNetwork.getReputationRootHash();
-    await this._miner.createDB();
-    await this._miner.loadState(latestReputationHash);
-    if (this._miner.nReputations.eq(0)) {
-      this._adapter.log("Latest state not found - need to sync");
-      await this._miner.sync(startingBlock, true);
+    let resumedSuccessfully = false;
+    // If we have a JRH saved, and it goes from the current (on chain) state to
+    // a state that we know, then let's assume it's correct
+    const latestConfirmedReputationHash = await this._miner.colonyNetwork.getReputationRootHash();
+    const repCycle = await this._miner.getActiveRepCycle();
+
+    await this._miner.loadJustificationTree();
+    const jhKeys = Object.keys(this._miner.justificationHashes)
+    const firstLeaf = jhKeys[0]
+    const lastLeaf = jhKeys[jhKeys.length - 1]
+
+    if (firstLeaf && lastLeaf) { // lastLeaf will never be undefined if firstLeaf isn't, but this is more semantic
+      const firstStateHash = this._miner.justificationHashes[firstLeaf].jhLeafValue.slice(0, 66)
+      const lastStateHash = this._miner.justificationHashes[lastLeaf].jhLeafValue.slice(0, 66)
+
+      if (firstStateHash === latestConfirmedReputationHash){
+        await this._miner.loadState(lastStateHash);
+        const currentStateHash = await this._miner.reputationTree.getRootHash();
+        if (currentStateHash === lastStateHash){
+          const submittedState = await repCycle.getReputationHashSubmission(this._miner.minerAddress);
+          if (submittedState.proposedNewRootHash === ethers.utils.hexZeroPad(0, 32)) {
+            resumedSuccessfully = true;
+            this._adapter.log("Successfully resumed pre-submission");
+          } else {
+            const jrh = await this._miner.justificationTree.getRootHash();
+            if (submittedState.proposedNewRootHash === currentStateHash && submittedState.jrh === jrh){
+              resumedSuccessfully = true;
+              this._adapter.log("Successfully resumed mid-submission");
+            }
+          }
+        }
+      }
+    }
+
+    if (!resumedSuccessfully) {
+      // Reset any partial loading we did trying to resume.
+      await this._miner.initialise(colonyNetworkAddress);
+
+      // Get latest state from database if available, otherwise sync to current state on-chain
+      await this._miner.createDB();
+      await this._miner.loadState(latestConfirmedReputationHash);
+      if (this._miner.nReputations.eq(0)) {
+        this._adapter.log("Latest state not found - need to sync");
+        await this._miner.sync(startingBlock, true);
+      }
+
+      // Initial call to process the existing log from the cycle we're currently in
+      await this.processReputationLog();
     }
 
     this.gasBlockAverages = [];
 
-    // Initial call to process the existing log from the cycle we're currently in
-    await this.processReputationLog();
     this._miner.realProvider.polling = true;
     this._miner.realProvider.pollingInterval = 1000;
 
     this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
 
     // Work out when the confirm timeout should be.
-    const repCycle = await this._miner.getActiveRepCycle();
     await this._miner.updatePeriodLength(repCycle);
 
     await this.setMiningCycleTimeout(repCycle);
@@ -639,6 +677,8 @@ class ReputationMinerClient {
     await this._miner.addLogContentsToReputationTree();
     this._adapter.log("💾 Writing new reputation state to database");
     await this._miner.saveCurrentState();
+    this._adapter.log("💾 Caching justification tree to disk");
+    await this._miner.saveJustificationTree();
   }
 
   async getTwelveBestSubmissions() {
