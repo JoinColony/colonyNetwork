@@ -271,7 +271,7 @@ export async function currentBlock() {
   return p;
 }
 
-export async function getBlockTime(blockNumber) {
+export async function getBlockTime(blockNumber = "latest") {
   const p = new Promise((resolve, reject) => {
     web3.eth.getBlock(blockNumber, (err, res) => {
       if (err) {

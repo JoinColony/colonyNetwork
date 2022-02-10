@@ -511,27 +511,8 @@ class ReputationMinerClient {
         }
 
         // If we're here, we do have an opponent.
-        // Has our opponent timed out?
-        // TODO: Remove these magic numbers
 
-        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600);
-        if (opponentTimeout){
-          const responsePossible = await repCycle.getResponsePossible(
-            disputeStages.INVALIDATE_HASH,
-            ethers.BigNumber.from(oppEntry.lastResponseTimestamp).add(600)
-          );
-          if (responsePossible) {
-            // If so, invalidate them.
-            await this.updateGasEstimate('fast');
-            this._adapter.log("Invalidating opponent in dispute");
-            await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
-            this.endDoBlockChecks();
-            return;
-          }
-        }
-        // this._adapter.log(oppSubmission);
-
-        // Our opponent hasn't timed out yet. We should check if we can respond to something though
+        // Before checking if our opponent has timed out yet, check if we can respond to something
         // 1. Do we still need to confirm JRH?
         if (submission.jrhNLeaves.eq(0)) {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
@@ -590,6 +571,26 @@ class ReputationMinerClient {
             await tx.wait();
           }
         }
+
+        // Has our opponent timed out?
+        // TODO: Remove these magic numbers
+
+        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600);
+        if (opponentTimeout){
+          const responsePossible = await repCycle.getResponsePossible(
+            disputeStages.INVALIDATE_HASH,
+            ethers.BigNumber.from(oppEntry.lastResponseTimestamp).add(600)
+          );
+          if (responsePossible) {
+            // If so, invalidate them.
+            await this.updateGasEstimate('fast');
+            this._adapter.log("Invalidating opponent in dispute");
+            await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
+            this.endDoBlockChecks();
+            return;
+          }
+        }
+
       }
 
       if (lastHashStanding && ethers.BigNumber.from(block.timestamp).sub(windowOpened).gte(this._miner.getMiningCycleDuration())) {

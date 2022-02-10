@@ -1445,6 +1445,9 @@ class ReputationMiner {
         if (!this.useJsTree) {
           await tx.wait();
         }
+        if (i === 0){
+          this.nReputationsBeforeLatestLog = this.justificationHashes[hash].nLeaves
+        }
       }
     } catch (err) {
       console.log(err);
@@ -1453,6 +1456,7 @@ class ReputationMiner {
     const currentJRH = await this.justificationTree.getRootHash();
     if (justificationRootHash && currentJRH !== justificationRootHash) {
       console.log("WARNING: The supplied JRH failed to be recreated successfully. Are you sure it was saved?");
+      this.nReputationsBeforeLatestLog = undefined;
     }
   }
 
