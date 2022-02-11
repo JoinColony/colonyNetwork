@@ -685,11 +685,11 @@ class ReputationMinerClient {
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
-    const balance = await this._miner.tokenLocking.getObligation(
+    const miningStake = await this._miner.colonyNetwork.getMiningStake(
       this._miner.minerAddress,
-      this._miner.clnyAddress,
-      this._miner.colonyNetwork.address
     );
+
+    const balance = miningStake.amount;
 
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
     const rootHash = await this._miner.getRootHash();
@@ -739,17 +739,14 @@ class ReputationMinerClient {
   }
 
   async confirmEntry() {
-    const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
-
     this._adapter.log("⏰ Looks like it's time to confirm the new hash");
-    // Confirm hash
+    // Confirm hash if possible
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
-      const gasEstimate = await repCycle.estimateGas.confirmNewHash(round);
       await this.updateGasEstimate('average');
 
-      const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: gasEstimate, gasPrice: this._miner.gasPrice });
+      const confirmNewHashTx = await this._miner.confirmNewHash();
+
       this._adapter.log(`⛏️ Transaction waiting to be mined ${confirmNewHashTx.hash}`);
       await confirmNewHashTx.wait();
       this._adapter.log("✅ New reputation hash confirmed");
