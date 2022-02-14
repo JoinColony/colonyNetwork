@@ -1364,6 +1364,19 @@ class ReputationMiner {
     }
   }
 
+  // Gas price should be a hex string
+  async setGasPrice(_gasPrice){
+    if (!ethers.utils.isHexString(_gasPrice)){
+      throw new Error("Passed gas price was not a hex string")
+    }
+    const passedPrice = ethers.BigNumber.from(_gasPrice);
+    const minimumPrice = ethers.BigNumber.from("1100000000");
+    if (passedPrice.lt(minimumPrice)){
+      this.gasPrice = minimumPrice.toHexString();
+    } else {
+      this.gasPrice = _gasPrice;
+    }
+  }
 
   async saveCurrentState() {
 

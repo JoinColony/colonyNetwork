@@ -347,7 +347,7 @@ class ReputationMinerClient {
       factor = 10;
     } else {
       this._adapter.error(`Error during gas estimation: unknown chainid ${this.chainId}`);
-      this._miner.gasPrice = ethers.utils.hexlify(20000000000);
+      this._miner.setGasPrice(ethers.utils.hexlify(20000000000));
       return;
     }
 
@@ -356,13 +356,13 @@ class ReputationMinerClient {
       const gasEstimates = await request(options);
 
       if (gasEstimates[type]){
-        this._miner.gasPrice = ethers.utils.hexlify(gasEstimates[type] / factor * 1e9);
+        this._miner.setGasPrice(ethers.utils.hexlify(gasEstimates[type] / factor * 1e9));
       } else {
-        this._miner.gasPrice = defaultGasPrice;
+        this._miner.setGasPrice(defaultGasPrice);
       }
     } catch (err) {
       this._adapter.error(`Error during gas estimation: ${err}`);
-      this._miner.gasPrice = defaultGasPrice;
+      this._miner.setGasPrice(defaultGasPrice);
     }
   }
 
