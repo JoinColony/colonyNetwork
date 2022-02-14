@@ -610,7 +610,8 @@ class ReputationMinerClient {
       // If it's out-of-ether...
       if (err.toString().indexOf('does not have enough funds') >= 0 ) {
         // This could obviously be much better in the future, but for now, we'll settle for this not triggering a restart loop.
-        this._adapter.error(`Block checks suspended due to not enough Ether. Send ether to \`${this._miner.minerAddress}\`, then restart the miner`);
+        const signingAddress = await this._miner.realWallet.getAddress()
+        this._adapter.error(`Block checks suspended due to not enough Ether. Send ether to \`${signingAddress}\`, then restart the miner`);
         return;
       }
       if (repCycleCode === "0x") {
