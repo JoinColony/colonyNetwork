@@ -384,7 +384,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
   function unlockToken() public stoppable auth {
     ERC20Extended(token).unlock();
 
-    emit TokenUnlocked();
+    emit TokenUnlocked(msgSender());
   }
 
   function getTokenApproval(address _token, address _spender) public view returns (uint256) {
