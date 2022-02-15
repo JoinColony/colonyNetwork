@@ -34,6 +34,22 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     _;
   }
 
+  function setMiningDelegate(address _delegate, bool _allowed) public stoppable {
+    if (miningDelegators[_delegate] != address(0x00)){
+      require(miningDelegators[_delegate] == msgSender(), "colony-reputation-mining-not-your-delegate");
+    }
+
+    if (_allowed){
+      miningDelegators[_delegate] = msgSender();
+    } else {
+      miningDelegators[_delegate] = address(0x00);
+    }
+  }
+
+  function getMiningDelegator(address _delegate) external view returns (address) {
+    return miningDelegators[_delegate];
+  }
+
   function setReplacementReputationUpdateLogEntry(
     address _reputationMiningCycle,
     uint256 _id,
@@ -206,7 +222,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
 
     ITokenLocking(tokenLocking).deposit(clnyToken, 0, true); // Faux deposit to clear any locks
     for (uint256 i = 0; i < _stakers.length; i++) {
-      lostStake = min(ITokenLocking(tokenLocking).getObligation(_stakers[i], clnyToken, address(this)), _amount);
+      lostStake = min(miningStakes[_stakers[i]].amount, _amount);
+      miningStakes[_stakers[i]].amount = sub(miningStakes[_stakers[i]].amount, lostStake);
       ITokenLocking(tokenLocking).transferStake(_stakers[i], lostStake, clnyToken, address(this));
       // TODO: Lose rep?
       emit ReputationMinerPenalised(_stakers[i], lostStake);
@@ -227,12 +244,11 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
 
   function stakeForMining(uint256 _amount) public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
-    uint256 existingObligation = ITokenLocking(tokenLocking).getObligation(msgSender(), clnyToken, address(this));
 
     ITokenLocking(tokenLocking).approveStake(msgSender(), _amount, clnyToken);
     ITokenLocking(tokenLocking).obligateStake(msgSender(), _amount, clnyToken);
 
-    miningStakes[msgSender()].timestamp = getNewTimestamp(existingObligation, _amount, miningStakes[msgSender()].timestamp, block.timestamp);
+    miningStakes[msgSender()].timestamp = getNewTimestamp(miningStakes[msgSender()].amount, _amount, miningStakes[msgSender()].timestamp, block.timestamp);
     miningStakes[msgSender()].amount = add(miningStakes[msgSender()].amount, _amount);
   }
 

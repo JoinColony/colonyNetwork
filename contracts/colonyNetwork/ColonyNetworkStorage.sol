@@ -103,6 +103,8 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   uint256 constant METATRANSACTION_NONCES_SLOT = 41;
   mapping(address => uint256) metatransactionNonces; // Storage slot 41
 
+  // Mining delegation mapping
+  mapping(address => address) miningDelegators; // Storage slot 42
 
   modifier calledByColony() {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");

@@ -167,7 +167,7 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
   function approveStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
     approvals[_user][_token][msgSender()] = add(approvals[_user][_token][msgSender()], _amount);
 
-    emit UserTokenApproved(_token, _user, msg.sender, _amount);
+    emit UserTokenApproved(_token, _user, msgSender(), _amount);
   }
 
   function obligateStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
@@ -177,14 +177,14 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
 
     require(userLocks[_token][_user].balance >= totalObligations[_user][_token], "colony-token-locking-insufficient-deposit");
 
-    emit UserTokenObligated(_token, _user, msg.sender, _amount);
+    emit UserTokenObligated(_token, _user, msgSender(), _amount);
   }
 
   function deobligateStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
     obligations[_user][_token][msgSender()] = sub(obligations[_user][_token][msgSender()], _amount);
     totalObligations[_user][_token] = sub(totalObligations[_user][_token], _amount);
 
-    emit UserTokenDeobligated(_token, _user, msg.sender, _amount);
+    emit UserTokenDeobligated(_token, _user, msgSender(), _amount);
   }
 
   function transferStake(address _user, uint256 _amount, address _token, address _recipient) public calledByColonyOrNetwork() {
@@ -197,7 +197,7 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
 
     makeConditionalDeposit(_token, _amount, _recipient);
 
-    emit StakeTransferred(_token, msg.sender, _user, _recipient, _amount);
+    emit StakeTransferred(_token, msgSender(), _user, _recipient, _amount);
   }
 
   function reward(address _recipient, uint256 _amount) public pure { // solhint-disable-line no-empty-blocks

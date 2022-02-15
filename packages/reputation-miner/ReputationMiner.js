@@ -60,13 +60,9 @@ class ReputationMiner {
     }
 
     if (minerAddress) {
-      this.minerAddress = minerAddress;
       this.realWallet = this.realProvider.getSigner(minerAddress);
     } else {
       this.realWallet = new ethers.Wallet(privateKey, this.realProvider);
-      this.minerAddress = this.realWallet.address;
-      // TODO: Check that this wallet can stake?
-      this.minerAddress = this.realWallet.address;
       console.log("Transactions will be signed from ", this.realWallet.address);
     }
   }
@@ -112,6 +108,19 @@ class ReputationMiner {
     this.db = new Database(this.dbPath, { });
     // this.db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
     await this.createDB();
+
+    // NB some technical debt here with names. The minerAddress arg passed in on the command line, which
+    // has been used for realWallet and is where transactions will be signed from may or may not be acting
+    // on behalf of another address via delegate mining. So check which address we're actually mining for.
+    const signingAddress = await this.realWallet.getAddress();
+    const delegator = await this.colonyNetwork.getMiningDelegator(signingAddress);
+    if (delegator === ethers.constants.AddressZero){
+      this.minerAddress = signingAddress;
+    } else {
+      this.minerAddress = delegator;
+    }
+    console.log(`Mining on behalf of ${this.minerAddress}`)
+
     process.on('exit', () => this.db.close());
     process.on('SIGHUP', () => process.exit(128 + 1));
     process.on('SIGINT', () => process.exit(128 + 2));
@@ -1149,6 +1158,24 @@ class ReputationMiner {
       { gasLimit: gasEstimate, gasPrice: this.gasPrice }
     );
   }
+
+  /**
+   * Confirm the new reputation hash after all dispute resolution (if any) has occurred.
+   * @return {Promise} Resolves to tx hash of the response
+   */
+  async confirmNewHash() {
+    const repCycle = await this.getActiveRepCycle();
+    const [round] = await this.getMySubmissionRoundAndIndex();
+
+    let gasEstimate = ethers.BigNumber.from(4000000);
+    try {
+      gasEstimate = await repCycle.estimateGas.confirmNewHash(round);
+    } catch (err){ // eslint-disable-line no-empty
+
+    }
+    return repCycle.confirmNewHash(round, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+  }
+
 
   async updatePeriodLength(repCycle) {
     const { numerator, denominator } = await repCycle.getDecayConstant();

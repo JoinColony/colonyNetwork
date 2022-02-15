@@ -113,12 +113,12 @@ contract("Contract Storage", (accounts) => {
 
       await forwardTime(MINING_CYCLE_DURATION / 2 + SUBMITTER_ONLY_WINDOW + MINING_CYCLE_TIMEOUT + 1, this);
 
-      await repCycle.invalidateHash(0, 0);
-      await repCycle.invalidateHash(0, 3);
+      await repCycle.invalidateHash(0, 0, { from: MINER1 });
+      await repCycle.invalidateHash(0, 3, { from: MINER1 });
 
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
       const networkBalanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
-      const tx = await repCycle.confirmNewHash(1);
+      const tx = await repCycle.confirmNewHash(1, { from: MINER1 });
 
       if (chainId === XDAI || chainId === FORKED_XDAI) {
         // tokens should be paid from the network balance
@@ -155,7 +155,7 @@ contract("Contract Storage", (accounts) => {
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 1, { from: MINER1 });
 
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      const tx = await repCycle.confirmNewHash(0);
+      const tx = await repCycle.confirmNewHash(0, { from: MINER1 });
       await expectNoEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, 0]);
       await expectNoEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, 0]);
     });

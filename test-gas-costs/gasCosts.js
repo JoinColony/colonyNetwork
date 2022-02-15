@@ -268,7 +268,7 @@ contract("All", function (accounts) {
       });
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
-      await repCycle.confirmNewHash(2);
+      await repCycle.confirmNewHash(2, { from: STAKER1 });
 
       // withdraw
       const clnyToken = await metaColony.getToken();

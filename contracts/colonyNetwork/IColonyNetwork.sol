@@ -422,4 +422,15 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _colony The address of the colony in control of the token
   /// @param allowedToTransfer An array of addresses that are allowed to transfer the token even if it's locked
   function deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer) external returns (address);
+
+  /// @notice Called to give or remove another address's permission to mine on your behalf
+  /// @param _delegate The address you're giving or removing permission from
+  /// @param _allowed Whether they are allowed (true) or not (false) to mine on your behalf
+  function setMiningDelegate(address _delegate, bool _allowed) external;
+
+  /// @notice Called to get the address _delegate is allowed to mine for
+  /// @param _delegate The address that wants to mine
+  /// @return The address they are allowed to mine on behalf of
+  function getMiningDelegator(address _delegate) external view returns (address);
+
 }

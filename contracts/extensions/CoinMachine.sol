@@ -215,7 +215,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     uint256 totalCost = wmul(numTokens, activePrice);
 
     if (numTokens <= 0) {
-      if (msg.value > 0) { msg.sender.transfer(msg.value); } // Refund any balance
+      if (msg.value > 0) { msgSender().transfer(msg.value); } // Refund any balance
       return;
     }
 
