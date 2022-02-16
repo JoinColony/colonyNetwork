@@ -154,7 +154,7 @@ contract("Contract Storage", (accounts) => {
       console.log("miningCycleStateHash:", miningCycleAccount.stateRoot.toString("hex"));
       console.log("tokenLockingStateHash:", tokenLockingAccount.stateRoot.toString("hex"));
 
-      expect(colonyNetworkAccount.stateRoot.toString("hex")).to.equal("2fc4ca2bc026596911efe7d856f35872f404991cc0a431062583bee2412fea26");
+      expect(colonyNetworkAccount.stateRoot.toString("hex")).to.equal("4b33c6ecc4cdb85217bb207c5fe83f315947716edc9e69ca4f825b271a73fa66");
       expect(colonyAccount.stateRoot.toString("hex")).to.equal("f76b564446d2c023cf887feb6bf0d3a09e6659f12f7f86a896affac7fc03fcfd");
       expect(metaColonyAccount.stateRoot.toString("hex")).to.equal("114b65e001ab37d07caf85521f32707401b67ca490333207b31e313567333176");
       expect(miningCycleAccount.stateRoot.toString("hex")).to.equal("8882b29a20fbfc26fc4840ddb02d6e996d7feeb96331179bd6c828f93ce9bcf4");
