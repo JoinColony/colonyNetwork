@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "apicache": "^1.6.2",
+    "apicache": "^1.6.3",
     "better-sqlite3": "^7.4.3",
     "bn.js": "^5.0.0",
     "discord.js": "^12.2.0",

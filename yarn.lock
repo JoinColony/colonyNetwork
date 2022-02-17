@@ -2513,10 +2513,10 @@ anymatch@~3.1.1:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-apicache@^1.6.2:
-  version "1.6.2"
-  resolved "https://registry.yarnpkg.com/apicache/-/apicache-1.6.2.tgz#a0a3d51024fa2814c4ace7e9e7053ebcb0920ee6"
-  integrity sha512-3z5e+1E2qwZoqzFVgdx5l9nGhSG0kHv3v2G170vnJSz5uj4mCLVZfRw0o37aWwV8pTPXSkB8OBZz3TIur4H26g==
+apicache@^1.6.3:
+  version "1.6.3"
+  resolved "https://registry.yarnpkg.com/apicache/-/apicache-1.6.3.tgz#4441aa40f2a48c9dd6f11c73be937d563405355b"
+  integrity sha512-jS3VfUFpQ9BesFQZcdd1vVYg3ZsO2kGPmTJHqycIYPAQs54r74CRiyj8DuzJpwzLwIfCBYzh4dy9Jt8xYbo27w==
 
 app-module-path@^2.2.0:
   version "2.2.0"
