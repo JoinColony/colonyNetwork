@@ -367,7 +367,7 @@ class ReputationMiner {
       // Then the user-specifc sums in the order children, parents, skill.
       if (amount.lt(0)) {
         const nUpdates = ethers.BigNumber.from(logEntry.nUpdates);
-        const [nParents] = await this.colonyNetwork.getSkill(logEntry.skillId);
+        const [nParents] = await this.colonyNetwork.getSkill(logEntry.skillId, {blockTag: blockNumber});
         const nChildUpdates = nUpdates.div(2).sub(1).sub(nParents);
         const relativeUpdateNumber = updateNumber.sub(logEntry.nPreviousUpdates).sub(this.nReputationsBeforeLatestLog);
         // Child updates are two sets: colonywide sums for children - located in the first nChildUpdates,
@@ -375,7 +375,7 @@ class ReputationMiner {
 
         // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
         const originSkillUpdateNumber = updateNumber.sub(relativeUpdateNumber).add(nUpdates).sub(1);
-        const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
+        const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber, blockNumber);
         originReputationProof = await this.getReputationProofObject(originSkillKey);
         const originSkillKeyExists = this.reputations[originSkillKey] !== undefined;
 
@@ -400,9 +400,9 @@ class ReputationMiner {
           let keyUsedInCalculations;
           if (relativeUpdateNumber.lt(nChildUpdates)) {
             const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
-            keyUsedInCalculations = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
+            keyUsedInCalculations = await this.getKeyForUpdateNumber(childSkillUpdateNumber, blockNumber);
           } else {
-            keyUsedInCalculations = await this.getKeyForUpdateNumber(updateNumber);
+            keyUsedInCalculations = await this.getKeyForUpdateNumber(updateNumber, blockNumber);
           }
           childReputationProof = await this.getReputationProofObject(keyUsedInCalculations);
 
