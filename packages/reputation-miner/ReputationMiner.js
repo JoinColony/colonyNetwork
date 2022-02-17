@@ -1364,6 +1364,19 @@ class ReputationMiner {
     }
   }
 
+  // Gas price should be a hex string
+  async setGasPrice(_gasPrice){
+    if (!ethers.utils.isHexString(_gasPrice)){
+      throw new Error("Passed gas price was not a hex string")
+    }
+    const passedPrice = ethers.BigNumber.from(_gasPrice);
+    const minimumPrice = ethers.BigNumber.from("1100000000");
+    if (passedPrice.lt(minimumPrice)){
+      this.gasPrice = minimumPrice.toHexString();
+    } else {
+      this.gasPrice = _gasPrice;
+    }
+  }
 
   async saveCurrentState() {
 
@@ -1445,6 +1458,9 @@ class ReputationMiner {
         if (!this.useJsTree) {
           await tx.wait();
         }
+        if (i === 0){
+          this.nReputationsBeforeLatestLog = this.justificationHashes[hash].nLeaves
+        }
       }
     } catch (err) {
       console.log(err);
@@ -1453,6 +1469,7 @@ class ReputationMiner {
     const currentJRH = await this.justificationTree.getRootHash();
     if (justificationRootHash && currentJRH !== justificationRootHash) {
       console.log("WARNING: The supplied JRH failed to be recreated successfully. Are you sure it was saved?");
+      this.nReputationsBeforeLatestLog = undefined;
     }
   }
 

@@ -347,7 +347,7 @@ class ReputationMinerClient {
       factor = 10;
     } else {
       this._adapter.error(`Error during gas estimation: unknown chainid ${this.chainId}`);
-      this._miner.gasPrice = ethers.utils.hexlify(20000000000);
+      this._miner.setGasPrice(ethers.utils.hexlify(20000000000));
       return;
     }
 
@@ -356,13 +356,13 @@ class ReputationMinerClient {
       const gasEstimates = await request(options);
 
       if (gasEstimates[type]){
-        this._miner.gasPrice = ethers.utils.hexlify(gasEstimates[type] / factor * 1e9);
+        this._miner.setGasPrice(ethers.utils.hexlify(gasEstimates[type] / factor * 1e9));
       } else {
-        this._miner.gasPrice = defaultGasPrice;
+        this._miner.setGasPrice(defaultGasPrice);
       }
     } catch (err) {
       this._adapter.error(`Error during gas estimation: ${err}`);
-      this._miner.gasPrice = defaultGasPrice;
+      this._miner.setGasPrice(defaultGasPrice);
     }
   }
 
@@ -511,27 +511,8 @@ class ReputationMinerClient {
         }
 
         // If we're here, we do have an opponent.
-        // Has our opponent timed out?
-        // TODO: Remove these magic numbers
 
-        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600);
-        if (opponentTimeout){
-          const responsePossible = await repCycle.getResponsePossible(
-            disputeStages.INVALIDATE_HASH,
-            ethers.BigNumber.from(oppEntry.lastResponseTimestamp).add(600)
-          );
-          if (responsePossible) {
-            // If so, invalidate them.
-            await this.updateGasEstimate('fast');
-            this._adapter.log("Invalidating opponent in dispute");
-            await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
-            this.endDoBlockChecks();
-            return;
-          }
-        }
-        // this._adapter.log(oppSubmission);
-
-        // Our opponent hasn't timed out yet. We should check if we can respond to something though
+        // Before checking if our opponent has timed out yet, check if we can respond to something
         // 1. Do we still need to confirm JRH?
         if (submission.jrhNLeaves.eq(0)) {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
@@ -590,6 +571,26 @@ class ReputationMinerClient {
             await tx.wait();
           }
         }
+
+        // Has our opponent timed out?
+        // TODO: Remove these magic numbers
+
+        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600);
+        if (opponentTimeout){
+          const responsePossible = await repCycle.getResponsePossible(
+            disputeStages.INVALIDATE_HASH,
+            ethers.BigNumber.from(oppEntry.lastResponseTimestamp).add(600)
+          );
+          if (responsePossible) {
+            // If so, invalidate them.
+            await this.updateGasEstimate('fast');
+            this._adapter.log("Invalidating opponent in dispute");
+            await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
+            this.endDoBlockChecks();
+            return;
+          }
+        }
+
       }
 
       if (lastHashStanding && ethers.BigNumber.from(block.timestamp).sub(windowOpened).gte(this._miner.getMiningCycleDuration())) {
@@ -609,7 +610,8 @@ class ReputationMinerClient {
       // If it's out-of-ether...
       if (err.toString().indexOf('does not have enough funds') >= 0 ) {
         // This could obviously be much better in the future, but for now, we'll settle for this not triggering a restart loop.
-        this._adapter.error(`Block checks suspended due to not enough Ether. Send ether to \`${this._miner.minerAddress}\`, then restart the miner`);
+        const signingAddress = await this._miner.realWallet.getAddress()
+        this._adapter.error(`Block checks suspended due to not enough Ether. Send ether to \`${signingAddress}\`, then restart the miner`);
         return;
       }
       if (repCycleCode === "0x") {
