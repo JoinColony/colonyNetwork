@@ -1335,6 +1335,15 @@ class ReputationMiner {
       }
     }
 
+    // Some more cycles might have completed since we started syncing
+    const lastEventBlock = events[events.length - 1].blockNumber
+    filter.fromBlock = lastEventBlock;
+    const sinceEvents = await this.realProvider.getLogs(filter);
+    if (sinceEvents.length > 1){
+      console.log("Some more cycles have completed during the sync process. Continuing to sync...")
+      await this.sync(lastEventBlock, saveHistoricalStates);
+    }
+
     // Check final state
     const currentHash = await this.colonyNetwork.getReputationRootHash();
     // TODO: Once getReputationRootHashNLeaves exists, use it
