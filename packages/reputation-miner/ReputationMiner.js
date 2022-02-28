@@ -222,6 +222,32 @@ class ReputationMiner {
         jtType = "noop"
     }
 
+    // TODO: Can this be better?
+    this.previousReputations = JSON.parse(JSON.stringify(this.reputations));
+
+    if (this.useJsTree) {
+      this.previousReputationTree = new PatriciaTree();
+    } else {
+      this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
+      this.patriciaTreeNoHashContractDef = await this.loader.load(
+        { contractName: "PatriciaTreeNoHash" },
+        { abi: true, address: false, bytecode: true }
+      );
+
+      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
+      const contract = await contractFactory.deploy();
+      await contract.deployed();
+      this.previousReputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
+    }
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const key of Object.keys(this.reputations)){
+      const tx = await this.previousReputationTree.insert(key, this.reputations[key])
+      if (!this.useJsTree) {
+        await tx.wait();
+      }
+    }
+
     await this.instantiateJustificationTree(jtType);
 
     this.justificationHashes = {};
@@ -848,44 +874,100 @@ class ReputationMiner {
   }
 
   /**
-   * Get a Merkle proof and value for `key` in a past reputation state with root hash `rootHash`
+   * Get a Merkle proof and value for `key` in a (possibly) past reputation state with root hash `rootHash`
    * @param  {[type]}  rootHash A previous root hash of a reputation state
    * @param  {[type]}  key      A key in that root hash we wish to know the value and proof for
    * @return {Promise}          A promise that resolves to [branchmask, siblings, value] for the supplied key in the supplied root hash
    */
   async getHistoricalProofAndValue(rootHash, key) {
-    const tree = new PatriciaTree();
-    // Load all reputations from that state.
+    const currentRootHash = await this.reputationTree.getRootHash();
 
-    let res = await this.queries.getAllReputationsInHash.all(rootHash);
-    if (res.length === 0) {
-      return new Error("No such reputation state");
+    if (currentRootHash === rootHash) {
+      if (!this.reputations[key]){
+        return new Error("Requested reputation does not exist")
+      }
+      try {
+        const [branchMask, siblings] = await this.reputationTree.getProof(key);
+
+        const retBranchMask = ReputationMiner.getHexString(branchMask);
+        return [retBranchMask, siblings, this.reputations[key]];
+      } catch (err) {
+        return err;
+      }
     }
-    for (let i = 0; i < res.length; i += 1) {
-      const row = res[i];
-      const rowKey = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
-      await tree.insert(rowKey, row.value);
+
+    const previousRootHash = await this.previousReputationTree.getRootHash();
+    if (previousRootHash === rootHash) {
+      if (!this.previousReputations[key]){
+        return new Error("Requested reputation does not exist")
+      }
+      try {
+        const [branchMask, siblings] = await this.previousReputationTree.getProof(key);
+        if (branchMask === "0x"){
+          return new Error("No such reputation")
+        }
+        const retBranchMask = ReputationMiner.getHexString(branchMask);
+        return [retBranchMask, siblings, this.previousReputations[key]];
+      } catch (err) {
+        return err;
+      }
+    }
+
+    // Not in the accepted or next tree, so let's look at the DB
+
+    const allReputations = await this.queries.getAllReputationsInHash.all(rootHash);
+    if (allReputations.length === 0) {
+      return new Error("No such reputation state");
     }
 
     const keyElements = ReputationMiner.breakKeyInToElements(key);
     const [colonyAddress, , userAddress] = keyElements;
     const skillId = parseInt(keyElements[1], 16);
-    res = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
+    const reputationValue = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
 
-    if (res.length === 0) {
+    if (reputationValue.length === 0) {
       return new Error("No such reputation");
     }
 
-    if (res.length > 1) {
+    if (reputationValue.length > 1) {
       return new Error("Multiple such reputations found. Something is wrong!");
+    }
+
+    const tree = new PatriciaTree();
+    // Load all reputations from that state.
+
+    for (let i = 0; i < allReputations.length; i += 1) {
+      const row = allReputations[i];
+      const rowKey = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      await tree.insert(rowKey, row.value);
     }
 
     const [branchMask, siblings] = await tree.getProof(key);
     const retBranchMask = ReputationMiner.getHexString(branchMask);
-    return [retBranchMask, siblings, res[0].value];
+    return [retBranchMask, siblings, reputationValue[0].value];
   }
 
   async getHistoricalValue(rootHash, key) {
+
+    const currentRootHash = await this.reputationTree.getRootHash();
+
+    if (currentRootHash === rootHash) {
+      if (this.reputations[key]){
+        return this.reputations[key]
+      }
+      // Otherwise, not in requested state
+      return new Error("Requested reputation does not exist")
+    }
+
+    const previousRootHash = await this.previousReputationTree.getRootHash();
+
+    if (previousRootHash === rootHash) {
+      if (this.previousReputations[key]){
+        return this.previousReputations[key]
+      }
+      // Otherwise, not in requested state
+      return new Error("Requested reputation does not exist")
+    }
 
     let res = await this.queries.getAllReputationsInHash.all(rootHash);
     if (res.length === 0) {
@@ -1439,6 +1521,38 @@ class ReputationMiner {
     if (currentStateHash !== reputationRootHash) {
       console.log("WARNING: The supplied state failed to be recreated successfully. Are you sure it was saved?");
     }
+  }
+
+  async loadStateToPrevious(reputationRootHash) {
+    this.previousReputations = {};
+
+    if (this.useJsTree) {
+      this.previousReputationTree = new PatriciaTree();
+    } else {
+      this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
+
+      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
+      const contract = await contractFactory.deploy();
+      await contract.deployed();
+
+      this.previousReputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
+    }
+
+    const res = await this.queries.getAllReputationsInHash.all(reputationRootHash);
+    for (let i = 0; i < res.length; i += 1) {
+      const row = res[i];
+      const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      const tx = await this.previousReputationTree.insert(key, row.value, { gasLimit: 4000000 });
+      if (!this.useJsTree) {
+        await tx.wait();
+      }
+      this.previousReputations[key] = row.value;
+    }
+    const currentStateHash = await this.previousReputationTree.getRootHash();
+    if (currentStateHash !== reputationRootHash) {
+      console.log("WARNING: The supplied state failed to be recreated successfully. Are you sure it was saved?");
+    }
+
   }
 
   async loadJustificationTree(justificationRootHash) {

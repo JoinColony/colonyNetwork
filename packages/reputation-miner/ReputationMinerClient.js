@@ -188,16 +188,6 @@ class ReputationMinerClient {
         }
 
         const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
-        const currentHash = await this._miner.getRootHash();
-        if (currentHash === req.params.rootHash) {
-          if (this._miner.reputations[key]) {
-            const proof = await this._miner.getReputationProofObject(key);
-            delete proof.NLeaves;
-            proof.reputationAmount = ethers.BigNumber.from(`0x${proof.value.slice(2, 66)}`).toString();
-            return res.status(200).send(proof);
-          }
-          return res.status(400).send({ message: "Requested reputation does not exist" });
-        }
 
         try {
           const historicalProof = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
@@ -209,6 +199,7 @@ class ReputationMinerClient {
           proof.reputationAmount = ethers.BigNumber.from(`0x${proof.value.slice(2, 66)}`).toString();
           return res.status(200).send(proof);
         } catch (err) {
+          console.log(err)
           return res.status(500).send({ message: "An error occurred querying the reputation" });
         }
       });
@@ -240,18 +231,27 @@ class ReputationMinerClient {
       const lastStateHash = this._miner.justificationHashes[lastLeaf].jhLeafValue.slice(0, 66)
 
       if (firstStateHash === latestConfirmedReputationHash){
-        await this._miner.loadState(lastStateHash);
-        const currentStateHash = await this._miner.reputationTree.getRootHash();
-        if (currentStateHash === lastStateHash){
-          const submittedState = await repCycle.getReputationHashSubmission(this._miner.minerAddress);
-          if (submittedState.proposedNewRootHash === ethers.utils.hexZeroPad(0, 32)) {
-            resumedSuccessfully = true;
-            this._adapter.log("Successfully resumed pre-submission");
-          } else {
-            const jrh = await this._miner.justificationTree.getRootHash();
-            if (submittedState.proposedNewRootHash === currentStateHash && submittedState.jrh === jrh){
+        // We need to be able to load that state (but no Justification Tree)
+
+        await this._miner.loadStateToPrevious(firstStateHash)
+        const previousStateHash = await this._miner.previousReputationTree.getRootHash();
+        if (previousStateHash === firstStateHash){
+
+          // Then, if successful, we need to load the last state hash, including the justification tree
+          await this._miner.loadState(lastStateHash);
+          const currentStateHash = await this._miner.reputationTree.getRootHash();
+          if (currentStateHash === lastStateHash){
+          // Loading the state was successful...
+            const submittedState = await repCycle.getReputationHashSubmission(this._miner.minerAddress);
+            if (submittedState.proposedNewRootHash === ethers.utils.hexZeroPad(0, 32)) {
               resumedSuccessfully = true;
-              this._adapter.log("Successfully resumed mid-submission");
+              this._adapter.log("Successfully resumed pre-submission");
+            } else {
+              const jrh = await this._miner.justificationTree.getRootHash();
+              if (submittedState.proposedNewRootHash === currentStateHash && submittedState.jrh === jrh){
+                resumedSuccessfully = true;
+                this._adapter.log("Successfully resumed mid-submission");
+              }
             }
           }
         }
