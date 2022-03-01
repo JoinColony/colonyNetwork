@@ -147,7 +147,7 @@ class ReputationMiner {
     );
 
     this.queries.insertReputation = this.db.prepare(
-      `INSERT INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
+      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
       SELECT
       (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash=?),
       (SELECT colonies.rowid FROM colonies WHERE colonies.address=?),
@@ -1472,21 +1472,17 @@ class ReputationMiner {
   async saveCurrentState() {
 
     const currentRootHash = await this.getRootHash();
-    let res = await this.queries.saveHashAndLeaves.run(currentRootHash, this.nReputations.toString());
+    this.queries.saveHashAndLeaves.run(currentRootHash, this.nReputations.toString());
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
       const key = Object.keys(this.reputations)[i];
       const value = this.reputations[key];
       const keyElements = ReputationMiner.breakKeyInToElements(key);
       const [colonyAddress, , userAddress] = keyElements;
       const skillId = parseInt(keyElements[1], 16);
-      await this.queries.saveColony.run(colonyAddress);
-      await this.queries.saveUser.run(userAddress);
-      await this.queries.saveSkill.run(skillId);
-
-      res = this.queries.getReputationCount.get(currentRootHash, colonyAddress, skillId, userAddress);
-      if (res.n === 0) {
-        this.queries.insertReputation.run(currentRootHash, colonyAddress, skillId, userAddress, value);
-      }
+      this.queries.saveColony.run(colonyAddress);
+      this.queries.saveUser.run(userAddress);
+      this.queries.saveSkill.run(skillId);
+      this.queries.insertReputation.run(currentRootHash, colonyAddress, skillId, userAddress, value);
     }
   }
 
@@ -1653,7 +1649,8 @@ class ReputationMiner {
         colony_rowid INTEGER NOT NULL,
         skill_id INTEGER NOT NULL,
         user_rowid INTEGER NOT NULL,
-        value text NOT NULL
+        value text NOT NULL,
+        PRIMARY KEY("reputation_rowid","colony_rowid","skill_id","user_rowid")
       )`
     ).run();
 
@@ -1675,6 +1672,25 @@ class ReputationMiner {
     await this.db.prepare('CREATE INDEX IF NOT EXISTS reputation_skill_id ON reputations (skill_id)').run();
     await this.db.prepare('CREATE INDEX IF NOT EXISTS colonies_address ON colonies (address)').run();
 
+    // We added a composite key to reputations - do we need to port it over?
+    const res = await this.db.prepare("SELECT COUNT(pk) AS c FROM PRAGMA_TABLE_INFO('reputations') WHERE pk <> 0").all();
+    if (res[0].c === 0){
+      await this.db.prepare(
+        `CREATE TABLE reputations2 (
+          reputation_rowid text NOT NULL,
+          colony_rowid INTEGER NOT NULL,
+          skill_id INTEGER NOT NULL,
+          user_rowid INTEGER NOT NULL,
+          value text NOT NULL,
+          PRIMARY KEY("reputation_rowid","colony_rowid","skill_id","user_rowid")
+        )`
+      ).run();
+
+      await this.db.prepare(`INSERT INTO reputations2 SELECT * FROM reputations`).run()
+      await this.db.prepare(`DROP TABLE reputations`).run()
+      await this.db.prepare(`ALTER TABLE reputations2 RENAME TO reputations`).run()
+      console.log("Composite primary key added to reputations table")
+    }
     this.prepareQueries()
   }
 
