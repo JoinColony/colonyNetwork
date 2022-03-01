@@ -137,6 +137,8 @@ contract Salaries is ColonyExtensionMeta {
     uint256 domainFundingPotId = colony.getDomain(salary.domainId).fundingPotId;
     uint256 minClaimableProportion = getMinClaimableProportion(_id, domainFundingPotId);
 
+    require(minClaimableProportion > 0, "salaries-nothing-to-claim");
+
     setExpenditureFunds(
       _permissionDomainId,
       _childSkillIndex,
@@ -173,7 +175,9 @@ contract Salaries is ColonyExtensionMeta {
   function getAmountClaimable(uint256 _id, uint256 _tokenIdx) public view returns (uint256) {
     Salary storage salary = salaries[_id];
     uint256 durationToClaim = sub(min(block.timestamp, salary.claimUntil), salary.claimFrom);
-    return wmul(salary.amounts[_tokenIdx], wdiv(durationToClaim, salary.interval));
+    return (durationToClaim > 0) ?
+      wmul(salary.amounts[_tokenIdx], wdiv(durationToClaim, salary.interval)) :
+      0;
   }
 
   function getNumSalaries() public view returns (uint256) {
@@ -189,7 +193,7 @@ contract Salaries is ColonyExtensionMeta {
     for (uint256 i; i < salaries[_id].tokens.length; i++) {
       amountClaimable = getAmountClaimable(_id, i);
       domainFundingPotBalance = colony.getFundingPotBalance(_domainFundingPotId, salaries[_id].tokens[i]);
-      minClaimableProportion = min(minClaimableProportion, wdiv(domainFundingPotBalance, amountClaimable));
+      minClaimableProportion = min(minClaimableProportion, wdiv(domainFundingPotBalance, max(1, amountClaimable)));
     }
     return minClaimableProportion;
   }
@@ -207,7 +211,7 @@ contract Salaries is ColonyExtensionMeta {
     internal
   {
     for (uint256 i; i < salaries[_id].tokens.length; i++) {
-      uint256 amountToClaim = wmul(_minClaimableProportion, getAmountClaimable(_id, i));
+      uint256 amountToClaim = wmul(getAmountClaimable(_id, i), _minClaimableProportion);
       uint256 expenditureFundingPotId = colony.getExpenditure(_expenditureId).fundingPotId;
       address tokenAddress = salaries[_id].tokens[i];
       colony.moveFundsBetweenPots(
