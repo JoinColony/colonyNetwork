@@ -85,20 +85,16 @@ class ReputationMiner {
     const metaColony = new ethers.Contract(metaColonyAddress, this.colonyContractDef.abi, this.realWallet);
     this.clnyAddress = await metaColony.getToken();
 
-    if (this.useJsTree) {
-      this.reputationTree = new PatriciaTree();
-    } else {
+
+    if (!this.useJsTree) {
       this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
       this.patriciaTreeNoHashContractDef = await this.loader.load(
         { contractName: "PatriciaTreeNoHash" },
         { abi: true, address: false, bytecode: true }
       );
-
-      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
-      const contract = await contractFactory.deploy();
-      await contract.deployed();
-      this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
+
+    this.reputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
@@ -225,20 +221,8 @@ class ReputationMiner {
     // TODO: Can this be better?
     this.previousReputations = JSON.parse(JSON.stringify(this.reputations));
 
-    if (this.useJsTree) {
-      this.previousReputationTree = new PatriciaTree();
-    } else {
-      this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
-      this.patriciaTreeNoHashContractDef = await this.loader.load(
-        { contractName: "PatriciaTreeNoHash" },
-        { abi: true, address: false, bytecode: true }
-      );
+    this.previousReputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
-      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
-      const contract = await contractFactory.deploy();
-      await contract.deployed();
-      this.previousReputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
-    }
 
     // eslint-disable-next-line no-restricted-syntax
     for (const key of Object.keys(this.reputations)){
@@ -1470,7 +1454,6 @@ class ReputationMiner {
   }
 
   async saveCurrentState() {
-
     const currentRootHash = await this.getRootHash();
     this.queries.saveHashAndLeaves.run(currentRootHash, this.nReputations.toString());
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
@@ -1490,17 +1473,7 @@ class ReputationMiner {
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
 
-    if (this.useJsTree) {
-      this.reputationTree = new PatriciaTree();
-    } else {
-      this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
-
-      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
-      const contract = await contractFactory.deploy();
-      await contract.deployed();
-
-      this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
-    }
+    this.reputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
     const res = await this.queries.getAllReputationsInHash.all(reputationRootHash);
     this.nReputations = ethers.BigNumber.from(res.length);
@@ -1522,17 +1495,7 @@ class ReputationMiner {
   async loadStateToPrevious(reputationRootHash) {
     this.previousReputations = {};
 
-    if (this.useJsTree) {
-      this.previousReputationTree = new PatriciaTree();
-    } else {
-      this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
-
-      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
-      const contract = await contractFactory.deploy();
-      await contract.deployed();
-
-      this.previousReputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
-    }
+    this.previousReputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
     const res = await this.queries.getAllReputationsInHash.all(reputationRootHash);
     for (let i = 0; i < res.length; i += 1) {
@@ -1548,7 +1511,6 @@ class ReputationMiner {
     if (currentStateHash !== reputationRootHash) {
       console.log("WARNING: The supplied state failed to be recreated successfully. Are you sure it was saved?");
     }
-
   }
 
   async loadJustificationTree(justificationRootHash) {
@@ -1593,29 +1555,47 @@ class ReputationMiner {
   }
 
   async instantiateJustificationTree(type = "js") {
-    if (type === "js") {
-      this.justificationTree = new PatriciaTreeNoHash();
-    } else if (type === "solidity") {
-      const contractFactory = new ethers.ContractFactory(
-        this.patriciaTreeNoHashContractDef.abi,
-        this.patriciaTreeNoHashContractDef.bytecode,
-        this.ganacheWallet
-      );
+    this.justificationTree = await this.getNewPatriciaTree(type, false);
+  }
 
+  // Type can be js, solidity or noop, as appropriate. 'hash' is whether the tree (in the first two instances)
+  // hashes the contents or not before adding to the tree.
+  async getNewPatriciaTree(type = "js", hash = true){
+    if (type === "js") {
+      if (hash){
+        return new PatriciaTree()
+      }
+      return new PatriciaTreeNoHash();
+    }
+
+    if (type === "solidity") {
+      let abi;
+      let bytecode;
+      if (hash) {
+        abi = this.patriciaTreeContractDef.abi
+        bytecode = this.patriciaTreeContractDef.bytecode
+      } else {
+        abi = this.patriciaTreeNoHashContractDef.abi
+        bytecode = this.patriciaTreeNoHashContractDef.bytecode
+      }
+
+      const contractFactory = new ethers.ContractFactory(abi, bytecode, this.ganacheWallet);
       const contract = await contractFactory.deploy();
       await contract.deployed();
 
-      this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeNoHashContractDef.abi, this.ganacheWallet);
-    } else if (type === "noop") {
-      this.justificationTree = {
+      return new ethers.Contract(contract.address, abi, this.ganacheWallet);
+    }
+
+    if (type === "noop") {
+      return {
         insert: () => {return { wait: () => {}}},
         getRootHash: () => {},
         getImpliedRoot: () => {},
         getProof: () => {},
       }
-    } else {
-      console.log(`UNKNOWN TYPE for justification tree instantiation: ${type}`)
     }
+    console.log(`UNKNOWN TYPE for patricia tree instantiation: ${type}`)
+    return new PatriciaTree();
   }
 
   async saveJustificationTree(){
