@@ -139,22 +139,28 @@ contract Salaries is ColonyExtensionMeta {
 
     require(salary.startTime <= block.timestamp, "salaries-too-soon-to-claim");
 
-    uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, salary.domainId);
-    colony.setExpenditureRecipient(expenditureId, SLOT, salary.recipient);
-
     uint256 domainFundingPotId = colony.getDomain(salary.domainId).fundingPotId;
+    uint256[] memory amountsToClaim = new uint256[](salary.tokens.length);
 
-    setExpenditureFunds(
+    for (uint256 i; i < salary.tokens.length; i++) {
+      salary.lastClaimed[i] = max(salary.lastClaimed[i], salary.startTime);
+
+      uint256 amountClaimable = getAmountClaimable(_id, i);
+      uint256 claimableProportion = getClaimableProportion(_id, i, domainFundingPotId, amountClaimable);
+      amountsToClaim[i] = wmul(claimableProportion, amountClaimable);
+
+      salary.lastClaimed[i] = add(salary.lastClaimed[i], wmul(claimableProportion, sub(block.timestamp, salary.lastClaimed[i])));
+    }
+
+    uint256 expenditureId = setupExpenditure(
       _permissionDomainId,
       _childSkillIndex,
       _fromChildSkillIndex,
       _toChildSkillIndex,
       _id,
-      expenditureId,
-      domainFundingPotId
+      domainFundingPotId,
+      amountsToClaim
     );
-
-    colony.finalizeExpenditure(expenditureId);
 
     for (uint256 i; i < salary.tokens.length; i++) {
       colony.claimExpenditurePayout(expenditureId, SLOT, salary.tokens[i]);
@@ -202,28 +208,23 @@ contract Salaries is ColonyExtensionMeta {
 
   // Internal
 
-  function setExpenditureFunds(
+  function setupExpenditure(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _fromChildSkillIndex,
     uint256 _toChildSkillIndex,
     uint256 _id,
-    uint256 _expenditureId,
-    uint256 _domainFundingPotId
+    uint256 _domainFundingPotId,
+    uint256[] memory _amountsToClaim
   )
     internal
+    returns (uint256)
   {
     Salary storage salary = salaries[_id];
-    uint256 expenditureFundingPotId = colony.getExpenditure(_expenditureId).fundingPotId;
+    uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, salary.domainId);
+    uint256 expenditureFundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
+
     for (uint256 i; i < salary.tokens.length; i++) {
-      salary.lastClaimed[i] = max(salary.lastClaimed[i], salary.startTime);
-
-      uint256 amountClaimable = getAmountClaimable(_id, i);
-      uint256 claimableProportion = getClaimableProportion(_id, i, _domainFundingPotId, amountClaimable);
-
-      salary.lastClaimed[i] = add(salary.lastClaimed[i], wmul(claimableProportion, sub(block.timestamp, salary.lastClaimed[i])));
-      uint256 amountToClaim = wmul(claimableProportion, amountClaimable);
-
       colony.moveFundsBetweenPots(
         _permissionDomainId,
         _childSkillIndex,
@@ -232,10 +233,14 @@ contract Salaries is ColonyExtensionMeta {
         _toChildSkillIndex,
         _domainFundingPotId,
         expenditureFundingPotId,
-        amountToClaim,
+        _amountsToClaim[i],
         salary.tokens[i]
       );
-      colony.setExpenditurePayout(_expenditureId, SLOT, salary.tokens[i], amountToClaim);
+      colony.setExpenditurePayout(expenditureId, SLOT, salary.tokens[i], _amountsToClaim[i]);
     }
+
+    colony.setExpenditureRecipient(expenditureId, SLOT, salary.recipient);
+    colony.finalizeExpenditure(expenditureId);
+    return expenditureId;
   }
 }
