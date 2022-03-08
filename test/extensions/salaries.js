@@ -102,6 +102,17 @@ contract("Salaries", (accounts) => {
       expect(salaryCount).to.eq.BN(1);
     });
 
+    it("cannot create a salary without relevant permissions", async () => {
+      await checkErrorRevert(
+        salaries.createSalary(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD], { from: USER1 }),
+        "salaries-not-authorized"
+      );
+    });
+
+    it("cannot create a salary with mismatched arguments", async () => {
+      await checkErrorRevert(salaries.createSalary(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], []), "salaries-bad-input");
+    });
+
     it("can claim a salary", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
@@ -114,6 +125,13 @@ contract("Salaries", (accounts) => {
       await makeTxAtTimestamp(salaries.claimSalary, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
+    });
+
+    it("cannot claim a salary before the start time", async () => {
+      await salaries.createSalary(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const salaryId = await salaries.getNumSalaries();
+
+      await checkErrorRevert(salaries.claimSalary(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, salaryId), "salaries-too-soon-to-claim");
     });
 
     it("can cancel a salary", async () => {
