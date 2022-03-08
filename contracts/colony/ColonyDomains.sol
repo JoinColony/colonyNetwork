@@ -1,4 +1,3 @@
-
 /*
   This file is part of The Colony Network.
 
@@ -143,8 +142,6 @@ contract ColonyDomains is ColonyStorage {
     emit FundingPotAdded(fundingPotCount);
   }
 
-  // Internal
-
   function setFunctionReviewers(bytes4 _sig, TaskRole _firstReviewer, TaskRole _secondReviewer)
   private
   {
@@ -154,4 +151,5 @@ contract ColonyDomains is ColonyStorage {
   function setRoleAssignmentFunction(bytes4 _sig) private {
     roleAssignmentSigs[_sig] = true;
   }
+
 }

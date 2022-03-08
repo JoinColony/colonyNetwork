@@ -391,4 +391,5 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
   function getTotalTokenApproval(address _token) public view returns (uint256) {
     return tokenApprovalTotals[_token];
   }
+
 }
