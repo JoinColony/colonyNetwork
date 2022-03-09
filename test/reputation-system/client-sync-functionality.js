@@ -5,7 +5,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
-import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
+import { DEFAULT_STAKE, INITIAL_FUNDING, UINT256_MAX } from "../../helpers/constants";
 import { forwardTime, currentBlock, advanceMiningCycleNoContest, getActiveRepCycle } from "../../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -133,6 +133,7 @@ process.env.SOLIDITY_COVERAGE
           for (let i = 0; i < 5; i += 1) {
             await setupFinalizedTask({ colonyNetwork, colony: metaColony });
           }
+          await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, accounts[2], -100, { from: accounts[0] });
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 

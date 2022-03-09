@@ -18,6 +18,7 @@ import {
   finishReputationMiningCycle,
   currentBlock,
   getWaitForNSubmissionsPromise,
+  TestAdapter,
 } from "../../../helpers/test-helper";
 import {
   setupColonyNetwork,
@@ -517,21 +518,6 @@ process.env.SOLIDITY_COVERAGE
           const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-
-          class TestAdapter {
-            constructor() {
-              this.outputs = [];
-            }
-
-            // eslint-disable-next-line class-methods-use-this
-            error(line) {
-              console.log(line);
-            }
-
-            log(line) {
-              this.outputs.push(line);
-            }
-          }
 
           // start up another one - does it quick-load pre submission?
           let adapter = new TestAdapter();

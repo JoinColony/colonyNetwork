@@ -8,7 +8,7 @@ import bnChai from "bn-chai";
 
 import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
 import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
-import { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle } from "../../helpers/test-helper";
+import { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter } from "../../helpers/test-helper";
 import {
   fundColonyWithTokens,
   setupColonyNetwork,
@@ -73,7 +73,9 @@ process.env.SOLIDITY_COVERAGE
         await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
         await reputationMiner.saveCurrentState();
 
-        client = new ReputationMinerClient({ loader, realProviderPort, minerAddress: MINER1, useJsTree: true, auto: false });
+        const adapter = new TestAdapter();
+
+        client = new ReputationMinerClient({ loader, realProviderPort, minerAddress: MINER1, useJsTree: true, auto: false, adapter });
         await client.initialise(colonyNetwork.address, 1);
       });
 
@@ -105,19 +107,36 @@ process.env.SOLIDITY_COVERAGE
           expect(value).to.equal(oracleProofObject.value);
         });
 
-        it("should correctly respond to a request for a reputation state in a previous state", async () => {
+        it("should correctly respond to a request for a reputation state in previous states", async () => {
+          const startingBlock = await currentBlock();
+          const startingBlockNumber = startingBlock.number;
+          await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+
           const rootHash = await reputationMiner.getRootHash();
           const key = makeReputationKey(metaColony.address, new BN(2), MINER1);
           const [branchMask, siblings] = await reputationMiner.getProof(key);
           const value = reputationMiner.reputations[key];
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          const rootHash2 = await reputationMiner.getRootHash();
+          const [branchMask2, siblings2] = await reputationMiner.getProof(key);
+          const value2 = reputationMiner.reputations[key];
 
-          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MINER1}`;
-          const res = await request(url);
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          const rootHash3 = await reputationMiner.getRootHash();
+          const [branchMask3, siblings3] = await reputationMiner.getProof(key);
+          const value3 = reputationMiner.reputations[key];
+
+          await client._miner.sync(startingBlockNumber, true); // eslint-disable-line no-underscore-dangle
+
+          let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MINER1}`;
+          let res = await request(url);
           expect(res.statusCode).to.equal(200);
 
-          const oracleProofObject = JSON.parse(res.body);
+          let oracleProofObject = JSON.parse(res.body);
           expect(branchMask).to.equal(oracleProofObject.branchMask);
           expect(siblings.length).to.equal(oracleProofObject.siblings.length);
 
@@ -127,25 +146,97 @@ process.env.SOLIDITY_COVERAGE
 
           expect(key).to.equal(oracleProofObject.key);
           expect(value).to.equal(oracleProofObject.value);
+
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+
+          // Different URL so we don't hit the cache.
+          url = `http://127.0.0.1:3000/${rootHash2}/${metaColony.address}/2/${MINER1}`;
+          res = await request(url);
+          expect(res.statusCode).to.equal(200);
+
+          oracleProofObject = JSON.parse(res.body);
+          expect(branchMask2).to.equal(oracleProofObject.branchMask);
+          expect(siblings2.length).to.equal(oracleProofObject.siblings.length);
+
+          for (let i = 0; i < oracleProofObject.siblings.length; i += 1) {
+            expect(siblings2[i]).to.equal(oracleProofObject.siblings[i]);
+          }
+
+          expect(key).to.equal(oracleProofObject.key);
+          expect(value2).to.equal(oracleProofObject.value);
+
+          // Different URL so we don't hit the cache.
+          url = `http://127.0.0.1:3000/${rootHash3}/${metaColony.address}/2/${MINER1}`;
+          res = await request(url);
+          expect(res.statusCode).to.equal(200);
+
+          oracleProofObject = JSON.parse(res.body);
+          expect(branchMask3).to.equal(oracleProofObject.branchMask);
+          expect(siblings3.length).to.equal(oracleProofObject.siblings.length);
+
+          for (let i = 0; i < oracleProofObject.siblings.length; i += 1) {
+            expect(siblings3[i]).to.equal(oracleProofObject.siblings[i]);
+          }
+
+          expect(key).to.equal(oracleProofObject.key);
+          expect(value3).to.equal(oracleProofObject.value);
         });
 
-        it("should correctly respond to a request for a reputation state in a previous state with no proof", async () => {
+        it("should correctly respond to a request for a reputation state in previous states with no proof", async () => {
+          const startingBlock = await currentBlock();
+          const startingBlockNumber = startingBlock.number;
+          await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+
           const rootHash = await reputationMiner.getRootHash();
           const key = makeReputationKey(metaColony.address, new BN(2), MINER1);
           const value = reputationMiner.reputations[key];
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          const rootHash2 = await reputationMiner.getRootHash();
+          const value2 = reputationMiner.reputations[key];
 
-          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MINER1}/noProof`;
-          const res = await request(url);
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
+          const rootHash3 = await reputationMiner.getRootHash();
+          const value3 = reputationMiner.reputations[key];
+
+          await client._miner.sync(startingBlockNumber, true); // eslint-disable-line no-underscore-dangle
+
+          let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MINER1}/noProof`;
+          let res = await request(url);
           expect(res.statusCode).to.equal(200);
 
-          const oracleProofObject = JSON.parse(res.body);
+          let oracleProofObject = JSON.parse(res.body);
           expect(undefined).to.equal(oracleProofObject.branchMask);
           expect(undefined).to.equal(oracleProofObject.siblings);
 
           expect(key).to.equal(oracleProofObject.key);
           expect(value).to.equal(oracleProofObject.value);
+
+          // Different URL so we don't hit the cache.
+          url = `http://127.0.0.1:3000/${rootHash2}/${metaColony.address}/2/${MINER1}/noProof`;
+          res = await request(url);
+          expect(res.statusCode).to.equal(200);
+
+          oracleProofObject = JSON.parse(res.body);
+          expect(undefined).to.equal(oracleProofObject.branchMask);
+          expect(undefined).to.equal(oracleProofObject.siblings);
+
+          expect(key).to.equal(oracleProofObject.key);
+          expect(value2).to.equal(oracleProofObject.value);
+
+          url = `http://127.0.0.1:3000/${rootHash3}/${metaColony.address}/2/${MINER1}/noProof`;
+          res = await request(url);
+          expect(res.statusCode).to.equal(200);
+
+          oracleProofObject = JSON.parse(res.body);
+          expect(undefined).to.equal(oracleProofObject.branchMask);
+          expect(undefined).to.equal(oracleProofObject.siblings);
+
+          expect(key).to.equal(oracleProofObject.key);
+          expect(value3).to.equal(oracleProofObject.value);
         });
 
         it("should correctly respond to a request for a valid key in a reputation state that never existed", async () => {
