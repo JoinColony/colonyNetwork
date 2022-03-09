@@ -16,15 +16,15 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
-const Salaries = artifacts.require("Salaries");
+const StreamingPayments = artifacts.require("StreamingPayments");
 
-const SALARIES = soliditySha3("Salaries");
+const STREAMING_PAYMENTS = soliditySha3("StreamingPayments");
 
-contract("Salaries", (accounts) => {
+contract("Streaming Payments", (accounts) => {
   let colonyNetwork;
   let colony;
   let token;
-  let salaries;
+  let streamingPayments;
   let version;
 
   const USER0 = accounts[0];
@@ -38,20 +38,20 @@ contract("Salaries", (accounts) => {
     const metacolony = await IMetaColony.at(metaColonyAddress);
     await metacolony.setNetworkFeeInverse(UINT256_MAX);
 
-    const extension = await Salaries.new();
+    const extension = await StreamingPayments.new();
     version = await extension.version();
   });
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
 
-    await colony.installExtension(SALARIES, version);
+    await colony.installExtension(STREAMING_PAYMENTS, version);
 
-    const salariesAddress = await colonyNetwork.getExtensionInstallation(SALARIES, colony.address);
-    salaries = await Salaries.at(salariesAddress);
+    const streamingPaymentsAddress = await colonyNetwork.getExtensionInstallation(STREAMING_PAYMENTS, colony.address);
+    streamingPayments = await StreamingPayments.at(streamingPaymentsAddress);
 
-    await colony.setFundingRole(1, UINT256_MAX, salaries.address, 1, true);
-    await colony.setAdministrationRole(1, UINT256_MAX, salaries.address, 1, true);
+    await colony.setFundingRole(1, UINT256_MAX, streamingPayments.address, 1, true);
+    await colony.setAdministrationRole(1, UINT256_MAX, streamingPayments.address, 1, true);
 
     await colony.setFundingRole(1, UINT256_MAX, USER0, 1, true);
     await colony.setAdministrationRole(1, UINT256_MAX, USER0, 1, true);
@@ -59,129 +59,135 @@ contract("Salaries", (accounts) => {
 
   describe("managing the extension", async () => {
     it("can install the extension manually", async () => {
-      salaries = await Salaries.new();
-      await salaries.install(colony.address);
+      streamingPayments = await StreamingPayments.new();
+      await streamingPayments.install(colony.address);
 
-      await checkErrorRevert(salaries.install(colony.address), "extension-already-installed");
+      await checkErrorRevert(streamingPayments.install(colony.address), "extension-already-installed");
 
-      const identifier = await salaries.identifier();
-      expect(identifier).to.equal(SALARIES);
+      const identifier = await streamingPayments.identifier();
+      expect(identifier).to.equal(STREAMING_PAYMENTS);
 
-      const capabilityRoles = await salaries.getCapabilityRoles("0x0");
+      const capabilityRoles = await streamingPayments.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
 
-      await salaries.finishUpgrade();
-      await salaries.deprecate(true);
-      await salaries.uninstall();
+      await streamingPayments.finishUpgrade();
+      await streamingPayments.deprecate(true);
+      await streamingPayments.uninstall();
 
-      const code = await web3GetCode(salaries.address);
+      const code = await web3GetCode(streamingPayments.address);
       expect(code).to.equal("0x");
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(SALARIES, version, { from: USER0 });
+      await colony.installExtension(STREAMING_PAYMENTS, version, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(SALARIES, version, { from: USER0 }), "colony-network-extension-already-installed");
-      await checkErrorRevert(colony.uninstallExtension(SALARIES, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.installExtension(STREAMING_PAYMENTS, version, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.uninstallExtension(STREAMING_PAYMENTS, { from: USER1 }), "ds-auth-unauthorized");
 
-      await colony.uninstallExtension(SALARIES, { from: USER0 });
+      await colony.uninstallExtension(STREAMING_PAYMENTS, { from: USER0 });
     });
   });
 
   describe("using the extension", async () => {
-    it("can create a salary", async () => {
-      let salaryCount;
+    it("can create a streamingPayment", async () => {
+      let streamingPaymentCount;
 
-      salaryCount = await salaries.getNumSalaries();
-      expect(salaryCount).to.be.zero;
+      streamingPaymentCount = await streamingPayments.getNumStreamingPayments();
+      expect(streamingPaymentCount).to.be.zero;
 
-      await salaries.createSalary(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
 
-      salaryCount = await salaries.getNumSalaries();
-      expect(salaryCount).to.eq.BN(1);
+      streamingPaymentCount = await streamingPayments.getNumStreamingPayments();
+      expect(streamingPaymentCount).to.eq.BN(1);
     });
 
-    it("cannot create a salary without relevant permissions", async () => {
+    it("cannot create a streamingPayment without relevant permissions", async () => {
       await checkErrorRevert(
-        salaries.createSalary(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD], { from: USER1 }),
-        "salaries-not-authorized"
+        streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD], { from: USER1 }),
+        "streaming-payments-not-authorized"
       );
     });
 
-    it("cannot create a salary with mismatched arguments", async () => {
-      await checkErrorRevert(salaries.createSalary(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], []), "salaries-bad-input");
+    it("cannot create a streamingPayment with mismatched arguments", async () => {
+      await checkErrorRevert(
+        streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], []),
+        "streaming-payments-bad-input"
+      );
     });
 
-    it("can claim a salary", async () => {
+    it("can claim a streamingPayment", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
-      const tx = await salaries.createSalary(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const tx = await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
-      const salaryId = await salaries.getNumSalaries();
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       const balancePre = await token.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, salaryId];
-      await makeTxAtTimestamp(salaries.claimSalary, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
     });
 
-    it("cannot claim a salary before the start time", async () => {
-      await salaries.createSalary(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
-      const salaryId = await salaries.getNumSalaries();
+    it("cannot claim a streamingPayment before the start time", async () => {
+      await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
-      await checkErrorRevert(salaries.claimSalary(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, salaryId), "salaries-too-soon-to-claim");
+      await checkErrorRevert(
+        streamingPayments.claimStreamingPayment(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId),
+        "streaming-payments-too-soon-to-claim"
+      );
     });
 
-    it("can cancel a salary", async () => {
-      await salaries.createSalary(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
-      const salaryId = await salaries.getNumSalaries();
+    it("can cancel a streamingPayment", async () => {
+      await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
-      await salaries.cancelSalary(salaryId);
+      await streamingPayments.cancelStreamingPayment(streamingPaymentId);
 
-      const salary = salaries.getSalary(salaryId);
-      expect(salary.claimFrom).to.eq.BN(salary.claimUntil);
+      const streamingPayment = streamingPayments.getStreamingPayment(streamingPaymentId);
+      expect(streamingPayment.claimFrom).to.eq.BN(streamingPayment.claimUntil);
     });
 
-    it("can claim a salary multiple times", async () => {
+    it("can claim a streamingPayment multiple times", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
-      const tx = await salaries.createSalary(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const tx = await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
-      const salaryId = await salaries.getNumSalaries();
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       let balancePre;
       let balancePost;
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, salaryId];
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
 
       // Claim 2 WADs
       balancePre = await token.balanceOf(USER1);
-      await makeTxAtTimestamp(salaries.claimSalary, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
 
       // Claim 1 WAD
       balancePre = await token.balanceOf(USER1);
-      await makeTxAtTimestamp(salaries.claimSalary, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
+      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.subn(1)); // -1 for network fee
     });
 
-    it("can claim a salary with partial funding", async () => {
+    it("can claim a streamingPayment with partial funding", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(1));
 
-      const tx = await salaries.createSalary(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const tx = await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
-      const salaryId = await salaries.getNumSalaries();
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       let balancePre;
       let balancePost;
 
       // Can only claim 1 wad (of 2 wads)
       balancePre = await token.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, salaryId];
-      await makeTxAtTimestamp(salaries.claimSalary, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(1).subn(1)); // -1 for network fee
 
@@ -189,7 +195,7 @@ contract("Salaries", (accounts) => {
 
       // Claim 1 wad plus 1 wad owed
       balancePre = await token.balanceOf(USER1);
-      await makeTxAtTimestamp(salaries.claimSalary, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
+      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
     });
@@ -197,19 +203,19 @@ contract("Salaries", (accounts) => {
     it("can claim nothing", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
-      const tx = await salaries.createSalary(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const tx = await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
-      const salaryId = await salaries.getNumSalaries();
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       // Now claim at the same timestamp
       const balancePre = await token.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, salaryId];
-      await makeTxAtTimestamp(salaries.claimSalary, claimArgs, blockTime, this);
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime, this);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.be.zero;
     });
 
-    it("can claim a salary with multiple tokens and amounts", async () => {
+    it("can claim a streamingPayment with multiple tokens and amounts", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
       const tokenArgs = getTokenArgs();
@@ -217,22 +223,22 @@ contract("Salaries", (accounts) => {
       await otherToken.unlock();
       await fundColonyWithTokens(colony, otherToken, WAD.muln(10));
 
-      const salaryArgs = [1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address, otherToken.address], [WAD, WAD.muln(2)]];
-      const tx = await salaries.createSalary(...salaryArgs);
+      const streamingPaymentArgs = [1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address, otherToken.address], [WAD, WAD.muln(2)]];
+      const tx = await streamingPayments.createStreamingPayment(...streamingPaymentArgs);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
-      const salaryId = await salaries.getNumSalaries();
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       const balance0Pre = await token.balanceOf(USER1);
       const balance1Pre = await otherToken.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, salaryId];
-      await makeTxAtTimestamp(salaries.claimSalary, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       const balance0Post = await token.balanceOf(USER1);
       const balance1Post = await otherToken.balanceOf(USER1);
       expect(balance0Post.sub(balance0Pre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
       expect(balance1Post.sub(balance1Pre)).to.eq.BN(WAD.muln(4).subn(1)); // -1 for network fee
     });
 
-    it("can claim a salary with multiple tokens and amounts with partial funding", async () => {
+    it("can claim a streamingPayment with multiple tokens and amounts with partial funding", async () => {
       // Only fund partially
       await fundColonyWithTokens(colony, token, WAD.muln(1));
 
@@ -241,10 +247,10 @@ contract("Salaries", (accounts) => {
       await otherToken.unlock();
       await fundColonyWithTokens(colony, otherToken, WAD.muln(10));
 
-      const salaryArgs = [1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address, otherToken.address], [WAD, WAD.muln(2)]];
-      const tx = await salaries.createSalary(...salaryArgs);
+      const streamingPaymentArgs = [1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address, otherToken.address], [WAD, WAD.muln(2)]];
+      const tx = await streamingPayments.createStreamingPayment(...streamingPaymentArgs);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
-      const salaryId = await salaries.getNumSalaries();
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       let balance0Pre;
       let balance0Post;
@@ -253,8 +259,8 @@ contract("Salaries", (accounts) => {
 
       balance0Pre = await token.balanceOf(USER1);
       balance1Pre = await otherToken.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, salaryId];
-      await makeTxAtTimestamp(salaries.claimSalary, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       balance0Post = await token.balanceOf(USER1);
       balance1Post = await otherToken.balanceOf(USER1);
       expect(balance0Post.sub(balance0Pre)).to.eq.BN(WAD.muln(1).subn(1)); // -1 for network fee
@@ -266,7 +272,7 @@ contract("Salaries", (accounts) => {
       // The discrepancy is claimed
       balance0Pre = await token.balanceOf(USER1);
       balance1Pre = await otherToken.balanceOf(USER1);
-      await makeTxAtTimestamp(salaries.claimSalary, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
+      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
       balance0Post = await token.balanceOf(USER1);
       balance1Post = await otherToken.balanceOf(USER1);
       expect(balance0Post.sub(balance0Pre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee

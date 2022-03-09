@@ -23,12 +23,12 @@ import "./ColonyExtensionMeta.sol";
 // ignore-file-swc-108
 
 
-contract Salaries is ColonyExtensionMeta {
+contract StreamingPayments is ColonyExtensionMeta {
 
   // Events
 
-  event SalaryCreated(uint256 salaryId);
-  event SalaryClaimed(uint256 indexed salaryId, address indexed token);
+  event StreamingPaymentCreated(uint256 streamingPaymentId);
+  event StreamingPaymentClaimed(uint256 indexed streamingPaymentId, address indexed token);
 
   // Constants
 
@@ -38,7 +38,7 @@ contract Salaries is ColonyExtensionMeta {
 
   // Storage
 
-  struct Salary {
+  struct StreamingPayment {
     address payable recipient;
     uint256 domainId;
     uint256 startTime;
@@ -49,8 +49,8 @@ contract Salaries is ColonyExtensionMeta {
     uint256[] lastClaimed;
   }
 
-  uint256 numSalaries;
-  mapping (uint256 => Salary) salaries;
+  uint256 numStreamingPayments;
+  mapping (uint256 => StreamingPayment) streamingPayments;
 
   // Modifiers
 
@@ -58,14 +58,14 @@ contract Salaries is ColonyExtensionMeta {
     require(
       colony.hasInheritedUserRole(msgSender(), _permissionDomainId, FUNDING, _childSkillIndex, _domainId) &&
       colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ADMINISTRATION, _childSkillIndex, _domainId),
-      "salaries-not-authorized"
+      "streaming-payments-not-authorized"
     );
     _;
   }
 
   /// @notice Returns the identifier of the extension
   function identifier() public override pure returns (bytes32) {
-    return keccak256("Salaries");
+    return keccak256("StreamingPayments");
   }
 
   /// @notice Returns the version of the extension
@@ -94,7 +94,7 @@ contract Salaries is ColonyExtensionMeta {
     selfdestruct(address(uint160(address(colony))));
   }
 
-  function createSalary(
+  function createStreamingPayment(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _domainId,
@@ -108,13 +108,13 @@ contract Salaries is ColonyExtensionMeta {
     public
     validatePermission(_permissionDomainId, _childSkillIndex, _domainId)
   {
-    require(_tokens.length == _amounts.length, "salaries-bad-input");
+    require(_tokens.length == _amounts.length, "streaming-payments-bad-input");
 
     uint256 startTime = (_startTime == 0) ? block.timestamp : _startTime;
     uint256 endTime = (_endTime == 0) ? UINT256_MAX : _endTime;
     uint256[] memory lastClaimed = new uint256[](_tokens.length);
 
-    salaries[++numSalaries] = Salary(
+    streamingPayments[++numStreamingPayments] = StreamingPayment(
       _recipient,
       _domainId,
       startTime,
@@ -125,31 +125,40 @@ contract Salaries is ColonyExtensionMeta {
       lastClaimed
     );
 
-    emit SalaryCreated(numSalaries);
+    emit StreamingPaymentCreated(numStreamingPayments);
   }
 
-  function claimSalary(
+  function claimStreamingPayment(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _fromChildSkillIndex,
     uint256 _toChildSkillIndex,
     uint256 _id
   ) public {
-    Salary storage salary = salaries[_id];
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
 
-    require(salary.startTime <= block.timestamp, "salaries-too-soon-to-claim");
+    require(streamingPayment.startTime <= block.timestamp, "streaming-payments-too-soon-to-claim");
 
-    uint256 domainFundingPotId = colony.getDomain(salary.domainId).fundingPotId;
-    uint256[] memory amountsToClaim = new uint256[](salary.tokens.length);
+    uint256 domainFundingPotId = colony.getDomain(streamingPayment.domainId).fundingPotId;
+    uint256[] memory amountsToClaim = new uint256[](streamingPayment.tokens.length);
 
-    for (uint256 i; i < salary.tokens.length; i++) {
-      salary.lastClaimed[i] = max(salary.lastClaimed[i], salary.startTime);
+    for (uint256 i; i < streamingPayment.tokens.length; i++) {
+      streamingPayment.lastClaimed[i] = max(streamingPayment.lastClaimed[i], streamingPayment.startTime);
 
       uint256 amountClaimable = getAmountClaimable(_id, i);
       uint256 claimableProportion = getClaimableProportion(_id, i, domainFundingPotId, amountClaimable);
       amountsToClaim[i] = wmul(claimableProportion, amountClaimable);
 
-      salary.lastClaimed[i] = add(salary.lastClaimed[i], wmul(claimableProportion, sub(block.timestamp, salary.lastClaimed[i])));
+      streamingPayment.lastClaimed[i] = add(
+        streamingPayment.lastClaimed[i],
+        wmul(
+          claimableProportion,
+          sub(
+            block.timestamp,
+            streamingPayment.lastClaimed[i]
+          )
+        )
+      );
     }
 
     uint256 expenditureId = setupExpenditure(
@@ -162,28 +171,28 @@ contract Salaries is ColonyExtensionMeta {
       amountsToClaim
     );
 
-    for (uint256 i; i < salary.tokens.length; i++) {
-      colony.claimExpenditurePayout(expenditureId, SLOT, salary.tokens[i]);
+    for (uint256 i; i < streamingPayment.tokens.length; i++) {
+      colony.claimExpenditurePayout(expenditureId, SLOT, streamingPayment.tokens[i]);
 
-      emit SalaryClaimed(_id, salary.tokens[i]);
+      emit StreamingPaymentClaimed(_id, streamingPayment.tokens[i]);
     }
   }
 
-  function cancelSalary(uint256 _id) public {
-    salaries[_id].endTime = block.timestamp;
+  function cancelStreamingPayment(uint256 _id) public {
+    streamingPayments[_id].endTime = block.timestamp;
   }
 
   // View
 
-  function getSalary(uint256 _id) public view returns (Salary memory salary) {
-    salary = salaries[_id];
+  function getStreamingPayment(uint256 _id) public view returns (StreamingPayment memory streamingPayment) {
+    streamingPayment = streamingPayments[_id];
   }
 
   function getAmountClaimable(uint256 _id, uint256 _tokenIdx) public view returns (uint256) {
-    Salary storage salary = salaries[_id];
-    uint256 durationToClaim = sub(block.timestamp, salary.lastClaimed[_tokenIdx]);
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
+    uint256 durationToClaim = sub(block.timestamp, streamingPayment.lastClaimed[_tokenIdx]);
     return (durationToClaim > 0) ?
-      wmul(salary.amounts[_tokenIdx], wdiv(durationToClaim, salary.interval)) :
+      wmul(streamingPayment.amounts[_tokenIdx], wdiv(durationToClaim, streamingPayment.interval)) :
       0;
   }
 
@@ -197,13 +206,13 @@ contract Salaries is ColonyExtensionMeta {
     view
     returns (uint256)
   {
-    Salary storage salary = salaries[_id];
-    uint256 domainBalance = colony.getFundingPotBalance(_fundingPotId, salary.tokens[_tokenIdx]);
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
+    uint256 domainBalance = colony.getFundingPotBalance(_fundingPotId, streamingPayment.tokens[_tokenIdx]);
     return min(WAD, wdiv(domainBalance, max(1, _amountClaimable)));
   }
 
-  function getNumSalaries() public view returns (uint256) {
-    return numSalaries;
+  function getNumStreamingPayments() public view returns (uint256) {
+    return numStreamingPayments;
   }
 
   // Internal
@@ -220,26 +229,26 @@ contract Salaries is ColonyExtensionMeta {
     internal
     returns (uint256)
   {
-    Salary storage salary = salaries[_id];
-    uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, salary.domainId);
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
+    uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, streamingPayment.domainId);
     uint256 expenditureFundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
-    for (uint256 i; i < salary.tokens.length; i++) {
+    for (uint256 i; i < streamingPayment.tokens.length; i++) {
       colony.moveFundsBetweenPots(
         _permissionDomainId,
         _childSkillIndex,
-        salary.domainId,
+        streamingPayment.domainId,
         _fromChildSkillIndex,
         _toChildSkillIndex,
         _domainFundingPotId,
         expenditureFundingPotId,
         _amountsToClaim[i],
-        salary.tokens[i]
+        streamingPayment.tokens[i]
       );
-      colony.setExpenditurePayout(expenditureId, SLOT, salary.tokens[i], _amountsToClaim[i]);
+      colony.setExpenditurePayout(expenditureId, SLOT, streamingPayment.tokens[i], _amountsToClaim[i]);
     }
 
-    colony.setExpenditureRecipient(expenditureId, SLOT, salary.recipient);
+    colony.setExpenditureRecipient(expenditureId, SLOT, streamingPayment.recipient);
     colony.finalizeExpenditure(expenditureId);
     return expenditureId;
   }
