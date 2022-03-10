@@ -8,7 +8,6 @@ import { soliditySha3 } from "web3-utils";
 import { UINT256_MAX, WAD, SECONDS_PER_DAY } from "../../helpers/constants";
 import { checkErrorRevert, web3GetCode, makeTxAtTimestamp, getBlockTime, getTokenArgs, forwardTime } from "../../helpers/test-helper";
 import { setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
-import { check } from "prettier";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -154,7 +153,7 @@ contract("Streaming Payments", (accounts) => {
       await checkErrorRevert(
         streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, 0, { from: USER1 }),
         "streaming-payments-not-authorized"
-        );
+      );
     });
 
     it("can update the end time", async () => {
