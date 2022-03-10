@@ -8,6 +8,7 @@ import { soliditySha3 } from "web3-utils";
 import { UINT256_MAX, WAD, SECONDS_PER_DAY } from "../../helpers/constants";
 import { checkErrorRevert, web3GetCode, makeTxAtTimestamp, getBlockTime, getTokenArgs, forwardTime } from "../../helpers/test-helper";
 import { setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
+import { check } from "prettier";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -370,6 +371,43 @@ contract("Streaming Payments", (accounts) => {
       balance1Post = await otherToken.balanceOf(USER1);
       expect(balance0Post.sub(balance0Pre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
       expect(balance1Post.sub(balance1Pre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
+    });
+
+    it("can change the token amount", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      const tx = await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      let balancePre;
+      let balancePost;
+
+      // Claim one wad
+      balancePre = await token.balanceOf(USER1);
+      const updateArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, 0, WAD.muln(2)];
+      await makeTxAtTimestamp(streamingPayments.setTokenAmount, updateArgs, blockTime + SECONDS_PER_DAY, this);
+      balancePost = await token.balanceOf(USER1);
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(1).subn(1)); // -1 for network fee
+
+      // Claim two wads
+      balancePre = await token.balanceOf(USER1);
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      balancePost = await token.balanceOf(USER1);
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
+    });
+
+    it("cannot change the token amount with insufficient funds", async () => {
+      await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await forwardTime(SECONDS_PER_DAY, this);
+
+      await checkErrorRevert(
+        streamingPayments.setTokenAmount(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, 0, WAD.muln(2)),
+        "streaming-payments-insufficient-funds"
+      );
     });
   });
 });

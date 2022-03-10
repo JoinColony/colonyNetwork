@@ -28,7 +28,8 @@ contract StreamingPayments is ColonyExtensionMeta {
   // Events
 
   event StreamingPaymentCreated(uint256 streamingPaymentId);
-  event StreamingPaymentClaimed(uint256 indexed streamingPaymentId, address indexed token);
+  event StreamingPaymentClaimed(uint256 indexed streamingPaymentId, address indexed token, uint256 amount);
+  event StreamingPaymentUpdated(uint256 indexed streamingPaymentId, address indexed token, uint256 amount);
 
   // Constants
 
@@ -192,8 +193,37 @@ contract StreamingPayments is ColonyExtensionMeta {
     for (uint256 i; i < streamingPayment.tokens.length; i++) {
       colony.claimExpenditurePayout(expenditureId, SLOT, streamingPayment.tokens[i]);
 
-      emit StreamingPaymentClaimed(_id, streamingPayment.tokens[i]);
+      emit StreamingPaymentClaimed(_id, streamingPayment.tokens[i], amountsToClaim[i]);
     }
+  }
+
+  /// @notice Update the token amount to be paid out. Claims existing payouts prior to the change
+  /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
+  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _fromChildSkillIndex The linking the domainId to the fromPot domain
+  /// @param _toChildSkillIndex The linking the domainId to the toPot domain
+  /// @param _id The id of the streaming payment
+  /// @param _tokenIdx The index of the token
+  /// @param _amount The new amount to pay out
+  function setTokenAmount(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _fromChildSkillIndex,
+    uint256 _toChildSkillIndex,
+    uint256 _id,
+    uint256 _tokenIdx,
+    uint256 _amount
+  )
+    public
+    validatePermission(_permissionDomainId, _childSkillIndex, streamingPayments[_id].domainId)
+  {
+    claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id);
+
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
+    require(streamingPayment.lastClaimed[_tokenIdx] == block.timestamp, "streaming-payments-insufficient-funds");
+    streamingPayment.amounts[_tokenIdx] = _amount;
+
+    emit StreamingPaymentUpdated(_id, streamingPayment.tokens[_tokenIdx], _amount);
   }
 
   /// @notice Update the startTime, only if the current startTime is in the future
