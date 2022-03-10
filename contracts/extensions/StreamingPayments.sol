@@ -205,6 +205,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _id The id of the streaming payment
   /// @param _tokenIdx The index of the token
   /// @param _amount The new amount to pay out
+  // slither-disable-next-line reentrancy-no-eth
   function setTokenAmount(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -220,7 +221,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id);
 
     StreamingPayment storage streamingPayment = streamingPayments[_id];
-    require(streamingPayment.lastClaimed[_tokenIdx] == block.timestamp, "streaming-payments-insufficient-funds");
+    require(streamingPayment.lastClaimed[_tokenIdx] >= block.timestamp, "streaming-payments-insufficient-funds");
     streamingPayment.amounts[_tokenIdx] = _amount;
 
     emit StreamingPaymentUpdated(_id, streamingPayment.tokens[_tokenIdx], _amount);
