@@ -63,6 +63,8 @@ contract StreamingPayments is ColonyExtensionMeta {
     _;
   }
 
+  // Public
+
   /// @notice Returns the identifier of the extension
   function identifier() public override pure returns (bytes32) {
     return keccak256("StreamingPayments");
@@ -94,6 +96,16 @@ contract StreamingPayments is ColonyExtensionMeta {
     selfdestruct(address(uint160(address(colony))));
   }
 
+  /// @notice Creates a new streaming payment
+  /// @param _permissionDomainId The domain in which the caller holds the funding & admin permissions
+  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _domainId The domain out of which the streaming payment will be paid
+  /// @param _startTime The time at which the payment begins paying out
+  /// @param _endTime The time at which the payment ends paying out
+  /// @param _interval The period of time over which _amounts are paid out
+  /// @param _recipient The recipient of the streaming payment
+  /// @param _tokens The tokens to be paid out
+  /// @param _amounts The amounts to be paid out (per _interval of time)
   function create(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -128,6 +140,12 @@ contract StreamingPayments is ColonyExtensionMeta {
     emit StreamingPaymentCreated(numStreamingPayments);
   }
 
+  /// @notice Claim a streaming payment
+  /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
+  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _fromChildSkillIndex The linking the domainId to the fromPot domain
+  /// @param _toChildSkillIndex The linking the domainId to the toPot domain
+  /// @param _id The id of the streaming payment
   function claim(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -178,6 +196,11 @@ contract StreamingPayments is ColonyExtensionMeta {
     }
   }
 
+  /// @notice Update the startTime, only if the current startTime is in the future
+  /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
+  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _id The id of the streaming payment
+  /// @param _startTime The new startTime to set
   function setStartTime(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -192,6 +215,11 @@ contract StreamingPayments is ColonyExtensionMeta {
     streamingPayment.startTime = _startTime;
   }
 
+  /// @notice Update the endTime, only if the new endTime is in the future
+  /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
+  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _id The id of the streaming payment
+  /// @param _endTime The new endTime to set
   function setEndTime(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -206,6 +234,10 @@ contract StreamingPayments is ColonyExtensionMeta {
     streamingPayment.endTime = _endTime;
   }
 
+  /// @notice Cancel the streaming payment, specifically by setting endTime to block.timestamp
+  /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
+  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _id The id of the streaming payment
   function cancel(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -223,6 +255,10 @@ contract StreamingPayments is ColonyExtensionMeta {
     streamingPayment = streamingPayments[_id];
   }
 
+  function getNumStreamingPayments() public view returns (uint256) {
+    return numStreamingPayments;
+  }
+
   function getAmountClaimable(uint256 _id, uint256 _tokenIdx) public view returns (uint256) {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     uint256 durationToClaim = sub(block.timestamp, streamingPayment.lastClaimed[_tokenIdx]);
@@ -231,13 +267,15 @@ contract StreamingPayments is ColonyExtensionMeta {
       0;
   }
 
+  // Internal
+
   function getClaimableProportion(
     uint256 _id,
     uint256 _tokenIdx,
     uint256 _fundingPotId,
     uint256 _amountClaimable
   )
-    public
+    internal
     view
     returns (uint256)
   {
@@ -245,12 +283,6 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 domainBalance = colony.getFundingPotBalance(_fundingPotId, streamingPayment.tokens[_tokenIdx]);
     return min(WAD, wdiv(domainBalance, max(1, _amountClaimable)));
   }
-
-  function getNumStreamingPayments() public view returns (uint256) {
-    return numStreamingPayments;
-  }
-
-  // Internal
 
   function setupExpenditure(
     uint256 _permissionDomainId,
