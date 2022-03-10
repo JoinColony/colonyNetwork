@@ -225,6 +225,24 @@ contract("Streaming Payments", (accounts) => {
       expect(streamingPayment.endTime).to.eq.BN(blockTime);
     });
 
+    it("can cancel a streaming payment and claim any balance owed", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      const tx = await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      // Cancel after one day
+      await makeTxAtTimestamp(streamingPayments.cancel, [1, UINT256_MAX, streamingPaymentId], blockTime + SECONDS_PER_DAY, this);
+
+      // Claim after two days, but only get one day's worth of payout
+      const balancePre = await token.balanceOf(USER1);
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      const balancePost = await token.balanceOf(USER1);
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD.subn(1)); // -1 for network fee
+    });
+
     it("can claim a streaming payment multiple times", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
