@@ -261,7 +261,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   function getAmountClaimable(uint256 _id, uint256 _tokenIdx) public view returns (uint256) {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
-    uint256 durationToClaim = sub(block.timestamp, streamingPayment.lastClaimed[_tokenIdx]);
+    uint256 durationToClaim = sub(min(block.timestamp, streamingPayment.endTime), streamingPayment.lastClaimed[_tokenIdx]);
     return (durationToClaim > 0) ?
       wmul(streamingPayment.amounts[_tokenIdx], wdiv(durationToClaim, streamingPayment.interval)) :
       0;
