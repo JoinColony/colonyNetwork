@@ -94,7 +94,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     selfdestruct(address(uint160(address(colony))));
   }
 
-  function createStreamingPayment(
+  function create(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _domainId,
@@ -128,7 +128,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     emit StreamingPaymentCreated(numStreamingPayments);
   }
 
-  function claimStreamingPayment(
+  function claim(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _fromChildSkillIndex,
@@ -178,13 +178,48 @@ contract StreamingPayments is ColonyExtensionMeta {
     }
   }
 
-  function cancelStreamingPayment(uint256 _id) public {
-    streamingPayments[_id].endTime = block.timestamp;
+  function setStartTime(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _startTime
+  )
+    public
+    validatePermission(_permissionDomainId, _childSkillIndex, streamingPayments[_id].domainId)
+  {
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
+    require(block.timestamp <= streamingPayment.startTime, "streaming-payments-already-started");
+    streamingPayment.startTime = _startTime;
+  }
+
+  function setEndTime(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _endTime
+  )
+    public
+    validatePermission(_permissionDomainId, _childSkillIndex, streamingPayments[_id].domainId)
+  {
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
+    require(block.timestamp <= _endTime, "streaming-payments-invalid-end-time");
+    streamingPayment.endTime = _endTime;
+  }
+
+  function cancel(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id
+  )
+    public
+    validatePermission(_permissionDomainId, _childSkillIndex, streamingPayments[_id].domainId)
+  {
+    setEndTime(_permissionDomainId, _childSkillIndex, _id, block.timestamp);
   }
 
   // View
 
-  function getStreamingPayment(uint256 _id) public view returns (StreamingPayment memory streamingPayment) {
+  function get(uint256 _id) public view returns (StreamingPayment memory streamingPayment) {
     streamingPayment = streamingPayments[_id];
   }
 

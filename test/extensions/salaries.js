@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, SECONDS_PER_DAY } from "../../helpers/constants";
-import { checkErrorRevert, web3GetCode, makeTxAtTimestamp, getBlockTime, getTokenArgs } from "../../helpers/test-helper";
+import { checkErrorRevert, web3GetCode, makeTxAtTimestamp, getBlockTime, getTokenArgs, forwardTime } from "../../helpers/test-helper";
 import { setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -90,70 +90,145 @@ contract("Streaming Payments", (accounts) => {
   });
 
   describe("using the extension", async () => {
-    it("can create a streamingPayment", async () => {
+    it("can create a streaming payment", async () => {
       let streamingPaymentCount;
 
       streamingPaymentCount = await streamingPayments.getNumStreamingPayments();
       expect(streamingPaymentCount).to.be.zero;
 
-      await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
 
       streamingPaymentCount = await streamingPayments.getNumStreamingPayments();
       expect(streamingPaymentCount).to.eq.BN(1);
     });
 
-    it("cannot create a streamingPayment without relevant permissions", async () => {
+    it("cannot create a streaming payment without relevant permissions", async () => {
       await checkErrorRevert(
-        streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD], { from: USER1 }),
+        streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD], { from: USER1 }),
         "streaming-payments-not-authorized"
       );
     });
 
-    it("cannot create a streamingPayment with mismatched arguments", async () => {
+    it("cannot create a streaming payment with mismatched arguments", async () => {
       await checkErrorRevert(
-        streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], []),
+        streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], []),
         "streaming-payments-bad-input"
       );
     });
 
-    it("can claim a streamingPayment", async () => {
+    it("can update the start time", async () => {
+      const blockTime = await getBlockTime();
+      const startTime = blockTime + SECONDS_PER_DAY;
+      const newStartTime = blockTime + SECONDS_PER_DAY * 2;
+
+      // Set start time one day into the future
+      await streamingPayments.create(1, UINT256_MAX, 1, startTime, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      let streamingPayment;
+      streamingPayment = await streamingPayments.get(streamingPaymentId);
+      expect(streamingPayment.startTime).to.eq.BN(startTime);
+
+      // Now make it two days into the future
+      await streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, newStartTime);
+      streamingPayment = await streamingPayments.get(streamingPaymentId);
+      expect(streamingPayment.startTime).to.eq.BN(newStartTime);
+    });
+
+    it("cannot update the start time after the start time has passed", async () => {
+      await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await forwardTime(SECONDS_PER_DAY, this);
+
+      await checkErrorRevert(streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, 0), "streaming-payments-already-started");
+    });
+
+    it("cannot update the start time without correct permissions", async () => {
+      await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await forwardTime(SECONDS_PER_DAY, this);
+
+      await checkErrorRevert(
+        streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, 0, { from: USER1 }),
+        "streaming-payments-not-authorized"
+        );
+    });
+
+    it("can update the end time", async () => {
+      const blockTime = await getBlockTime();
+      const endTime = blockTime + SECONDS_PER_DAY;
+      const newEndTime = blockTime + SECONDS_PER_DAY * 2;
+
+      await streamingPayments.create(1, UINT256_MAX, 1, 0, endTime, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      let streamingPayment;
+      streamingPayment = await streamingPayments.get(streamingPaymentId);
+      expect(streamingPayment.endTime).to.eq.BN(endTime);
+
+      await streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, newEndTime);
+      streamingPayment = await streamingPayments.get(streamingPaymentId);
+      expect(streamingPayment.endTime).to.eq.BN(newEndTime);
+    });
+
+    it("cannot update the end time to a time past", async () => {
+      await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await checkErrorRevert(streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, 0), "streaming-payments-invalid-end-time");
+    });
+
+    it("cannot update the end time without relevant permissions", async () => {
+      await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await checkErrorRevert(
+        streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, 0, { from: USER1 }),
+        "streaming-payments-not-authorized"
+      );
+    });
+
+    it("can claim a streaming payment", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
-      const tx = await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const tx = await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       const balancePre = await token.balanceOf(USER1);
       const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
-      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
     });
 
-    it("cannot claim a streamingPayment before the start time", async () => {
-      await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+    it("cannot claim a streaming payment before the start time", async () => {
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       await checkErrorRevert(
-        streamingPayments.claimStreamingPayment(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId),
+        streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId),
         "streaming-payments-too-soon-to-claim"
       );
     });
 
-    it("can cancel a streamingPayment", async () => {
-      await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+    it("can cancel a streaming payment", async () => {
+      await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
-      await streamingPayments.cancelStreamingPayment(streamingPaymentId);
+      const tx = await streamingPayments.cancel(1, UINT256_MAX, streamingPaymentId);
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
 
-      const streamingPayment = streamingPayments.getStreamingPayment(streamingPaymentId);
-      expect(streamingPayment.claimFrom).to.eq.BN(streamingPayment.claimUntil);
+      const streamingPayment = await streamingPayments.get(streamingPaymentId);
+      expect(streamingPayment.endTime).to.eq.BN(blockTime);
     });
 
-    it("can claim a streamingPayment multiple times", async () => {
+    it("can claim a streaming payment multiple times", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
-      const tx = await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const tx = await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
@@ -163,21 +238,21 @@ contract("Streaming Payments", (accounts) => {
 
       // Claim 2 WADs
       balancePre = await token.balanceOf(USER1);
-      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
 
       // Claim 1 WAD
       balancePre = await token.balanceOf(USER1);
-      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.subn(1)); // -1 for network fee
     });
 
-    it("can claim a streamingPayment with partial funding", async () => {
+    it("can claim a streaming payment with partial funding", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(1));
 
-      const tx = await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const tx = await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
@@ -187,7 +262,7 @@ contract("Streaming Payments", (accounts) => {
       // Can only claim 1 wad (of 2 wads)
       balancePre = await token.balanceOf(USER1);
       const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
-      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(1).subn(1)); // -1 for network fee
 
@@ -195,7 +270,7 @@ contract("Streaming Payments", (accounts) => {
 
       // Claim 1 wad plus 1 wad owed
       balancePre = await token.balanceOf(USER1);
-      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
     });
@@ -203,19 +278,19 @@ contract("Streaming Payments", (accounts) => {
     it("can claim nothing", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
-      const tx = await streamingPayments.createStreamingPayment(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const tx = await streamingPayments.create(1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       // Now claim at the same timestamp
       const balancePre = await token.balanceOf(USER1);
       const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
-      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime, this);
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime, this);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.be.zero;
     });
 
-    it("can claim a streamingPayment with multiple tokens and amounts", async () => {
+    it("can claim a streaming payment with multiple tokens and amounts", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
       const tokenArgs = getTokenArgs();
@@ -224,21 +299,21 @@ contract("Streaming Payments", (accounts) => {
       await fundColonyWithTokens(colony, otherToken, WAD.muln(10));
 
       const streamingPaymentArgs = [1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address, otherToken.address], [WAD, WAD.muln(2)]];
-      const tx = await streamingPayments.createStreamingPayment(...streamingPaymentArgs);
+      const tx = await streamingPayments.create(...streamingPaymentArgs);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       const balance0Pre = await token.balanceOf(USER1);
       const balance1Pre = await otherToken.balanceOf(USER1);
       const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
-      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       const balance0Post = await token.balanceOf(USER1);
       const balance1Post = await otherToken.balanceOf(USER1);
       expect(balance0Post.sub(balance0Pre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
       expect(balance1Post.sub(balance1Pre)).to.eq.BN(WAD.muln(4).subn(1)); // -1 for network fee
     });
 
-    it("can claim a streamingPayment with multiple tokens and amounts with partial funding", async () => {
+    it("can claim a streaming payment with multiple tokens and amounts with partial funding", async () => {
       // Only fund partially
       await fundColonyWithTokens(colony, token, WAD.muln(1));
 
@@ -248,7 +323,7 @@ contract("Streaming Payments", (accounts) => {
       await fundColonyWithTokens(colony, otherToken, WAD.muln(10));
 
       const streamingPaymentArgs = [1, UINT256_MAX, 1, 0, 0, SECONDS_PER_DAY, USER1, [token.address, otherToken.address], [WAD, WAD.muln(2)]];
-      const tx = await streamingPayments.createStreamingPayment(...streamingPaymentArgs);
+      const tx = await streamingPayments.create(...streamingPaymentArgs);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
@@ -260,7 +335,7 @@ contract("Streaming Payments", (accounts) => {
       balance0Pre = await token.balanceOf(USER1);
       balance1Pre = await otherToken.balanceOf(USER1);
       const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
-      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       balance0Post = await token.balanceOf(USER1);
       balance1Post = await otherToken.balanceOf(USER1);
       expect(balance0Post.sub(balance0Pre)).to.eq.BN(WAD.muln(1).subn(1)); // -1 for network fee
@@ -272,7 +347,7 @@ contract("Streaming Payments", (accounts) => {
       // The discrepancy is claimed
       balance0Pre = await token.balanceOf(USER1);
       balance1Pre = await otherToken.balanceOf(USER1);
-      await makeTxAtTimestamp(streamingPayments.claimStreamingPayment, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 3, this);
       balance0Post = await token.balanceOf(USER1);
       balance1Post = await otherToken.balanceOf(USER1);
       expect(balance0Post.sub(balance0Pre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
