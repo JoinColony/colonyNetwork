@@ -27,9 +27,9 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   // Events
 
-  event StreamingPaymentCreated(uint256 streamingPaymentId);
-  event StreamingPaymentClaimed(uint256 indexed streamingPaymentId, address indexed token, uint256 amount);
-  event StreamingPaymentUpdated(uint256 indexed streamingPaymentId, address indexed token, uint256 amount);
+  event StreamingPaymentCreated(address agent, uint256 streamingPaymentId);
+  event StreamingPaymentClaimed(address agent, uint256 indexed streamingPaymentId, address indexed token, uint256 amount);
+  event StreamingPaymentUpdated(address agent, uint256 indexed streamingPaymentId, address indexed token, uint256 amount);
 
   // Constants
 
@@ -55,11 +55,18 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   // Modifiers
 
-  modifier validatePermission(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId) {
+  modifier validateFundingPermission(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId) {
     require(
-      colony.hasInheritedUserRole(msgSender(), _permissionDomainId, FUNDING, _childSkillIndex, _domainId) &&
+      colony.hasInheritedUserRole(msgSender(), _permissionDomainId, FUNDING, _childSkillIndex, _domainId),
+      "streaming-payments-funding-not-authorized"
+    );
+    _;
+  }
+
+  modifier validateAdministrationPermission(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId) {
+    require(
       colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ADMINISTRATION, _childSkillIndex, _domainId),
-      "streaming-payments-not-authorized"
+      "streaming-payments-admin-not-authorized"
     );
     _;
   }
@@ -98,8 +105,10 @@ contract StreamingPayments is ColonyExtensionMeta {
   }
 
   /// @notice Creates a new streaming payment
-  /// @param _permissionDomainId The domain in which the caller holds the funding & admin permissions
-  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _fundingPermissionDomainId The domain in which the caller holds the funding permission
+  /// @param _adminPermissionDomainId The domain in which the caller holds the admin permission
+  /// @param _fundingChildSkillIndex The index linking the fundingPermissionDomainId to the domainId
+  /// @param _adminChildSkillIndex The index linking the adminPermissionDomainId to the domainId
   /// @param _domainId The domain out of which the streaming payment will be paid
   /// @param _startTime The time at which the payment begins paying out
   /// @param _endTime The time at which the payment ends paying out
@@ -108,8 +117,10 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _tokens The tokens to be paid out
   /// @param _amounts The amounts to be paid out (per _interval of time)
   function create(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
+    uint256 _fundingPermissionDomainId,
+    uint256 _fundingChildSkillIndex,
+    uint256 _adminPermissionDomainId,
+    uint256 _adminChildSkillIndex,
     uint256 _domainId,
     uint256 _startTime,
     uint256 _endTime,
@@ -119,26 +130,26 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256[] memory _amounts
   )
     public
-    validatePermission(_permissionDomainId, _childSkillIndex, _domainId)
+    validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, _domainId)
+    validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, _domainId)
   {
-    require(_tokens.length == _amounts.length, "streaming-payments-bad-input");
-
     uint256 startTime = (_startTime == 0) ? block.timestamp : _startTime;
-    uint256 endTime = (_endTime == 0) ? UINT256_MAX : _endTime;
-    uint256[] memory lastClaimed = new uint256[](_tokens.length);
+
+    require(_tokens.length == _amounts.length, "streaming-payments-bad-input");
+    require(startTime <= _endTime, "streaming-payments-bad-end-time");
 
     streamingPayments[++numStreamingPayments] = StreamingPayment(
       _recipient,
       _domainId,
       startTime,
-      endTime,
+      _endTime,
       _interval,
       _tokens,
       _amounts,
-      lastClaimed
+      new uint256[](_tokens.length)
     );
 
-    emit StreamingPaymentCreated(numStreamingPayments);
+    emit StreamingPaymentCreated(msgSender(), numStreamingPayments);
   }
 
   /// @notice Claim a streaming payment
@@ -193,11 +204,13 @@ contract StreamingPayments is ColonyExtensionMeta {
     for (uint256 i; i < streamingPayment.tokens.length; i++) {
       colony.claimExpenditurePayout(expenditureId, SLOT, streamingPayment.tokens[i]);
 
-      emit StreamingPaymentClaimed(_id, streamingPayment.tokens[i], amountsToClaim[i]);
+      emit StreamingPaymentClaimed(msgSender(), _id, streamingPayment.tokens[i], amountsToClaim[i]);
     }
   }
 
   /// @notice Update the token amount to be paid out. Claims existing payouts prior to the change
+  /// @param _fundingPermissionDomainId The domain in which the caller holds the funding permission
+  /// @param _fundingChildSkillIndex The index linking the fundingPermissionDomainId to the domainId
   /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
   /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
   /// @param _fromChildSkillIndex The linking the domainId to the fromPot domain
@@ -207,6 +220,8 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _amount The new amount to pay out
   // slither-disable-next-line reentrancy-no-eth
   function setTokenAmount(
+    uint256 _fundingPermissionDomainId,
+    uint256 _fundingChildSkillIndex,
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _fromChildSkillIndex,
@@ -216,7 +231,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _amount
   )
     public
-    validatePermission(_permissionDomainId, _childSkillIndex, streamingPayments[_id].domainId)
+    validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, streamingPayments[_id].domainId)
   {
     claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id);
 
@@ -224,22 +239,23 @@ contract StreamingPayments is ColonyExtensionMeta {
     require(streamingPayment.lastClaimed[_tokenIdx] >= block.timestamp, "streaming-payments-insufficient-funds");
     streamingPayment.amounts[_tokenIdx] = _amount;
 
-    emit StreamingPaymentUpdated(_id, streamingPayment.tokens[_tokenIdx], _amount);
+    emit StreamingPaymentUpdated(msgSender(), _id, streamingPayment.tokens[_tokenIdx], _amount);
   }
 
   /// @notice Update the startTime, only if the current startTime is in the future
-  /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
-  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _adminPermissionDomainId The domain in which the caller holds the admin permission
+  /// @param _adminChildSkillIndex The index linking the adminPermissionDomainId to the domainId
   /// @param _id The id of the streaming payment
   /// @param _startTime The new startTime to set
   function setStartTime(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
+    uint256 _adminPermissionDomainId,
+    uint256 _adminChildSkillIndex,
     uint256 _id,
     uint256 _startTime
   )
     public
-    validatePermission(_permissionDomainId, _childSkillIndex, streamingPayments[_id].domainId)
+    validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, streamingPayments[_id].domainId)
+
   {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     require(block.timestamp <= streamingPayment.startTime, "streaming-payments-already-started");
@@ -247,18 +263,19 @@ contract StreamingPayments is ColonyExtensionMeta {
   }
 
   /// @notice Update the endTime, only if the new endTime is in the future
-  /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
-  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _adminPermissionDomainId The domain in which the caller holds the admin permission
+  /// @param _adminChildSkillIndex The index linking the adminPermissionDomainId to the domainId
   /// @param _id The id of the streaming payment
   /// @param _endTime The new endTime to set
   function setEndTime(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
+    uint256 _adminPermissionDomainId,
+    uint256 _adminChildSkillIndex,
     uint256 _id,
     uint256 _endTime
   )
     public
-    validatePermission(_permissionDomainId, _childSkillIndex, streamingPayments[_id].domainId)
+    validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, streamingPayments[_id].domainId)
+
   {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     require(block.timestamp <= _endTime, "streaming-payments-invalid-end-time");
@@ -266,18 +283,18 @@ contract StreamingPayments is ColonyExtensionMeta {
   }
 
   /// @notice Cancel the streaming payment, specifically by setting endTime to block.timestamp
-  /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
-  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _adminPermissionDomainId The domain in which the caller holds the admin permission
+  /// @param _adminChildSkillIndex The index linking the adminPermissionDomainId to the domainId
   /// @param _id The id of the streaming payment
   function cancel(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
+    uint256 _adminPermissionDomainId,
+    uint256 _adminChildSkillIndex,
     uint256 _id
   )
     public
-    validatePermission(_permissionDomainId, _childSkillIndex, streamingPayments[_id].domainId)
+    validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, streamingPayments[_id].domainId)
   {
-    setEndTime(_permissionDomainId, _childSkillIndex, _id, block.timestamp);
+    setEndTime(_adminPermissionDomainId, _adminChildSkillIndex, _id, block.timestamp);
   }
 
   // View
@@ -332,18 +349,20 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 expenditureFundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
     for (uint256 i; i < streamingPayment.tokens.length; i++) {
-      colony.moveFundsBetweenPots(
-        _permissionDomainId,
-        _childSkillIndex,
-        streamingPayment.domainId,
-        _fromChildSkillIndex,
-        _toChildSkillIndex,
-        _domainFundingPotId,
-        expenditureFundingPotId,
-        _amountsToClaim[i],
-        streamingPayment.tokens[i]
-      );
-      colony.setExpenditurePayout(expenditureId, SLOT, streamingPayment.tokens[i], _amountsToClaim[i]);
+      if (_amountsToClaim[i] > 0) {
+        colony.moveFundsBetweenPots(
+          _permissionDomainId,
+          _childSkillIndex,
+          streamingPayment.domainId,
+          _fromChildSkillIndex,
+          _toChildSkillIndex,
+          _domainFundingPotId,
+          expenditureFundingPotId,
+          _amountsToClaim[i],
+          streamingPayment.tokens[i]
+        );
+        colony.setExpenditurePayout(expenditureId, SLOT, streamingPayment.tokens[i], _amountsToClaim[i]);
+      }
     }
 
     colony.setExpenditureRecipient(expenditureId, SLOT, streamingPayment.recipient);
