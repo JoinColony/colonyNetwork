@@ -416,7 +416,7 @@ contract.only("Streaming Payments", (accounts) => {
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
     });
 
-    it("cannot change the token amount with insufficient funds", async () => {
+    it("cannot change the token amount if existing payouts cannot be made", async () => {
       await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
@@ -424,6 +424,37 @@ contract.only("Streaming Payments", (accounts) => {
 
       await checkErrorRevert(
         streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, 0, WAD.muln(2)),
+        "streaming-payments-insufficient-funds"
+      );
+    });
+
+    it("can add a new token/amount", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [], []);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      const tx = await streamingPayments.addToken(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, token.address, WAD)
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+
+      const balancePre = await token.balanceOf(USER1);
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY, this);
+      const balancePost = await token.balanceOf(USER1);
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(1).subn(1)); // -1 for network fee
+    });
+
+    it("cannot add a mew token/amount if existing payouts cannot be made", async () => {
+      const tokenArgs = getTokenArgs();
+      const otherToken = await Token.new(...tokenArgs);
+
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await forwardTime(SECONDS_PER_DAY, this);
+
+      await checkErrorRevert(
+        streamingPayments.addToken(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, otherToken.address, WAD),
         "streaming-payments-insufficient-funds"
       );
     });

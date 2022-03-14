@@ -208,6 +208,46 @@ contract StreamingPayments is ColonyExtensionMeta {
     }
   }
 
+
+  /// @notice Add a new token/amount pair. Claims existing payouts prior to the change
+  /// @param _fundingPermissionDomainId The domain in which the caller holds the funding permission
+  /// @param _fundingChildSkillIndex The index linking the fundingPermissionDomainId to the domainId
+  /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
+  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _fromChildSkillIndex The linking the domainId to the fromPot domain
+  /// @param _toChildSkillIndex The linking the domainId to the toPot domain
+  /// @param _id The id of the streaming payment
+  /// @param _token The address of the token
+  /// @param _amount The new amount to pay out
+  // slither-disable-next-line reentrancy-no-eth
+  function addToken(
+    uint256 _fundingPermissionDomainId,
+    uint256 _fundingChildSkillIndex,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _fromChildSkillIndex,
+    uint256 _toChildSkillIndex,
+    uint256 _id,
+    address _token,
+    uint256 _amount
+  )
+    public
+    validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, streamingPayments[_id].domainId)
+  {
+    claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id);
+
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
+    for (uint256 i; i < streamingPayment.lastClaimed.length; i++) {
+      require(streamingPayment.lastClaimed[i] >= block.timestamp, "streaming-payments-insufficient-funds");
+    }
+
+    streamingPayment.tokens.push(_token);
+    streamingPayment.amounts.push(_amount);
+    streamingPayment.lastClaimed.push(block.timestamp);
+
+    emit StreamingPaymentUpdated(msgSender(), _id, _token, _amount);
+  }
+
   /// @notice Update the token amount to be paid out. Claims existing payouts prior to the change
   /// @param _fundingPermissionDomainId The domain in which the caller holds the funding permission
   /// @param _fundingChildSkillIndex The index linking the fundingPermissionDomainId to the domainId
@@ -237,6 +277,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     require(streamingPayment.lastClaimed[_tokenIdx] >= block.timestamp, "streaming-payments-insufficient-funds");
+
     streamingPayment.amounts[_tokenIdx] = _amount;
 
     emit StreamingPaymentUpdated(msgSender(), _id, streamingPayment.tokens[_tokenIdx], _amount);
