@@ -29,7 +29,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   event StreamingPaymentCreated(address agent, uint256 streamingPaymentId);
   event StreamingPaymentClaimed(address agent, uint256 indexed streamingPaymentId, address indexed token, uint256 amount);
-  event StreamingPaymentUpdated(address agent, uint256 indexed streamingPaymentId, address indexed token, uint256 amount);
+  event PaymentTokenUpdated(address agent, uint256 indexed streamingPaymentId, address indexed token, uint256 amount);
 
   // Constants
 
@@ -45,13 +45,16 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 startTime;
     uint256 endTime;
     uint256 interval;
-    address[] tokens;
-    uint256[] amounts;
-    uint256[] lastClaimed;
+  }
+
+  struct PaymentToken {
+    uint256 amount;
+    uint256 lastClaimed;
   }
 
   uint256 numStreamingPayments;
   mapping (uint256 => StreamingPayment) streamingPayments;
+  mapping (uint256 => mapping (address => PaymentToken)) paymentTokens;
 
   // Modifiers
 
@@ -138,16 +141,13 @@ contract StreamingPayments is ColonyExtensionMeta {
     require(_tokens.length == _amounts.length, "streaming-payments-bad-input");
     require(startTime <= _endTime, "streaming-payments-bad-end-time");
 
-    streamingPayments[++numStreamingPayments] = StreamingPayment(
-      _recipient,
-      _domainId,
-      startTime,
-      _endTime,
-      _interval,
-      _tokens,
-      _amounts,
-      new uint256[](_tokens.length)
-    );
+    numStreamingPayments++;
+    streamingPayments[numStreamingPayments] = StreamingPayment(_recipient, _domainId, startTime, _endTime, _interval);
+    for (uint256 i; i < _tokens.length; i++) {
+      paymentTokens[numStreamingPayments][_tokens[i]] = PaymentToken(_amounts[i], block.timestamp);
+
+      emit PaymentTokenUpdated(msgSender(), numStreamingPayments, _tokens[i], _amounts[i]);
+    }
 
     emit StreamingPaymentCreated(msgSender(), numStreamingPayments);
   }
@@ -158,34 +158,37 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _fromChildSkillIndex The linking the domainId to the fromPot domain
   /// @param _toChildSkillIndex The linking the domainId to the toPot domain
   /// @param _id The id of the streaming payment
+  /// @param _tokens The tokens to be paid out
   function claim(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _fromChildSkillIndex,
     uint256 _toChildSkillIndex,
-    uint256 _id
+    uint256 _id,
+    address[] memory _tokens
   ) public {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
 
     require(streamingPayment.startTime <= block.timestamp, "streaming-payments-too-soon-to-claim");
 
     uint256 domainFundingPotId = colony.getDomain(streamingPayment.domainId).fundingPotId;
-    uint256[] memory amountsToClaim = new uint256[](streamingPayment.tokens.length);
+    uint256[] memory amountsToClaim = new uint256[](_tokens.length);
 
-    for (uint256 i; i < streamingPayment.tokens.length; i++) {
-      streamingPayment.lastClaimed[i] = max(streamingPayment.lastClaimed[i], streamingPayment.startTime);
+    for (uint256 i; i < _tokens.length; i++) {
+      PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
+      paymentToken.lastClaimed = max(paymentToken.lastClaimed, streamingPayment.startTime);
 
-      uint256 amountClaimable = getAmountClaimable(_id, i);
-      uint256 claimableProportion = getClaimableProportion(_id, i, domainFundingPotId, amountClaimable);
+      uint256 amountClaimable = getAmountClaimable(_id, _tokens[i]);
+      uint256 claimableProportion = getClaimableProportion(_tokens[i], domainFundingPotId, amountClaimable);
       amountsToClaim[i] = wmul(claimableProportion, amountClaimable);
 
-      streamingPayment.lastClaimed[i] = add(
-        streamingPayment.lastClaimed[i],
+      paymentToken.lastClaimed = add(
+        paymentToken.lastClaimed,
         wmul(
           claimableProportion,
           sub(
             block.timestamp,
-            streamingPayment.lastClaimed[i]
+            paymentToken.lastClaimed
           )
         )
       );
@@ -198,18 +201,41 @@ contract StreamingPayments is ColonyExtensionMeta {
       _toChildSkillIndex,
       _id,
       domainFundingPotId,
+      _tokens,
       amountsToClaim
     );
 
-    for (uint256 i; i < streamingPayment.tokens.length; i++) {
-      colony.claimExpenditurePayout(expenditureId, SLOT, streamingPayment.tokens[i]);
+    for (uint256 i; i < _tokens.length; i++) {
+      colony.claimExpenditurePayout(expenditureId, SLOT, _tokens[i]);
 
-      emit StreamingPaymentClaimed(msgSender(), _id, streamingPayment.tokens[i], amountsToClaim[i]);
+      emit StreamingPaymentClaimed(msgSender(), _id, _tokens[i], amountsToClaim[i]);
     }
   }
 
 
-  /// @notice Add a new token/amount pair. Claims existing payouts prior to the change
+  /// @notice Add a new token/amount pair
+  /// @param _fundingPermissionDomainId The domain in which the caller holds the funding permission
+  /// @param _fundingChildSkillIndex The index linking the fundingPermissionDomainId to the domainId
+  /// @param _id The id of the streaming payment
+  /// @param _token The address of the token
+  /// @param _amount The new amount to pay out
+  // slither-disable-next-line reentrancy-no-eth
+  function addToken(
+    uint256 _fundingPermissionDomainId,
+    uint256 _fundingChildSkillIndex,
+    uint256 _id,
+    address _token,
+    uint256 _amount
+  )
+    public
+    validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, streamingPayments[_id].domainId)
+  {
+    paymentTokens[_id][_token] = PaymentToken(_amount, block.timestamp);
+
+    emit PaymentTokenUpdated(msgSender(), _id, _token, _amount);
+  }
+
+  /// @notice Update the token amount to be paid out. Claims existing payout prior to the change
   /// @param _fundingPermissionDomainId The domain in which the caller holds the funding permission
   /// @param _fundingChildSkillIndex The index linking the fundingPermissionDomainId to the domainId
   /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
@@ -220,7 +246,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _token The address of the token
   /// @param _amount The new amount to pay out
   // slither-disable-next-line reentrancy-no-eth
-  function addToken(
+  function setTokenAmount(
     uint256 _fundingPermissionDomainId,
     uint256 _fundingChildSkillIndex,
     uint256 _permissionDomainId,
@@ -234,53 +260,13 @@ contract StreamingPayments is ColonyExtensionMeta {
     public
     validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, streamingPayments[_id].domainId)
   {
-    claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id);
+    claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id, toArray(_token));
 
-    StreamingPayment storage streamingPayment = streamingPayments[_id];
-    for (uint256 i; i < streamingPayment.lastClaimed.length; i++) {
-      require(streamingPayment.lastClaimed[i] >= block.timestamp, "streaming-payments-insufficient-funds");
-    }
+    PaymentToken storage paymentToken = paymentTokens[_id][_token];
+    require(paymentToken.lastClaimed >= block.timestamp, "streaming-payments-insufficient-funds");
+    paymentToken.amount = _amount;
 
-    streamingPayment.tokens.push(_token);
-    streamingPayment.amounts.push(_amount);
-    streamingPayment.lastClaimed.push(block.timestamp);
-
-    emit StreamingPaymentUpdated(msgSender(), _id, _token, _amount);
-  }
-
-  /// @notice Update the token amount to be paid out. Claims existing payouts prior to the change
-  /// @param _fundingPermissionDomainId The domain in which the caller holds the funding permission
-  /// @param _fundingChildSkillIndex The index linking the fundingPermissionDomainId to the domainId
-  /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
-  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
-  /// @param _fromChildSkillIndex The linking the domainId to the fromPot domain
-  /// @param _toChildSkillIndex The linking the domainId to the toPot domain
-  /// @param _id The id of the streaming payment
-  /// @param _tokenIdx The index of the token
-  /// @param _amount The new amount to pay out
-  // slither-disable-next-line reentrancy-no-eth
-  function setTokenAmount(
-    uint256 _fundingPermissionDomainId,
-    uint256 _fundingChildSkillIndex,
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _fromChildSkillIndex,
-    uint256 _toChildSkillIndex,
-    uint256 _id,
-    uint256 _tokenIdx,
-    uint256 _amount
-  )
-    public
-    validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, streamingPayments[_id].domainId)
-  {
-    claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id);
-
-    StreamingPayment storage streamingPayment = streamingPayments[_id];
-    require(streamingPayment.lastClaimed[_tokenIdx] >= block.timestamp, "streaming-payments-insufficient-funds");
-
-    streamingPayment.amounts[_tokenIdx] = _amount;
-
-    emit StreamingPaymentUpdated(msgSender(), _id, streamingPayment.tokens[_tokenIdx], _amount);
+    emit PaymentTokenUpdated(msgSender(), _id, _token, _amount);
   }
 
   /// @notice Update the startTime, only if the current startTime is in the future
@@ -340,27 +326,29 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   // View
 
-  function get(uint256 _id) public view returns (StreamingPayment memory streamingPayment) {
+  function getStreamingPayment(uint256 _id) public view returns (StreamingPayment memory streamingPayment) {
     streamingPayment = streamingPayments[_id];
+  }
+
+  function getPaymentToken(uint256 _id, address _token) public view returns (PaymentToken memory paymentToken) {
+    paymentToken = paymentTokens[_id][_token];
   }
 
   function getNumStreamingPayments() public view returns (uint256) {
     return numStreamingPayments;
   }
 
-  function getAmountClaimable(uint256 _id, uint256 _tokenIdx) public view returns (uint256) {
+  function getAmountClaimable(uint256 _id, address _token) public view returns (uint256) {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
-    uint256 durationToClaim = sub(min(block.timestamp, streamingPayment.endTime), streamingPayment.lastClaimed[_tokenIdx]);
-    return (durationToClaim > 0) ?
-      wmul(streamingPayment.amounts[_tokenIdx], wdiv(durationToClaim, streamingPayment.interval)) :
-      0;
+    PaymentToken storage paymentToken = paymentTokens[_id][_token];
+    uint256 durationToClaim = sub(min(block.timestamp, streamingPayment.endTime), paymentToken.lastClaimed);
+    return (durationToClaim > 0) ? wmul(paymentToken.amount, wdiv(durationToClaim, streamingPayment.interval)) : 0;
   }
 
   // Internal
 
   function getClaimableProportion(
-    uint256 _id,
-    uint256 _tokenIdx,
+    address _token,
     uint256 _fundingPotId,
     uint256 _amountClaimable
   )
@@ -368,8 +356,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     view
     returns (uint256)
   {
-    StreamingPayment storage streamingPayment = streamingPayments[_id];
-    uint256 domainBalance = colony.getFundingPotBalance(_fundingPotId, streamingPayment.tokens[_tokenIdx]);
+    uint256 domainBalance = colony.getFundingPotBalance(_fundingPotId, _token);
     return min(WAD, wdiv(domainBalance, max(1, _amountClaimable)));
   }
 
@@ -380,34 +367,39 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _toChildSkillIndex,
     uint256 _id,
     uint256 _domainFundingPotId,
+    address[] memory _tokens,
     uint256[] memory _amountsToClaim
   )
     internal
     returns (uint256)
   {
-    StreamingPayment storage streamingPayment = streamingPayments[_id];
-    uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, streamingPayment.domainId);
+    uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, streamingPayments[_id].domainId);
     uint256 expenditureFundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
-    for (uint256 i; i < streamingPayment.tokens.length; i++) {
+    for (uint256 i; i < _tokens.length; i++) {
       if (_amountsToClaim[i] > 0) {
         colony.moveFundsBetweenPots(
           _permissionDomainId,
           _childSkillIndex,
-          streamingPayment.domainId,
+          streamingPayments[_id].domainId,
           _fromChildSkillIndex,
           _toChildSkillIndex,
           _domainFundingPotId,
           expenditureFundingPotId,
           _amountsToClaim[i],
-          streamingPayment.tokens[i]
+          _tokens[i]
         );
-        colony.setExpenditurePayout(expenditureId, SLOT, streamingPayment.tokens[i], _amountsToClaim[i]);
+        colony.setExpenditurePayout(expenditureId, SLOT, _tokens[i], _amountsToClaim[i]);
       }
     }
 
-    colony.setExpenditureRecipient(expenditureId, SLOT, streamingPayment.recipient);
+    colony.setExpenditureRecipient(expenditureId, SLOT, streamingPayments[_id].recipient);
     colony.finalizeExpenditure(expenditureId);
     return expenditureId;
+  }
+
+  function toArray(address _token) internal pure returns (address[] memory tokens) {
+    tokens = new address[](1);
+    tokens[0] = _token;
   }
 }
