@@ -20,7 +20,7 @@ const StreamingPayments = artifacts.require("StreamingPayments");
 
 const STREAMING_PAYMENTS = soliditySha3("StreamingPayments");
 
-contract.only("Streaming Payments", (accounts) => {
+contract("Streaming Payments", (accounts) => {
   let colonyNetwork;
   let colony;
   let token;
@@ -145,12 +145,12 @@ contract.only("Streaming Payments", (accounts) => {
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       let streamingPayment;
-      streamingPayment = await streamingPayments.get(streamingPaymentId);
+      streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(streamingPayment.startTime).to.eq.BN(startTime);
 
       // Now make it two days into the future
       await streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, newStartTime);
-      streamingPayment = await streamingPayments.get(streamingPaymentId);
+      streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(streamingPayment.startTime).to.eq.BN(newStartTime);
     });
 
@@ -184,11 +184,11 @@ contract.only("Streaming Payments", (accounts) => {
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       let streamingPayment;
-      streamingPayment = await streamingPayments.get(streamingPaymentId);
+      streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(streamingPayment.endTime).to.eq.BN(endTime);
 
       await streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, newEndTime);
-      streamingPayment = await streamingPayments.get(streamingPaymentId);
+      streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(streamingPayment.endTime).to.eq.BN(newEndTime);
     });
 
@@ -217,7 +217,7 @@ contract.only("Streaming Payments", (accounts) => {
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       const balancePre = await token.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]];
       await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
@@ -228,7 +228,7 @@ contract.only("Streaming Payments", (accounts) => {
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       await checkErrorRevert(
-        streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId),
+        streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]),
         "streaming-payments-too-soon-to-claim"
       );
     });
@@ -240,7 +240,7 @@ contract.only("Streaming Payments", (accounts) => {
       const tx = await streamingPayments.cancel(1, UINT256_MAX, streamingPaymentId);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
 
-      const streamingPayment = await streamingPayments.get(streamingPaymentId);
+      const streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(streamingPayment.endTime).to.eq.BN(blockTime);
     });
 
@@ -256,7 +256,7 @@ contract.only("Streaming Payments", (accounts) => {
 
       // Claim after two days, but only get one day's worth of payout
       const balancePre = await token.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]];
       await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.subn(1)); // -1 for network fee
@@ -271,7 +271,7 @@ contract.only("Streaming Payments", (accounts) => {
 
       let balancePre;
       let balancePost;
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]];
 
       // Claim 2 WADs
       balancePre = await token.balanceOf(USER1);
@@ -298,7 +298,7 @@ contract.only("Streaming Payments", (accounts) => {
 
       // Can only claim 1 wad (of 2 wads)
       balancePre = await token.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]];
       await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(1).subn(1)); // -1 for network fee
@@ -321,7 +321,7 @@ contract.only("Streaming Payments", (accounts) => {
 
       // Now claim at the same timestamp
       const balancePre = await token.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]];
       await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime, this);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.be.zero;
@@ -335,14 +335,25 @@ contract.only("Streaming Payments", (accounts) => {
       await otherToken.unlock();
       await fundColonyWithTokens(colony, otherToken, WAD.muln(10));
 
-      const streamingPaymentArgs = [1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address, otherToken.address], [WAD, WAD.muln(2)]];
-      const tx = await streamingPayments.create(...streamingPaymentArgs);
+      const tx = await streamingPayments.create(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        1,
+        0,
+        UINT256_MAX,
+        SECONDS_PER_DAY,
+        USER1,
+        [token.address, otherToken.address],
+        [WAD, WAD.muln(2)]
+      );
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       const balance0Pre = await token.balanceOf(USER1);
       const balance1Pre = await otherToken.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address, otherToken.address]];
       await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       const balance0Post = await token.balanceOf(USER1);
       const balance1Post = await otherToken.balanceOf(USER1);
@@ -359,8 +370,19 @@ contract.only("Streaming Payments", (accounts) => {
       await otherToken.unlock();
       await fundColonyWithTokens(colony, otherToken, WAD.muln(10));
 
-      const streamingPaymentArgs = [1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address, otherToken.address], [WAD, WAD.muln(2)]];
-      const tx = await streamingPayments.create(...streamingPaymentArgs);
+      const tx = await streamingPayments.create(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        1,
+        0,
+        UINT256_MAX,
+        SECONDS_PER_DAY,
+        USER1,
+        [token.address, otherToken.address],
+        [WAD, WAD.muln(2)]
+      );
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
@@ -371,7 +393,7 @@ contract.only("Streaming Payments", (accounts) => {
 
       balance0Pre = await token.balanceOf(USER1);
       balance1Pre = await otherToken.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address, otherToken.address]];
       await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       balance0Post = await token.balanceOf(USER1);
       balance1Post = await otherToken.balanceOf(USER1);
@@ -403,14 +425,17 @@ contract.only("Streaming Payments", (accounts) => {
 
       // Claim one wad
       balancePre = await token.balanceOf(USER1);
-      const updateArgs = [1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, 0, WAD.muln(2)];
+      const updateArgs = [1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, token.address, WAD.muln(2)];
       await makeTxAtTimestamp(streamingPayments.setTokenAmount, updateArgs, blockTime + SECONDS_PER_DAY, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(1).subn(1)); // -1 for network fee
 
+      const paymentToken = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
+      expect(paymentToken.amount).to.eq.BN(WAD.muln(2));
+
       // Claim two wads
       balancePre = await token.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]];
       await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
@@ -423,7 +448,7 @@ contract.only("Streaming Payments", (accounts) => {
       await forwardTime(SECONDS_PER_DAY, this);
 
       await checkErrorRevert(
-        streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, 0, WAD.muln(2)),
+        streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, token.address, WAD.muln(2)),
         "streaming-payments-insufficient-funds"
       );
     });
@@ -434,29 +459,14 @@ contract.only("Streaming Payments", (accounts) => {
       await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [], []);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
-      const tx = await streamingPayments.addToken(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, token.address, WAD)
+      const tx = await streamingPayments.addToken(1, UINT256_MAX, streamingPaymentId, token.address, WAD);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
 
       const balancePre = await token.balanceOf(USER1);
-      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId];
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]];
       await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY, this);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(1).subn(1)); // -1 for network fee
-    });
-
-    it("cannot add a mew token/amount if existing payouts cannot be made", async () => {
-      const tokenArgs = getTokenArgs();
-      const otherToken = await Token.new(...tokenArgs);
-
-      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
-      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
-
-      await forwardTime(SECONDS_PER_DAY, this);
-
-      await checkErrorRevert(
-        streamingPayments.addToken(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, otherToken.address, WAD),
-        "streaming-payments-insufficient-funds"
-      );
     });
   });
 });
