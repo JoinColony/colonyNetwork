@@ -190,13 +190,16 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
 
   function deprecateSkill(uint256 _skillId, bool _deprecated) public stoppable
   allowedToAddSkill(skills[_skillId].nParents == 0)
+  returns (bool)
   {
+    bool changed = skills[_skillId].deprecated != _deprecated;
     skills[_skillId].deprecated = _deprecated;
+    return changed;
   }
 
-  function deprecateSkill(uint256 _skillId) public stoppable
+  function deprecateSkill(uint256 _skillId) public stoppable returns (bool)
   {
-    deprecateSkill(_skillId, true);
+    return deprecateSkill(_skillId, true);
   }
 
   function initialiseRootLocalSkill() public
@@ -251,6 +254,18 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
 
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
     return metatransactionNonces[_user];
+  }
+
+  function setPayoutWhitelist(address _token, bool _status) public stoppable
+  calledByMetaColony
+  {
+    payoutWhitelist[_token] = _status;
+
+    emit TokenWhitelisted(_token, _status);
+  }
+
+  function getPayoutWhitelist(address _token) public view returns (bool) {
+    return payoutWhitelist[_token];
   }
 
   function incrementMetatransactionNonce(address _user) override internal {

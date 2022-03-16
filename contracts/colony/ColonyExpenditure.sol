@@ -186,7 +186,7 @@ contract ColonyExpenditure is ColonyStorage {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
 
     for (uint256 i; i < _slots.length; i++) {
-      require(isValidSkill(_skillIds[i]), "colony-not-valid-skill");
+      require(isValidGlobalOrLocalSkill(_skillIds[i]), "colony-not-valid-global-or-local-skill");
 
       // We only allow setting of the first skill here.
       // If we allow more in the future, make sure to have a hard limit that

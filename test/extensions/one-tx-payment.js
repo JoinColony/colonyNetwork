@@ -224,7 +224,7 @@ contract("One transaction payments", (accounts) => {
     it("should not allow an admin to specify a non-global skill", async () => {
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 2),
-        "colony-not-valid-skill"
+        "colony-not-valid-global-or-local-skill"
       );
     });
 
@@ -235,7 +235,7 @@ contract("One transaction payments", (accounts) => {
 
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, skillId),
-        "colony-not-valid-skill"
+        "colony-not-valid-global-or-local-skill"
       );
     });
 
@@ -249,7 +249,7 @@ contract("One transaction payments", (accounts) => {
     it("should not allow an admin to specify a non-existent skill", async () => {
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 99),
-        "colony-not-valid-skill"
+        "colony-not-valid-global-or-local-skill"
       );
     });
 
