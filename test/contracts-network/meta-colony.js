@@ -71,7 +71,7 @@ contract("Meta Colony", (accounts) => {
       await restoreSubdomainLimit(colonyNetwork);
     });
 
-    it("should be able to add a new skill as a child of a domain", async () => {
+    it("should be able to add a new domain skill as a child of a domain", async () => {
       await metaColony.addDomain(1, UINT256_MAX, 1);
 
       const skillCount = await colonyNetwork.getSkillCount();
@@ -97,7 +97,7 @@ contract("Meta Colony", (accounts) => {
       await checkErrorRevert(metaColony.addGlobalSkill({ from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
     });
 
-    it("should be able to add multiple child skills to the skill corresponding to the root domain by adding child domains", async () => {
+    it("should be able to add multiple child skills to the domain skill corresponding to the root domain by adding child domains", async () => {
       await metaColony.addDomain(1, UINT256_MAX, 1);
       await metaColony.addDomain(1, UINT256_MAX, 1);
       await metaColony.addDomain(1, UINT256_MAX, 1);
@@ -141,20 +141,20 @@ contract("Meta Colony", (accounts) => {
       expect(skillCount).to.eq.BN(6);
     });
 
-    it("should NOT be able to add a child skill to a local skill parent", async () => {
+    it("should NOT be able to add a child skill to a global skill parent", async () => {
       // Put colony in to recovery mode
       await metaColony.enterRecoveryMode();
-      // work out the storage slot
+      // Work out the storage slot
       // Domain mapping is storage slot 20
       // So domain 1 struct starts at slot given by
       const domain1Slot = soliditySha3(1, 20);
       // Which means the skill is in that slot (it's the first entry in the struct)
-      // Edit that slot
+      // Edit that slot to the first global skill (from id 1 to id 4)
       await metaColony.setStorageSlotRecovery(domain1Slot, "0x0000000000000000000000000000000000000000000000000000000000000004");
       // Leave recovery mode
       await metaColony.approveExitRecovery();
       await metaColony.exitRecoveryMode();
-      // Try to add a child
+      // Try to add a child to what the network thinks is a global skill
       await checkErrorRevert(metaColony.addDomain(1, UINT256_MAX, 1), "colony-global-and-local-skill-trees-are-separate");
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(4);
@@ -304,7 +304,7 @@ contract("Meta Colony", (accounts) => {
       // So domain 1 struct starts at slot given by
       const domain1Slot = soliditySha3(1, 20);
       // Which means the skill is in that slot (it's the first entry in the struct)
-      // Edit that slot
+      // Edit that slot to a made-up skillId
       await metaColony.setStorageSlotRecovery(domain1Slot, "0xdeadbeef");
       // Leave recovery mode
       await metaColony.approveExitRecovery();
@@ -396,19 +396,19 @@ contract("Meta Colony", (accounts) => {
       expect(rootSkillChild3).to.eq.BN(9);
     });
 
-    it("should NOT be able to add a new local skill by anyone but a Colony", async () => {
+    it("should NOT be able to add a new skill by anyone but a Colony", async () => {
       await checkErrorRevert(colonyNetwork.addSkill(2), "colony-caller-must-be-colony");
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(6);
     });
 
-    it("should NOT be able to add a new root local skill", async () => {
+    it("should NOT be able to add a new domain skill by anyone but a Colony", async () => {
       const skillCountBefore = await colonyNetwork.getSkillCount();
       const rootDomain = await colony.getDomain(1);
-      const rootLocalSkillId = rootDomain.skillId;
+      const rootDomainSkillId = rootDomain.skillId;
 
-      await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId), "colony-caller-must-be-colony");
+      await checkErrorRevert(colonyNetwork.addSkill(rootDomainSkillId), "colony-caller-must-be-colony");
 
       const skillCountAfter = await colonyNetwork.getSkillCount();
       expect(skillCountBefore).to.eq.BN(skillCountAfter);
@@ -485,21 +485,21 @@ contract("Meta Colony", (accounts) => {
 
     it("should NOT be able to set nonexistent skill on task", async () => {
       const taskId = await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(taskId, 100), "colony-not-valid-skill");
+      await checkErrorRevert(colony.setTaskSkill(taskId, 100), "colony-not-valid-global-or-local-skill");
     });
 
-    it("should NOT be able to set local skill on task", async () => {
+    it("should NOT be able to set a domain skill on task", async () => {
       const taskId = await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(taskId, 1), "colony-not-valid-skill");
+      await checkErrorRevert(colony.setTaskSkill(taskId, 1), "colony-not-valid-global-or-local-skill");
     });
 
-    it("should NOT be able to set a deprecated skill on task", async () => {
+    it("should NOT be able to set a deprecated global skill on task", async () => {
       const taskId = await makeTask({ colony });
       await metaColony.addGlobalSkill();
       const skillId = await colonyNetwork.getSkillCount();
       await metaColony.deprecateGlobalSkill(skillId);
 
-      await checkErrorRevert(colony.setTaskSkill(taskId, skillId), "colony-not-valid-skill");
+      await checkErrorRevert(colony.setTaskSkill(taskId, skillId), "colony-not-valid-global-or-local-skill");
     });
   });
 
@@ -539,7 +539,7 @@ contract("Meta Colony", (accounts) => {
       expect(globalSkill.globalSkill).to.be.true;
     });
 
-    it("should return a false flag if the skill is a domain skill", async () => {
+    it("should return a false flag if the skill is a domain or local skill", async () => {
       const domainSkill = await colonyNetwork.getSkill(3);
 
       expect(domainSkill.globalSkill).to.be.false;

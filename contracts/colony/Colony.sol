@@ -169,6 +169,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     return IColonyNetwork(colonyNetworkAddress).addSkill(0); // ignore-swc-107
   }
 
+  // slither-disable-next-line unused-return
   function deprecateGlobalSkill(uint256 _skillId) public
   stoppable
   auth
@@ -244,9 +245,9 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
   }
 
   function deprecateLocalSkill(uint256 _localSkillId, bool _deprecated) public stoppable auth {
-    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_localSkillId, _deprecated);
-
-    emit LocalSkillDeprecated(msgSender(), _localSkillId, _deprecated);
+    if (IColonyNetwork(colonyNetworkAddress).deprecateSkill(_localSkillId, _deprecated)) {
+      emit LocalSkillDeprecated(msgSender(), _localSkillId, _deprecated);
+    }
   }
 
   function getRootLocalSkill() public view returns (uint256) {
