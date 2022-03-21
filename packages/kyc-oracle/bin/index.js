@@ -14,7 +14,7 @@ const { argv } = require("yargs")
   .option("providerAddress", { type: "array", default: [] });
 
 const KycOracle = require("../KycOracle");
-const TruffleLoader = require("../TruffleLoader").default;
+const { TruffleLoader } = require("../../package-utils");
 
 const { adminAddress, privateKey, whitelistAddress, apiKey, network, localProviderPort, localProviderAddress, providerAddress, dbPath, port } = argv;
 const supportedInfuraNetworks = ["mainnet"];

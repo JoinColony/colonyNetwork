@@ -11,6 +11,7 @@
   "dependencies": {
     "discord.js": "^12.2.0",
     "ethers": "^5.5.1",
+    "jsonfile": "^6.1.0",
     "request-promise": "^4.2.6",
     "slack": "^11.0.2"
   }

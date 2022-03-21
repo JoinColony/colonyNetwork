@@ -10,7 +10,7 @@ const path = require("path");
 
 const { colonyNetworkAddress, gasPrice, privateKey, rpcEndpoint, port, dbPath } = argv;
 
-const TruffleLoader = require("../TruffleLoader").default;
+const { TruffleLoader } = require("../../package-utils");
 
 const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts"),

@@ -5,7 +5,7 @@ import request from "async-request";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
+import { TruffleLoader } from "../../packages/package-utils";
 import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
 import { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter } from "../../helpers/test-helper";
 import {

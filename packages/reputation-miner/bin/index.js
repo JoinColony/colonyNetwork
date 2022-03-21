@@ -13,9 +13,8 @@ const ethers = require("ethers");
 const backoff = require("exponential-backoff").backOff;
 
 const ReputationMinerClient = require("../ReputationMinerClient");
-const TruffleLoader = require("../TruffleLoader").default;
 
-const { ConsoleAdapter, SlackAdapter, DiscordAdapter } = require("../../package-utils");
+const { ConsoleAdapter, SlackAdapter, DiscordAdapter, TruffleLoader } = require("../../package-utils");
 
 const supportedInfuraNetworks = ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"];
 const {
