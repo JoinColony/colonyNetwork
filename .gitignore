@@ -28,3 +28,4 @@ truffle-security-output.json
 .coverage_contracts
 etherrouter-address.json
 ganache-chain-db
+mtxCache.sqlite
