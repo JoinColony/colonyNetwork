@@ -109,8 +109,8 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   /// @notice Creates a new streaming payment
   /// @param _fundingPermissionDomainId The domain in which the caller holds the funding permission
-  /// @param _adminPermissionDomainId The domain in which the caller holds the admin permission
   /// @param _fundingChildSkillIndex The index linking the fundingPermissionDomainId to the domainId
+  /// @param _adminPermissionDomainId The domain in which the caller holds the admin permission
   /// @param _adminChildSkillIndex The index linking the adminPermissionDomainId to the domainId
   /// @param _domainId The domain out of which the streaming payment will be paid
   /// @param _startTime The time at which the payment begins paying out
@@ -154,7 +154,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   /// @notice Claim a streaming payment
   /// @param _permissionDomainId The domain in which the extension holds the funding & admin permissions
-  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId
+  /// @param _childSkillIndex The index linking the permissionDomainId to the domainId the payment is in
   /// @param _fromChildSkillIndex The linking the domainId to the fromPot domain
   /// @param _toChildSkillIndex The linking the domainId to the toPot domain
   /// @param _id The id of the streaming payment
@@ -230,6 +230,8 @@ contract StreamingPayments is ColonyExtensionMeta {
     public
     validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, streamingPayments[_id].domainId)
   {
+    require(paymentTokens[_id][_token].amount == 0, "streaming-payments-token-exists");
+
     paymentTokens[_id][_token] = PaymentToken(_amount, block.timestamp);
 
     emit PaymentTokenUpdated(msgSender(), _id, _token, _amount);
@@ -305,6 +307,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
+    require(block.timestamp <= streamingPayment.endTime, "streaming-payments-already-ended");
     require(block.timestamp <= _endTime, "streaming-payments-invalid-end-time");
     streamingPayment.endTime = _endTime;
   }
