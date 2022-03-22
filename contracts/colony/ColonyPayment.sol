@@ -110,7 +110,7 @@ contract ColonyPayment is ColonyStorage {
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
   paymentNotFinalized(_id)
-  validSkill(_skillId)
+  validGlobalOrLocalSkill(_skillId)
   {
     payments[_id].skills[0] = _skillId;
 

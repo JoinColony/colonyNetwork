@@ -339,7 +339,7 @@ contract ColonyTask is ColonyStorage {
   stoppable
   taskExists(_id)
   taskNotComplete(_id)
-  validSkill(_skillId)
+  validGlobalOrLocalSkill(_skillId)
   self()
   {
     tasks[_id].skills[0] = _skillId;

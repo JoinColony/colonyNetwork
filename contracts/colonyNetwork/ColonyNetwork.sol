@@ -197,9 +197,9 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
     return changed;
   }
 
-  function deprecateSkill(uint256 _skillId) public stoppable returns (bool)
-  {
-    return deprecateSkill(_skillId, true);
+  // DEPRECATED
+  function deprecateSkill(uint256 _skillId) public stoppable {
+    deprecateSkill(_skillId, true);
   }
 
   function initialiseRootLocalSkill() public

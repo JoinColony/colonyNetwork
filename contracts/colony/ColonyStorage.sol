@@ -202,7 +202,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
-  modifier validSkill(uint256 _skillId) {
+  modifier validGlobalOrLocalSkill(uint256 _skillId) {
     require(isValidGlobalOrLocalSkill(_skillId), "colony-not-valid-global-or-local-skill");
     _;
   }
