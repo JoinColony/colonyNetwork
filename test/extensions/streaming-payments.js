@@ -193,10 +193,26 @@ contract("Streaming Payments", (accounts) => {
     });
 
     it("cannot update the end time to a time past", async () => {
+      const blockTime = await getBlockTime();
+      const endTime = blockTime + SECONDS_PER_DAY;
+
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, endTime, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await forwardTime(SECONDS_PER_DAY * 2, this);
+
+      await checkErrorRevert(streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, 0), "streaming-payments-already-ended");
+    });
+
+    it("cannot update the end time if the end time has elapsed", async () => {
       await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
-      await checkErrorRevert(streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, 0), "streaming-payments-invalid-end-time");
+      await streamingPayments.cancel(1, UINT256_MAX, streamingPaymentId);
+
+      await forwardTime(1, this);
+
+      await checkErrorRevert(streamingPayments.cancel(1, UINT256_MAX, streamingPaymentId), "streaming-payments-already-ended");
     });
 
     it("cannot update the end time without relevant permissions", async () => {
@@ -260,6 +276,17 @@ contract("Streaming Payments", (accounts) => {
       await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.subn(1)); // -1 for network fee
+    });
+
+    it("cannot cancel a streaming payment twice", async () => {
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await streamingPayments.cancel(1, UINT256_MAX, streamingPaymentId);
+
+      await forwardTime(1, this);
+
+      await checkErrorRevert(streamingPayments.cancel(1, UINT256_MAX, streamingPaymentId), "streaming-payments-already-ended");
     });
 
     it("can claim a streaming payment multiple times", async () => {
@@ -467,6 +494,15 @@ contract("Streaming Payments", (accounts) => {
       await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY, this);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(1).subn(1)); // -1 for network fee
+    });
+
+    it("cannot add a new token/amount if the token already exists", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await checkErrorRevert(streamingPayments.addToken(1, UINT256_MAX, streamingPaymentId, token.address, WAD), "streaming-payments-token-exists");
     });
   });
 });
