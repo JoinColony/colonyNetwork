@@ -10,13 +10,15 @@ import { TruffleLoader } from "../../packages/package-utils";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
 import MetatransactionBroadcaster from "../../packages/metatransaction-broadcaster/MetatransactionBroadcaster";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, getMetaTransactionParameters, setupColony } from "../../helpers/test-data-generator";
+import { getMetaTransactionParameters, setupColony } from "../../helpers/test-data-generator";
 
 const axios = require("axios");
 
 const { expect } = chai;
 const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
 
+const EtherRouter = artifacts.require("EtherRouter");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ColonyExtension = artifacts.require("ColonyExtension");
 const CoinMachine = artifacts.require("CoinMachine");
 const MetaTxToken = artifacts.require("MetaTxToken");
@@ -41,8 +43,12 @@ contract("Metatransaction broadcaster", (accounts) => {
   let broadcaster;
   let metaTxToken;
 
+  before(async () => {
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+  });
+
   beforeEach(async () => {
-    colonyNetwork = await setupColonyNetwork();
     metaTxToken = await MetaTxToken.new("Test", "TEST", 18);
     colony = await setupColony(colonyNetwork, metaTxToken.address);
 
@@ -71,6 +77,7 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("transactions to a colony are accepted", async function () {
       let valid = await broadcaster.isAddressValid(colony.address);
       expect(valid).to.be.equal(true);
+      // This second call hits the cache
       valid = await broadcaster.isAddressValid(colony.address);
       expect(valid).to.be.equal(true);
     });
@@ -81,9 +88,6 @@ contract("Metatransaction broadcaster", (accounts) => {
       const coinMachineImplementation = await CoinMachine.new();
       const resolver = await Resolver.new();
       await setupEtherRouter("CoinMachine", { CoinMachine: coinMachineImplementation.address }, resolver);
-
-      const { metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-      await metaColony.addExtensionToNetwork(COIN_MACHINE, resolver.address);
 
       const versionSig = await resolver.stringToSig("version()");
       const target = await resolver.lookup(versionSig);
@@ -122,6 +126,7 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       expect(valid).to.be.equal(true);
     });
+
     it("transactions to a token are accepted base on destination address for transferFrom", async function () {
       // A random user address is rejected
       let txData = await metaTxToken.contract.methods.transferFrom(USER0, USER1, 300000).encodeABI();
@@ -136,7 +141,7 @@ contract("Metatransaction broadcaster", (accounts) => {
       expect(valid).to.be.equal(true);
     });
 
-    it("transactions to a token are accepted base on destination address for approve", async function () {
+    it("transactions to a token are accepted based on destination address for approve", async function () {
       // A random user address is rejected
       let txData = await metaTxToken.contract.methods.approve(USER1, 300000).encodeABI();
       let valid = await broadcaster.isTransactionValid(metaTxToken.address, txData);
