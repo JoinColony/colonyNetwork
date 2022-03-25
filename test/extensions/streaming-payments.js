@@ -163,6 +163,21 @@ contract("Streaming Payments", (accounts) => {
       await checkErrorRevert(streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, 0), "streaming-payments-already-started");
     });
 
+    it("cannot update the start time to after the end time", async () => {
+      const blockTime = await getBlockTime();
+      const startTime = blockTime + SECONDS_PER_DAY;
+      const endTime = startTime + SECONDS_PER_DAY;
+      const newStartTime = endTime + SECONDS_PER_DAY;
+
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, startTime, endTime, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await checkErrorRevert(
+        streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, newStartTime),
+        "streaming-payments-invalid-start-time"
+      );
+    });
+
     it("cannot update the start time without relevant permissions", async () => {
       await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
@@ -178,7 +193,7 @@ contract("Streaming Payments", (accounts) => {
     it("can update the end time", async () => {
       const blockTime = await getBlockTime();
       const endTime = blockTime + SECONDS_PER_DAY;
-      const newEndTime = blockTime + SECONDS_PER_DAY * 2;
+      const newEndTime = endTime + SECONDS_PER_DAY;
 
       await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, endTime, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
@@ -194,14 +209,26 @@ contract("Streaming Payments", (accounts) => {
 
     it("cannot update the end time to a time past", async () => {
       const blockTime = await getBlockTime();
-      const endTime = blockTime + SECONDS_PER_DAY;
+      const endTime = blockTime + SECONDS_PER_DAY * 3;
 
       await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, endTime, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       await forwardTime(SECONDS_PER_DAY * 2, this);
 
-      await checkErrorRevert(streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, 0), "streaming-payments-already-ended");
+      await checkErrorRevert(streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, 0), "streaming-payments-invalid-end-time");
+    });
+
+    it("cannot update the end time to before the start time", async () => {
+      const blockTime = await getBlockTime();
+      const startTime = blockTime + SECONDS_PER_DAY;
+      const endTime = startTime;
+      const newEndTime = startTime - SECONDS_PER_DAY / 2;
+
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, startTime, endTime, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await checkErrorRevert(streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, newEndTime), "streaming-payments-invalid-end-time");
     });
 
     it("cannot update the end time if the end time has elapsed", async () => {
@@ -342,11 +369,16 @@ contract("Streaming Payments", (accounts) => {
     it("can claim nothing", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
-      const tx = await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
-      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
-      // Now claim at the same timestamp
+      await forwardTime(SECONDS_PER_DAY, this);
+
+      // Claim any owed tokens
+      const tx = await streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]);
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+
+      // Now claim again at the same timestamp
       const balancePre = await token.balanceOf(USER1);
       const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]];
       await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime, this);

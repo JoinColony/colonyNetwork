@@ -169,7 +169,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   ) public {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
 
-    require(streamingPayment.startTime <= block.timestamp, "streaming-payments-too-soon-to-claim");
+    require(streamingPayment.startTime < block.timestamp, "streaming-payments-too-soon-to-claim");
 
     uint256 domainFundingPotId = colony.getDomain(streamingPayment.domainId).fundingPotId;
     uint256[] memory amountsToClaim = new uint256[](_tokens.length);
@@ -206,7 +206,9 @@ contract StreamingPayments is ColonyExtensionMeta {
     );
 
     for (uint256 i; i < _tokens.length; i++) {
-      colony.claimExpenditurePayout(expenditureId, SLOT, _tokens[i]);
+      if (amountsToClaim[i] > 0) {
+        colony.claimExpenditurePayout(expenditureId, SLOT, _tokens[i]);
+      }
 
       emit StreamingPaymentClaimed(msgSender(), _id, _tokens[i], amountsToClaim[i]);
     }
@@ -288,6 +290,8 @@ contract StreamingPayments is ColonyExtensionMeta {
   {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     require(block.timestamp <= streamingPayment.startTime, "streaming-payments-already-started");
+    require(_startTime <= streamingPayment.endTime, "streaming-payments-invalid-start-time");
+
     streamingPayment.startTime = _startTime;
   }
 
@@ -309,6 +313,8 @@ contract StreamingPayments is ColonyExtensionMeta {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     require(block.timestamp <= streamingPayment.endTime, "streaming-payments-already-ended");
     require(block.timestamp <= _endTime, "streaming-payments-invalid-end-time");
+    require(streamingPayment.startTime <= _endTime, "streaming-payments-invalid-end-time");
+
     streamingPayment.endTime = _endTime;
   }
 
