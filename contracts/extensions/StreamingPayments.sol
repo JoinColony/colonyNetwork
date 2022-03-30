@@ -28,8 +28,8 @@ contract StreamingPayments is ColonyExtensionMeta {
   // Events
 
   event StreamingPaymentCreated(address agent, uint256 streamingPaymentId);
-  event StreamingPaymentClaimed(address agent, uint256 indexed streamingPaymentId, address indexed token, uint256 amount);
-  event PaymentTokenUpdated(address agent, uint256 indexed streamingPaymentId, address indexed token, uint256 amount);
+  event StreamingPaymentClaimed(address agent, uint256 indexed streamingPaymentId, address token, uint256 amount);
+  event PaymentTokenUpdated(address agent, uint256 indexed streamingPaymentId, address token, uint256 amount);
 
   // Constants
 
@@ -133,6 +133,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256[] memory _amounts
   )
     public
+    notDeprecated
     validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, _domainId)
     validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, _domainId)
   {
@@ -173,6 +174,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
     uint256 domainFundingPotId = colony.getDomain(streamingPayment.domainId).fundingPotId;
     uint256[] memory amountsToClaim = new uint256[](_tokens.length);
+    bool anythingToClaim;
 
     for (uint256 i; i < _tokens.length; i++) {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
@@ -181,6 +183,7 @@ contract StreamingPayments is ColonyExtensionMeta {
       uint256 amountClaimable = getAmountClaimable(_id, _tokens[i]);
       uint256 claimableProportion = getClaimableProportion(_tokens[i], domainFundingPotId, amountClaimable);
       amountsToClaim[i] = wmul(claimableProportion, amountClaimable);
+      anythingToClaim = anythingToClaim || amountsToClaim[i] > 0;
 
       paymentToken.lastClaimed = add(
         paymentToken.lastClaimed,
@@ -193,6 +196,9 @@ contract StreamingPayments is ColonyExtensionMeta {
         )
       );
     }
+
+    // Skip expenditure setup if there's nothing to claim
+    if (!anythingToClaim) { return; }
 
     uint256 expenditureId = setupExpenditure(
       _permissionDomainId,
@@ -208,9 +214,9 @@ contract StreamingPayments is ColonyExtensionMeta {
     for (uint256 i; i < _tokens.length; i++) {
       if (amountsToClaim[i] > 0) {
         colony.claimExpenditurePayout(expenditureId, SLOT, _tokens[i]);
-      }
 
-      emit StreamingPaymentClaimed(msgSender(), _id, _tokens[i], amountsToClaim[i]);
+        emit StreamingPaymentClaimed(msgSender(), _id, _tokens[i], amountsToClaim[i]);
+      }
     }
   }
 
