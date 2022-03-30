@@ -43,11 +43,15 @@ class MetatransactionBroadcaster {
         // Check target is valid
         const addressValid = await this.isAddressValid(target);
         // It's possible it's not a valid address, but could be a valid transaction with a token.
-        const validTokenTransaction = await this.isTransactionValid(target, payload);
-        if (!addressValid && !validTokenTransaction) {
+        const validTokenTransaction = await this.isTokenTransactionValid(target, payload);
+        const allowedColonyFamilyTransaction = await this.isColonyFamilyTransactionAllowed(target, payload);
+        if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
           const data = {};
           if (!addressValid) {
             data.target = "Not a contract we pay metatransactions for";
+          }
+          if (!allowedColonyFamilyTransaction) {
+            data.target = "Not a function on colony we pay metatransactions for";
           }
           if (!validTokenTransaction) {
             data.payload = "Not a transaction we pay metatransactions for";
@@ -183,7 +187,7 @@ class MetatransactionBroadcaster {
     await db.close();
   }
 
-  async isTransactionValid(target, txData) {
+  async isTokenTransactionValid(target, txData) {
     const metaTxTokenDef = await this.loader.load({ contractName: "MetaTxToken" }, { abi: true, address: false });
     const possibleToken = new ethers.Contract(target, metaTxTokenDef.abi, this.wallet);
     let valid = false;
@@ -200,6 +204,37 @@ class MetatransactionBroadcaster {
       // Not a token related transaction (we recognise)
     }
     return valid;
+  }
+
+  async isColonyFamilyTransactionAllowed(target, txData) {
+    let allowed = true;
+    const colonyDef = await this.loader.load({ contractName: "IColony" }, { abi: true, address: false });
+    const possibleColony = new ethers.Contract(target, colonyDef.abi, this.wallet);
+    try {
+      const tx = possibleColony.interface.parseTransaction({ data: txData });
+      if (tx.signature === "makeArbitraryTransaction(address,bytes)") {
+        allowed = false;
+      } else if (tx.signature === "makeArbitraryTransactions(address[],bytes[],bool)") {
+        allowed = false;
+      } else if (tx.signature === "makeSingleArbitraryTransaction(address,bytes)") {
+        allowed = false;
+      }
+    } catch (err) {
+      // Not a colony related transaction (we recognise)
+    }
+
+    const votingRepDef = await this.loader.load({ contractName: "VotingReputation" }, { abi: true, address: false });
+    const possibleVotingRep = new ethers.Contract(target, votingRepDef.abi, this.wallet);
+    try {
+      const tx = possibleVotingRep.interface.parseTransaction({ data: txData });
+      if (tx.signature === "finalizeMotion(uint256)") {
+        allowed = false;
+      }
+    } catch (err) {
+      // Not a voting rep related transaction (we recognise)
+    }
+
+    return allowed;
   }
 }
 

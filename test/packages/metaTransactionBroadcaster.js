@@ -23,6 +23,7 @@ const ColonyExtension = artifacts.require("ColonyExtension");
 const CoinMachine = artifacts.require("CoinMachine");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const Resolver = artifacts.require("Resolver");
+const VotingReputation = artifacts.require("VotingReputation");
 
 chai.use(bnChai(web3.utils.BN));
 
@@ -101,6 +102,42 @@ contract("Metatransaction broadcaster", (accounts) => {
       expect(valid).to.be.equal(true);
     });
 
+    it("transactions that try to execute a forbidden method on Reputation Voting extension are rejected", async function () {
+      const REP_VOTING = soliditySha3("VotingReputation");
+
+      const votingReputationImplementation = await VotingReputation.new();
+      const resolver = await Resolver.new();
+      await setupEtherRouter("VotingReputation", { VotingReputation: votingReputationImplementation.address }, resolver);
+
+      const versionSig = await resolver.stringToSig("version()");
+      const target = await resolver.lookup(versionSig);
+      const extensionImplementation = await ColonyExtension.at(target);
+      const votingReputationVersion = await extensionImplementation.version();
+
+      await colony.installExtension(REP_VOTING, votingReputationVersion);
+      const votingAddress = await colonyNetwork.getExtensionInstallation(REP_VOTING, colony.address);
+
+      const voting = await VotingReputation.at(votingAddress);
+
+      const txData = await voting.contract.methods.finalizeMotion(1).encodeABI();
+      const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
+      expect(valid).to.be.equal(false);
+    });
+
+    it("transactions that try to execute a forbidden method on a Colony are rejected", async function () {
+      let txData = await colony.contract.methods.makeArbitraryTransaction(colony.address, "0x00000000").encodeABI();
+      let valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
+      expect(valid).to.be.equal(false);
+
+      txData = await colony.contract.methods.makeArbitraryTransactions([colony.address], ["0x00000000"], false).encodeABI();
+      valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
+      expect(valid).to.be.equal(false);
+
+      txData = await colony.contract.methods.makeSingleArbitraryTransaction(colony.address, "0x00000000").encodeABI();
+      valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
+      expect(valid).to.be.equal(false);
+    });
+
     it("transactions to a token are not accepted based on address", async function () {
       const tokenAddress = await colony.getToken();
 
@@ -116,13 +153,13 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("transactions to a token are accepted base on destination address for transfer", async function () {
       // A random user address is rejected
       let txData = await metaTxToken.contract.methods.transfer(USER1, 300000).encodeABI();
-      let valid = await broadcaster.isTransactionValid(metaTxToken.address, txData);
+      let valid = await broadcaster.isTokenTransactionValid(metaTxToken.address, txData);
 
       expect(valid).to.be.equal(false);
 
       // Going to a colony is okay though
       txData = await metaTxToken.contract.methods.transfer(colony.address, 300000).encodeABI();
-      valid = await broadcaster.isTransactionValid(metaTxToken.address, txData);
+      valid = await broadcaster.isTokenTransactionValid(metaTxToken.address, txData);
 
       expect(valid).to.be.equal(true);
     });
@@ -130,13 +167,13 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("transactions to a token are accepted base on destination address for transferFrom", async function () {
       // A random user address is rejected
       let txData = await metaTxToken.contract.methods.transferFrom(USER0, USER1, 300000).encodeABI();
-      let valid = await broadcaster.isTransactionValid(metaTxToken.address, txData);
+      let valid = await broadcaster.isTokenTransactionValid(metaTxToken.address, txData);
 
       expect(valid).to.be.equal(false);
 
       // Going to a colony is okay though
       txData = await metaTxToken.contract.methods.transferFrom(USER0, colony.address, 300000).encodeABI();
-      valid = await broadcaster.isTransactionValid(metaTxToken.address, txData);
+      valid = await broadcaster.isTokenTransactionValid(metaTxToken.address, txData);
 
       expect(valid).to.be.equal(true);
     });
@@ -144,13 +181,13 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("transactions to a token are accepted based on destination address for approve", async function () {
       // A random user address is rejected
       let txData = await metaTxToken.contract.methods.approve(USER1, 300000).encodeABI();
-      let valid = await broadcaster.isTransactionValid(metaTxToken.address, txData);
+      let valid = await broadcaster.isTokenTransactionValid(metaTxToken.address, txData);
 
       expect(valid).to.be.equal(false);
 
       // Going to a colony is okay though
       txData = await metaTxToken.contract.methods.approve(colony.address, 300000).encodeABI();
-      valid = await broadcaster.isTransactionValid(metaTxToken.address, txData);
+      valid = await broadcaster.isTokenTransactionValid(metaTxToken.address, txData);
 
       expect(valid).to.be.equal(true);
     });
