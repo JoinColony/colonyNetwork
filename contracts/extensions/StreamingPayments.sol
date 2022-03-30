@@ -227,7 +227,6 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _id The id of the streaming payment
   /// @param _token The address of the token
   /// @param _amount The new amount to pay out
-  // slither-disable-next-line reentrancy-no-eth
   function addToken(
     uint256 _fundingPermissionDomainId,
     uint256 _fundingChildSkillIndex,
