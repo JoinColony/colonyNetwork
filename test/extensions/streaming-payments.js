@@ -135,6 +135,15 @@ contract("Streaming Payments", (accounts) => {
       );
     });
 
+    it("cannot create a streaming payment if the extension is deprecated", async () => {
+      await colony.deprecateExtension(STREAMING_PAYMENTS, true);
+
+      await checkErrorRevert(
+        streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]),
+        "colony-extension-deprecated"
+      );
+    });
+
     it("can update the start time", async () => {
       const blockTime = await getBlockTime();
       const startTime = blockTime + SECONDS_PER_DAY;
