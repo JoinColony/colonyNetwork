@@ -144,13 +144,15 @@ contract StreamingPayments is ColonyExtensionMeta {
 
     numStreamingPayments++;
     streamingPayments[numStreamingPayments] = StreamingPayment(_recipient, _domainId, startTime, _endTime, _interval);
+
+    emit StreamingPaymentCreated(msgSender(), numStreamingPayments);
+
     for (uint256 i; i < _tokens.length; i++) {
       paymentTokens[numStreamingPayments][_tokens[i]] = PaymentToken(_amounts[i], block.timestamp);
 
       emit PaymentTokenUpdated(msgSender(), numStreamingPayments, _tokens[i], _amounts[i]);
     }
 
-    emit StreamingPaymentCreated(msgSender(), numStreamingPayments);
   }
 
   /// @notice Claim a streaming payment
