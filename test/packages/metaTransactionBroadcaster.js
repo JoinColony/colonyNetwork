@@ -19,11 +19,13 @@ const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disabl
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
 const ColonyExtension = artifacts.require("ColonyExtension");
 const CoinMachine = artifacts.require("CoinMachine");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const Resolver = artifacts.require("Resolver");
 const VotingReputation = artifacts.require("VotingReputation");
+const GasGuzzler = artifacts.require("GasGuzzler");
 
 chai.use(bnChai(web3.utils.BN));
 
@@ -277,6 +279,110 @@ contract("Metatransaction broadcaster", (accounts) => {
       expect(balanceAccount1).to.eq.BN(1500000);
       const balanceAccount2 = await metaTxToken.balanceOf(colony.address);
       expect(balanceAccount2).to.eq.BN(0);
+    });
+
+    it("a transaction that would be valid but errors is rejected and not mined", async function () {
+      await metaTxToken.mint(USER0, 100000, { from: USER0 });
+
+      const txData = await metaTxToken.contract.methods.transfer(colony.address, 300000).encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
+
+      const ethBalanceBefore = await web3.eth.getBalance(USER0);
+      // Send to endpoint
+
+      const jsonData = {
+        target: metaTxToken.address,
+        payload: txData,
+        userAddress: USER0,
+        r,
+        s,
+        v,
+      };
+      let errored = false;
+      try {
+        await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (err) {
+        errored = true;
+        expect(err.response.data).to.be.deep.equal({
+          status: "fail",
+          data: {
+            payload: "Transaction reverts and will not be broadcast",
+          },
+        });
+      }
+      expect(errored).to.be.equal(true);
+
+      // Check the transaction did not happen
+      const balanceAccount1 = await metaTxToken.balanceOf(USER0);
+      expect(balanceAccount1).to.eq.BN(100000);
+      const balanceAccount2 = await metaTxToken.balanceOf(colony.address);
+      expect(balanceAccount2).to.eq.BN(0);
+
+      const ethBalanceAfter = await web3.eth.getBalance(USER0);
+
+      expect(ethBalanceAfter).to.eq.BN(ethBalanceBefore);
+    });
+
+    it("a transaction that would be valid but is too expensive is rejected and not mined", async function () {
+      const extensionImplementation = await GasGuzzler.new();
+      const resolver = await Resolver.new();
+      await setupEtherRouter("GasGuzzler", { GasGuzzler: extensionImplementation.address }, resolver);
+      const TEST_EXTENSION = soliditySha3("GasGuzzler");
+      // await colonyNetwork.createMetaColony(metaTxToken.address);
+
+      const mcAddress = await colonyNetwork.getMetaColony();
+      const metaColony = await IMetaColony.at(mcAddress);
+
+      await metaColony.addExtensionToNetwork(TEST_EXTENSION, resolver.address);
+
+      await colony.installExtension(TEST_EXTENSION, 1);
+
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
+      // console.log(extensionAddress)
+      // process.exit()
+      const guzzler = await GasGuzzler.at(extensionAddress);
+
+      const txData = await guzzler.contract.methods.fun(1000).encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, guzzler.address);
+
+      const ethBalanceBefore = await web3.eth.getBalance(USER0);
+      // Send to endpoint
+
+      const jsonData = {
+        target: guzzler.address,
+        payload: txData,
+        userAddress: USER0,
+        r,
+        s,
+        v,
+      };
+      let errored = false;
+      try {
+        await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (err) {
+        errored = true;
+        expect(err.response.data).to.be.deep.equal({
+          status: "fail",
+          data: {
+            payload: "Transaction too expensive and will not be broadcast",
+          },
+        });
+      }
+      expect(errored).to.be.equal(true);
+
+      // Check the transaction did not happen
+      const ethBalanceAfter = await web3.eth.getBalance(USER0);
+      expect(ethBalanceAfter).to.eq.BN(ethBalanceBefore);
     });
   });
 });

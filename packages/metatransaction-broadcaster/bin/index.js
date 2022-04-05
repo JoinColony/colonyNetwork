@@ -8,7 +8,7 @@ const { argv } = require("yargs").option("privateKey", { string: true }).option(
 
 const path = require("path");
 
-const { colonyNetworkAddress, gasPrice, privateKey, rpcEndpoint, port, dbPath } = argv;
+const { colonyNetworkAddress, gasPrice, privateKey, rpcEndpoint, port, dbPath, gasLimit } = argv;
 
 const { TruffleLoader } = require("../../package-utils");
 
@@ -20,5 +20,5 @@ const MetatransactionBroadcaster = require("../MetatransactionBroadcaster");
 
 const provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
 
-const client = new MetatransactionBroadcaster({ gasPrice, privateKey, loader, provider, port, dbPath });
+const client = new MetatransactionBroadcaster({ gasPrice, privateKey, loader, provider, port, dbPath, gasLimit });
 client.initialise(colonyNetworkAddress);

@@ -12,7 +12,7 @@ class MetatransactionBroadcaster {
    * @param {Object} loader                  The loader for loading the contract interfaces. Usually a TruffleLoader.
    * @param {Object} provider                Ethers provider that allows access to an ethereum node.
    */
-  constructor({ privateKey, loader, provider, adapter, dbPath = "./mtxCache.sqlite", port = 3000 }) {
+  constructor({ privateKey, loader, provider, adapter, dbPath = "./mtxCache.sqlite", port = 3000, gasLimit = 500000 }) {
     this.provider = provider;
     this.wallet = new ethers.Wallet(privateKey, this.provider);
     this.senderAddress = this.wallet.address;
@@ -40,6 +40,31 @@ class MetatransactionBroadcaster {
     this.app.post("/broadcast", async (req, res) => {
       try {
         const { target, userAddress, payload, r, s, v } = req.body;
+
+        const contract = new ethers.Contract(target, this.metaTxDef.abi, this.wallet);
+        this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
+
+        let gasEstimate;
+
+        try {
+          gasEstimate = await contract.estimateGas.executeMetaTransaction(userAddress, payload, r, s, v, { gasPrice: this.gasPrice });
+          if (gasEstimate > gasLimit) {
+            return res.status(400).send({
+              status: "fail",
+              data: {
+                payload: "Transaction too expensive and will not be broadcast",
+              },
+            });
+          }
+        } catch (err) {
+          return res.status(400).send({
+            status: "fail",
+            data: {
+              payload: "Transaction reverts and will not be broadcast",
+            },
+          });
+        }
+
         // Check target is valid
         const addressValid = await this.isAddressValid(target);
         // It's possible it's not a valid address, but could be a valid transaction with a token.
@@ -51,9 +76,13 @@ class MetatransactionBroadcaster {
             data.target = "Not a contract we pay metatransactions for";
           }
           if (!allowedColonyFamilyTransaction) {
-            data.target = "Not a function on colony we pay metatransactions for";
+            data.payload = "Not a function on colony we pay metatransactions for";
           }
-          if (!validTokenTransaction) {
+
+          // validTokenTransaction after '||' unnecessary, but included for clarity
+          // This condition guards against a colony being set up with a native token that follows
+          // the ERC20 interface, but the functions calls do something totally different.
+          if (!validTokenTransaction || (validTokenTransaction && gasEstimate > 50000)) {
             data.payload = "Not a transaction we pay metatransactions for";
           }
           return res.status(400).send({
@@ -62,11 +91,7 @@ class MetatransactionBroadcaster {
           });
         }
 
-        const contract = new ethers.Contract(target, this.metaTxDef.abi, this.wallet);
-        this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
-
         const tx = await contract.executeMetaTransaction(userAddress, payload, r, s, v, { gasPrice: this.gasPrice });
-
         return res.send({
           status: "success",
           data: {
