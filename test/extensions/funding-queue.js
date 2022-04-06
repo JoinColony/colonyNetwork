@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
+import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, DISPUTE_DEFENCE_WINDOW } from "../../helpers/constants";
 
 import {
   checkErrorRevert,
@@ -161,7 +161,7 @@ contract("Funding Queues", (accounts) => {
 
     const rootHash = await reputationTree.getRootHash();
     const repCycle = await getActiveRepCycle(colonyNetwork);
-    await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, this);
+    await forwardTime(MINING_CYCLE_DURATION + DISPUTE_DEFENCE_WINDOW + 1, this);
     await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
     await repCycle.confirmNewHash(0, { from: MINER });
   });

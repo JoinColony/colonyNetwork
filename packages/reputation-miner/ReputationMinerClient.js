@@ -19,6 +19,8 @@ const disputeStages = {
  CONFIRM_NEW_HASH: 5
 }
 
+const DISPUTE_DEFENCE_WINDOW = 1200;
+
 const cache = apicache.middleware
 
 class ReputationMinerClient {
@@ -575,11 +577,11 @@ class ReputationMinerClient {
         // Has our opponent timed out?
         // TODO: Remove these magic numbers
 
-        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600);
+        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(DISPUTE_DEFENCE_WINDOW);
         if (opponentTimeout){
           const responsePossible = await repCycle.getResponsePossible(
             disputeStages.INVALIDATE_HASH,
-            ethers.BigNumber.from(oppEntry.lastResponseTimestamp).add(600)
+            ethers.BigNumber.from(oppEntry.lastResponseTimestamp).add(DISPUTE_DEFENCE_WINDOW)
           );
           if (responsePossible) {
             // If so, invalidate them.
