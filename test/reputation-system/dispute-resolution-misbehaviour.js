@@ -31,7 +31,14 @@ import {
   fundColonyWithTokens,
 } from "../../helpers/test-data-generator";
 
-import { UINT256_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION, DISPUTE_DEFENCE_WINDOW } from "../../helpers/constants";
+import {
+  UINT256_MAX,
+  DEFAULT_STAKE,
+  INITIAL_FUNDING,
+  MINING_CYCLE_DURATION,
+  DISPUTE_DEFENCE_WINDOW,
+  ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
+} from "../../helpers/constants";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
@@ -646,6 +653,48 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
+    it(`should not allow miners who didn't submit to respond during a dispute,
+      but they should be able to during the last part of the window`, async function nonMiner() {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
+
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      await badClient.initialise(colonyNetwork.address);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      await badClient.addLogContentsToReputationTree();
+      await badClient.submitRootHash();
+
+      const disputeRound = await repCycle.getDisputeRound(0);
+      const goodEntry = disputeRound[0];
+
+      // This timestamp is the window opening for disputes
+      let timestamp = parseInt(goodEntry.lastResponseTimestamp, 10);
+
+      const [, siblings1] = await goodClient.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
+      const nLogEntries = await repCycle.getReputationUpdateLogLength();
+      const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.subn(1));
+      const totalnUpdates = ethers.BigNumber.from(lastLogEntry.nUpdates)
+        .add(lastLogEntry.nPreviousUpdates)
+        .add(goodClient.nReputationsBeforeLatestLog);
+      const [, siblings2] = await goodClient.justificationTree.getProof(ReputationMinerTestWrapper.getHexString(totalnUpdates, 64));
+      const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
+
+      await checkErrorRevert(
+        makeTxAtTimestamp(repCycle.confirmJustificationRootHash, [round, index, siblings1, siblings2, { from: MINER3 }], timestamp, this),
+        "colony-reputation-mining-user-ineligible-to-respond"
+      );
+
+      timestamp += DISPUTE_DEFENCE_WINDOW - ALL_ENTRIES_ALLOWED_END_OF_WINDOW + 1;
+
+      await makeTxAtTimestamp(repCycle.confirmJustificationRootHash, [round, index, siblings1, siblings2, { from: MINER3 }], timestamp, this);
+    });
+
     it(`should not allow miners to respond immediately during a dispute,
       but they should be able to some time before the end of the window`, async function gateTest() {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
@@ -704,7 +753,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       timestamp = parseInt(goodEntry.lastResponseTimestamp, 10) + 1;
 
       await checkErrorRevertEthers(
-        makeTxAtTimestamp(goodClient.respondToBinarySearchForChallenge.bind(goodClient), [{ from: MINER2 }], timestamp, this),
+        makeTxAtTimestamp(goodClient.respondToBinarySearchForChallenge.bind(goodClient), [], timestamp, this),
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 
@@ -731,8 +780,18 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 
-      timestamp += DISPUTE_DEFENCE_WINDOW;
+      timestamp += DISPUTE_DEFENCE_WINDOW - ALL_ENTRIES_ALLOWED_END_OF_WINDOW + 1;
       await makeTxAtTimestamp(goodClient.respondToChallenge.bind(goodClient), [], timestamp, this);
+
+      // Can't invalidate even once defence restrictions lifted
+      await checkErrorRevert(
+        makeTxAtTimestamp(repCycle.invalidateHash, [0, 1, { from: MINER1 }], timestamp, this),
+        "colony-reputation-mining-not-timed-out"
+      );
+
+      // Entire response window has passed. Responses are still possible, but we're now in to the
+      // invalidation window for the bad entry.
+      timestamp += ALL_ENTRIES_ALLOWED_END_OF_WINDOW;
 
       // Can't invalidate at start of window
       await checkErrorRevert(
@@ -740,7 +799,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 
-      timestamp += DISPUTE_DEFENCE_WINDOW;
+      // Can invalidate once restrictions are lifted
+      timestamp += DISPUTE_DEFENCE_WINDOW - ALL_ENTRIES_ALLOWED_END_OF_WINDOW + 1;
+
       await makeTxAtTimestamp(repCycle.invalidateHash, [0, 1, { from: MINER1 }], timestamp, this);
       timestamp += DISPUTE_DEFENCE_WINDOW + 1;
       await makeTxAtTimestamp(repCycle.confirmNewHash, [1, { from: MINER1 }], timestamp, this);

@@ -292,7 +292,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
       // The submission can be invalidated - now check the person invalidating is allowed to
       require(
-        responsePossible(DisputeStages.InvalidateHash, disputeRounds[_round][_idx].lastResponseTimestamp + CHALLENGE_RESPONSE_WINDOW_DURATION),
+        responsePossible(DisputeStages.InvalidateHash, add(disputeRounds[_round][_idx].lastResponseTimestamp, CHALLENGE_RESPONSE_WINDOW_DURATION)),
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 

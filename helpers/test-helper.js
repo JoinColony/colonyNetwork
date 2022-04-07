@@ -631,7 +631,7 @@ export async function getActiveRepCycle(colonyNetwork) {
 }
 
 export async function advanceMiningCycleNoContest({ colonyNetwork, client, minerAddress, test }) {
-  await forwardTime(MINING_CYCLE_DURATION + DISPUTE_DEFENCE_WINDOW - 600 + 1, test);
+  await forwardTime(MINING_CYCLE_DURATION + DISPUTE_DEFENCE_WINDOW, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
 
   if (client !== undefined) {
@@ -666,7 +666,7 @@ export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetw
   }
 
   // Timeout the other client
-  await forwardTime(DISPUTE_DEFENCE_WINDOW + 600, this);
+  await forwardTime(DISPUTE_DEFENCE_WINDOW, this);
 
   const toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
   const accounts = await web3GetAccounts();
@@ -716,7 +716,7 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
       toInvalidateIdx = idx1;
     }
     // Forward time, so that whichever has failed to respond by now has timed out.
-    await forwardTime(DISPUTE_DEFENCE_WINDOW + 600, test);
+    await forwardTime(DISPUTE_DEFENCE_WINDOW * 2, test); // First window is the response window, second window is the invalidate window
   } else {
     toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
   }
