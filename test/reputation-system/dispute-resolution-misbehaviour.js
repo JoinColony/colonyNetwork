@@ -780,7 +780,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 
-      timestamp += DISPUTE_DEFENCE_WINDOW - ALL_ENTRIES_ALLOWED_END_OF_WINDOW + 1;
+      timestamp += DISPUTE_DEFENCE_WINDOW - ALL_ENTRIES_ALLOWED_END_OF_WINDOW;
       await makeTxAtTimestamp(goodClient.respondToChallenge.bind(goodClient), [], timestamp, this);
 
       // Can't invalidate even once defence restrictions lifted

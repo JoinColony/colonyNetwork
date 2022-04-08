@@ -144,10 +144,11 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
 
   uint256 constant UINT256_MAX = 2**256 - 1;
   uint256 constant CHALLENGE_RESPONSE_WINDOW_DURATION = 60 * 20;
-  uint256 constant Y = UINT256_MAX / CHALLENGE_RESPONSE_WINDOW_DURATION - ALL_ENTRIES_ALLOWED_END_OF_WINDOW;
+  uint256 constant Y = UINT256_MAX / (CHALLENGE_RESPONSE_WINDOW_DURATION - ALL_ENTRIES_ALLOWED_END_OF_WINDOW);
 
   function responsePossible(DisputeStages _stage, uint256 _responseWindowOpened) internal view returns (bool) {
     if (_responseWindowOpened > block.timestamp) {
+      // I don't think this is currently possible, but belt and braces!
       return false;
     }
 
