@@ -316,6 +316,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     sig = bytes4(keccak256("deprecateDomain(uint256,uint256,uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
 
+    delete rootLocalSkill; // In case the colony has set this slot in recovery mode
     IColony(address(this)).initialiseRootLocalSkill();
   }
 
@@ -335,6 +336,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
     require(_slot != COLONY_NETWORK_SLOT, "colony-protected-variable");
+    require(_slot != ROOT_LOCAL_SKILL_SLOT, "colony-protected-variable");
   }
 
   function approveStake(address _approvee, uint256 _domainId, uint256 _amount) public stoppable {

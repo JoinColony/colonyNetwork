@@ -33,6 +33,7 @@ import "./ColonyDataTypes.sol";
 
 contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage {
   uint256 constant COLONY_NETWORK_SLOT = 6;
+  uint256 constant ROOT_LOCAL_SKILL_SLOT = 36;
 
   // Storage
 
