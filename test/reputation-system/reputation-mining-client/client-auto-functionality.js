@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 
 import TruffleLoader from "../../../packages/reputation-miner/TruffleLoader";
 
-import { DEFAULT_STAKE, MINING_CYCLE_DURATION, DISPUTE_DEFENCE_WINDOW } from "../../../helpers/constants";
+import { DEFAULT_STAKE, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } from "../../../helpers/constants";
 import {
   getActiveRepCycle,
   forwardTime,
@@ -139,7 +139,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION * 0.1 + DISPUTE_DEFENCE_WINDOW + 1, this);
+          await forwardTime(MINING_CYCLE_DURATION * 0.1 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
           await miningCycleComplete;
         });
 
@@ -310,7 +310,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION / 2 + DISPUTE_DEFENCE_WINDOW + 1, this);
+          await forwardTime(MINING_CYCLE_DURATION / 2 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
           await miningCycleComplete;
         });
 
@@ -394,7 +394,7 @@ process.env.SOLIDITY_COVERAGE
           await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
           await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
 
-          await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           await mineBlock();
           await goodClientConfirmedJRH;
@@ -425,7 +425,7 @@ process.env.SOLIDITY_COVERAGE
           while (badEntry.upperBound !== badEntry.lowerBound) {
             await mineBlock();
             const goodClientSearchStepPromise = getGoodClientBinarySearchStepPromise();
-            await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + DISPUTE_DEFENCE_WINDOW);
+            await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION);
             await goodClientSearchStepPromise;
             if (parseInt(badEntry.challengeStepCompleted, 10) <= parseInt(goodEntry.challengeStepCompleted, 10)) {
               await mineBlock();
@@ -442,7 +442,7 @@ process.env.SOLIDITY_COVERAGE
           badEntry = disputeRound[badIndex];
           goodEntry = disputeRound[goodIndex];
 
-          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + DISPUTE_DEFENCE_WINDOW);
+          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION);
 
           await mineBlock();
           await goodClientConfirmedBinarySearch;
@@ -452,7 +452,7 @@ process.env.SOLIDITY_COVERAGE
           disputeRound = await repCycle.getDisputeRound(0);
           badEntry = disputeRound[badIndex];
 
-          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + DISPUTE_DEFENCE_WINDOW);
+          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION);
 
           await mineBlock();
           await goodClientCompleteChallenge;
@@ -483,7 +483,7 @@ process.env.SOLIDITY_COVERAGE
 
           await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-decay-incorrect");
 
-          await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           // Good client should now realise it can timeout bad submission
           await goodClientInvalidateOpponent;
@@ -502,7 +502,7 @@ process.env.SOLIDITY_COVERAGE
             }, 60000);
           });
 
-          await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           // Good client should realise it can confirm new hash. So we wait for that event.
           await newCycleStart;
@@ -608,7 +608,7 @@ process.env.SOLIDITY_COVERAGE
           await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
           await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
 
-          await forwardTime(DISPUTE_DEFENCE_WINDOW * 2 + 1, this);
+          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION * 2 + 1, this);
 
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
@@ -627,7 +627,7 @@ process.env.SOLIDITY_COVERAGE
           disputeRound = await repCycle.getDisputeRound(0);
           goodEntry = disputeRound[goodIndex];
 
-          await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           // Good client should now realise it can timeout bad submission
           await goodClientConfirmedJRH;
@@ -647,7 +647,7 @@ process.env.SOLIDITY_COVERAGE
             }, 60000);
           });
 
-          await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           // Good client should realise it can confirm new hash. So we wait for that event.
           await newCycleStart;
@@ -709,7 +709,7 @@ process.env.SOLIDITY_COVERAGE
           await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
           await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
 
-          await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           const reputationMinerClient2 = new ReputationMinerClient({
             loader,
@@ -739,7 +739,7 @@ process.env.SOLIDITY_COVERAGE
             }, 30000);
           });
 
-          await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           // Good client should now realise it can timeout bad submission
           await goodClientInvalidateOpponent;
@@ -758,7 +758,7 @@ process.env.SOLIDITY_COVERAGE
             }, 60000);
           });
 
-          await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           // Good client should realise it can confirm new hash. So we wait for that event.
           await newCycleStart;

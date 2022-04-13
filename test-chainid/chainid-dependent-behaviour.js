@@ -25,7 +25,7 @@ import {
   MINING_CYCLE_DURATION,
   DEFAULT_STAKE,
   MIN_STAKE,
-  DISPUTE_DEFENCE_WINDOW,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
   WAD,
   ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
 } from "../helpers/constants";
@@ -118,12 +118,12 @@ contract("Contract Storage", (accounts) => {
 
       const rewardSize = await repCycle.getDisputeRewardSize();
 
-      await forwardTime(MINING_CYCLE_DURATION / 2 + DISPUTE_DEFENCE_WINDOW * 2 + 1, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2 + CHALLENGE_RESPONSE_WINDOW_DURATION * 2 + 1, this);
 
       await repCycle.invalidateHash(0, 0, { from: MINER1 });
       await repCycle.invalidateHash(0, 3, { from: MINER1 });
 
-      await forwardTime(DISPUTE_DEFENCE_WINDOW - ALL_ENTRIES_ALLOWED_END_OF_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION - ALL_ENTRIES_ALLOWED_END_OF_WINDOW + 1, this);
       const networkBalanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
       const tx = await repCycle.confirmNewHash(1, { from: MINER1 });
 
@@ -161,7 +161,7 @@ contract("Contract Storage", (accounts) => {
       await repCycle.getNSubmissionsForHash("0x12345678", 10, "0x00");
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 1, { from: MINER1 });
 
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       const tx = await repCycle.confirmNewHash(0, { from: MINER1 });
       await expectNoEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, 0]);
       await expectNoEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, 0]);

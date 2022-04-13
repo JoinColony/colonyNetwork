@@ -40,7 +40,7 @@ import {
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
   GLOBAL_SKILL_ID,
-  DISPUTE_DEFENCE_WINDOW,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
 } from "../../helpers/constants";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -198,7 +198,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       });
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(3, { from: MINER1 });
     });
 
@@ -267,21 +267,21 @@ contract("Reputation Mining - happy paths", (accounts) => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
       await runBinarySearch(goodClient, badClient);
 
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await goodClient.respondToChallenge();
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.invalidateHash(0, 1, { from: MINER1 });
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
@@ -316,7 +316,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
@@ -350,7 +350,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" },
       });
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
@@ -394,9 +394,9 @@ contract("Reputation Mining - happy paths", (accounts) => {
         workerRating: 3,
       });
 
-      await forwardTime(MINING_CYCLE_DURATION + DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(0, { from: MINER1 });
 
       repCycle = await getActiveRepCycle(colonyNetwork);
@@ -404,7 +404,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-reputation-not-max-int128" },
       });
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
@@ -426,7 +426,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       const rootHash = await goodClient.getRootHash();
       let repCycle = await getActiveRepCycle(colonyNetwork);
-      await forwardTime(MINING_CYCLE_DURATION + DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
       await repCycle.confirmNewHash(0, { from: MINER1 });
 
@@ -435,7 +435,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
 
       const largeCalculationResult = INT128_MAX.subn(1).mul(DECAY_RATE.NUMERATOR).div(DECAY_RATE.DENOMINATOR);
@@ -830,7 +830,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
     });
 
@@ -840,7 +840,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await goodClient.addLogContentsToReputationTree();
       const newRootHash = await goodClient.getRootHash();
 
-      await forwardTime(MINING_CYCLE_DURATION + DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
       await repCycle.submitRootHash(newRootHash, 10, "0x00", 10, { from: MINER1 });
@@ -900,10 +900,10 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       const rootHash = await goodClient.getRootHash();
 
-      await forwardTime(MINING_CYCLE_DURATION + DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       let repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(0, { from: MINER1 });
 
       // Check we have exactly one reputation.
@@ -913,16 +913,16 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
       });
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
 
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
@@ -950,7 +950,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       });
 
       repCycle = await getActiveRepCycle(colonyNetwork);
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
 
       // Check it 'decayed' from 0 to 0
@@ -969,7 +969,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(MINING_CYCLE_DURATION + DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: WORKER });
       await repCycle.confirmNewHash(0, { from: MINER1 });
 
@@ -981,28 +981,28 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await badClient.submitRootHash();
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
       await delegatedClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
       await delegatedClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
 
       await runBinarySearch(delegatedClient, badClient);
 
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await delegatedClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
       // Cleanup
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await delegatedClient.respondToChallenge();
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.invalidateHash(0, 1, { from: MINER1 });
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
     });
   });

@@ -7,7 +7,7 @@ import shortid from "shortid";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, DISPUTE_DEFENCE_WINDOW } from "../../helpers/constants";
+import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, CHALLENGE_RESPONSE_WINDOW_DURATION } from "../../helpers/constants";
 
 import {
   checkErrorRevert,
@@ -229,7 +229,7 @@ contract("Voting Reputation", (accounts) => {
     const repCycle = await getActiveRepCycle(colonyNetwork);
     await forwardTime(MINING_CYCLE_DURATION, this);
     await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
-    await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+    await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
     await repCycle.confirmNewHash(0, { from: MINER });
   });
 
@@ -1059,7 +1059,7 @@ contract("Voting Reputation", (accounts) => {
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
-      await forwardTime(DISPUTE_DEFENCE_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(0, { from: MINER });
 
       // Create new motion with new reputation state
