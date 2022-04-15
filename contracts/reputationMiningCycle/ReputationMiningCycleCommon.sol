@@ -31,6 +31,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   // Size of mining window in seconds. Should be consistent with decay constant
   // in reputationMiningCycleRespond. If you change one, you should change the other.
   uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 1; // 1 hour
+  uint256 constant ALL_ENTRIES_ALLOWED_END_OF_WINDOW = 60 * 10; // 10 minutes
 
   function getMinerAddressIfStaked() internal view returns (address) {
     // Is msg.sender a miner themselves? See if they have stake.
@@ -142,11 +143,12 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   }
 
   uint256 constant UINT256_MAX = 2**256 - 1;
-  uint256 constant SUBMITTER_ONLY_WINDOW_DURATION = 60 * 10;
-  uint256 constant Y = UINT256_MAX / SUBMITTER_ONLY_WINDOW_DURATION;
+  uint256 constant CHALLENGE_RESPONSE_WINDOW_DURATION = 60 * 20;
+  uint256 constant Y = UINT256_MAX / (CHALLENGE_RESPONSE_WINDOW_DURATION - ALL_ENTRIES_ALLOWED_END_OF_WINDOW);
 
   function responsePossible(DisputeStages _stage, uint256 _responseWindowOpened) internal view returns (bool) {
     if (_responseWindowOpened > block.timestamp) {
+      // I don't think this is currently possible, but belt and braces!
       return false;
     }
 
@@ -154,7 +156,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
 
     uint256 windowOpenFor = block.timestamp - _responseWindowOpened;
 
-    if (windowOpenFor <= SUBMITTER_ONLY_WINDOW_DURATION) {
+    if (windowOpenFor <= CHALLENGE_RESPONSE_WINDOW_DURATION - ALL_ENTRIES_ALLOWED_END_OF_WINDOW) {
       // require user made a submission
       if (reputationHashSubmissions[minerAddress].proposedNewRootHash == bytes32(0x00)) {
         return false;

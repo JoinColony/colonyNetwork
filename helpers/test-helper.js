@@ -6,7 +6,7 @@ import BN from "bn.js";
 import { ethers } from "ethers";
 import { BigNumber } from "bignumber.js";
 
-import { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, SUBMITTER_ONLY_WINDOW } from "./constants";
+import { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION } from "./constants";
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -609,7 +609,7 @@ export async function runBinarySearch(client1, client2, test) {
   // Binary search will error when it is complete.
   let noError = true;
   while (noError) {
-    await forwardTime(SUBMITTER_ONLY_WINDOW, test);
+    await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION, test);
     try {
       await client1.respondToBinarySearchForChallenge();
     } catch (err) {
@@ -631,7 +631,7 @@ export async function getActiveRepCycle(colonyNetwork) {
 }
 
 export async function advanceMiningCycleNoContest({ colonyNetwork, client, minerAddress, test }) {
-  await forwardTime(MINING_CYCLE_DURATION + SUBMITTER_ONLY_WINDOW + 1, test);
+  await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
 
   if (client !== undefined) {
@@ -655,7 +655,7 @@ export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetw
   const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
   // Make a submission from client1
   const submission1before = await repCycle.getReputationHashSubmission(client1.minerAddress);
-  await forwardTime(SUBMITTER_ONLY_WINDOW, this);
+  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION, this);
 
   // Submit JRH for submission 1 if needed
   // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
@@ -666,7 +666,7 @@ export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetw
   }
 
   // Timeout the other client
-  await forwardTime(SUBMITTER_ONLY_WINDOW + 600, this);
+  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION, this);
 
   const toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
   const accounts = await web3GetAccounts();
@@ -716,11 +716,11 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
       toInvalidateIdx = idx1;
     }
     // Forward time, so that whichever has failed to respond by now has timed out.
-    await forwardTime(SUBMITTER_ONLY_WINDOW + 600, test);
+    await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION * 2, test); // First window is the response window, second window is the invalidate window
   } else {
     toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
   }
-  await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
+  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
   const signingAddress = await client1.realWallet.getAddress();
   return repCycle.invalidateHash(round1, toInvalidateIdx, { from: signingAddress });
@@ -731,7 +731,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
   const submission1before = await repCycle.getReputationHashSubmission(client1.minerAddress);
 
-  await forwardTime(SUBMITTER_ONLY_WINDOW);
+  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
 
   // Submit JRH for submission 1 if needed
   // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
@@ -751,7 +751,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     "Clients are not facing each other in this round"
   ).to.be.true;
 
-  await forwardTime(SUBMITTER_ONLY_WINDOW);
+  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
 
   if (submission2before.jrhNLeaves === "0") {
     if (errors.client2.confirmJustificationRootHash) {
@@ -771,7 +771,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   let binarySearchStep = -1;
   let binarySearchError = false;
   while (submission1.lowerBound !== submission1.upperBound && binarySearchError === false) {
-    await forwardTime(SUBMITTER_ONLY_WINDOW);
+    await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
     binarySearchStep += 1;
     if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep]) {
       await checkErrorRevertEthers(client1.respondToBinarySearchForChallenge(), errors.client1.respondToBinarySearchForChallenge[binarySearchStep]);
@@ -799,7 +799,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     return;
   }
 
-  await forwardTime(SUBMITTER_ONLY_WINDOW);
+  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
 
   if (errors.client1.confirmBinarySearchResult) {
     await checkErrorRevertEthers(client1.confirmBinarySearchResult(), errors.client1.confirmBinarySearchResult);
@@ -816,7 +816,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     return;
   }
 
-  await forwardTime(SUBMITTER_ONLY_WINDOW);
+  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
 
   // Respond to the challenge - usually, only one of these should work.
   // If both work, then the starting reputation is 0 and one client is lying

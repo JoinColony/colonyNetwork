@@ -69,7 +69,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     }
   }
 
-  uint256 constant X = UINT256_MAX / MINING_WINDOW_SIZE;
+  uint256 constant X = UINT256_MAX / (MINING_WINDOW_SIZE - ALL_ENTRIES_ALLOWED_END_OF_WINDOW);
 
   /// @notice A function that checks if the proposed entry is within the current allowable submission window
   /// @dev A submission will only be accepted from a reputation miner if `keccak256(address, N, hash) < target`
@@ -78,8 +78,12 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     // Check the ticket is a winning one.
     // All entries are acceptable if the 24 hour-long window is closed, so skip this check if that's the case
     if (!submissionWindowClosed()) {
-      uint256 target = (block.timestamp - reputationMiningWindowOpenTimestamp) * X;
-      require(uint256(getEntryHash(_minerAddress, _entryIndex, _newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
+      uint256 windowElapsed = block.timestamp - reputationMiningWindowOpenTimestamp;
+      if (windowElapsed < MINING_WINDOW_SIZE - ALL_ENTRIES_ALLOWED_END_OF_WINDOW) {
+        // The end of the window, any entry can be submitted, so skip this check
+        uint256 target = (block.timestamp - reputationMiningWindowOpenTimestamp) * X;
+        require(uint256(getEntryHash(_minerAddress, _entryIndex, _newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
+      }
     }
   }
 
@@ -284,11 +288,11 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       require(disputeRounds[_round][opponentIdx].challengeStepCompleted >= disputeRounds[_round][_idx].challengeStepCompleted, "colony-reputation-mining-less-challenge-rounds-completed");
 
       // Require that it has failed a challenge (i.e. failed to respond in time)
-      require(add(disputeRounds[_round][_idx].lastResponseTimestamp, 600) <= block.timestamp, "colony-reputation-mining-not-timed-out"); // Timeout is ten minutes here.
+      require(add(disputeRounds[_round][_idx].lastResponseTimestamp, CHALLENGE_RESPONSE_WINDOW_DURATION) <= block.timestamp, "colony-reputation-mining-not-timed-out"); // Timeout is twenty minutes here.
 
       // The submission can be invalidated - now check the person invalidating is allowed to
       require(
-        responsePossible(DisputeStages.InvalidateHash, disputeRounds[_round][_idx].lastResponseTimestamp + 600),
+        responsePossible(DisputeStages.InvalidateHash, add(disputeRounds[_round][_idx].lastResponseTimestamp, CHALLENGE_RESPONSE_WINDOW_DURATION)),
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 
