@@ -288,7 +288,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       require(disputeRounds[_round][opponentIdx].challengeStepCompleted >= disputeRounds[_round][_idx].challengeStepCompleted, "colony-reputation-mining-less-challenge-rounds-completed");
 
       // Require that it has failed a challenge (i.e. failed to respond in time)
-      require(add(disputeRounds[_round][_idx].lastResponseTimestamp, CHALLENGE_RESPONSE_WINDOW_DURATION) <= block.timestamp, "colony-reputation-mining-not-timed-out"); // Timeout is ten minutes here.
+      require(add(disputeRounds[_round][_idx].lastResponseTimestamp, CHALLENGE_RESPONSE_WINDOW_DURATION) <= block.timestamp, "colony-reputation-mining-not-timed-out"); // Timeout is twenty minutes here.
 
       // The submission can be invalidated - now check the person invalidating is allowed to
       require(

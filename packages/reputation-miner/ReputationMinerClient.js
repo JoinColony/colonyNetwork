@@ -575,7 +575,6 @@ class ReputationMinerClient {
         }
 
         // Has our opponent timed out?
-        // TODO: Remove these magic numbers
 
         const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(CHALLENGE_RESPONSE_WINDOW_DURATION);
         if (opponentTimeout){
