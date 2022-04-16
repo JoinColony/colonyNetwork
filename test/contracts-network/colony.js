@@ -170,6 +170,11 @@ contract("Colony", (accounts) => {
   });
 
   describe("when adding local skills", () => {
+    it("should be able to get the rootLocalSkill", async () => {
+      const rootLocalSkill = await colony.getRootLocalSkill();
+      expect(rootLocalSkill).to.eq.BN(5);
+    });
+
     it("should log the LocalSkillAdded event", async () => {
       const tx = await colony.addLocalSkill();
 
@@ -183,6 +188,14 @@ contract("Colony", (accounts) => {
 
       const tx = await colony.deprecateLocalSkill(skillCount, true);
       await expectEvent(tx, "LocalSkillDeprecated", [accounts[0], skillCount, true]);
+    });
+
+    it("should not emit an event if deprecation is a no-op", async () => {
+      await colony.addLocalSkill();
+      const skillCount = await colonyNetwork.getSkillCount();
+
+      const tx = await colony.deprecateLocalSkill(skillCount, false);
+      await expectNoEvent(tx, "LocalSkillDeprecated");
     });
   });
 
