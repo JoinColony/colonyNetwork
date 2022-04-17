@@ -172,7 +172,9 @@ contract("Colony", (accounts) => {
   describe("when adding local skills", () => {
     it("should be able to get the rootLocalSkill", async () => {
       const rootLocalSkill = await colony.getRootLocalSkill();
-      expect(rootLocalSkill).to.eq.BN(5);
+      // If run as the only test, it's 5. If it's in the test suite as a whole, because there's a
+      // 'beforeEach' that creates colonies, it depends how many there have been.
+      expect(rootLocalSkill).to.be.gte.BN(5);
     });
 
     it("should log the LocalSkillAdded event", async () => {
