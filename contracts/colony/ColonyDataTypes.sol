@@ -316,7 +316,8 @@ interface ColonyDataTypes {
 
   /// @notice Event emitted when the colony unlocks its native token through the
   /// provided function
-  event TokenUnlocked();
+  /// @param agent The address that is responsible for triggering this event
+  event TokenUnlocked(address agent);
 
   /// @notice Event logged when a manual reputation reward/penalty is made
   /// @param agent The address that is responsible for triggering this event

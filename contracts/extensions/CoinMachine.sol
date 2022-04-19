@@ -30,7 +30,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
   // Events
 
-  event TokensBought(address buyer, uint256 numTokens, uint256 totalCost);
+  event TokensBought(address indexed buyer, address token, uint256 numTokens, uint256 totalCost);
   event PeriodUpdated(uint256 activePeriod, uint256 currentPeriod);
   event PriceEvolutionSet(bool evolvePrice);
   event WhitelistSet(address whitelist);
@@ -243,7 +243,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
     require(ERC20(token).transfer(msgSender(), numTokens), "coin-machine-transfer-failed");
 
-    emit TokensBought(msgSender(), numTokens, totalCost);
+    emit TokensBought(msgSender(), token, numTokens, totalCost);
   }
 
   /// @notice Bring the token accounting current
