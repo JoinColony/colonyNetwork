@@ -30,7 +30,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
   // Events
 
-  event TokensBought(address indexed buyer, address indexed token, uint256 numTokens, uint256 totalCost);
+  event TokensBought(address indexed buyer, address token, uint256 numTokens, uint256 totalCost);
   event PeriodUpdated(uint256 activePeriod, uint256 currentPeriod);
   event PriceEvolutionSet(bool evolvePrice);
   event WhitelistSet(address whitelist);
