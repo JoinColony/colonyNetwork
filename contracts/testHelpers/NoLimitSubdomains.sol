@@ -36,7 +36,7 @@ contract NoLimitSubdomains is ColonyStorage {
     initialiseDomain(newLocalSkill);
   }
 
-  function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {
+  function initialiseDomain(uint256 _skillId) internal {
     domainCount += 1;
     // Create a new funding pot
     fundingPotCount += 1;
@@ -46,8 +46,7 @@ contract NoLimitSubdomains is ColonyStorage {
     // Create a new domain with the given skill and new funding pot
     domains[domainCount] = Domain({
       skillId: _skillId,
-      fundingPotId: fundingPotCount,
-      deprecated: false
+      fundingPotId: fundingPotCount
     });
 
     emit DomainAdded(msg.sender, domainCount);

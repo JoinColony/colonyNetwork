@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { currentBlockTime } from "../helpers/test-helper";
+import { currentBlockTime, getColonyEditable } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import { ROOT_ROLE, SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";
 import { makeTask, setupRandomColony } from "../helpers/test-data-generator";
@@ -8,6 +8,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
+const ColonyDomains = artifacts.require("ColonyDomains");
 const ColonyExpenditure = artifacts.require("ColonyExpenditure");
 const ColonyTask = artifacts.require("ColonyTask");
 const ColonyPayment = artifacts.require("ColonyPayment");
@@ -39,6 +40,7 @@ contract("Colony contract upgrade", (accounts) => {
 
     ({ colony, token } = await setupRandomColony(colonyNetwork));
 
+    const colonyDomains = await ColonyDomains.new();
     const colonyExpenditure = await ColonyExpenditure.new();
     const colonyTask = await ColonyTask.new();
     const colonyPayment = await ColonyPayment.new();
@@ -57,6 +59,7 @@ contract("Colony contract upgrade", (accounts) => {
     await resolver.register("isUpdated()", updatedColonyContract.address);
     await setupColonyVersionResolver(
       updatedColonyContract,
+      colonyDomains,
       colonyExpenditure,
       colonyTask,
       colonyPayment,
@@ -74,6 +77,11 @@ contract("Colony contract upgrade", (accounts) => {
     updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
 
     // Upgrade our existing colony
+    // 8->9 upgrade, unlike other upgrades to date, not idempotent, so have to delete
+    // the local root skill id
+    const editableColony = await getColonyEditable(colony, colonyNetwork);
+    await editableColony.setStorageSlot(36, "0x0000000000000000000000000000000000000000000000000000000000000000");
+
     await colony.upgrade(updatedColonyVersion);
     updatedColony = await IUpdatedColony.at(colony.address);
   });

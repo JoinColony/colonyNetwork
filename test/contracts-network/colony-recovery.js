@@ -202,6 +202,7 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(colony.setStorageSlotRecovery(2, "0xdeadbeef"), "colony-common-protected-variable");
       // '6' is a protected location in Colony, but not ColonyNetwork. We get a different error.
       await checkErrorRevert(colony.setStorageSlotRecovery(6, "0xdeadbeef"), "colony-protected-variable");
+      await checkErrorRevert(colony.setStorageSlotRecovery(36, "0xdeadbeef"), "colony-protected-variable");
     });
 
     it("should not allow editing of a protected variable in a mapping", async () => {

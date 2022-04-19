@@ -54,7 +54,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
   }
 
   function emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount)
-  public stoppable auth validGlobalSkill(_skillId)
+  public stoppable auth validGlobalOrLocalSkill(_skillId)
   {
     require(_amount > 0, "colony-reward-must-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
@@ -77,50 +77,12 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
   }
 
   function emitSkillReputationPenalty(uint256 _skillId, address _user, int256 _amount)
-  public stoppable auth validGlobalSkill(_skillId)
+  public stoppable auth validGlobalOrLocalSkill(_skillId)
   {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
     emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
-  }
-
-  function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
-    require(_colonyNetworkAddress != address(0x0), "colony-network-cannot-be-zero");
-    require(_token != address(0x0), "colony-token-cannot-be-zero");
-
-    require(colonyNetworkAddress == address(0x0), "colony-already-initialised-network");
-    require(token == address(0x0), "colony-already-initialised-token");
-
-    colonyNetworkAddress = _colonyNetworkAddress;
-    token = _token;
-    tokenLockingAddress = IColonyNetwork(colonyNetworkAddress).getTokenLocking();
-
-    // Initialise the task update reviewers
-    setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
-    // We are setting a manager to both reviewers, but it will require just one signature from manager
-    setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Manager);
-    setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Evaluator);
-    setFunctionReviewers(bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("removeTaskEvaluatorRole(uint256)")), TaskRole.Manager, TaskRole.Evaluator);
-    setFunctionReviewers(bytes4(keccak256("removeTaskWorkerRole(uint256)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("cancelTask(uint256)")), TaskRole.Manager, TaskRole.Worker);
-
-    setRoleAssignmentFunction(bytes4(keccak256("setTaskManagerRole(uint256,address,uint256,uint256)")));
-    setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));
-    setRoleAssignmentFunction(bytes4(keccak256("setTaskWorkerRole(uint256,address)")));
-
-    // Initialise the root domain
-    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    uint256 rootLocalSkill = colonyNetwork.getSkillCount();
-    initialiseDomain(rootLocalSkill);
-
-    // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
-    rewardInverse = 2**256 - 1;
-
-    emit ColonyInitialised(msgSender(), _colonyNetworkAddress, _token);
   }
 
   function editColony(string memory _metadata) public
@@ -207,11 +169,12 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     return IColonyNetwork(colonyNetworkAddress).addSkill(0); // ignore-swc-107
   }
 
+  // slither-disable-next-line unused-return
   function deprecateGlobalSkill(uint256 _skillId) public
   stoppable
   auth
   {
-    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_skillId);
+    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_skillId, true);
   }
 
   function setNetworkFeeInverse(uint256 _feeInverse) public
@@ -272,63 +235,23 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId);
   }
 
-  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
-  stoppable
-  domainNotDeprecated(_parentDomainId)
-  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
-  {
-    addDomain(_permissionDomainId, _childSkillIndex, _parentDomainId, "");
+  function addLocalSkill() public stoppable auth {
+    require(rootLocalSkill != 0, "colony-local-skill-tree-not-initialised");
+
+    uint256 newLocalSkill = IColonyNetwork(colonyNetworkAddress).addSkill(rootLocalSkill);
+    localSkills[newLocalSkill] = true;
+
+    emit LocalSkillAdded(msgSender(), newLocalSkill);
   }
 
-  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId, string memory _metadata) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
-  {
-    // Note: Remove when we want to allow more domain hierarchy levels
-    require(_parentDomainId == 1, "colony-parent-domain-not-root");
-
-    uint256 parentSkillId = domains[_parentDomainId].skillId;
-
-    // Setup new local skill
-    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    // slither-disable-next-line reentrancy-no-eth
-    uint256 newLocalSkill = colonyNetwork.addSkill(parentSkillId);
-
-    // Add domain to local mapping
-    initialiseDomain(newLocalSkill);
-
-    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
-      emit DomainMetadata(msgSender(), domainCount, _metadata);
+  function deprecateLocalSkill(uint256 _localSkillId, bool _deprecated) public stoppable auth {
+    if (IColonyNetwork(colonyNetworkAddress).deprecateSkill(_localSkillId, _deprecated)) {
+      emit LocalSkillDeprecated(msgSender(), _localSkillId, _deprecated);
     }
   }
 
-  function editDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, string memory _metadata) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
-    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
-      emit DomainMetadata(msgSender(), _domainId, _metadata);
-    }
-  }
-
-  function deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
-    if (domains[_domainId].deprecated != _deprecated) {
-      domains[_domainId].deprecated = _deprecated;
-
-      emit DomainDeprecated(msgSender(), _domainId, _deprecated);
-    }
-
-  }
-
-  function getDomain(uint256 _domainId) public view returns (Domain memory domain) {
-    domain = domains[_domainId];
-  }
-
-  function getDomainCount() public view returns (uint256) {
-    return domainCount;
+  function getRootLocalSkill() public view returns (uint256) {
+    return rootLocalSkill;
   }
 
   function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
@@ -384,8 +307,17 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
+    sig = bytes4(keccak256("addLocalSkill()"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("deprecateLocalSkill(uint256,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
     sig = bytes4(keccak256("deprecateDomain(uint256,uint256,uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
+
+    delete rootLocalSkill; // In case the colony has set this slot in recovery mode
+    IColony(address(this)).initialiseRootLocalSkill();
   }
 
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
@@ -404,6 +336,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
     require(_slot != COLONY_NETWORK_SLOT, "colony-protected-variable");
+    require(_slot != ROOT_LOCAL_SKILL_SLOT, "colony-protected-variable");
   }
 
   function approveStake(address _approvee, uint256 _domainId, uint256 _amount) public stoppable {
@@ -460,34 +393,6 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
   function getTotalTokenApproval(address _token) public view returns (uint256) {
     return tokenApprovalTotals[_token];
-  }
-
-  function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {
-    domainCount += 1;
-    // Create a new funding pot
-    fundingPotCount += 1;
-    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType.Domain;
-    fundingPots[fundingPotCount].associatedTypeId = domainCount;
-
-    // Create a new domain with the given skill and new funding pot
-    domains[domainCount] = Domain({
-      skillId: _skillId,
-      fundingPotId: fundingPotCount,
-      deprecated: false
-    });
-
-    emit DomainAdded(msgSender(), domainCount);
-    emit FundingPotAdded(fundingPotCount);
-  }
-
-  function setFunctionReviewers(bytes4 _sig, TaskRole _firstReviewer, TaskRole _secondReviewer)
-  private
-  {
-    reviewers[_sig] = [_firstReviewer, _secondReviewer];
-  }
-
-  function setRoleAssignmentFunction(bytes4 _sig) private {
-    roleAssignmentSigs[_sig] = true;
   }
 
 }

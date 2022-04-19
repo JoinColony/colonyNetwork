@@ -128,9 +128,9 @@ contract("Colony", (accounts) => {
       // The first pot should have been created and assigned to the domain
       expect(domain.fundingPotId).to.eq.BN(1);
 
-      // A root skill should have been created for the Colony
+      // A domain skill should have been created for the Colony
       const rootLocalSkillId = await colonyNetwork.getSkillCount();
-      expect(domain.skillId).to.eq.BN(rootLocalSkillId);
+      expect(domain.skillId).to.eq.BN(rootLocalSkillId.subn(1));
     });
 
     it("should let funding pot information be read", async () => {
@@ -166,6 +166,38 @@ contract("Colony", (accounts) => {
       await expectEvent(colony.unlockToken({ from: accounts[0] }), "TokenUnlocked", []);
       locked = await token.locked();
       expect(locked).to.be.equal(false);
+    });
+  });
+
+  describe("when adding local skills", () => {
+    it("should be able to get the rootLocalSkill", async () => {
+      const rootLocalSkill = await colony.getRootLocalSkill();
+      // If run as the only test, it's 5. If it's in the test suite as a whole, because there's a
+      // 'beforeEach' that creates colonies, it depends how many there have been.
+      expect(rootLocalSkill).to.be.gte.BN(5);
+    });
+
+    it("should log the LocalSkillAdded event", async () => {
+      const tx = await colony.addLocalSkill();
+
+      const skillCount = await colonyNetwork.getSkillCount();
+      await expectEvent(tx, "LocalSkillAdded", [accounts[0], skillCount]);
+    });
+
+    it("should allow root users to deprecate local skills", async () => {
+      await colony.addLocalSkill();
+      const skillCount = await colonyNetwork.getSkillCount();
+
+      const tx = await colony.deprecateLocalSkill(skillCount, true);
+      await expectEvent(tx, "LocalSkillDeprecated", [accounts[0], skillCount, true]);
+    });
+
+    it("should not emit an event if deprecation is a no-op", async () => {
+      await colony.addLocalSkill();
+      const skillCount = await colonyNetwork.getSkillCount();
+
+      const tx = await colony.deprecateLocalSkill(skillCount, false);
+      await expectNoEvent(tx, "LocalSkillDeprecated");
     });
   });
 
@@ -206,11 +238,6 @@ contract("Colony", (accounts) => {
       await expectEvent(colony.deprecateDomain(1, 0, 2, true), "DomainDeprecated", [USER0, 2, true]);
     });
 
-    it("should not log the DomainDeprecated event if the state did not change", async () => {
-      await colony.addDomain(1, UINT256_MAX, 1);
-      await expectNoEvent(colony.deprecateDomain(1, 0, 2, false), "DomainDeprecated");
-    });
-
     it("should not be able to perform prohibited actions in the domain", async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
       await colony.deprecateDomain(1, 0, 2, true);
@@ -227,6 +254,7 @@ contract("Colony", (accounts) => {
 
     it("should assign reputation correctly", async () => {
       const skillCount = await colonyNetwork.getSkillCount();
+      const rootDomainSkillId = skillCount.subn(1);
 
       await colony.mintTokens(WAD.muln(14));
       await colony.claimColonyFunds(token.address);
@@ -238,7 +266,7 @@ contract("Colony", (accounts) => {
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       expect(updateLog.user).to.eq.BN(INITIAL_ADDRESSES[0]);
       expect(updateLog.amount).to.eq.BN(INITIAL_REPUTATIONS[0]);
-      expect(updateLog.skillId).to.eq.BN(skillCount);
+      expect(updateLog.skillId).to.eq.BN(rootDomainSkillId);
     });
 
     it("should assign tokens correctly", async () => {

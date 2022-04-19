@@ -241,6 +241,17 @@ interface ColonyDataTypes {
   /// @param taskId Id of the canceled task
   event TaskCanceled(uint256 indexed taskId);
 
+  /// @notice Event logged when a new local skill is added
+  /// @param agent The address that is responsible for triggering this event
+  /// @param localSkillId Id of the newly-created local skill
+  event LocalSkillAdded(address agent, uint256 localSkillId);
+
+  /// @notice Event logged when a new local skill is added
+  /// @param agent The address that is responsible for triggering this event
+  /// @param localSkillId Id of the newly-created local skill
+  /// @param deprecated Deprecation status of the local skill
+  event LocalSkillDeprecated(address agent, uint256 localSkillId, bool deprecated);
+
   /// @notice Event logged when a new Domain is added
   /// @param agent The address that is responsible for triggering this event
   /// @param domainId Id of the newly-created Domain
@@ -416,6 +427,9 @@ interface ColonyDataTypes {
   struct Domain {
     uint256 skillId;
     uint256 fundingPotId;
-    bool deprecated;
+  }
+
+  struct LocalSkill {
+    bool exists;
   }
 }

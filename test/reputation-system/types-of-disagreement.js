@@ -25,7 +25,14 @@ import {
   setupMetaColonyWithLockedCLNYToken,
 } from "../../helpers/test-data-generator";
 
-import { INT128_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } from "../../helpers/constants";
+import {
+  INT128_MAX,
+  DEFAULT_STAKE,
+  INITIAL_FUNDING,
+  MINING_CYCLE_DURATION,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  GLOBAL_SKILL_ID,
+} from "../../helpers/constants";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
@@ -678,7 +685,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
-        skillId: 3,
+        skillId: GLOBAL_SKILL_ID,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000,
         workerPayout: 1000000000000,
@@ -693,7 +700,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
-        skillId: 3,
+        skillId: GLOBAL_SKILL_ID,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000,
         workerPayout,
