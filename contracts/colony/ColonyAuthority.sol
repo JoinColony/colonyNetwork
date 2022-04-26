@@ -123,6 +123,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "addLocalSkill()");
     addRoleCapability(ROOT_ROLE, "deprecateLocalSkill(uint256,bool)");
     addRoleCapability(ARCHITECTURE_ROLE, "deprecateDomain(uint256,uint256,uint256,bool)");
+    addRoleCapability(ROOT_ROLE, "editColonyByDelta(string)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

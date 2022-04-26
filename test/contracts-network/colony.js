@@ -376,6 +376,18 @@ contract("Colony", (accounts) => {
     });
   });
 
+  describe("when editing colony data", () => {
+    it("should be able to emit the event we expect to contain an entire blob", async () => {
+      const tx = await colony.editColony("ipfsContainingBlob");
+      await expectEvent(tx, "ColonyMetadata", [USER0, "ipfsContainingBlob"]);
+    });
+
+    it("should be able to emit the event we expect to contain a delta", async () => {
+      const tx = await colony.editColonyByDelta("ipfsContainingDelta");
+      await expectEvent(tx, "ColonyMetadataDelta", [USER0, "ipfsContainingDelta"]);
+    });
+  });
+
   describe("when executing metatransactions", () => {
     it("should allow a metatransaction to occur", async () => {
       const txData = await colony.contract.methods.mintTokens(100).encodeABI();

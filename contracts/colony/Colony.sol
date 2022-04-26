@@ -91,6 +91,12 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     emit ColonyMetadata(msgSender(), _metadata);
   }
 
+  function editColonyByDelta(string memory _metadataDelta) public
+  stoppable
+  auth {
+    emit ColonyMetadataDelta(msgSender(), _metadataDelta);
+  }
+
   function bootstrapColony(address[] memory _users, int[] memory _amounts) public
   stoppable
   auth
@@ -315,6 +321,9 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
     sig = bytes4(keccak256("deprecateDomain(uint256,uint256,uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Architecture), address(this), sig, true);
+
+    sig = bytes4(keccak256("editColonyByDelta(string)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
     delete rootLocalSkill; // In case the colony has set this slot in recovery mode
     IColony(address(this)).initialiseRootLocalSkill();

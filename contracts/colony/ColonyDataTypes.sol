@@ -274,6 +274,11 @@ interface ColonyDataTypes {
   /// @param metadata IPFS hash of the metadata
   event ColonyMetadata(address agent, string metadata);
 
+  /// @notice Event logged when Colony metadata is updated via a delta
+  /// @param agent The address that is responsible for triggering this event
+  /// @param metadata IPFS hash of the delta
+  event ColonyMetadataDelta(address agent, string metadata);
+
   /// @notice Event logged when a new FundingPot is added
   /// @param fundingPotId Id of the newly-created FundingPot
   event FundingPotAdded(uint256 fundingPotId);
