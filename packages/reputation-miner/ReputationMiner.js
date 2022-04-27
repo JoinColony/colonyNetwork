@@ -62,9 +62,11 @@ class ReputationMiner {
     if (minerAddress) {
       this.realWallet = this.realProvider.getSigner(minerAddress);
     } else {
+      // TODO: Check that this wallet can stake?
       this.realWallet = new ethers.Wallet(privateKey, this.realProvider);
-      console.log("Transactions will be signed from ", this.realWallet.address);
+      this.minerAddress = this.realWallet.address;
     }
+    console.log(`Transactions will be signed from ${this.realWallet.address}`);
   }
 
   /**
@@ -757,9 +759,9 @@ class ReputationMiner {
 
   async getEntryIndex(startIndex = 1) {
     // Get how much we've staked, and thefore how many entries we have
-    const [stakeAmount] = await this.colonyNetwork.getMiningStake(this.minerAddress);
+    const minerStake = await this.getMiningStake();
 
-    for (let i = ethers.BigNumber.from(startIndex); i.lte(stakeAmount.div(minStake)); i = i.add(1)) {
+    for (let i = ethers.BigNumber.from(startIndex); i.lte(minerStake.amount.div(minStake)); i = i.add(1)) {
       const submissionPossible = await this.submissionPossible(i);
       if (submissionPossible) {
         return i;
@@ -792,13 +794,13 @@ class ReputationMiner {
     }
 
     // Check the proposed entry is eligible (emulates entryQualifies modifier behaviour)
-    const [stakeAmount, stakeTimestamp] = await this.colonyNetwork.getMiningStake(this.minerAddress);
+    const minerStake = await this.getMiningStake();
 
-    if (ethers.BigNumber.from(entryIndex).gt(stakeAmount.div(minStake))) {
+    if (ethers.BigNumber.from(entryIndex).gt(minerStake.amount.div(minStake))) {
       return false;
     }
 
-    if(reputationMiningWindowOpenTimestamp.lt(stakeTimestamp)) {
+    if(reputationMiningWindowOpenTimestamp.lt(minerStake.timestamp)) {
       return false;
     }
 
@@ -820,6 +822,22 @@ class ReputationMiner {
     }
 
     return true;
+  }
+
+  /**
+   * Get the stake for the miner
+   * @return {Promise}      Resolves to the mining stake, {amount, timestamp}
+   */
+  getMiningStake() {
+    return this.colonyNetwork.getMiningStake(this.minerAddress);
+  }
+
+  /**
+   * Get the minimum stake for reputation mining
+   * @return {integer}      The minimum stake
+   */
+  getMinStake() {
+    return minStake;
   }
 
   /**
@@ -1331,20 +1349,28 @@ class ReputationMiner {
    * @param  { Bool }    saveHistoricalStates Whether to save historical (valid) states while syncing
    * @return {Promise}               A promise that resolves once the state is up-to-date
    */
-  async sync(blockNumber, saveHistoricalStates = false) {
-    if (!blockNumber) {
-      throw new Error("Block number not supplied to sync");
-    }
+  async sync(blockNumber = 1, saveHistoricalStates = false) {
+
     // Get the events
     const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
     filter.fromBlock = blockNumber;
     const events = await this.realProvider.getLogs(filter);
     let localHash = await this.reputationTree.getRootHash();
+
+    console.log(`Beginning sync from block ${blockNumber} and hash ${localHash} with ${events.length} cycles to go`)
+
     let applyLogs = false;
+    // We're going to apply logs if:
+    // - We're syncing from a user-provided hash (which is this conditional)
+    // - We find a match for an on-chain state in our db (which is the loop below)
+    // - We are syncing from scratch (e.g. no user-given or on-chain state is found, localHash is 0)
+    if (localHash !== `0x${new BN(0).toString(16, 64)}`) {
+      applyLogs = true;
+    }
 
     // Run through events backwards find the most recent one that we know...
     let syncFromIndex = 0;
-    for (let i = events.length - 1 ; i >= 0 ; i -= 1){
+    for (let i = events.length - 1 ; i >= 0 ; i -= 1) {
       const event = events[i];
       const hash = event.data.slice(0, 66);
       const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
@@ -1353,22 +1379,24 @@ class ReputationMiner {
       if (res.n === 1){
         // We know that state! We can just sync from the next one...
         syncFromIndex = i + 1;
+        localHash = hash;
         await this.loadState(hash);
         applyLogs = true;
         break;
       }
     }
 
-    // We're not going to apply the logs unless we're syncing from scratch (which is this if statement)
-    // or we find a hash that we recognise as our current state, and we're going to sync from there (which
-    // is the if statement at the end of the loop below
+    console.log(`Syncing forward from index ${syncFromIndex} with local hash ${localHash}`)
+
     if (localHash === `0x${new BN(0).toString(16, 64)}`) {
       applyLogs = true;
     }
 
     for (let i = syncFromIndex; i < events.length; i += 1) {
-      console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
       const event = events[i];
+      const time = new Date().toLocaleTimeString();
+      console.log(`${time}: Syncing mining cycle ${i + 1} of ${events.length}, from block ${event.blockNumber} and localHash ${localHash}`);
+
       if (i === 0) {
         // If we are syncing from the very start of the reputation history, the block
         // before the very first 'ReputationMiningCycleComplete' does not have an
@@ -1417,7 +1445,8 @@ class ReputationMiner {
     localHash = await this.reputationTree.getRootHash();
     const localNLeaves = await this.nReputations;
     if (localHash !== currentHash || !currentNLeaves.eq(localNLeaves)) {
-      console.log("ERROR: Sync failed and did not recover");
+      console.log(`Error: Sync failed and did not recover, final hash does not match ${currentHash}.`);
+      console.log("If the miner has been syncing for a while, try restarting, as the mining cycle may have advanced.");
     } else {
       console.log("Sync successful, even if there were warnings above");
     }
@@ -1488,7 +1517,9 @@ class ReputationMiner {
     }
     const currentStateHash = await this.reputationTree.getRootHash();
     if (currentStateHash !== reputationRootHash) {
-      console.log("WARNING: The supplied state failed to be recreated successfully. Are you sure it was saved?");
+      console.log(`WARNING: The supplied state ${reputationRootHash} failed to be recreated successfully. Are you sure it was saved?`);
+    } else {
+      console.log(`Reputation state ${reputationRootHash} was loaded successfully.`);
     }
   }
 

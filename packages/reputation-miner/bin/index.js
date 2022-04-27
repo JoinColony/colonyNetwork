@@ -8,6 +8,7 @@ const { argv } = require("yargs")
   .option('privateKey', {string:true})
   .option('colonyNetworkAddress', {string:true})
   .option('minerAddress', {string:true})
+  .option('startingHash', {string:true})
   .option('providerAddress', {type: "array", default: []});
 const ethers = require("ethers");
 const backoff = require("exponential-backoff").backOff;
@@ -33,6 +34,7 @@ const {
   oraclePort,
   processingDelay,
   adapterLabel,
+  startingHash,
 } = argv;
 
 class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
@@ -53,7 +55,7 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
     return backoff(() => super.getNetwork(), {retry: RetryProvider.attemptCheck});
   }
 
-  // This should return a Promise (and may throw erros)
+  // This should return a Promise (and may throw errors)
   // method is the method name (e.g. getBalance) and params is an
   // object with normalized values passed in, depending on the method
   perform(method, params) {
@@ -61,8 +63,8 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
   }
 }
 
-if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
-  console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress and --syncFrom on the command line!");
+if ((!minerAddress && !privateKey) || !colonyNetworkAddress) {
+  console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress on the command line!");
   process.exit();
 }
 
@@ -126,4 +128,5 @@ const client = new ReputationMinerClient({
   oraclePort,
   processingDelay
 });
-client.initialise(colonyNetworkAddress, syncFrom);
+
+client.initialise(colonyNetworkAddress, syncFrom, startingHash);
