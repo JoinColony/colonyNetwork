@@ -21,6 +21,7 @@
     "clean:ganache": "rimraf ./ganache-chain-db/",
     "provision:token:contracts": "truffle compile && truffle compile --contracts_directory 'lib/dappsys/[!note][!stop][!proxy][!thing][!token]*.sol' && bash ./scripts/provision-token-contracts.sh",
     "start:blockchain:client": "bash ./scripts/start-blockchain-client.sh",
+    "start:reputation:oracle": "./scripts/start-reputation-oracle.js",
     "stop:blockchain:client": "bash ./scripts/stop-blockchain-client.sh",
     "fork:goerli": "yarn run ganache-cli --fork https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d --port 8605",
     "fork:mainnet": "yarn run ganache-cli --fork https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d --port 8601",
