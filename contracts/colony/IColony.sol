@@ -228,6 +228,11 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _metadata IPFS hash of the metadata
   function editColony(string memory _metadata) external;
 
+  /// @notice Called to change the metadata associated with a colony. Expected to be a IPFS hash of a
+  /// delta to a JSON blob, but not enforced to any degree by the contracts
+  /// @param _metadataDelta IPFS hash of the metadata delta
+  function editColonyByDelta(string memory _metadataDelta) external;
+
   /// @notice Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to `_users`.
   /// This reputation is assigned in the colony-wide domain. Secured function to authorised members.
   /// @dev Only allowed to be called when `taskCount` is `0` by authorized addresses.
