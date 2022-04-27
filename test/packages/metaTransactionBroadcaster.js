@@ -333,7 +333,6 @@ contract("Metatransaction broadcaster", (accounts) => {
       const resolver = await Resolver.new();
       await setupEtherRouter("GasGuzzler", { GasGuzzler: extensionImplementation.address }, resolver);
       const TEST_EXTENSION = soliditySha3("GasGuzzler");
-      // await colonyNetwork.createMetaColony(metaTxToken.address);
 
       const mcAddress = await colonyNetwork.getMetaColony();
       const metaColony = await IMetaColony.at(mcAddress);
@@ -343,8 +342,6 @@ contract("Metatransaction broadcaster", (accounts) => {
       await colony.installExtension(TEST_EXTENSION, 1);
 
       const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
-      // console.log(extensionAddress)
-      // process.exit()
       const guzzler = await GasGuzzler.at(extensionAddress);
 
       const txData = await guzzler.contract.methods.fun(1000).encodeABI();
