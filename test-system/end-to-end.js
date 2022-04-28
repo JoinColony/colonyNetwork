@@ -5,7 +5,7 @@ import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import TruffleLoader from "../packages/reputation-miner/TruffleLoader";
+import { TruffleLoader } from "../packages/package-utils";
 import {
   submitAndForwardTimeToDispute,
   getActiveRepCycle,

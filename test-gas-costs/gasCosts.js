@@ -1,7 +1,7 @@
 /* globals artifacts */
 
 import path from "path";
-import TruffleLoader from "../packages/reputation-miner/TruffleLoader";
+import { TruffleLoader } from "../packages/package-utils";
 
 import {
   UINT256_MAX,

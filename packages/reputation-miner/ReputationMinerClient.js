@@ -3,8 +3,7 @@ import apicache from 'apicache'
 const ethers = require("ethers");
 const express = require("express");
 const path = require('path');
-const request = require('request-promise');
-const ConsoleAdapter = require('./adapters/console').default;
+const { ConsoleAdapter, updateGasEstimate } = require('../package-utils');
 
 const ReputationMiner = require("./ReputationMiner");
 
@@ -67,7 +66,7 @@ class ReputationMinerClient {
     }
 
     if (typeof this._adapter === "undefined" ) {
-      this._adapter = ConsoleAdapter;
+      this._adapter = new ConsoleAdapter();
     }
 
     if (this._oracle) {
@@ -324,50 +323,6 @@ class ReputationMinerClient {
     }
   }
 
-  async updateGasEstimate(_type) {
-    let type = _type;
-    const options = {
-      headers: {
-        'User-Agent': 'Request-Promise'
-      },
-      json: true // Automatically parses the JSON string in the response
-    };
-    let defaultGasPrice;
-    let factor;
-
-    if (this.chainId === 100){
-      options.uri = "https://blockscout.com/xdai/mainnet/api/v1/gas-price-oracle";
-      defaultGasPrice = ethers.utils.hexlify(1000000000);
-      factor = 1;
-      // This oracle presents the information slightly differently from ethgasstation.
-      if (_type === "safeLow") {
-        type = "slow";
-      }
-    } else if (this.chainId === 1) {
-      options.uri = "https://ethgasstation.info/json/ethgasAPI.json";
-      defaultGasPrice = ethers.utils.hexlify(20000000000);
-      factor = 10;
-    } else {
-      this._adapter.error(`Error during gas estimation: unknown chainid ${this.chainId}`);
-      this._miner.setGasPrice(ethers.utils.hexlify(20000000000));
-      return;
-    }
-
-    // Get latest from whichever oracle
-    try {
-      const gasEstimates = await request(options);
-
-      if (gasEstimates[type]){
-        this._miner.setGasPrice(ethers.utils.hexlify(gasEstimates[type] / factor * 1e9));
-      } else {
-        this._miner.setGasPrice(defaultGasPrice);
-      }
-    } catch (err) {
-      this._adapter.error(`Error during gas estimation: ${err}`);
-      this._miner.setGasPrice(defaultGasPrice);
-    }
-  }
-
   /**
    * Navigate through the mining process logic used when the client is in auto mode.
    * Up to 12 submissions of our current proposed Hash/nLeaves/JRH are made at the earliest block possible
@@ -460,7 +415,8 @@ class ReputationMinerClient {
           if (canSubmit) {
             this._adapter.log("⏰ Looks like it's time to submit an entry to the current cycle");
             this.submissionIndex += 1;
-            await this.updateGasEstimate('average');
+            const gasPrice = await updateGasEstimate("average", this.chainId, this._adapter);
+            await this._miner.setGasPrice(gasPrice);
             await this.submitEntry(entryIndex);
           }
         }
@@ -505,7 +461,9 @@ class ReputationMinerClient {
               return;
             }
           }
-          await this.updateGasEstimate('fast');
+          const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
+          await this._miner.setGasPrice(gasPrice);
+
           this._adapter.log("Invalidating pseudo-opponent in dispute");
           await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
           this.endDoBlockChecks();
@@ -513,13 +471,13 @@ class ReputationMinerClient {
         }
 
         // If we're here, we do have an opponent.
-
         // Before checking if our opponent has timed out yet, check if we can respond to something
         // 1. Do we still need to confirm JRH?
         if (submission.jrhNLeaves.eq(0)) {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
           if (responsePossible){
-            await this.updateGasEstimate('fast');
+            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
+            await this._miner.setGasPrice(gasPrice);
             this._adapter.log("Confirming JRH in dispute");
             const tx = await this._miner.confirmJustificationRootHash();
             await tx.wait();
@@ -533,7 +491,8 @@ class ReputationMinerClient {
           if (oppEntry.challengeStepCompleted.gte(entry.challengeStepCompleted)) {
             const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_RESPONSE, entry.lastResponseTimestamp);
             if (responsePossible){
-              await this.updateGasEstimate('fast');
+            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
+            await this._miner.setGasPrice(gasPrice);
               this._adapter.log("Responding to binary search in dispute");
               const tx = await this._miner.respondToBinarySearchForChallenge();
               await tx.wait();
@@ -550,7 +509,8 @@ class ReputationMinerClient {
         {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
           if (responsePossible){
-            await this.updateGasEstimate('fast');
+            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
+            await this._miner.setGasPrice(gasPrice);
             this._adapter.log("Confirming binary search in dispute");
             const tx = await this._miner.confirmBinarySearchResult();
             await tx.wait();
@@ -567,7 +527,8 @@ class ReputationMinerClient {
         {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
           if (responsePossible){
-            await this.updateGasEstimate('fast');
+            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
+            await this._miner.setGasPrice(gasPrice);
             this._adapter.log("Responding to challenge in dispute");
             const tx = await this._miner.respondToChallenge();
             await tx.wait();
@@ -584,7 +545,8 @@ class ReputationMinerClient {
           );
           if (responsePossible) {
             // If so, invalidate them.
-            await this.updateGasEstimate('fast');
+            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
+            await this._miner.setGasPrice(gasPrice);
             this._adapter.log("Invalidating opponent in dispute");
             await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
             this.endDoBlockChecks();
@@ -746,7 +708,8 @@ class ReputationMinerClient {
     // Confirm hash if possible
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
-      await this.updateGasEstimate('average');
+      const gasPrice = await updateGasEstimate("average", this.chainId, this._adapter);
+      await this._miner.setGasPrice(gasPrice);
 
       const confirmNewHashTx = await this._miner.confirmNewHash();
 
