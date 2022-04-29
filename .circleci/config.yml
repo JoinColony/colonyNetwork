@@ -2,7 +2,7 @@ version: 2
 
 job_common: &job_common
   docker:
-    - image: circleci/node:12.16.3-stretch
+    - image: cimg/node:12.22.12
       auth:
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
