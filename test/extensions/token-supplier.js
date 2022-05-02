@@ -1,14 +1,14 @@
 /* globals artifacts */
 
-import BN from "bn.js";
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
+const BN = require("bn.js");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
 
-import { UINT256_MAX, WAD, SECONDS_PER_DAY } from "../../helpers/constants";
-import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
-import { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, getBlockTime, forwardTime } from "../../helpers/test-helper";
+const { UINT256_MAX, WAD, SECONDS_PER_DAY } = require("../../helpers/constants");
+const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
+const { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, getBlockTime, forwardTime } = require("../../helpers/test-helper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

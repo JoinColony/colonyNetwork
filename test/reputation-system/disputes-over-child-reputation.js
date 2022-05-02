@@ -1,9 +1,9 @@
-import path from "path";
-import chai from "chai";
-import bnChai from "bn-chai";
+const path = require("path");
+const chai = require("chai");
+const bnChai = require("bn-chai");
 
-import { TruffleLoader } from "../../packages/package-utils";
-import {
+const { TruffleLoader } = require("../../packages/package-utils");
+const {
   forwardTime,
   checkErrorRevertEthers,
   submitAndForwardTimeToDispute,
@@ -13,26 +13,26 @@ import {
   accommodateChallengeAndInvalidateHash,
   finishReputationMiningCycle,
   removeSubdomainLimit,
-} from "../../helpers/test-helper";
+} = require("../../helpers/test-helper");
 
-import {
+const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
   setupFinalizedTask,
   fundColonyWithTokens,
-} from "../../helpers/test-data-generator";
+} = require("../../helpers/test-data-generator");
 
-import { UINT256_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } from "../../helpers/constants";
+const { UINT256_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
 
-import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
-import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
-import MaliciousReputationMinerClaimNoOriginReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNoOriginReputation";
-import MaliciousReputationMinerClaimNoUserChildReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNoUserChildReputation"; // eslint-disable-line max-len
-import MaliciousReputationMinerClaimWrongOriginReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongOriginReputation"; // eslint-disable-line max-len
-import MaliciousReputationMinerClaimWrongChildReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongChildReputation"; // eslint-disable-line max-len
-import MaliciousReputationMinerGlobalOriginNotChildOrigin from "../../packages/reputation-miner/test/MaliciousReputationMinerGlobalOriginNotChildOrigin"; // eslint-disable-line max-len
-import MaliciousReputationMinerWrongResponse from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongResponse";
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
+const MaliciousReputationMinerClaimNoOriginReputation = require("../../packages/reputation-miner/test/MaliciousReputationMinerClaimNoOriginReputation"); // eslint-disable-line max-len
+const MaliciousReputationMinerClaimNoUserChildReputation = require("../../packages/reputation-miner/test/MaliciousReputationMinerClaimNoUserChildReputation"); // eslint-disable-line max-len
+const MaliciousReputationMinerClaimWrongOriginReputation = require("../../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongOriginReputation"); // eslint-disable-line max-len
+const MaliciousReputationMinerClaimWrongChildReputation = require("../../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongChildReputation"); // eslint-disable-line max-len
+const MaliciousReputationMinerGlobalOriginNotChildOrigin = require("../../packages/reputation-miner/test/MaliciousReputationMinerGlobalOriginNotChildOrigin"); // eslint-disable-line max-len
+const MaliciousReputationMinerWrongResponse = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongResponse");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

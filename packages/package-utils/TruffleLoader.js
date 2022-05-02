@@ -10,7 +10,7 @@ const DEFAULT_REQUIRED_CONTRACT_PROPS = {
 
 const validateField = (assertion, field) => assert(assertion, `Invalid contract definition: ${field} is missing or invalid`);
 
-export default class TruffleContractLoader {
+class TruffleContractLoader {
   static transform({ abi = [], bytecode, networks = {} } = {}, { network } = {}) {
     let address;
 
@@ -105,3 +105,5 @@ export default class TruffleContractLoader {
     return result;
   }
 }
+
+module.exports = TruffleContractLoader;

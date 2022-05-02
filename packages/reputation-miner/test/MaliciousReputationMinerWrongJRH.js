@@ -1,4 +1,4 @@
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it submits a bad JRH
@@ -40,4 +40,4 @@ class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
   }
 }
 
-export default MaliciousReputationMinerWrongJRH;
+module.exports = MaliciousReputationMinerWrongJRH;

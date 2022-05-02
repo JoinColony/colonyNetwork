@@ -1,9 +1,9 @@
 /* globals artifacts */
-import { soliditySha3 } from "web3-utils";
-import BN from "bn.js";
-import { ethers } from "ethers";
+const { soliditySha3 } = require("web3-utils");
+const BN = require("bn.js");
+const { ethers } = require("ethers");
 
-import {
+const {
   UINT256_MAX,
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
@@ -19,10 +19,10 @@ import {
   SPECIFICATION_HASH,
   DELIVERABLE_HASH,
   GLOBAL_SKILL_ID,
-} from "./constants";
+} = require("./constants");
 
-import { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } from "./test-helper";
-import { executeSignedTaskChange, executeSignedRoleAssignment } from "./task-review-signing";
+const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } = require("./test-helper");
+const { executeSignedTaskChange, executeSignedRoleAssignment } = require("./task-review-signing");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -36,7 +36,15 @@ const Resolver = artifacts.require("Resolver");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 
-export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = GLOBAL_SKILL_ID, dueDate = 0, manager }) {
+exports.makeTask = async function makeTask({
+  colonyNetwork,
+  colony,
+  hash = SPECIFICATION_HASH,
+  domainId = 1,
+  skillId = GLOBAL_SKILL_ID,
+  dueDate = 0,
+  manager,
+}) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
 
@@ -53,9 +61,9 @@ export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HAS
   const { logs } = await colony.makeTask(1, childSkillIndex, hash, domainId, skillId, dueDate, { from: manager });
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
   return logs.filter((log) => log.event === "TaskAdded")[0].args.taskId;
-}
+};
 
-export async function assignRoles({ colony, taskId, manager, evaluator, worker }) {
+exports.assignRoles = async function assignRoles({ colony, taskId, manager, evaluator, worker }) {
   if (evaluator && manager !== evaluator) {
     await executeSignedTaskChange({
       colony,
@@ -87,9 +95,14 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
     sigTypes,
     args: [taskId, worker],
   });
-}
+};
 
-export async function submitDeliverableAndRatings({ colony, taskId, managerRating = MANAGER_RATING, workerRating = WORKER_RATING }) {
+exports.submitDeliverableAndRatings = async function submitDeliverableAndRatings({
+  colony,
+  taskId,
+  managerRating = MANAGER_RATING,
+  workerRating = WORKER_RATING,
+}) {
   const managerRatingSecret = soliditySha3(RATING_1_SALT, managerRating);
   const workerRatingSecret = soliditySha3(RATING_2_SALT, workerRating);
 
@@ -100,21 +113,21 @@ export async function submitDeliverableAndRatings({ colony, taskId, managerRatin
   await colony.submitTaskWorkRating(taskId, WORKER_ROLE, workerRatingSecret, { from: evaluatorRole.user });
   await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, RATING_1_SALT, { from: workerRole.user });
   await colony.revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, RATING_2_SALT, { from: evaluatorRole.user });
-}
+};
 
-export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId, manager, evaluator, worker }) {
+exports.setupAssignedTask = async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId, manager, evaluator, worker }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
   evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
   worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
-  const taskId = await makeTask({ colonyNetwork, colony, dueDate, domainId, skillId, manager });
-  await assignRoles({ colony, taskId, manager, evaluator, worker });
+  const taskId = await exports.makeTask({ colonyNetwork, colony, dueDate, domainId, skillId, manager });
+  await exports.assignRoles({ colony, taskId, manager, evaluator, worker });
 
   return taskId;
-}
+};
 
-export async function setupFundedTask({
+exports.setupFundedTask = async function setupFundedTask({
   colonyNetwork,
   colony,
   token,
@@ -140,7 +153,7 @@ export async function setupFundedTask({
     tokenAddress = token === ethers.constants.AddressZero ? ethers.constants.AddressZero : token.address;
   }
 
-  const taskId = await makeTask({ colonyNetwork, colony, dueDate, domainId, skillId, manager });
+  const taskId = await exports.makeTask({ colonyNetwork, colony, dueDate, domainId, skillId, manager });
   const task = await colony.getTask(taskId);
   const managerPayoutBN = new BN(managerPayout);
   const evaluatorPayoutBN = new BN(evaluatorPayout);
@@ -153,12 +166,12 @@ export async function setupFundedTask({
   await colony.setFundingRole(1, UINT256_MAX, manager, 1, true);
   await moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, childSkillIndex, 1, task.fundingPotId, totalPayouts, tokenAddress, { from: manager });
   await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout, { from: manager });
-  await assignRoles({ colony, taskId, manager, evaluator, worker });
+  await exports.assignRoles({ colony, taskId, manager, evaluator, worker });
 
   return taskId;
-}
+};
 
-export async function setupRatedTask({
+exports.setupRatedTask = async function setupRatedTask({
   colonyNetwork,
   colony,
   token,
@@ -179,7 +192,7 @@ export async function setupRatedTask({
   evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
   worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
-  const taskId = await setupFundedTask({
+  const taskId = await exports.setupFundedTask({
     colonyNetwork,
     colony,
     token,
@@ -194,11 +207,11 @@ export async function setupRatedTask({
     workerPayout,
   });
 
-  await submitDeliverableAndRatings({ colony, taskId, evaluator, worker, managerRating, workerRating });
+  await exports.submitDeliverableAndRatings({ colony, taskId, evaluator, worker, managerRating, workerRating });
   return taskId;
-}
+};
 
-export async function setupFinalizedTask({
+exports.setupFinalizedTask = async function setupFinalizedTask({
   colonyNetwork,
   colony,
   token,
@@ -219,7 +232,7 @@ export async function setupFinalizedTask({
   evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
   worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
-  const taskId = await setupRatedTask({
+  const taskId = await exports.setupRatedTask({
     colonyNetwork,
     colony,
     token,
@@ -238,9 +251,9 @@ export async function setupFinalizedTask({
 
   await colony.finalizeTask(taskId);
   return taskId;
-}
+};
 
-export async function giveUserCLNYTokens(colonyNetwork, userAddress, amount) {
+exports.giveUserCLNYTokens = async function giveUserCLNYTokens(colonyNetwork, userAddress, amount) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken();
@@ -248,9 +261,9 @@ export async function giveUserCLNYTokens(colonyNetwork, userAddress, amount) {
 
   const accounts = await web3GetAccounts();
   await clnyToken.mint(userAddress, amount, { from: accounts[11] });
-}
+};
 
-export async function giveUserCLNYTokensAndStake(colonyNetwork, user, _amount) {
+exports.giveUserCLNYTokensAndStake = async function giveUserCLNYTokensAndStake(colonyNetwork, user, _amount) {
   let amount;
   if (web3.utils.isBN(_amount)) {
     amount = _amount;
@@ -263,15 +276,15 @@ export async function giveUserCLNYTokensAndStake(colonyNetwork, user, _amount) {
   const clnyAddress = await metaColony.getToken();
   const clnyToken = await Token.at(clnyAddress);
 
-  await giveUserCLNYTokens(colonyNetwork, user, amount);
+  await exports.giveUserCLNYTokens(colonyNetwork, user, amount);
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   await clnyToken.approve(tokenLocking.address, amount, { from: user });
   await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, amount, true, { from: user });
   await colonyNetwork.stakeForMining(amount, { from: user });
-}
+};
 
-export async function fundColonyWithTokens(colony, token, tokenAmount = INITIAL_FUNDING) {
+exports.fundColonyWithTokens = async function fundColonyWithTokens(colony, token, tokenAmount = INITIAL_FUNDING) {
   // We get input either a plan JS number or a BN.js instance. Ensure we always pass on BN.js
   let tokenAmountBN;
   if (web3.utils.isBN(tokenAmount)) {
@@ -287,9 +300,9 @@ export async function fundColonyWithTokens(colony, token, tokenAmount = INITIAL_
     await token.mint(colony.address, tokenAmountBN);
   }
   await colony.claimColonyFunds(token.address);
-}
+};
 
-export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
+exports.setupMetaColonyWithLockedCLNYToken = async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   const accounts = await web3GetAccounts();
   const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
   await colonyNetwork.createMetaColony(clnyToken.address);
@@ -315,9 +328,9 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   await metaColony.addGlobalSkill();
 
   return { metaColony, clnyToken };
-}
+};
 
-export async function unlockCLNYToken(metaColony) {
+exports.unlockCLNYToken = async function unlockCLNYToken(metaColony) {
   const clnyAddress = await metaColony.getToken();
   const clny = await Token.at(clnyAddress);
 
@@ -331,9 +344,9 @@ export async function unlockCLNYToken(metaColony) {
   // await clny.setOwner(accounts[11], { from: accounts[11] });
   // Authority could be cleared as well?
   // await clny.setAuthority(0x0, { from: accounts[11] });
-}
+};
 
-export async function setupColonyNetwork() {
+exports.setupColonyNetwork = async function setupColonyNetwork() {
   const resolverColonyNetworkDeployed = await Resolver.deployed();
   const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
 
@@ -368,37 +381,37 @@ export async function setupColonyNetwork() {
   await tokenLocking.setColonyNetwork(colonyNetwork.address);
 
   return colonyNetwork;
-}
+};
 
-export async function setupRandomToken(lockedToken) {
+exports.setupRandomToken = async function setupRandomToken(lockedToken) {
   const tokenArgs = getTokenArgs();
   const token = await Token.new(...tokenArgs);
   if (!lockedToken) {
     await token.unlock();
   }
   return token;
-}
+};
 
-export async function setupRandomColony(colonyNetwork, lockedToken = false) {
-  const token = await setupRandomToken(lockedToken);
+exports.setupRandomColony = async function setupRandomColony(colonyNetwork, lockedToken = false) {
+  const token = await exports.setupRandomToken(lockedToken);
 
-  const colony = await setupColony(colonyNetwork, token.address);
+  const colony = await exports.setupColony(colonyNetwork, token.address);
 
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [tokenLockingAddress]);
   await token.setAuthority(tokenAuthority.address);
 
   return { colony, token };
-}
+};
 
-export async function setupColony(colonyNetwork, tokenAddress) {
+exports.setupColony = async function setupColony(colonyNetwork, tokenAddress) {
   const { logs } = await colonyNetwork.createColony(tokenAddress, 0, "", "");
   const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
   const colony = await IColony.at(colonyAddress);
   return colony;
-}
+};
 
-export async function getMetaTransactionParameters(txData, userAddress, targetAddress) {
+exports.getMetaTransactionParameters = async function getMetaTransactionParameters(txData, userAddress, targetAddress) {
   const contract = await BasicMetaTransaction.at(targetAddress);
   const nonce = await contract.getMetatransactionNonce(userAddress);
   // We should just be able to get the chain id via a web3 call, but until ganache sort their stuff out,
@@ -420,9 +433,9 @@ export async function getMetaTransactionParameters(txData, userAddress, targetAd
   const v = parseInt(sig.substring(130), 16) + 27;
 
   return { r, s, v };
-}
+};
 
-export async function getPermitParameters(owner, spender, amount, deadline, targetAddress) {
+exports.getPermitParameters = async function getPermitParameters(owner, spender, amount, deadline, targetAddress) {
   const contract = await MetaTxToken.at(targetAddress);
   const nonce = await contract.getMetatransactionNonce(owner);
   const multichain = await MultiChain.new();
@@ -495,4 +508,4 @@ export async function getPermitParameters(owner, spender, amount, deadline, targ
   const v = parseInt(sig.substring(130), 16);
 
   return { r, s, v };
-}
+};

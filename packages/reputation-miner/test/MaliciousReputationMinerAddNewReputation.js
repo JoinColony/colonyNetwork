@@ -1,4 +1,4 @@
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class MaliciousReputationMinerAddNewReputation extends ReputationMinerTestWrapper {
   // This will add a new reputation as well as adding entryToFalsify correctly.
@@ -21,4 +21,4 @@ class MaliciousReputationMinerAddNewReputation extends ReputationMinerTestWrappe
   }
 }
 
-export default MaliciousReputationMinerAddNewReputation;
+module.exports = MaliciousReputationMinerAddNewReputation;

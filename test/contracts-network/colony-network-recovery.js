@@ -1,14 +1,14 @@
 /* globals artifacts */
 
-import { padLeft, soliditySha3 } from "web3-utils";
-import BN from "bn.js";
-import { ethers } from "ethers";
-import chai from "chai";
-import bnChai from "bn-chai";
-import path from "path";
+const { padLeft, soliditySha3 } = require("web3-utils");
+const BN = require("bn.js");
+const { ethers } = require("ethers");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const path = require("path");
 
-import { TruffleLoader } from "../../packages/package-utils";
-import {
+const { TruffleLoader } = require("../../packages/package-utils");
+const {
   forwardTime,
   makeReputationKey,
   currentBlock,
@@ -18,17 +18,17 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   getTokenArgs,
-} from "../../helpers/test-helper";
-import {
+} = require("../../helpers/test-helper");
+const {
   setupFinalizedTask,
   giveUserCLNYTokensAndStake,
   fundColonyWithTokens,
   setupRandomColony,
   getMetaTransactionParameters,
-} from "../../helpers/test-data-generator";
-import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
-import { DEFAULT_STAKE, MINING_CYCLE_DURATION, CURR_VERSION } from "../../helpers/constants";
+} = require("../../helpers/test-data-generator");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
+const { DEFAULT_STAKE, MINING_CYCLE_DURATION, CURR_VERSION } = require("../../helpers/constants");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

@@ -1,6 +1,6 @@
-import ConsoleAdapter from "./console";
-
 const Slack = require("slack");
+
+const ConsoleAdapter = require("./console");
 
 class SlackAdapter extends ConsoleAdapter {
   constructor(label) {
@@ -21,4 +21,4 @@ class SlackAdapter extends ConsoleAdapter {
   }
 }
 
-export default SlackAdapter;
+module.exports = SlackAdapter;

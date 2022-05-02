@@ -1,4 +1,4 @@
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class MaliciousReputationMinerWrongNLeaves2 extends ReputationMinerTestWrapper {
   // This client will reuse a UID for a reputation
@@ -16,4 +16,4 @@ class MaliciousReputationMinerWrongNLeaves2 extends ReputationMinerTestWrapper {
   }
 }
 
-export default MaliciousReputationMinerWrongNLeaves2;
+module.exports = MaliciousReputationMinerWrongNLeaves2;

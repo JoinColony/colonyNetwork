@@ -1,13 +1,13 @@
 /* eslint-disable no-underscore-dangle */
 
-import path from "path";
-import chai from "chai";
-import bnChai from "bn-chai";
+const path = require("path");
+const chai = require("chai");
+const bnChai = require("bn-chai");
 
-import { TruffleLoader } from "../../../packages/package-utils";
+const { TruffleLoader } = require("../../../packages/package-utils");
 
-import { DEFAULT_STAKE, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } from "../../../helpers/constants";
-import {
+const { DEFAULT_STAKE, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../../helpers/constants");
+const {
   getActiveRepCycle,
   forwardTime,
   forwardTimeTo,
@@ -19,17 +19,17 @@ import {
   currentBlock,
   getWaitForNSubmissionsPromise,
   TestAdapter,
-} from "../../../helpers/test-helper";
-import {
+} = require("../../../helpers/test-helper");
+const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
   setupFinalizedTask,
   fundColonyWithTokens,
-} from "../../../helpers/test-data-generator";
-import ReputationMinerClient from "../../../packages/reputation-miner/ReputationMinerClient";
-import ReputationMinerTestWrapper from "../../../packages/reputation-miner/test/ReputationMinerTestWrapper";
-import MaliciousReputationMinerExtraRep from "../../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
+} = require("../../../helpers/test-data-generator");
+const ReputationMinerClient = require("../../../packages/reputation-miner/ReputationMinerClient");
+const ReputationMinerTestWrapper = require("../../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const MaliciousReputationMinerExtraRep = require("../../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

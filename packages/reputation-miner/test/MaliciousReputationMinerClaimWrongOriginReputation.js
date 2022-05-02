@@ -1,4 +1,4 @@
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 const WRONG_ADDRESS = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
 
@@ -45,4 +45,4 @@ class MaliciousReputationMinerWrongOriginReputation extends ReputationMinerTestW
 
 }
 
-export default MaliciousReputationMinerWrongOriginReputation;
+module.exports = MaliciousReputationMinerWrongOriginReputation;

@@ -1,6 +1,6 @@
-import PatriciaTreeBase from "./patricia-base";
+const PatriciaTreeBase = require("./patricia-base");
 
-export default class PatriciaTree extends PatriciaTreeBase {
+class PatriciaTree extends PatriciaTreeBase {
   insert(key, value, _ = undefined) {
     return super.insert(PatriciaTreeBase.sha3(key), value, _);
   }
@@ -14,3 +14,5 @@ export default class PatriciaTree extends PatriciaTreeBase {
     return super.getImpliedRoot(PatriciaTreeBase.sha3(key), value, _branchMask, siblings);
   }
 }
+
+module.exports = PatriciaTree;

@@ -1,10 +1,10 @@
 /* globals artifacts */
 
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
 
-import {
+const {
   IPFS_HASH,
   UINT256_MAX,
   MANAGER_RATING,
@@ -14,9 +14,9 @@ import {
   RATING_1_SECRET,
   RATING_2_SECRET,
   WAD,
-} from "../../helpers/constants";
-import { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } from "../../helpers/test-helper";
-import { makeTask, setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
+} = require("../../helpers/constants");
+const { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } = require("../../helpers/test-helper");
+const { makeTask, setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

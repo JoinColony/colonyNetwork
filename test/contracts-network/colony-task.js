@@ -1,11 +1,11 @@
 /* global artifacts */
-import BN from "bn.js";
-import { ethers } from "ethers";
-import chai from "chai";
-import bnChai from "bn-chai";
-import { soliditySha3 } from "web3-utils";
+const BN = require("bn.js");
+const { ethers } = require("ethers");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { soliditySha3 } = require("web3-utils");
 
-import {
+const {
   UINT256_MAX,
   WAD,
   MANAGER_ROLE,
@@ -30,11 +30,11 @@ import {
   RATING_2_SECRET,
   MAX_PAYOUT,
   GLOBAL_SKILL_ID,
-} from "../../helpers/constants";
+} = require("../../helpers/constants");
 
-import { getSigsAndTransactionData, executeSignedTaskChange, executeSignedRoleAssignment } from "../../helpers/task-review-signing";
+const { getSigsAndTransactionData, executeSignedTaskChange, executeSignedRoleAssignment } = require("../../helpers/task-review-signing");
 
-import {
+const {
   getTokenArgs,
   web3GetBalance,
   checkErrorRevert,
@@ -44,9 +44,9 @@ import {
   currentBlockTime,
   addTaskSkillEditingFunctions,
   web3GetStorageAt,
-} from "../../helpers/test-helper";
+} = require("../../helpers/test-helper");
 
-import {
+const {
   fundColonyWithTokens,
   setupFinalizedTask,
   setupRatedTask,
@@ -55,8 +55,8 @@ import {
   makeTask,
   setupRandomColony,
   assignRoles,
-} from "../../helpers/test-data-generator";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+} = require("../../helpers/test-data-generator");
+const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

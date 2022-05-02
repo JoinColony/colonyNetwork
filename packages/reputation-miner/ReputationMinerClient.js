@@ -1,11 +1,10 @@
-import apicache from 'apicache'
-
 const ethers = require("ethers");
 const express = require("express");
-const path = require('path');
-const { ConsoleAdapter, updateGasEstimate } = require('../package-utils');
+const path = require("path");
+const apicache = require("apicache")
 
 const ReputationMiner = require("./ReputationMiner");
+const { ConsoleAdapter, updateGasEstimate } = require("../package-utils");
 
 const minStake = ethers.BigNumber.from(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
 const MINUTE_IN_SECONDS = 60;

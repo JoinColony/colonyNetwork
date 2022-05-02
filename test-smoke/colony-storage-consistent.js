@@ -1,17 +1,15 @@
 /* global artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import { BN } from "bn.js";
-
-import { UINT256_MAX, WAD, GLOBAL_SKILL_ID } from "../helpers/constants";
-import { fundColonyWithTokens, setupColony } from "../helpers/test-data-generator";
-
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const BN = require("bn.js");
 const Account = require("ethereumjs-account").default;
+const utils = require("ethereumjs-util");
+
+const { UINT256_MAX, WAD, GLOBAL_SKILL_ID } = require("../helpers/constants");
+const { fundColonyWithTokens, setupColony } = require("../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
-
-const utils = require("ethereumjs-util");
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");

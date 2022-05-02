@@ -1,7 +1,7 @@
-import { soliditySha3 } from "web3-utils";
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
-
 const ethers = require("ethers");
+const { soliditySha3 } = require("web3-utils");
+
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrapper {
   // This client will supply the wrong log entry as part of its proof
@@ -79,4 +79,4 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
   }
 }
 
-export default MaliciousReputationMinerWrongProofLogEntry;
+module.exports = MaliciousReputationMinerWrongProofLogEntry;

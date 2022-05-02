@@ -1,17 +1,17 @@
 /* globals artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import BN from "bn.js";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const BN = require("bn.js");
 
-import { setupENSRegistrar } from "../helpers/upgradable-contracts";
-import {
+const { setupENSRegistrar } = require("../helpers/upgradable-contracts");
+const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokens,
   giveUserCLNYTokensAndStake,
   unlockCLNYToken,
-} from "../helpers/test-data-generator";
-import {
+} = require("../helpers/test-data-generator");
+const {
   forwardTime,
   getActiveRepCycle,
   advanceMiningCycleNoContest,
@@ -20,15 +20,15 @@ import {
   expectEvent,
   expectNoEvent,
   getTokenArgs,
-} from "../helpers/test-helper";
-import {
+} = require("../helpers/test-helper");
+const {
   MINING_CYCLE_DURATION,
   DEFAULT_STAKE,
   MIN_STAKE,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   WAD,
   ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
-} from "../helpers/constants";
+} = require("../helpers/constants");
 
 const { expect } = chai;
 const ENSRegistry = artifacts.require("ENSRegistry");
