@@ -1,21 +1,21 @@
 /* globals artifacts */
 
-import chai from "chai";
-import bnChai from "bn-chai";
+const chai = require("chai");
+const bnChai = require("bn-chai");
 
-import { soliditySha3 } from "web3-utils";
-import { UINT256_MAX, INITIAL_FUNDING, SPECIFICATION_HASH, GLOBAL_SKILL_ID, WAD } from "../../helpers/constants";
-import { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit } from "../../helpers/test-helper";
-import { executeSignedTaskChange } from "../../helpers/task-review-signing";
+const { soliditySha3 } = require("web3-utils");
+const { UINT256_MAX, INITIAL_FUNDING, SPECIFICATION_HASH, GLOBAL_SKILL_ID, WAD } = require("../../helpers/constants");
+const { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit } = require("../../helpers/test-helper");
+const { executeSignedTaskChange } = require("../../helpers/task-review-signing");
 
-import {
+const {
   fundColonyWithTokens,
   setupFinalizedTask,
   makeTask,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   setupRandomColony,
-} from "../../helpers/test-data-generator";
+} = require("../../helpers/test-data-generator");
 
 const IMetaColony = artifacts.require("IMetaColony");
 

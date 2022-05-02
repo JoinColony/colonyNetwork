@@ -1,14 +1,14 @@
 /* global artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import { BN } from "bn.js";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { BN } = require("bn.js");
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
 
-import { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID, IPFS_HASH } from "../../helpers/constants";
-import { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } from "../../helpers/test-helper";
-import { fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+const { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID, IPFS_HASH } = require("../../helpers/constants");
+const { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } = require("../../helpers/test-helper");
+const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
+const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

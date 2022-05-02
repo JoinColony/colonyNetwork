@@ -1,23 +1,23 @@
 /* globals artifacts */
-import path from "path";
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
+const path = require("path");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
 
-import { TruffleLoader } from "../../packages/package-utils";
-import { getTokenArgs, checkErrorRevert, makeReputationKey, advanceMiningCycleNoContest, expectEvent } from "../../helpers/test-helper";
-import {
+const { TruffleLoader } = require("../../packages/package-utils");
+const { getTokenArgs, checkErrorRevert, makeReputationKey, advanceMiningCycleNoContest, expectEvent } = require("../../helpers/test-helper");
+const {
   giveUserCLNYTokensAndStake,
   setupColony,
   setupRandomColony,
   fundColonyWithTokens,
   getMetaTransactionParameters,
-} from "../../helpers/test-data-generator";
-import { UINT256_MAX, DEFAULT_STAKE } from "../../helpers/constants";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+} = require("../../helpers/test-data-generator");
+const { UINT256_MAX, DEFAULT_STAKE } = require("../../helpers/constants");
+const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 
-import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

@@ -1,5 +1,6 @@
-import BN from "bn.js";
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
+const BN = require("bn.js");
+
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class MaliciousReputationMinerReuseUID extends ReputationMinerTestWrapper {
   // This client will reuse a UID for a reputation
@@ -30,4 +31,4 @@ class MaliciousReputationMinerReuseUID extends ReputationMinerTestWrapper {
   }
 }
 
-export default MaliciousReputationMinerReuseUID;
+module.exports = MaliciousReputationMinerReuseUID;

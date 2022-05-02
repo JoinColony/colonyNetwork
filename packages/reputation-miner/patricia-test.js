@@ -1,10 +1,10 @@
 /* globals artifacts */
 
-import path from "path";
-import { fromAscii } from "web3-utils";
+const path = require("path");
+const { fromAscii } = require("web3-utils");
 
-import { TruffleLoader } from "../package-utils";
-import ReputationMiner from "./ReputationMiner";
+const { TruffleLoader } = require("../package-utils");
+const ReputationMiner = require("./ReputationMiner");
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");

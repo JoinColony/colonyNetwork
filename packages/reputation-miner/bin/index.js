@@ -1,8 +1,3 @@
-require("@babel/register")({
-  presets: ["@babel/preset-env"]
-});
-require("@babel/polyfill");
-
 const path = require("path");
 const { argv } = require("yargs")
   .option('privateKey', {string:true})

@@ -1,12 +1,12 @@
 /* global artifacts */
 
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
 
-import { UINT256_MAX, SPECIFICATION_HASH } from "../../helpers/constants";
-import { web3GetStorageAt, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
-import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
+const { UINT256_MAX, SPECIFICATION_HASH } = require("../../helpers/constants");
+const { web3GetStorageAt, checkErrorRevert, expectEvent } = require("../../helpers/test-helper");
+const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");

@@ -1,11 +1,11 @@
-import path from "path";
-import BN from "bn.js";
-import { toBN } from "web3-utils";
-import chai from "chai";
-import bnChai from "bn-chai";
+const path = require("path");
+const BN = require("bn.js");
+const { toBN } = require("web3-utils");
+const chai = require("chai");
+const bnChai = require("bn-chai");
 
-import { TruffleLoader } from "../../packages/package-utils";
-import {
+const { TruffleLoader } = require("../../packages/package-utils");
+const {
   forwardTime,
   checkErrorRevert,
   checkErrorRevertEthers,
@@ -15,35 +15,35 @@ import {
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
   finishReputationMiningCycle,
-} from "../../helpers/test-helper";
+} = require("../../helpers/test-helper");
 
-import {
+const {
   giveUserCLNYTokensAndStake,
   setupFinalizedTask,
   fundColonyWithTokens,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
-} from "../../helpers/test-data-generator";
+} = require("../../helpers/test-data-generator");
 
-import {
+const {
   INT128_MAX,
   DEFAULT_STAKE,
   INITIAL_FUNDING,
   MINING_CYCLE_DURATION,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   GLOBAL_SKILL_ID,
-} from "../../helpers/constants";
+} = require("../../helpers/constants");
 
-import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
-import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
-import MaliciousReputationMinerWrongUID from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongUID";
-import MaliciousReputationMinerReuseUID from "../../packages/reputation-miner/test/MaliciousReputationMinerReuseUID";
-import MaliciousReputationMinerClaimNew from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNew";
-import MaliciousReputationMinerWrongJRH from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRH";
-import MaliciousReputationMinerWrongJRHRightNLeaves from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRHRightNLeaves";
-import MaliciousReputationMinerWrongNLeaves from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNLeaves";
-import MaliciousReputationMinerWrongNLeaves2 from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNLeaves2";
-import MaliciousReputationMinerAddNewReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerAddNewReputation";
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
+const MaliciousReputationMinerWrongUID = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongUID");
+const MaliciousReputationMinerReuseUID = require("../../packages/reputation-miner/test/MaliciousReputationMinerReuseUID");
+const MaliciousReputationMinerClaimNew = require("../../packages/reputation-miner/test/MaliciousReputationMinerClaimNew");
+const MaliciousReputationMinerWrongJRH = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRH");
+const MaliciousReputationMinerWrongJRHRightNLeaves = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRHRightNLeaves");
+const MaliciousReputationMinerWrongNLeaves = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongNLeaves");
+const MaliciousReputationMinerWrongNLeaves2 = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongNLeaves2");
+const MaliciousReputationMinerAddNewReputation = require("../../packages/reputation-miner/test/MaliciousReputationMinerAddNewReputation");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

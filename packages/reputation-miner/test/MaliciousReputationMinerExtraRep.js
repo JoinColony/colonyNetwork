@@ -1,4 +1,4 @@
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class MaliciousReputationMinerExtraRep extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it adds some extra
@@ -18,4 +18,4 @@ class MaliciousReputationMinerExtraRep extends ReputationMinerTestWrapper {
   }
 }
 
-export default MaliciousReputationMinerExtraRep;
+module.exports = MaliciousReputationMinerExtraRep;

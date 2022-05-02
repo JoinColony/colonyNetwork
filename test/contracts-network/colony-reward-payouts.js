@@ -1,16 +1,16 @@
 /* globals artifacts */
-import { BN } from "bn.js";
-import { ethers } from "ethers";
-import { sha3 } from "web3-utils";
-import chai from "chai";
-import bnChai from "bn-chai";
+const { BN } = require("bn.js");
+const { ethers } = require("ethers");
+const { sha3 } = require("web3-utils");
+const chai = require("chai");
+const bnChai = require("bn-chai");
 
-import path from "path";
+const path = require("path");
 
-import { TruffleLoader } from "../../packages/package-utils";
-import { UINT256_MAX, INT128_MAX, WAD, MANAGER_ROLE, INITIAL_FUNDING, DEFAULT_STAKE, SECONDS_PER_DAY } from "../../helpers/constants";
+const { TruffleLoader } = require("../../packages/package-utils");
+const { UINT256_MAX, INT128_MAX, WAD, MANAGER_ROLE, INITIAL_FUNDING, DEFAULT_STAKE, SECONDS_PER_DAY } = require("../../helpers/constants");
 
-import {
+const {
   getTokenArgs,
   checkErrorRevert,
   forwardTime,
@@ -19,11 +19,11 @@ import {
   makeReputationKey,
   advanceMiningCycleNoContest,
   getRewardClaimSquareRootsAndProofs,
-} from "../../helpers/test-helper";
+} = require("../../helpers/test-helper");
 
-import { fundColonyWithTokens, setupFinalizedTask, giveUserCLNYTokensAndStake, setupRandomColony } from "../../helpers/test-data-generator";
+const { fundColonyWithTokens, setupFinalizedTask, giveUserCLNYTokensAndStake, setupRandomColony } = require("../../helpers/test-data-generator");
 
-import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

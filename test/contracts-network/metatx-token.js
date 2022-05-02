@@ -1,9 +1,9 @@
 /* globals artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
-import { web3GetBalance, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
-import { getMetaTransactionParameters, getPermitParameters, setupColony } from "../../helpers/test-data-generator";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
+const { web3GetBalance, checkErrorRevert, expectEvent } = require("../../helpers/test-helper");
+const { getMetaTransactionParameters, getPermitParameters, setupColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

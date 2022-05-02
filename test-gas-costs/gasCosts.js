@@ -1,9 +1,9 @@
 /* globals artifacts */
 
-import path from "path";
-import { TruffleLoader } from "../packages/package-utils";
+const path = require("path");
+const { TruffleLoader } = require("../packages/package-utils");
 
-import {
+const {
   UINT256_MAX,
   CURR_VERSION,
   WAD,
@@ -22,9 +22,9 @@ import {
   INITIAL_FUNDING,
   GLOBAL_SKILL_ID,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
-} from "../helpers/constants";
+} = require("../helpers/constants");
 
-import {
+const {
   getTokenArgs,
   currentBlockTime,
   forwardTime,
@@ -34,13 +34,13 @@ import {
   advanceMiningCycleNoContest,
   submitAndForwardTimeToDispute,
   accommodateChallengeAndInvalidateHash,
-} from "../helpers/test-helper";
+} = require("../helpers/test-helper");
 
-import { giveUserCLNYTokensAndStake, fundColonyWithTokens, makeTask, setupRandomColony } from "../helpers/test-data-generator";
-import { executeSignedTaskChange, executeSignedRoleAssignment } from "../helpers/task-review-signing";
+const { giveUserCLNYTokensAndStake, fundColonyWithTokens, makeTask, setupRandomColony } = require("../helpers/test-data-generator");
+const { executeSignedTaskChange, executeSignedRoleAssignment } = require("../helpers/task-review-signing");
 
-import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
-import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
+const ReputationMinerTestWrapper = require("../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const MaliciousReputationMinerExtraRep = require("../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");

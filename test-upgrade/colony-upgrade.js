@@ -1,8 +1,8 @@
 /* globals artifacts */
-import { currentBlockTime, getColonyEditable } from "../helpers/test-helper";
-import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
-import { ROOT_ROLE, SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";
-import { makeTask, setupRandomColony } from "../helpers/test-data-generator";
+const { currentBlockTime, getColonyEditable } = require("../helpers/test-helper");
+const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
+const { ROOT_ROLE, SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } = require("../helpers/constants");
+const { makeTask, setupRandomColony } = require("../helpers/test-data-generator");
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");

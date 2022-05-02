@@ -1,14 +1,14 @@
 /* globals artifacts */
 
-import path from "path";
-import chai from "chai";
-import bnChai from "bn-chai";
+const path = require("path");
+const chai = require("chai");
+const bnChai = require("bn-chai");
 
-import { TruffleLoader } from "../../packages/package-utils";
-import { DEFAULT_STAKE, INITIAL_FUNDING, UINT256_MAX } from "../../helpers/constants";
-import { forwardTime, currentBlock, advanceMiningCycleNoContest, getActiveRepCycle } from "../../helpers/test-helper";
-import { giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } from "../../helpers/test-data-generator";
-import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
+const { TruffleLoader } = require("../../packages/package-utils");
+const { DEFAULT_STAKE, INITIAL_FUNDING, UINT256_MAX } = require("../../helpers/constants");
+const { forwardTime, currentBlock, advanceMiningCycleNoContest, getActiveRepCycle } = require("../../helpers/test-helper");
+const { giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } = require("../../helpers/test-data-generator");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

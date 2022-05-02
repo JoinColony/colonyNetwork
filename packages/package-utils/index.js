@@ -1,6 +1,6 @@
-exports.colonyIOCors = require("./colonyIOCors").default;
-exports.updateGasEstimate = require("./updateGasEstimate").default;
-exports.DiscordAdapter = require("./adapters/discord").default;
-exports.SlackAdapter = require("./adapters/slack").default;
-exports.ConsoleAdapter = require("./adapters/console").default;
-exports.TruffleLoader = require("./TruffleLoader").default;
+exports.colonyIOCors = require("./colonyIOCors");
+exports.updateGasEstimate = require("./updateGasEstimate");
+exports.DiscordAdapter = require("./adapters/discord");
+exports.SlackAdapter = require("./adapters/slack");
+exports.ConsoleAdapter = require("./adapters/console");
+exports.TruffleLoader = require("./TruffleLoader");

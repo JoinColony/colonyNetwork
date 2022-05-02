@@ -1,6 +1,6 @@
-import ConsoleAdapter from "./console";
-
 const Discord = require("discord.js");
+
+const ConsoleAdapter = require("./console");
 
 class DiscordAdapter extends ConsoleAdapter {
   constructor(label) {
@@ -20,4 +20,4 @@ class DiscordAdapter extends ConsoleAdapter {
   }
 }
 
-export default DiscordAdapter;
+module.exports = DiscordAdapter;

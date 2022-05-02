@@ -1,6 +1,6 @@
-import { soliditySha3 } from "web3-utils";
-import { BN } from "bn.js";
-import shortid from "shortid";
+const { soliditySha3 } = require("web3-utils");
+const BN = require("bn.js");
+const shortid = require("shortid");
 
 const UINT256_MAX = new BN(0).notn(256);
 const UINT128_MAX = new BN(0).notn(128);

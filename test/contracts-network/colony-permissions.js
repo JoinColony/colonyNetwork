@@ -1,8 +1,9 @@
 /* global artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
-import {
+const {
   UINT256_MAX,
   INT256_MIN,
   INT256_MAX,
@@ -17,13 +18,11 @@ import {
   INITIAL_FUNDING,
   SPECIFICATION_HASH,
   GLOBAL_SKILL_ID,
-} from "../../helpers/constants";
+} = require("../../helpers/constants");
 
-import { fundColonyWithTokens, makeTask, setupRandomColony } from "../../helpers/test-data-generator";
-import { checkErrorRevert, expectEvent } from "../../helpers/test-helper";
-import { executeSignedRoleAssignment } from "../../helpers/task-review-signing";
-
-const ethers = require("ethers");
+const { fundColonyWithTokens, makeTask, setupRandomColony } = require("../../helpers/test-data-generator");
+const { checkErrorRevert, expectEvent } = require("../../helpers/test-helper");
+const { executeSignedRoleAssignment } = require("../../helpers/task-review-signing");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

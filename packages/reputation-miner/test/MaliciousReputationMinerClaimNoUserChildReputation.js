@@ -1,6 +1,6 @@
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
-
 const ethers = require("ethers");
+
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class MaliciousReputationMinerClaimNoUserChildReputation extends ReputationMinerTestWrapper {
   // This client will claim there is no user child reputation, whether there is one or not
@@ -72,4 +72,4 @@ class MaliciousReputationMinerClaimNoUserChildReputation extends ReputationMiner
   }
 }
 
-export default MaliciousReputationMinerClaimNoUserChildReputation;
+module.exports = MaliciousReputationMinerClaimNoUserChildReputation;

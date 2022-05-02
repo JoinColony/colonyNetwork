@@ -1,4 +1,4 @@
-import ReputationMiner from "../ReputationMiner";
+const ReputationMiner = require("../ReputationMiner");
 
 class ReputationMinerTestWrapper extends ReputationMiner {
   async submitRootHash(entryIndex) {
@@ -32,4 +32,4 @@ class ReputationMinerTestWrapper extends ReputationMiner {
   }
 }
 
-export default ReputationMinerTestWrapper;
+module.exports = ReputationMinerTestWrapper;

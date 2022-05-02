@@ -1,9 +1,9 @@
-import { soliditySha3 } from "web3-utils";
-import namehash from "eth-ens-namehash";
-import assert from "assert";
-import fs from "fs";
+const { soliditySha3 } = require("web3-utils");
+const namehash = require("eth-ens-namehash");
+const assert = require("assert");
+const fs = require("fs");
 
-export function parseImplementation(contractName, functionsToResolve, deployedImplementations) {
+exports.parseImplementation = function parseImplementation(contractName, functionsToResolve, deployedImplementations) {
   // Goes through a contract, and sees if anything in it is in the interface. If it is, then wire up the resolver to point at it
   const { abi } = JSON.parse(fs.readFileSync(`./build/contracts/${contractName}.json`));
   abi.map((value) => {
@@ -27,9 +27,9 @@ export function parseImplementation(contractName, functionsToResolve, deployedIm
     }
     return functionsToResolve[fName];
   });
-}
+};
 
-export async function setupEtherRouter(interfaceContract, deployedImplementations, resolver) {
+exports.setupEtherRouter = async function setupEtherRouter(interfaceContract, deployedImplementations, resolver) {
   const functionsToResolve = {};
 
   // Load ABI of the interface of the contract we're trying to stich together
@@ -49,7 +49,7 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
     }
     return functionsToResolve;
   });
-  Object.keys(deployedImplementations).map((name) => parseImplementation(name, functionsToResolve, deployedImplementations));
+  Object.keys(deployedImplementations).map((name) => exports.parseImplementation(name, functionsToResolve, deployedImplementations));
   // Iterate over the ABI again to make sure we get overloads - the functionToResolve is only indexed by name, not signature.
   for (let i = 0; i < iAbi.length; i += 1) {
     // We do it like this rather than a nice await Promise.all on a mapped array of promises because of
@@ -68,9 +68,9 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
       assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);
     }
   }
-}
+};
 
-export async function setupColonyVersionResolver(
+exports.setupColonyVersionResolver = async function setupColonyVersionResolver(
   colony,
   colonyDomains,
   colonyExpenditure,
@@ -93,10 +93,10 @@ export async function setupColonyVersionResolver(
   deployedImplementations.ContractRecovery = contractRecovery.address;
   deployedImplementations.ColonyArbitraryTransaction = colonyArbitraryTransaction.address;
 
-  await setupEtherRouter("IMetaColony", deployedImplementations, resolver);
-}
+  await exports.setupEtherRouter("IMetaColony", deployedImplementations, resolver);
+};
 
-export async function setupUpgradableColonyNetwork(
+exports.setupUpgradableColonyNetwork = async function setupUpgradableColonyNetwork(
   etherRouter,
   resolver,
   colonyNetwork,
@@ -116,21 +116,21 @@ export async function setupUpgradableColonyNetwork(
   deployedImplementations.ColonyNetworkExtensions = colonyNetworkExtensions.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
 
-  await setupEtherRouter("IColonyNetwork", deployedImplementations, resolver);
+  await exports.setupEtherRouter("IColonyNetwork", deployedImplementations, resolver);
   await etherRouter.setResolver(resolver.address);
-}
+};
 
-export async function setupUpgradableTokenLocking(etherRouter, resolver, tokenLocking) {
+exports.setupUpgradableTokenLocking = async function setupUpgradableTokenLocking(etherRouter, resolver, tokenLocking) {
   const deployedImplementations = {};
   deployedImplementations.TokenLocking = tokenLocking.address;
-  await setupEtherRouter("ITokenLocking", deployedImplementations, resolver);
+  await exports.setupEtherRouter("ITokenLocking", deployedImplementations, resolver);
 
   await etherRouter.setResolver(resolver.address);
   const registeredResolver = await etherRouter.resolver();
   assert.equal(registeredResolver, resolver.address);
-}
+};
 
-export async function setupReputationMiningCycleResolver(
+exports.setupReputationMiningCycleResolver = async function setupReputationMiningCycleResolver(
   reputationMiningCycle,
   reputationMiningCycleRespond,
   reputationMiningCycleBinarySearch,
@@ -142,12 +142,12 @@ export async function setupReputationMiningCycleResolver(
   deployedImplementations.ReputationMiningCycleRespond = reputationMiningCycleRespond.address;
   deployedImplementations.ReputationMiningCycleBinarySearch = reputationMiningCycleBinarySearch.address;
 
-  await setupEtherRouter("IReputationMiningCycle", deployedImplementations, resolver);
+  await exports.setupEtherRouter("IReputationMiningCycle", deployedImplementations, resolver);
 
   await colonyNetwork.setMiningResolver(resolver.address);
-}
+};
 
-export async function setupENSRegistrar(colonyNetwork, ensRegistry, registrarOwner) {
+exports.setupENSRegistrar = async function setupENSRegistrar(colonyNetwork, ensRegistry, registrarOwner) {
   const rootNode = namehash.hash("joincolony.eth");
   const USER_HASH = soliditySha3("user");
   const COLONY_HASH = soliditySha3("colony");
@@ -157,4 +157,4 @@ export async function setupENSRegistrar(colonyNetwork, ensRegistry, registrarOwn
 
   await ensRegistry.setSubnodeOwner(rootNode, USER_HASH, colonyNetwork.address);
   await ensRegistry.setSubnodeOwner(rootNode, COLONY_HASH, colonyNetwork.address);
-}
+};

@@ -1,19 +1,19 @@
 /* globals artifacts */
-import { BN } from "bn.js";
-import { soliditySha3 } from "web3-utils";
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
+const { BN } = require("bn.js");
+const { soliditySha3 } = require("web3-utils");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
 
-import {
+const {
   fundColonyWithTokens,
   setupRatedTask,
   setupFundedTask,
   setupFinalizedTask,
   giveUserCLNYTokensAndStake,
-} from "../../helpers/test-data-generator";
+} = require("../../helpers/test-data-generator");
 
-import {
+const {
   UINT256_MAX,
   INT256_MAX,
   INT128_MAX,
@@ -34,16 +34,16 @@ import {
   RATING_2_SALT,
   RATING_1_SECRET,
   RATING_2_SECRET,
-} from "../../helpers/constants";
+} = require("../../helpers/constants");
 
-import {
+const {
   checkErrorRevert,
   forwardTime,
   advanceMiningCycleNoContest,
   getTokenArgs,
   removeSubdomainLimit,
   addTaskSkillEditingFunctions,
-} from "../../helpers/test-helper";
+} = require("../../helpers/test-helper");
 
 const ADDRESS_ZERO = ethers.constants.AddressZero;
 

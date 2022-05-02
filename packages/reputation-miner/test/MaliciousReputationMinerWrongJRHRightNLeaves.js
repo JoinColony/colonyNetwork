@@ -1,7 +1,7 @@
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
-import PatriciaTreeNoHash from "../patriciaNoHashKey";
-
 const ethers = require("ethers");
+
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const PatriciaTreeNoHash = require("../patriciaNoHashKey");
 
 class MaliciousReputationMinerWrongJRHRightNLeaves extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it submits a bad JRH
@@ -57,4 +57,4 @@ class MaliciousReputationMinerWrongJRHRightNLeaves extends ReputationMinerTestWr
   }
 }
 
-export default MaliciousReputationMinerWrongJRHRightNLeaves;
+module.exports = MaliciousReputationMinerWrongJRHRightNLeaves;
