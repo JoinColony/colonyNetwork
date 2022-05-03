@@ -9,7 +9,7 @@ job_common: &job_common
   working_directory: ~/colonyNetwork
 job_python: &job_python
   docker:
-    - image: circleci/python:3.8.0b1-stretch-node
+    - image: cimg/python:3.8.13-node
       auth:
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
@@ -41,10 +41,10 @@ step_setup_slither: &step_setup_slither
         wget https://github.com/ethereum/solidity/releases/download/v0.5.8/solc-static-linux
         chmod +x solc-static-linux
         sudo mv solc-static-linux /usr/local/bin/solc
-        sudo pip install slither-analyzer
-        sudo pip install solc-select
-        sudo solc-select install 0.7.3
-        sudo solc-select use 0.7.3
+        pip install slither-analyzer
+        pip install solc-select
+        solc-select install 0.7.3
+        solc-select use 0.7.3
 
 jobs:
   reputation-test:
