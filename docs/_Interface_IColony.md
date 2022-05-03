@@ -308,6 +308,18 @@ Called to change the metadata associated with a colony. Expected to be a IPFS ha
 |_metadata|string|IPFS hash of the metadata
 
 
+### `editColonyByDelta`
+
+Called to change the metadata associated with a colony. Expected to be a IPFS hash of a delta to a JSON blob, but not enforced to any degree by the contracts
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_metadataDelta|string|IPFS hash of the metadata delta
+
+
 ### `editDomain`
 
 Add a colony domain, and its respective local skill under skill with id `_parentSkillId`. New funding pot is created and associated with the domain here.
