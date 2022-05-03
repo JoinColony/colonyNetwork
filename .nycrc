@@ -1,5 +1,4 @@
 {
-  "require": ["@babel/register"],
   "include": "packages/reputation-miner/ReputationMiner*.js",
   "reporter": ["lcov", "html"],
   "report-dir": "./coverage-miner",

@@ -278,6 +278,7 @@ Set the deprecation of an extension in a colony. Can only be called by a Colony.
 
 Mark a skill as deprecated which stops new tasks and payments from using it.
 
+*Note: This function is deprecated and will be removed in a future release*
 
 **Parameters**
 
@@ -298,6 +299,11 @@ Set deprecation status for a skill
 |_skillId|uint256|Id of the skill
 |_deprecated|bool|Deprecation status
 
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|changed|bool|Whether the deprecated state was changed
 
 ### `getChildSkillId`
 
