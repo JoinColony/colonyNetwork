@@ -13,6 +13,7 @@ module.exports = {
       gasPrice: 0,
       network_id: "*",
       skipDryRun: true,
+      disableConfirmationListener: true,
     },
     integration: {
       host: "localhost",
@@ -26,6 +27,7 @@ module.exports = {
       port: 8555,
       network_id: parseInt(process.env.CHAIN_ID, 10) || 1999,
       skipDryRun: true,
+      disableConfirmationListener: true,
     },
     goerliFork: {
       host: "localhost",

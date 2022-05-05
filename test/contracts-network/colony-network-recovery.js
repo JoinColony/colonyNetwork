@@ -90,8 +90,8 @@ contract("Colony Network Recovery", (accounts) => {
   });
 
   afterEach(async () => {
-    // await colonyNetwork.removeRecoveryRole(accounts[1]);
-    // await colonyNetwork.removeRecoveryRole(accounts[2]);
+    await colonyNetwork.removeRecoveryRole(accounts[1]);
+    await colonyNetwork.removeRecoveryRole(accounts[2]);
   });
 
   describe("when using recovery mode", () => {
