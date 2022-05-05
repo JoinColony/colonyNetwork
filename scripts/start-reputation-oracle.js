@@ -17,7 +17,7 @@ async function start() {
   const ganacheAccounts = await getGanacheAccounts();
   const command =
     `node ./bin/index.js --minerAddress="${ganacheAccounts[5]}" ` +
-    `--colonyNetworkAddress="${etherRouterAddress}" --syncFrom=1 --dbPath ./reputations.sqlite`;
+    `--colonyNetworkAddress="${etherRouterAddress}" --syncFrom=1 --dbPath ./reputations.sqlite --processingDelay 1`;
   const proc = exec(command, { cwd: reputationOraclePath });
   proc.stdout.pipe(process.stdout);
   proc.stderr.pipe(process.stderr);
