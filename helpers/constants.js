@@ -1,6 +1,9 @@
 const { soliditySha3 } = require("web3-utils");
 const BN = require("bn.js");
 const shortid = require("shortid");
+const { ethers } = require("ethers");
+
+const HASHZERO = ethers.constants.HashZero;
 
 const UINT256_MAX = new BN(0).notn(256);
 const UINT128_MAX = new BN(0).notn(128);
@@ -114,4 +117,5 @@ module.exports = {
   DECAY_RATE,
   GLOBAL_SKILL_ID,
   IPFS_HASH,
+  HASHZERO,
 };

@@ -90,8 +90,8 @@ contract("Colony Network Recovery", (accounts) => {
   });
 
   afterEach(async () => {
-    await colonyNetwork.removeRecoveryRole(accounts[1]);
-    await colonyNetwork.removeRecoveryRole(accounts[2]);
+    // await colonyNetwork.removeRecoveryRole(accounts[1]);
+    // await colonyNetwork.removeRecoveryRole(accounts[2]);
   });
 
   describe("when using recovery mode", () => {
@@ -334,7 +334,6 @@ contract("Colony Network Recovery", (accounts) => {
 
           const repCycle = await getActiveRepCycle(colonyNetwork);
           const invalidEntry = await repCycle.getReputationUpdateLogEntry(5);
-          invalidEntry.amount = 0;
 
           await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
@@ -350,7 +349,7 @@ contract("Colony Network Recovery", (accounts) => {
             repCycle.address,
             5,
             invalidEntry.user,
-            invalidEntry.amount,
+            0,
             invalidEntry.skillId,
             invalidEntry.colony,
             invalidEntry.nUpdates,

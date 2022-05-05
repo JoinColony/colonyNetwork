@@ -16,6 +16,7 @@ const {
   MIN_STAKE,
   WAD,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
+  HASHZERO,
 } = require("../../helpers/constants");
 
 const {
@@ -28,7 +29,7 @@ const {
   getValidEntryNumber,
   finishReputationMiningCycle,
   runBinarySearch,
-  checkErrorRevertEthers,
+  checkErrorRevertEstimateGas,
   currentBlock,
   currentBlockTime,
   makeReputationKey,
@@ -368,9 +369,9 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     it("should error if a non existent root hash submission is gotten", async () => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION, this);
-      await repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MINER1 });
-      await checkErrorRevertEthers(
-        repCycle.getSubmissionUser("0x12345678", 10, "0x00", 10),
+      await repCycle.submitRootHash("0x12345678", 10, HASHZERO, 10, { from: MINER1 });
+      await checkErrorRevertEstimateGas(
+        repCycle.getSubmissionUser.estimateGas("0x12345678", 10, HASHZERO, 10),
         "colony-reputation-mining-submission-index-out-of-range"
       );
     });
