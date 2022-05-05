@@ -214,6 +214,17 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
   expect(receipt.status, `Transaction succeeded, but expected to fail with: ${errorMessage}`).to.be.zero;
 };
 
+// Sometimes we might have to use this function because of
+// https://github.com/trufflesuite/truffle/issues/4900
+// Once that's fixed, hopefully we can get rid of it
+exports.checkErrorRevertEstimateGas = async function checkErrorRevertTruffleWorkaround(promise, errorMessage) {
+  try {
+    await promise;
+  } catch (err) {
+    expect(err.data.stack).to.contain(errorMessage);
+  }
+};
+
 exports.checkSuccessEthers = async function checkSuccessEthers(promise, errorMessage) {
   let receipt;
   try {

@@ -6,8 +6,6 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
-const HASHZERO = ethers.constants.HashZero;
-
 const { TruffleLoader } = require("../../packages/package-utils");
 const {
   forwardTime,
@@ -40,6 +38,7 @@ const {
   MINING_CYCLE_DURATION,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
+  HASHZERO,
 } = require("../../helpers/constants");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
