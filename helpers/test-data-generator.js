@@ -430,7 +430,10 @@ exports.getMetaTransactionParameters = async function getMetaTransactionParamete
 
   const r = `0x${sig.substring(2, 66)}`;
   const s = `0x${sig.substring(66, 130)}`;
-  const v = parseInt(sig.substring(130), 16) + 27;
+
+  // Ganache has fixed this discrepancy with the real world, but the version used by solidity coverage is still old...
+  const vOffset = process.env.SOLIDITY_COVERAGE ? 27 : 0;
+  const v = parseInt(sig.substring(130), 16) + vOffset;
 
   return { r, s, v };
 };
