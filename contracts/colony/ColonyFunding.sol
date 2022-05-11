@@ -34,6 +34,32 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     uint256 _toChildSkillIndex,
     uint256 _fromPot,
     uint256 _toPot,
+    uint256[] memory _amounts,
+    address[] memory _tokens
+  )
+  public
+  stoppable
+  domainNotDeprecated(getDomainFromFundingPot(_toPot))
+  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  validFundingTransfer(_fromPot, _toPot)
+  {
+    require(validateDomainInheritance(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot)), "colony-invalid-domain-inheritence");
+    require(validateDomainInheritance(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot)), "colony-invalid-domain-inheritence");
+    require(_amounts.length == _tokens.length, "colony-invalid-arguments");
+
+    for (uint256 i; i < _amounts.length; i++) {
+      moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amounts[i], _tokens[i]);
+    }
+  }
+
+ function moveFundsBetweenPots(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    uint256 _fromChildSkillIndex,
+    uint256 _toChildSkillIndex,
+    uint256 _fromPot,
+    uint256 _toPot,
     uint256 _amount,
     address _token
   )
@@ -435,6 +461,8 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   }
 
   function processPayout(uint256 _fundingPotId, address _token, uint256 _payout, address payable _user) private {
+    refundDomain(_fundingPotId, _token);
+
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
 
@@ -464,5 +492,14 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
 
     emit PayoutClaimed(msgSender(), _fundingPotId, _token, remainder);
+  }
+
+  function refundDomain(uint256 _fundingPotId, address _token) private {
+    FundingPot storage fundingPot = fundingPots[_fundingPotId];
+    if (fundingPot.payouts[_token] < fundingPot.balance[_token]) {
+      uint256 domainId = getDomainFromFundingPot(_fundingPotId);
+      uint256 surplus = sub(fundingPot.balance[_token], fundingPot.payouts[_token]);
+      moveFundsBetweenPotsFunctionality(_fundingPotId, domains[domainId].fundingPotId, surplus, _token);
+    }
   }
 }

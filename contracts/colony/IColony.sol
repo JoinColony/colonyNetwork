@@ -400,6 +400,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   function finalizeExpenditure(uint256 _id) external;
 
   /// @notice Sets the metadata for an expenditure. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
   /// @param _metadata IPFS hash of the metadata
   function setExpenditureMetadata(uint256 _id, string memory _metadata) external;
@@ -413,12 +414,14 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
 
   /// @notice @deprecated
   /// @notice Sets the recipient on an expenditure slot. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
   /// @param _slot Slot for the recipient address
   /// @param _recipient Address of the recipient
   function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient) external;
 
   /// @notice Sets the recipients in given expenditure slots. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
   /// @param _slots Array of slots to set recipients
   /// @param _recipients Addresses of the recipients
@@ -426,6 +429,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
 
   /// @notice @deprecated
   /// @notice Set the token payout on an expenditure slot. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
   /// @param _slot Number of the slot
   /// @param _token Address of the token, `0x0` value indicates Ether
@@ -433,6 +437,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount) external;
 
   /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
   /// @param _slots Array of slots to set payouts
   /// @param _token Address of the token, `0x0` value indicates Ether
@@ -440,6 +445,23 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts) external;
 
   /// @notice @deprecated
+  /// @notice Set the token payouts in given expenditure slots. Can only be called by an Arbitration user.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _id Id of the expenditure
+  /// @param _slots Array of slots to set payouts
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amounts Payout amounts
+  function setExpenditurePayouts(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256[] memory _slots,
+    address _token,
+    uint256[] memory _amounts
+  ) external;
+
+  /// @notice Deprecated
   /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
