@@ -1,5 +1,5 @@
 const HDWalletProvider = require("truffle-hdwallet-provider");
-const ganache = require("ganache-core");
+const ganache = require("ganache");
 
 const ganacheProvider = ganache.provider({ total_accounts: 14, seed: "smoketest" });
 

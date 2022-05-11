@@ -33,7 +33,7 @@ class ReputationMiner {
       // If this require is global, line numbers are broken in all our tests. If we move it here, it's only an issue if we're not
       // using the JS tree. There is an issue open at ganache-core about this, and this require will have to remain here until it's fixed.
       // https://github.com/trufflesuite/ganache-core/issues/287
-      const ganache = require("ganache-core"); // eslint-disable-line global-require
+      const ganache = require("ganache"); // eslint-disable-line global-require
       const ganacheProvider = ganache.provider({
         network_id: 515,
         vmErrorsOnRPCResponse: false,
