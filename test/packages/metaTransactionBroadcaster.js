@@ -55,7 +55,7 @@ contract("Metatransaction broadcaster", (accounts) => {
     colony = await setupColony(colonyNetwork, metaTxToken.address);
 
     broadcaster = new MetatransactionBroadcaster({
-      privateKey: `0x${ganacheAccounts.private_keys[accounts[0].toLowerCase()]}`,
+      privateKey: `${ganacheAccounts.private_keys[accounts[0].toLowerCase()]}`,
       loader,
       provider,
     });

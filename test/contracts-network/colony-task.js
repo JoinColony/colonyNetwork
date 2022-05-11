@@ -1755,7 +1755,7 @@ contract("ColonyTask", (accounts) => {
       const workerBalanceBefore = await web3GetBalance(WORKER);
       const metaBalanceBefore = await web3GetBalance(metaColony.address);
 
-      await colony.claimTaskPayout(taskId, WORKER_ROLE, ethers.constants.AddressZero, { gasPrice: 0 });
+      await colony.claimTaskPayout(taskId, WORKER_ROLE, ethers.constants.AddressZero);
 
       const workerBalanceAfter = await web3GetBalance(WORKER);
       expect(new BN(workerBalanceAfter).sub(new BN(workerBalanceBefore))).to.eq.BN(new BN(197));

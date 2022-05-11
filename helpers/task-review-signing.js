@@ -70,9 +70,9 @@ exports.createSignatures = async function createSignatures(colony, taskId, signe
 
     let privKey;
     if (privKeys[i]) {
-      privKey = privKeys[i];
+      privKey = privKeys[i].replace("0x", "");
     } else {
-      privKey = accountsJson.private_keys[user];
+      privKey = accountsJson.private_keys[user].replace("0x", "");
     }
 
     const prefixedMessageHash = hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex"));
@@ -112,9 +112,9 @@ exports.createSignaturesTrezor = async function createSignaturesTrezor(colony, t
 
     let privKey;
     if (privKeys[i]) {
-      privKey = privKeys[i];
+      privKey = privKeys[i].replace("0x", "");
     } else {
-      privKey = accountsJson.private_keys[user];
+      privKey = accountsJson.private_keys[user].replace("0x", "");
     }
 
     const prefixedMessageHash = soliditySha3("\x19Ethereum Signed Message:\n\x20", msgHash);
