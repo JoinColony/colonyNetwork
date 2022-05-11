@@ -52,7 +52,6 @@ contract("Colony Expenditure", (accounts) => {
 
   const EXPENDITURES_SLOT = 25;
   const EXPENDITURESLOTS_SLOT = 26;
-  const EXPENDITURESLOTPAYOUTS_SLOT = 27;
 
   let colony;
   let token;
@@ -1109,11 +1108,8 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should allow arbitration users to update expenditure slot payouts", async () => {
-      const mask = [MAPPING, MAPPING];
-      const keys = ["0x0", bn2bytes32(new BN(token.address.slice(2), 16))];
-      const value = bn2bytes32(new BN(100));
-
-      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTPAYOUTS_SLOT, mask, keys, value, { from: ARBITRATOR });
+      const setExpenditurePayouts = colony.methods["setExpenditurePayouts(uint256,uint256,uint256,uint256[],address,uint256[])"];
+      await setExpenditurePayouts(1, UINT256_MAX, expenditureId, [0], token.address, [100], { from: ARBITRATOR });
 
       const expenditureSlotPayout = await colony.getExpenditureSlotPayout(expenditureId, 0, token.address);
       expect(expenditureSlotPayout).to.eq.BN(100);

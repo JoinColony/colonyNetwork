@@ -268,7 +268,6 @@ contract ColonyExpenditure is ColonyStorage {
 
   uint256 constant EXPENDITURES_SLOT = 25;
   uint256 constant EXPENDITURESLOTS_SLOT = 26;
-  uint256 constant EXPENDITURESLOTPAYOUTS_SLOT = 27;
 
   function setExpenditureState(
     uint256 _permissionDomainId,
@@ -305,10 +304,6 @@ contract ColonyExpenditure is ColonyStorage {
           "colony-expenditure-bad-payout-modifier"
         );
       }
-
-    // Should always be two mappings
-    } else if (_storageSlot == EXPENDITURESLOTPAYOUTS_SLOT) {
-      require(_keys.length == 2, "colony-expenditure-bad-keys");
 
     } else {
       require(false, "colony-expenditure-bad-slot");
