@@ -16,9 +16,9 @@ const reputationOraclePath = path.resolve(__dirname, "../packages/reputation-min
 async function start() {
   const ganacheAccounts = await getGanacheAccounts();
   const command =
-    `node ./bin/index.js --minerAddress="${ganacheAccounts[5]}" ` +
-    `--colonyNetworkAddress="${etherRouterAddress}" --syncFrom=1 --dbPath ./reputations.sqlite`;
-  const proc = exec(command, { cwd: reputationOraclePath });
+    `node ${reputationOraclePath}/bin/index.js --minerAddress="${ganacheAccounts[5]}" ` +
+    `--colonyNetworkAddress="${etherRouterAddress}" --syncFrom=1 --processingDelay=1 --dbPath ./reputations.sqlite`;
+  const proc = exec(command, { cwd: path.resolve(__dirname, "..") });
   proc.stdout.pipe(process.stdout);
   proc.stderr.pipe(process.stderr);
 }
