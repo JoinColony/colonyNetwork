@@ -18,7 +18,7 @@ async function start() {
   const command =
     `node ${reputationOraclePath}/bin/index.js --minerAddress="${ganacheAccounts[5]}" ` +
     `--colonyNetworkAddress="${etherRouterAddress}" --syncFrom=1 --processingDelay=1 --dbPath ./reputations.sqlite`;
-  const proc = exec(command, { cwd: path.resolve(__dirname, '..') });
+  const proc = exec(command, { cwd: path.resolve(__dirname, "..") });
   proc.stdout.pipe(process.stdout);
   proc.stderr.pipe(process.stderr);
 }
