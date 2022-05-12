@@ -283,7 +283,8 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureExists(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
-    // Only allow editing expenditure status, owner, and finalizedTimestamp
+    // Only allow editing expenditure status, owner, finalizedTimestamp, and globalClaimDelay
+    //  Do not allow editing of fundingPotId or domainId
     //  Note that status + owner occupy one slot
     if (_storageSlot == EXPENDITURES_SLOT) {
       require(_keys.length == 1, "colony-expenditure-bad-keys");

@@ -96,6 +96,33 @@ contract("Colony Funding", (accounts) => {
       expect(pot2Balance).to.eq.BN(51);
     });
 
+    it("should let multiple tokens be moved between funding pots at once", async () => {
+      await fundColonyWithTokens(colony, token, 100);
+      await fundColonyWithTokens(colony, otherToken, 200);
+
+      await colony.addDomain(1, UINT256_MAX, 1);
+
+      const sig = "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256[],address[])";
+      const moveFundsBetweenPots = colony.methods[sig];
+      await moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, 1, 2, [50, 100], [token.address, otherToken.address]);
+
+      const colonyTokenBalance = await token.balanceOf(colony.address);
+      const colonyOtherTokenBalance = await otherToken.balanceOf(colony.address);
+
+      const potTokenBalance = await colony.getFundingPotBalance(1, token.address);
+      const potOtherTokenBalance = await colony.getFundingPotBalance(1, otherToken.address);
+
+      const pot2TokenBalance = await colony.getFundingPotBalance(2, token.address);
+      const pot2OtherTokenBalance = await colony.getFundingPotBalance(2, otherToken.address);
+
+      expect(colonyTokenBalance).to.eq.BN(100);
+      expect(colonyOtherTokenBalance).to.eq.BN(200);
+      expect(potTokenBalance).to.eq.BN(49);
+      expect(potOtherTokenBalance).to.eq.BN(98);
+      expect(pot2TokenBalance).to.eq.BN(50);
+      expect(pot2OtherTokenBalance).to.eq.BN(100);
+    });
+
     it("when moving tokens between pots, should respect permission inheritance", async () => {
       await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
       await fundColonyWithTokens(colony, otherToken, 100);

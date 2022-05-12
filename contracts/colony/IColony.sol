@@ -960,6 +960,29 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _toChildSkillIndex The same, but for the _toPot which the funds are being moved to
   /// @param _fromPot Funding pot id providing the funds
   /// @param _toPot Funding pot id receiving the funds
+  /// @param _amounts An array of the amounts of funds
+  /// @param _tokens An array of the addresses of the tokens, `0x0` value indicates Ether
+  function moveFundsBetweenPots(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    uint256 _fromChildSkillIndex,
+    uint256 _toChildSkillIndex,
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256[] memory _amounts,
+    address[] memory _tokens
+    ) external;
+
+  /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The child index in _permissionDomainId where I will be taking this action
+  /// @param _domainId The domain where I am taking this action, pointed to by _permissionDomainId and _childSkillIndex
+  /// @param _fromChildSkillIndex In the array of child skills for the skill associated with the domain pointed to by _permissionDomainId + _childSkillIndex,
+  ///         the index of the skill associated with the domain that contains _fromPot
+  /// @param _toChildSkillIndex The same, but for the _toPot which the funds are being moved to
+  /// @param _fromPot Funding pot id providing the funds
+  /// @param _toPot Funding pot id receiving the funds
   /// @param _amount Amount of funds
   /// @param _token Address of the token, `0x0` value indicates Ether
   function moveFundsBetweenPots(

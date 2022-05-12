@@ -125,8 +125,9 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ARCHITECTURE_ROLE, "deprecateDomain(uint256,uint256,uint256,bool)");
     addRoleCapability(ROOT_ROLE, "editColonyByDelta(string)");
 
-    // Added in colony v10 (g-lwss)
+    // Added in colony v10 (ginger-lwss)
     addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayouts(uint256,uint256,uint256,uint256[],address,uint256[])");
+    addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256[],address[])");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {
