@@ -343,7 +343,7 @@ contract("Metatransaction broadcaster", (accounts) => {
       const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
       const guzzler = await GasGuzzler.at(extensionAddress);
 
-      const txData = await guzzler.contract.methods.fun(1000).encodeABI();
+      const txData = await guzzler.contract.methods.fun(10000).encodeABI();
 
       const { r, s, v } = await getMetaTransactionParameters(txData, USER0, guzzler.address);
 
