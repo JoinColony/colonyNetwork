@@ -134,11 +134,11 @@ exports.web3SignTypedData = function web3SignTypedData(address, typedData) {
   });
 };
 
-exports.web3GetRawCall = function web3GetRawCall(params) {
+exports.web3GetRawCall = function web3GetRawCall(params, blockTag) {
   const packet = {
     jsonrpc: "2.0",
     method: "eth_call",
-    params: [params],
+    params: [params, blockTag],
     id: new Date().getTime(),
   };
 
@@ -205,13 +205,18 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
   } catch (err) {
     const txid = err.transactionHash;
     const tx = await exports.web3GetTransaction(txid);
-    const response = await exports.web3GetRawCall({
-      from: tx.from,
-      to: tx.to,
-      data: tx.input,
-      gas: tx.gas,
-      value: ethers.utils.hexlify(parseInt(tx.value, 10)),
-    });
+    receipt = await exports.web3GetTransactionReceipt(txid);
+
+    const response = await exports.web3GetRawCall(
+      {
+        from: tx.from,
+        to: tx.to,
+        data: tx.input,
+        gas: tx.gas,
+        value: ethers.utils.hexlify(parseInt(tx.value, 10)),
+      },
+      receipt.blockNumber
+    );
     const reason = exports.extractReasonString(response);
     expect(reason).to.equal(errorMessage);
     return;
@@ -227,7 +232,7 @@ exports.checkErrorRevertEstimateGas = async function checkErrorRevertTruffleWork
   try {
     await promise;
   } catch (err) {
-    expect(err.data.stack).to.contain(errorMessage);
+    expect(err.toString()).to.contain(errorMessage);
   }
 };
 
