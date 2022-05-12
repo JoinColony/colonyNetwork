@@ -160,11 +160,11 @@ exports.extractReasonString = function extractReasonString(res) {
   const isString = res && typeof res === "object" && typeof res.result === "string";
 
   if (isObject) {
-    const { data } = res.error;
-    const hash = Object.keys(data)[0];
-
-    if (data[hash].return && data[hash].return.includes(errorStringHash)) {
-      return web3.eth.abi.decodeParameter("string", data[hash].return.slice(10));
+    if (res && res.error && res.error.data) {
+      const hash = res.error.data;
+      if (hash.includes(errorStringHash)) {
+        return web3.eth.abi.decodeParameter("string", hash.slice(10));
+      }
     }
   } else if (isString && res.result.includes(errorStringHash)) {
     return web3.eth.abi.decodeParameter("string", res.result.slice(10));
@@ -205,7 +205,13 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
   } catch (err) {
     const txid = err.transactionHash;
     const tx = await exports.web3GetTransaction(txid);
-    const response = await exports.web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
+    const response = await exports.web3GetRawCall({
+      from: tx.from,
+      to: tx.to,
+      data: tx.input,
+      gas: tx.gas,
+      value: ethers.utils.hexlify(parseInt(tx.value, 10)),
+    });
     const reason = exports.extractReasonString(response);
     expect(reason).to.equal(errorMessage);
     return;
