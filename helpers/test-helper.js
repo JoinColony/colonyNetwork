@@ -533,6 +533,11 @@ exports.makeTxAtTimestamp = async function makeTxAtTimestamp(f, args, timestamp,
   }
   // Turn auto-mining back on
   await exports.startMining();
+
+  // Tests are written assuming all future blocks will be from this time, which used to be
+  // how ganache operated. It's not any more, so explicitly forward time.
+  await exports.forwardTimeTo(timestamp, test);
+
   return promise;
 };
 
