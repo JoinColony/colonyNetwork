@@ -124,5 +124,7 @@
   "workspaces": [
     "packages/*"
   ],
-  "dependencies": {}
+  "dependencies": {
+    "ganache-core": "^2.13.2"
+  }
 }
