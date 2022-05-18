@@ -26,10 +26,10 @@ import "./ColonyStorage.sol";
 
 contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
-  // V8: Ebony Lightweight Spaceship
+  // V10: G Lightweight Spaceship
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 9; }
+  function version() public pure returns (uint256 colonyVersion) { return 10; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
@@ -262,7 +262,6 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
 
   function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
   public view
-  stoppable
   returns (bool)
   {
     uint256 colonyAddress;
@@ -343,7 +342,7 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view {
     require(_slot != COLONY_NETWORK_SLOT, "colony-protected-variable");
     require(_slot != ROOT_LOCAL_SKILL_SLOT, "colony-protected-variable");
   }
