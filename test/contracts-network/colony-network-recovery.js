@@ -14,6 +14,7 @@ const {
   currentBlock,
   currentBlockTime,
   checkErrorRevert,
+  checkErrorRevertEstimateGas,
   web3GetStorageAt,
   getActiveRepCycle,
   advanceMiningCycleNoContest,
@@ -28,7 +29,7 @@ const {
 } = require("../../helpers/test-data-generator");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
-const { DEFAULT_STAKE, MINING_CYCLE_DURATION, CURR_VERSION } = require("../../helpers/constants");
+const { DEFAULT_STAKE, MINING_CYCLE_DURATION, CURR_VERSION, ADDRESS_ZERO, HASHZERO } = require("../../helpers/constants");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -135,8 +136,65 @@ contract("Colony Network Recovery", (accounts) => {
     it("should not be able to call normal functions while in recovery", async () => {
       await colonyNetwork.enterRecoveryMode();
       await checkErrorRevert(colonyNetwork.createColony(clny.address), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createMetaColony(clny.address), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setTokenLocking(ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.initialiseRootLocalSkill(), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.appendReputationUpdateLog(ADDRESS_ZERO, 0, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColony(clny.address, 4, "", "", true), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColony(clny.address, 4, ""), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColony(clny.address, 4, "", ""), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setupRegistrar(clny.address, HASHZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.registerUserLabel("", ""), "colony-in-recovery-mode");
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.registerColonyLabel.estimateGas("", "", { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevertEstimateGas(colonyNetwork.updateColonyOrbitDB.estimateGas("", { from: metaColony.address }), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.updateUserOrbitDB(""), "colony-in-recovery-mode");
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.addExtensionToNetwork.estimateGas(HASHZERO, ADDRESS_ZERO, { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.installExtension.estimateGas(HASHZERO, 1, { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.upgradeExtension.estimateGas(HASHZERO, 2, { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.deprecateExtension.estimateGas(HASHZERO, true, { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.uninstallExtension.estimateGas(HASHZERO, { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevert(colonyNetwork.deployTokenViaNetwork("", "", 18), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.deployTokenAuthority(ADDRESS_ZERO, ADDRESS_ZERO, []), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setMiningDelegate(ADDRESS_ZERO, true), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setReputationRootHash(HASHZERO, 0, [], 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setReputationRootHash(HASHZERO, 0, []), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.punishStakers([], 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.reward(ADDRESS_ZERO, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.stakeForMining(0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.unstakeForMining(0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.burnUnneededRewards(0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setReputationMiningCycleReward(0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setMiningResolver(ADDRESS_ZERO), "colony-in-recovery-mode");
+
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
+    });
+
+    it("should not be able to call recovery functions when not in recovery mode", async () => {
+      await checkErrorRevert(
+        colonyNetwork.setReplacementReputationUpdateLogEntry(ADDRESS_ZERO, 0, ADDRESS_ZERO, 0, 0, ADDRESS_ZERO, 0, 0),
+        "colony-not-in-recovery-mode"
+      );
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {

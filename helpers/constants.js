@@ -4,6 +4,7 @@ const shortid = require("shortid");
 const { ethers } = require("ethers");
 
 const HASHZERO = ethers.constants.HashZero;
+const ADDRESS_ZERO = ethers.constants.AddressZero;
 
 const UINT256_MAX = new BN(0).notn(256);
 const UINT128_MAX = new BN(0).notn(128);
@@ -118,4 +119,5 @@ module.exports = {
   GLOBAL_SKILL_ID,
   IPFS_HASH,
   HASHZERO,
+  ADDRESS_ZERO,
 };
