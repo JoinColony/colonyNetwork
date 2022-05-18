@@ -20,18 +20,18 @@ const Resolver = artifacts.require("./Resolver");
 // See https://github.com/cgewecke/eth-gas-reporter/issues/64
 artifacts.require("./ReputationMiningCycle");
 
-module.exports = (deployer, network) => {
+module.exports = async function (deployer, network) {
   console.log(`## ${network} network ##`);
-  deployer.deploy(ColonyNetwork);
-  deployer.deploy(ColonyNetworkDeployer);
-  deployer.deploy(ColonyNetworkMining);
-  deployer.deploy(ColonyNetworkAuction);
-  deployer.deploy(ColonyNetworkENS);
-  deployer.deploy(ColonyNetworkExtensions);
-  deployer.deploy(ReputationMiningCycle);
-  deployer.deploy(ReputationMiningCycleRespond);
-  deployer.deploy(ReputationMiningCycleBinarySearch);
-  deployer.deploy(EtherRouter);
-  deployer.deploy(Resolver);
-  deployer.deploy(ContractRecovery);
+  await deployer.deploy(ColonyNetwork);
+  await deployer.deploy(ColonyNetworkDeployer);
+  await deployer.deploy(ColonyNetworkMining);
+  await deployer.deploy(ColonyNetworkAuction);
+  await deployer.deploy(ColonyNetworkENS);
+  await deployer.deploy(ColonyNetworkExtensions);
+  await deployer.deploy(ReputationMiningCycle);
+  await deployer.deploy(ReputationMiningCycleRespond);
+  await deployer.deploy(ReputationMiningCycleBinarySearch);
+  await deployer.deploy(EtherRouter);
+  await deployer.deploy(Resolver);
+  await deployer.deploy(ContractRecovery);
 };
