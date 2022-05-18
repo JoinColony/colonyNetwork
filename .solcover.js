@@ -26,6 +26,7 @@ module.exports = {
       total_accounts: 18
     },
     onCompileComplete: provisionTokenContracts,
-    istanbulFolder: "./coverage-contracts"
+    istanbulFolder: "./coverage-contracts",
+    modifierWhitelist: ["always"],
 }
 

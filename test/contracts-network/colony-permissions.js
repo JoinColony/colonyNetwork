@@ -18,6 +18,7 @@ const {
   INITIAL_FUNDING,
   SPECIFICATION_HASH,
   GLOBAL_SKILL_ID,
+  ADDRESS_ZERO,
 } = require("../../helpers/constants");
 
 const { fundColonyWithTokens, makeTask, setupRandomColony } = require("../../helpers/test-data-generator");
@@ -30,6 +31,7 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const ColonyAuthority = artifacts.require("ColonyAuthority");
 
 contract("ColonyPermissions", (accounts) => {
   const FOUNDER = accounts[0];
@@ -613,6 +615,15 @@ contract("ColonyPermissions", (accounts) => {
       await colony.setUserRoles(1, 0, USER2, 2, nonexistentRole, { from: FOUNDER });
       const userRoles = await colony.getUserRoles(USER2, 2);
       expect(userRoles).to.equal(ethers.constants.HashZero);
+    });
+
+    it("authority should not allow users who aren't permissioned to set roles", async () => {
+      const authority = await ColonyAuthority.new(USER2);
+      await checkErrorRevert(authority.setUserRole(ADDRESS_ZERO, 0, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(
+        authority.methods["setUserRole(address,uint256,uint8,bool)"](ADDRESS_ZERO, 0, 0, true, { from: USER1 }),
+        "ds-auth-unauthorized"
+      );
     });
   });
 });
