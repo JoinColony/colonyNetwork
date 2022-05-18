@@ -186,7 +186,7 @@ contract("Colony Reward Payouts", (accounts) => {
       const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       const newColonyWideReputationProof = [key, value, branchMask, siblings];
 
-      checkErrorRevert(colony.startNextRewardPayout(otherToken.address, ...newColonyWideReputationProof), "colony-reputation-invalid-skill-id");
+      await checkErrorRevert(colony.startNextRewardPayout(otherToken.address, ...newColonyWideReputationProof), "colony-reputation-invalid-skill-id");
     });
 
     it("should still be able to claim funds after some have been moved to reward pot and claimed", async () => {
