@@ -19,6 +19,7 @@ const {
   SPECIFICATION_HASH,
   GLOBAL_SKILL_ID,
   ADDRESS_ZERO,
+  HASHZERO,
 } = require("../../helpers/constants");
 
 const { fundColonyWithTokens, makeTask, setupRandomColony } = require("../../helpers/test-data-generator");
@@ -305,6 +306,21 @@ contract("ColonyPermissions", (accounts) => {
       expect(hasRole).to.be.true;
 
       await colony.setAdministrationRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 });
+    });
+
+    it("should not allow users without relevant permissions to set permissions", async () => {
+      await await checkErrorRevert(colony.setRootRole(USER1, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setArbitrationRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setArchitectureRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setFundingRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setAdministrationRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setUserRoles(1, UINT256_MAX, USER2, 1, HASHZERO, { from: USER1 }), "ds-auth-unauthorized");
+
+      // If you are allowed to set in a subdomain, not necessarily allowed to set in the domain you have permissions...
+      await colony.setArchitectureRole(1, UINT256_MAX, USER1, 1, true);
+      await checkErrorRevert(colony.setArbitrationRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-only-authorized-in-child-domain");
+      await checkErrorRevert(colony.setArchitectureRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-only-authorized-in-child-domain");
+      await checkErrorRevert(colony.setFundingRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-only-authorized-in-child-domain");
     });
 
     it("should allow users with root permission manipulate root domain permissions and colony-wide parameters", async () => {

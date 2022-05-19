@@ -138,6 +138,10 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditure.owner).to.equal(USER);
     });
 
+    it("a non-root user cannot setDefaultGlobalClaimDelay", async () => {
+      await checkErrorRevert(colony.setDefaultGlobalClaimDelay(0, { from: ADMIN }), "ds-auth-unauthorized");
+    });
+
     it("should set the default global claim delay", async () => {
       await expectEvent(colony.setDefaultGlobalClaimDelay(SECONDS_PER_DAY, { from: ROOT }), "ExpenditureGlobalClaimDelaySet", [
         ROOT,
@@ -166,6 +170,22 @@ contract("Colony Expenditure", (accounts) => {
 
     it("should error if the expenditure does not exist", async () => {
       await checkErrorRevert(colony.setExpenditureSkill(100, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN }), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.transferExpenditure(100, USER), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(
+        colony.transferExpenditureViaArbitration(0, UINT256_MAX, 100, USER, { from: ADMIN }),
+        "colony-expenditure-does-not-exist"
+      );
+      await checkErrorRevert(colony.cancelExpenditure(100), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.lockExpenditure(100), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.finalizeExpenditure(100), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.setExpenditureMetadata(100, ""), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(
+        colony.methods["setExpenditureMetadata(uint256,uint256,uint256,string)"](0, 0, 100, ""),
+        "colony-expenditure-does-not-exist"
+      );
+      await checkErrorRevert(colony.setExpenditureRecipients(100, [], []), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.setExpenditureClaimDelays(100, [], []), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.setExpenditurePayoutModifiers(100, [], []), "colony-expenditure-does-not-exist");
     });
 
     it("should allow owners to update the metadata", async () => {
