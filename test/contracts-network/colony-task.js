@@ -30,6 +30,7 @@ const {
   RATING_2_SECRET,
   MAX_PAYOUT,
   GLOBAL_SKILL_ID,
+  ADDRESS_ZERO,
 } = require("../../helpers/constants");
 
 const { getSigsAndTransactionData, executeSignedTaskChange, executeSignedRoleAssignment } = require("../../helpers/task-review-signing");
@@ -946,6 +947,16 @@ contract("ColonyTask", (accounts) => {
     it("should fail if a non-colony call is made to the task update functions", async () => {
       await makeTask({ colony });
       await checkErrorRevert(colony.setTaskBrief(1, SPECIFICATION_HASH_UPDATED, { from: OTHER }), "colony-not-self");
+      await checkErrorRevert(colony.setTaskManagerPayout(1, ADDRESS_ZERO, 0), "colony-not-self");
+      await checkErrorRevert(colony.setTaskEvaluatorPayout(1, ADDRESS_ZERO, 0), "colony-not-self");
+      await checkErrorRevert(colony.setTaskWorkerPayout(1, ADDRESS_ZERO, 0), "colony-not-self");
+      await checkErrorRevert(colony.setTaskManagerRole(1, ADDRESS_ZERO, 0, 0), "colony-not-self");
+      await checkErrorRevert(colony.setTaskEvaluatorRole(1, ADDRESS_ZERO), "colony-not-self");
+      await checkErrorRevert(colony.setTaskWorkerRole(1, ADDRESS_ZERO), "colony-not-self");
+      await checkErrorRevert(colony.removeTaskEvaluatorRole(1), "colony-not-self");
+      await checkErrorRevert(colony.removeTaskWorkerRole(1), "colony-not-self");
+      await checkErrorRevert(colony.setTaskDueDate(1, 0), "colony-not-self");
+      await checkErrorRevert(colony.cancelTask(1), "colony-not-self");
     });
 
     it("should fail update of task brief signed by a non-registered role", async () => {

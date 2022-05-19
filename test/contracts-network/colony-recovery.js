@@ -130,7 +130,7 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(colony.setRootRole(accounts[1], false), "colony-in-recovery-mode");
     });
 
-    it.only("should not be able to call normal functions while in recovery", async () => {
+    it("should not be able to call normal functions while in recovery", async () => {
       await colony.enterRecoveryMode();
 
       const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -142,6 +142,7 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.addGlobalSkill(), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.deprecateGlobalSkill(0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.emitDomainReputationReward(0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.emitDomainReputationPenalty(0, 0, 0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.emitSkillReputationReward(0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.emitSkillReputationPenalty(0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.editColony(""), "colony-in-recovery-mode");
@@ -226,7 +227,17 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.setRewardInverse(0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditurePayouts(0, [], ADDRESS_ZERO, []), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditurePayout(0, 0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.enterRecoveryMode({ from: accounts[2] }), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.enterRecoveryMode(), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.burnTokens(ADDRESS_ZERO, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.registerColonyLabel("", ""), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.updateColonyOrbitDB(""), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.makeArbitraryTransaction(ADDRESS_ZERO, HASHZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.makeArbitraryTransactions([], [], true), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.makeSingleArbitraryTransaction(ADDRESS_ZERO, HASHZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.addPayment(0, 0, ADDRESS_ZERO, ADDRESS_ZERO, 0, 0, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.finalizePayment(0, 0, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.setPaymentRecipient(0, 0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.setPaymentSkill(0, 0, 0, 0), "colony-in-recovery-mode");
     });
 
     it("recovery functions should be permissioned", async () => {

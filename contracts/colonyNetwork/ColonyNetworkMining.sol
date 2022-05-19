@@ -260,7 +260,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     miningStakes[msgSender()].amount = sub(miningStakes[msgSender()].amount, _amount);
   }
 
-  function getMiningStake(address _user) public stoppable returns (MiningStake memory) {
+  function getMiningStake(address _user) public view returns (MiningStake memory) {
     return miningStakes[_user];
   }
 
