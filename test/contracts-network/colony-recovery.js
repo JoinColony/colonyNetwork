@@ -130,7 +130,7 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(colony.setRootRole(accounts[1], false), "colony-in-recovery-mode");
     });
 
-    it("should not be able to call normal functions while in recovery", async () => {
+    it.only("should not be able to call normal functions while in recovery", async () => {
       await colony.enterRecoveryMode();
 
       const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -226,6 +226,18 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.setRewardInverse(0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditurePayouts(0, [], ADDRESS_ZERO, []), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditurePayout(0, 0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.enterRecoveryMode({ from: accounts[2] }), "colony-in-recovery-mode");
+    });
+
+    it("recovery functions should be permissioned", async () => {
+      await colony.setRecoveryRole(accounts[1]);
+      await checkErrorRevert(colony.setRecoveryRole(accounts[2], { from: accounts[2] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.removeRecoveryRole(accounts[1], { from: accounts[2] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.enterRecoveryMode({ from: accounts[2] }), "ds-auth-unauthorized");
+
+      await colony.enterRecoveryMode();
+      await checkErrorRevert(colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: accounts[2] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.exitRecoveryMode({ from: accounts[2] }), "ds-auth-unauthorized");
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {

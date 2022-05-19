@@ -14,6 +14,7 @@ const {
   RATING_1_SECRET,
   RATING_2_SECRET,
   WAD,
+  ADDRESS_ZERO,
 } = require("../../helpers/constants");
 const { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } = require("../../helpers/test-helper");
 const { makeTask, setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
@@ -397,6 +398,17 @@ contract("Colony", (accounts) => {
       const tx = await colony.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
       await expectEvent(tx, "TokensMinted(address,address,uint256)", [USER0, colony.address, 100]);
+    });
+
+    it("should not allow a metatransaction to occur if signature bad (as opposed to invalid)", async () => {
+      const txData = await colony.contract.methods.mintTokens(100).encodeABI();
+
+      const { r, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
+
+      await checkErrorRevert(
+        colony.executeMetaTransaction(USER0, txData, r, ADDRESS_ZERO, v + 1, { from: USER1 }),
+        "colony-metatx-invalid-signature"
+      );
     });
   });
 
