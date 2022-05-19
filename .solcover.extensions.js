@@ -17,6 +17,7 @@ module.exports = {
       'common/EtherRouter.sol',
       'patriciaTree',
       'testHelpers',
+      'ens'
     ],
     providerOptions: {
       port: 8555,
