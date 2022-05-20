@@ -5,7 +5,17 @@ const { BN } = require("bn.js");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID, IPFS_HASH, ADDRESS_ZERO } = require("../../helpers/constants");
+const {
+  UINT256_MAX,
+  INT128_MAX,
+  WAD,
+  SECONDS_PER_DAY,
+  MAX_PAYOUT,
+  GLOBAL_SKILL_ID,
+  IPFS_HASH,
+  ADDRESS_ZERO,
+  HASHZERO,
+} = require("../../helpers/constants");
 const { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } = require("../../helpers/test-helper");
 const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
@@ -190,11 +200,13 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditurePayouts(100, [], ADDRESS_ZERO, []), "colony-expenditure-does-not-exist");
     });
 
-    it("should allow owners to update the metadata", async () => {
+    it("should only allow owners to update the metadata", async () => {
       const setExpenditureMetadata = colony.methods["setExpenditureMetadata(uint256,string)"];
       const tx = await setExpenditureMetadata(expenditureId, IPFS_HASH, { from: ADMIN });
 
       await expectEvent(tx, "ExpenditureMetadataSet", [ADMIN, expenditureId, IPFS_HASH]);
+
+      await checkErrorRevert(setExpenditureMetadata(expenditureId, IPFS_HASH, { from: USER }), "colony-expenditure-not-owner");
     });
 
     it("should allow arbitrators to update the metadata", async () => {
@@ -204,6 +216,13 @@ contract("Colony Expenditure", (accounts) => {
       await expectEvent(tx, "ExpenditureMetadataSet", [ARBITRATOR, expenditureId, IPFS_HASH]);
     });
 
+    it("metadata can only be updated while in draft state", async () => {
+      const setExpenditureMetadata = colony.methods["setExpenditureMetadata(uint256,string)"];
+
+      await colony.cancelExpenditure(expenditureId, { from: ADMIN });
+      await checkErrorRevert(setExpenditureMetadata(expenditureId, IPFS_HASH, { from: ADMIN }), "colony-expenditure-not-draft");
+    });
+
     it("should allow owners to update a slot recipient", async () => {
       await colony.setExpenditureRecipient(expenditureId, SLOT0, USER, { from: ADMIN });
 
@@ -211,7 +230,12 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditureSlot.recipient).to.equal(USER);
     });
 
-    it("should allow owners to update many slot recipients at once", async () => {
+    it("should allow only owners to update many slot recipients at once", async () => {
+      await checkErrorRevert(
+        colony.setExpenditureRecipients(expenditureId, [SLOT1, SLOT2], [RECIPIENT, USER], { from: USER }),
+        "colony-expenditure-not-owner"
+      );
+
       await colony.setExpenditureRecipients(expenditureId, [SLOT1, SLOT2], [RECIPIENT, USER], { from: ADMIN });
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
@@ -287,7 +311,9 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [100], { from: ADMIN }), "colony-not-valid-global-or-local-skill");
     });
 
-    it("should allow owners to update a slot claim delay", async () => {
+    it("should allow only owners to update a slot claim delay", async () => {
+      await checkErrorRevert(colony.setExpenditureClaimDelay(expenditureId, SLOT0, SECONDS_PER_DAY, { from: USER }), "colony-expenditure-not-owner");
+
       await colony.setExpenditureClaimDelay(expenditureId, SLOT0, SECONDS_PER_DAY, { from: ADMIN });
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
@@ -309,7 +335,12 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditureClaimDelays(expenditureId, [SLOT0, SLOT1], [10], { from: ADMIN }), "colony-expenditure-bad-slots");
     });
 
-    it("should allow owners to update many slot payout modifiers at once", async () => {
+    it("should allow only owners to update many slot payout modifiers at once", async () => {
+      await checkErrorRevert(
+        colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(2), WAD], { from: USER }),
+        "colony-expenditure-not-owner"
+      );
+
       await colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(2), WAD], { from: ADMIN });
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
@@ -492,6 +523,14 @@ contract("Colony Expenditure", (accounts) => {
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.status).to.eq.BN(FINALIZED);
       expect(expenditure.finalizedTimestamp).to.eq.BN(currTime);
+    });
+
+    it("should not allow an expenditure to be finalized twice", async () => {
+      const expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.status).to.eq.BN(DRAFT);
+
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+      await checkErrorRevert(colony.finalizeExpenditure(expenditureId, { from: ADMIN }), "colony-expenditure-not-draft-or-locked");
     });
 
     it("should allow owners to finalize expenditures from locked state", async () => {
@@ -1111,6 +1150,38 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR }),
         "colony-expenditure-large-offset"
+      );
+    });
+
+    it("should not allow arbitration users to pass bad sets of keys for what they're trying to change", async () => {
+      const mask = [MAPPING, ARRAY, ARRAY];
+      let keys = ["0x0", bn2bytes32(new BN(10)), bn2bytes32(new BN(10))];
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
+        "colony-expenditure-bad-keys"
+      );
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
+        "colony-expenditure-bad-offset"
+      );
+
+      keys = [bn2bytes32(new BN(10))];
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
+        "colony-expenditure-bad-keys"
+      );
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTPAYOUTS_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
+        "colony-expenditure-bad-keys"
+      );
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, 1000000, mask, keys, HASHZERO, { from: ARBITRATOR }),
+        "colony-expenditure-bad-slot"
       );
     });
 
