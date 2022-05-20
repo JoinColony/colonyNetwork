@@ -151,6 +151,10 @@ contract("Colony Network", (accounts) => {
       await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.constants.AddressZero), "colony-mining-resolver-cannot-be-zero");
     });
 
+    it("should not allow a non-permissioned user to set the mining resolver", async () => {
+      await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.constants.AddressZero, { from: accounts[1] }), "ds-auth-unauthorized");
+    });
+
     it("should not allow initialisation if the clny token is 0", async () => {
       const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
       await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);

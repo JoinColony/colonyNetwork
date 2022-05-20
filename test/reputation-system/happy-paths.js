@@ -18,6 +18,7 @@ const {
   makeReputationKey,
   makeReputationValue,
   removeSubdomainLimit,
+  checkErrorRevert,
 } = require("../../helpers/test-helper");
 
 const {
@@ -41,6 +42,7 @@ const {
   WORKER_PAYOUT,
   GLOBAL_SKILL_ID,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
+  ADDRESS_ZERO,
 } = require("../../helpers/constants");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
@@ -998,6 +1000,24 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await repCycle.invalidateHash(0, 1, { from: MINER1 });
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
+    });
+
+    it("a miner can set a delegate", async () => {
+      await colonyNetwork.setMiningDelegate(WORKER, true, { from: MINER1 });
+      const delegator = await colonyNetwork.getMiningDelegator(WORKER);
+      expect(delegator).to.equal(MINER1);
+    });
+
+    it("a mining delegate cannot be stolen", async () => {
+      await colonyNetwork.setMiningDelegate(WORKER, true, { from: MINER1 });
+      await checkErrorRevert(colonyNetwork.setMiningDelegate(WORKER, true, { from: MINER2 }), "colony-reputation-mining-not-your-delegate");
+    });
+
+    it("a mining delegate can be removed", async () => {
+      await colonyNetwork.setMiningDelegate(WORKER, true, { from: MINER1 });
+      await colonyNetwork.setMiningDelegate(WORKER, false, { from: MINER1 });
+      const delegator = await colonyNetwork.getMiningDelegator(WORKER);
+      expect(delegator).to.equal(ADDRESS_ZERO);
     });
   });
 });

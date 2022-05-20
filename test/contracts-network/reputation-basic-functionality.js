@@ -213,7 +213,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
 
     it('should not allow "setReputationRootHash" to be called from an account that is not a ReputationMiningCycle', async () => {
       await checkErrorRevert(
-        colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]], 0),
+        colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]]),
         "colony-reputation-mining-sender-not-active-reputation-cycle"
       );
     });

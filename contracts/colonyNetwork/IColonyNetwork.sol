@@ -229,14 +229,6 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return resolverAddress Address of the `Resolver` contract
   function getColonyVersionResolver(uint256 _version) external view returns (address resolverAddress);
 
-  /// @notice This version of setReputationRootHash is deprecated and will be removed in a future release. It transparently
-  /// calls the new version if it is called (essentially, removing the `reward` parameter.
-  /// @param newHash The reputation root hash
-  /// @param newNLeaves The updated leaves count value
-  /// @param stakers Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-  /// @param reward Amount of CLNY to be distributed as reward to miners (not used)
-  function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers, uint256 reward) external;
-
   /// @notice Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
   /// @param newHash The reputation root hash
   /// @param newNLeaves The updated leaves count value

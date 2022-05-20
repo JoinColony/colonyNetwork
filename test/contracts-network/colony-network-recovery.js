@@ -174,7 +174,6 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.deployTokenViaNetwork("", "", 18), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.deployTokenAuthority(ADDRESS_ZERO, ADDRESS_ZERO, []), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setMiningDelegate(ADDRESS_ZERO, true), "colony-in-recovery-mode");
-      await checkErrorRevert(colonyNetwork.setReputationRootHash(HASHZERO, 0, [], 0), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setReputationRootHash(HASHZERO, 0, []), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-in-recovery-mode");
@@ -365,6 +364,18 @@ contract("Colony Network Recovery", (accounts) => {
       expect(entry.colony).to.equal(replacementEntry.colony);
       expect(entry.nUpdates).to.equal(replacementEntry.nUpdates);
       expect(entry.nPreviousUpdates).to.equal(replacementEntry.nPreviousUpdates);
+
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.exitRecoveryMode();
+    });
+
+    it("non-root users cannot set reputation log entry", async () => {
+      await colonyNetwork.enterRecoveryMode();
+
+      await checkErrorRevert(
+        colonyNetwork.setReplacementReputationUpdateLogEntry(ADDRESS_ZERO, 0, ADDRESS_ZERO, 0, 0, ADDRESS_ZERO, 0, 0, { from: accounts[1] }),
+        "ds-auth-unauthorized"
+      );
 
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
