@@ -4,7 +4,7 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 
 const { soliditySha3 } = require("web3-utils");
-const { UINT256_MAX, INITIAL_FUNDING, SPECIFICATION_HASH, GLOBAL_SKILL_ID, WAD } = require("../../helpers/constants");
+const { UINT256_MAX, INITIAL_FUNDING, SPECIFICATION_HASH, GLOBAL_SKILL_ID, WAD, ADDRESS_ZERO, HASHZERO } = require("../../helpers/constants");
 const { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit } = require("../../helpers/test-helper");
 const { executeSignedTaskChange } = require("../../helpers/task-review-signing");
 
@@ -93,8 +93,14 @@ contract("Meta Colony", (accounts) => {
       expect(rootSkillChild2).to.eq.BN(5);
     });
 
-    it("should not allow a non-root role in the metacolony to add a global skill", async () => {
+    it("should not allow a non-root role in the metacolony to add or deprecate a global skill", async () => {
       await checkErrorRevert(metaColony.addGlobalSkill({ from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
+      await checkErrorRevert(metaColony.deprecateGlobalSkill(0, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
+    });
+
+    it("should not allow a non-root role in the metacolony to add colony or extension versions to the network", async () => {
+      await checkErrorRevert(metaColony.addNetworkColonyVersion(1, ADDRESS_ZERO, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
+      await checkErrorRevert(metaColony.addExtensionToNetwork(HASHZERO, ADDRESS_ZERO, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
     });
 
     it("should be able to add multiple child skills to the domain skill corresponding to the root domain by adding child domains", async () => {

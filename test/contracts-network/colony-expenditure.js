@@ -5,7 +5,7 @@ const { BN } = require("bn.js");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID, IPFS_HASH } = require("../../helpers/constants");
+const { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID, IPFS_HASH, ADDRESS_ZERO } = require("../../helpers/constants");
 const { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } = require("../../helpers/test-helper");
 const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
@@ -186,6 +186,8 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditureRecipients(100, [], []), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.setExpenditureClaimDelays(100, [], []), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.setExpenditurePayoutModifiers(100, [], []), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.claimExpenditurePayout(100, 0, ADDRESS_ZERO), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.setExpenditurePayouts(100, [], ADDRESS_ZERO, []), "colony-expenditure-does-not-exist");
     });
 
     it("should allow owners to update the metadata", async () => {

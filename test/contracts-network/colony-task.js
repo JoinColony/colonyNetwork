@@ -1303,6 +1303,10 @@ contract("ColonyTask", (accounts) => {
       expect(task.status).to.eq.BN(FINALIZED_TASK_STATE);
     });
 
+    it("cannot complete a task that does not exist", async () => {
+      await checkErrorRevert(colony.completeTask(100), "colony-task-does-not-exist");
+    });
+
     it("should fail if the task work ratings have not been assigned and they still have time to be", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const dueDate = await currentBlockTime();
@@ -1358,6 +1362,20 @@ contract("ColonyTask", (accounts) => {
 
       const task = await colony.getTask(taskId);
       expect(task.status).to.eq.BN(CANCELLED_TASK_STATE);
+    });
+
+    it("cannot cancel a task that doesn't exist", async () => {
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          taskId: 100,
+          functionName: "cancelTask",
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [100],
+        }),
+        "colony-task-does-not-exist"
+      );
     });
 
     it("should be possible to return funds back to the domain", async () => {
@@ -1716,6 +1734,20 @@ contract("ColonyTask", (accounts) => {
           args: [taskId, ethers.constants.AddressZero, MAX_PAYOUT.addn(1)],
         }),
         "colony-task-change-execution-failed" // Should be "colony-payout-too-large"
+      );
+    });
+
+    it("should not be able to set a payout on a task that doesn't exist", async () => {
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          taskId: 1000,
+          functionName: "setTaskManagerPayout",
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [1000, ethers.constants.AddressZero, MAX_PAYOUT.addn(1)],
+        }),
+        "colony-task-does-not-exist"
       );
     });
   });

@@ -323,6 +323,18 @@ contract("ColonyPermissions", (accounts) => {
       await checkErrorRevert(colony.setFundingRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-only-authorized-in-child-domain");
     });
 
+    it("should not allow users without root permission to call root-restricted functions", async () => {
+      await checkErrorRevert(colony.editColony("", { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.editColonyByDelta("", { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.mintTokensFor(ADDRESS_ZERO, 0, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.updateColonyOrbitDB("", { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.installExtension(HASHZERO, ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.addLocalSkill({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.deprecateLocalSkill(0, true, { from: USER2 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.makeArbitraryTransactions([], [], true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.startNextRewardPayout(ADDRESS_ZERO, HASHZERO, HASHZERO, 0, [HASHZERO], { from: USER1 }), "ds-auth-unauthorized");
+    });
+
     it("should allow users with root permission manipulate root domain permissions and colony-wide parameters", async () => {
       await colony.setRootRole(USER1, true);
       hasRole = await colony.hasUserRole(USER1, 1, ROOT_ROLE);

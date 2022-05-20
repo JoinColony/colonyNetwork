@@ -90,7 +90,7 @@ contract("Token Supplier", (accounts) => {
     });
 
     it("cannot initialise with ceiling smaller than totalSupply", async () => {
-      token.mint(SUPPLY_CEILING.addn(1));
+      await token.mint(SUPPLY_CEILING.addn(1));
 
       await checkErrorRevert(tokenSupplier.initialise(SUPPLY_CEILING, WAD), "token-supplier-ceiling-too-low");
     });
@@ -113,7 +113,7 @@ contract("Token Supplier", (accounts) => {
     it("cannot update the tokenSupplyCeiling if less than totalSupply", async () => {
       await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
 
-      token.mint(SUPPLY_CEILING.muln(3));
+      await token.mint(SUPPLY_CEILING.muln(3));
 
       await checkErrorRevert(tokenSupplier.setTokenSupplyCeiling(SUPPLY_CEILING.muln(2)), "token-supplier-ceiling-too-low");
     });
@@ -256,7 +256,7 @@ contract("Token Supplier", (accounts) => {
     });
 
     it("can claim no tokens if the supply is larger than the ceiling", async () => {
-      token.mint(SUPPLY_CEILING.addn(1));
+      await token.mint(SUPPLY_CEILING.addn(1));
 
       const balancePre = await token.balanceOf(colony.address);
 
