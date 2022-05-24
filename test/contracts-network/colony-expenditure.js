@@ -31,7 +31,7 @@ const Token = artifacts.require("Token");
 const TestExtension0 = artifacts.require("TestExtension0");
 const Resolver = artifacts.require("Resolver");
 
-contract("Colony Expenditure", (accounts) => {
+contract.only("Colony Expenditure", (accounts) => {
   const SLOT0 = 0;
   const SLOT1 = 1;
   const SLOT2 = 2;
