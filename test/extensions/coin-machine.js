@@ -179,6 +179,13 @@ contract("Coin Machine", (accounts) => {
         "coin-machine-caller-not-root"
       );
     });
+
+    it("can't use the network-level functions if installed via ColonyNetwork", async () => {
+      await checkErrorRevert(coinMachine.install(ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(coinMachine.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(coinMachine.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(coinMachine.uninstall({ from: USER1 }), "ds-auth-unauthorized");
+    });
   });
 
   describe("buying tokens", async () => {
