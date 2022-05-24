@@ -5,7 +5,7 @@ const { soliditySha3 } = require("web3-utils");
 const { setupEtherRouter } = require("../helpers/upgradable-contracts");
 
 const CoinMachine = artifacts.require("./CoinMachine");
-const EvaluatedExpenditure = artifacts.require("./EvaluatedExpenditure");
+const ExpenditureUtils = artifacts.require("./ExpenditureUtils");
 const FundingQueue = artifacts.require("./FundingQueue");
 const OneTxPayment = artifacts.require("./OneTxPayment");
 const StreamingPayments = artifacts.require("./StreamingPayments");
@@ -37,7 +37,7 @@ module.exports = async function (deployer, network, accounts) {
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
 
   await addExtension(colonyNetwork, "CoinMachine", CoinMachine);
-  await addExtension(colonyNetwork, "EvaluatedExpenditure", EvaluatedExpenditure);
+  await addExtension(colonyNetwork, "ExpenditureUtils", ExpenditureUtils);
   await addExtension(colonyNetwork, "FundingQueue", FundingQueue);
   await addExtension(colonyNetwork, "OneTxPayment", OneTxPayment);
   await addExtension(colonyNetwork, "StreamingPayments", StreamingPayments);
