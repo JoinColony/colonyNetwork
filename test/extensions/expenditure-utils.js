@@ -194,7 +194,7 @@ contract("ExpenditureUtils", (accounts) => {
 
     beforeEach(async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
-      constexpenditureId = await colony.getExpenditureCount();
+      expenditureId = await colony.getExpenditureCount();
 
       await colony.lockExpenditure(expenditureId);
     });

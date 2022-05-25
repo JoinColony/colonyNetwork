@@ -460,11 +460,11 @@ contract("Colony Expenditure", (accounts) => {
         [token.address, otherToken.address],
         [
           [SLOT0, SLOT1],
-          [SLOT1, SLOT2]
+          [SLOT1, SLOT2],
         ],
         [
           [WAD.muln(10), WAD.muln(20)],
-          [WAD.muln(30), WAD.muln(40)]
+          [WAD.muln(30), WAD.muln(40)],
         ],
         { from: ADMIN }
       );
@@ -559,10 +559,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should not allow the owner to set payouts", async () => {
       const setExpenditurePayouts = colony.methods["setExpenditurePayouts(uint256,uint256[],address,uint256[])"];
 
-      await checkErrorRevert(
-        setExpenditurePayouts(expenditureId, [SLOT0], token.address, [WAD], { from: ADMIN }),
-        "colony-expenditure-not-draft"
-      );
+      await checkErrorRevert(setExpenditurePayouts(expenditureId, [SLOT0], token.address, [WAD], { from: ADMIN }), "colony-expenditure-not-draft");
     });
   });
 
