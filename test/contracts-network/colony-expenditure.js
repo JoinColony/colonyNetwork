@@ -31,7 +31,7 @@ const Token = artifacts.require("Token");
 const TestExtension0 = artifacts.require("TestExtension0");
 const Resolver = artifacts.require("Resolver");
 
-contract.only("Colony Expenditure", (accounts) => {
+contract("Colony Expenditure", (accounts) => {
   const SLOT0 = 0;
   const SLOT1 = 1;
   const SLOT2 = 2;
@@ -444,6 +444,64 @@ contract.only("Colony Expenditure", (accounts) => {
 
       totalPayout = await colony.getFundingPotPayout(expenditure.fundingPotId, token.address);
       expect(totalPayout).to.eq.BN(WAD);
+    });
+
+    it("should allow owners to update many values simultaneously", async () => {
+      await colony.setExpenditureValues(
+        expenditureId,
+        [SLOT0, SLOT1, SLOT2],
+        [RECIPIENT, USER, ADMIN],
+        [SLOT1, SLOT2],
+        [GLOBAL_SKILL_ID, GLOBAL_SKILL_ID],
+        [SLOT0, SLOT1],
+        [10, 20],
+        [SLOT0, SLOT2],
+        [WAD.divn(3), WAD.divn(2)],
+        [token.address, otherToken.address],
+        [
+          [SLOT0, SLOT1],
+          [SLOT1, SLOT2]
+        ],
+        [
+          [WAD.muln(10), WAD.muln(20)],
+          [WAD.muln(30), WAD.muln(40)]
+        ],
+        { from: ADMIN }
+      );
+
+      let slot;
+      slot = await colony.getExpenditureSlot(expenditureId, SLOT0);
+      expect(slot.recipient).to.equal(RECIPIENT);
+      expect(slot.skills[0]).to.be.zero;
+      expect(slot.claimDelay).to.eq.BN(10);
+      expect(slot.payoutModifier).to.eq.BN(WAD.divn(3));
+
+      slot = await colony.getExpenditureSlot(expenditureId, SLOT1);
+      expect(slot.recipient).to.equal(USER);
+      expect(slot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(slot.claimDelay).to.eq.BN(20);
+      expect(slot.payoutModifier).to.be.zero;
+
+      slot = await colony.getExpenditureSlot(expenditureId, SLOT2);
+      expect(slot.recipient).to.equal(ADMIN);
+      expect(slot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(slot.claimDelay).to.be.zero;
+      expect(slot.payoutModifier).to.eq.BN(WAD.divn(2));
+
+      let payout;
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
+      expect(payout).to.eq.BN(WAD.muln(10));
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT1, token.address);
+      expect(payout).to.eq.BN(WAD.muln(20));
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT2, token.address);
+      expect(payout).to.be.zero;
+
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, otherToken.address);
+      expect(payout).to.be.zero;
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT1, otherToken.address);
+      expect(payout).to.eq.BN(WAD.muln(30));
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT2, otherToken.address);
+      expect(payout).to.eq.BN(WAD.muln(40));
     });
   });
 

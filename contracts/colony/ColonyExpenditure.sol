@@ -230,6 +230,33 @@ contract ColonyExpenditure is ColonyStorage {
     }
   }
 
+  function setExpenditureValues(
+    uint256 _id,
+    uint256[] memory _recipientSlots,
+    address payable[] memory _recipients,
+    uint256[] memory _skillIdSlots,
+    uint256[] memory _skillIds,
+    uint256[] memory _claimDelaySlots,
+    uint256[] memory _claimDelays,
+    uint256[] memory _payoutModifierSlots,
+    int256[] memory _payoutModifiers,
+    address[] memory _payoutTokens,
+    uint256[][] memory _payoutSlots,
+    uint256[][] memory _payoutValues
+  )
+    public
+    stoppable
+    expenditureExists(_id)
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    setExpenditureRecipients(_id, _recipientSlots, _recipients);
+    setExpenditureSkills(_id, _skillIdSlots, _skillIds);
+    setExpenditureClaimDelays(_id, _claimDelaySlots, _claimDelays);
+    setExpenditurePayoutModifiers(_id, _payoutModifierSlots, _payoutModifiers);
+    setExpenditurePayouts(_id, _payoutTokens, _payoutSlots, _payoutValues);
+  }
+
   // Deprecated
   function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient)
     public
@@ -332,6 +359,19 @@ contract ColonyExpenditure is ColonyStorage {
   }
 
   // Internal functions
+
+  function setExpenditurePayouts(
+    uint256 _id,
+    address[] memory _payoutTokens,
+    uint256[][] memory _payoutSlots,
+    uint256[][] memory _payoutValues
+  )
+    internal
+  {
+    for (uint256 i; i < _payoutTokens.length; i++) {
+      IColony(address(this)).setExpenditurePayouts(_id, _payoutSlots[i], _payoutTokens[i], _payoutValues[i]);
+    }
+  }
 
   bool constant MAPPING = false;
   bool constant ARRAY = true;

@@ -493,6 +493,33 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus
   function setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers) external;
 
+  /// @notice Set many values of an expenditure simultaneously. Can only be called by expenditure owner.
+  /// @param _recipientSlots Array of slots to set recipients
+  /// @param _recipients Addresses of the recipients
+  /// @param _skillIdSlots Array of slots to set skills
+  /// @param _skillIds Ids of the new skills to set
+  /// @param _claimDelaySlots Array of slots to set claim delays
+  /// @param _claimDelays Durations of time (in seconds) to delay
+  /// @param _payoutModifierSlots Array of slots to set payout modifiers
+  /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus
+  /// @param _payoutSlots 2-dimensional array of slots to set payouts
+  /// @param _payoutTokens Addresses of the tokens, `0x0` value indicates Ether
+  /// @param _payoutValues 2-dimensional array of the payout amounts
+  function setExpenditureValues(
+    uint256 _id,
+    uint256[] memory _recipientSlots,
+    address payable[] memory _recipients,
+    uint256[] memory _skillIdSlots,
+    uint256[] memory _skillIds,
+    uint256[] memory _claimDelaySlots,
+    uint256[] memory _claimDelays,
+    uint256[] memory _payoutModifierSlots,
+    int256[] memory _payoutModifiers,
+    address[] memory _payoutTokens,
+    uint256[][] memory _payoutSlots,
+    uint256[][] memory _payoutValues
+  ) external;
+
   /// @notice Set arbitrary state on an expenditure slot. Can only be called by Arbitration role.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
