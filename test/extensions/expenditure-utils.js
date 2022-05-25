@@ -113,7 +113,7 @@ contract("ExpenditureUtils", (accounts) => {
     });
   });
 
-  describe.only("using stakes to manage expenditures", async () => {
+  describe("using stakes to manage expenditures", async () => {
     beforeEach(async () => {
       await expenditureUtils.setStakeFraction(WAD.divn(10)); // Stake of .3 WADs
 
@@ -134,6 +134,19 @@ contract("ExpenditureUtils", (accounts) => {
       expect(obligation).to.eq.BN(WAD.muln(3).divn(10));
     });
 
+    it("can slash the stake with the arbitration permission", async () => {
+      await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+
+      await expenditureUtils.slashStake(1, UINT256_MAX, expenditureId);
+
+      const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
+      expect(obligation).to.be.zero;
+
+      const userLock = await tokenLocking.getUserLock(token.address, USER0);
+      expect(userLock.balance).to.eq.BN(WAD.sub(WAD.muln(3).divn(10)));
+    });
+
     it("can reclaim the stake by cancelling the expenditure", async () => {
       await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
@@ -144,6 +157,9 @@ contract("ExpenditureUtils", (accounts) => {
 
       const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
       expect(obligation).to.be.zero;
+
+      const userLock = await tokenLocking.getUserLock(token.address, USER0);
+      expect(userLock.balance).to.eq.BN(WAD);
     });
 
     it("can reclaim the stake by finalizing the expenditure", async () => {
@@ -156,6 +172,9 @@ contract("ExpenditureUtils", (accounts) => {
 
       const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
       expect(obligation).to.be.zero;
+
+      const userLock = await tokenLocking.getUserLock(token.address, USER0);
+      expect(userLock.balance).to.eq.BN(WAD);
     });
 
     it("cannot reclaim the stake while the expenditure is in progress", async () => {

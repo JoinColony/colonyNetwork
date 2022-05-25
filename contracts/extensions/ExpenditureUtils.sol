@@ -37,7 +37,7 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-caller-not-root");
+    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "evaluated-expenditure-caller-not-root");
     _;
   }
 
@@ -100,6 +100,26 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     uint256 expenditureId = colony.getExpenditureCount();
     stakes[msgSender()][expenditureId] = stake;
     colony.transferExpenditure(expenditureId, msgSender());
+  }
+
+  function slashStake(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _expenditureId
+  )
+    public
+  {
+    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
+    uint256 stake = stakes[expenditure.owner][_expenditureId];
+    require(stake > 0, "expenditure-utils-nothing-to-claim");
+
+    require(
+      colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Arbitration, _childSkillIndex, expenditure.domainId),
+      "expenditure-utils-caller-not-arbitration"
+    );
+
+    delete stakes[expenditure.owner][_expenditureId];
+    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), expenditure.owner, expenditure.domainId, stake, address(0x0));
   }
 
   function reclaimStake(uint256 _expenditureId) public {
