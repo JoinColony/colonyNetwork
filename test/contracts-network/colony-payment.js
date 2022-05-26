@@ -253,7 +253,7 @@ contract("Colony Payment", (accounts) => {
       await checkErrorRevert(colony.finalizePayment(1, UINT256_MAX, paymentId, { from: accounts[10] }), "ds-auth-unauthorized");
     });
 
-    it("should not allow a finazlied payment to be finalized again", async () => {
+    it("should not allow a finalized payment to be finalized again", async () => {
       await colony.finalizePayment(1, UINT256_MAX, paymentId);
       await checkErrorRevert(colony.finalizePayment(1, UINT256_MAX, paymentId), "colony-payment-finalized");
     });
