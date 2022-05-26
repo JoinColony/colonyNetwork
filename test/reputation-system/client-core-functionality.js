@@ -1,22 +1,22 @@
 /* globals artifacts */
 
-import path from "path";
-import request from "async-request";
-import chai from "chai";
-import bnChai from "bn-chai";
+const path = require("path");
+const request = require("async-request");
+const chai = require("chai");
+const bnChai = require("bn-chai");
 
-import { TruffleLoader } from "../../packages/package-utils";
-import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
-import { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter } from "../../helpers/test-helper";
-import {
+const { TruffleLoader } = require("../../packages/package-utils");
+const { DEFAULT_STAKE, INITIAL_FUNDING } = require("../../helpers/constants");
+const { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter } = require("../../helpers/test-helper");
+const {
   fundColonyWithTokens,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
   setupFinalizedTask,
-} from "../../helpers/test-data-generator";
-import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
-import ReputationMinerClient from "../../packages/reputation-miner/ReputationMinerClient";
+} = require("../../helpers/test-data-generator");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerClient = require("../../packages/reputation-miner/ReputationMinerClient");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

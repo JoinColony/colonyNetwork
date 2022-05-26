@@ -1,8 +1,7 @@
-import sqlite3 from "sqlite3";
-
 const ethers = require("ethers");
 const express = require("express");
 const sqlite = require("sqlite");
+const sqlite3 = require("sqlite3");
 const { colonyIOCors, ConsoleAdapter, updateGasEstimate } = require("../package-utils");
 
 class MetatransactionBroadcaster {

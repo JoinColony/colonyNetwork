@@ -1,17 +1,15 @@
 /* global artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import { BN } from "bn.js";
-
-import { UINT256_MAX, WAD, GLOBAL_SKILL_ID } from "../helpers/constants";
-import { fundColonyWithTokens, setupColony } from "../helpers/test-data-generator";
-
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const BN = require("bn.js");
 const Account = require("ethereumjs-account").default;
+const utils = require("ethereumjs-util");
+
+const { UINT256_MAX, WAD, GLOBAL_SKILL_ID } = require("../helpers/constants");
+const { fundColonyWithTokens, setupColony } = require("../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
-
-const utils = require("ethereumjs-util");
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -154,11 +152,11 @@ contract("Contract Storage", (accounts) => {
       console.log("miningCycleStateHash:", miningCycleAccount.stateRoot.toString("hex"));
       console.log("tokenLockingStateHash:", tokenLockingAccount.stateRoot.toString("hex"));
 
-      expect(colonyNetworkAccount.stateRoot.toString("hex")).to.equal("abc691df82610adc362fc162293bb1151a7869039b145bbd925d3c760a22778d");
-      expect(colonyAccount.stateRoot.toString("hex")).to.equal("db3561898fd52285f65cf27eecfdfb556838f7626f5f425d9b293dcf703fae84");
-      expect(metaColonyAccount.stateRoot.toString("hex")).to.equal("58f1833f0b94c47c028c91ededb70d6697624ecf98bc2cc7930bf55f40d2d931");
-      expect(miningCycleAccount.stateRoot.toString("hex")).to.equal("1f3909ac9098d953ec1d197e6d7924384e96209770f445466ea2f0c0c39f4834");
-      expect(tokenLockingAccount.stateRoot.toString("hex")).to.equal("7ec700a44aef86af735adcb205136940a73bd0507d07d88e93e629dee06f05c3");
+      expect(colonyNetworkAccount.stateRoot.toString("hex")).to.equal("d83bafbde471d922f744f0045e6b50936c62edb219d95977a16c509560c0858f");
+      expect(colonyAccount.stateRoot.toString("hex")).to.equal("38408842ba839e25a312bee736ae2f20950add8abdb3c1e72c057e53af6b0a89");
+      expect(metaColonyAccount.stateRoot.toString("hex")).to.equal("0329b7be521126a90466fd821d1e1fd9d21b0ec9237b207bd8f14ae891d98d5f");
+      expect(miningCycleAccount.stateRoot.toString("hex")).to.equal("9ee0d346e2a597ee9083711e9c7f6f414bff6b9f0ae7f88f7db534a2280964c0");
+      expect(tokenLockingAccount.stateRoot.toString("hex")).to.equal("9484aed2f25183c3d88967bb90ef988c5d83a2813aa7cf931a89a741f4a845c0");
     });
   });
 });

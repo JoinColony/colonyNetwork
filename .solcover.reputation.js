@@ -17,6 +17,7 @@ module.exports = {
       'common/EtherRouter.sol',
       'patriciaTree',
       'testHelpers',
+      'ens',
     ],
     providerOptions: {
       port: 8555,
@@ -26,6 +27,7 @@ module.exports = {
       total_accounts: 18
     },
     onCompileComplete: provisionTokenContracts,
-    istanbulFolder: "./coverage-reputation"
+    istanbulFolder: "./coverage-reputation",
+    modifierWhitelist: ["always"],
 }
 

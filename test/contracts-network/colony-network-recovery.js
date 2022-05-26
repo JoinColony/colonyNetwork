@@ -1,34 +1,35 @@
 /* globals artifacts */
 
-import { padLeft, soliditySha3 } from "web3-utils";
-import BN from "bn.js";
-import { ethers } from "ethers";
-import chai from "chai";
-import bnChai from "bn-chai";
-import path from "path";
+const { padLeft, soliditySha3 } = require("web3-utils");
+const BN = require("bn.js");
+const { ethers } = require("ethers");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const path = require("path");
 
-import { TruffleLoader } from "../../packages/package-utils";
-import {
+const { TruffleLoader } = require("../../packages/package-utils");
+const {
   forwardTime,
   makeReputationKey,
   currentBlock,
   currentBlockTime,
   checkErrorRevert,
+  checkErrorRevertEstimateGas,
   web3GetStorageAt,
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   getTokenArgs,
-} from "../../helpers/test-helper";
-import {
+} = require("../../helpers/test-helper");
+const {
   setupFinalizedTask,
   giveUserCLNYTokensAndStake,
   fundColonyWithTokens,
   setupRandomColony,
   getMetaTransactionParameters,
-} from "../../helpers/test-data-generator";
-import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
-import { DEFAULT_STAKE, MINING_CYCLE_DURATION, CURR_VERSION } from "../../helpers/constants";
+} = require("../../helpers/test-data-generator");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
+const { DEFAULT_STAKE, MINING_CYCLE_DURATION, CURR_VERSION, ADDRESS_ZERO, HASHZERO } = require("../../helpers/constants");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -135,8 +136,72 @@ contract("Colony Network Recovery", (accounts) => {
     it("should not be able to call normal functions while in recovery", async () => {
       await colonyNetwork.enterRecoveryMode();
       await checkErrorRevert(colonyNetwork.createColony(clny.address), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createMetaColony(clny.address), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setTokenLocking(ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.initialiseRootLocalSkill(), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.appendReputationUpdateLog(ADDRESS_ZERO, 0, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColony(clny.address, 4, "", "", true), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColony(clny.address, 4, ""), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColony(clny.address, 4, "", ""), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setupRegistrar(clny.address, HASHZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.registerUserLabel("", ""), "colony-in-recovery-mode");
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.registerColonyLabel.estimateGas("", "", { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevertEstimateGas(colonyNetwork.updateColonyOrbitDB.estimateGas("", { from: metaColony.address }), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.updateUserOrbitDB(""), "colony-in-recovery-mode");
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.addExtensionToNetwork.estimateGas(HASHZERO, ADDRESS_ZERO, { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.installExtension.estimateGas(HASHZERO, 1, { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.upgradeExtension.estimateGas(HASHZERO, 2, { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.deprecateExtension.estimateGas(HASHZERO, true, { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevertEstimateGas(
+        colonyNetwork.uninstallExtension.estimateGas(HASHZERO, { from: metaColony.address }),
+        "colony-in-recovery-mode"
+      );
+      await checkErrorRevert(colonyNetwork.deployTokenViaNetwork("", "", 18), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.deployTokenAuthority(ADDRESS_ZERO, ADDRESS_ZERO, []), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setMiningDelegate(ADDRESS_ZERO, true), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setReputationRootHash(HASHZERO, 0, []), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.punishStakers([], 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.reward(ADDRESS_ZERO, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.stakeForMining(0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.unstakeForMining(0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.burnUnneededRewards(0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setReputationMiningCycleReward(0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setMiningResolver(ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.initialise(ADDRESS_ZERO, 1), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.addSkill(1), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.deprecateSkill(1, true), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.deprecateSkill(1), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setFeeInverse(1), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setPayoutWhitelist(ADDRESS_ZERO, true), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.claimMiningReward(ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.startTokenAuction(ADDRESS_ZERO), "colony-in-recovery-mode");
+
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
+    });
+
+    it("should not be able to call recovery functions when not in recovery mode", async () => {
+      await checkErrorRevert(
+        colonyNetwork.setReplacementReputationUpdateLogEntry(ADDRESS_ZERO, 0, ADDRESS_ZERO, 0, 0, ADDRESS_ZERO, 0, 0),
+        "colony-not-in-recovery-mode"
+      );
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {
@@ -303,6 +368,18 @@ contract("Colony Network Recovery", (accounts) => {
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
     });
+
+    it("non-root users cannot set reputation log entry", async () => {
+      await colonyNetwork.enterRecoveryMode();
+
+      await checkErrorRevert(
+        colonyNetwork.setReplacementReputationUpdateLogEntry(ADDRESS_ZERO, 0, ADDRESS_ZERO, 0, 0, ADDRESS_ZERO, 0, 0, { from: accounts[1] }),
+        "ds-auth-unauthorized"
+      );
+
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.exitRecoveryMode();
+    });
   });
 
   describe("when using recovery mode, miners should work correctly", async () => {
@@ -334,7 +411,6 @@ contract("Colony Network Recovery", (accounts) => {
 
           const repCycle = await getActiveRepCycle(colonyNetwork);
           const invalidEntry = await repCycle.getReputationUpdateLogEntry(5);
-          invalidEntry.amount = 0;
 
           await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
@@ -350,7 +426,7 @@ contract("Colony Network Recovery", (accounts) => {
             repCycle.address,
             5,
             invalidEntry.user,
-            invalidEntry.amount,
+            0,
             invalidEntry.skillId,
             invalidEntry.colony,
             invalidEntry.nUpdates,

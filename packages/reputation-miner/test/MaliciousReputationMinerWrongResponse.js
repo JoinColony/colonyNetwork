@@ -1,6 +1,7 @@
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
+
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it adds some extra
@@ -118,4 +119,4 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
 
 }
 
-export default MaliciousReputationMinerWrongResponse;
+module.exports = MaliciousReputationMinerWrongResponse;

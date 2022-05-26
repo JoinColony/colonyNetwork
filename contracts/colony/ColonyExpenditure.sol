@@ -86,9 +86,9 @@ contract ColonyExpenditure is ColonyStorage {
   )
     public
     stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
     expenditureExists(_id)
     expenditureDraftOrLocked(_id)
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     expenditures[_id].owner = _newOwner;
 

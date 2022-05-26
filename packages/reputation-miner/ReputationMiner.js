@@ -1,14 +1,12 @@
+const fs = require("fs").promises;
+const path = require("path");
+const BN = require("bn.js");
+const Database = require("better-sqlite3");
+const ethers = require("ethers");
+const { soliditySha3, isAddress } = require("web3-utils");
 
-import { BN } from "bn.js";
-import { soliditySha3, isAddress } from "web3-utils";
-import { ethers } from "ethers";
-import Database from "better-sqlite3";
-
-import PatriciaTreeNoHash from "./patriciaNoHashKey";
-import PatriciaTree from "./patricia";
-
-const fs = require('fs').promises;
-const path = require('path');
+const PatriciaTree = require("./patricia");
+const PatriciaTreeNoHash = require("./patriciaNoHashKey");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.
@@ -35,7 +33,7 @@ class ReputationMiner {
       // If this require is global, line numbers are broken in all our tests. If we move it here, it's only an issue if we're not
       // using the JS tree. There is an issue open at ganache-core about this, and this require will have to remain here until it's fixed.
       // https://github.com/trufflesuite/ganache-core/issues/287
-      const ganache = require("ganache-core"); // eslint-disable-line global-require
+      const ganache = require("ganache"); // eslint-disable-line global-require
       const ganacheProvider = ganache.provider({
         network_id: 515,
         vmErrorsOnRPCResponse: false,

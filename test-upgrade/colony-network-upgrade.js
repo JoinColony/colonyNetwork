@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { setupRandomColony } from "../helpers/test-data-generator";
+const { setupRandomColony } = require("../helpers/test-data-generator");
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");

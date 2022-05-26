@@ -1,20 +1,28 @@
-import { soliditySha3, padLeft } from "web3-utils";
-import { hashPersonalMessage, ecsign } from "ethereumjs-util";
-import fs from "fs";
-import { ethers } from "ethers";
-import { encodeTxData } from "./test-helper";
+const { soliditySha3, padLeft } = require("web3-utils");
+const { hashPersonalMessage, ecsign } = require("ethereumjs-util");
+const fs = require("fs");
+const { ethers } = require("ethers");
+const { encodeTxData } = require("./test-helper");
 
-export async function executeSignedTaskChange({ colony, taskId, functionName, signers, privKeys, sigTypes, args }) {
-  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, privKeys, sigTypes, args });
+exports.executeSignedTaskChange = async function executeSignedTaskChange({ colony, taskId, functionName, signers, privKeys, sigTypes, args }) {
+  const { sigV, sigR, sigS, txData } = await exports.getSigsAndTransactionData({ colony, taskId, functionName, signers, privKeys, sigTypes, args });
   return colony.executeTaskChange(sigV, sigR, sigS, sigTypes, 0, txData);
-}
+};
 
-export async function executeSignedRoleAssignment({ colony, taskId, functionName, signers, privKeys, sigTypes, args }) {
-  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, privKeys, sigTypes, args });
+exports.executeSignedRoleAssignment = async function executeSignedRoleAssignment({
+  colony,
+  taskId,
+  functionName,
+  signers,
+  privKeys,
+  sigTypes,
+  args,
+}) {
+  const { sigV, sigR, sigS, txData } = await exports.getSigsAndTransactionData({ colony, taskId, functionName, signers, privKeys, sigTypes, args });
   return colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 0, txData);
-}
+};
 
-export async function getSigsAndTransactionData({ colony, taskId, functionName, signers, privKeys, sigTypes, args }) {
+exports.getSigsAndTransactionData = async function getSigsAndTransactionData({ colony, taskId, functionName, signers, privKeys, sigTypes, args }) {
   // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
   // and https://github.com/ethereum/web3.js/issues/2077
   const txData = await encodeTxData(colony, functionName, args);
@@ -25,18 +33,18 @@ export async function getSigsAndTransactionData({ colony, taskId, functionName, 
       privKey = [privKeys[i]];
     }
     if (type === 0) {
-      return createSignatures(colony, ethersBNTaskId, [signers[i]], privKey, 0, txData);
+      return exports.createSignatures(colony, ethersBNTaskId, [signers[i]], privKey, 0, txData);
     }
-    return createSignaturesTrezor(colony, ethersBNTaskId, [signers[i]], privKey, 0, txData);
+    return exports.createSignaturesTrezor(colony, ethersBNTaskId, [signers[i]], privKey, 0, txData);
   });
   const sigs = await Promise.all(sigsPromises);
   const sigV = sigs.map((sig) => sig.sigV[0]);
   const sigR = sigs.map((sig) => sig.sigR[0]);
   const sigS = sigs.map((sig) => sig.sigS[0]);
   return { sigV, sigR, sigS, txData };
-}
+};
 
-export async function createSignatures(colony, taskId, signers, privKeys, value, data) {
+exports.createSignatures = async function createSignatures(colony, taskId, signers, privKeys, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;
   const nonce = await colony.getTaskChangeNonce(taskId);
@@ -62,13 +70,13 @@ export async function createSignatures(colony, taskId, signers, privKeys, value,
 
     let privKey;
     if (privKeys[i]) {
-      privKey = privKeys[i];
+      privKey = privKeys[i].replace("0x", "");
     } else {
-      privKey = accountsJson.private_keys[user];
+      privKey = accountsJson.private_keys[user].replace("0x", "");
     }
 
-    const prefixedMessageHash = await hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex"));
-    const sig = await ecsign(prefixedMessageHash, Buffer.from(privKey, "hex"));
+    const prefixedMessageHash = hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex"));
+    const sig = ecsign(prefixedMessageHash, Buffer.from(privKey, "hex"));
 
     sigV.push(sig.v);
     sigR.push(`0x${sig.r.toString("hex")}`);
@@ -76,9 +84,9 @@ export async function createSignatures(colony, taskId, signers, privKeys, value,
   }
 
   return { sigV, sigR, sigS };
-}
+};
 
-export async function createSignaturesTrezor(colony, taskId, signers, privKeys, value, data) {
+exports.createSignaturesTrezor = async function createSignaturesTrezor(colony, taskId, signers, privKeys, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;
   const nonce = await colony.getTaskChangeNonce(taskId);
@@ -104,9 +112,9 @@ export async function createSignaturesTrezor(colony, taskId, signers, privKeys, 
 
     let privKey;
     if (privKeys[i]) {
-      privKey = privKeys[i];
+      privKey = privKeys[i].replace("0x", "");
     } else {
-      privKey = accountsJson.private_keys[user];
+      privKey = accountsJson.private_keys[user].replace("0x", "");
     }
 
     const prefixedMessageHash = soliditySha3("\x19Ethereum Signed Message:\n\x20", msgHash);
@@ -117,4 +125,4 @@ export async function createSignaturesTrezor(colony, taskId, signers, privKeys, 
   }
 
   return { sigV, sigR, sigS };
-}
+};

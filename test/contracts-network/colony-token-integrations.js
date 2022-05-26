@@ -1,6 +1,6 @@
 /* globals artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
+const chai = require("chai");
+const bnChai = require("bn-chai");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

@@ -1,8 +1,3 @@
-require("@babel/register")({
-  presets: ["@babel/preset-env"],
-});
-require("@babel/polyfill");
-
 const ethers = require("ethers");
 const path = require("path");
 

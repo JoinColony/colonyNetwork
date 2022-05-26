@@ -1,4 +1,4 @@
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class MaliciousReputationMinerClaimNew extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it claims a reputation update
@@ -45,4 +45,4 @@ class MaliciousReputationMinerClaimNew extends ReputationMinerTestWrapper {
   }
 }
 
-export default MaliciousReputationMinerClaimNew;
+module.exports = MaliciousReputationMinerClaimNew;

@@ -1,18 +1,17 @@
 /* eslint-disable no-underscore-dangle */
 /* global artifacts */
 
-import path from "path";
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
-import { TruffleLoader } from "../../packages/package-utils";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
-
-import MetatransactionBroadcaster from "../../packages/metatransaction-broadcaster/MetatransactionBroadcaster";
-import { getMetaTransactionParameters, setupColony } from "../../helpers/test-data-generator";
-
+const path = require("path");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
 const axios = require("axios");
+const { TruffleLoader } = require("../../packages/package-utils");
+const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
+
+const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
+const { getMetaTransactionParameters, setupColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
@@ -56,7 +55,7 @@ contract("Metatransaction broadcaster", (accounts) => {
     colony = await setupColony(colonyNetwork, metaTxToken.address);
 
     broadcaster = new MetatransactionBroadcaster({
-      privateKey: `0x${ganacheAccounts.private_keys[accounts[0].toLowerCase()]}`,
+      privateKey: `${ganacheAccounts.private_keys[accounts[0].toLowerCase()]}`,
       loader,
       provider,
     });
@@ -344,7 +343,7 @@ contract("Metatransaction broadcaster", (accounts) => {
       const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
       const guzzler = await GasGuzzler.at(extensionAddress);
 
-      const txData = await guzzler.contract.methods.fun(1000).encodeABI();
+      const txData = await guzzler.contract.methods.fun(10000).encodeABI();
 
       const { r, s, v } = await getMetaTransactionParameters(txData, USER0, guzzler.address);
 

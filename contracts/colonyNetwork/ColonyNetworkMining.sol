@@ -83,14 +83,6 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     return replacementReputationUpdateLogsExist[_reputationMiningCycle];
   }
 
-  // solhint-disable-next-line no-unused-vars
-  function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers, uint256 reward) public
-  stoppable
-  onlyReputationMiningCycle
-  {
-    setReputationRootHash(newHash, newNLeaves, stakers);
-  }
-
   function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers) public
   stoppable
   onlyReputationMiningCycle
@@ -260,7 +252,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     miningStakes[msgSender()].amount = sub(miningStakes[msgSender()].amount, _amount);
   }
 
-  function getMiningStake(address _user) public stoppable returns (MiningStake memory) {
+  function getMiningStake(address _user) public view returns (MiningStake memory) {
     return miningStakes[_user];
   }
 

@@ -51,4 +51,4 @@ const updateGasEstimate = async function (_type, chainId, adapter) {
   }
 };
 
-export default updateGasEstimate;
+module.exports = updateGasEstimate;

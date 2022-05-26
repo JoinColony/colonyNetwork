@@ -1,9 +1,10 @@
 /* globals artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
 
-import {
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
+
+const {
   UINT256_MAX,
   WAD,
   MANAGER_ROLE,
@@ -13,11 +14,11 @@ import {
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
   INITIAL_FUNDING,
-} from "../../helpers/constants";
+} = require("../../helpers/constants");
 
-import { fundColonyWithTokens, setupFinalizedTask, setupRandomColony, makeTask } from "../../helpers/test-data-generator";
-import { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit } from "../../helpers/test-helper";
-import { executeSignedTaskChange, executeSignedRoleAssignment } from "../../helpers/task-review-signing";
+const { fundColonyWithTokens, setupFinalizedTask, setupRandomColony, makeTask } = require("../../helpers/test-data-generator");
+const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit } = require("../../helpers/test-helper");
+const { executeSignedTaskChange, executeSignedRoleAssignment } = require("../../helpers/task-review-signing");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

@@ -1,14 +1,24 @@
 /* global artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import { BN } from "bn.js";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { BN } = require("bn.js");
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
 
-import { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, GLOBAL_SKILL_ID, IPFS_HASH } from "../../helpers/constants";
-import { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } from "../../helpers/test-helper";
-import { fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+const {
+  UINT256_MAX,
+  INT128_MAX,
+  WAD,
+  SECONDS_PER_DAY,
+  MAX_PAYOUT,
+  GLOBAL_SKILL_ID,
+  IPFS_HASH,
+  ADDRESS_ZERO,
+  HASHZERO,
+} = require("../../helpers/constants");
+const { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } = require("../../helpers/test-helper");
+const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
+const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -138,6 +148,10 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditure.owner).to.equal(USER);
     });
 
+    it("a non-root user cannot setDefaultGlobalClaimDelay", async () => {
+      await checkErrorRevert(colony.setDefaultGlobalClaimDelay(0, { from: ADMIN }), "ds-auth-unauthorized");
+    });
+
     it("should set the default global claim delay", async () => {
       await expectEvent(colony.setDefaultGlobalClaimDelay(SECONDS_PER_DAY, { from: ROOT }), "ExpenditureGlobalClaimDelaySet", [
         ROOT,
@@ -166,13 +180,33 @@ contract("Colony Expenditure", (accounts) => {
 
     it("should error if the expenditure does not exist", async () => {
       await checkErrorRevert(colony.setExpenditureSkill(100, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN }), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.transferExpenditure(100, USER), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(
+        colony.transferExpenditureViaArbitration(0, UINT256_MAX, 100, USER, { from: ADMIN }),
+        "colony-expenditure-does-not-exist"
+      );
+      await checkErrorRevert(colony.cancelExpenditure(100), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.lockExpenditure(100), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.finalizeExpenditure(100), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.setExpenditureMetadata(100, ""), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(
+        colony.methods["setExpenditureMetadata(uint256,uint256,uint256,string)"](0, 0, 100, ""),
+        "colony-expenditure-does-not-exist"
+      );
+      await checkErrorRevert(colony.setExpenditureRecipients(100, [], []), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.setExpenditureClaimDelays(100, [], []), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.setExpenditurePayoutModifiers(100, [], []), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.claimExpenditurePayout(100, 0, ADDRESS_ZERO), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.setExpenditurePayouts(100, [], ADDRESS_ZERO, []), "colony-expenditure-does-not-exist");
     });
 
-    it("should allow owners to update the metadata", async () => {
+    it("should only allow owners to update the metadata", async () => {
       const setExpenditureMetadata = colony.methods["setExpenditureMetadata(uint256,string)"];
       const tx = await setExpenditureMetadata(expenditureId, IPFS_HASH, { from: ADMIN });
 
       await expectEvent(tx, "ExpenditureMetadataSet", [ADMIN, expenditureId, IPFS_HASH]);
+
+      await checkErrorRevert(setExpenditureMetadata(expenditureId, IPFS_HASH, { from: USER }), "colony-expenditure-not-owner");
     });
 
     it("should allow arbitrators to update the metadata", async () => {
@@ -182,6 +216,13 @@ contract("Colony Expenditure", (accounts) => {
       await expectEvent(tx, "ExpenditureMetadataSet", [ARBITRATOR, expenditureId, IPFS_HASH]);
     });
 
+    it("metadata can only be updated while in draft state", async () => {
+      const setExpenditureMetadata = colony.methods["setExpenditureMetadata(uint256,string)"];
+
+      await colony.cancelExpenditure(expenditureId, { from: ADMIN });
+      await checkErrorRevert(setExpenditureMetadata(expenditureId, IPFS_HASH, { from: ADMIN }), "colony-expenditure-not-draft");
+    });
+
     it("should allow owners to update a slot recipient", async () => {
       await colony.setExpenditureRecipient(expenditureId, SLOT0, USER, { from: ADMIN });
 
@@ -189,7 +230,12 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditureSlot.recipient).to.equal(USER);
     });
 
-    it("should allow owners to update many slot recipients at once", async () => {
+    it("should allow only owners to update many slot recipients at once", async () => {
+      await checkErrorRevert(
+        colony.setExpenditureRecipients(expenditureId, [SLOT1, SLOT2], [RECIPIENT, USER], { from: USER }),
+        "colony-expenditure-not-owner"
+      );
+
       await colony.setExpenditureRecipients(expenditureId, [SLOT1, SLOT2], [RECIPIENT, USER], { from: ADMIN });
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
@@ -265,7 +311,9 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [100], { from: ADMIN }), "colony-not-valid-global-or-local-skill");
     });
 
-    it("should allow owners to update a slot claim delay", async () => {
+    it("should allow only owners to update a slot claim delay", async () => {
+      await checkErrorRevert(colony.setExpenditureClaimDelay(expenditureId, SLOT0, SECONDS_PER_DAY, { from: USER }), "colony-expenditure-not-owner");
+
       await colony.setExpenditureClaimDelay(expenditureId, SLOT0, SECONDS_PER_DAY, { from: ADMIN });
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
@@ -287,7 +335,12 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditureClaimDelays(expenditureId, [SLOT0, SLOT1], [10], { from: ADMIN }), "colony-expenditure-bad-slots");
     });
 
-    it("should allow owners to update many slot payout modifiers at once", async () => {
+    it("should allow only owners to update many slot payout modifiers at once", async () => {
+      await checkErrorRevert(
+        colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(2), WAD], { from: USER }),
+        "colony-expenditure-not-owner"
+      );
+
       await colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(2), WAD], { from: ADMIN });
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
@@ -470,6 +523,14 @@ contract("Colony Expenditure", (accounts) => {
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.status).to.eq.BN(FINALIZED);
       expect(expenditure.finalizedTimestamp).to.eq.BN(currTime);
+    });
+
+    it("should not allow an expenditure to be finalized twice", async () => {
+      const expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.status).to.eq.BN(DRAFT);
+
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+      await checkErrorRevert(colony.finalizeExpenditure(expenditureId, { from: ADMIN }), "colony-expenditure-not-draft-or-locked");
     });
 
     it("should allow owners to finalize expenditures from locked state", async () => {
@@ -1089,6 +1150,38 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR }),
         "colony-expenditure-large-offset"
+      );
+    });
+
+    it("should not allow arbitration users to pass bad sets of keys for what they're trying to change", async () => {
+      const mask = [MAPPING, ARRAY, ARRAY];
+      let keys = ["0x0", bn2bytes32(new BN(10)), bn2bytes32(new BN(10))];
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
+        "colony-expenditure-bad-keys"
+      );
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
+        "colony-expenditure-bad-offset"
+      );
+
+      keys = [bn2bytes32(new BN(10))];
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
+        "colony-expenditure-bad-keys"
+      );
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTPAYOUTS_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
+        "colony-expenditure-bad-keys"
+      );
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, 1000000, mask, keys, HASHZERO, { from: ARBITRATOR }),
+        "colony-expenditure-bad-slot"
       );
     });
 

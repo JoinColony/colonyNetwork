@@ -1,4 +1,4 @@
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class MaliciousReputationMinerWrongNLeaves extends ReputationMinerTestWrapper {
 
@@ -12,4 +12,4 @@ class MaliciousReputationMinerWrongNLeaves extends ReputationMinerTestWrapper {
   }
 }
 
-export default MaliciousReputationMinerWrongNLeaves;
+module.exports = MaliciousReputationMinerWrongNLeaves;

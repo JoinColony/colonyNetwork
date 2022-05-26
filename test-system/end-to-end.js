@@ -1,12 +1,12 @@
 /* globals artifacts */
 
-import path from "path";
-import BN from "bn.js";
-import chai from "chai";
-import bnChai from "bn-chai";
+const path = require("path");
+const BN = require("bn.js");
+const chai = require("chai");
+const bnChai = require("bn-chai");
 
-import { TruffleLoader } from "../packages/package-utils";
-import {
+const { TruffleLoader } = require("../packages/package-utils");
+const {
   submitAndForwardTimeToDispute,
   getActiveRepCycle,
   advanceMiningCycleNoContest,
@@ -14,21 +14,21 @@ import {
   makeReputationKey,
   makeReputationValue,
   removeSubdomainLimit,
-} from "../helpers/test-helper";
+} = require("../helpers/test-helper");
 
-import {
+const {
   giveUserCLNYTokensAndStake,
   setupRandomColony,
   fundColonyWithTokens,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   setupFinalizedTask,
-} from "../helpers/test-data-generator";
+} = require("../helpers/test-data-generator");
 
-import { DEFAULT_STAKE, INITIAL_FUNDING } from "../helpers/constants";
+const { DEFAULT_STAKE, INITIAL_FUNDING } = require("../helpers/constants");
 
-import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
-import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
+const ReputationMinerTestWrapper = require("../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const MaliciousReputationMinerExtraRep = require("../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

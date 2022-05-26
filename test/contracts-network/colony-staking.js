@@ -1,11 +1,11 @@
 /* global artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
 
-import { UINT256_MAX, WAD, INITIAL_FUNDING } from "../../helpers/constants";
-import { fundColonyWithTokens, setupRandomColony, setupColony } from "../../helpers/test-data-generator";
-import { checkErrorRevert, expectEvent } from "../../helpers/test-helper";
+const { UINT256_MAX, WAD, INITIAL_FUNDING } = require("../../helpers/constants");
+const { fundColonyWithTokens, setupRandomColony, setupColony } = require("../../helpers/test-data-generator");
+const { checkErrorRevert, expectEvent } = require("../../helpers/test-helper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

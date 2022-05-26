@@ -1,12 +1,7 @@
-require("@babel/register")({
-  presets: ["@babel/preset-env"],
-});
-require("@babel/polyfill");
+const path = require("path");
 const ethers = require("ethers");
 
 const { argv } = require("yargs").option("privateKey", { string: true }).option("colonyNetworkAddress", { string: true });
-
-const path = require("path");
 
 const { colonyNetworkAddress, gasPrice, privateKey, rpcEndpoint, port, dbPath, gasLimit } = argv;
 

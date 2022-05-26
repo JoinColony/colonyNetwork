@@ -1,4 +1,4 @@
-import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class MaliciousReputationMinerClaimNoOriginReputation extends ReputationMinerTestWrapper {
   // This client will claim there is no origin reputation, whether there is one or not, if told to falsify a child update.
@@ -56,4 +56,4 @@ class MaliciousReputationMinerClaimNoOriginReputation extends ReputationMinerTes
   }
 }
 
-export default MaliciousReputationMinerClaimNoOriginReputation;
+module.exports = MaliciousReputationMinerClaimNoOriginReputation;

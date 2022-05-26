@@ -1,15 +1,15 @@
 /* globals artifacts */
 
-import BN from "bn.js";
-import chai from "chai";
-import bnChai from "bn-chai";
-import shortid from "shortid";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
+const BN = require("bn.js");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const shortid = require("shortid");
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
 
-import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, CHALLENGE_RESPONSE_WINDOW_DURATION } from "../../helpers/constants";
+const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
 
-import {
+const {
   checkErrorRevert,
   web3GetCode,
   makeReputationKey,
@@ -19,11 +19,11 @@ import {
   encodeTxData,
   bn2bytes32,
   expectEvent,
-} from "../../helpers/test-helper";
+} = require("../../helpers/test-helper");
 
-import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
+const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
-import PatriciaTree from "../../packages/reputation-miner/patricia";
+const PatriciaTree = require("../../packages/reputation-miner/patricia");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

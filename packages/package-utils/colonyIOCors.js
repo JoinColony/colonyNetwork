@@ -17,4 +17,4 @@ const colonyIOCors = function (req, res, next) {
   next();
 };
 
-exports.default = colonyIOCors;
+module.exports = colonyIOCors;
