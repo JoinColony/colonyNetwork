@@ -19,6 +19,7 @@ pragma solidity 0.7.3;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
+import "./IColony.sol";
 
 
 contract ColonyTask is ColonyStorage {
@@ -369,6 +370,37 @@ contract ColonyTask is ColonyStorage {
     tasks[_id].dueDate = _dueDate;
 
     emit TaskDueDateSet(_id, _dueDate);
+  }
+
+  function setAllTaskPayouts(
+    uint256 _id,
+    address _token,
+    uint256 _managerAmount,
+    uint256 _evaluatorAmount,
+    uint256 _workerAmount
+  )
+  public
+  stoppable
+  confirmTaskRoleIdentity(_id, TaskRole.Manager)
+  {
+    Task storage task = tasks[_id];
+    address manager = task.roles[uint8(TaskRole.Manager)].user;
+    address evaluator = task.roles[uint8(TaskRole.Evaluator)].user;
+    address worker = task.roles[uint8(TaskRole.Worker)].user;
+
+    require(
+      evaluator == manager ||
+      evaluator == address(0x0),
+      "colony-funding-evaluator-already-set");
+
+    require(
+      worker == manager ||
+      worker == address(0x0),
+      "colony-funding-worker-already-set");
+
+    IColony(address(this)).setTaskManagerPayout(_id, _token, _managerAmount);
+    IColony(address(this)).setTaskEvaluatorPayout(_id, _token, _evaluatorAmount);
+    IColony(address(this)).setTaskWorkerPayout(_id, _token, _workerAmount);
   }
 
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public

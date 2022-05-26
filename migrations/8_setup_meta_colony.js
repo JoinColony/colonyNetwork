@@ -57,21 +57,23 @@ module.exports = async function (deployer, network, accounts) {
   // Set up functional resolvers that identify correctly as previous versions.
   const Colony = artifacts.require("./Colony");
   const ColonyDomains = artifacts.require("./ColonyDomains");
-  const ColonyFunding = artifacts.require("./ColonyFunding");
   const ColonyExpenditure = artifacts.require("./ColonyExpenditure");
+  const ColonyFunding = artifacts.require("./ColonyFunding");
+  const ColonyPayment = artifacts.require("./ColonyPayment");
+  const ColonyRewards = artifacts.require("./ColonyRewards");
   const ColonyRoles = artifacts.require("./ColonyRoles");
   const ColonyTask = artifacts.require("./ColonyTask");
-  const ColonyPayment = artifacts.require("./ColonyPayment");
   const ContractRecovery = artifacts.require("./ContractRecovery");
   const ColonyArbitraryTransaction = artifacts.require("./ColonyArbitraryTransaction");
 
   const colony = await Colony.new();
   const colonyDomains = await ColonyDomains.new();
-  const colonyFunding = await ColonyFunding.new();
   const colonyExpenditure = await ColonyExpenditure.new();
+  const colonyFunding = await ColonyFunding.new();
+  const colonyPayment = await ColonyPayment.new();
+  const colonyRewards = await ColonyRewards.new();
   const colonyRoles = await ColonyRoles.new();
   const colonyTask = await ColonyTask.new();
-  const colonyPayment = await ColonyPayment.new();
   const contractRecovery = await ContractRecovery.deployed();
   const colonyArbitraryTransaction = await ColonyArbitraryTransaction.new();
 
@@ -80,10 +82,11 @@ module.exports = async function (deployer, network, accounts) {
     colony,
     colonyDomains,
     colonyExpenditure,
-    colonyTask,
-    colonyPayment,
     colonyFunding,
+    colonyPayment,
+    colonyRewards,
     colonyRoles,
+    colonyTask,
     contractRecovery,
     colonyArbitraryTransaction,
     resolver3
@@ -97,10 +100,11 @@ module.exports = async function (deployer, network, accounts) {
     colony,
     colonyDomains,
     colonyExpenditure,
-    colonyTask,
-    colonyPayment,
     colonyFunding,
+    colonyPayment,
+    colonyRewards,
     colonyRoles,
+    colonyTask,
     contractRecovery,
     colonyArbitraryTransaction,
     resolver4

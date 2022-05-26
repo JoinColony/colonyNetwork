@@ -74,10 +74,11 @@ exports.setupColonyVersionResolver = async function setupColonyVersionResolver(
   colony,
   colonyDomains,
   colonyExpenditure,
-  colonyTask,
-  colonyPayment,
   colonyFunding,
+  colonyPayment,
+  colonyRewards,
   colonyRoles,
+  colonyTask,
   contractRecovery,
   colonyArbitraryTransaction,
   resolver
@@ -86,10 +87,11 @@ exports.setupColonyVersionResolver = async function setupColonyVersionResolver(
   deployedImplementations.Colony = colony.address;
   deployedImplementations.ColonyDomains = colonyDomains.address;
   deployedImplementations.ColonyExpenditure = colonyExpenditure.address;
-  deployedImplementations.ColonyTask = colonyTask.address;
-  deployedImplementations.ColonyRoles = colonyRoles.address;
-  deployedImplementations.ColonyPayment = colonyPayment.address;
   deployedImplementations.ColonyFunding = colonyFunding.address;
+  deployedImplementations.ColonyPayment = colonyPayment.address;
+  deployedImplementations.ColonyRewards = colonyRewards.address;
+  deployedImplementations.ColonyRoles = colonyRoles.address;
+  deployedImplementations.ColonyTask = colonyTask.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
   deployedImplementations.ColonyArbitraryTransaction = colonyArbitraryTransaction.address;
 

@@ -330,6 +330,17 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     return domainId > 0 && domainId <= domainCount;
   }
 
+  function calculateNetworkFeeForPayout(uint256 _payout) internal view returns (uint256 fee) {
+    uint256 feeInverse = IColonyNetwork(colonyNetworkAddress).getFeeInverse();
+
+    // slither-disable-next-line incorrect-equality
+    if (_payout == 0 || feeInverse == 1) {
+      fee = _payout;
+    } else {
+      fee = _payout / feeInverse + 1;
+    }
+  }
+
   function executeCall(address to, uint256 value, bytes memory data) internal returns (bool success) {
     assembly {
               // call contract at address a with input mem[in…(in+insize))
