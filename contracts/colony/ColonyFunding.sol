@@ -141,9 +141,23 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts)
   public
   stoppable
-  expenditureExists(_id)
   expenditureDraft(_id)
   expenditureOnlyOwner(_id)
+  {
+    setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
+  }
+
+  function setExpenditurePayouts(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256[] memory _slots,
+    address _token,
+    uint256[] memory _amounts
+  )
+  public
+  stoppable
+  authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
   }
@@ -378,6 +392,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
   function setExpenditurePayoutsInternal(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts)
   internal
+  expenditureExists(_id)
   {
     require(_slots.length == _amounts.length, "colony-expenditure-bad-slots");
 
