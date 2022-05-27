@@ -120,7 +120,7 @@ contract("ExpenditureUtils", (accounts) => {
     });
   });
 
-  describe("using stakes to manage expenditures", async () => {
+  describe.only("using stakes to manage expenditures", async () => {
     beforeEach(async () => {
       await expenditureUtils.setStakeFraction(WAD.divn(10)); // Stake of .3 WADs
 
@@ -145,13 +145,36 @@ contract("ExpenditureUtils", (accounts) => {
       await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
 
-      await expenditureUtils.slashStake(1, UINT256_MAX, expenditureId);
+      await expenditureUtils.slashStake(1, UINT256_MAX, expenditureId, USER0);
 
       const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
       expect(obligation).to.be.zero;
 
       const userLock = await tokenLocking.getUserLock(token.address, USER0);
       expect(userLock.balance).to.eq.BN(WAD.sub(WAD.muln(3).divn(10)));
+    });
+
+    it("if ownership is transferred, the original owner is still slashed", async () => {
+      await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+
+      await colony.transferExpenditure(expenditureId, USER1, { from: USER0 });
+
+      // New owner can't be slahed
+      await checkErrorRevert(expenditureUtils.slashStake(1, UINT256_MAX, 0, USER1), "expenditure-utils-nothing-to-slash");
+
+      // Original owner can be
+      await expenditureUtils.slashStake(1, UINT256_MAX, expenditureId, USER0);
+
+      const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
+      expect(obligation).to.be.zero;
+
+      const userLock = await tokenLocking.getUserLock(token.address, USER0);
+      expect(userLock.balance).to.eq.BN(WAD.sub(WAD.muln(3).divn(10)));
+    });
+
+    it("cannot slash a nonexistent stake", async () => {
+      await checkErrorRevert(expenditureUtils.slashStake(1, UINT256_MAX, 0, USER0), "expenditure-utils-nothing-to-slash");
     });
 
     it("can reclaim the stake by cancelling the expenditure", async () => {

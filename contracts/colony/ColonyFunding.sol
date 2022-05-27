@@ -169,7 +169,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   stoppable
   expenditureExists(_id)
   expenditureDraft(_id)
-  expenditureOnlyOwner(_id)
+  expenditureSelfOrOwner(_id)
   {
     setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
   }
@@ -230,12 +230,9 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     uint256 tokenPayout = min(initialPayout, repPayout);
     uint256 tokenSurplus = sub(initialPayout, tokenPayout);
 
-    // Send any surplus back to the domain (for payoutScalars < 1)
+    // Deduct any surplus from the outstanding payouts (for payoutScalars < 1)
     if (tokenSurplus > 0) {
       fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], tokenSurplus);
-      fundingPot.balance[_token] = sub(fundingPot.balance[_token], tokenSurplus);
-      FundingPot storage domainFundingPot = fundingPots[domains[expenditure.domainId].fundingPotId];
-      domainFundingPot.balance[_token] = add(domainFundingPot.balance[_token], tokenSurplus);
     }
 
     // Process reputation updates if internal token

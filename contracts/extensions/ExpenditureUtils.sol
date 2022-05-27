@@ -104,21 +104,22 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
   function slashStake(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
-    uint256 _expenditureId
+    uint256 _expenditureId,
+    address _owner
   )
     public
   {
-    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
-    uint256 stake = stakes[expenditure.owner][_expenditureId];
-    require(stake > 0, "expenditure-utils-nothing-to-claim");
+    uint256 stake = stakes[_owner][_expenditureId];
+    require(stake > 0, "expenditure-utils-nothing-to-slash");
 
+    uint256 expenditureDomainId = colony.getExpenditure(_expenditureId).domainId;
     require(
-      colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Arbitration, _childSkillIndex, expenditure.domainId),
+      colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Arbitration, _childSkillIndex, expenditureDomainId),
       "expenditure-utils-caller-not-arbitration"
     );
 
-    delete stakes[expenditure.owner][_expenditureId];
-    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), expenditure.owner, expenditure.domainId, stake, address(0x0));
+    delete stakes[_owner][_expenditureId];
+    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), _owner, expenditureDomainId, stake, address(colony));
   }
 
   function reclaimStake(uint256 _expenditureId) public {

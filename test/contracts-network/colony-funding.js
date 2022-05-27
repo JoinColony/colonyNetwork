@@ -536,19 +536,22 @@ contract("Colony Funding", (accounts) => {
       expect(colonyPotBalance).to.eq.BN(MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT));
     });
 
-    it("should allow funds to be removed from a task if there are no more payouts of that token to be claimed", async () => {
-      await fundColonyWithTokens(colony, otherToken, WAD.muln(363));
+    it("should automatically return surplus funds to the domain", async () => {
+      await fundColonyWithTokens(colony, otherToken, WAD.muln(500));
       const taskId = await setupFinalizedTask({ colonyNetwork, colony, token: otherToken });
 
       const task = await colony.getTask(taskId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 10, otherToken.address);
+
+      // Add an extra WAD of funding
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, WAD, otherToken.address);
+
       await colony.claimTaskPayout(taskId, MANAGER_ROLE, otherToken.address);
       await colony.claimTaskPayout(taskId, WORKER_ROLE, otherToken.address);
       await colony.claimTaskPayout(taskId, EVALUATOR_ROLE, otherToken.address);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 10, otherToken.address);
 
-      const colonyPotBalance = await colony.getFundingPotBalance(2, otherToken.address);
-      expect(colonyPotBalance).to.be.zero;
+      // WAD is gone
+      const taskPotBalance = await colony.getFundingPotBalance(task.fundingPotId, otherToken.address);
+      expect(taskPotBalance).to.be.zero;
     });
 
     it("should not allow user to claim payout if rating is 1", async () => {
