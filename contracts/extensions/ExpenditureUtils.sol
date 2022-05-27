@@ -95,9 +95,8 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     uint256 stake = wmul(domainRep, stakeFraction);
 
     colony.obligateStake(msgSender(), _domainId, stake);
-    colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
+    uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
 
-    uint256 expenditureId = colony.getExpenditureCount();
     stakes[msgSender()][expenditureId] = stake;
     colony.transferExpenditure(expenditureId, msgSender());
   }
