@@ -22,188 +22,9 @@ import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
 
-contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
-  function lockToken() public stoppable onlyOwnExtension returns (uint256) {
-    uint256 lockId = ITokenLocking(tokenLockingAddress).lockToken(token);
-    tokenLocks[msgSender()][lockId] = true;
-    return lockId;
-  }
+contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
-  function unlockTokenForUser(address _user, uint256 _lockId) public stoppable onlyOwnExtension {
-    require(tokenLocks[msgSender()][_lockId], "colony-bad-lock-id");
-    ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, _user, _lockId);
-  }
-
-  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
-    setTaskPayout(_id, TaskRole.Manager, _token, _amount);
-    emit TaskPayoutSet(_id, TaskRole.Manager, _token, _amount);
-  }
-
-  function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
-    setTaskPayout(_id, TaskRole.Evaluator, _token, _amount);
-    emit TaskPayoutSet(_id, TaskRole.Evaluator, _token, _amount);
-  }
-
-  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
-    setTaskPayout(_id, TaskRole.Worker, _token, _amount);
-    emit TaskPayoutSet(_id, TaskRole.Worker, _token, _amount);
-  }
-
-  function setAllTaskPayouts(
-    uint256 _id,
-    address _token,
-    uint256 _managerAmount,
-    uint256 _evaluatorAmount,
-    uint256 _workerAmount
-  )
-  public
-  stoppable
-  confirmTaskRoleIdentity(_id, TaskRole.Manager)
-  {
-    Task storage task = tasks[_id];
-    address manager = task.roles[uint8(TaskRole.Manager)].user;
-    address evaluator = task.roles[uint8(TaskRole.Evaluator)].user;
-    address worker = task.roles[uint8(TaskRole.Worker)].user;
-
-    require(
-      evaluator == manager ||
-      evaluator == address(0x0),
-      "colony-funding-evaluator-already-set");
-
-    require(
-      worker == manager ||
-      worker == address(0x0),
-      "colony-funding-worker-already-set");
-
-    this.setTaskManagerPayout(_id, _token, _managerAmount);
-    this.setTaskEvaluatorPayout(_id, _token, _evaluatorAmount);
-    this.setTaskWorkerPayout(_id, _token, _workerAmount);
-  }
-
-  // To get all payouts for a task iterate over roles.length
-  function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256) {
-    Task storage task = tasks[_id];
-    bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
-    return unsatisfactory ? 0 : task.payouts[_role][_token];
-  }
-
-  function claimTaskPayout(uint256 _id, uint8 _role, address _token) public
-  stoppable
-  taskFinalized(_id)
-  {
-    Task storage task = tasks[_id];
-    FundingPot storage fundingPot = fundingPots[task.fundingPotId];
-    assert(task.roles[_role].user != address(0x0));
-
-    uint payout = task.payouts[_role][_token];
-    task.payouts[_role][_token] = 0;
-
-    bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
-    if (!unsatisfactory) {
-      processPayout(task.fundingPotId, _token, payout, task.roles[_role].user);
-    } else {
-      fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], payout);
-    }
-  }
-
-  int256 constant MAX_PAYOUT_MODIFIER = int256(WAD);
-  int256 constant MIN_PAYOUT_MODIFIER = -int256(WAD);
-
-  function claimExpenditurePayout(uint256 _id, uint256 _slot, address _token) public
-  stoppable
-  expenditureExists(_id)
-  expenditureFinalized(_id)
-  {
-    Expenditure storage expenditure = expenditures[_id];
-    ExpenditureSlot storage slot = expenditureSlots[_id][_slot];
-
-    require(
-      add(expenditure.finalizedTimestamp, add(expenditure.globalClaimDelay, slot.claimDelay)) <= block.timestamp,
-      "colony-expenditure-cannot-claim"
-    );
-
-    FundingPot storage fundingPot = fundingPots[expenditure.fundingPotId];
-    assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
-
-    uint256 initialPayout = expenditureSlotPayouts[_id][_slot][_token];
-    delete expenditureSlotPayouts[_id][_slot][_token];
-
-    int256 payoutModifier = imin(imax(slot.payoutModifier, MIN_PAYOUT_MODIFIER), MAX_PAYOUT_MODIFIER);
-    uint256 payoutScalar = uint256(payoutModifier + int256(WAD));
-
-    uint256 repPayout = wmul(initialPayout, payoutScalar);
-    uint256 tokenPayout = min(initialPayout, repPayout);
-    uint256 tokenSurplus = sub(initialPayout, tokenPayout);
-
-    // Send any surplus back to the domain (for payoutScalars < 1)
-    if (tokenSurplus > 0) {
-      fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], tokenSurplus);
-      fundingPot.balance[_token] = sub(fundingPot.balance[_token], tokenSurplus);
-      FundingPot storage domainFundingPot = fundingPots[domains[expenditure.domainId].fundingPotId];
-      domainFundingPot.balance[_token] = add(domainFundingPot.balance[_token], tokenSurplus);
-    }
-
-    // Process reputation updates if internal token
-    if (_token == token && !isExtension(slot.recipient)) {
-      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-      colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), domains[expenditure.domainId].skillId);
-      if (slot.skills.length > 0 && slot.skills[0] > 0) {
-        // Currently we support at most one skill per Expenditure, but this will likely change in the future.
-        colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), slot.skills[0]);
-      }
-    }
-
-    // Finish the payout
-    processPayout(expenditure.fundingPotId, _token, tokenPayout, slot.recipient);
-  }
-
-  function claimPayment(uint256 _id, address _token) public
-  stoppable
-  paymentFinalized(_id)
-  {
-    Payment storage payment = payments[_id];
-    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
-    assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
-
-    processPayout(payment.fundingPotId, _token, fundingPot.payouts[_token], payment.recipient);
-  }
-
-  function setPaymentPayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _token, uint256 _amount) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
-  validPayoutAmount(_amount)
-  paymentNotFinalized(_id)
-  {
-    Payment storage payment = payments[_id];
-    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
-    assert(fundingPot.associatedType == FundingPotAssociatedType.Payment);
-
-    uint currentTotalAmount = fundingPot.payouts[_token];
-    fundingPot.payouts[_token] = _amount;
-
-    updatePayoutsWeCannotMakeAfterBudgetChange(payment.fundingPotId, _token, currentTotalAmount);
-
-    emit PaymentPayoutSet(msgSender(), _id, _token, _amount);
-  }
-
-  function getFundingPotCount() public view returns (uint256 count) {
-    return fundingPotCount;
-  }
-
-  function getFundingPotBalance(uint256 _potId, address _token) public view returns (uint256) {
-    return fundingPots[_potId].balance[_token];
-  }
-
-  function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256) {
-    return fundingPots[_potId].payouts[_token];
-  }
-
-  function getFundingPot(uint256 _potId) public view returns
-  (FundingPotAssociatedType associatedType, uint256 associatedTypeId, uint256 payoutsWeCannotMake)
-  {
-    FundingPot storage fundingPot = fundingPots[_potId];
-    return (fundingPot.associatedType, fundingPot.associatedTypeId, fundingPot.payoutsWeCannotMake);
-  }
+  // Public
 
  function moveFundsBetweenPots(
     uint256 _permissionDomainId,
@@ -276,181 +97,193 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     return nonRewardPotsTotal[_token];
   }
 
-  function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
-  public stoppable auth
-  {
-    ITokenLocking tokenLocking = ITokenLocking(tokenLockingAddress);
-    uint256 totalLockCount = tokenLocking.lockToken(token);
-    uint256 thisPayoutAmount = sub(fundingPots[0].balance[_token], pendingRewardPayments[_token]);
-    require(thisPayoutAmount > 0, "colony-reward-payout-no-rewards");
-    pendingRewardPayments[_token] = add(pendingRewardPayments[_token], thisPayoutAmount);
-
-    uint256 totalTokens = sub(ERC20Extended(token).totalSupply(), ERC20Extended(token).balanceOf(address(this)));
-    require(totalTokens > 0, "colony-reward-payout-invalid-total-tokens");
-
-    bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
-    uint256 colonyWideReputation = checkReputation(
-      rootHash,
-      domains[1].skillId,
-      address(0x0),
-      key,
-      value,
-      branchMask,
-      siblings
-    );
-    require(colonyWideReputation > 0, "colony-reward-payout-invalid-colony-wide-reputation");
-
-    rewardPayoutCycles[totalLockCount] = RewardPayoutCycle(
-      rootHash,
-      colonyWideReputation,
-      totalTokens,
-      thisPayoutAmount,
-      _token,
-      block.timestamp,
-      thisPayoutAmount,
-      false
-    );
-
-    emit RewardPayoutCycleStarted(msgSender(), totalLockCount);
+  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
+    setTaskPayout(_id, TaskRole.Manager, _token, _amount);
+    emit TaskPayoutSet(_id, TaskRole.Manager, _token, _amount);
   }
 
-  // slither-disable-next-line reentrancy-no-eth
-  function claimRewardPayout(
-    uint256 _payoutId,
-    uint256[7] memory _squareRoots,
-    bytes memory key,
-    bytes memory value,
-    uint256 branchMask,
-    bytes32[] memory siblings
-  ) public stoppable
-  {
-    uint256 userReputation = checkReputation(
-      rewardPayoutCycles[_payoutId].reputationState,
-      domains[1].skillId,
-      msgSender(),
-      key,
-      value,
-      branchMask,
-      siblings
-    );
-
-    address tokenAddress;
-    uint256 reward;
-    (tokenAddress, reward) = calculateRewardForUser(_payoutId, _squareRoots, userReputation);
-
-    ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, msgSender(), _payoutId);
-
-    uint fee = calculateNetworkFeeForPayout(reward);
-    uint remainder = sub(reward, fee);
-
-    fundingPots[0].balance[tokenAddress] = sub(fundingPots[0].balance[tokenAddress], reward);
-    pendingRewardPayments[rewardPayoutCycles[_payoutId].tokenAddress] = sub(
-      pendingRewardPayments[rewardPayoutCycles[_payoutId].tokenAddress],
-      reward
-    );
-    rewardPayoutCycles[_payoutId].amountRemaining = sub(rewardPayoutCycles[_payoutId].amountRemaining, reward);
-
-    assert(ERC20Extended(tokenAddress).transfer(msgSender(), remainder));
-    assert(ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee));
-
-    emit RewardPayoutClaimed(_payoutId, msgSender(), fee, remainder);
+  function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
+    setTaskPayout(_id, TaskRole.Evaluator, _token, _amount);
+    emit TaskPayoutSet(_id, TaskRole.Evaluator, _token, _amount);
   }
 
-  function finalizeRewardPayout(uint256 _payoutId) public stoppable {
-    RewardPayoutCycle memory payout = rewardPayoutCycles[_payoutId];
-    require(payout.reputationState != 0x00, "colony-reward-payout-does-not-exist");
-    require(!payout.finalized, "colony-reward-payout-already-finalized");
-    require(block.timestamp - payout.blockTimestamp > 60 days, "colony-reward-payout-active");
-
-    rewardPayoutCycles[_payoutId].finalized = true;
-    pendingRewardPayments[payout.tokenAddress] = sub(pendingRewardPayments[payout.tokenAddress], payout.amountRemaining);
-
-    emit RewardPayoutCycleEnded(msgSender(), _payoutId);
+  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
+    setTaskPayout(_id, TaskRole.Worker, _token, _amount);
+    emit TaskPayoutSet(_id, TaskRole.Worker, _token, _amount);
   }
 
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle memory rewardPayoutCycle) {
-    rewardPayoutCycle = rewardPayoutCycles[_payoutId];
+  // To get all payouts for a task iterate over roles.length
+  function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256) {
+    Task storage task = tasks[_id];
+    bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
+    return unsatisfactory ? 0 : task.payouts[_role][_token];
   }
 
-  function setRewardInverse(uint256 _rewardInverse) public
+  function claimTaskPayout(uint256 _id, uint8 _role, address _token) public
   stoppable
-  auth
+  taskFinalized(_id)
   {
-    require(_rewardInverse > 0, "colony-reward-inverse-cannot-be-zero");
-    rewardInverse = _rewardInverse;
+    Task storage task = tasks[_id];
+    FundingPot storage fundingPot = fundingPots[task.fundingPotId];
+    assert(task.roles[_role].user != address(0x0));
 
-    emit ColonyRewardInverseSet(msgSender(), _rewardInverse);
+    uint payout = task.payouts[_role][_token];
+    task.payouts[_role][_token] = 0;
+
+    bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
+    if (!unsatisfactory) {
+      processPayout(task.fundingPotId, _token, payout, task.roles[_role].user);
+    } else {
+      fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], payout);
+    }
+  }
+
+  function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts)
+  public
+  stoppable
+  expenditureExists(_id)
+  expenditureDraft(_id)
+  expenditureOnlyOwner(_id)
+  {
+    setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
+  }
+
+  function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)
+  public
+  stoppable
+  {
+    uint256[] memory slots = new uint256[](1);
+    slots[0] = _slot;
+    uint256[] memory amounts = new uint256[](1);
+    amounts[0] = _amount;
+    setExpenditurePayouts(_id, slots, _token, amounts);
+  }
+
+  int256 constant MAX_PAYOUT_MODIFIER = int256(WAD);
+  int256 constant MIN_PAYOUT_MODIFIER = -int256(WAD);
+
+  function claimExpenditurePayout(uint256 _id, uint256 _slot, address _token) public
+  stoppable
+  expenditureExists(_id)
+  expenditureFinalized(_id)
+  {
+    Expenditure storage expenditure = expenditures[_id];
+    ExpenditureSlot storage slot = expenditureSlots[_id][_slot];
+
+    require(
+      add(expenditure.finalizedTimestamp, add(expenditure.globalClaimDelay, slot.claimDelay)) <= block.timestamp,
+      "colony-expenditure-cannot-claim"
+    );
+
+    FundingPot storage fundingPot = fundingPots[expenditure.fundingPotId];
+    assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
+
+    uint256 initialPayout = expenditureSlotPayouts[_id][_slot][_token];
+    delete expenditureSlotPayouts[_id][_slot][_token];
+
+    int256 payoutModifier = imin(imax(slot.payoutModifier, MIN_PAYOUT_MODIFIER), MAX_PAYOUT_MODIFIER);
+    uint256 payoutScalar = uint256(payoutModifier + int256(WAD));
+
+    uint256 repPayout = wmul(initialPayout, payoutScalar);
+    uint256 tokenPayout = min(initialPayout, repPayout);
+    uint256 tokenSurplus = sub(initialPayout, tokenPayout);
+
+    // Send any surplus back to the domain (for payoutScalars < 1)
+    if (tokenSurplus > 0) {
+      fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], tokenSurplus);
+      fundingPot.balance[_token] = sub(fundingPot.balance[_token], tokenSurplus);
+      FundingPot storage domainFundingPot = fundingPots[domains[expenditure.domainId].fundingPotId];
+      domainFundingPot.balance[_token] = add(domainFundingPot.balance[_token], tokenSurplus);
+    }
+
+    // Process reputation updates if internal token
+    if (_token == token && !isExtension(slot.recipient)) {
+      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+      colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), domains[expenditure.domainId].skillId);
+      if (slot.skills.length > 0 && slot.skills[0] > 0) {
+        // Currently we support at most one skill per Expenditure, but this will likely change in the future.
+        colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), slot.skills[0]);
+      }
+    }
+
+    // Finish the payout
+    processPayout(expenditure.fundingPotId, _token, tokenPayout, slot.recipient);
+  }
+
+  function setPaymentPayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _token, uint256 _amount) public
+  stoppable
+  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
+  validPayoutAmount(_amount)
+  paymentNotFinalized(_id)
+  {
+    Payment storage payment = payments[_id];
+    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
+    assert(fundingPot.associatedType == FundingPotAssociatedType.Payment);
+
+    uint currentTotalAmount = fundingPot.payouts[_token];
+    fundingPot.payouts[_token] = _amount;
+
+    updatePayoutsWeCannotMakeAfterBudgetChange(payment.fundingPotId, _token, currentTotalAmount);
+
+    emit PaymentPayoutSet(msgSender(), _id, _token, _amount);
+  }
+
+  function claimPayment(uint256 _id, address _token) public
+  stoppable
+  paymentFinalized(_id)
+  {
+    Payment storage payment = payments[_id];
+    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
+    assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
+
+    processPayout(payment.fundingPotId, _token, fundingPot.payouts[_token], payment.recipient);
+  }
+
+  // View
+
+  function getFundingPotCount() public view returns (uint256 count) {
+    return fundingPotCount;
+  }
+
+  function getFundingPotBalance(uint256 _potId, address _token) public view returns (uint256) {
+    return fundingPots[_potId].balance[_token];
+  }
+
+  function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256) {
+    return fundingPots[_potId].payouts[_token];
+  }
+
+  function getFundingPot(uint256 _potId) public view returns
+  (FundingPotAssociatedType associatedType, uint256 associatedTypeId, uint256 payoutsWeCannotMake)
+  {
+    FundingPot storage fundingPot = fundingPots[_potId];
+    return (fundingPot.associatedType, fundingPot.associatedTypeId, fundingPot.payoutsWeCannotMake);
+  }
+
+  function getDomainFromFundingPot(uint256 _fundingPotId) public view returns (uint256 domainId) {
+    require(_fundingPotId <= fundingPotCount, "colony-funding-nonexistent-pot");
+    FundingPot storage fundingPot = fundingPots[_fundingPotId];
+
+    if (fundingPot.associatedType == FundingPotAssociatedType.Domain) {
+      domainId = fundingPot.associatedTypeId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.Task) {
+      domainId = tasks[fundingPot.associatedTypeId].domainId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.Payment) {
+      domainId = payments[fundingPot.associatedTypeId].domainId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.Expenditure) {
+      domainId = expenditures[fundingPot.associatedTypeId].domainId;
+    } else {
+      // If rewards pot, return root domain.
+      assert(_fundingPotId == 0);
+      domainId = 1;
+    }
   }
 
   function getRewardInverse() public view returns (uint256) {
     return rewardInverse;
   }
 
-  function checkReputation(
-    bytes32 rootHash,
-    uint256 skillId,
-    address userAddress,
-    bytes memory key,
-    bytes memory value,
-    uint256 branchMask,
-    bytes32[] memory siblings
-  ) internal view returns (uint256)
-  {
-    bytes32 impliedRoot = getImpliedRootHashKey(key, value, branchMask, siblings);
-    require(rootHash == impliedRoot, "colony-reputation-invalid-root-hash");
-
-    uint256 reputationValue;
-    address keyColonyAddress;
-    uint256 keySkill;
-    address keyUserAddress;
-
-    assembly {
-      reputationValue := mload(add(value, 32))
-      keyColonyAddress := mload(add(key, 20))
-      keySkill := mload(add(key, 52))
-      keyUserAddress := mload(add(key, 72))
-    }
-
-    require(keyColonyAddress == address(this), "colony-reputation-invalid-colony-address");
-    require(keySkill == skillId, "colony-reputation-invalid-skill-id");
-    require(keyUserAddress == userAddress, "colony-reputation-invalid-user-address");
-
-    return reputationValue;
-  }
-
-  function calculateRewardForUser(uint256 payoutId, uint256[7] memory squareRoots, uint256 userReputation) internal returns (address, uint256) {
-    RewardPayoutCycle memory payout = rewardPayoutCycles[payoutId];
-
-    // Checking if payout is active
-    require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
-
-    uint256 userTokens = ITokenLocking(tokenLockingAddress).getUserLock(token, msgSender()).balance;
-    require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
-    require(userReputation > 0, "colony-reward-payout-invalid-user-reputation");
-
-    // squareRoots[0] - square root of userReputation
-    // squareRoots[1] - square root of userTokens (deposited in TokenLocking)
-    // squareRoots[2] - square root of payout.colonyWideReputation
-    // squareRoots[3] - square root of totalTokens
-    // squareRoots[4] - square root of numerator
-    // squareRoots[5] - square root of denominator
-    // squareRoots[6] - square root of payout.amount
-
-    require(mul(squareRoots[0], squareRoots[0]) <= userReputation, "colony-reward-payout-invalid-parameter-user-reputation");
-    require(mul(squareRoots[1], squareRoots[1]) <= userTokens, "colony-reward-payout-invalid-parameter-user-token");
-    require(mul(squareRoots[2], squareRoots[2]) >= payout.colonyWideReputation, "colony-reward-payout-invalid-parameter-total-reputation");
-    require(mul(squareRoots[3], squareRoots[3]) >= payout.totalTokens, "colony-reward-payout-invalid-parameter-total-tokens");
-    require(mul(squareRoots[6], squareRoots[6]) <= payout.amount, "colony-reward-payout-invalid-parameter-amount");
-    uint256 numerator = mul(squareRoots[0], squareRoots[1]);
-    uint256 denominator = mul(squareRoots[2], squareRoots[3]);
-
-    require(mul(squareRoots[4], squareRoots[4]) <= numerator, "colony-reward-payout-invalid-parameter-numerator");
-    require(mul(squareRoots[5], squareRoots[5]) >= denominator, "colony-reward-payout-invalid-parameter-denominator");
-
-    uint256 reward = (mul(squareRoots[4], squareRoots[6]) / squareRoots[5]) ** 2;
-
-    return (payout.tokenAddress, reward);
-  }
+  // Internal
 
   function moveFundsBetweenPotsFunctionality(
     uint256 _fromPot,
@@ -458,7 +291,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     uint256 _amount,
     address _token
   )
-  internal {
+    internal
+  {
     FundingPot storage fromPot = fundingPots[_fromPot];
     FundingPot storage toPot = fundingPots[_toPot];
 
@@ -514,8 +348,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     emit ColonyFundsMovedBetweenFundingPots(msgSender(), _fromPot, _toPot, _amount, _token);
   }
 
-
-
   function updatePayoutsWeCannotMakeAfterPotChange(uint256 _fundingPotId, address _token, uint _prev) internal {
     FundingPot storage tokenPot = fundingPots[_fundingPotId];
 
@@ -544,31 +376,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     }
   }
 
-  function getDomainFromFundingPot(uint256 _fundingPotId) public view returns (uint256 domainId) {
-    require(_fundingPotId <= fundingPotCount, "colony-funding-nonexistent-pot");
-    FundingPot storage fundingPot = fundingPots[_fundingPotId];
-
-    if (fundingPot.associatedType == FundingPotAssociatedType.Domain) {
-      domainId = fundingPot.associatedTypeId;
-    } else if (fundingPot.associatedType == FundingPotAssociatedType.Task) {
-      domainId = tasks[fundingPot.associatedTypeId].domainId;
-    } else if (fundingPot.associatedType == FundingPotAssociatedType.Payment) {
-      domainId = payments[fundingPot.associatedTypeId].domainId;
-    } else if (fundingPot.associatedType == FundingPotAssociatedType.Expenditure) {
-      domainId = expenditures[fundingPot.associatedTypeId].domainId;
-    } else {
-      // If rewards pot, return root domain.
-      assert(_fundingPotId == 0);
-      domainId = 1;
-    }
-  }
-
-  function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts)
-  public
-  stoppable
-  expenditureExists(_id)
-  expenditureDraft(_id)
-  expenditureOnlyOwner(_id)
+  function setExpenditurePayoutsInternal(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts)
+  internal
   {
     require(_slots.length == _amounts.length, "colony-expenditure-bad-slots");
 
@@ -592,17 +401,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     updatePayoutsWeCannotMakeAfterBudgetChange(expenditures[_id].fundingPotId, _token, currentTotal);
   }
 
-  function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)
-  public
-  stoppable
-  {
-    uint256[] memory slots = new uint256[](1);
-    slots[0] = _slot;
-    uint256[] memory amounts = new uint256[](1);
-    amounts[0] = _amount;
-    setExpenditurePayouts(_id, slots, _token, amounts);
-  }
-
   function setTaskPayout(uint256 _id, TaskRole _role, address _token, uint256 _amount) private
   taskExists(_id)
   taskNotComplete(_id)
@@ -622,15 +420,15 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   }
 
   function processPayout(uint256 _fundingPotId, address _token, uint256 _payout, address payable _user) private {
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
+
     fundingPots[_fundingPotId].balance[_token] = sub(fundingPots[_fundingPotId].balance[_token], _payout);
+    fundingPots[_fundingPotId].payouts[_token] = sub(fundingPots[_fundingPotId].payouts[_token], _payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _payout);
 
     uint fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
     uint remainder = sub(_payout, fee);
-    fundingPots[_fundingPotId].payouts[_token] = sub(fundingPots[_fundingPotId].payouts[_token], _payout);
-
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
 
     if (_token == address(0x0)) {
       // Payout ether
@@ -652,17 +450,4 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     emit PayoutClaimed(msgSender(), _fundingPotId, _token, remainder);
   }
-
-  function calculateNetworkFeeForPayout(uint256 _payout) private view returns (uint256 fee) {
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    uint256 feeInverse = colonyNetworkContract.getFeeInverse();
-
-    // slither-disable-next-line incorrect-equality
-    if (_payout == 0 || feeInverse == 1) {
-      fee = _payout;
-    } else {
-      fee = _payout/feeInverse + 1;
-    }
-  }
-
 }

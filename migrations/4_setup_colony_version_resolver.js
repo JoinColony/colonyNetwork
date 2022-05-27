@@ -4,8 +4,9 @@ const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts"
 
 const Colony = artifacts.require("./Colony");
 const ColonyDomains = artifacts.require("./ColonyDomains");
-const ColonyFunding = artifacts.require("./ColonyFunding");
 const ColonyExpenditure = artifacts.require("./ColonyExpenditure");
+const ColonyFunding = artifacts.require("./ColonyFunding");
+const ColonyRewards = artifacts.require("./ColonyRewards");
 const ColonyRoles = artifacts.require("./ColonyRoles");
 const ColonyTask = artifacts.require("./ColonyTask");
 const ColonyPayment = artifacts.require("./ColonyPayment");
@@ -20,11 +21,12 @@ module.exports = async function (deployer) {
   // Create a new Colony (version) and setup a new Resolver for it
   const colony = await Colony.new();
   const colonyDomains = await ColonyDomains.new();
-  const colonyFunding = await ColonyFunding.new();
   const colonyExpenditure = await ColonyExpenditure.new();
+  const colonyFunding = await ColonyFunding.new();
+  const colonyPayment = await ColonyPayment.new();
+  const colonyRewards = await ColonyRewards.new();
   const colonyRoles = await ColonyRoles.new();
   const colonyTask = await ColonyTask.new();
-  const colonyPayment = await ColonyPayment.new();
   const colonyArbitraryTransaction = await ColonyArbitraryTransaction.new();
   const contractRecovery = await ContractRecovery.deployed();
   const version = await colony.version();
@@ -38,10 +40,11 @@ module.exports = async function (deployer) {
     colony,
     colonyDomains,
     colonyExpenditure,
-    colonyTask,
-    colonyPayment,
     colonyFunding,
+    colonyPayment,
+    colonyRewards,
     colonyRoles,
+    colonyTask,
     contractRecovery,
     colonyArbitraryTransaction,
     resolver
