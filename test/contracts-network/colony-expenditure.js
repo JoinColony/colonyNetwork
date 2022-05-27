@@ -1260,11 +1260,6 @@ contract("Colony Expenditure", (accounts) => {
       );
 
       await checkErrorRevert(
-        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTPAYOUTS_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
-        "colony-expenditure-bad-keys"
-      );
-
-      await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, 1000000, mask, keys, HASHZERO, { from: ARBITRATOR }),
         "colony-expenditure-bad-slot"
       );
