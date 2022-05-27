@@ -70,7 +70,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     expenditureExists(_id)
     expenditureDraftOrLocked(_id)
-    expenditureOnlyOwner(_id)
+    expenditureSelfOrOwner(_id)
   {
     expenditures[_id].owner = _newOwner;
 
@@ -100,7 +100,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
+    expenditureSelfOrOwner(_id)
   {
     expenditures[_id].status = ExpenditureStatus.Cancelled;
 
@@ -112,7 +112,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
+    expenditureSelfOrOwner(_id)
   {
     expenditures[_id].status = ExpenditureStatus.Locked;
 
@@ -124,7 +124,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     expenditureExists(_id)
     expenditureDraftOrLocked(_id)
-    expenditureOnlyOwner(_id)
+    expenditureSelfOrOwner(_id)
   {
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     require(fundingPot.payoutsWeCannotMake == 0, "colony-expenditure-not-funded");
@@ -140,7 +140,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
+    expenditureSelfOrOwner(_id)
   {
     emit ExpenditureMetadataSet(msgSender(), _id, _metadata);
   }
@@ -164,7 +164,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
+    expenditureSelfOrOwner(_id)
   {
     require(_slots.length == _recipients.length, "colony-expenditure-bad-slots");
 
@@ -180,7 +180,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
+    expenditureSelfOrOwner(_id)
   {
     require(_slots.length == _skillIds.length, "colony-expenditure-bad-slots");
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
@@ -203,7 +203,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
+    expenditureSelfOrOwner(_id)
   {
     require(_slots.length == _claimDelays.length, "colony-expenditure-bad-slots");
 
@@ -219,7 +219,7 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
+    expenditureSelfOrOwner(_id)
   {
     require(_slots.length == _payoutModifiers.length, "colony-expenditure-bad-slots");
 
@@ -248,13 +248,13 @@ contract ColonyExpenditure is ColonyStorage {
     stoppable
     expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
+    expenditureSelfOrOwner(_id)
   {
-    setExpenditureRecipients(_id, _recipientSlots, _recipients);
-    setExpenditureSkills(_id, _skillIdSlots, _skillIds);
-    setExpenditureClaimDelays(_id, _claimDelaySlots, _claimDelays);
-    setExpenditurePayoutModifiers(_id, _payoutModifierSlots, _payoutModifiers);
-    setExpenditurePayouts(_id, _payoutTokens, _payoutSlots, _payoutValues);
+    if (_recipients.length > 0) { setExpenditureRecipients(_id, _recipientSlots, _recipients); }
+    if (_skillIds.length > 0) { setExpenditureSkills(_id, _skillIdSlots, _skillIds); }
+    if (_claimDelays.length > 0) { setExpenditureClaimDelays(_id, _claimDelaySlots, _claimDelays); }
+    if (_payoutModifiers.length > 0) { setExpenditurePayoutModifiers(_id, _payoutModifierSlots, _payoutModifiers); }
+    if (_payoutTokens.length > 0) { setExpenditurePayouts(_id, _payoutTokens, _payoutSlots, _payoutValues); }
   }
 
   // Deprecated
