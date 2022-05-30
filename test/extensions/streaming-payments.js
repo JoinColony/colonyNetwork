@@ -275,7 +275,7 @@ contract("Streaming Payments", (accounts) => {
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
     });
 
-    it.only("cannot get more from a payment than should be able to", async () => {
+    it("cannot get more from a payment than should be able to", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(1));
 
       let blockTime = await getBlockTime();
@@ -311,7 +311,7 @@ contract("Streaming Payments", (accounts) => {
       expect(balancePost.sub(balancePre)).to.be.lte.BN(WAD.muln(100));
     });
 
-    it.only("should not be able to 'brick' a payout, with 'last paid out' being after the end date", async () => {
+    it("should not be able to 'brick' a payout, with 'last paid out' being after the end date", async () => {
       const blockTime = await getBlockTime();
       const createArgs = [
         1,
@@ -331,7 +331,6 @@ contract("Streaming Payments", (accounts) => {
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       const balancePre = await token.balanceOf(USER1);
-
       await forwardTime(SECONDS_PER_DAY, this);
 
       await fundColonyWithTokens(colony, token, WAD.muln(99));
@@ -346,9 +345,10 @@ contract("Streaming Payments", (accounts) => {
       }
 
       const paymentToken = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
-      const payment = await streamingPayments.getStreamingPayment(streamingPaymentId);
 
-      expect(paymentToken.lastClaimed).to.be.lte.BN(payment.endTime);
+      expect(paymentToken.amountClaimed).to.be.lte.BN(paymentToken.amount);
+      const balancePost = await token.balanceOf(USER1);
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(100).subn(11)); // -11 for network fee after 11 claims that paid
     });
 
     it("cannot claim a streaming payment before the start time", async () => {

@@ -49,7 +49,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   struct PaymentToken {
     uint256 amount;
-    uint256 lastClaimed;
+    uint256 amountClaimed;
   }
 
   uint256 numStreamingPayments;
@@ -148,7 +148,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     emit StreamingPaymentCreated(msgSender(), numStreamingPayments);
 
     for (uint256 i; i < _tokens.length; i++) {
-      paymentTokens[numStreamingPayments][_tokens[i]] = PaymentToken(_amounts[i], block.timestamp);
+      paymentTokens[numStreamingPayments][_tokens[i]] = PaymentToken(_amounts[i], 0);
 
       emit PaymentTokenUpdated(msgSender(), numStreamingPayments, _tokens[i], _amounts[i]);
     }
@@ -180,23 +180,12 @@ contract StreamingPayments is ColonyExtensionMeta {
 
     for (uint256 i; i < _tokens.length; i++) {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
-      paymentToken.lastClaimed = max(paymentToken.lastClaimed, streamingPayment.startTime);
 
-      uint256 amountClaimable = getAmountClaimable(_id, _tokens[i]);
-      uint256 claimableProportion = getClaimableProportion(_tokens[i], domainFundingPotId, amountClaimable);
-      amountsToClaim[i] = wmul(claimableProportion, amountClaimable);
+      uint256 amountEntitled = getAmountEntitled(_id, _tokens[i]);
+      uint256 amountSinceLastClaim = sub(amountEntitled, paymentToken.amountClaimed);
+      amountsToClaim[i] = getAmountClaimable(_id, _tokens[i], amountSinceLastClaim);
       anythingToClaim = anythingToClaim || amountsToClaim[i] > 0;
-
-      paymentToken.lastClaimed = add(
-        paymentToken.lastClaimed,
-        wmul(
-          claimableProportion,
-          sub(
-            block.timestamp,
-            paymentToken.lastClaimed
-          )
-        )
-      );
+      paymentToken.amountClaimed = add(paymentToken.amountClaimed, amountsToClaim[i]);
     }
 
     // Skip expenditure setup if there's nothing to claim
@@ -241,7 +230,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   {
     require(paymentTokens[_id][_token].amount == 0, "streaming-payments-token-exists");
 
-    paymentTokens[_id][_token] = PaymentToken(_amount, block.timestamp);
+    paymentTokens[_id][_token] = PaymentToken(_amount, 0);
 
     emit PaymentTokenUpdated(msgSender(), _id, _token, _amount);
   }
@@ -274,8 +263,11 @@ contract StreamingPayments is ColonyExtensionMeta {
     claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id, toArray(_token));
 
     PaymentToken storage paymentToken = paymentTokens[_id][_token];
-    require(paymentToken.lastClaimed >= block.timestamp, "streaming-payments-insufficient-funds");
+    require(paymentToken.amountClaimed >= getAmountEntitled(_id, _token), "streaming-payments-insufficient-funds");
     paymentToken.amount = _amount;
+
+    // Update 'claimed' as if we've had this rate since the beginning
+    paymentToken.amountClaimed = getAmountEntitled(_id, _token);
 
     emit PaymentTokenUpdated(msgSender(), _id, _token, _amount);
   }
@@ -354,26 +346,35 @@ contract StreamingPayments is ColonyExtensionMeta {
     return numStreamingPayments;
   }
 
-  function getAmountClaimable(uint256 _id, address _token) public view returns (uint256) {
+  function getAmountEntitled(uint256 _id, address _token) public view returns (uint256) {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     PaymentToken storage paymentToken = paymentTokens[_id][_token];
-    uint256 durationToClaim = sub(min(block.timestamp, streamingPayment.endTime), paymentToken.lastClaimed);
-    return (durationToClaim > 0) ? wmul(paymentToken.amount, wdiv(durationToClaim, streamingPayment.interval)) : 0;
+    if (streamingPayment.startTime >= block.timestamp){
+      return 0;
+    }
+    // if (streamingPayment.endTime <= block.timestamp){
+    //   return wmul(paymentToken.amount;
+    // }
+    uint256 durationToClaim = sub(min(block.timestamp, streamingPayment.endTime), streamingPayment.startTime);
+    if (durationToClaim == 0) {
+      return 0;
+    }
+    return wmul(paymentToken.amount, wdiv(durationToClaim, streamingPayment.interval));
   }
 
   // Internal
 
-  function getClaimableProportion(
-    address _token,
+  function getAmountClaimable(
     uint256 _fundingPotId,
-    uint256 _amountClaimable
+    address _token,
+    uint256 _amountEntitled
   )
     internal
     view
     returns (uint256)
   {
     uint256 domainBalance = colony.getFundingPotBalance(_fundingPotId, _token);
-    return min(WAD, wdiv(domainBalance, max(1, _amountClaimable)));
+    return min(domainBalance, _amountEntitled);
   }
 
   function setupExpenditure(
