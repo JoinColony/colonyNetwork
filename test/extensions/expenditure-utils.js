@@ -120,7 +120,7 @@ contract("ExpenditureUtils", (accounts) => {
     });
   });
 
-  describe.only("using stakes to manage expenditures", async () => {
+  describe("using stakes to manage expenditures", async () => {
     beforeEach(async () => {
       await expenditureUtils.setStakeFraction(WAD.divn(10)); // Stake of .3 WADs
 
