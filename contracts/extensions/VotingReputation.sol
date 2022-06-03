@@ -54,8 +54,12 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
   );
 
-  bytes4 constant CHANGE_FUNCTION_SIG = bytes4(keccak256(
+  bytes4 constant CHANGE_FUNCTION_SIG_1 = bytes4(keccak256(
     "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"
+  ));
+
+  bytes4 constant CHANGE_FUNCTION_SIG_2 = bytes4(keccak256(
+    "setExpenditurePayouts(uint256,uint256,uint256,uint256[],address,uint256[])"
   ));
 
   bytes4 constant OLD_MOVE_FUNDS_SIG = bytes4(keccak256(
@@ -392,7 +396,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
       _vote == YAY &&
       !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
-      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
+      (getSig(motion.action) == CHANGE_FUNCTION_SIG_1 || getSig(motion.action) == CHANGE_FUNCTION_SIG_2) &&
       motion.altTarget == address(0x0)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
@@ -588,7 +592,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     );
 
     if (
-      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
+      (getSig(motion.action) == CHANGE_FUNCTION_SIG_1 || getSig(motion.action) == CHANGE_FUNCTION_SIG_2) &&
       getTarget(motion.altTarget) == address(colony)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
@@ -1044,7 +1048,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   }
 
   function hashExpenditureActionStruct(bytes memory action) internal returns (bytes32 hash) {
-    assert(getSig(action) == CHANGE_FUNCTION_SIG);
+    assert(getSig(action) == CHANGE_FUNCTION_SIG_1 || getSig(action) == CHANGE_FUNCTION_SIG_2);
 
     uint256 expenditureId;
     uint256 storageSlot;
@@ -1075,14 +1079,14 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     //   of 0x20 represents advancing one byte, 4 is the function signature.
     // So: 0x[length][sig][args...]
 
-    bytes32 functionSignature;
+    bytes4 functionSignature = CHANGE_FUNCTION_SIG_1;
+
     uint256 permissionDomainId;
     uint256 childSkillIndex;
     uint256 expenditureId;
     uint256 storageSlot;
 
     assembly {
-      functionSignature := mload(add(action, 0x20))
       permissionDomainId := mload(add(action, 0x24))
       childSkillIndex := mload(add(action, 0x44))
       expenditureId := mload(add(action, 0x64))
@@ -1090,7 +1094,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     }
 
     // If we are editing the main expenditure struct
-    if (storageSlot == 25) {
+    if (storageSlot == 25 || getSig(action) == CHANGE_FUNCTION_SIG_2) {
 
       bytes memory mainClaimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
       assembly {
