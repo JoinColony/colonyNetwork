@@ -3,7 +3,7 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
-const { UINT256_MAX, WAD, INITIAL_FUNDING } = require("../../helpers/constants");
+const { UINT256_MAX, WAD, INITIAL_FUNDING, ADDRESS_ZERO } = require("../../helpers/constants");
 const { fundColonyWithTokens, setupRandomColony, setupColony } = require("../../helpers/test-data-generator");
 const { checkErrorRevert, expectEvent } = require("../../helpers/test-helper");
 
@@ -235,6 +235,17 @@ contract("Colony Staking", (accounts) => {
 
       const { balance } = await tokenLocking.getUserLock(token.address, USER2);
       expect(balance).to.eq.BN(WAD);
+    });
+
+    it("should burn slashed stake if sent to address(0x0)", async () => {
+      const supplyBefore = await token.totalSupply();
+
+      await colony.approveStake(USER0, 1, WAD, { from: USER1 });
+      await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
+      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ADDRESS_ZERO, { from: USER2 });
+
+      const supplyAfter = await token.totalSupply();
+      expect(supplyBefore.sub(supplyAfter)).to.eq.BN(WAD);
     });
   });
 });
