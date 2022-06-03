@@ -119,7 +119,7 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     );
 
     delete stakes[_owner][_expenditureId];
-    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), _owner, expenditureDomainId, stake, address(colony));
+    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), _owner, expenditureDomainId, stake, address(0x0));
   }
 
   function reclaimStake(uint256 _expenditureId) public {

@@ -128,6 +128,9 @@ contract("ExpenditureUtils", (accounts) => {
       await token.approve(tokenLocking.address, WAD, { from: USER0 });
       await tokenLocking.deposit(token.address, WAD, false, { from: USER0 });
       await colony.approveStake(expenditureUtils.address, 1, WAD, { from: USER0 });
+
+      const userLock = await tokenLocking.getUserLock(token.address, USER0);
+      expect(userLock.balance).to.eq.BN(WAD);
     });
 
     it("can create an expenditure by submitting a stake", async () => {

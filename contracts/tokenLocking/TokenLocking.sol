@@ -195,7 +195,11 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
     Lock storage userLock = userLocks[_token][_user];
     userLock.balance = sub(userLock.balance, _amount);
 
-    makeConditionalDeposit(_token, _amount, _recipient);
+    if (_recipient == address(0x0)) {
+      ERC20Extended(_token).burn(_amount);
+    } else {
+      makeConditionalDeposit(_token, _amount, _recipient);
+    }
 
     emit StakeTransferred(_token, msgSender(), _user, _recipient, _amount);
   }
