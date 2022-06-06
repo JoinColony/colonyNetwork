@@ -37,7 +37,7 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "evaluated-expenditure-caller-not-root");
+    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "expenditure-utils-caller-not-root");
     _;
   }
 
@@ -157,8 +157,8 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
   )
     public
   {
-    require(_slots.length == _payoutModifiers.length, "evaluated-expenditure-bad-slots");
-    require(colony.getExpenditure(_id).owner == msgSender(), "evaluated-expenditure-not-owner");
+    require(_slots.length == _payoutModifiers.length, "expenditure-utils-bad-slots");
+    require(colony.getExpenditure(_id).owner == msgSender(), "expenditure-utils-not-owner");
 
     bool[] memory mask = new bool[](2);
     bytes32[] memory keys = new bytes32[](2);
