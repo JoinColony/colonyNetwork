@@ -5,7 +5,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
+const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ADDRESS_ZERO } = require("../../helpers/constants");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 const {
   checkErrorRevert,
@@ -76,6 +76,20 @@ contract("ExpenditureUtils", (accounts) => {
       makeReputationValue(WAD.muln(3), 1)
     );
 
+    // Used to create invalid proofs
+    await reputationTree.insert(
+      makeReputationKey(ADDRESS_ZERO, domain1.skillId), // Bad colony
+      makeReputationValue(WAD, 2)
+    );
+    await reputationTree.insert(
+      makeReputationKey(colony.address, 100), // Bad skill
+      makeReputationValue(WAD, 3)
+    );
+    await reputationTree.insert(
+      makeReputationKey(colony.address, domain1.skillId, USER0), // Bad user
+      makeReputationValue(WAD, 4)
+    );
+
     domain1Key = makeReputationKey(colony.address, domain1.skillId);
     domain1Value = makeReputationValue(WAD.muln(3), 1);
     [domain1Mask, domain1Siblings] = await reputationTree.getProof(domain1Key);
@@ -109,6 +123,15 @@ contract("ExpenditureUtils", (accounts) => {
       expect(code).to.equal("0x");
     });
 
+    it("cannot manage the extension if not owner", async () => {
+      expenditureUtils = await ExpenditureUtils.new();
+
+      await checkErrorRevert(expenditureUtils.install(colony.address, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(expenditureUtils.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(expenditureUtils.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(expenditureUtils.uninstall({ from: USER1 }), "ds-auth-unauthorized");
+    });
+
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(EXPENDITURE_UTILS, version, { from: USER0 });
@@ -133,6 +156,10 @@ contract("ExpenditureUtils", (accounts) => {
       expect(userLock.balance).to.eq.BN(WAD);
     });
 
+    it("cannot set the stake fraction if not root", async () => {
+      await checkErrorRevert(expenditureUtils.setStakeFraction(WAD, { from: USER1 }), "expenditure-utils-caller-not-root");
+    });
+
     it("can create an expenditure by submitting a stake", async () => {
       await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
@@ -142,6 +169,47 @@ contract("ExpenditureUtils", (accounts) => {
 
       const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
       expect(obligation).to.eq.BN(WAD.muln(3).divn(10));
+    });
+
+    it("cannot create an expenditure with an invalid proof", async () => {
+      const domain1 = await colony.getDomain(1);
+
+      let key;
+      let value;
+      let mask;
+      let siblings;
+
+      key = makeReputationKey(colony.address, domain1.skillId);
+      value = makeReputationValue(WAD, 10);
+      [mask, siblings] = await reputationTree.getProof(key);
+      await checkErrorRevert(
+        expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
+        "expenditure-utils-invalid-root-hash"
+      );
+
+      key = makeReputationKey(ADDRESS_ZERO, domain1.skillId);
+      value = makeReputationValue(WAD, 2);
+      [mask, siblings] = await reputationTree.getProof(key);
+      await checkErrorRevert(
+        expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
+        "expenditure-utils-invalid-colony-address"
+      );
+
+      key = makeReputationKey(colony.address, 100);
+      value = makeReputationValue(WAD, 3);
+      [mask, siblings] = await reputationTree.getProof(key);
+      await checkErrorRevert(
+        expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
+        "expenditure-utils-invalid-skill-id"
+      );
+
+      key = makeReputationKey(colony.address, domain1.skillId, USER0);
+      value = makeReputationValue(WAD, 4);
+      [mask, siblings] = await reputationTree.getProof(key);
+      await checkErrorRevert(
+        expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
+        "expenditure-utils-invalid-user-address"
+      );
     });
 
     it("can slash the stake with the arbitration permission", async () => {
@@ -155,6 +223,16 @@ contract("ExpenditureUtils", (accounts) => {
 
       const userLock = await tokenLocking.getUserLock(token.address, USER0);
       expect(userLock.balance).to.eq.BN(WAD.sub(WAD.muln(3).divn(10)));
+    });
+
+    it("cannot slash the stake without the arbitration permission", async () => {
+      await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+
+      await checkErrorRevert(
+        expenditureUtils.slashStake(1, UINT256_MAX, expenditureId, USER0, { from: USER1 }),
+        "expenditure-utils-caller-not-arbitration"
+      );
     });
 
     it("if ownership is transferred, the original owner is still slashed", async () => {
@@ -247,14 +325,14 @@ contract("ExpenditureUtils", (accounts) => {
     it("cannot set the payout modifier with bad arguments", async () => {
       await checkErrorRevert(
         expenditureUtils.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [], { from: USER0 }),
-        "evaluated-expenditure-bad-slots"
+        "expenditure-utils-bad-slots"
       );
     });
 
     it("cannot set the payout modifier if not the owner", async () => {
       await checkErrorRevert(
         expenditureUtils.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [WAD], { from: USER1 }),
-        "evaluated-expenditure-not-owner"
+        "expenditure-utils-not-owner"
       );
     });
 
