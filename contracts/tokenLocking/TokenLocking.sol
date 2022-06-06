@@ -196,7 +196,7 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
     userLock.balance = sub(userLock.balance, _amount);
 
     if (_recipient == address(0x0)) {
-      ERC20Extended(_token).burn(_amount);
+      require(ERC20Extended(_token).transfer(address(0x0), _amount), "colony-token-locking-burn-failed");
     } else {
       makeConditionalDeposit(_token, _amount, _recipient);
     }

@@ -237,14 +237,14 @@ contract("Colony Staking", (accounts) => {
       expect(balance).to.eq.BN(WAD);
     });
 
-    it("should burn slashed stake if sent to address(0x0)", async () => {
-      const supplyBefore = await token.totalSupply();
+    it("should send stake out of tokenLocking if sent to address(0x0)", async () => {
+      const supplyBefore = await token.balanceOf(tokenLocking.address);
 
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
       await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ADDRESS_ZERO, { from: USER2 });
 
-      const supplyAfter = await token.totalSupply();
+      const supplyAfter = await token.balanceOf(tokenLocking.address);
       expect(supplyBefore.sub(supplyAfter)).to.eq.BN(WAD);
     });
   });
