@@ -6,7 +6,14 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
+const {
+  UINT256_MAX,
+  WAD,
+  MINING_CYCLE_DURATION,
+  SECONDS_PER_DAY,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  ADDRESS_ZERO,
+} = require("../../helpers/constants");
 
 const {
   checkErrorRevert,
@@ -195,6 +202,13 @@ contract("Funding Queues", (accounts) => {
       await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });
+    });
+
+    it("can't use the network-level functions if installed via ColonyNetwork", async () => {
+      await checkErrorRevert(fundingQueue.install(ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(fundingQueue.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(fundingQueue.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(fundingQueue.uninstall({ from: USER1 }), "ds-auth-unauthorized");
     });
   });
 

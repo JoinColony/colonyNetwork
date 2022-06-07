@@ -332,6 +332,13 @@ contract("Voting Reputation", (accounts) => {
       expect(revealPeriod).to.eq.BN(REVEAL_PERIOD);
       expect(escalationPeriod).to.eq.BN(ESCALATION_PERIOD);
     });
+
+    it("can't use the network-level functions if installed via ColonyNetwork", async () => {
+      // await checkErrorRevert(voting.install(ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(voting.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(voting.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(voting.uninstall({ from: USER1 }), "ds-auth-unauthorized");
+    });
   });
 
   describe("creating motions", async () => {
