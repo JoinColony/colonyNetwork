@@ -15,13 +15,13 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.14;
 
 import "./../common/CommonAuthority.sol";
 
 
 contract ColonyNetworkAuthority is CommonAuthority {
-  constructor(address colonyNetwork) public CommonAuthority(colonyNetwork) { // solhint-disable-line no-empty-blocks
+  constructor(address colonyNetwork) CommonAuthority(colonyNetwork) { // solhint-disable-line no-empty-blocks
 
   }
 }

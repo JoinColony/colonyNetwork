@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.14;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -316,8 +316,8 @@ contract ColonyExpenditure is ColonyStorage {
       // Validate payout modifier
       if (offset == 2) {
         require(
-          int256(_value) <= MAX_PAYOUT_MODIFIER &&
-          int256(_value) >= MIN_PAYOUT_MODIFIER,
+          int256(uint256(_value)) <= MAX_PAYOUT_MODIFIER &&
+          int256(uint256(_value)) >= MIN_PAYOUT_MODIFIER,
           "colony-expenditure-bad-payout-modifier"
         );
       }

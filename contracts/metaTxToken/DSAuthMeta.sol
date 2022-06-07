@@ -15,7 +15,7 @@ import "./../common/BasicMetaTransaction.sol";
 import "./../common/ERC20Extended.sol";
 import "./../../lib/dappsys/auth.sol";
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.14;
 
 abstract contract DSAuthMeta is DSAuthEvents, BasicMetaTransaction {
     DSAuthority  public  authority;
@@ -52,7 +52,7 @@ abstract contract DSAuthMeta is DSAuthEvents, BasicMetaTransaction {
             return true;
         } else if (src == owner) {
             return true;
-        } else if (authority == DSAuthority(0)) {
+        } else if (authority == DSAuthority(address(0x00))) {
             return false;
         } else {
             return authority.canCall(src, address(this), sig);

@@ -48,8 +48,8 @@ step_setup_slither: &step_setup_slither
         sudo mv solc-static-linux /usr/local/bin/solc
         pip install slither-analyzer
         pip install solc-select
-        solc-select install 0.7.3
-        solc-select use 0.7.3
+        solc-select install 0.8.14
+        solc-select use 0.8.14
 
 jobs:
   reputation-test:

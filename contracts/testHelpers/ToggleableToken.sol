@@ -1,6 +1,6 @@
 // Judiciously tweaked from ../../lib/dappsys/base.sol
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.14;
 
 import "./../../lib/dappsys/erc20.sol";
 import "./../../lib/dappsys/math.sol";
@@ -13,7 +13,7 @@ contract ToggleableToken is DSMath, ERC20Events {
     event Mint(address indexed guy, uint wad);
 
 
-    constructor(uint supply) public {
+    constructor(uint supply) {
         _balances[msg.sender] = supply;
         _supply = supply;
     }

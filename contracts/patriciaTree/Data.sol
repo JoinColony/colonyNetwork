@@ -1,4 +1,4 @@
-pragma solidity 0.7.3;
+pragma solidity 0.8.14;
 pragma experimental "ABIEncoderV2";
 
 import {Bits} from "./Bits.sol";
