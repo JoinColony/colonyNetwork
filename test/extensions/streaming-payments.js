@@ -346,7 +346,7 @@ contract("Streaming Payments", (accounts) => {
 
       const paymentToken = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
 
-      expect(paymentToken.amountClaimed).to.be.lte.BN(paymentToken.amount);
+      expect(paymentToken.amountEntitledFromStart).to.be.lte.BN(paymentToken.amount);
       const balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(100).subn(11)); // -11 for network fee after 11 claims that paid
     });
@@ -399,6 +399,69 @@ contract("Streaming Payments", (accounts) => {
       await forwardTime(1, this);
 
       await checkErrorRevert(streamingPayments.cancel(1, UINT256_MAX, streamingPaymentId), "streaming-payments-already-ended");
+    });
+
+    it("receipient can cancel and waive a streaming payment", async () => {
+      const tx = await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+
+      await makeTxAtTimestamp(
+        streamingPayments.cancelAndWaive,
+        [streamingPaymentId, [token.address], { from: USER1 }],
+        blockTime + SECONDS_PER_DAY * 2,
+        this
+      );
+
+      const streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
+      expect(streamingPayment.endTime).to.equal((blockTime + SECONDS_PER_DAY * 2).toString());
+
+      const paymentToken = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
+      expect(paymentToken.amountEntitledFromStart).to.equal((WAD * 2).toString());
+    });
+
+    it("multiple cancel-and-waives of a streaming payments do not change the end time", async () => {
+      const tx = await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+
+      await makeTxAtTimestamp(
+        streamingPayments.cancelAndWaive,
+        [streamingPaymentId, [token.address], { from: USER1 }],
+        blockTime + SECONDS_PER_DAY * 2,
+        this
+      );
+
+      const streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
+      expect(streamingPayment.endTime).to.equal((blockTime + SECONDS_PER_DAY * 2).toString());
+
+      await makeTxAtTimestamp(
+        streamingPayments.cancelAndWaive,
+        [streamingPaymentId, [token.address], { from: USER1 }],
+        blockTime + SECONDS_PER_DAY * 4,
+        this
+      );
+
+      const streamingPayment2 = await streamingPayments.getStreamingPayment(streamingPaymentId);
+      expect(streamingPayment.endTime).to.equal(streamingPayment2.endTime);
+    });
+
+    it("non-receipient cannot cancel-and-waive a steaming payment", async () => {
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+      await checkErrorRevert(streamingPayments.cancelAndWaive(streamingPaymentId, [token.address]), "streaming-payments-not-recipient");
+    });
+
+    it("cannot cancel-and-waive payment before the start time", async () => {
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await checkErrorRevert(
+        streamingPayments.cancelAndWaive(streamingPaymentId, [token.address], { from: USER1 }),
+        "streaming-payments-not-started"
+      );
     });
 
     it("can claim a streaming payment multiple times", async () => {

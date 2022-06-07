@@ -332,6 +332,28 @@ contract StreamingPayments is ColonyExtensionMeta {
     setEndTime(_adminPermissionDomainId, _adminChildSkillIndex, _id, block.timestamp);
   }
 
+  /// @notice Cancel the streaming payment, specifically by setting endTime to block.timestamp, and waive claim
+  /// to specified tokens already earned. Only callable by the recipient.
+  /// @param _tokens The tokens to waive any claims to.
+  function cancelAndWaive(
+    uint256 _id,
+    address[] memory _tokens
+  )
+    public
+  {
+    // slither-disable-next-line incorrect-equality
+    require(streamingPayments[_id].recipient == msgSender(), "streaming-payments-not-recipient");
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
+    require(streamingPayment.startTime <= block.timestamp, "streaming-payments-not-started");
+
+    streamingPayment.endTime = min(streamingPayment.endTime, block.timestamp);
+
+    for (uint256 i; i < _tokens.length; i++) {
+      PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
+      paymentToken.amountEntitledFromStart = getAmountEntitled(_id, _tokens[i]);
+    }
+  }
+
   // View
 
   function getStreamingPayment(uint256 _id) public view returns (StreamingPayment memory streamingPayment) {
