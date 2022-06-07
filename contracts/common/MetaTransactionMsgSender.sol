@@ -1,4 +1,4 @@
-pragma solidity 0.7.3;
+pragma solidity 0.8.14;
 
 import "../../lib/dappsys/math.sol";
 
@@ -15,14 +15,14 @@ abstract contract MetaTransactionMsgSender is DSMath {
         flag := mload(add(array, sub(index, 20)))
       }
       if (flag != METATRANSACTION_FLAG){
-        return msg.sender;
+        return payable(msg.sender);
       }
       assembly {
         // Load the 32 bytes word from memory with the address on the lower 20 bytes, and mask those.
         sender := and(mload(add(array, index)), 0xffffffffffffffffffffffffffffffffffffffff)
       }
     } else {
-      return msg.sender;
+      return payable(msg.sender);
     }
   }
 }

@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.14;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyExtension.sol";
@@ -63,7 +63,7 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
-    selfdestruct(address(uint160(address(colony))));
+    selfdestruct(payable(address(uint160(address(colony)))));
   }
 
   /// @notice Gets the next nonce for a meta-transaction
@@ -113,7 +113,7 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
         EXPENDITURESLOTS_SLOT,
         mask,
         keys,
-        bytes32(_payoutModifiers[i])
+        bytes32(uint256(_payoutModifiers[i]))
       );
     }
   }
