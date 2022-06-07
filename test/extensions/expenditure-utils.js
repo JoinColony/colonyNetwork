@@ -123,10 +123,8 @@ contract("ExpenditureUtils", (accounts) => {
       expect(code).to.equal("0x");
     });
 
-    it("cannot manage the extension if not owner", async () => {
-      expenditureUtils = await ExpenditureUtils.new();
-
-      await checkErrorRevert(expenditureUtils.install(colony.address, { from: USER1 }), "ds-auth-unauthorized");
+    it("can't use the network-level functions if installed via ColonyNetwork", async () => {
+      await checkErrorRevert(expenditureUtils.install(ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
       await checkErrorRevert(expenditureUtils.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
       await checkErrorRevert(expenditureUtils.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
       await checkErrorRevert(expenditureUtils.uninstall({ from: USER1 }), "ds-auth-unauthorized");
