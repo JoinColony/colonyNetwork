@@ -663,10 +663,10 @@ contract("Streaming Payments", (accounts) => {
     it("can add a new token/amount", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
-      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [], []);
+      const tx = await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [], []);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
-      const tx = await streamingPayments.addToken(1, UINT256_MAX, streamingPaymentId, token.address, WAD);
+      await streamingPayments.addToken(1, UINT256_MAX, streamingPaymentId, token.address, WAD);
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
 
       const balancePre = await token.balanceOf(USER1);
