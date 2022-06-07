@@ -49,7 +49,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   struct PaymentToken {
     uint256 amount;
-    uint256 amountClaimed;
+    uint256 amountEntitledFromStart;
   }
 
   uint256 numStreamingPayments;
@@ -182,10 +182,10 @@ contract StreamingPayments is ColonyExtensionMeta {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
 
       uint256 amountEntitled = getAmountEntitled(_id, _tokens[i]);
-      uint256 amountSinceLastClaim = sub(amountEntitled, paymentToken.amountClaimed);
+      uint256 amountSinceLastClaim = sub(amountEntitled, paymentToken.amountEntitledFromStart);
       amountsToClaim[i] = getAmountClaimable(_id, _tokens[i], amountSinceLastClaim);
       anythingToClaim = anythingToClaim || amountsToClaim[i] > 0;
-      paymentToken.amountClaimed = add(paymentToken.amountClaimed, amountsToClaim[i]);
+      paymentToken.amountEntitledFromStart = add(paymentToken.amountEntitledFromStart, amountsToClaim[i]);
     }
 
     // Skip expenditure setup if there's nothing to claim
@@ -263,11 +263,11 @@ contract StreamingPayments is ColonyExtensionMeta {
     claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id, toArray(_token));
 
     PaymentToken storage paymentToken = paymentTokens[_id][_token];
-    require(paymentToken.amountClaimed >= getAmountEntitled(_id, _token), "streaming-payments-insufficient-funds");
+    require(paymentToken.amountEntitledFromStart >= getAmountEntitled(_id, _token), "streaming-payments-insufficient-funds");
     paymentToken.amount = _amount;
 
     // Update 'claimed' as if we've had this rate since the beginning
-    paymentToken.amountClaimed = getAmountEntitled(_id, _token);
+    paymentToken.amountEntitledFromStart = getAmountEntitled(_id, _token);
 
     emit PaymentTokenUpdated(msgSender(), _id, _token, _amount);
   }
