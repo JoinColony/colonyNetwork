@@ -169,7 +169,7 @@ contract("Colony Funding", (accounts) => {
       await colony.addDomain(1, UINT256_MAX, 1);
 
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, 1, 2, 40, otherToken.address);
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 1, 2, 3, 50, otherToken.address), "ds-math-sub-underflow");
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 1, 2, 3, 50, otherToken.address), "Panic: Arithmetic overflow");
 
       const colonyTokenBalance = await otherToken.balanceOf(colony.address);
       const pot1Balance = await colony.getFundingPotBalance(1, otherToken.address);
@@ -610,7 +610,7 @@ contract("Colony Funding", (accounts) => {
       await colony.addDomain(1, UINT256_MAX, 1);
 
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, 1, 2, 40, ethers.constants.AddressZero);
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 1, 2, 3, 50, ethers.constants.AddressZero), "ds-math-sub-underflow");
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 1, 2, 3, 50, ethers.constants.AddressZero), "Panic: Arithmetic overflow");
 
       const colonyEtherBalance = await web3GetBalance(colony.address);
       const pot1Balance = await colony.getFundingPotBalance(1, ethers.constants.AddressZero);
