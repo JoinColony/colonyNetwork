@@ -132,6 +132,13 @@ contract("Streaming Payments", (accounts) => {
       );
     });
 
+    it("cannot create a streaming payment with an interval of 0", async () => {
+      await checkErrorRevert(
+        streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, 0, USER1, [token.address], [WAD]),
+        "streaming-payments-bad-interval"
+      );
+    });
+
     it("cannot create a streaming payment which ends before it starts", async () => {
       const startTime = 10;
       const endTime = 9;

@@ -141,6 +141,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
     require(_tokens.length == _amounts.length, "streaming-payments-bad-input");
     require(startTime <= _endTime, "streaming-payments-bad-end-time");
+    require(_interval > 0, "streaming-payments-bad-interval");
 
     numStreamingPayments++;
     streamingPayments[numStreamingPayments] = StreamingPayment(_recipient, _domainId, startTime, _endTime, _interval);
