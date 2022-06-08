@@ -114,7 +114,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
 
       await checkErrorRevert(
         tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken.address, 10000, false, { from: MINER2 }),
-        "ds-math-sub-underflow"
+        "Panic: Arithmetic overflow"
       );
 
       const info = await tokenLocking.getUserLock(clnyToken.address, MINER2);

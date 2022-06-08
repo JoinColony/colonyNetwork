@@ -129,7 +129,7 @@ contract("Colony Staking", (accounts) => {
     it("should not let users obligate more than is approved for obligator", async () => {
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
 
-      await checkErrorRevert(colony.obligateStake(USER1, 1, WAD.addn(1), { from: USER0 }), "ds-math-sub-underflow");
+      await checkErrorRevert(colony.obligateStake(USER1, 1, WAD.addn(1), { from: USER0 }), "Panic: Arithmetic overflow");
     });
 
     it("should not let cumulative obligations be larger than token deposit, with one colony", async () => {
@@ -153,7 +153,7 @@ contract("Colony Staking", (accounts) => {
       await colony.approveStake(USER0, 1, WAD.muln(2), { from: USER1 });
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
 
-      await checkErrorRevert(colony.deobligateStake(USER1, 1, WAD.addn(1), { from: USER0 }), "ds-math-sub-underflow");
+      await checkErrorRevert(colony.deobligateStake(USER1, 1, WAD.addn(1), { from: USER0 }), "Panic: Arithmetic overflow");
     });
 
     it("should not let users slash more than is obligated", async () => {
@@ -162,7 +162,7 @@ contract("Colony Staking", (accounts) => {
 
       await checkErrorRevert(
         colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD.addn(1), ethers.constants.AddressZero, { from: USER2 }),
-        "ds-math-sub-underflow"
+        "Panic: Arithmetic overflow"
       );
     });
 
