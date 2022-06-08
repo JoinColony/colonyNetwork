@@ -7,7 +7,7 @@ job_common: &job_common
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
-  run: 
+  run:
 job_python: &job_python
   docker:
     - image: cimg/python:3.8.13-node
@@ -132,12 +132,12 @@ jobs:
       - run:
           name: "Checking contract recovery modifiers"
           command: npm run check:recoverymods
-      - run:
-          name: "Checking contract versions"
-          command: npm run check:versioning
-      - run:
-          name: "Provision token contracts again (needed after version check script)"
-          command: npm run provision:token:contracts
+      # - run:
+      #     name: "Checking contract versions"
+      #     command: npm run check:versioning
+      # - run:
+      #     name: "Provision token contracts again (needed after version check script)"
+      #     command: npm run provision:token:contracts
       - run:
           name: "Checking contract authDomain modifiers"
           command: npm run check:auth
