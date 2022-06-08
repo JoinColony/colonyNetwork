@@ -122,6 +122,7 @@
     "shortid": "^2.2.16",
     "solhint": "^3.3.7",
     "solidity-coverage": "^0.8.0-beta.1",
+    "@solidity-parser/parser": "^0.14.1",
     "solidity-steamroller": "^1.1.0",
     "truffle": "^5.5.30",
     "truffle-contract-size": "^2.0.1",
