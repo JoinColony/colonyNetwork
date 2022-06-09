@@ -28,11 +28,22 @@ import "./ColonyExtensionMeta.sol";
 
 contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
 
+  // Events
+
+  event ExpenditureMadeViaStake(address indexed creator, uint256 expenditureId, uint256 stake);
+
+  // Datatypes
+
+  struct Stake {
+    address creator;
+    uint256 amount;
+  }
+
   // Storage
 
   uint256 stakeFraction;
 
-  mapping (address => mapping (uint256 => uint256)) stakes;
+  mapping (uint256 => Stake) stakes;
 
   // Modifiers
 
@@ -92,39 +103,20 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     public
   {
     uint256 domainRep = getReputationFromProof(_domainId, _key, _value, _branchMask, _siblings);
-    uint256 stake = wmul(domainRep, stakeFraction);
+    uint256 stakeAmount = wmul(domainRep, stakeFraction);
 
-    colony.obligateStake(msgSender(), _domainId, stake);
+    colony.obligateStake(msgSender(), _domainId, stakeAmount);
     uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
 
-    stakes[msgSender()][expenditureId] = stake;
+    stakes[expenditureId] = Stake({ creator: msgSender(), amount: stakeAmount });
     colony.transferExpenditure(expenditureId, msgSender());
-  }
 
-  function slashStake(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _expenditureId,
-    address _owner
-  )
-    public
-  {
-    uint256 stake = stakes[_owner][_expenditureId];
-    require(stake > 0, "expenditure-utils-nothing-to-slash");
-
-    uint256 expenditureDomainId = colony.getExpenditure(_expenditureId).domainId;
-    require(
-      colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Arbitration, _childSkillIndex, expenditureDomainId),
-      "expenditure-utils-caller-not-arbitration"
-    );
-
-    delete stakes[_owner][_expenditureId];
-    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), _owner, expenditureDomainId, stake, address(0x0));
+    emit ExpenditureMadeViaStake(msgSender(), expenditureId, stakeAmount);
   }
 
   function reclaimStake(uint256 _expenditureId) public {
-    uint256 stake = stakes[msgSender()][_expenditureId];
-    require(stake > 0, "expenditure-utils-nothing-to-claim");
+    Stake storage stake = stakes[_expenditureId];
+    require(stake.amount > 0, "expenditure-utils-nothing-to-claim");
 
     ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
     require(
@@ -133,8 +125,43 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
       "expenditure-utils-expenditure-invalid-state"
     );
 
-    delete stakes[msgSender()][_expenditureId];
-    colony.deobligateStake(msgSender(), expenditure.domainId, stake);
+    colony.deobligateStake(stake.creator, expenditure.domainId, stake.amount);
+
+  // slither-disable-next-line reentrancy-no-eth
+    delete stakes[_expenditureId];
+  }
+
+  function slashStake(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _expenditureId,
+    bool _penalizeRep
+  )
+    public
+  {
+    Stake storage stake = stakes[_expenditureId];
+    require(stake.amount > 0, "expenditure-utils-nothing-to-slash");
+
+    uint256 expenditureDomainId = colony.getExpenditure(_expenditureId).domainId;
+    require(
+      colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Arbitration, _childSkillIndex, expenditureDomainId),
+      "expenditure-utils-caller-not-arbitration"
+    );
+
+    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), stake.creator, expenditureDomainId, stake.amount, address(0x0));
+
+    if (_penalizeRep) {
+      colony.emitDomainReputationPenalty(
+        _permissionDomainId,
+        _childSkillIndex,
+        expenditureDomainId,
+        stake.creator,
+        -int256(stake.amount)
+      );
+    }
+
+  // slither-disable-next-line reentrancy-no-eth
+    delete stakes[_expenditureId];
   }
 
   uint256 constant EXPENDITURESLOTS_SLOT = 26;

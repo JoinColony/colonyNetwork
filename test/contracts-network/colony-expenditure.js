@@ -506,6 +506,45 @@ contract("Colony Expenditure", (accounts) => {
       payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT2, otherToken.address);
       expect(payout).to.eq.BN(WAD.muln(40));
     });
+
+    it("will not update values if empty arrays are passed", async () => {
+      await colony.setExpenditureValues(expenditureId, [], [], [], [], [], [], [], [], [], [[], []], [[], []], { from: ADMIN });
+
+      let slot;
+      slot = await colony.getExpenditureSlot(expenditureId, SLOT0);
+      console.log(slot);
+      expect(slot.recipient).to.equal(ADDRESS_ZERO);
+      expect(slot.skills[0]).to.be.zero;
+      expect(slot.claimDelay).to.be.zero;
+      expect(slot.payoutModifier).to.be.zero;
+
+      slot = await colony.getExpenditureSlot(expenditureId, SLOT1);
+      expect(slot.recipient).to.equal(ADDRESS_ZERO);
+      expect(slot.skills[0]).to.be.zero;
+      expect(slot.claimDelay).to.be.zero;
+      expect(slot.payoutModifier).to.be.zero;
+
+      slot = await colony.getExpenditureSlot(expenditureId, SLOT2);
+      expect(slot.recipient).to.equal(ADDRESS_ZERO);
+      expect(slot.skills[0]).to.be.zero;
+      expect(slot.claimDelay).to.be.zero;
+      expect(slot.payoutModifier).to.be.zero;
+
+      let payout;
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
+      expect(payout).to.be.zero;
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT1, token.address);
+      expect(payout).to.be.zero;
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT2, token.address);
+      expect(payout).to.be.zero;
+
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, otherToken.address);
+      expect(payout).to.be.zero;
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT1, otherToken.address);
+      expect(payout).to.be.zero;
+      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT2, otherToken.address);
+      expect(payout).to.be.zero;
+    });
   });
 
   describe("when locking expenditures", () => {
