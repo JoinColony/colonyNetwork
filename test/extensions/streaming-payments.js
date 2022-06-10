@@ -386,6 +386,18 @@ contract("Streaming Payments", (accounts) => {
       expect(streamingPayment.endTime).to.eq.BN(blockTime);
     });
 
+    it("can cancel a streaming payment before the start time", async () => {
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      const tx = await streamingPayments.cancel(1, UINT256_MAX, streamingPaymentId);
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+
+      const streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
+      expect(streamingPayment.endTime).to.eq.BN(blockTime);
+      expect(streamingPayment.startTime).to.eq.BN(blockTime);
+    });
+
     it("can cancel a streaming payment and claim any balance owed", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
@@ -432,7 +444,7 @@ contract("Streaming Payments", (accounts) => {
       expect(streamingPayment.endTime).to.equal((blockTime + SECONDS_PER_DAY * 2).toString());
 
       const paymentToken = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
-      expect(paymentToken.amountEntitledFromStart).to.equal((WAD * 2).toString());
+      expect(paymentToken.amountClaimedFromStart).to.equal((WAD * 2).toString());
     });
 
     it("multiple cancel-and-waives of a streaming payments do not change the end time", async () => {
@@ -468,14 +480,17 @@ contract("Streaming Payments", (accounts) => {
       await checkErrorRevert(streamingPayments.cancelAndWaive(streamingPaymentId, [token.address]), "streaming-payments-not-recipient");
     });
 
-    it("cannot cancel-and-waive payment before the start time", async () => {
+    it("can cancel-and-waive payment before the start time", async () => {
       await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
-      await checkErrorRevert(
-        streamingPayments.cancelAndWaive(streamingPaymentId, [token.address], { from: USER1 }),
-        "streaming-payments-not-started"
-      );
+      const tx = await streamingPayments.cancelAndWaive(streamingPaymentId, [token.address], { from: USER1 });
+
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+
+      const streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
+      expect(streamingPayment.endTime).to.equal(blockTime.toString());
+      expect(streamingPayment.startTime).to.equal(blockTime.toString());
     });
 
     it("can claim a streaming payment multiple times", async () => {

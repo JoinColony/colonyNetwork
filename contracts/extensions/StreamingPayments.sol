@@ -49,7 +49,9 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   struct PaymentToken {
     uint256 amount;
-    uint256 amountEntitledFromStart;
+    // DEV: Note that this might not necessarily be the amount claimed from the start if amount has
+    // been changed in the lifecycle of the payment.
+    uint256 amountClaimedFromStart;
   }
 
   uint256 numStreamingPayments;
@@ -182,11 +184,11 @@ contract StreamingPayments is ColonyExtensionMeta {
     for (uint256 i; i < _tokens.length; i++) {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
 
-      uint256 amountEntitled = getAmountEntitled(_id, _tokens[i]);
-      uint256 amountSinceLastClaim = sub(amountEntitled, paymentToken.amountEntitledFromStart);
+      uint256 amountEntitled = getAmountEntitledFromStart(_id, _tokens[i]);
+      uint256 amountSinceLastClaim = sub(amountEntitled, paymentToken.amountClaimedFromStart);
       amountsToClaim[i] = getAmountClaimable(_id, _tokens[i], amountSinceLastClaim);
+      paymentToken.amountClaimedFromStart = add(paymentToken.amountClaimedFromStart, amountsToClaim[i]);
       anythingToClaim = anythingToClaim || amountsToClaim[i] > 0;
-      paymentToken.amountEntitledFromStart = add(paymentToken.amountEntitledFromStart, amountsToClaim[i]);
     }
 
     // Skip expenditure setup if there's nothing to claim
@@ -218,7 +220,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _fundingChildSkillIndex The index linking the fundingPermissionDomainId to the domainId
   /// @param _id The id of the streaming payment
   /// @param _token The address of the token
-  /// @param _amount The new amount to pay out
+  /// @param _amount The amount to pay out
   function addToken(
     uint256 _fundingPermissionDomainId,
     uint256 _fundingChildSkillIndex,
@@ -264,11 +266,11 @@ contract StreamingPayments is ColonyExtensionMeta {
     claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id, toArray(_token));
 
     PaymentToken storage paymentToken = paymentTokens[_id][_token];
-    require(paymentToken.amountEntitledFromStart >= getAmountEntitled(_id, _token), "streaming-payments-insufficient-funds");
+    require(paymentToken.amountClaimedFromStart >= getAmountEntitledFromStart(_id, _token), "streaming-payments-insufficient-funds");
     paymentToken.amount = _amount;
 
     // Update 'claimed' as if we've had this rate since the beginning
-    paymentToken.amountEntitledFromStart = getAmountEntitled(_id, _token);
+    paymentToken.amountClaimedFromStart = getAmountEntitledFromStart(_id, _token);
 
     emit PaymentTokenUpdated(msgSender(), _id, _token, _amount);
   }
@@ -330,6 +332,10 @@ contract StreamingPayments is ColonyExtensionMeta {
     public
     validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, streamingPayments[_id].domainId)
   {
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
+    if (streamingPayment.startTime > block.timestamp) {
+      streamingPayment.startTime = block.timestamp;
+    }
     setEndTime(_adminPermissionDomainId, _adminChildSkillIndex, _id, block.timestamp);
   }
 
@@ -342,16 +348,19 @@ contract StreamingPayments is ColonyExtensionMeta {
   )
     public
   {
-    // slither-disable-next-line incorrect-equality
-    require(streamingPayments[_id].recipient == msgSender(), "streaming-payments-not-recipient");
     StreamingPayment storage streamingPayment = streamingPayments[_id];
-    require(streamingPayment.startTime <= block.timestamp, "streaming-payments-not-started");
+    // slither-disable-next-line incorrect-equality
+    require(streamingPayment.recipient == msgSender(), "streaming-payments-not-recipient");
+
+    if (streamingPayment.startTime > block.timestamp) {
+      streamingPayment.startTime = block.timestamp;
+    }
 
     streamingPayment.endTime = min(streamingPayment.endTime, block.timestamp);
 
     for (uint256 i; i < _tokens.length; i++) {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
-      paymentToken.amountEntitledFromStart = getAmountEntitled(_id, _tokens[i]);
+      paymentToken.amountClaimedFromStart = getAmountEntitledFromStart(_id, _tokens[i]);
     }
   }
 
@@ -369,15 +378,13 @@ contract StreamingPayments is ColonyExtensionMeta {
     return numStreamingPayments;
   }
 
-  function getAmountEntitled(uint256 _id, address _token) public view returns (uint256) {
+  function getAmountEntitledFromStart(uint256 _id, address _token) public view returns (uint256) {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     PaymentToken storage paymentToken = paymentTokens[_id][_token];
     if (streamingPayment.startTime >= block.timestamp){
       return 0;
     }
-    // if (streamingPayment.endTime <= block.timestamp){
-    //   return wmul(paymentToken.amount;
-    // }
+
     uint256 durationToClaim = sub(min(block.timestamp, streamingPayment.endTime), streamingPayment.startTime);
     if (durationToClaim == 0) {
       return 0;
@@ -390,14 +397,14 @@ contract StreamingPayments is ColonyExtensionMeta {
   function getAmountClaimable(
     uint256 _fundingPotId,
     address _token,
-    uint256 _amountEntitled
+    uint256 _amountEntitledToClaimNow
   )
     internal
     view
     returns (uint256)
   {
     uint256 domainBalance = colony.getFundingPotBalance(_fundingPotId, _token);
-    return min(domainBalance, _amountEntitled);
+    return min(domainBalance, _amountEntitledToClaimNow);
   }
 
   function setupExpenditure(
