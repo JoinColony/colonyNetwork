@@ -42,6 +42,7 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
   // Storage
 
   uint256 stakeFraction;
+  uint256 repPenaltyFraction;
 
   mapping (uint256 => Stake) stakes;
 
@@ -88,7 +89,13 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
   // Public
 
   function setStakeFraction(uint256 _stakeFraction) public onlyRoot {
+    require(_stakeFraction <= WAD, "expenditure-utils-value-too-large");
     stakeFraction = _stakeFraction;
+  }
+
+  function setRepPenaltyFraction(uint256 _repPenaltyFraction) public onlyRoot {
+    require(_repPenaltyFraction <= WAD, "expenditure-utils-value-too-large");
+    repPenaltyFraction = _repPenaltyFraction;
   }
 
   function makeExpenditureWithStake(
@@ -134,29 +141,35 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
   function slashStake(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
-    uint256 _expenditureId,
-    bool _penalizeRep
+    uint256 _expenditureId
   )
     public
   {
     Stake storage stake = stakes[_expenditureId];
     require(stake.amount > 0, "expenditure-utils-nothing-to-slash");
 
-    uint256 expenditureDomainId = colony.getExpenditure(_expenditureId).domainId;
+    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
+
     require(
-      colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Arbitration, _childSkillIndex, expenditureDomainId),
+      expenditure.status == ColonyDataTypes.ExpenditureStatus.Locked,
+      "expenditure-utils-expenditure-not-locked"
+    );
+
+    require(
+      colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Arbitration, _childSkillIndex, expenditure.domainId),
       "expenditure-utils-caller-not-arbitration"
     );
 
-    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), stake.creator, expenditureDomainId, stake.amount, address(0x0));
+    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), stake.creator, expenditure.domainId, stake.amount, address(0x0));
 
-    if (_penalizeRep) {
+    if (repPenaltyFraction > 0) {
+      int256 repPenalty = -int256(wmul(stake.amount, repPenaltyFraction));
       colony.emitDomainReputationPenalty(
         _permissionDomainId,
         _childSkillIndex,
-        expenditureDomainId,
+        expenditure.domainId,
         stake.creator,
-        -int256(stake.amount)
+        repPenalty
       );
     }
 
@@ -209,6 +222,16 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
       );
     }
   }
+
+// View
+
+function getStakeFraction() public view returns (uint256) {
+  return stakeFraction;
+}
+
+function getRepPenaltyFraction() public view returns (uint256) {
+  return repPenaltyFraction;
+}
 
 // Internal
 
