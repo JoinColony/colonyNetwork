@@ -444,7 +444,7 @@ contract("Streaming Payments", (accounts) => {
       expect(streamingPayment.endTime).to.equal((blockTime + SECONDS_PER_DAY * 2).toString());
 
       const paymentToken = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
-      expect(paymentToken.amountClaimedFromStart).to.equal((WAD * 2).toString());
+      expect(paymentToken.pseudoAmountClaimedFromStart).to.equal((WAD * 2).toString());
     });
 
     it("multiple cancel-and-waives of a streaming payments do not change the end time", async () => {

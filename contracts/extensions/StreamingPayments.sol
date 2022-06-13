@@ -51,7 +51,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 amount;
     // DEV: Note that this might not necessarily be the amount claimed from the start if amount has
     // been changed in the lifecycle of the payment.
-    uint256 amountClaimedFromStart;
+    uint256 pseudoAmountClaimedFromStart;
   }
 
   uint256 numStreamingPayments;
@@ -185,9 +185,9 @@ contract StreamingPayments is ColonyExtensionMeta {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
 
       uint256 amountEntitled = getAmountEntitledFromStart(_id, _tokens[i]);
-      uint256 amountSinceLastClaim = sub(amountEntitled, paymentToken.amountClaimedFromStart);
+      uint256 amountSinceLastClaim = sub(amountEntitled, paymentToken.pseudoAmountClaimedFromStart);
       amountsToClaim[i] = getAmountClaimable(_id, _tokens[i], amountSinceLastClaim);
-      paymentToken.amountClaimedFromStart = add(paymentToken.amountClaimedFromStart, amountsToClaim[i]);
+      paymentToken.pseudoAmountClaimedFromStart = add(paymentToken.pseudoAmountClaimedFromStart, amountsToClaim[i]);
       anythingToClaim = anythingToClaim || amountsToClaim[i] > 0;
     }
 
@@ -266,11 +266,11 @@ contract StreamingPayments is ColonyExtensionMeta {
     claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id, toArray(_token));
 
     PaymentToken storage paymentToken = paymentTokens[_id][_token];
-    require(paymentToken.amountClaimedFromStart >= getAmountEntitledFromStart(_id, _token), "streaming-payments-insufficient-funds");
+    require(paymentToken.pseudoAmountClaimedFromStart >= getAmountEntitledFromStart(_id, _token), "streaming-payments-insufficient-funds");
     paymentToken.amount = _amount;
 
     // Update 'claimed' as if we've had this rate since the beginning
-    paymentToken.amountClaimedFromStart = getAmountEntitledFromStart(_id, _token);
+    paymentToken.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(_id, _token);
 
     emit PaymentTokenUpdated(msgSender(), _id, _token, _amount);
   }
@@ -360,7 +360,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
     for (uint256 i; i < _tokens.length; i++) {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
-      paymentToken.amountClaimedFromStart = getAmountEntitledFromStart(_id, _tokens[i]);
+      paymentToken.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(_id, _tokens[i]);
     }
   }
 
