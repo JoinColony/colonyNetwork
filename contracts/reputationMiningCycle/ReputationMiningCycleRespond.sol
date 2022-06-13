@@ -41,11 +41,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     // Check the binary search result has been confirmed
     Submission storage submission = reputationHashSubmissions[disputeRounds[_round][_idx].firstSubmitter];
     require(
+      disputeRounds[_round][_idx].challengeStepCompleted >= 2 &&
       2**(disputeRounds[_round][_idx].challengeStepCompleted-2)>submission.jrhNLeaves,
       "colony-reputation-mining-binary-search-result-not-confirmed"
     );
     // Check that we have not already responded to the challenge
     require(
+      disputeRounds[_round][_idx].challengeStepCompleted >= 3 &&
       2**(disputeRounds[_round][_idx].challengeStepCompleted-3)<=submission.jrhNLeaves,
       "colony-reputation-mining-challenge-already-responded"
     );
