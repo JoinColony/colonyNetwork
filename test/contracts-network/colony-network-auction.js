@@ -107,7 +107,7 @@ contract("Colony Network Auction", (accounts) => {
       const args = getTokenArgs();
       const otherToken = await Token.new(...args);
       await otherToken.unlock();
-      await checkErrorRevert(colonyNetwork.startTokenAuction(otherToken.address));
+      await checkErrorRevert(colonyNetwork.startTokenAuction(otherToken.address), "Panic: Failed assertion");
     });
 
     it("cannot bid if not started", async () => {

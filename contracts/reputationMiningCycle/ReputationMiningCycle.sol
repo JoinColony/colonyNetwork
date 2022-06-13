@@ -547,7 +547,9 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   function startMemberOfPair(uint256 _roundNumber, uint256 _index) internal {
     Submission storage submission = reputationHashSubmissions[disputeRounds[_roundNumber][_index].firstSubmitter];
     disputeRounds[_roundNumber][_index].lastResponseTimestamp = block.timestamp;
-    disputeRounds[_roundNumber][_index].upperBound = submission.jrhNLeaves - 1;
+    if (submission.jrhNLeaves != 0) {
+      disputeRounds[_roundNumber][_index].upperBound = submission.jrhNLeaves - 1;
+    }
     disputeRounds[_roundNumber][_index].lowerBound = 0;
     disputeRounds[_roundNumber][_index].targetHashDuringSearch = submission.jrh;
     if (submission.jrhNLeaves != 0) {
