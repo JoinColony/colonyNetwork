@@ -184,8 +184,8 @@ contract StreamingPayments is ColonyExtensionMeta {
     for (uint256 i; i < _tokens.length; i++) {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
 
-      uint256 amountEntitled = getAmountEntitledFromStart(_id, _tokens[i]);
-      uint256 amountSinceLastClaim = sub(amountEntitled, paymentToken.pseudoAmountClaimedFromStart);
+      uint256 amountEntitledFromStart = getAmountEntitledFromStart(_id, _tokens[i]);
+      uint256 amountSinceLastClaim = sub(amountEntitledFromStart, paymentToken.pseudoAmountClaimedFromStart);
       amountsToClaim[i] = getAmountClaimable(_id, _tokens[i], amountSinceLastClaim);
       paymentToken.pseudoAmountClaimedFromStart = add(paymentToken.pseudoAmountClaimedFromStart, amountsToClaim[i]);
       anythingToClaim = anythingToClaim || amountsToClaim[i] > 0;
