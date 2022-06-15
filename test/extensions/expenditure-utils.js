@@ -248,6 +248,11 @@ contract("ExpenditureUtils", (accounts) => {
 
       const userLock = await tokenLocking.getUserLock(token.address, USER0);
       expect(userLock.balance).to.eq.BN(WAD.sub(requiredStake));
+
+      // The expenditure is automatically cancelled
+      const cancelled = 1;
+      const expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.status).to.eq.BN(cancelled);
     });
 
     it("can slash the stake and give a reputation penalty", async () => {
@@ -276,20 +281,14 @@ contract("ExpenditureUtils", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
-      await checkErrorRevert(
-        expenditureUtils.slashStake(1, UINT256_MAX, expenditureId, { from: USER1 }),
-        "expenditure-utils-caller-not-arbitration"
-      );
+      await checkErrorRevert(expenditureUtils.slashStake(1, UINT256_MAX, expenditureId, { from: USER1 }), "expenditure-utils-caller-not-arbitration");
     });
 
     it("cannot slash the stake unless the expenditure is in the locked state", async () => {
       await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
 
-      await checkErrorRevert(
-        expenditureUtils.slashStake(1, UINT256_MAX, expenditureId, { from: USER1 }),
-        "expenditure-utils-expenditure-not-locked"
-      );
+      await checkErrorRevert(expenditureUtils.slashStake(1, UINT256_MAX, expenditureId, { from: USER1 }), "expenditure-utils-expenditure-not-locked");
     });
 
     it("if ownership is transferred, the original owner is still slashed", async () => {

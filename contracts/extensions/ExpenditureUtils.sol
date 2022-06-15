@@ -173,10 +173,21 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
       );
     }
 
-  // slither-disable-next-line reentrancy-no-eth
+
+    // Get the slot storing 0x{owner}{state}
+    bool[] memory mask = new bool[](1);
+    mask[0] = ARRAY;
+    bytes32[] memory keys = new bytes32[](1);
+    keys[0] = bytes32(uint256(0));
+
+    bytes32 value = bytes32(bytes20(expenditure.owner)) >> 0x58 | bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled));
+    colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, EXPENDITURE_SLOT, mask, keys, value);
+
+    // slither-disable-next-line reentrancy-no-eth
     delete stakes[_expenditureId];
   }
 
+  uint256 constant EXPENDITURE_SLOT = 25;
   uint256 constant EXPENDITURESLOTS_SLOT = 26;
   uint256 constant PAYOUT_MODIFIER_OFFSET = 2;
   bool constant MAPPING = false;
