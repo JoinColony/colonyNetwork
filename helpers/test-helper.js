@@ -189,13 +189,13 @@ exports.checkErrorRevert = async function checkErrorRevert(promise, errorMessage
     if (!receipt) {
       const txid = await promise;
       receipt = await exports.web3GetTransactionReceipt(txid);
+      // Check the receipt `status` to ensure transaction failed.
+      expect(receipt.status, `Transaction succeeded, but expected error ${errorMessage}`).to.be.false;
     }
   } catch (err) {
-    ({ receipt, reason } = err);
+    ({ reason } = err);
     expect(reason).to.equal(errorMessage);
   }
-  // Check the receipt `status` to ensure transaction failed.
-  expect(receipt.status, `Transaction succeeded, but expected error ${errorMessage}`).to.be.false;
 };
 
 exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, errorMessage) {
