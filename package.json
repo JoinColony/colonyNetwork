@@ -113,10 +113,10 @@
     "rimraf": "^3.0.0",
     "shortid": "^2.2.14",
     "solhint": "^3.2.2",
-    "solidity-coverage": "^0.7.21",
+    "solidity-coverage": "^0.8.0-beta.1",
     "solidity-parser-diligence": "^0.4.18",
     "solidity-steamroller": "^1.1.0",
-    "truffle": "5.5.11",
+    "truffle": "^5.5.18",
     "truffle-hdwallet-provider": "^1.0.9",
     "web3-utils": "^1.2.9"
   },
