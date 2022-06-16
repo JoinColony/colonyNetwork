@@ -6,7 +6,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD, SECONDS_PER_DAY } = require("../../helpers/constants");
+const { UINT256_MAX, WAD, SECONDS_PER_DAY, ADDRESS_ZERO } = require("../../helpers/constants");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 const { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, getBlockTime, forwardTime } = require("../../helpers/test-helper");
 
@@ -195,6 +195,13 @@ contract("Token Supplier", (accounts) => {
       expect(tokenIssuanceRate).to.eq.BN(WAD);
       expect(lastPinged).to.eq.BN(blockTime);
       expect(lastRateUpdate).to.eq.BN(blockTime);
+    });
+
+    it("can't use the network-level functions if installed via ColonyNetwork", async () => {
+      await checkErrorRevert(tokenSupplier.install(ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(tokenSupplier.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(tokenSupplier.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(tokenSupplier.uninstall({ from: USER1 }), "ds-auth-unauthorized");
     });
   });
 

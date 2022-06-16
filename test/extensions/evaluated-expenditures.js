@@ -5,7 +5,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD } = require("../../helpers/constants");
+const { UINT256_MAX, WAD, ADDRESS_ZERO } = require("../../helpers/constants");
 const { checkErrorRevert, web3GetCode } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
@@ -75,6 +75,13 @@ contract("EvaluatedExpenditure", (accounts) => {
       await checkErrorRevert(colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER0 });
+    });
+
+    it("can't use the network-level functions if installed via ColonyNetwork", async () => {
+      await checkErrorRevert(evaluatedExpenditure.install(ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(evaluatedExpenditure.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(evaluatedExpenditure.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(evaluatedExpenditure.uninstall({ from: USER1 }), "ds-auth-unauthorized");
     });
   });
 
