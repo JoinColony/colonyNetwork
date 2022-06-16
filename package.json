@@ -1,6 +1,6 @@
 {
   "name": "@colony.io/colony-network-contracts",
-  "version": "1.0.0",
+  "version": "1.22.5",
   "description": "Contracts for Colony Network",
   "scripts": {
     "solhint-staged": "bash ./scripts/solhint.sh",
