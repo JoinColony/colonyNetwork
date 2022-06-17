@@ -1,5 +1,5 @@
 const ethers = require("ethers");
-const request = require("request-promise");
+const axios = require("axios");
 
 /**
  * Update the gas estimate
@@ -37,7 +37,7 @@ const updateGasEstimate = async function (_type, chainId, adapter) {
 
   // Get latest from whichever oracle
   try {
-    const gasEstimates = await request(options);
+    const gasEstimates = await axios.get(options);
     let gasPrice;
     if (gasEstimates[type]) {
       gasPrice = ethers.utils.hexlify((gasEstimates[type] / factor) * 1e9);
