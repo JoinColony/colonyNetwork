@@ -133,16 +133,14 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     delete stakes[_expenditureId];
   }
 
-  function slashStake(
+  function cancelExpenditure(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
-    uint256 _expenditureId
+    uint256 _expenditureId,
+    bool _punish
   )
     public
   {
-    Stake storage stake = stakes[_expenditureId];
-    require(stake.amount > 0, "expenditure-utils-nothing-to-slash");
-
     ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
 
     require(
@@ -155,20 +153,34 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
       "expenditure-utils-caller-not-arbitration"
     );
 
-    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), stake.creator, expenditure.domainId, stake.amount, address(0x0));
+    if (_punish) {
+      Stake storage stake = stakes[_expenditureId];
+      require(stake.amount > 0, "expenditure-utils-nothing-to-slash");
 
-    colony.emitDomainReputationPenalty(
-      _permissionDomainId,
-      _childSkillIndex,
-      expenditure.domainId,
-      stake.creator,
-      -int256(stake.amount)
-    );
+      colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), stake.creator, expenditure.domainId, stake.amount, address(0x0));
 
-    cancelExpenditure(_permissionDomainId, _childSkillIndex,_expenditureId, expenditure.owner);
+      colony.emitDomainReputationPenalty(
+        _permissionDomainId,
+        _childSkillIndex,
+        expenditure.domainId,
+        stake.creator,
+        -int256(stake.amount)
+      );
 
-    // slither-disable-next-line reentrancy-no-eth
-    delete stakes[_expenditureId];
+      // slither-disable-next-line reentrancy-no-eth
+      delete stakes[_expenditureId];
+    }
+
+    // Get the slot storing 0x{owner}{state}
+    bool[] memory mask = new bool[](1);
+    mask[0] = ARRAY;
+    bytes32[] memory keys = new bytes32[](1);
+    keys[0] = bytes32(uint256(0));
+
+    // Prepare the new 0x{owner}{state} value
+    bytes32 value = bytes32(bytes20(expenditure.owner)) >> 0x58 | bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled));
+
+    colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, EXPENDITURE_SLOT, mask, keys, value);
   }
 
   uint256 constant EXPENDITURE_SLOT = 25;
@@ -225,26 +237,6 @@ function getStakeFraction() public view returns (uint256) {
 }
 
 // Internal
-
-function cancelExpenditure(
-  uint256 _permissionDomainId,
-  uint256 _childSkillIndex,
-  uint256 _expenditureId,
-  address _owner
-)
-  internal
-{
-  // Get the slot storing 0x{owner}{state}
-  bool[] memory mask = new bool[](1);
-  mask[0] = ARRAY;
-  bytes32[] memory keys = new bytes32[](1);
-  keys[0] = bytes32(uint256(0));
-
-  // Prepare the new 0x{owner}{state} value
-  bytes32 value = bytes32(bytes20(_owner)) >> 0x58 | bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled));
-
-  colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, EXPENDITURE_SLOT, mask, keys, value);
-}
 
 function getReputationFromProof(
     uint256 _domainId,
