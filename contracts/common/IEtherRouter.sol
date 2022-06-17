@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.8.14; // ignore-swc-103
+pragma solidity >=0.8.15; // ignore-swc-103
 pragma experimental ABIEncoderV2;
 
 // Note that we have deliberately left the fallback function off here to accommodate

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Mostly taken from Uniswap/v3-periphery repository, with payable removed and solidity version
 // adjustments
-pragma solidity 0.7.3;
+pragma solidity 0.8.15;
 pragma experimental "ABIEncoderV2";
 import "./MetaTransactionMsgSender.sol";
 
