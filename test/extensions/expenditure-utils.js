@@ -171,19 +171,6 @@ contract("ExpenditureUtils", (accounts) => {
       await checkErrorRevert(expenditureUtils.setStakeFraction(WAD.addn(1), { from: USER0 }), "expenditure-utils-value-too-large");
     });
 
-    it("can set the reputation penalty fraction", async () => {
-      await expenditureUtils.setRepPenaltyFraction(WAD, { from: USER0 });
-
-      const repPenaltyFraction = await expenditureUtils.getRepPenaltyFraction();
-      expect(repPenaltyFraction).to.eq.BN(WAD);
-
-      // But not if not root!
-      await checkErrorRevert(expenditureUtils.setRepPenaltyFraction(WAD, { from: USER1 }), "expenditure-utils-caller-not-root");
-
-      // Also not greater than WAD!
-      await checkErrorRevert(expenditureUtils.setRepPenaltyFraction(WAD.addn(1), { from: USER0 }), "expenditure-utils-value-too-large");
-    });
-
     it("can create an expenditure by submitting a stake", async () => {
       await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
@@ -259,9 +246,6 @@ contract("ExpenditureUtils", (accounts) => {
       await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
-
-      // Give a penalty equal to 100% of the stake
-      await expenditureUtils.setRepPenaltyFraction(WAD, { from: USER0 });
 
       await expenditureUtils.slashStake(1, UINT256_MAX, expenditureId);
 

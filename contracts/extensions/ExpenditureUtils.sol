@@ -93,11 +93,6 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     stakeFraction = _stakeFraction;
   }
 
-  function setRepPenaltyFraction(uint256 _repPenaltyFraction) public onlyRoot {
-    require(_repPenaltyFraction <= WAD, "expenditure-utils-value-too-large");
-    repPenaltyFraction = _repPenaltyFraction;
-  }
-
   function makeExpenditureWithStake(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -162,26 +157,15 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
 
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), stake.creator, expenditure.domainId, stake.amount, address(0x0));
 
-    if (repPenaltyFraction > 0) {
-      int256 repPenalty = -int256(wmul(stake.amount, repPenaltyFraction));
-      colony.emitDomainReputationPenalty(
-        _permissionDomainId,
-        _childSkillIndex,
-        expenditure.domainId,
-        stake.creator,
-        repPenalty
-      );
-    }
+    colony.emitDomainReputationPenalty(
+      _permissionDomainId,
+      _childSkillIndex,
+      expenditure.domainId,
+      stake.creator,
+      -int256(stake.amount)
+    );
 
-
-    // Get the slot storing 0x{owner}{state}
-    bool[] memory mask = new bool[](1);
-    mask[0] = ARRAY;
-    bytes32[] memory keys = new bytes32[](1);
-    keys[0] = bytes32(uint256(0));
-
-    bytes32 value = bytes32(bytes20(expenditure.owner)) >> 0x58 | bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled));
-    colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, EXPENDITURE_SLOT, mask, keys, value);
+    cancelExpenditure(_permissionDomainId, _childSkillIndex,_expenditureId, expenditure.owner);
 
     // slither-disable-next-line reentrancy-no-eth
     delete stakes[_expenditureId];
@@ -240,11 +224,27 @@ function getStakeFraction() public view returns (uint256) {
   return stakeFraction;
 }
 
-function getRepPenaltyFraction() public view returns (uint256) {
-  return repPenaltyFraction;
-}
-
 // Internal
+
+function cancelExpenditure(
+  uint256 _permissionDomainId,
+  uint256 _childSkillIndex,
+  uint256 _expenditureId,
+  address _owner
+)
+  internal
+{
+  // Get the slot storing 0x{owner}{state}
+  bool[] memory mask = new bool[](1);
+  mask[0] = ARRAY;
+  bytes32[] memory keys = new bytes32[](1);
+  keys[0] = bytes32(uint256(0));
+
+  // Prepare the new 0x{owner}{state} value
+  bytes32 value = bytes32(bytes20(_owner)) >> 0x58 | bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled));
+
+  colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, EXPENDITURE_SLOT, mask, keys, value);
+}
 
 function getReputationFromProof(
     uint256 _domainId,
