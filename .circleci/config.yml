@@ -116,6 +116,9 @@ jobs:
           name: "Linting Solidity"
           command: yarn run solhint
       - run:
+          name: "Check git hooks run"
+          command: yarn run check:gitchanges
+      - run:
           name: "Checking contract storage variables"
           command: yarn run check:storagevars
       - run:
