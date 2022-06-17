@@ -1,6 +1,6 @@
 // Judiciously tweaked from ../../lib/dappsys/base.sol
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "./../../lib/dappsys/erc20.sol";
 import "./../../lib/dappsys/math.sol";

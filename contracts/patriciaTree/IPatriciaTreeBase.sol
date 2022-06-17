@@ -1,4 +1,4 @@
-pragma solidity >=0.8.14; // ignore-swc-103
+pragma solidity >=0.8.15; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
 import {Data} from "./Data.sol";

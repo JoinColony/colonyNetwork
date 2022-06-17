@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.15;
 pragma experimental ABIEncoderV2;
 
 import "./../colony/ColonyDataTypes.sol";
@@ -87,7 +87,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
-    selfdestruct(address(uint160(address(colony))));
+    selfdestruct(payable(address(colony)));
   }
 
   // Public
