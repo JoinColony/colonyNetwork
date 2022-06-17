@@ -9,14 +9,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.19.0",
-    "discord.js": "^12.5.3",
-    "ethers": "^5.4.1",
-    "express": "^4.17.1",
+    "body-parser": "^1.20.0",
+    "discord.js": "^13.8.0",
+    "ethers": "^5.6.8",
+    "express": "^4.18.1",
     "jsonfile": "^6.1.0",
     "slack": "^11.0.2",
-    "sqlite": "^4.0.23",
-    "sqlite3": "^5.0.3",
-    "yargs": "^17.0.1"
+    "sqlite": "^4.1.1",
+    "sqlite3": "^5.0.8",
+    "yargs": "^17.5.1"
   }
 }

@@ -10,8 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.27.2",
-    "discord.js": "^12.2.0",
-    "ethers": "^5.5.1",
+    "discord.js": "^13.8.0",
+    "ethers": "^5.6.8",
     "jsonfile": "^6.1.0",
     "slack": "^11.0.2"
   }
