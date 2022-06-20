@@ -265,16 +265,6 @@ contract("ExpenditureUtils", (accounts) => {
       );
     });
 
-    it("cannot slash the stake unless the expenditure is in the locked state", async () => {
-      await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
-      const expenditureId = await colony.getExpenditureCount();
-
-      await checkErrorRevert(
-        expenditureUtils.cancelExpenditure(1, UINT256_MAX, expenditureId, true, { from: USER1 }),
-        "expenditure-utils-expenditure-not-locked"
-      );
-    });
-
     it("can cancel the expenditure without penalty", async () => {
       await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
