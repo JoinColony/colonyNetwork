@@ -144,11 +144,6 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
 
     require(
-      expenditure.status == ColonyDataTypes.ExpenditureStatus.Locked,
-      "expenditure-utils-expenditure-not-locked"
-    );
-
-    require(
       colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Arbitration, _childSkillIndex, expenditure.domainId),
       "expenditure-utils-caller-not-arbitration"
     );
