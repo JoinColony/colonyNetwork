@@ -34,7 +34,7 @@ For simple interactions, [Remix](http://remix-alpha.ethereum.org/) is a good lig
 Rather than import the entire set of contracts into remix, use the included `solidity-steamroller` to flatten the needed interface contracts to the `build/flattened/` directory:
 
 ```
-$ yarn flatten:contracts
+$ npm run flatten:contracts
 ```
 
 Navigate to `colonyNetwork/build/flattened/` to find the contracts you need to import to Remix.
@@ -61,7 +61,7 @@ goerli: {
 
 Then, start up the truffle console and connect to testnet:
 ```
-$ yarn truffle console --network goerli
+$ npx truffle console --network goerli
 ```
 In the truffle console, instantiate the IColonyNetwork interface on Görli:
 ```
@@ -99,12 +99,12 @@ Note that in this example the task is not yet assigned a worker, otherwise both 
 
 If you want to safely test your transactions before executing them against a network, you can fork the target network and do a practice run there. To fork either goerli or mainnet networks with `ganache-cli` use
 
-`yarn run ganache-cli --fork https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d`
+`npx ganache-cli --fork https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d`
 for goerli
 
-`yarn run ganache-cli --fork https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d`
+`npx ganache-cli --fork https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d`
 for mainnet
 
 This will start a local copy of the target network running on `ganache-cli` which returns `revert` error messages for failed transactions that are essential in troubleshooting. Other benefits of the forked network include instant mining and zero gas costs.
 
-Then you can connect via the truffle console to this local node via the usual way `yarn run truffle console`. In the console you can then safely execute your transactions to test their results.
+Then you can connect via the truffle console to this local node via the usual way `npx truffle console`. In the console you can then safely execute your transactions to test their results.

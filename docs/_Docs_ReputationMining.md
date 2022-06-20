@@ -31,7 +31,7 @@ Optional arguments:
 
 
 #### `--minerAddress`
-Address of the miner account which the client will send reputation mining contract transactions from. Used when working with an unlocked account for the miner against **development networks only**. We provision twelve unlocked test accounts stored in `ganache-accounts.json` for testing that are available when starting a local ganache-cli instance via `yarn run start:blockchain:client` command.
+Address of the miner account which the client will send reputation mining contract transactions from. Used when working with an unlocked account for the miner against **development networks only**. We provision twelve unlocked test accounts stored in `ganache-accounts.json` for testing that are available when starting a local ganache-cli instance via `npm run start:blockchain:client` command.
 
 #### `--privateKey`
 Private key of the miner account which the client will sign reputation mining contract transactions with.

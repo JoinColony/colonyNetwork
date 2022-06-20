@@ -27,9 +27,7 @@ See the [Bug Bounty program overview](./_bug_rules.md) for more information abou
 
 ## Prerequisites
 
-`node` v10.12 or higher (we recommend using `nvm`)
-
-`yarn` v1.13 or higher
+`node` v16.15.x (we recommend using [`nvm`](https://github.com/nvm-sh/nvm))
 
 `docker` v18 or higher
 
@@ -49,7 +47,7 @@ $ git clone https://github.com/JoinColony/colonyNetwork.git
 Move into the directory and install dependencies:
 
 ```
-$ cd colonyNetwork && yarn
+$ cd colonyNetwork && npm install
 ```
 
 Update submodule libraries:
@@ -60,7 +58,7 @@ $ git submodule update --init
 Provision token contracts for testing:
 
 ```
-$ yarn provision:token:contracts
+$ npm run provision:token:contracts
 ```
 
 ## Contracts
@@ -73,31 +71,31 @@ The `math`, `erc20`, `auth`, `roles` and a significant part of the `token` contr
 You can start a local test node and deploy the contracts yourself using the locally installed `truffle` package.
 
 ```
-yarn start:blockchain:client
+npm run start:blockchain:client
 
-yarn truffle migrate --reset --compile-all
+npx truffle migrate --reset --compile-all
 ```
 
 To deploy all contracts and run all contract tests:
 ```
-yarn test:contracts
+npm run test:contracts
 ```
 To deploy all contracts and run all reputation mining tests:
 ```
-yarn test:reputation
+npm run test:reputation
 ```
 To run tests with code coverage using [solidity-coverage](https://github.com/sc-forks/solidity-coverage):
 ```
-yarn run test:contracts:coverage
+npm run test:contracts:coverage
 ```
 To lint contracts using [Solium](https://github.com/duaraghav8/Solium)
 ```
-yarn run solium
+npm run solium
 ```
 
 To lint JS using `eslint` (this is also a pre-commit hook)
 ```
-yarn run eslint
+npm run eslint
 ```
 
 ## Contributing
