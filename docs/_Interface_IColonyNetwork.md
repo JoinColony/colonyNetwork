@@ -937,21 +937,6 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 
 
-### `setReputationRootHash`
-
-This version of setReputationRootHash is deprecated and will be removed in a future release. It transparently calls the new version if it is called (essentially, removing the `reward` parameter.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|newHash|bytes32|The reputation root hash
-|newNLeaves|uint256|The updated leaves count value
-|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-|reward|uint256|Amount of CLNY to be distributed as reward to miners (not used)
-
-
 ### `setTokenLocking`
 
 Sets the token locking address. This is only set once, and can't be changed afterwards.

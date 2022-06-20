@@ -9,6 +9,7 @@
     "solhint": "solhint ./contracts/**/*.sol",
     "build:docs": "scripts/docgen.js",
     "ping:osx": "osascript -e 'display notification \"Ping!\"'",
+    "check:gitchanges": "./scripts/no-git-changes.sh",
     "check:storagevars": "./scripts/check-storage.js",
     "check:recoverymods": "./scripts/check-recovery.js",
     "check:coverage": "yarn istanbul-combine -d coverage-merged -p detail -r html -r json coverage-*/coverage-final.json && istanbul check-coverage ./coverage-merged/coverage-final.json --statements 99 --branches 94 --functions 99 --lines 99",
