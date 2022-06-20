@@ -12,7 +12,7 @@
     "check:gitchanges": "./scripts/no-git-changes.sh",
     "check:storagevars": "./scripts/check-storage.js",
     "check:recoverymods": "./scripts/check-recovery.js",
-    "check:coverage": "yarn istanbul-combine -d coverage-merged -p detail -r html -r json coverage-*/coverage-final.json && istanbul check-coverage ./coverage-merged/coverage-final.json --statements 99 --branches 94 --functions 99 --lines 99",
+    "check:coverage": "istanbul-combine -d coverage-merged -p detail -r html -r json coverage-*/coverage-final.json && istanbul check-coverage ./coverage-merged/coverage-final.json --statements 99 --branches 94 --functions 99 --lines 99",
     "check:auth": "./scripts/check-auth.js",
     "check:versioning": "bash ./scripts/versioningCheck.sh",
     "version:contracts": "bash ./scripts/version-contracts.sh",
@@ -24,8 +24,8 @@
     "start:blockchain:client": "bash ./scripts/start-blockchain-client.sh",
     "start:reputation:oracle": "./scripts/start-reputation-oracle.js",
     "stop:blockchain:client": "bash ./scripts/stop-blockchain-client.sh",
-    "fork:goerli": "yarn run ganache --fork https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d --port 8605",
-    "fork:mainnet": "yarn run ganache --fork https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d --port 8601",
+    "fork:goerli": "ganache --fork https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d --port 8605",
+    "fork:mainnet": "ganache --fork https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d --port 8601",
     "flatten:contracts": "mkdir -p ./build/flattened/ && steamroller contracts/colonyNetwork/IColonyNetwork.sol > build/flattened/flatIColonyNetwork.sol && steamroller contracts/colony/IColony.sol > build/flattened/flatIColony.sol && steamroller contracts/reputationMiningCycle/IReputationMiningCycle.sol > build/flattened/flatIReputationMiningCycle.sol && steamroller contracts/colony/IMetaColony.sol > build/flattened/flatIMetaColony.sol && steamroller contracts/common/IRecovery.sol > build/flattened/flatIRecovery.sol && steamroller contracts/common/IEtherRouter.sol > build/flattened/flatIEtherRouter.sol",
     "test:reputation": "npm run start:blockchain:client & truffle migrate --reset --compile-all && nyc truffle test ./test/reputation-system/* ./test/reputation-system/reputation-mining-client/* --network development",
     "test:reputation:coverage": "SOLIDITY_COVERAGE=1 truffle run coverage --solcoverjs ./.solcover.reputation.js --network coverage --temp build --file='./test/reputation-system/**/*'",
@@ -64,7 +64,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn check:versioning && yarn eslint-staged && yarn solhint-staged && yarn build:docs && git add docs"
+      "pre-commit": "npm run check:versioning && npm run eslint-staged && npm run solhint-staged && npm run build:docs && git add docs"
     }
   },
   "repository": {
