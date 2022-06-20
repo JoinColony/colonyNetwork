@@ -41,7 +41,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
 
-  // DEPRECATED, only deploys version 3 colonies.
+  /// @deprecated only deploys version 3 colonies.
   function createColony(address _tokenAddress) public
   stoppable
   returns (address)
@@ -49,7 +49,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     return createColony(_tokenAddress, 3, "", "");
   }
 
-  // DEPRECATED, only deploys version 4 colonies.
+  /// @deprecated only deploys version 4 colonies.
   function createColony(
     address _tokenAddress,
     uint256 _version, // solhint-disable-line no-unused-vars

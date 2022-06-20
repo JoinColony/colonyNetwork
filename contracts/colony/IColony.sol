@@ -61,8 +61,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @return tokenAddress Address of the token contract
   function getToken() external view returns (address tokenAddress);
 
+  /// @deprecated
   /// @notice Execute arbitrary transaction on behalf of the Colony
-  /// DEPRECATED
   /// @param _to Contract to receive the function call (cannot be this contract, network or token locking)
   /// @param _action Bytes array encoding the function call and arguments
   /// @return success Boolean indicating whether the transaction succeeded
@@ -376,7 +376,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _newOwner New owner of expenditure
   function transferExpenditure(uint256 _id, address _newOwner) external;
 
-  /// @notice DEPRECATED Updates the expenditure owner. Can only be called by Arbitration role.
+  /// @deprecated
+  /// @notice Updates the expenditure owner. Can only be called by Arbitration role.
   /// @dev This is now deprecated and will be removed in a future version
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
@@ -951,7 +952,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
     address _token
     ) external;
 
-  /// @notice DEPRECATED
+  /// @deprecated
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _fromChildSkillIndex The child index in `_permissionDomainId` where we can find the domain for `_fromPotId`

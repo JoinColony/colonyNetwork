@@ -296,7 +296,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     emit MotionCreated(motionCount, msgSender(), _domainId);
   }
 
-  /// @notice Create a motion in the root domain (DEPRECATED)
+  /// @deprecated
+  /// @notice Create a motion in the root domain
   /// @param _altTarget The contract to which we send the action (0x0 for the colony)
   /// @param _action A bytes array encoding a function call
   /// @param _key Reputation tree key for the root domain
@@ -316,7 +317,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     createMotion(1, UINT256_MAX, _altTarget, _action, _key, _value, _branchMask, _siblings);
   }
 
-  /// @notice Create a motion in any domain (DEPRECATED)
+  /// @deprecated
+  /// @notice Create a motion in any domain
   /// @param _domainId The domain where we vote on the motion
   /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
   /// @param _action A bytes array encoding a function call

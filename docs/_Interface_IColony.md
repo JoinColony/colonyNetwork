@@ -1131,7 +1131,7 @@ Lock the colony's token. Can only be called by a network-managed extension.
 
 ### `makeArbitraryTransaction`
 
-Execute arbitrary transaction on behalf of the Colony DEPRECATED
+Execute arbitrary transaction on behalf of the Colony
 
 
 **Parameters**
@@ -1918,7 +1918,7 @@ Updates the expenditure owner. Can only be called by expenditure owner.
 
 ### `transferExpenditureViaArbitration`
 
-DEPRECATED Updates the expenditure owner. Can only be called by Arbitration role.
+Updates the expenditure owner. Can only be called by Arbitration role.
 
 *Note: This is now deprecated and will be removed in a future version*
 
