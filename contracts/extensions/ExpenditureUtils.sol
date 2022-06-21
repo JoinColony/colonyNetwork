@@ -133,7 +133,7 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     delete stakes[_expenditureId];
   }
 
-  function cancelExpenditure(
+  function cancelExpenditureAndPunish(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _expenditureId,
@@ -146,6 +146,11 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     require(
       colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Arbitration, _childSkillIndex, expenditure.domainId),
       "expenditure-utils-caller-not-arbitration"
+    );
+
+    require(
+      expenditure.status != ColonyDataTypes.ExpenditureStatus.Draft,
+      "expenditure-utils-expenditure-still-draft"
     );
 
     if (_punish) {
