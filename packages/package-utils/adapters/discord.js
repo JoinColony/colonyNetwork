@@ -6,7 +6,9 @@ class DiscordAdapter extends ConsoleAdapter {
   constructor(label) {
     super(label);
 
-    const client = new Discord.Client();
+    const usedIntents = new Discord.Intents();
+    const client = new Discord.Client({ intents: usedIntents });
+
     client.once("ready", async () => {
       this.channel = await client.channels.fetch(process.env.DISCORD_CHANNEL_ID);
     });
