@@ -109,4 +109,4 @@ Called to set the total per-cycle reputation reward, which will be split between
 
 |Name|Type|Description|
 |---|---|---|
-|_amount|uint256|
+|_amount|uint256|The CLNY awarded per mining cycle to the miners

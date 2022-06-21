@@ -468,7 +468,7 @@ Called to get the address _delegate is allowed to mine for
 
 |Name|Type|Description|
 |---|---|---|
-|address|address|
+|delegator|address|The address they are allowed to mine on behalf of
 
 ### `getMiningResolver`
 
@@ -532,7 +532,7 @@ Get a token's status in the payout whitelist
 
 |Name|Type|Description|
 |---|---|---|
-|status|bool|
+|status|bool|Will be `true` if token is whitelisted
 
 ### `getProfileDBAddress`
 
@@ -613,7 +613,7 @@ Called to get the total per-cycle reputation mining reward.
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|amount|uint256|The CLNY awarded per mining cycle to the miners
 
 ### `getReputationMiningSkillId`
 
@@ -920,7 +920,7 @@ Called to set the total per-cycle reputation reward, which will be split between
 
 |Name|Type|Description|
 |---|---|---|
-|_amount|uint256|
+|_amount|uint256|The CLNY awarded per mining cycle to the miners
 
 
 ### `setReputationRootHash`

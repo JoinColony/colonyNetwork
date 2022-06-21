@@ -50,7 +50,7 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _lockId Id of the lock user wants to increment to
   function incrementLockCounterTo(address _token, uint256 _lockId) external;
 
-  /// @deprecated
+  /// @notice @deprecated
   /// @notice Deposit `_amount` of deposited tokens. Can only be called if user tokens are not locked.
   /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
   /// @param _token Address of the token to deposit
