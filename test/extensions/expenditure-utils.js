@@ -230,7 +230,7 @@ contract("ExpenditureUtils", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
-      await expenditureUtils.cancelExpenditure(1, UINT256_MAX, expenditureId, true);
+      await expenditureUtils.cancelAndPunish(1, UINT256_MAX, expenditureId, true);
 
       const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
       expect(obligation).to.be.zero;
@@ -260,7 +260,7 @@ contract("ExpenditureUtils", (accounts) => {
       await colony.lockExpenditure(expenditureId);
 
       await checkErrorRevert(
-        expenditureUtils.cancelExpenditure(1, UINT256_MAX, expenditureId, true, { from: USER1 }),
+        expenditureUtils.cancelAndPunish(1, UINT256_MAX, expenditureId, true, { from: USER1 }),
         "expenditure-utils-caller-not-arbitration"
       );
     });
@@ -270,7 +270,7 @@ contract("ExpenditureUtils", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
-      await expenditureUtils.cancelExpenditure(1, UINT256_MAX, expenditureId, false);
+      await expenditureUtils.cancelAndPunish(1, UINT256_MAX, expenditureId, false);
 
       let obligation;
       let userLock;
@@ -301,7 +301,7 @@ contract("ExpenditureUtils", (accounts) => {
 
       await colony.transferExpenditure(expenditureId, USER1, { from: USER0 });
 
-      await expenditureUtils.cancelExpenditure(1, UINT256_MAX, expenditureId, true);
+      await expenditureUtils.cancelAndPunish(1, UINT256_MAX, expenditureId, true);
 
       const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
       expect(obligation).to.be.zero;
@@ -315,7 +315,7 @@ contract("ExpenditureUtils", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
-      await checkErrorRevert(expenditureUtils.cancelExpenditure(1, UINT256_MAX, expenditureId, true), "expenditure-utils-nothing-to-slash");
+      await checkErrorRevert(expenditureUtils.cancelAndPunish(1, UINT256_MAX, expenditureId, true), "expenditure-utils-nothing-to-slash");
     });
 
     it("can reclaim the stake by cancelling the expenditure", async () => {
@@ -331,6 +331,29 @@ contract("ExpenditureUtils", (accounts) => {
 
       const userLock = await tokenLocking.getUserLock(token.address, USER0);
       expect(userLock.balance).to.eq.BN(WAD);
+    });
+
+    it("can cancel and reclaim the stake in one transaction", async () => {
+      await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+
+      await expenditureUtils.cancelAndReclaimStake(1, UINT256_MAX, expenditureId);
+
+      const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
+      expect(obligation).to.be.zero;
+
+      const userLock = await tokenLocking.getUserLock(token.address, USER0);
+      expect(userLock.balance).to.eq.BN(WAD);
+    });
+
+    it("cannot cancel and reclaim the stake in one transaction if not owner", async () => {
+      await expenditureUtils.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+
+      await checkErrorRevert(
+        expenditureUtils.cancelAndReclaimStake(1, UINT256_MAX, expenditureId, { from: USER1 }),
+        "expenditure-utils-must-be-owner"
+      );
     });
 
     it("can reclaim the stake by finalizing the expenditure", async () => {

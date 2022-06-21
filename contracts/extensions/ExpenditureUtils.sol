@@ -133,7 +133,28 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     delete stakes[_expenditureId];
   }
 
-  function cancelExpenditureAndPunish(
+  function cancelAndReclaimStake(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _expenditureId
+  )
+    public
+  {
+    Stake storage stake = stakes[_expenditureId];
+    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
+
+    require(expenditure.owner == msgSender(), "expenditure-utils-must-be-owner");
+
+    require(
+      expenditure.status == ColonyDataTypes.ExpenditureStatus.Draft,
+      "expenditure-utils-expenditure-not-draft"
+    );
+
+    cancelExpenditure(_permissionDomainId, _childSkillIndex, _expenditureId, expenditure.owner);
+    reclaimStake(_expenditureId);
+  }
+
+  function cancelAndPunish(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _expenditureId,
@@ -171,16 +192,7 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
       delete stakes[_expenditureId];
     }
 
-    // Get the slot storing 0x{owner}{state}
-    bool[] memory mask = new bool[](1);
-    mask[0] = ARRAY;
-    bytes32[] memory keys = new bytes32[](1);
-    keys[0] = bytes32(uint256(0));
-
-    // Prepare the new 0x{owner}{state} value
-    bytes32 value = bytes32(bytes20(expenditure.owner)) >> 0x58 | bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled));
-
-    colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, EXPENDITURE_SLOT, mask, keys, value);
+    cancelExpenditure(_permissionDomainId, _childSkillIndex, _expenditureId, expenditure.owner);
   }
 
   uint256 constant EXPENDITURE_SLOT = 25;
@@ -192,20 +204,20 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
   /// @notice Sets the payout modifiers in given expenditure slots, using the arbitration permission
   /// @param _permissionDomainId The domainId in which the extension has the arbitration permission
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
-  /// @param _id Expenditure identifier
+  /// @param _expenditureId Expenditure identifier
   /// @param _slots Array of slots to set payout modifiers
   /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus
   function setExpenditurePayoutModifiers(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
-    uint256 _id,
+    uint256 _expenditureId,
     uint256[] memory _slots,
     int256[] memory _payoutModifiers
   )
     public
   {
     require(_slots.length == _payoutModifiers.length, "expenditure-utils-bad-slots");
-    require(colony.getExpenditure(_id).owner == msgSender(), "expenditure-utils-not-owner");
+    require(colony.getExpenditure(_expenditureId).owner == msgSender(), "expenditure-utils-not-owner");
 
     bool[] memory mask = new bool[](2);
     bytes32[] memory keys = new bytes32[](2);
@@ -221,7 +233,7 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
       colony.setExpenditureState(
         _permissionDomainId,
         _childSkillIndex,
-        _id,
+        _expenditureId,
         EXPENDITURESLOTS_SLOT,
         mask,
         keys,
@@ -237,6 +249,37 @@ function getStakeFraction() public view returns (uint256) {
 }
 
 // Internal
+
+function cancelExpenditure(
+  uint256 _permissionDomainId,
+  uint256 _childSkillIndex,
+  uint256 _expenditureId,
+  address _expenditureOwner
+)
+  internal
+{
+  // Get the slot storing 0x{owner}{state}
+  bool[] memory mask = new bool[](1);
+  mask[0] = ARRAY;
+  bytes32[] memory keys = new bytes32[](1);
+  keys[0] = bytes32(uint256(0));
+
+  // Prepare the new 0x{owner}{state} value
+  bytes32 value = (
+    bytes32(bytes20(_expenditureOwner)) >> 0x58 |
+    bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled))
+  );
+
+  colony.setExpenditureState(
+    _permissionDomainId,
+    _childSkillIndex,
+    _expenditureId,
+    EXPENDITURE_SLOT,
+    mask,
+    keys,
+    value
+  );
+}
 
 function getReputationFromProof(
     uint256 _domainId,

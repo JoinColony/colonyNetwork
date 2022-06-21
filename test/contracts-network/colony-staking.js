@@ -251,8 +251,8 @@ contract("Colony Staking", (accounts) => {
 
     it("should send the stake to address(0x0) if the token does not support burning", async () => {
       // This token does not support burning
-      const token = await ToggleableToken.new(WAD, { from: USER1 });
-      const colony = await setupColony(colonyNetwork, token.address);
+      token = await ToggleableToken.new(WAD, { from: USER1 });
+      colony = await setupColony(colonyNetwork, token.address);
       await colony.setArbitrationRole(1, UINT256_MAX, USER2, 1, true);
 
       await token.approve(tokenLocking.address, WAD, { from: USER1 });
