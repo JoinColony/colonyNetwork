@@ -445,6 +445,14 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts) external;
 
   /// @notice @deprecated
+  /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
+  /// @param _id Id of the expenditure
+  /// @param _slots 2D array of slots to set payouts
+  /// @param _tokens Array of token addresses, `0x0` value indicates Ether
+  /// @param _amounts 2D array of payout amounts
+  function setExpenditurePayouts(uint256 _id, uint256[][] memory _slots, address[] memory _tokens, uint256[][] memory _amounts) external;
+
   /// @notice Set the token payouts in given expenditure slots. Can only be called by an Arbitration user.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
