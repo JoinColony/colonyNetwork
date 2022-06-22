@@ -128,7 +128,7 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
 
     colony.deobligateStake(stake.creator, expenditure.domainId, stake.amount);
 
-  // slither-disable-next-line reentrancy-no-eth
+    // slither-disable-next-line reentrancy-no-eth
     delete stakes[_expenditureId];
   }
 
@@ -202,97 +202,53 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     cancelExpenditure(_permissionDomainId, _childSkillIndex, _expenditureId, expenditure.owner);
   }
 
+  // View
+
+  function getStakeFraction() public view returns (uint256) {
+    return stakeFraction;
+  }
+
+  function getStake(uint256 _expenditureId) public view returns (Stake memory stake) {
+    return stakes[_expenditureId];
+  }
+
+  // Internal
+
   uint256 constant EXPENDITURE_SLOT = 25;
-  uint256 constant EXPENDITURESLOTS_SLOT = 26;
-  uint256 constant PAYOUT_MODIFIER_OFFSET = 2;
-  bool constant MAPPING = false;
   bool constant ARRAY = true;
 
-  /// @notice Sets the payout modifiers in given expenditure slots, using the arbitration permission
-  /// @param _permissionDomainId The domainId in which the extension has the arbitration permission
-  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
-  /// @param _expenditureId Expenditure identifier
-  /// @param _slots Array of slots to set payout modifiers
-  /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus
-  function setExpenditurePayoutModifiers(
+  function cancelExpenditure(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _expenditureId,
-    uint256[] memory _slots,
-    int256[] memory _payoutModifiers
+    address _expenditureOwner
   )
-    public
+    internal
   {
-    require(_slots.length == _payoutModifiers.length, "expenditure-utils-bad-slots");
-    require(colony.getExpenditure(_expenditureId).owner == msgSender(), "expenditure-utils-not-owner");
+    // Get the slot storing 0x{owner}{state}
+    bool[] memory mask = new bool[](1);
+    mask[0] = ARRAY;
+    bytes32[] memory keys = new bytes32[](1);
+    keys[0] = bytes32(uint256(0));
 
-    bool[] memory mask = new bool[](2);
-    bytes32[] memory keys = new bytes32[](2);
+    // Prepare the new 0x000...{owner}{state} value
+    bytes32 value = (
+      bytes32(bytes20(_expenditureOwner)) >> 0x58 | // Shift the address to the right, except for one byte
+      bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled)) // Put this value in that rightmost byte
+    );
 
-    mask[0] = MAPPING;
-    mask[1] = ARRAY;
-
-    keys[1] = bytes32(PAYOUT_MODIFIER_OFFSET);
-
-    for (uint256 i; i < _slots.length; i++) {
-      keys[0] = bytes32(_slots[i]);
-
-      colony.setExpenditureState(
-        _permissionDomainId,
-        _childSkillIndex,
-        _expenditureId,
-        EXPENDITURESLOTS_SLOT,
-        mask,
-        keys,
-        bytes32(_payoutModifiers[i])
-      );
-    }
+    colony.setExpenditureState(
+      _permissionDomainId,
+      _childSkillIndex,
+      _expenditureId,
+      EXPENDITURE_SLOT,
+      mask,
+      keys,
+      value
+    );
   }
 
-// View
-
-function getStakeFraction() public view returns (uint256) {
-  return stakeFraction;
-}
-
-function getStake(uint256 _expenditureId) public view returns (Stake memory stake) {
-  return stakes[_expenditureId];
-}
-
-// Internal
-
-function cancelExpenditure(
-  uint256 _permissionDomainId,
-  uint256 _childSkillIndex,
-  uint256 _expenditureId,
-  address _expenditureOwner
-)
-  internal
-{
-  // Get the slot storing 0x{owner}{state}
-  bool[] memory mask = new bool[](1);
-  mask[0] = ARRAY;
-  bytes32[] memory keys = new bytes32[](1);
-  keys[0] = bytes32(uint256(0));
-
-  // Prepare the new 0x000...{owner}{state} value
-  bytes32 value = (
-    bytes32(bytes20(_expenditureOwner)) >> 0x58 | // Shift the address to the right, except for one byte
-    bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled)) // Put this value in that rightmost byte
-  );
-
-  colony.setExpenditureState(
-    _permissionDomainId,
-    _childSkillIndex,
-    _expenditureId,
-    EXPENDITURE_SLOT,
-    mask,
-    keys,
-    value
-  );
-}
-
-function getReputationFromProof(
+  function getReputationFromProof(
     uint256 _domainId,
     bytes memory _key,
     bytes memory _value,

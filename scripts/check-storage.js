@@ -28,6 +28,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/TokenAuthority.sol", // Imported from colonyToken repo
       "contracts/ens/ENSRegistry.sol", // Not directly used by any colony contracts
       "contracts/extensions/CoinMachine.sol",
+      "contracts/extensions/EvaluatedExpenditure.sol",
       "contracts/extensions/ExpenditureUtils.sol",
       "contracts/extensions/FundingQueue.sol",
       "contracts/extensions/ColonyExtension.sol",

@@ -6,7 +6,7 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ADDRESS_ZERO } = require("../../helpers/constants");
-const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
+const { setupRandomColony } = require("../../helpers/test-data-generator");
 const {
   checkErrorRevert,
   web3GetCode,
@@ -387,60 +387,6 @@ contract("ExpenditureUtils", (accounts) => {
 
     it("cannot reclaim a nonexistent stake", async () => {
       await checkErrorRevert(expenditureUtils.reclaimStake(0), "expenditure-utils-nothing-to-claim");
-    });
-  });
-
-  describe("setting the payout modifiers with arbitration", async () => {
-    let expenditureId;
-
-    beforeEach(async () => {
-      await colony.makeExpenditure(1, UINT256_MAX, 1);
-      expenditureId = await colony.getExpenditureCount();
-
-      await colony.lockExpenditure(expenditureId);
-    });
-
-    it("can set the payout modifier in the locked state", async () => {
-      let expenditureSlot;
-
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.payoutModifier).to.be.zero;
-
-      await expenditureUtils.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [WAD], { from: USER0 });
-
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD);
-    });
-
-    it("cannot set the payout modifier with bad arguments", async () => {
-      await checkErrorRevert(
-        expenditureUtils.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [], { from: USER0 }),
-        "expenditure-utils-bad-slots"
-      );
-    });
-
-    it("cannot set the payout modifier if not the owner", async () => {
-      await checkErrorRevert(
-        expenditureUtils.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [WAD], { from: USER1 }),
-        "expenditure-utils-not-owner"
-      );
-    });
-
-    it("can set the payout modifier via metatransaction", async () => {
-      const txData = await expenditureUtils.contract.methods
-        .setExpenditurePayoutModifiers(1, UINT256_MAX.toString(), expenditureId.toString(), [0], [WAD.toString()])
-        .encodeABI();
-
-      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, expenditureUtils.address);
-
-      let expenditureSlot;
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.payoutModifier).to.be.zero;
-
-      await expenditureUtils.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
-
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD);
     });
   });
 });
