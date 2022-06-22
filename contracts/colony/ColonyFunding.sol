@@ -52,7 +52,8 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
   }
 
- function moveFundsBetweenPots(
+  /// @notice @deprecated
+  function moveFundsBetweenPots(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _domainId,
@@ -75,6 +76,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
   }
 
+  /// @notice @deprecated
   function moveFundsBetweenPots(
     uint256 _permissionDomainId,
     uint256 _fromChildSkillIndex,
@@ -164,7 +166,29 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
   }
 
-  function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts)
+  function setExpenditurePayouts(
+    uint256 _id,
+    uint256[][] memory _slots,
+    address[] memory _tokens,
+    uint256[][] memory _amounts
+  )
+  public
+  stoppable
+  expenditureExists(_id)
+  expenditureDraft(_id)
+  expenditureSelfOrOwner(_id)
+  {
+    for (uint256 i; i < _tokens.length; i++) {
+      setExpenditurePayoutsInternal(_id, _slots[i], _tokens[i], _amounts[i]);
+    }
+  }
+
+  function setExpenditurePayouts(
+    uint256 _id,
+    uint256[] memory _slots,
+    address _token,
+    uint256[] memory _amounts
+  )
   public
   stoppable
   expenditureExists(_id)

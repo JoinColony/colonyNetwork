@@ -42,7 +42,6 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
   // Storage
 
   uint256 stakeFraction;
-  uint256 repPenaltyFraction;
 
   mapping (uint256 => Stake) stakes;
 
@@ -157,6 +156,8 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
   function cancelAndPunish(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
+    uint256 _callerPermissionDomainId,
+    uint256 _callerChildSkillIndex,
     uint256 _expenditureId,
     bool _punish
   )
@@ -165,7 +166,13 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
     ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
 
     require(
-      colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Arbitration, _childSkillIndex, expenditure.domainId),
+      colony.hasInheritedUserRole(
+        msgSender(),
+        _callerPermissionDomainId,
+        ColonyDataTypes.ColonyRole.Arbitration,
+        _callerChildSkillIndex,
+        expenditure.domainId
+      ),
       "expenditure-utils-caller-not-arbitration"
     );
 
@@ -248,6 +255,10 @@ function getStakeFraction() public view returns (uint256) {
   return stakeFraction;
 }
 
+function getStake(uint256 _expenditureId) public view returns (Stake memory stake) {
+  return stakes[_expenditureId];
+}
+
 // Internal
 
 function cancelExpenditure(
@@ -264,10 +275,10 @@ function cancelExpenditure(
   bytes32[] memory keys = new bytes32[](1);
   keys[0] = bytes32(uint256(0));
 
-  // Prepare the new 0x{owner}{state} value
+  // Prepare the new 0x000...{owner}{state} value
   bytes32 value = (
-    bytes32(bytes20(_expenditureOwner)) >> 0x58 |
-    bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled))
+    bytes32(bytes20(_expenditureOwner)) >> 0x58 | // Shift the address to the right, except for one byte
+    bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled)) // Put this value in that rightmost byte
   );
 
   colony.setExpenditureState(
