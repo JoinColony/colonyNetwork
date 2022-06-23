@@ -2,7 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const parser = require("solidity-parser-diligence");
+const parser = require("@solidity-parser/parser");
 
 const INTERFACES = [
   {
@@ -40,13 +40,33 @@ const INTERFACES = [
     templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_ITokenLocking.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "_Interface_ITokenLocking.md"),
   },
+  {
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "CoinMachine.sol"),
+    templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_CoinMachine.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_CoinMachine.md"),
+  },
+  {
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "OneTxPayment.sol"),
+    templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_OneTxPayment.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_OneTxPayment.md"),
+  },
+  {
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "VotingReputation.sol"),
+    templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_VotingReputation.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_VotingReputation.md"),
+  },
+  {
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "Whitelist.sol"),
+    templateFile: path.resolve(__dirname, "..", "docs", "templates", "_Interface_Whitelist.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "_Interface_Whitelist.md"),
+  },
 ];
 
 const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
   const contractFileString = fs.readFileSync(contractFile).toString();
   const templateFileString = fs.readFileSync(templateFile).toString();
 
-  const ast = parser.parse(contractFileString);
+  const ast = parser.parse(contractFileString, { loc: true });
 
   const contract = ast.children.find((child) => {
     return child.type === "ContractDefinition";
@@ -68,163 +88,155 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
   console.log(`Generating ${contract.name} documentation...`);
 
-  contract.subNodes.forEach((method) => {
-    // Set the initial natspec values
-    const natspec = {
-      notice: null,
-      dev: null,
-      params: [],
-      returns: [],
-    };
+  contract.subNodes
+    .filter(({ type, visibility }) => type === "FunctionDefinition" && (visibility === "external" || visibility === "public"))
+    .forEach((method) => {
+      // Set the initial natspec values
+      const natspec = {
+        notice: null,
+        dev: null,
+        params: [],
+        returns: [],
+      };
 
-    // Get the index of the line in which the method is declared
-    let methodLineIndex = contractFileArray.findIndex((line) => {
-      const sig = astToSig(method);
-      return line.includes(sig);
-    });
+      const methodLineIndex = method.loc.start.line - 1;
 
-    if (methodLineIndex === -1) {
-      // If the above failed, fall back to just the function name.
-      // This won't work if we overload a function that is defined across multiple lines in the interface
-      methodLineIndex = contractFileArray.findIndex((line) => line.includes(`function ${method.name}(`));
-    }
+      // Set the initial value for the natsepc notice
+      let noticeLineIndex = methodLineIndex - 1;
 
-    // Set the initial value for the natsepc notice
-    let noticeLineIndex = methodLineIndex - 1;
-
-    // Get the line index for the natspec notice
-    while (
-      contractFileArray[noticeLineIndex] &&
-      contractFileArray[noticeLineIndex].includes("///") &&
-      !contractFileArray[noticeLineIndex].includes(" @notice ")
-    ) {
-      noticeLineIndex -= 1;
-    }
-
-    // Check whether the current line is a valid notice line
-    if (contractFileArray[noticeLineIndex].includes(" @notice ")) {
-      // Get additional natspec notice lines
-      const additionalNoticeLineIndexes = [];
-      let additionalNoticeLineIndex = noticeLineIndex + 1;
-      while (isValidAdditionalLine(additionalNoticeLineIndex)) {
-        additionalNoticeLineIndexes.push(additionalNoticeLineIndex);
-        additionalNoticeLineIndex += 1;
-      }
-
-      // Set natspec notice including additional natspec notice lines
-      [, natspec.notice] = contractFileArray[noticeLineIndex].split(" @notice ");
-      additionalNoticeLineIndexes.forEach((index) => {
-        natspec.notice += contractFileArray[index].split("///")[1];
-      });
-
-      // Set the initial value for the dev line index
-      let devLineIndex = noticeLineIndex + 1;
-
-      // Get the natspec dev line index
+      // Get the line index for the natspec notice
       while (
-        contractFileArray[devLineIndex] &&
-        contractFileArray[devLineIndex].includes("///") &&
-        !contractFileArray[devLineIndex].includes(" @dev ")
+        contractFileArray[noticeLineIndex] &&
+        contractFileArray[noticeLineIndex].includes("///") &&
+        !contractFileArray[noticeLineIndex].includes(" @notice ")
       ) {
-        devLineIndex += 1;
+        noticeLineIndex -= 1;
       }
 
-      // Check whether the current line is a valid dev line
-      if (contractFileArray[devLineIndex].includes(" @dev ")) {
-        // Get additional natspec dev lines
-        const additionalDevLineIndexes = [];
-        let additionalDevLineIndex = devLineIndex + 1;
-        while (isValidAdditionalLine(additionalDevLineIndex)) {
-          additionalDevLineIndexes.push(additionalDevLineIndex);
-          additionalDevLineIndex += 1;
+      // Check whether the current line is a valid notice line
+      if (contractFileArray[noticeLineIndex].includes(" @notice ")) {
+        // Get additional natspec notice lines
+        const additionalNoticeLineIndexes = [];
+        let additionalNoticeLineIndex = noticeLineIndex + 1;
+        while (isValidAdditionalLine(additionalNoticeLineIndex)) {
+          additionalNoticeLineIndexes.push(additionalNoticeLineIndex);
+          additionalNoticeLineIndex += 1;
         }
 
-        // Set natspec dev including additional natspec dev lines
-        [, natspec.dev] = contractFileArray[devLineIndex].split(" @dev ");
-        additionalDevLineIndexes.forEach((index) => {
-          natspec.dev += contractFileArray[index].split("///")[1];
+        // Set natspec notice including additional natspec notice lines
+        [, natspec.notice] = contractFileArray[noticeLineIndex].split(" @notice ");
+        additionalNoticeLineIndexes.forEach((index) => {
+          natspec.notice += contractFileArray[index].split("///")[1];
         });
-      }
 
-      // Check whether the method has params
-      if (method.parameters) {
-        // Set the initial value for the param line index
-        let paramLineIndex = noticeLineIndex + 1;
+        // Set the initial value for the dev line index
+        let devLineIndex = noticeLineIndex + 1;
 
-        // Get the natspec param line index for each param
+        // Get the natspec dev line index
         while (
-          contractFileArray[paramLineIndex] &&
-          contractFileArray[paramLineIndex].includes("///") &&
-          natspec.params.length !== method.parameters.length
+          contractFileArray[devLineIndex] &&
+          contractFileArray[devLineIndex].includes("///") &&
+          !contractFileArray[devLineIndex].includes(" @dev ")
         ) {
-          // Check whether the current line is a valid param line
-          if (contractFileArray[paramLineIndex].includes(" @param ")) {
-            // Get additional natspec param lines
-            const additionalParamLineIndexes = [];
-            let additionalParamLineIndex = paramLineIndex + 1;
-            while (isValidAdditionalLine(additionalParamLineIndex)) {
-              additionalParamLineIndexes.push(additionalParamLineIndex);
-              additionalParamLineIndex += 1;
-            }
+          devLineIndex += 1;
+        }
 
-            // Set natspec param including additional natspec param lines
-            let param = contractFileArray[paramLineIndex].split(" @param ")[1];
-            additionalParamLineIndexes.forEach((index) => {
-              param += contractFileArray[index].split("///")[1];
-            });
-
-            // Push the param and continue loop
-            natspec.params.push(param);
+        // Check whether the current line is a valid dev line
+        if (contractFileArray[devLineIndex].includes(" @dev ")) {
+          // Get additional natspec dev lines
+          const additionalDevLineIndexes = [];
+          let additionalDevLineIndex = devLineIndex + 1;
+          while (isValidAdditionalLine(additionalDevLineIndex)) {
+            additionalDevLineIndexes.push(additionalDevLineIndex);
+            additionalDevLineIndex += 1;
           }
 
-          // Incremenent the param line
-          paramLineIndex += 1;
+          // Set natspec dev including additional natspec dev lines
+          [, natspec.dev] = contractFileArray[devLineIndex].split(" @dev ");
+          additionalDevLineIndexes.forEach((index) => {
+            natspec.dev += contractFileArray[index].split("///")[1];
+          });
         }
-      }
 
-      // Check whether the method has returns
-      if (method.returnParameters) {
-        // Set the initial value for the return line index
-        let returnLineIndex = noticeLineIndex + 1;
+        // Check whether the method has params
+        if (method.parameters) {
+          // Set the initial value for the param line index
+          let paramLineIndex = noticeLineIndex + 1;
 
-        // Get the natspec return line index for each return
-        while (
-          contractFileArray[returnLineIndex] &&
-          contractFileArray[returnLineIndex].includes("///") &&
-          natspec.returns.length !== method.returnParameters.length
-        ) {
-          // Check whether the current line is a valid return line
-          if (contractFileArray[returnLineIndex].includes(" @return ")) {
-            // Get additional natspec return lines
-            const additionalReturnLineIndexes = [];
-            let additionalReturnLineIndex = returnLineIndex + 1;
-            while (isValidAdditionalLine(additionalReturnLineIndex)) {
-              additionalReturnLineIndexes.push(additionalReturnLineIndex);
-              additionalReturnLineIndex += 1;
+          // Get the natspec param line index for each param
+          while (
+            contractFileArray[paramLineIndex] &&
+            contractFileArray[paramLineIndex].includes("///") &&
+            natspec.params.length !== method.parameters.length
+          ) {
+            // Check whether the current line is a valid param line
+            if (contractFileArray[paramLineIndex].includes(" @param ")) {
+              // Get additional natspec param lines
+              const additionalParamLineIndexes = [];
+              let additionalParamLineIndex = paramLineIndex + 1;
+              while (isValidAdditionalLine(additionalParamLineIndex)) {
+                additionalParamLineIndexes.push(additionalParamLineIndex);
+                additionalParamLineIndex += 1;
+              }
+
+              // Set natspec param including additional natspec param lines
+              let param = contractFileArray[paramLineIndex].split(" @param ")[1];
+              additionalParamLineIndexes.forEach((index) => {
+                param += contractFileArray[index].split("///")[1];
+              });
+
+              // Push the param and continue loop
+              natspec.params.push(param);
             }
 
-            // Set natspec return including additional natspec return lines
-            let param = contractFileArray[returnLineIndex].split(" @return ")[1];
-            additionalReturnLineIndexes.forEach((index) => {
-              param += contractFileArray[index].split("///")[1];
-            });
-
-            // Push the return and continue loop
-            natspec.returns.push(param);
+            // Incremenent the param line
+            paramLineIndex += 1;
           }
-
-          // Incremenent the return line
-          returnLineIndex += 1;
         }
-      }
-    } else {
-      // Log warning for any methods without a valid notice line
-      console.warn(`Warning: ${method.name} is missing a natspec @notice`);
-    }
 
-    // Push the method and append natspec
-    methods.push({ ...method, natspec });
-  });
+        // Check whether the method has returns
+        if (method.returnParameters) {
+          // Set the initial value for the return line index
+          let returnLineIndex = noticeLineIndex + 1;
+
+          // Get the natspec return line index for each return
+          while (
+            contractFileArray[returnLineIndex] &&
+            contractFileArray[returnLineIndex].includes("///") &&
+            natspec.returns.length !== method.returnParameters.length
+          ) {
+            // Check whether the current line is a valid return line
+            if (contractFileArray[returnLineIndex].includes(" @return ")) {
+              // Get additional natspec return lines
+              const additionalReturnLineIndexes = [];
+              let additionalReturnLineIndex = returnLineIndex + 1;
+              while (isValidAdditionalLine(additionalReturnLineIndex)) {
+                additionalReturnLineIndexes.push(additionalReturnLineIndex);
+                additionalReturnLineIndex += 1;
+              }
+
+              // Set natspec return including additional natspec return lines
+              let param = contractFileArray[returnLineIndex].split(" @return ")[1];
+              additionalReturnLineIndexes.forEach((index) => {
+                param += contractFileArray[index].split("///")[1];
+              });
+
+              // Push the return and continue loop
+              natspec.returns.push(param);
+            }
+
+            // Incremenent the return line
+            returnLineIndex += 1;
+          }
+        }
+      } else {
+        // Log warning for any methods without a valid notice line
+        console.warn(`Warning: ${method.name} is missing a natspec @notice`);
+      }
+
+      // Push the method and append natspec
+      methods.push({ ...method, natspec });
+    });
 
   const md = `
   ${templateFileString}
@@ -303,7 +315,7 @@ function printParams(method, params, natspecParams) {
 }
 
 function printParam(method, param, index, natspecParams) {
-  const name = param.name || param.typeName.name;
+  const name = param.name || param.typeName.name || param.typeName.namePath;
   let arrayType;
   let userDefinedType;
   if (param.typeName.type === "ArrayTypeName") {

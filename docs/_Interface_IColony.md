@@ -1276,12 +1276,12 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |Name|Type|Description|
 |---|---|---|
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_fromChildSkillIndex|uint256|
-|_toChildSkillIndex|uint256|
-|_fromPot|uint256|
-|_toPot|uint256|
-|_amount|uint256|
-|_token|address|
+|_fromChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_fromPotId`
+|_toChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_toPotId`
+|_fromPot|uint256|Funding pot id providing the funds
+|_toPot|uint256|Funding pot id receiving the funds
+|_amount|uint256|Amount of funds
+|_token|address|Address of the token, `0x0` value indicates Ether
 
 
 ### `obligateStake`
