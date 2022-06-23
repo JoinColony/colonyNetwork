@@ -7,7 +7,7 @@ order: 4
   
 ## Interface Methods
 
-### `addExtensionToNetwork`
+### ▸ **`addExtensionToNetwork(bytes32 _extensionId, address _resolver)`**
 
 Add a new extension/version to the Extensions repository.
 
@@ -21,7 +21,7 @@ Add a new extension/version to the Extensions repository.
 |_resolver|address|The deployed resolver containing the extension contract logic
 
 
-### `addGlobalSkill`
+### ▸ **`addGlobalSkill():uint256 skillId`**
 
 Add a new global skill.
 
@@ -34,7 +34,7 @@ Add a new global skill.
 |---|---|---|
 |skillId|uint256|Id of the added skill
 
-### `addNetworkColonyVersion`
+### ▸ **`addNetworkColonyVersion(uint256 _version, address _resolver)`**
 
 Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
 
@@ -48,7 +48,7 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 |_resolver|address|Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
 
 
-### `deprecateGlobalSkill`
+### ▸ **`deprecateGlobalSkill(uint256 _skillId)`**
 
 Mark a global skill as deprecated which stops new tasks and payments from using it.
 
@@ -61,7 +61,7 @@ Mark a global skill as deprecated which stops new tasks and payments from using 
 |_skillId|uint256|Id of the added skill
 
 
-### `mintTokensForColonyNetwork`
+### ▸ **`mintTokensForColonyNetwork(uint256 _wad)`**
 
 Mints CLNY in the Meta Colony and transfers them to the colony network. Only allowed to be called on the Meta Colony by the colony network.
 
@@ -73,7 +73,7 @@ Mints CLNY in the Meta Colony and transfers them to the colony network. Only all
 |_wad|uint256|Amount to mint and transfer to the colony network
 
 
-### `setNetworkFeeInverse`
+### ▸ **`setNetworkFeeInverse(uint256 _feeInverse)`**
 
 Set the Colony Network fee inverse amount.
 
@@ -86,7 +86,7 @@ Set the Colony Network fee inverse amount.
 |_feeInverse|uint256|Nonzero amount for the fee inverse
 
 
-### `setPayoutWhitelist`
+### ▸ **`setPayoutWhitelist(address _token, bool _status)`**
 
 Set a token's status in the payout whitelist on the Colony Network
 
@@ -99,7 +99,7 @@ Set a token's status in the payout whitelist on the Colony Network
 |_status|bool|The whitelist status
 
 
-### `setReputationMiningCycleReward`
+### ▸ **`setReputationMiningCycleReward(uint256 _amount)`**
 
 Called to set the total per-cycle reputation reward, which will be split between all miners.
 

@@ -262,7 +262,7 @@ function printMethods(methods) {
 ${methods
   .map(
     (method) => `
-### \`${method.name}\`\n
+### ▸ **\`${astToSig(method)}\`**\n
 ${method.natspec.notice ? method.natspec.notice : ""}
 ${
   method.natspec.dev
@@ -274,14 +274,14 @@ ${
   method.parameters && method.parameters.length
     ? `
 **Parameters**
-${printParams(method, method.parameters, method.natspec.params)}`
+${printParamTable(method, method.parameters, method.natspec.params)}`
     : ""
 }
 ${
   method.returnParameters && method.returnParameters.length
     ? `
 **Return Parameters**
-${printParams(method, method.returnParameters, method.natspec.returns)}`
+${printParamTable(method, method.returnParameters, method.natspec.returns)}`
     : ""
 }
 `
@@ -290,7 +290,7 @@ ${printParams(method, method.returnParameters, method.natspec.returns)}`
 }
 
 function astToSig(method) {
-  return `function ${method.name}(${method.parameters
+  return `${method.name}(${method.parameters
     .map((p) => {
       if (p.typeName.name) {
         return `${p.typeName.name}${p.storageLocation ? ` ${p.storageLocation}` : ""} ${p.name}`;
@@ -304,18 +304,27 @@ function astToSig(method) {
       console.log("Unknown parameter type...");
       return process.exit(1);
     })
-    .join(", ")})`;
+    .join(", ")})${printReturnTypes(method.returnParameters)}`;
 }
 
-function printParams(method, params, natspecParams) {
+function printReturnTypes(returnParameters) {
+  return returnParameters ? `:${returnParameters.map((param) => `${getType(param)} ${getName(param)}`).join(", ")}` : "";
+}
+
+function printParamTable(method, params, natspecParams) {
   if (params.length) {
-    return `\n|Name|Type|Description|\n|---|---|---|\n${params.map((param, index) => printParam(method, param, index, natspecParams)).join("\n")}`;
+    return `\n|Name|Type|Description|\n|---|---|---|\n${params
+      .map((param, index) => printParamEntry(method, param, index, natspecParams))
+      .join("\n")}`;
   }
   return "";
 }
 
-function printParam(method, param, index, natspecParams) {
-  const name = param.name || param.typeName.name || param.typeName.namePath;
+function getName(param) {
+  return param.name || param.typeName.name || param.typeName.namePath;
+}
+
+function getType(param) {
   let arrayType;
   let userDefinedType;
   if (param.typeName.type === "ArrayTypeName") {
@@ -325,7 +334,12 @@ function printParam(method, param, index, natspecParams) {
   if (param.typeName.type === "UserDefinedTypeName") {
     userDefinedType = param.typeName.namePath;
   }
-  const type = param.typeName.name || arrayType || userDefinedType;
+  return param.typeName.name || arrayType || userDefinedType;
+}
+
+function printParamEntry(method, param, index, natspecParams) {
+  const name = getName(param);
+  const type = getType(param);
   let description = "";
   const matchingDescription = natspecParams[index] && natspecParams[index].substring(0, name.length) === name;
   if (matchingDescription) {

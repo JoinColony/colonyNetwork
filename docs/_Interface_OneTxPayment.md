@@ -1,6 +1,6 @@
 ## Interface Methods
 
-### `deprecate`
+### ▸ **`deprecate(bool _deprecated)`**
 
 Called when deprecating (or undeprecating) the extension
 
@@ -12,14 +12,14 @@ Called when deprecating (or undeprecating) the extension
 |_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
 
 
-### `finishUpgrade`
+### ▸ **`finishUpgrade()`**
 
 Called when upgrading the extension
 
 
 
 
-### `getCapabilityRoles`
+### ▸ **`getCapabilityRoles(bytes4 _sig):bytes32 roles`**
 
 Return the permissions required for each function
 
@@ -36,7 +36,7 @@ Return the permissions required for each function
 |---|---|---|
 |roles|bytes32|The byte32 of permissions required
 
-### `getMetatransactionNonce`
+### ▸ **`getMetatransactionNonce(address userAddress):uint256 nonce`**
 
 Gets the next nonce for a meta-transaction
 
@@ -53,7 +53,7 @@ Gets the next nonce for a meta-transaction
 |---|---|---|
 |nonce|uint256|The nonce
 
-### `identifier`
+### ▸ **`identifier():bytes32 identifier`**
 
 Returns the identifier of the extension
 
@@ -65,7 +65,7 @@ Returns the identifier of the extension
 |---|---|---|
 |identifier|bytes32|The extension's identifier
 
-### `install`
+### ▸ **`install(address _colony)`**
 
 Configures the extension
 
@@ -77,7 +77,7 @@ Configures the extension
 |_colony|address|The colony in which the extension holds permissions
 
 
-### `makePayment`
+### ▸ **`makePayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _callerPermissionDomainId, uint256 _callerChildSkillIndex, address[] memory _workers, address[] memory _tokens, uint256[] memory _amounts, uint256 _domainId, uint256 _skillId)`**
 
 Completes a colony payment in a single transaction
 
@@ -98,7 +98,7 @@ Completes a colony payment in a single transaction
 |_skillId|uint256|The skillId that the payment should be marked with, possibly awarding reputation in this skill.
 
 
-### `makePaymentFundedFromDomain`
+### ▸ **`makePaymentFundedFromDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _callerPermissionDomainId, uint256 _callerChildSkillIndex, address[] memory _workers, address[] memory _tokens, uint256[] memory _amounts, uint256 _domainId, uint256 _skillId)`**
 
 Completes a colony payment in a single transaction
 
@@ -119,14 +119,14 @@ Completes a colony payment in a single transaction
 |_skillId|uint256|The skillId that the payment should be marked with, possibly awarding reputation in this skill.
 
 
-### `uninstall`
+### ▸ **`uninstall()`**
 
 Called when uninstalling the extension
 
 
 
 
-### `version`
+### ▸ **`version():uint256 version`**
 
 Returns the version of the extension
 

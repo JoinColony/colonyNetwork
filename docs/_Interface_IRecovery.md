@@ -7,14 +7,14 @@ order: 6
   
 ## Interface Methods
 
-### `approveExitRecovery`
+### ▸ **`approveExitRecovery()`**
 
 Indicate approval to exit recovery mode. Can only be called by user with recovery role.
 
 
 
 
-### `checkNotAdditionalProtectedVariable`
+### ▸ **`checkNotAdditionalProtectedVariable(uint256 _slot)`**
 
 Check whether the supplied slot is a protected variable specific to this contract
 
@@ -27,21 +27,21 @@ Check whether the supplied slot is a protected variable specific to this contrac
 |_slot|uint256|The storage slot number to check.
 
 
-### `enterRecoveryMode`
+### ▸ **`enterRecoveryMode()`**
 
 Put colony network mining into recovery mode. Can only be called by user with recovery role.
 
 
 
 
-### `exitRecoveryMode`
+### ▸ **`exitRecoveryMode()`**
 
 Exit recovery mode, can be called by anyone if enough whitelist approvals are given.
 
 
 
 
-### `isInRecoveryMode`
+### ▸ **`isInRecoveryMode():bool inRecoveryMode`**
 
 Is colony network in recovery mode.
 
@@ -53,7 +53,7 @@ Is colony network in recovery mode.
 |---|---|---|
 |inRecoveryMode|bool|Return true if recovery mode is active, false otherwise
 
-### `numRecoveryRoles`
+### ▸ **`numRecoveryRoles():uint64 numRoles`**
 
 Return number of recovery roles.
 
@@ -65,7 +65,7 @@ Return number of recovery roles.
 |---|---|---|
 |numRoles|uint64|Number of users with the recovery role.
 
-### `removeRecoveryRole`
+### ▸ **`removeRecoveryRole(address _user)`**
 
 Remove colony recovery role. Can only be called by root role.
 
@@ -77,7 +77,7 @@ Remove colony recovery role. Can only be called by root role.
 |_user|address|User we want to remove recovery role from
 
 
-### `setRecoveryRole`
+### ▸ **`setRecoveryRole(address _user)`**
 
 Set new colony recovery role. Can be called by root.
 
@@ -89,7 +89,7 @@ Set new colony recovery role. Can be called by root.
 |_user|address|User we want to give a recovery role to
 
 
-### `setStorageSlotRecovery`
+### ▸ **`setStorageSlotRecovery(uint256 _slot, bytes32 _value)`**
 
 Update value of arbitrary storage variable. Can only be called by user with recovery role.
 

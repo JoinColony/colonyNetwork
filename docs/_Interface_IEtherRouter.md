@@ -7,7 +7,7 @@ order: 1
   
 ## Interface Methods
 
-### `setAuthority`
+### ▸ **`setAuthority(address authority_)`**
 
 Sets the EtherRouter authority. Inherited from DSAuth.
 
@@ -19,7 +19,7 @@ Sets the EtherRouter authority. Inherited from DSAuth.
 |authority_|address|Address of the new DSAuthority instance
 
 
-### `setOwner`
+### ▸ **`setOwner(address owner_)`**
 
 Sets the EtherRouter owner. Inherited from DSAuth.
 
@@ -31,7 +31,7 @@ Sets the EtherRouter owner. Inherited from DSAuth.
 |owner_|address|Address of the new owner
 
 
-### `setResolver`
+### ▸ **`setResolver(address _resolver)`**
 
 Sets the resolver address. This is used in the routing of all delegatecalls by the EtherRouter.
 

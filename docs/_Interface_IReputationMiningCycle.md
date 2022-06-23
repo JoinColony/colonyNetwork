@@ -7,7 +7,7 @@ order: 7
   
 ## Interface Methods
 
-### `appendReputationUpdateLog`
+### ▸ **`appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId, address _colonyAddress, uint128 _nParents, uint128 _nChildren)`**
 
 Add a new entry to the reputation update log.
 
@@ -24,7 +24,7 @@ Add a new entry to the reputation update log.
 |_nChildren|uint128|The number of child skills the skill defined by the skillId has
 
 
-### `challengeRoundComplete`
+### ▸ **`challengeRoundComplete(uint256 _round):bool complete`**
 
 Get whether a challenge round is complete.
 
@@ -41,7 +41,7 @@ Get whether a challenge round is complete.
 |---|---|---|
 |complete|bool|Boolean indicating whether the given round challenge is complete
 
-### `confirmBinarySearchResult`
+### ▸ **`confirmBinarySearchResult(uint256 _round, uint256 _idx, bytes memory _jhIntermediateValue, bytes32[] memory _siblings)`**
 
 This function ensures that the intermediate hashes saved are correct.
 
@@ -56,7 +56,7 @@ This function ensures that the intermediate hashes saved are correct.
 |_siblings|bytes32[]|The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetLeaf`
 
 
-### `confirmJustificationRootHash`
+### ▸ **`confirmJustificationRootHash(uint256 _round, uint256 _index, bytes32[] memory _siblings1, bytes32[] memory _siblings2)`**
 
 Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible.
 
@@ -72,7 +72,7 @@ Verify the Justification Root Hash (JRH) for a submitted reputation hash is plau
 |_siblings2|bytes32[]|The siblings for the same Merkle proof
 
 
-### `confirmNewHash`
+### ▸ **`confirmNewHash(uint256 _roundNumber)`**
 
 Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle, or the last one standing after all others have been proved wrong.
 
@@ -84,7 +84,7 @@ Confirm a new reputation hash. The hash in question is either the only one that 
 |_roundNumber|uint256|The round number that the hash being confirmed is in as the only contendender. If only one hash was submitted, then this is zero.
 
 
-### `getDecayConstant`
+### ▸ **`getDecayConstant():uint256 numerator, uint256 denominator`**
 
 Get the reputation decay constant.
 
@@ -97,7 +97,7 @@ Get the reputation decay constant.
 |numerator|uint256|The numerator of the decay constant
 |denominator|uint256|The denominator of the decay constant
 
-### `getDisputeRewardSize`
+### ▸ **`getDisputeRewardSize():uint256 reward`**
 
 Returns the amount of CLNY given for defending a hash during the current dispute cycle
 
@@ -109,7 +109,7 @@ Returns the amount of CLNY given for defending a hash during the current dispute
 |---|---|---|
 |reward|uint256|uint256 The amount of CLNY given.
 
-### `getDisputeRound`
+### ▸ **`getDisputeRound(uint256 _round):DisputedEntry[] submissions`**
 
 The getter for the disputeRounds mapping.
 
@@ -126,7 +126,7 @@ The getter for the disputeRounds mapping.
 |---|---|---|
 |submissions|DisputedEntry[]|An array of DisputedEntrys struct for the round. See ReputationMiningCycleDataTypes for the full description of the properties.
 
-### `getEntryHash`
+### ▸ **`getEntryHash(address _submitter, uint256 _entryIndex, bytes32 _newHash):bytes32 entryHash`**
 
 Get the hash for the corresponding entry.
 
@@ -145,7 +145,7 @@ Get the hash for the corresponding entry.
 |---|---|---|
 |entryHash|bytes32|The hash for the corresponding entry
 
-### `getMinStake`
+### ▸ **`getMinStake():uint256 minStake`**
 
 Get the minimum stake of CLNY required to mine.
 
@@ -157,7 +157,7 @@ Get the minimum stake of CLNY required to mine.
 |---|---|---|
 |minStake|uint256|The minimum stake amount
 
-### `getMiningWindowDuration`
+### ▸ **`getMiningWindowDuration():uint256 miningWindowDuration`**
 
 Get the length of the mining window in seconds.
 
@@ -169,7 +169,7 @@ Get the length of the mining window in seconds.
 |---|---|---|
 |miningWindowDuration|uint256|Duration of the reputation mining window in seconds
 
-### `getNInvalidatedHashes`
+### ▸ **`getNInvalidatedHashes():uint256 nInvalidatedHashes`**
 
 Get the number of hashes that have been invalidated this mining cycle.
 
@@ -181,7 +181,7 @@ Get the number of hashes that have been invalidated this mining cycle.
 |---|---|---|
 |nInvalidatedHashes|uint256|Number of invalidated hashes in this mining cycle
 
-### `getNSubmissionsForHash`
+### ▸ **`getNSubmissionsForHash(bytes32 _hash, uint256 _nLeaves, bytes32 _jrh):uint256 count`**
 
 Get the number of submissions miners made of a particular hash / nLeaves / jrh combination.
 
@@ -200,7 +200,7 @@ Get the number of submissions miners made of a particular hash / nLeaves / jrh c
 |---|---|---|
 |count|uint256|The number of submissions - should be 0-12, as up to twelve submissions can be made
 
-### `getNUniqueSubmittedHashes`
+### ▸ **`getNUniqueSubmittedHashes():uint256 nUniqueSubmittedHashes`**
 
 Get the number of unique hash/nleaves/jrh sets that have been submitted this mining cycle.
 
@@ -212,7 +212,7 @@ Get the number of unique hash/nleaves/jrh sets that have been submitted this min
 |---|---|---|
 |nUniqueSubmittedHashes|uint256|Number of unique hash/nleaves/jrh sets in this cycle
 
-### `getReputationHashSubmission`
+### ▸ **`getReputationHashSubmission(address _user):Submission submission`**
 
 The getter for the hashSubmissions mapping, which keeps track of submissions by user.
 
@@ -229,7 +229,7 @@ The getter for the hashSubmissions mapping, which keeps track of submissions by 
 |---|---|---|
 |submission|Submission|the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description.
 
-### `getReputationMiningWindowOpenTimestamp`
+### ▸ **`getReputationMiningWindowOpenTimestamp():uint256 timestamp`**
 
 Get the timestamp that the current reputation mining window opened.
 
@@ -241,7 +241,7 @@ Get the timestamp that the current reputation mining window opened.
 |---|---|---|
 |timestamp|uint256|The timestamp
 
-### `getReputationUpdateLogEntry`
+### ▸ **`getReputationUpdateLogEntry(uint256 _id):ReputationLogEntry reputationUpdateLogEntry`**
 
 Get the `ReputationLogEntry` at index `_id`.
 
@@ -258,7 +258,7 @@ Get the `ReputationLogEntry` at index `_id`.
 |---|---|---|
 |reputationUpdateLogEntry|ReputationLogEntry|The Reputation Update Log Entry
 
-### `getReputationUpdateLogLength`
+### ▸ **`getReputationUpdateLogLength():uint256 nUpdates`**
 
 Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract.
 
@@ -270,7 +270,7 @@ Get the length of the ReputationUpdateLog stored on this instance of the Reputat
 |---|---|---|
 |nUpdates|uint256|
 
-### `getResponsePossible`
+### ▸ **`getResponsePossible(DisputeStages _stage, uint256 _since):bool possible`**
 
 Returns whether the caller is able to currently respond to a dispute stage.
 
@@ -288,7 +288,7 @@ Returns whether the caller is able to currently respond to a dispute stage.
 |---|---|---|
 |possible|bool|bool Whether the user can respond at the current time.
 
-### `getSubmissionUser`
+### ▸ **`getSubmissionUser(bytes32 _hash, uint256 _nLeaves, bytes32 _jrh, uint256 _index):address user`**
 
 Get the address that made a particular submission.
 
@@ -308,7 +308,7 @@ Get the address that made a particular submission.
 |---|---|---|
 |user|address|Address of the user that submitted the hash / nLeaves/ jrh at index
 
-### `initialise`
+### ▸ **`initialise(address _tokenLocking, address _clnyToken)`**
 
 Initialise this reputation mining cycle.
 
@@ -322,7 +322,7 @@ Initialise this reputation mining cycle.
 |_clnyToken|address|Address of the CLNY token
 
 
-### `invalidateHash`
+### ▸ **`invalidateHash(uint256 _round, uint256 _idx)`**
 
 Invalidate a hash that has timed out relative to its opponent its current challenge step. Note that this can be called to 'invalidate' a nonexistent hash, if the round has an odd number of entrants and so the last hash is being given a bye to the next round.
 
@@ -335,7 +335,7 @@ Invalidate a hash that has timed out relative to its opponent its current challe
 |_idx|uint256|The index in the round that the hash being invalidated is in
 
 
-### `minerSubmittedEntryIndex`
+### ▸ **`minerSubmittedEntryIndex(address _miner, uint256 _index):bool result`**
 
 Returns a boolean result of whether the miner has already submitted at this entry index.
 
@@ -353,7 +353,7 @@ Returns a boolean result of whether the miner has already submitted at this entr
 |---|---|---|
 |result|bool|Boolean whether the entryIndex was already submitted
 
-### `resetWindow`
+### ▸ **`resetWindow()`**
 
 Resets the timestamp that the submission window opens to `now`.
 
@@ -361,7 +361,7 @@ Resets the timestamp that the submission window opens to `now`.
 
 
 
-### `respondToBinarySearchForChallenge`
+### ▸ **`respondToBinarySearchForChallenge(uint256 _round, uint256 _idx, bytes memory _jhIntermediateValue, bytes32[] memory _siblings)`**
 
 Respond to a binary search step, to eventually discover where two submitted hashes differ in their Justification trees.
 
@@ -376,7 +376,7 @@ Respond to a binary search step, to eventually discover where two submitted hash
 |_siblings|bytes32[]|The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetLeaf`
 
 
-### `respondToChallenge`
+### ▸ **`respondToChallenge(uint256[[object Object]] memory _u, bytes32[[object Object]] memory _b32, bytes32[] memory _reputationSiblings, bytes32[] memory _agreeStateSiblings, bytes32[] memory _disagreeStateSiblings, bytes32[] memory _userOriginReputationSiblings, bytes32[] memory _childReputationSiblings, bytes32[] memory _adjacentReputationSiblings)`**
 
 Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
 
@@ -396,7 +396,7 @@ Respond to challenge, to establish which (if either) of the two submissions faci
 |_adjacentReputationSiblings|bytes32[]|Nonzero for updates involving insertion of a new skill. The siblings of the Merkle proof of a reputation in the agree state that ends adjacent to the new reputation
 
 
-### `rewardStakersWithReputation`
+### ▸ **`rewardStakersWithReputation(address[] memory _stakers, uint256[] memory _weights, address _metaColonyAddress, uint256 _reward, uint256 _miningSkillId)`**
 
 Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
 
@@ -413,7 +413,7 @@ Start the reputation log with the rewards for the stakers who backed the accepte
 |_miningSkillId|uint256|Skill id of the special mining skill
 
 
-### `submitRootHash`
+### ▸ **`submitRootHash(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex)`**
 
 Submit a new reputation root hash.
 
@@ -428,7 +428,7 @@ Submit a new reputation root hash.
 |_entryIndex|uint256|The entry number for the given `newHash` and `nLeaves`
 
 
-### `userInvolvedInMiningCycle`
+### ▸ **`userInvolvedInMiningCycle(address _user):bool involved`**
 
 Returns whether a particular address has been involved in the current mining cycle. This might be from submitting a hash, or from defending one during a dispute.
 

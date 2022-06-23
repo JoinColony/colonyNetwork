@@ -1,6 +1,6 @@
 ## Interface Methods
 
-### `buyTokens`
+### ▸ **`buyTokens(uint256 _numTokens)`**
 
 Purchase tokens from Coin Machine.
 
@@ -12,7 +12,7 @@ Purchase tokens from Coin Machine.
 |_numTokens|uint256|The number of tokens to purchase
 
 
-### `deprecate`
+### ▸ **`deprecate(bool _deprecated)`**
 
 Called when deprecating (or undeprecating) the extension
 
@@ -24,14 +24,14 @@ Called when deprecating (or undeprecating) the extension
 |_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
 
 
-### `finishUpgrade`
+### ▸ **`finishUpgrade()`**
 
 Called when upgrading the extension
 
 
 
 
-### `getActiveIntake`
+### ▸ **`getActiveIntake():uint256 intake`**
 
 Get the number of tokens received in the period that the price was last updated for or a purchase was made
 
@@ -43,7 +43,7 @@ Get the number of tokens received in the period that the price was last updated 
 |---|---|---|
 |intake|uint256|Amount of tokens received
 
-### `getActivePeriod`
+### ▸ **`getActivePeriod():uint256 period`**
 
 Get the period that the price was last updated for or a purchase was made
 
@@ -55,7 +55,7 @@ Get the period that the price was last updated for or a purchase was made
 |---|---|---|
 |period|uint256|The active period
 
-### `getActiveSold`
+### ▸ **`getActiveSold():uint256 sold`**
 
 Get the number of tokens sold in the period that the price was last updated for or a purchase was made
 
@@ -67,7 +67,7 @@ Get the number of tokens sold in the period that the price was last updated for 
 |---|---|---|
 |sold|uint256|Amount of tokens sold
 
-### `getCurrentPrice`
+### ▸ **`getCurrentPrice():uint256 price`**
 
 Get the current price per token
 
@@ -79,7 +79,7 @@ Get the current price per token
 |---|---|---|
 |price|uint256|Current price
 
-### `getEMAIntake`
+### ▸ **`getEMAIntake():uint256 amount`**
 
 Get the EMA of the number of tokens received each period
 
@@ -91,7 +91,7 @@ Get the EMA of the number of tokens received each period
 |---|---|---|
 |amount|uint256|Amount of tokens received
 
-### `getEvolvePrice`
+### ▸ **`getEvolvePrice():bool evolve`**
 
 Get the evolvePrice boolean
 
@@ -103,7 +103,7 @@ Get the evolvePrice boolean
 |---|---|---|
 |evolve|bool|The evolvePrice boolean
 
-### `getMaxPerPeriod`
+### ▸ **`getMaxPerPeriod():uint256 max`**
 
 Get the maximum number of tokens to sell per period
 
@@ -115,7 +115,7 @@ Get the maximum number of tokens to sell per period
 |---|---|---|
 |max|uint256|Maximum number of tokens
 
-### `getMaxPurchase`
+### ▸ **`getMaxPurchase(address _user):uint256 max`**
 
 Get the maximum amount of tokens a user can purchase in a period
 
@@ -132,7 +132,7 @@ Get the maximum amount of tokens a user can purchase in a period
 |---|---|---|
 |max|uint256|Maximum amount of tokens
 
-### `getMetatransactionNonce`
+### ▸ **`getMetatransactionNonce(address userAddress):uint256 nonce`**
 
 Gets the next nonce for a meta-transaction
 
@@ -149,7 +149,7 @@ Gets the next nonce for a meta-transaction
 |---|---|---|
 |nonce|uint256|The nonce
 
-### `getPeriodLength`
+### ▸ **`getPeriodLength():uint256 length`**
 
 Get the length of the sale period
 
@@ -161,7 +161,7 @@ Get the length of the sale period
 |---|---|---|
 |length|uint256|Length of the sale period
 
-### `getPurchaseToken`
+### ▸ **`getPurchaseToken():address token`**
 
 Get the address of the token being used to make purchases
 
@@ -173,7 +173,7 @@ Get the address of the token being used to make purchases
 |---|---|---|
 |token|address|The token's address
 
-### `getSellableTokens`
+### ▸ **`getSellableTokens():uint256 remaining`**
 
 Get the number of remaining tokens for sale this period
 
@@ -185,7 +185,7 @@ Get the number of remaining tokens for sale this period
 |---|---|---|
 |remaining|uint256|Tokens remaining
 
-### `getTargetPerPeriod`
+### ▸ **`getTargetPerPeriod():uint256 target`**
 
 Get the target number of tokens to sell per period
 
@@ -197,7 +197,7 @@ Get the target number of tokens to sell per period
 |---|---|---|
 |target|uint256|Target number of tokens
 
-### `getToken`
+### ▸ **`getToken():address token`**
 
 Get the address of the token being sold
 
@@ -209,7 +209,7 @@ Get the address of the token being sold
 |---|---|---|
 |token|address|The token's address
 
-### `getTokenBalance`
+### ▸ **`getTokenBalance():uint256 balance`**
 
 Get the remaining balance of tokens
 
@@ -221,7 +221,7 @@ Get the remaining balance of tokens
 |---|---|---|
 |balance|uint256|Remaining token balance
 
-### `getUserLimit`
+### ▸ **`getUserLimit(address _user):uint256 max`**
 
 Get the maximum amount of tokens a user can purchase in total
 
@@ -238,7 +238,7 @@ Get the maximum amount of tokens a user can purchase in total
 |---|---|---|
 |max|uint256|Maximum amount of tokens
 
-### `getWhitelist`
+### ▸ **`getWhitelist():address whitelist`**
 
 Get the address of the whitelist (if exists)
 
@@ -250,7 +250,7 @@ Get the address of the whitelist (if exists)
 |---|---|---|
 |whitelist|address|Address of Whitelist contract
 
-### `getWindowSize`
+### ▸ **`getWindowSize():uint256 size`**
 
 Get the size of the averaging window
 
@@ -262,7 +262,7 @@ Get the size of the averaging window
 |---|---|---|
 |size|uint256|Size of the averaging window
 
-### `identifier`
+### ▸ **`identifier():bytes32 identifier`**
 
 Returns the identifier of the extension
 
@@ -274,7 +274,7 @@ Returns the identifier of the extension
 |---|---|---|
 |identifier|bytes32|The extension's identifier
 
-### `initialise`
+### ▸ **`initialise(address _token, address _purchaseToken, uint256 _periodLength, uint256 _windowSize, uint256 _targetPerPeriod, uint256 _maxPerPeriod, uint256 _userLimitFraction, uint256 _startingPrice, address _whitelist)`**
 
 Must be called before any sales can be made
 
@@ -294,7 +294,7 @@ Must be called before any sales can be made
 |_whitelist|address|Optionally an address of a whitelist contract to use can be provided. Pass 0x0 if no whitelist being used
 
 
-### `install`
+### ▸ **`install(address _colony)`**
 
 Configures the extension
 
@@ -306,7 +306,7 @@ Configures the extension
 |_colony|address|The colony in which the extension holds permissions
 
 
-### `setWhitelist`
+### ▸ **`setWhitelist(address _whitelist)`**
 
 Set the address for an (optional) whitelist
 
@@ -318,21 +318,21 @@ Set the address for an (optional) whitelist
 |_whitelist|address|The address of the whitelist
 
 
-### `uninstall`
+### ▸ **`uninstall()`**
 
 Called when uninstalling the extension
 
 
 
 
-### `updatePeriod`
+### ▸ **`updatePeriod()`**
 
 Bring the token accounting current
 
 
 
 
-### `version`
+### ▸ **`version():uint256 version`**
 
 Returns the version of the extension
 
