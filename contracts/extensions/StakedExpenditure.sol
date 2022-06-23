@@ -119,6 +119,10 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     Stake storage stake = stakes[_expenditureId];
     require(stake.amount > 0, "expenditure-utils-nothing-to-claim");
 
+    uint256 stakeAmount = stake.amount;
+    address stakeCreator = stake.creator;
+    delete stakes[_expenditureId];
+
     ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
     require(
       expenditure.status == ColonyDataTypes.ExpenditureStatus.Cancelled ||
@@ -126,10 +130,7 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
       "expenditure-utils-expenditure-invalid-state"
     );
 
-    colony.deobligateStake(stake.creator, expenditure.domainId, stake.amount);
-
-    // slither-disable-next-line reentrancy-no-eth
-    delete stakes[_expenditureId];
+    colony.deobligateStake(stakeCreator, expenditure.domainId, stakeAmount);
   }
 
   function cancelAndReclaimStake(
@@ -175,6 +176,10 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
       ),
       "expenditure-utils-caller-not-arbitration"
     );
+    require(
+      expenditure.status != ColonyDataTypes.ExpenditureStatus.Cancelled,
+      "expenditure-utils-expenditure-already-cancelled"
+    );
 
     require(
       expenditure.status != ColonyDataTypes.ExpenditureStatus.Draft,
@@ -185,18 +190,19 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
       Stake storage stake = stakes[_expenditureId];
       require(stake.amount > 0, "expenditure-utils-nothing-to-slash");
 
-      colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), stake.creator, expenditure.domainId, stake.amount, address(0x0));
+      uint256 stakeAmount = stake.amount;
+      address stakeCreator = stake.creator;
+      delete stakes[_expenditureId];
+
+      colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), stakeCreator, expenditure.domainId, stakeAmount, address(0x0));
 
       colony.emitDomainReputationPenalty(
         _permissionDomainId,
         _childSkillIndex,
         expenditure.domainId,
-        stake.creator,
-        -int256(stake.amount)
+        stakeCreator,
+        -int256(stakeAmount)
       );
-
-      // slither-disable-next-line reentrancy-no-eth
-      delete stakes[_expenditureId];
     }
 
     cancelExpenditure(_permissionDomainId, _childSkillIndex, _expenditureId, expenditure.owner);

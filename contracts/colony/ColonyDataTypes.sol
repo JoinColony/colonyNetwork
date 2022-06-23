@@ -157,6 +157,13 @@ interface ColonyDataTypes {
   /// @param payoutModifier The payout modifier for the slot
   event ExpenditurePayoutModifierSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, int256 payoutModifier);
 
+  /// @notice Event logged when an expenditure slot payout modifier changes
+  /// @param agent The address that is responsible for triggering this event
+  /// @param expenditureId Id of the expenditure
+  /// @param slot Memory slot being set
+  /// @param value Value being set in the slot
+  event ExpenditureStateChanged(address agent, uint256 indexed expenditureId, bytes32 slot, bytes32 value);
+
   /// @notice Event logged when a new payment is added
   /// @param agent The address that is responsible for triggering this event
   /// @param paymentId The newly added payment id
