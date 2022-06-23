@@ -31,6 +31,10 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
 
   mapping(address => uint256) metatransactionNonces;
+
+  /// @notice Gets the next nonce for a meta-transaction
+  /// @param userAddress The user's address
+  /// @return nonce The nonce
   function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
     return metatransactionNonces[userAddress];
   }
@@ -40,12 +44,14 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   }
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  /// @return identifier The extension's identifier
+  function identifier() public override pure returns (bytes32 identifier) {
     return keccak256("OneTxPayment");
   }
 
   /// @notice Returns the version of the extension
-  function version() public override pure returns (uint256) {
+  /// @return version The extension's version number
+  function version() public override pure returns (uint256 version) {
     return 3;
   }
 
@@ -61,6 +67,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
 
   /// @notice Called when deprecating (or undeprecating) the extension
+  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
   function deprecate(bool _deprecated) public override auth {} // solhint-disable-line no-empty-blocks
 
   /// @notice Called when uninstalling the extension
@@ -83,8 +90,8 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Return the permissions required for each function
   /// @param _sig The function signature
-  /// @return The byte32 of permissions required
-  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32) {
+  /// @return roles The byte32 of permissions required
+  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32 roles) {
     if (_sig == MAKE_PAYMENT_SIG || _sig == MAKE_PAYMENT_DOMAIN_SIG) {
       return REQUIRED_ROLES;
     } else {

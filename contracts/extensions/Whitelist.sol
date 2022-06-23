@@ -40,6 +40,9 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   mapping (address => bool) signatures;
   mapping(address => uint256) metatransactionNonces;
 
+  /// @notice Gets the next nonce for a meta-transaction
+  /// @param userAddress The user's address
+  /// @return nonce The nonce
   function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
     return metatransactionNonces[userAddress];
   }
@@ -59,12 +62,14 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   // Public
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  /// @return identifier The extension's identifier
+  function identifier() public override pure returns (bytes32 identifier) {
     return keccak256("Whitelist");
   }
 
   /// @notice Returns the version of the extension
-  function version() public override pure returns (uint256) {
+  /// @return version The extension's version number
+  function version() public override pure returns (uint256 version) {
     return 2;
   }
 
@@ -80,6 +85,7 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   function finishUpgrade() public override auth {}
 
   /// @notice Called when deprecating (or undeprecating) the extension
+  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
   }
@@ -134,7 +140,8 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Get the user's overall whitelist status
   /// @param _user The address of the user
-  function isApproved(address _user) public initialised view returns (bool) {
+  /// @return approved Is `true` when the user is approved
+  function isApproved(address _user) public initialised view returns (bool approved) {
     return (
       !deprecated &&
       (!useApprovals || approvals[_user]) &&
@@ -143,24 +150,28 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   }
 
   /// @notice Get the useApprovals boolean
-  function getUseApprovals() public view returns (bool) {
+  /// @return useApprovals Whether `useApprovals` is `true`
+  function getUseApprovals() public view returns (bool useApprovals) {
     return useApprovals;
   }
 
   /// @notice Get the agreementHash
-  function getAgreementHash() public view returns (string memory) {
+  /// @return hash The agreement hash
+  function getAgreementHash() public view returns (string memory hash) {
     return agreementHash;
   }
 
   /// @notice Get the user's approval status
   /// @param _user The address of the user
-  function getApproval(address _user) public view returns (bool) {
+  /// @return status The user's approval status
+  function getApproval(address _user) public view returns (bool status) {
     return approvals[_user];
   }
 
   /// @notice Get the user's signature status
   /// @param _user The address of the user
-  function getSignature(address _user) public view returns (bool) {
+  /// @return status The user's signature status
+  function getSignature(address _user) public view returns (bool status) {
     return signatures[_user];
   }
 }
