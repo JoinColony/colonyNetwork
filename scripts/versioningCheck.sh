@@ -1,7 +1,9 @@
 LATEST_RELEASE=`curl --silent "https://api.github.com/repos/joinColony/colonyNetwork/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")'`
 
+NO_COMMENT_REGEX="^[ \t]*[^\/ \t][^\/ \t].*$"
+
 # Are there changes in the colony contract?
-N=`git diff --cached --name-only $LATEST_RELEASE contracts/colony/ | wc -l`
+N=`git diff --cached --name-only -G"$NO_COMMENT_REGEX" $LATEST_RELEASE contracts/colony/ | wc -l`
 
 version_from_commit() {
 	COMMIT=$1;
@@ -34,7 +36,7 @@ if [ $N -ne 0 ]; then
 fi
 
 # Now the same for the extensions
-for file in $(git diff --cached --name-only $LATEST_RELEASE | grep -E 'contracts/extensions/')
+for file in $(git diff --cached --name-only -G"$NO_COMMENT_REGEX" $LATEST_RELEASE | grep -E 'contracts/extensions/')
 do
 	if [ $file = "contracts/extensions/ColonyExtension.sol" ]; then
 		continue
@@ -44,14 +46,19 @@ do
 		continue
 	fi
 
-	oldVersion="$(version_from_commit_extensions $LATEST_RELEASE $file)"
+	if git show $LATEST_RELEASE:$file > /dev/null 2>&1 ; then
 
-	# What version does the staged version have?
-	newVersion="$(version_from_commit_extensions '' $file)"
+		oldVersion="$(version_from_commit_extensions $LATEST_RELEASE $file)"
 
-	if [ $newVersion -eq $oldVersion ]; then
-		echo "Version not bumped for $file when it should be"
-		STATUS=1;
+		# What version does the staged version have?
+		newVersion="$(version_from_commit_extensions '' $file)"
+
+		if [ $newVersion -eq $oldVersion ]; then
+			echo "Version not bumped for $file when it should be"
+			STATUS=1;
+		fi
+	else
+		echo "$file is new, and doesn't exist in latest release; skipping."
 	fi
 
 done
