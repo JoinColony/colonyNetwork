@@ -994,7 +994,7 @@ Get the current approval amount
 
 |Name|Type|Description|
 |---|---|---|
-|amount|uint256|
+|amount|uint256|The token approval amount
 
 ### `getTotalTokenApproval`
 
@@ -1011,7 +1011,7 @@ Get the current total approval amount across all spenders
 
 |Name|Type|Description|
 |---|---|---|
-|amount|uint256|
+|amount|uint256|The total token approval amount
 
 ### `getUserRoles`
 
@@ -1127,11 +1127,11 @@ Lock the colony's token. Can only be called by a network-managed extension.
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|timesLocked|uint256|The amount of times the token was locked
 
 ### `makeArbitraryTransaction`
 
-Execute arbitrary transaction on behalf of the Colony DEPRECATED
+Execute arbitrary transaction on behalf of the Colony
 
 
 **Parameters**
@@ -1258,7 +1258,7 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
 |_childSkillIndex|uint256|The child index in _permissionDomainId where I will be taking this action
 |_domainId|uint256|The domain where I am taking this action, pointed to by _permissionDomainId and _childSkillIndex
-|_fromChildSkillIndex|uint256|In the array of child skills for the skill associated with the domain pointed to by _permissionDomainId + _childSkillIndex,         the index of the skill associated with the domain that contains _fromPot
+|_fromChildSkillIndex|uint256|In the array of child skills for the skill associated with the domain pointed to by _permissionDomainId + _childSkillIndex, the index of the skill associated with the domain that contains _fromPot
 |_toChildSkillIndex|uint256|The same, but for the _toPot which the funds are being moved to
 |_fromPot|uint256|Funding pot id providing the funds
 |_toPot|uint256|Funding pot id receiving the funds
@@ -1918,7 +1918,7 @@ Updates the expenditure owner. Can only be called by expenditure owner.
 
 ### `transferExpenditureViaArbitration`
 
-DEPRECATED Updates the expenditure owner. Can only be called by Arbitration role.
+Updates the expenditure owner. Can only be called by Arbitration role.
 
 *Note: This is now deprecated and will be removed in a future version*
 

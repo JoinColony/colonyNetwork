@@ -61,8 +61,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @return tokenAddress Address of the token contract
   function getToken() external view returns (address tokenAddress);
 
+  /// @notice @deprecated
   /// @notice Execute arbitrary transaction on behalf of the Colony
-  /// DEPRECATED
   /// @param _to Contract to receive the function call (cannot be this contract, network or token locking)
   /// @param _action Bytes array encoding the function call and arguments
   /// @return success Boolean indicating whether the transaction succeeded
@@ -250,7 +250,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   function mintTokensFor(address _guy, uint256 _wad) external;
 
   /// @notice Lock the colony's token. Can only be called by a network-managed extension.
-  function lockToken() external returns (uint256);
+  /// @return timesLocked The amount of times the token was locked
+  function lockToken() external returns (uint256 timesLocked);
 
   /// @notice Unlock the colony's token for a user. Can only be called by a network-managed extension.
   /// @param user The user to unlock
@@ -376,7 +377,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _newOwner New owner of expenditure
   function transferExpenditure(uint256 _id, address _newOwner) external;
 
-  /// @notice DEPRECATED Updates the expenditure owner. Can only be called by Arbitration role.
+  /// @notice @deprecated
+  /// @notice Updates the expenditure owner. Can only be called by Arbitration role.
   /// @dev This is now deprecated and will be removed in a future version
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
@@ -409,7 +411,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _metadata IPFS hash of the metadata
   function setExpenditureMetadata(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, string memory _metadata) external;
 
-  /// @notice Deprecated
+  /// @notice @deprecated
   /// @notice Sets the recipient on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Id of the expenditure
   /// @param _slot Slot for the recipient address
@@ -422,7 +424,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _recipients Addresses of the recipients
   function setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address payable[] memory _recipients) external;
 
-  /// @notice Deprecated
+  /// @notice @deprecated
   /// @notice Set the token payout on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Id of the expenditure
   /// @param _slot Number of the slot
@@ -437,7 +439,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _amounts Payout amounts
   function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts) external;
 
-  /// @notice Deprecated
+  /// @notice @deprecated
   /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
@@ -450,7 +452,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _skillIds Ids of the new skills to set
   function setExpenditureSkills(uint256 _id, uint256[] memory _slots, uint256[] memory _skillIds) external;
 
-  /// @notice Deprecated
+  /// @notice @deprecated
   /// @notice Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
@@ -932,8 +934,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The child index in _permissionDomainId where I will be taking this action
   /// @param _domainId The domain where I am taking this action, pointed to by _permissionDomainId and _childSkillIndex
-  /// @param _fromChildSkillIndex In the array of child skills for the skill associated with the domain pointed to by _permissionDomainId + _childSkillIndex,
-  ///         the index of the skill associated with the domain that contains _fromPot
+  /// @param _fromChildSkillIndex In the array of child skills for the skill associated with the domain pointed to by _permissionDomainId + _childSkillIndex, the index of the skill associated with the domain that contains _fromPot
   /// @param _toChildSkillIndex The same, but for the _toPot which the funds are being moved to
   /// @param _fromPot Funding pot id providing the funds
   /// @param _toPot Funding pot id receiving the funds
@@ -951,7 +952,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
     address _token
     ) external;
 
-  /// @notice DEPRECATED
+  /// @notice @deprecated
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _fromChildSkillIndex The child index in `_permissionDomainId` where we can find the domain for `_fromPotId`
@@ -1052,9 +1053,11 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @notice Get the current approval amount
   /// @param token The address of the token which was approved
   /// @param spender The account we have approved
+  /// @return amount The token approval amount
   function getTokenApproval(address token, address spender) external view returns (uint256 amount);
 
   /// @notice Get the current total approval amount across all spenders
   /// @param token The address of the token which was approved
+  /// @return amount The total token approval amount
   function getTotalTokenApproval(address token) external view returns (uint256 amount);
 }

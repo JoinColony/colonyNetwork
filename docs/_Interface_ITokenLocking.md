@@ -38,7 +38,7 @@ Deobligate the user some amount of tokens, releasing the stake. Can only be call
 
 ### `deposit`
 
-DEPRECATED Deposit `_amount` of deposited tokens. Can only be called if user tokens are not locked. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
+Deposit `_amount` of deposited tokens. Can only be called if user tokens are not locked. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
 
 
 **Parameters**
@@ -297,7 +297,7 @@ Increments the lock counter to `_lockId` for the `_user` if user's lock count is
 
 ### `withdraw`
 
-DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
 
 
 **Parameters**

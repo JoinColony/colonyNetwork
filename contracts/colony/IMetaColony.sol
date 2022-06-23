@@ -57,6 +57,7 @@ interface IMetaColony is IColony {
 
   /// @notice Called to set the total per-cycle reputation reward, which will be split between all miners.
   /// @dev Calls the corresponding function on the ColonyNetwork.
+  /// @param _amount The CLNY awarded per mining cycle to the miners
   function setReputationMiningCycleReward(uint256 _amount) external;
 
   /// @notice Add a new extension/version to the Extensions repository.

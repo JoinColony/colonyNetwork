@@ -359,6 +359,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
 
   /// @notice Get a token's status in the payout whitelist
   /// @param _token The token being queried
+  /// @return status Will be `true` if token is whitelisted
   function getPayoutWhitelist(address _token) external view returns (bool status);
 
   /// @notice Set a token's status in the payout whitelist
@@ -403,11 +404,12 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
 
   /// @notice Called to set the total per-cycle reputation reward, which will be split between all miners.
   /// @dev Can only be called by the MetaColony.
+  /// @param _amount The CLNY awarded per mining cycle to the miners
   function setReputationMiningCycleReward(uint256 _amount) external;
 
   /// @notice Called to get the total per-cycle reputation mining reward.
-  /// @return The CLNY awarded per mining cycle to the miners.
-  function getReputationMiningCycleReward() external view returns (uint256);
+  /// @return amount The CLNY awarded per mining cycle to the miners
+  function getReputationMiningCycleReward() external view returns (uint256 amount);
 
   /// @notice Called to deploy a token.
   /// @dev This is more expensive than deploying a token directly, but is able to be done via
@@ -424,6 +426,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _token The address of the otken
   /// @param _colony The address of the colony in control of the token
   /// @param allowedToTransfer An array of addresses that are allowed to transfer the token even if it's locked
+  /// @return The address of the newly deployed TokenAuthority
   function deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer) external returns (address);
 
   /// @notice Called to give or remove another address's permission to mine on your behalf
@@ -433,7 +436,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
 
   /// @notice Called to get the address _delegate is allowed to mine for
   /// @param _delegate The address that wants to mine
-  /// @return The address they are allowed to mine on behalf of
-  function getMiningDelegator(address _delegate) external view returns (address);
+  /// @return delegator The address they are allowed to mine on behalf of
+  function getMiningDelegator(address _delegate) external view returns (address delegator);
 
 }
