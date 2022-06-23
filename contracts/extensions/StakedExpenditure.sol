@@ -48,7 +48,7 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "expenditure-utils-caller-not-root");
+    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "staked-expenditure-caller-not-root");
     _;
   }
 
@@ -88,7 +88,7 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
   // Public
 
   function setStakeFraction(uint256 _stakeFraction) public onlyRoot {
-    require(_stakeFraction <= WAD, "expenditure-utils-value-too-large");
+    require(_stakeFraction <= WAD, "staked-expenditure-value-too-large");
     stakeFraction = _stakeFraction;
   }
 
@@ -117,7 +117,7 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
 
   function reclaimStake(uint256 _expenditureId) public {
     Stake storage stake = stakes[_expenditureId];
-    require(stake.amount > 0, "expenditure-utils-nothing-to-claim");
+    require(stake.amount > 0, "staked-expenditure-nothing-to-claim");
 
     uint256 stakeAmount = stake.amount;
     address stakeCreator = stake.creator;
@@ -127,7 +127,7 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     require(
       expenditure.status == ColonyDataTypes.ExpenditureStatus.Cancelled ||
       expenditure.status == ColonyDataTypes.ExpenditureStatus.Finalized,
-      "expenditure-utils-expenditure-invalid-state"
+      "staked-expenditure-expenditure-invalid-state"
     );
 
     colony.deobligateStake(stakeCreator, expenditure.domainId, stakeAmount);
@@ -143,14 +143,16 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     Stake storage stake = stakes[_expenditureId];
     ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
 
-    require(expenditure.owner == msgSender(), "expenditure-utils-must-be-owner");
+    require(expenditure.owner == msgSender(), "staked-expenditure-must-be-owner");
 
     require(
       expenditure.status == ColonyDataTypes.ExpenditureStatus.Draft,
-      "expenditure-utils-expenditure-not-draft"
+      "staked-expenditure-expenditure-not-draft"
     );
 
     cancelExpenditure(_permissionDomainId, _childSkillIndex, _expenditureId, expenditure.owner);
+
+    // slither-disable-next-line reentrancy-no-eth
     reclaimStake(_expenditureId);
   }
 
@@ -174,21 +176,21 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
         _callerChildSkillIndex,
         expenditure.domainId
       ),
-      "expenditure-utils-caller-not-arbitration"
+      "staked-expenditure-caller-not-arbitration"
     );
     require(
       expenditure.status != ColonyDataTypes.ExpenditureStatus.Cancelled,
-      "expenditure-utils-expenditure-already-cancelled"
+      "staked-expenditure-expenditure-already-cancelled"
     );
 
     require(
       expenditure.status != ColonyDataTypes.ExpenditureStatus.Draft,
-      "expenditure-utils-expenditure-still-draft"
+      "staked-expenditure-expenditure-still-draft"
     );
 
     if (_punish) {
       Stake storage stake = stakes[_expenditureId];
-      require(stake.amount > 0, "expenditure-utils-nothing-to-slash");
+      require(stake.amount > 0, "staked-expenditure-nothing-to-slash");
 
       uint256 stakeAmount = stake.amount;
       address stakeCreator = stake.creator;
@@ -267,7 +269,7 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
   {
     bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork()).getReputationRootHash();
     bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
-    require(rootHash == impliedRoot, "expenditure-utils-invalid-root-hash");
+    require(rootHash == impliedRoot, "staked-expenditure-invalid-root-hash");
 
 
     uint256 reputationValue;
@@ -282,9 +284,9 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
       keyUserAddress := mload(add(_key, 72))
     }
 
-    require(keyColonyAddress == address(colony), "expenditure-utils-invalid-colony-address");
-    require(keySkillId == colony.getDomain(_domainId).skillId, "expenditure-utils-invalid-skill-id");
-    require(keyUserAddress == address(0x0), "expenditure-utils-invalid-user-address");
+    require(keyColonyAddress == address(colony), "staked-expenditure-invalid-colony-address");
+    require(keySkillId == colony.getDomain(_domainId).skillId, "staked-expenditure-invalid-skill-id");
+    require(keyUserAddress == address(0x0), "staked-expenditure-invalid-user-address");
 
     return reputationValue;
   }
