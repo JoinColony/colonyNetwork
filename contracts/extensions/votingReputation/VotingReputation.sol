@@ -22,13 +22,13 @@ import "./../../colonyNetwork/IColonyNetwork.sol";
 import "./../../colony/ColonyRoles.sol";
 import "./../../common/BasicMetaTransaction.sol";
 import "./../../common/ERC20Extended.sol";
-import "./../../patriciaTree/PatriciaTreeProofs.sol";
 import "./../../tokenLocking/ITokenLocking.sol";
 import "./../ColonyExtension.sol";
 import "./VotingReputationDataTypes.sol";
 
+contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputationDataTypes {
 
-contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTransaction, VotingReputationDataTypes {
+  // Constants
   uint256 constant UINT128_MAX = 2**128 - 1;
 
   uint256 constant NAY = 0;
@@ -250,7 +250,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     motion.domainId = _domainId;
     motion.skillId = skillId;
 
-    motion.skillRep = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
+    motion.skillRep = checkReputation(motion.rootHash, skillId, address(0x0), _key, _value, _branchMask, _siblings);
     motion.altTarget = _altTarget;
     motion.action = _action;
 
@@ -308,7 +308,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     uint256 stakerTotalAmount = add(stakes[_motionId][msgSender()][_vote], amount);
 
     require(
-      stakerTotalAmount <= getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings),
+      stakerTotalAmount <= checkReputation(motion.rootHash, motion.skillId, msgSender(), _key, _value, _branchMask, _siblings),
       "voting-rep-insufficient-rep"
     );
     require(
@@ -383,7 +383,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     require(getMotionState(_motionId) == MotionState.Submit, "voting-rep-motion-not-open");
     require(_voteSecret != bytes32(0), "voting-rep-invalid-secret");
 
-    uint256 userRep = getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings);
+    uint256 userRep = checkReputation(motion.rootHash, motion.skillId, msgSender(), _key, _value, _branchMask, _siblings);
 
     // Count reputation if first submission
     if (voteSecrets[_motionId][msgSender()] == bytes32(0)) {
@@ -417,7 +417,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     require(getMotionState(_motionId) == MotionState.Reveal, "voting-rep-motion-not-reveal");
     require(_vote <= 1, "voting-rep-bad-vote");
 
-    uint256 userRep = getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings);
+    uint256 userRep = checkReputation(motion.rootHash, motion.skillId, msgSender(), _key, _value, _branchMask, _siblings);
     motion.votes[_vote] = add(motion.votes[_vote], userRep);
 
     bytes32 voteSecret = voteSecrets[_motionId][msgSender()];
@@ -460,7 +460,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     uint256 domainId = motion.domainId;
     motion.domainId = _newDomainId;
     motion.skillId = newDomainSkillId;
-    motion.skillRep = getReputationFromProof(_motionId, address(0x0), _key, _value, _branchMask, _siblings);
+    motion.skillRep = checkReputation(motion.rootHash, motion.skillId, address(0x0), _key, _value, _branchMask, _siblings);
 
     uint256 loser = (motion.votes[NAY] < motion.votes[YAY]) ? NAY : YAY;
     motion.stakes[loser] = sub(motion.stakes[loser], motion.paidVoterComp);
@@ -818,38 +818,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
 
   function flip(uint256 _vote) internal pure returns (uint256) {
     return sub(1, _vote);
-  }
-
-  function getReputationFromProof(
-    uint256 _motionId,
-    address _who,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  )
-    internal view returns (uint256)
-  {
-    bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
-    require(motions[_motionId].rootHash == impliedRoot, "voting-rep-invalid-root-hash");
-
-    uint256 reputationValue;
-    address keyColonyAddress;
-    uint256 keySkill;
-    address keyUserAddress;
-
-    assembly {
-      reputationValue := mload(add(_value, 32))
-      keyColonyAddress := mload(add(_key, 20))
-      keySkill := mload(add(_key, 52))
-      keyUserAddress := mload(add(_key, 72))
-    }
-
-    require(keyColonyAddress == address(colony), "voting-rep-invalid-colony-address");
-    require(keySkill == motions[_motionId].skillId, "voting-rep-invalid-skill-id");
-    require(keyUserAddress == _who, "voting-rep-invalid-user-address");
-
-    return reputationValue;
   }
 
   function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {

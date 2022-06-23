@@ -375,14 +375,14 @@ contract("Funding Queues", (accounts) => {
     it("cannot back a basic proposal with a bad reputation proof", async () => {
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, "0x0", "0x0", "0x0", [], { from: USER0 }),
-        "funding-queue-invalid-root-hash"
+        "colony-extension-invalid-root-hash"
       );
     });
 
     it("cannot back a basic proposal with the wrong user address", async () => {
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER1 }),
-        "funding-queue-invalid-user-address"
+        "colony-extension-invalid-user-address"
       );
     });
 
@@ -393,7 +393,7 @@ contract("Funding Queues", (accounts) => {
 
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, key, value, mask, siblings, { from: USER0 }),
-        "funding-queue-invalid-skill-id"
+        "colony-extension-invalid-skill-id"
       );
     });
 
@@ -404,7 +404,7 @@ contract("Funding Queues", (accounts) => {
 
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, key, value, mask, siblings, { from: USER0 }),
-        "funding-queue-invalid-colony-address"
+        "colony-extension-invalid-colony-address"
       );
     });
 

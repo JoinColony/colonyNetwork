@@ -22,12 +22,11 @@ import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../colony/ColonyRoles.sol";
 import "./../common/BasicMetaTransaction.sol";
 import "./../common/ERC20Extended.sol";
-import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./../extensions/ColonyExtension.sol";
 
 
-contract VotingReputationMisaligned is ColonyExtension, PatriciaTreeProofs, BasicMetaTransaction {
+contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
