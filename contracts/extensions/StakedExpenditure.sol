@@ -26,7 +26,7 @@ import "./ColonyExtensionMeta.sol";
 // ignore-file-swc-108
 
 
-contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
+contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
 
   // Events
 
@@ -56,7 +56,7 @@ contract ExpenditureUtils is ColonyExtensionMeta, PatriciaTreeProofs {
 
   /// @notice Returns the identifier of the extension
   function identifier() public override pure returns (bytes32) {
-    return keccak256("ExpenditureUtils");
+    return keccak256("StakedExpenditure");
   }
 
   /// @notice Returns the version of the extension
