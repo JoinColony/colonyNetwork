@@ -167,10 +167,10 @@ contract("StakedExpenditure", (accounts) => {
       expect(stakeFraction).to.eq.BN(WAD);
 
       // But not if not root!
-      await checkErrorRevert(stakedExpenditure.setStakeFraction(WAD, { from: USER1 }), "expenditure-utils-caller-not-root");
+      await checkErrorRevert(stakedExpenditure.setStakeFraction(WAD, { from: USER1 }), "staked-expenditure-caller-not-root");
 
       // Also not greater than WAD!
-      await checkErrorRevert(stakedExpenditure.setStakeFraction(WAD.addn(1), { from: USER0 }), "expenditure-utils-value-too-large");
+      await checkErrorRevert(stakedExpenditure.setStakeFraction(WAD.addn(1), { from: USER0 }), "staked-expenditure-value-too-large");
     });
 
     it("can create an expenditure by submitting a stake", async () => {
@@ -201,7 +201,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "expenditure-utils-invalid-root-hash"
+        "staked-expenditure-invalid-root-hash"
       );
 
       key = makeReputationKey(ADDRESS_ZERO, domain1.skillId);
@@ -209,7 +209,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "expenditure-utils-invalid-colony-address"
+        "staked-expenditure-invalid-colony-address"
       );
 
       key = makeReputationKey(colony.address, 100);
@@ -217,7 +217,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "expenditure-utils-invalid-skill-id"
+        "staked-expenditure-invalid-skill-id"
       );
 
       key = makeReputationKey(colony.address, domain1.skillId, USER0);
@@ -225,7 +225,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "expenditure-utils-invalid-user-address"
+        "staked-expenditure-invalid-user-address"
       );
     });
 
@@ -265,7 +265,7 @@ contract("StakedExpenditure", (accounts) => {
 
       await checkErrorRevert(
         stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true, { from: USER1 }),
-        "expenditure-utils-caller-not-arbitration"
+        "staked-expenditure-caller-not-arbitration"
       );
     });
 
@@ -321,7 +321,7 @@ contract("StakedExpenditure", (accounts) => {
 
       await checkErrorRevert(
         stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true),
-        "expenditure-utils-nothing-to-slash"
+        "staked-expenditure-nothing-to-slash"
       );
     });
 
@@ -359,7 +359,7 @@ contract("StakedExpenditure", (accounts) => {
 
       await checkErrorRevert(
         stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId, { from: USER1 }),
-        "expenditure-utils-must-be-owner"
+        "staked-expenditure-must-be-owner"
       );
     });
 
@@ -382,11 +382,11 @@ contract("StakedExpenditure", (accounts) => {
       await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
 
-      await checkErrorRevert(stakedExpenditure.reclaimStake(expenditureId), "expenditure-utils-expenditure-invalid-state");
+      await checkErrorRevert(stakedExpenditure.reclaimStake(expenditureId), "staked-expenditure-expenditure-invalid-state");
     });
 
     it("cannot reclaim a nonexistent stake", async () => {
-      await checkErrorRevert(stakedExpenditure.reclaimStake(0), "expenditure-utils-nothing-to-claim");
+      await checkErrorRevert(stakedExpenditure.reclaimStake(0), "staked-expenditure-nothing-to-claim");
     });
   });
 });
