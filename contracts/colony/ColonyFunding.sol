@@ -183,6 +183,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
   }
 
+  /// @notice @deprecated
   function setExpenditurePayouts(
     uint256 _id,
     uint256[] memory _slots,

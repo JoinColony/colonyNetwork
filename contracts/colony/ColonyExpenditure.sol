@@ -337,7 +337,7 @@ contract ColonyExpenditure is ColonyStorage {
       require(false, "colony-expenditure-bad-slot");
     }
 
-    executeStateChange(keccak256(abi.encode(_id, _storageSlot)), _mask, _keys, _value);
+    executeStateChange(_id, _storageSlot, _mask, _keys, _value);
   }
 
   // Public view functions
@@ -360,6 +360,7 @@ contract ColonyExpenditure is ColonyStorage {
 
   // Internal functions
 
+  // Used to get around the stack depth limit
   function setExpenditurePayouts(
     uint256 _id,
     uint256[][] memory _payoutSlots,
@@ -376,7 +377,8 @@ contract ColonyExpenditure is ColonyStorage {
   uint256 constant MAX_ARRAY = 1024; // Prevent writing arbitrary slots
 
   function executeStateChange(
-    bytes32 _slot,
+    uint256 _id,
+    uint256 _storageSlot,
     bool[] memory _mask,
     bytes32[] memory _keys,
     bytes32 _value
@@ -386,7 +388,7 @@ contract ColonyExpenditure is ColonyStorage {
     require(_keys.length == _mask.length, "colony-expenditure-bad-mask");
 
     bytes32 value = _value;
-    bytes32 slot = _slot;
+    bytes32 slot = keccak256(abi.encode(_id, _storageSlot));
 
     // See https://solidity.readthedocs.io/en/v0.5.14/miscellaneous.html
     for (uint256 i; i < _keys.length; i++) {
@@ -413,5 +415,7 @@ contract ColonyExpenditure is ColonyStorage {
     assembly {
       sstore(slot, value) // ignore-swc-124
     }
+
+    emit ExpenditureStateChanged(msgSender(), _id, slot, value);
   }
 }

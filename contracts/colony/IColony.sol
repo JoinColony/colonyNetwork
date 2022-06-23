@@ -436,6 +436,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _amount Payout amount
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount) external;
 
+  /// @notice @deprecated
   /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
   /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
@@ -444,7 +445,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _amounts Payout amounts
   function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts) external;
 
-  /// @notice @deprecated
   /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
   /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
