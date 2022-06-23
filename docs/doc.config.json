@@ -1,6 +1,0 @@
-{
-    "logo": "img/colonyNetwork_color.svg",
-    "logoSmall": "img/logomark_colonyNetwork_blue.svg",
-    "sectionOrder": ["Intro", "Docs", "Bug Bounty Program", "Whitepaper TL;DR", "Interface"],
-    "description": "Robust and secure smart contracts for managing work, permissions, and reputation."
-}
