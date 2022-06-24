@@ -52,7 +52,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return version The extension's version number
   function version() public override pure returns (uint256 version) {
-    return 3;
+    return 4;
   }
 
   /// @notice Configures the extension
