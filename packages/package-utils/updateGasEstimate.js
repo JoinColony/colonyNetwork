@@ -19,7 +19,7 @@ const updateGasEstimate = async function (_type, chainId, adapter) {
 
   if (chainId === 100) {
     options.url = "https://blockscout.com/xdai/mainnet/api/v1/gas-price-oracle";
-    defaultGasPrice = ethers.utils.hexlify(1000000000);
+    defaultGasPrice = ethers.utils.hexlify(2000000000);
     factor = 1;
     // This oracle presents the information slightly differently from ethgasstation.
     if (_type === "safeLow") {
