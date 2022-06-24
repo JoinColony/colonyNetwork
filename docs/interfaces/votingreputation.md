@@ -23,24 +23,6 @@ Claim the staker's reward
 |_vote|uint256|The side being supported (0 = NAY, 1 = YAY)
 
 
-### ▸ **`createClaimDelayAction(bytes memory action, uint256 value):bytes bytes`**
-
-
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|action|bytes|
-|value|uint256|
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|bytes|bytes|
-
 ### ▸ **`createDomainMotion(uint256 _domainId, uint256 _childSkillIndex, bytes memory _action, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`**
 
 Create a motion in any domain

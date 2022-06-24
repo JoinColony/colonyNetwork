@@ -217,7 +217,7 @@ Create the Meta Colony, same as a normal colony plus the root skill.
 |_tokenAddress|address|Address of the CLNY token
 
 
-### ▸ **`deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer):address address`**
+### ▸ **`deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer):address tokenAuthority`**
 
 Called to deploy a token authority
 
@@ -235,9 +235,9 @@ Called to deploy a token authority
 
 |Name|Type|Description|
 |---|---|---|
-|address|address|
+|tokenAuthority|address|The address of the newly deployed TokenAuthority
 
-### ▸ **`deployTokenViaNetwork(string memory _name, string memory _symbol, uint8 _decimals):address address`**
+### ▸ **`deployTokenViaNetwork(string memory _name, string memory _symbol, uint8 _decimals):address token`**
 
 Called to deploy a token.
 
@@ -255,7 +255,7 @@ Called to deploy a token.
 
 |Name|Type|Description|
 |---|---|---|
-|address|address|
+|token|address|The address of the newly deployed token
 
 ### ▸ **`deprecateExtension(bytes32 extensionId, bool deprecated)`**
 

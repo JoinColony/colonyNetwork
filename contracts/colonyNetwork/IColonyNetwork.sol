@@ -418,7 +418,8 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _symbol The short 'ticket' symbol for the token
   /// @param _decimals The number of decimal places that 1 user-facing token can be divided up in to
   /// In the case of ETH, and most tokens, this is 18.
-  function deployTokenViaNetwork(string memory _name, string memory _symbol, uint8 _decimals) external returns (address);
+  /// @return token The address of the newly deployed token
+  function deployTokenViaNetwork(string memory _name, string memory _symbol, uint8 _decimals) external returns (address token);
 
   /// @notice Called to deploy a token authority
   /// @dev This is more expensive than deploying a token directly, but is able to be done via
@@ -426,8 +427,8 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _token The address of the otken
   /// @param _colony The address of the colony in control of the token
   /// @param allowedToTransfer An array of addresses that are allowed to transfer the token even if it's locked
-  /// @return The address of the newly deployed TokenAuthority
-  function deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer) external returns (address);
+  /// @return tokenAuthority The address of the newly deployed TokenAuthority
+  function deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer) external returns (address tokenAuthority);
 
   /// @notice Called to give or remove another address's permission to mine on your behalf
   /// @param _delegate The address you're giving or removing permission from
