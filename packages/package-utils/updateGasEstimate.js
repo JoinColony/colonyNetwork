@@ -18,7 +18,7 @@ const updateGasEstimate = async function (_type, chainId, adapter) {
   let factor;
 
   if (chainId === 100) {
-    options.uri = "https://blockscout.com/xdai/mainnet/api/v1/gas-price-oracle";
+    options.url = "https://blockscout.com/xdai/mainnet/api/v1/gas-price-oracle";
     defaultGasPrice = ethers.utils.hexlify(1000000000);
     factor = 1;
     // This oracle presents the information slightly differently from ethgasstation.
@@ -26,7 +26,7 @@ const updateGasEstimate = async function (_type, chainId, adapter) {
       type = "slow";
     }
   } else if (chainId === 1) {
-    options.uri = "https://ethgasstation.info/json/ethgasAPI.json";
+    options.url = "https://ethgasstation.info/json/ethgasAPI.json";
     defaultGasPrice = ethers.utils.hexlify(20000000000);
     factor = 10;
   } else {
@@ -37,7 +37,7 @@ const updateGasEstimate = async function (_type, chainId, adapter) {
 
   // Get latest from whichever oracle
   try {
-    const gasEstimates = await axios.get(options);
+    const gasEstimates = await axios.request(options);
     let gasPrice;
     if (gasEstimates[type]) {
       gasPrice = ethers.utils.hexlify((gasEstimates[type] / factor) * 1e9);
