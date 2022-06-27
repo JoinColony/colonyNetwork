@@ -1,5 +1,3 @@
 # Contributing
 
-### :construction: Under construction :construction:
-
-Here will be some text that helps people contribute to the ColonyNetwork. How to set it up, how to run tests and more info related to the development process.
+We welcome any contributions of any form. Please review [this page](https://github.com/JoinColony/colonyNetwork/blob/develop/.github/CONTRIBUTING.md) if you're considering to contribute.

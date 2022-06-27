@@ -1,3 +1,7 @@
+---
+description: How Colony's upgradeable contract's work
+---
+
 # Upgrade design
 
 The contracts comprising the Colony Network are upgradeable using the Delegate Proxy design pattern.
@@ -18,6 +22,6 @@ The `Resolver` contract contains a mapping of whitelisted function signatures to
 
 A function signature lookup will return the address of the contracts that implement the desired function. `EtherRouter` in turn calls the function via `delegatecall`, and passes any returns from the call back to `msg.sender`.
 
-![EtherRouter](img/delegateProxyCallchain_1.png)
+![EtherRouter](../.gitbook/assets/delegateProxyCallchain\_1.png)
 
 This pattern enables both fine-grained control of permissions for individual functions (see below), well as eternal backwards-compatibility following network upgrades.

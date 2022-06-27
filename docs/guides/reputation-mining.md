@@ -1,23 +1,31 @@
+---
+description: How to use the Reputation Mining Client
+---
+
 # Reputation Mining Client
 
 ## Running the Mining Client
 
 The reputation mining client can be run locally to sync with a local ganache instance, the `goerli` testnet, or with glider on `mainnet`.
 
-To participate in the reputation mining process you need to have staked at least the [minimum amount of CLNY Tokens](/colonynetwork/interface-ireputationminingcycle#getminstake), for at least [one full mining cycle duration](/colonynetwork/interface-ireputationminingcycle#getminingwindowduration) before you can submit a new reputation root hash.
+To participate in the reputation mining process you need to have staked at least the [minimum amount of CLNY Tokens](../interfaces/ireputationminingcycle.md#getminstake-uint256-minstake), for at least [one full mining cycle duration](../interfaces/ireputationminingcycle.md#getminingwindowduration-uint256-miningwindowduration) before you can submit a new reputation root hash.
 
 Usage:
+
 ```
 node packages/reputation-miner/bin/index.js (--arguments <params>) [--arguments <params>]
 ```
 
 Mandatory arguments:
+
 ```
 (--minerAddress <address>) | (--privateKey <key>)
 (--colonyNetworkAddress <address>)
 (--syncFrom <number>)   // [goerli:'548534', mainnet:'7913100']
 ```
+
 Optional arguments:
+
 ```
 [--network <(goerli|mainnet)>]  
 [--localPort <number>]
@@ -29,38 +37,45 @@ Optional arguments:
 Address of the miner account which the client will send reputation mining contract transactions from. Used when working with an unlocked account for the miner against **development networks only**. We provision twelve unlocked test accounts stored in `ganache-accounts.json` for testing that are available when starting a local ganache-cli instance via `npm run start:blockchain:client` command.
 
 #### `--privateKey`
+
 Private key of the miner account which the client will sign reputation mining contract transactions with.
 
 #### `--colonyNetworkAddress`
-The address of the Colony Network's `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-upgrade-design/) for more information about the EtherRouter design pattern. This address is static on `goerli` and `mainnet`
-`goerli` `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B`
-`mainnet` `0x5346d0f80e2816fad329f2c140c870ffc3c3e2ef`
+
+The address of the Colony Network's `EtherRouter`. See [Upgrades to the Colony Network](../docs/upgrades.md) for more information about the EtherRouter design pattern. This address is static on `goerli` and `mainnet` `goerli` `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B` `mainnet` `0x5346d0f80e2816fad329f2c140c870ffc3c3e2ef`
 
 #### `--dbPath`
+
 Path for the sqlite database storing reputation state. Default is `./reputationStates.sqlite`.
 
 #### `--network`
+
 Used for connecting to a supported Infura node (instead of a local client). Valid options are `goerli` and `mainnet`.
 
 #### `--localPort`
+
 Used to connect to a local clinet running on the specified port. Default is `8545`.
 
 #### `--syncFrom`
+
 Block number to start reputation state sync from. This is the block at which the reputation mining process was initialised. This number is static on `goerli` and `mainnet`
+
 * `goerli: 548534`
 * `mainnet: 7913100`
 
-Note that beginning the sync with a too-early block will result in an error. If you get this exception, try syncing from a more recent block. Note that the sync process can take long. Latest tests syncing a client from scratch to 28 reputation cycles took ~2 hours.
+Note that beginning the sync with a too-early block will result in an error. If you get this exception, try syncing from a more recent block. Note that the sync process can take long. Latest tests syncing a client from scratch to 28 reputation cycles took \~2 hours.
 
 #### `--auto`
+
 Default is `true`
 
 The "auto" reputation mining client will:
+
 * Propose a new hash at the first possible block time, and submit until the maximum number has been reached (based on staked CLNY, with a maximum of 12 submissions allowed)
 * Respond to challenges if there are disagreeing submissions.
 * Confirm the last hash after the mining window closes and any disputes have been resolved.
 
-Reputation mining protocol details can be found in the [Whitepaper TLDR](/colonynetwork/whitepaper-tldr-reputation-mining#submissions)
+Reputation mining protocol details can be found in the [Whitepaper TLDR](../tldr/reputationmining.md).
 
 ## Visualizations
 
@@ -82,7 +97,7 @@ Once you have moved the network forward 24 hours, you can then mine a new block 
 curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_mine","params":[]}' localhost:8545
 ```
 
-Note that because reputation is awarded for the *previous* submission window, you will need to use the "fast-forward" command above to speed through at least 2 reputation updates before noticing a change in the miner's reputation.
+Note that because reputation is awarded for the _previous_ submission window, you will need to use the "fast-forward" command above to speed through at least 2 reputation updates before noticing a change in the miner's reputation.
 
 ## Get Reputation from the Reputation Oracle
 
@@ -93,8 +108,9 @@ http://127.0.0.1:3000/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
 ```
 
 An instance of the oracle is available for reputation queries against `goerli` or `mainnet` networks:
+
 ```
-https://colony.io/reputation/{network}/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
+https://xdai.colony.io/reputation/{network}/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
 ```
 
 The oracle should be able to provide responses to any valid reputation score in all historical states, as well as the current state. For querying the colony-wide reputation instead of user-specific one, instead of {userAddress} use a zero address (`0x0000000000000000000000000000000000000000`)
@@ -102,7 +118,7 @@ The oracle should be able to provide responses to any valid reputation score in 
 For example, you can get the reputation score of the miner in a reputation state `0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc`) using the address of the Meta Colony (`0x14946533cefe742399e9734a123f0c02d0405a51`), the mining skill id (`2`), and address of a miner (`0x0A1d439C7d0b9244035d4F934BBF8A418B35d064`).
 
 ```
-https://colony.io/reputation/mainnet/0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc/0x14946533cefe742399e9734a123f0c02d0405a51/2/0x0A1d439C7d0b9244035d4F934BBF8A418B35d064
+https://xdai.colony.io/reputation/mainnet/0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc/0x14946533cefe742399e9734a123f0c02d0405a51/2/0x0A1d439C7d0b9244035d4F934BBF8A418B35d064
 ```
 
 The oracle returns

@@ -18,7 +18,7 @@ After cloning the repository and installing the remaining dependencies you can s
 
 ### Prerequisites
 
-You will need to have [NodeJS](https://nodejs.org/en/), [Yarn](https://yarnpkg.com/) and optionally [Docker](https://docs.docker.com/get-docker/) installed. See [here](../quick-start.md#prerequisites) for more information.
+You will need to have [NodeJS](https://nodejs.org/en/) (best to use `nvm` to choose the right node version) and optionally [Docker](https://docs.docker.com/get-docker/) installed. See [here](../quick-start.md#prerequisites) for more information.
 
 ### Cloning the repository and preparing the dependencies
 
@@ -31,7 +31,7 @@ The RPC development server is a piece of software that emulates the behavior of 
 Ganache was installed when you set up all the dependencies earlier. You can start a CLI version of it like so (run in a different terminal window from the `colonyNetwork` directory):
 
 ```bash
-yarn start:blockchain:client
+npm run start:blockchain:client
 ```
 
 This will run Ganache on port `8545`. Do not close the window, we're about to deploy the contracts!
@@ -47,13 +47,13 @@ To deploy the Colony Network contracts to the running development RPC node (Gana
 {% tabs %}
 {% tab title="Using Docker" %}
 ```bash
-yarn truffle migrate --reset --compile-all
+npx truffle migrate --reset --compile-all
 ```
 {% endtab %}
 
 {% tab title="Without Docker" %}
 ```bash
-DISABLE_DOCKER=true yarn truffle migrate --reset --compile-all
+DISABLE_DOCKER=true npx truffle migrate --reset --compile-all
 ```
 {% endtab %}
 {% endtabs %}
@@ -70,7 +70,7 @@ Summary
 The migration scripts will also create a file called `etherrouter-address.json`. It contains the address for the main entry point for the Colony Contracts and can be instantiated as the `ColonyNetwork` contract. From this one you will be able to figure out all relevant addresses by just calling the corresponding functions on the `ColonyNetwork` contract.
 
 {% hint style="info" %}
-&#x20;Why `etherrouter-address`? Colony uses the so called _EtherRouter_ pattern for upgradeable Smart Contracts. Read more about that [here](https://blog.colony.io/writing-upgradeable-contracts-in-solidity-6743f0eecc88/). Or watch [this video](https://www.youtube.com/watch?v=Sw9O2LWgWC0). It's up to you :)
+Why `etherrouter-address`? Colony uses the so called _EtherRouter_ pattern for upgradeable Smart Contracts. Read more about that [here](https://blog.colony.io/writing-upgradeable-contracts-in-solidity-6743f0eecc88/). Or watch [this video](https://www.youtube.com/watch?v=Sw9O2LWgWC0). It's up to you :)
 {% endhint %}
 
 What does that mean in practice? Act as if the `etherrouter-address` is the Address for the deployed `ColonyNetwork` contract.
@@ -117,12 +117,16 @@ Check the logs of the `truffle migrate` command we issued earlier. The MetaColon
    > Total cost:                   0 ETH
 ```
 
-****:tada:**Congratulations, you've successfully deployed the ColonyNetwork** :tada:****
+:tada:**Congratulations, you've successfully deployed the ColonyNetwork** :tada:
 
 Where to go from here? Well, you can try to issue a few more `eth_call` commands to retrieve data or even make a custom manual transaction?
 
 Or just go down the easy path! We created [Colony SDK](https://app.gitbook.com/o/-MTaEZ\_7xhxpButTDDNj/s/slSiNQHJDrgYgciBacVr/), to make it really easy to talk to the Colony contracts. With the knowledge you just acquired you can even test it out locally. Or try our more involved solution [ColonyJS](https://app.gitbook.com/o/-MTaEZ\_7xhxpButTDDNj/s/QcRjzRciEwod6UqfA3ta/) that is quite a bit more flexible - we're using it to power the Colony Dapp!
 
-## Setting up the Reputation Oracle (optional)
+### Where to go from here?
 
-If you would like to access the reputation related functionality within your development work (mainly to get a user's reputation), please see [this guide](reputation-oracle-setup.md).
+If you would like to access the reputation related functionality within your development work (mainly to get a user's reputation), please see the following guide:
+
+{% content-ref url="reputation-oracle-setup.md" %}
+[reputation-oracle-setup.md](reputation-oracle-setup.md)
+{% endcontent-ref %}

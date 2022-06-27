@@ -25,7 +25,7 @@ Make sure you're on a recent version of the `colonyNetwork`, git hash `eac730e` 
 To start the oracle, go to the `colonyNetwork` directory and run this command:
 
 ```bash
-yarn start:reputation:oracle
+npm run start:reputation:oracle
 ```
 
 Wait for it to say
