@@ -115,6 +115,9 @@ class ReputationMiner {
     }
     console.log(`Mining on behalf of ${this.minerAddress}`)
 
+    const signingBalance = await this.realProvider.getBalance(signingAddress);
+    console.log(`With a balance of ${ethers.utils.formatUnits(signingBalance)}. I hope that's enough!`);
+
     process.on('exit', () => this.db.close());
     process.on('SIGHUP', () => process.exit(128 + 1));
     process.on('SIGINT', () => process.exit(128 + 2));
