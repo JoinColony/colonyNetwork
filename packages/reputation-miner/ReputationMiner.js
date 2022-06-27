@@ -1651,7 +1651,7 @@ class ReputationMiner {
     await this.db.prepare('CREATE INDEX IF NOT EXISTS colonies_address ON colonies (address)').run();
 
     // We added a composite key to reputations - do we need to port it over?
-    const res = await this.db.prepare("SELECT COUNT(pk) AS c FROM PRAGMA_TABLE_INFO('reputations') WHERE pk <> 0").all();
+    let res = await this.db.prepare("SELECT COUNT(pk) AS c FROM PRAGMA_TABLE_INFO('reputations') WHERE pk <> 0").all();
     if (res[0].c === 0){
       await this.db.prepare(
         `CREATE TABLE reputations2 (
@@ -1664,11 +1664,22 @@ class ReputationMiner {
         )`
       ).run();
 
+
       await this.db.prepare(`INSERT INTO reputations2 SELECT * FROM reputations`).run()
       await this.db.prepare(`DROP TABLE reputations`).run()
       await this.db.prepare(`ALTER TABLE reputations2 RENAME TO reputations`).run()
       console.log("Composite primary key added to reputations table")
     }
+
+    // Do we need to add an index to the reputations table for the /all endpoint?
+    res = await this.db.prepare("SELECT COUNT(*) AS c FROM sqlite_master WHERE type='index' and name='allEndpoint'").all();
+    if (res[0].c === 0){
+      await this.db.prepare(
+        `CREATE INDEX allEndpoint ON reputations (colony_rowid, user_rowid, reputation_rowid)`
+      ).run()
+      console.log("Index for /all endpoint added to reputations table")
+    }
+
     this.prepareQueries()
   }
 
