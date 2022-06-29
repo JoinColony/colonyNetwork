@@ -217,6 +217,16 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork(colonyNetworkAddress).addExtensionToNetwork(_extensionId, _resolver);
   }
 
+  function installExtensions(bytes32[] memory _extensionIds, uint256[] memory _versions)
+  public stoppable auth
+  {
+    require(_extensionIds.length == _versions.length, "colony-argument-mismatch");
+
+    for (uint256 i; i < _extensionIds.length; i++) {
+      IColonyNetwork(colonyNetworkAddress).installExtension(_extensionIds[i], _versions[i]);
+    }
+  }
+
   function installExtension(bytes32 _extensionId, uint256 _version)
   public stoppable auth
   {

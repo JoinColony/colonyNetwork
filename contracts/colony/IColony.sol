@@ -267,6 +267,12 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param orbitdb The path of the orbitDB database to be associated with the colony
   function updateColonyOrbitDB(string memory orbitdb) external;
 
+  /// @notice Install multiple extensions to the colony. Secured function to authorised members.
+  /// @param extensionIds Array of keccak256 hashes of the extension name, used as an indentifier
+  /// @param versions Array of the new extension versions to install
+  function installExtensions(bytes32[] memory extensionIds, uint256[] memory versions) external;
+
+
   /// @notice Install an extension to the colony. Secured function to authorised members.
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param version The new extension version to install

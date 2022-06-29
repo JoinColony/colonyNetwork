@@ -172,6 +172,16 @@ contract("Colony Network Extensions", (accounts) => {
 
       await checkErrorRevert(colony.installExtension(TEST_EXTENSION, 1, { from: ROOT }), "colony-network-extension-already-installed");
     });
+
+    it("allows a root user to install many extensions at once", async () => {
+      await colony.installExtensions([TEST_EXTENSION, TEST_VOTING_TOKEN], [2, 1], { from: ROOT });
+
+      const testExtensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
+      const testVotingTokenAddress = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
+
+      expect(testExtensionAddress).to.not.be.zero;
+      expect(testVotingTokenAddress).to.not.be.zero;
+    });
   });
 
   describe("upgrading extensions", () => {
