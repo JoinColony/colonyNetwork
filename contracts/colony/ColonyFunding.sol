@@ -174,9 +174,8 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   )
   public
   stoppable
-  expenditureExists(_id)
   expenditureDraft(_id)
-  expenditureSelfOrOwner(_id)
+  expenditureOwnerOrSelf(_id)
   {
     for (uint256 i; i < _tokens.length; i++) {
       setExpenditurePayoutsInternal(_id, _slots[i], _tokens[i], _amounts[i]);
@@ -192,9 +191,8 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   )
   public
   stoppable
-  expenditureExists(_id)
   expenditureDraft(_id)
-  expenditureSelfOrOwner(_id)
+  expenditureOwnerOrSelf(_id)
   {
     setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
   }
@@ -209,7 +207,6 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   )
   public
   stoppable
-  expenditureExists(_id)
   authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
@@ -231,7 +228,6 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
   function claimExpenditurePayout(uint256 _id, uint256 _slot, address _token) public
   stoppable
-  expenditureExists(_id)
   expenditureFinalized(_id)
   {
     Expenditure storage expenditure = expenditures[_id];

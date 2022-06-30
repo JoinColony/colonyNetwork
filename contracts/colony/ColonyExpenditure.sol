@@ -68,9 +68,8 @@ contract ColonyExpenditure is ColonyStorage {
   function transferExpenditure(uint256 _id, address _newOwner)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraftOrLocked(_id)
-    expenditureSelfOrOwner(_id)
+    expenditureOwnerOrSelf(_id)
   {
     expenditures[_id].owner = _newOwner;
 
@@ -86,7 +85,6 @@ contract ColonyExpenditure is ColonyStorage {
   )
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraftOrLocked(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
@@ -98,9 +96,8 @@ contract ColonyExpenditure is ColonyStorage {
   function cancelExpenditure(uint256 _id)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureSelfOrOwner(_id)
+    expenditureOwnerOrSelf(_id)
   {
     expenditures[_id].status = ExpenditureStatus.Cancelled;
 
@@ -110,9 +107,8 @@ contract ColonyExpenditure is ColonyStorage {
   function lockExpenditure(uint256 _id)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureSelfOrOwner(_id)
+    expenditureOwnerOrSelf(_id)
   {
     expenditures[_id].status = ExpenditureStatus.Locked;
 
@@ -122,9 +118,8 @@ contract ColonyExpenditure is ColonyStorage {
   function finalizeExpenditure(uint256 _id)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraftOrLocked(_id)
-    expenditureSelfOrOwner(_id)
+    expenditureOwnerOrSelf(_id)
   {
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     require(fundingPot.payoutsWeCannotMake == 0, "colony-expenditure-not-funded");
@@ -138,9 +133,8 @@ contract ColonyExpenditure is ColonyStorage {
   function setExpenditureMetadata(uint256 _id, string memory _metadata)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureSelfOrOwner(_id)
+    expenditureOwnerOrSelf(_id)
   {
     emit ExpenditureMetadataSet(msgSender(), _id, _metadata);
   }
@@ -153,7 +147,6 @@ contract ColonyExpenditure is ColonyStorage {
   )
     public
     stoppable
-    expenditureExists(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     emit ExpenditureMetadataSet(msgSender(), _id, _metadata);
@@ -162,9 +155,8 @@ contract ColonyExpenditure is ColonyStorage {
   function setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address payable[] memory _recipients)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureSelfOrOwner(_id)
+    expenditureOwnerOrSelf(_id)
   {
     require(_slots.length == _recipients.length, "colony-expenditure-bad-slots");
 
@@ -178,9 +170,8 @@ contract ColonyExpenditure is ColonyStorage {
   function setExpenditureSkills(uint256 _id, uint256[] memory _slots, uint256[] memory _skillIds)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureSelfOrOwner(_id)
+    expenditureOwnerOrSelf(_id)
   {
     require(_slots.length == _skillIds.length, "colony-expenditure-bad-slots");
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
@@ -201,9 +192,8 @@ contract ColonyExpenditure is ColonyStorage {
   function setExpenditureClaimDelays(uint256 _id, uint256[] memory _slots, uint256[] memory _claimDelays)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureSelfOrOwner(_id)
+    expenditureOwnerOrSelf(_id)
   {
     require(_slots.length == _claimDelays.length, "colony-expenditure-bad-slots");
 
@@ -217,9 +207,8 @@ contract ColonyExpenditure is ColonyStorage {
   function setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureSelfOrOwner(_id)
+    expenditureOwnerOrSelf(_id)
   {
     require(_slots.length == _payoutModifiers.length, "colony-expenditure-bad-slots");
 
@@ -246,15 +235,14 @@ contract ColonyExpenditure is ColonyStorage {
   )
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
-    expenditureSelfOrOwner(_id)
+    expenditureOwnerOrSelf(_id)
   {
     if (_recipients.length > 0) { setExpenditureRecipients(_id, _recipientSlots, _recipients); }
     if (_skillIds.length > 0) { setExpenditureSkills(_id, _skillIdSlots, _skillIds); }
     if (_claimDelays.length > 0) { setExpenditureClaimDelays(_id, _claimDelaySlots, _claimDelays); }
     if (_payoutModifiers.length > 0) { setExpenditurePayoutModifiers(_id, _payoutModifierSlots, _payoutModifiers); }
-    if (_payoutTokens.length > 0) { setExpenditurePayouts(_id, _payoutSlots, _payoutTokens, _payoutValues); }
+    if (_payoutTokens.length > 0) { IColony(address(this)).setExpenditurePayouts(_id, _payoutSlots, _payoutTokens, _payoutValues); }
   }
 
   // Deprecated
@@ -307,7 +295,6 @@ contract ColonyExpenditure is ColonyStorage {
   )
     public
     stoppable
-    expenditureExists(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     // Only allow editing expenditure status, owner, finalizedTimestamp, and globalClaimDelay
@@ -359,18 +346,6 @@ contract ColonyExpenditure is ColonyStorage {
   }
 
   // Internal functions
-
-  // Used to get around the stack depth limit
-  function setExpenditurePayouts(
-    uint256 _id,
-    uint256[][] memory _payoutSlots,
-    address[] memory _payoutTokens,
-    uint256[][] memory _payoutValues
-  )
-    internal
-  {
-    IColony(address(this)).setExpenditurePayouts(_id, _payoutSlots, _payoutTokens, _payoutValues);
-  }
 
   bool constant MAPPING = false;
   bool constant ARRAY = true;

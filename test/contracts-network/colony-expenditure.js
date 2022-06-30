@@ -178,10 +178,10 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should error if the expenditure does not exist", async () => {
-      await checkErrorRevert(colony.setExpenditureSkill(100, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN }), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.setExpenditureSkill(100, SLOT0, GLOBAL_SKILL_ID), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.transferExpenditure(100, USER), "colony-expenditure-does-not-exist");
       await checkErrorRevert(
-        colony.transferExpenditureViaArbitration(0, UINT256_MAX, 100, USER, { from: ADMIN }),
+        colony.transferExpenditureViaArbitration(0, UINT256_MAX, 100, USER, { from: ARBITRATOR }),
         "colony-expenditure-does-not-exist"
       );
       await checkErrorRevert(colony.cancelExpenditure(100), "colony-expenditure-does-not-exist");
@@ -190,7 +190,7 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditureMetadata(100, ""), "colony-expenditure-does-not-exist");
       await checkErrorRevert(
         colony.methods["setExpenditureMetadata(uint256,uint256,uint256,string)"](0, 0, 100, ""),
-        "colony-expenditure-does-not-exist"
+        "ds-auth-permission-domain-does-not-exist"
       );
       await checkErrorRevert(colony.setExpenditureRecipients(100, [], []), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.setExpenditureClaimDelays(100, [], []), "colony-expenditure-does-not-exist");
