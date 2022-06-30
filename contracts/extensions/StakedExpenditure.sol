@@ -31,6 +31,8 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
   // Events
 
   event ExpenditureMadeViaStake(address indexed creator, uint256 expenditureId, uint256 stake);
+  event ExpenditureCancelled(uint256 expenditureId);
+  event StakeReclaimed(uint256 expenditureId);
 
   // Datatypes
 
@@ -131,6 +133,8 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     );
 
     colony.deobligateStake(stakeCreator, expenditure.domainId, stakeAmount);
+
+    emit StakeReclaimed(_expenditureId);
   }
 
   function cancelAndReclaimStake(
@@ -254,6 +258,8 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
       keys,
       value
     );
+
+    emit ExpenditureCancelled(_expenditureId);
   }
 
   function getReputationFromProof(
