@@ -169,17 +169,14 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
-  modifier expenditureExists(uint256 _id) {
-    require(_id > 0 && _id <= expenditureCount, "colony-expenditure-does-not-exist");
-    _;
-  }
-
   modifier expenditureDraft(uint256 _id) {
+    require(expenditureExists(_id), "colony-expenditure-does-not-exist");
     require(expenditures[_id].status == ExpenditureStatus.Draft, "colony-expenditure-not-draft");
     _;
   }
 
   modifier expenditureDraftOrLocked(uint256 _id) {
+    require(expenditureExists(_id), "colony-expenditure-does-not-exist");
     require(
       expenditures[_id].status == ExpenditureStatus.Draft ||
       expenditures[_id].status == ExpenditureStatus.Locked,
@@ -189,11 +186,12 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   modifier expenditureFinalized(uint256 _id) {
+    require(expenditureExists(_id), "colony-expenditure-does-not-exist");
     require(expenditures[_id].status == ExpenditureStatus.Finalized, "colony-expenditure-not-finalized");
     _;
   }
 
-  modifier expenditureSelfOrOwner(uint256 _id) {
+  modifier expenditureOwnerOrSelf(uint256 _id) {
     require(expenditures[_id].owner == msgSender() || address(this) == msgSender(), "colony-expenditure-not-self-or-owner");
     _;
   }
@@ -328,6 +326,10 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   function domainExists(uint256 domainId) internal view returns (bool) {
     return domainId > 0 && domainId <= domainCount;
+  }
+
+  function expenditureExists(uint256 expenditureId) internal view returns (bool) {
+    return expenditureId > 0 && expenditureId <= expenditureCount;
   }
 
   function calculateNetworkFeeForPayout(uint256 _payout) internal view returns (uint256 fee) {
