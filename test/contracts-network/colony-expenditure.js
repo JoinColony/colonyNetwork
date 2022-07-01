@@ -190,7 +190,7 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditureMetadata(100, ""), "colony-expenditure-does-not-exist");
       await checkErrorRevert(
         colony.methods["setExpenditureMetadata(uint256,uint256,uint256,string)"](0, 0, 100, ""),
-        "ds-auth-permission-domain-does-not-exist"
+        "colony-expenditure-does-not-exist"
       );
       await checkErrorRevert(colony.setExpenditureRecipients(100, [], []), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.setExpenditureClaimDelays(100, [], []), "colony-expenditure-does-not-exist");

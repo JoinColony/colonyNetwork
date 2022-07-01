@@ -169,6 +169,11 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
+  modifier validExpenditure(uint256 _id) {
+    require(expenditureExists(_id), "colony-expenditure-does-not-exist");
+    _;
+  }
+
   modifier expenditureDraft(uint256 _id) {
     require(expenditureExists(_id), "colony-expenditure-does-not-exist");
     require(expenditures[_id].status == ExpenditureStatus.Draft, "colony-expenditure-not-draft");

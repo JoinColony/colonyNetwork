@@ -147,6 +147,7 @@ contract ColonyExpenditure is ColonyStorage {
   )
     public
     stoppable
+    validExpenditure(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     emit ExpenditureMetadataSet(msgSender(), _id, _metadata);
@@ -295,6 +296,7 @@ contract ColonyExpenditure is ColonyStorage {
   )
     public
     stoppable
+    validExpenditure(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     // Only allow editing expenditure status, owner, finalizedTimestamp, and globalClaimDelay

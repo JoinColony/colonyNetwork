@@ -33,6 +33,7 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
   event ExpenditureMadeViaStake(address indexed creator, uint256 expenditureId, uint256 stake);
   event ExpenditureCancelled(uint256 expenditureId);
   event StakeReclaimed(uint256 expenditureId);
+  event StakeFractionSet(uint256 stakeFraction);
 
   // Datatypes
 
@@ -92,6 +93,8 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
   function setStakeFraction(uint256 _stakeFraction) public onlyRoot {
     require(_stakeFraction <= WAD, "staked-expenditure-value-too-large");
     stakeFraction = _stakeFraction;
+
+    emit StakeFractionSet(_stakeFraction);
   }
 
   function makeExpenditureWithStake(
@@ -104,6 +107,7 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     bytes32[] memory _siblings
   )
     public
+    notDeprecated
   {
     uint256 domainRep = getReputationFromProof(_domainId, _key, _value, _branchMask, _siblings);
     uint256 stakeAmount = wmul(domainRep, stakeFraction);
@@ -119,7 +123,7 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
 
   function reclaimStake(uint256 _expenditureId) public {
     Stake storage stake = stakes[_expenditureId];
-    require(stake.amount > 0, "staked-expenditure-nothing-to-claim");
+    require(stake.creator != address(0x0), "staked-expenditure-nothing-to-claim");
 
     uint256 stakeAmount = stake.amount;
     address stakeCreator = stake.creator;

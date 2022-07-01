@@ -27,7 +27,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const StakedExpenditure = artifacts.require("StakedExpenditure");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
-const EXPENDITURE_UTILS = soliditySha3("StakedExpenditure");
+const STAKED_EXPENDITURE = soliditySha3("StakedExpenditure");
 
 contract("StakedExpenditure", (accounts) => {
   let colonyNetwork;
@@ -65,9 +65,9 @@ contract("StakedExpenditure", (accounts) => {
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
 
-    await colony.installExtension(EXPENDITURE_UTILS, version);
+    await colony.installExtension(STAKED_EXPENDITURE, version);
 
-    const stakedExpenditureAddress = await colonyNetwork.getExtensionInstallation(EXPENDITURE_UTILS, colony.address);
+    const stakedExpenditureAddress = await colonyNetwork.getExtensionInstallation(STAKED_EXPENDITURE, colony.address);
     stakedExpenditure = await StakedExpenditure.at(stakedExpenditureAddress);
 
     await colony.setArbitrationRole(1, UINT256_MAX, stakedExpenditure.address, 1, true);
@@ -115,7 +115,7 @@ contract("StakedExpenditure", (accounts) => {
       await checkErrorRevert(stakedExpenditure.install(colony.address), "extension-already-installed");
 
       const identifier = await stakedExpenditure.identifier();
-      expect(identifier).to.equal(EXPENDITURE_UTILS);
+      expect(identifier).to.equal(STAKED_EXPENDITURE);
 
       const capabilityRoles = await stakedExpenditure.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -137,12 +137,12 @@ contract("StakedExpenditure", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(EXPENDITURE_UTILS, version, { from: USER0 });
+      await colony.installExtension(STAKED_EXPENDITURE, version, { from: USER0 });
 
-      await checkErrorRevert(colony.installExtension(EXPENDITURE_UTILS, version, { from: USER0 }), "colony-network-extension-already-installed");
-      await checkErrorRevert(colony.uninstallExtension(EXPENDITURE_UTILS, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.installExtension(STAKED_EXPENDITURE, version, { from: USER0 }), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.uninstallExtension(STAKED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
-      await colony.uninstallExtension(EXPENDITURE_UTILS, { from: USER0 });
+      await colony.uninstallExtension(STAKED_EXPENDITURE, { from: USER0 });
     });
   });
 
@@ -226,6 +226,15 @@ contract("StakedExpenditure", (accounts) => {
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
         "staked-expenditure-invalid-user-address"
+      );
+    });
+
+    it("cannot create an expenditure if the extension is deprecated", async () => {
+      await colony.deprecateExtension(STAKED_EXPENDITURE, true);
+
+      await checkErrorRevert(
+        stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 }),
+        "colony-extension-deprecated"
       );
     });
 
