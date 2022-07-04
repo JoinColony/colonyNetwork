@@ -217,6 +217,10 @@ class MetatransactionBroadcaster {
         valid = await this.isAddressValid(tx.args[0]);
       } else if (tx.signature === "setAuthority(address)") {
         valid = true;
+      } else if (tx.signature === "setOwner(address)") {
+        const checksummedAddress = ethers.utils.getAddress(tx.args[0]);
+        const isColony = await this.colonyNetwork.isColony(checksummedAddress);
+        valid = isColony;
       }
     } catch (err) {
       // Not a token related transaction (we recognise)
