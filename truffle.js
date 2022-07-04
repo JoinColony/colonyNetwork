@@ -2,6 +2,15 @@ const HDWalletProvider = require("truffle-hdwallet-provider");
 const ganache = require("ganache-core");
 
 const ganacheProvider = ganache.provider({ total_accounts: 14, seed: "smoketest" });
+const LedgerWalletProvider = require("@umaprotocol/truffle-ledger-provider");
+
+const ledgerOptions = {
+  networkId: 100, // xdai
+  path: "44'/60'/0'/0", // ledger default derivation path
+  askConfirm: false,
+  accountsLength: 1,
+  accountsOffset: 0,
+};
 
 const DISABLE_DOCKER = !process.env.DISABLE_DOCKER;
 
@@ -58,6 +67,18 @@ module.exports = {
         return ganacheProvider;
       },
       network_id: "*",
+    },
+    xdai: {
+      url: "https://xdai-archive.blockscout.com/",
+      gasPrice: 2000000000,
+      network_id: 100,
+    },
+    xdaiLedger: {
+      provider() {
+        return new LedgerWalletProvider(ledgerOptions, "https://xdai-archive.blockscout.com/");
+      },
+      network_id: 100,
+      gasPrice: 2000000000,
     },
   },
   mocha: {
