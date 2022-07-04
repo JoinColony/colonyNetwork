@@ -215,6 +215,8 @@ class MetatransactionBroadcaster {
         valid = await this.isAddressValid(tx.args[1]);
       } else if (tx.signature === "approve(address,uint256)") {
         valid = await this.isAddressValid(tx.args[0]);
+      } else if (tx.signature === "setAuthority(address)") {
+        valid = true;
       }
     } catch (err) {
       // Not a token related transaction (we recognise)
@@ -223,17 +225,18 @@ class MetatransactionBroadcaster {
   }
 
   async isColonyFamilyTransactionAllowed(target, txData) {
-    let allowed = true;
     const colonyDef = await this.loader.load({ contractName: "IColony" }, { abi: true, address: false });
     const possibleColony = new ethers.Contract(target, colonyDef.abi, this.wallet);
     try {
       const tx = possibleColony.interface.parseTransaction({ data: txData });
       if (tx.signature === "makeArbitraryTransaction(address,bytes)") {
-        allowed = false;
-      } else if (tx.signature === "makeArbitraryTransactions(address[],bytes[],bool)") {
-        allowed = false;
-      } else if (tx.signature === "makeSingleArbitraryTransaction(address,bytes)") {
-        allowed = false;
+        return false;
+      }
+      if (tx.signature === "makeArbitraryTransactions(address[],bytes[],bool)") {
+        return false;
+      }
+      if (tx.signature === "makeSingleArbitraryTransaction(address,bytes)") {
+        return false;
       }
     } catch (err) {
       // Not a colony related transaction (we recognise)
@@ -244,13 +247,29 @@ class MetatransactionBroadcaster {
     try {
       const tx = possibleVotingRep.interface.parseTransaction({ data: txData });
       if (tx.signature === "finalizeMotion(uint256)") {
-        allowed = false;
+        // eslint-disable-next-line no-underscore-dangle
+        const motion = await possibleVotingRep.getMotion(tx.args._motionId);
+        // Get the motion
+        let motionTarget = motion.altTarget;
+        if (motionTarget === "0x0000000000000000000000000000000000000000") {
+          motionTarget = await possibleVotingRep.getColony();
+        }
+        // Is the motion doing something we'd allow? Duplicated logic from main function
+
+        const addressValid = await this.isAddressValid(motionTarget);
+        // It's possible it's not a valid address, but could be a valid transaction with a token.
+        const validTokenTransaction = await this.isTokenTransactionValid(motionTarget, motion.action);
+        const allowedColonyFamilyTransaction = await this.isColonyFamilyTransactionAllowed(motionTarget, motion.action);
+        if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
+          return false;
+        }
+        return true;
       }
     } catch (err) {
       // Not a voting rep related transaction (we recognise)
     }
 
-    return allowed;
+    return true;
   }
 }
 
