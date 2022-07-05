@@ -207,9 +207,29 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   )
   public
   stoppable
+  validExpenditure(_id)
   authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
+  }
+
+  function setExpenditureSlotPayouts(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _slot,
+    address[] memory _tokens,
+    uint256[] memory _amounts
+  )
+  public
+  stoppable
+  validExpenditure(_id)
+  authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
+  {
+    require(_tokens.length == _amounts.length, "colony-funding-mismatched-arguments");
+    for (uint256 i; i < _tokens.length; i++) {
+      setExpenditurePayout(_id, _slot, _tokens[i], _amounts[i]);
+    }
   }
 
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)
@@ -220,7 +240,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     slots[0] = _slot;
     uint256[] memory amounts = new uint256[](1);
     amounts[0] = _amount;
-    setExpenditurePayouts(_id, slots, _token, amounts);
+    setExpenditurePayoutsInternal(_id, slots, _token, amounts);
   }
 
   int256 constant MAX_PAYOUT_MODIFIER = int256(WAD);
