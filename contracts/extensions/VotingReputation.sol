@@ -56,12 +56,16 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
   );
 
-  bytes4 constant CHANGE_FUNCTION_SIG_1 = bytes4(keccak256(
+  bytes4 constant SET_EXPENDITURE_STATE = bytes4(keccak256(
     "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"
   ));
 
-  bytes4 constant CHANGE_FUNCTION_SIG_2 = bytes4(keccak256(
+  bytes4 constant SET_EXPENDITURE_PAYOUTS = bytes4(keccak256(
     "setExpenditurePayouts(uint256,uint256,uint256,uint256[],address,uint256[])"
+  ));
+
+  bytes4 constant SET_EXPENDITURE_SLOT_PAYOUTS = bytes4(keccak256(
+    "setExpenditureSlotPayouts(uint256,uint256,uint256,uint256,address[],uint256[])"
   ));
 
   bytes4 constant OLD_MOVE_FUNDS_SIG = bytes4(keccak256(
@@ -398,7 +402,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
       _vote == YAY &&
       !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
-      (getSig(motion.action) == CHANGE_FUNCTION_SIG_1 || getSig(motion.action) == CHANGE_FUNCTION_SIG_2) &&
+      (getSig(motion.action) == SET_EXPENDITURE_STATE || getSig(motion.action) == SET_EXPENDITURE_PAYOUTS) &&
       motion.altTarget == address(0x0)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
@@ -594,7 +598,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     );
 
     if (
-      (getSig(motion.action) == CHANGE_FUNCTION_SIG_1 || getSig(motion.action) == CHANGE_FUNCTION_SIG_2) &&
+      (getSig(motion.action) == SET_EXPENDITURE_STATE || getSig(motion.action) == SET_EXPENDITURE_PAYOUTS) &&
       getTarget(motion.altTarget) == address(colony)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
@@ -1055,7 +1059,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   }
 
   function hashExpenditureActionStruct(bytes memory action) internal returns (bytes32 hash) {
-    assert(getSig(action) == CHANGE_FUNCTION_SIG_1 || getSig(action) == CHANGE_FUNCTION_SIG_2);
+    assert(getSig(action) == SET_EXPENDITURE_STATE || getSig(action) == SET_EXPENDITURE_PAYOUTS);
 
     uint256 expenditureId;
     uint256 storageSlot;
@@ -1086,7 +1090,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     //   of 0x20 represents advancing one byte, 4 is the function signature.
     // So: 0x[length][sig][args...]
 
-    bytes4 functionSignature = CHANGE_FUNCTION_SIG_1;
+    bytes4 functionSignature = SET_EXPENDITURE_STATE;
 
     uint256 permissionDomainId;
     uint256 childSkillIndex;
@@ -1100,8 +1104,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
       storageSlot := mload(add(action, 0x84))
     }
 
-    // If we are editing the main expenditure struct
-    if (storageSlot == 25 || getSig(action) == CHANGE_FUNCTION_SIG_2) {
+    // If we are editing the main expenditure struct, or setting payouts on multiple slots
+    if (storageSlot == 25 || getSig(action) == SET_EXPENDITURE_PAYOUTS) {
 
       bytes memory mainClaimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
       assembly {
@@ -1120,7 +1124,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
       }
       return mainClaimDelayAction;
 
-    // If we are editing an expenditure slot
+    // If we are editing an expenditure slot or setting payouts for one slot
     } else {
 
       bytes memory slotClaimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
