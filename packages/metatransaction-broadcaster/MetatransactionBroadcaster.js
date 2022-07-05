@@ -59,8 +59,8 @@ class MetatransactionBroadcaster {
         // Check target is valid
         const addressValid = await this.isAddressValid(target);
         // It's possible it's not a valid address, but could be a valid transaction with a token.
-        const validTokenTransaction = await this.isTokenTransactionValid(target, payload);
-        const allowedColonyFamilyTransaction = await this.isColonyFamilyTransactionAllowed(target, payload);
+        const validTokenTransaction = await this.isTokenTransactionValid(target, payload, userAddress);
+        const allowedColonyFamilyTransaction = await this.isColonyFamilyTransactionAllowed(target, payload, userAddress);
         if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
           const data = {};
           if (!addressValid) {
@@ -203,7 +203,7 @@ class MetatransactionBroadcaster {
     await db.close();
   }
 
-  async isTokenTransactionValid(target, txData) {
+  async isTokenTransactionValid(target, txData, userAddress) {
     const metaTxTokenDef = await this.loader.load({ contractName: "MetaTxToken" }, { abi: true, address: false });
     const possibleToken = new ethers.Contract(target, metaTxTokenDef.abi, this.wallet);
     let valid = false;
@@ -216,7 +216,20 @@ class MetatransactionBroadcaster {
       } else if (tx.signature === "approve(address,uint256)") {
         valid = await this.isAddressValid(tx.args[0]);
       } else if (tx.signature === "setAuthority(address)") {
-        valid = true;
+        // Get the most recent metatx this user sent on colonyNetwork
+        let logs = await this.provider.getLogs({
+          address: this.colonyNetwork.address,
+          topics: [ ethers.utils.id("MetaTransactionExecuted(address,address,bytes)")]
+        })
+        const data = logs.map((l) => { return {
+          log: l,
+          event: this.colonyNetwork.interface.parseLog(l)
+        }}).filter(x => x.event.args.userAddress === userAddress )
+        // Get the TokenAuthorityDeployed event
+        const receipt = await this.provider.getTransactionReceipt(data[data.length - 1].log.transactionHash)
+        logs = receipt.logs.map(l => this.colonyNetwork.interface.parseLog(l)).filter(e => e.name === "TokenAuthorityDeployed")
+        // If the address is the same, it's valid
+        return logs[logs.length -1].args.tokenAuthorityAddress === tx.args[0]
       } else if (tx.signature === "setOwner(address)") {
         const checksummedAddress = ethers.utils.getAddress(tx.args[0]);
         const isColony = await this.colonyNetwork.isColony(checksummedAddress);
@@ -228,7 +241,7 @@ class MetatransactionBroadcaster {
     return valid;
   }
 
-  async isColonyFamilyTransactionAllowed(target, txData) {
+  async isColonyFamilyTransactionAllowed(target, txData, userAddress) {
     const colonyDef = await this.loader.load({ contractName: "IColony" }, { abi: true, address: false });
     const possibleColony = new ethers.Contract(target, colonyDef.abi, this.wallet);
     try {
@@ -262,7 +275,7 @@ class MetatransactionBroadcaster {
 
         const addressValid = await this.isAddressValid(motionTarget);
         // It's possible it's not a valid address, but could be a valid transaction with a token.
-        const validTokenTransaction = await this.isTokenTransactionValid(motionTarget, motion.action);
+        const validTokenTransaction = await this.isTokenTransactionValid(motionTarget, motion.action, userAddress);
         const allowedColonyFamilyTransaction = await this.isColonyFamilyTransactionAllowed(motionTarget, motion.action);
         if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
           return false;
