@@ -1,17 +1,18 @@
 /* eslint-disable no-underscore-dangle */
 /* global artifacts */
 
-const path = require("path");
-const chai = require("chai");
-const bnChai = require("bn-chai");
-const { ethers } = require("ethers");
-const { soliditySha3 } = require("web3-utils");
-const axios = require("axios");
-const { TruffleLoader } = require("../../packages/package-utils");
-const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
+import path from "path";
+import chai from "chai";
+import bnChai from "bn-chai";
+import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
+import { TruffleLoader } from "../../packages/package-utils";
+import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
-const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
-const { getMetaTransactionParameters, setupColony } = require("../../helpers/test-data-generator");
+import MetatransactionBroadcaster from "../../packages/metatransaction-broadcaster/MetatransactionBroadcaster";
+import { getMetaTransactionParameters, getPermitParameters, setupColony } from "../../helpers/test-data-generator";
+
+const axios = require("axios");
 
 const { expect } = chai;
 const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
@@ -235,6 +236,92 @@ contract("Metatransaction broadcaster", (accounts) => {
       expect(balanceAccount1).to.eq.BN(1200000);
       const balanceAccount2 = await metaTxToken.balanceOf(colony.address);
       expect(balanceAccount2).to.eq.BN(300000);
+    });
+
+    it("a valid EIP712 transaction is broadcast and mined", async function () {
+      await metaTxToken.mint(USER0, 1500000, { from: USER0 });
+
+      const deadline = Math.floor(Date.now() / 1000) + 3600;
+
+      const { r, s, v } = await getPermitParameters(USER0, colony.address, 1, deadline, metaTxToken.address);
+
+      // Send to endpoint
+
+      const jsonData = {
+        target: metaTxToken.address,
+        owner: USER0,
+        spender: colony.address,
+        value: 1,
+        deadline,
+        r,
+        s,
+        v,
+      };
+
+      const res = await axios.post("http://127.0.0.1:3000/broadcast/", jsonData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const { txHash } = res.data.data;
+
+      expect(txHash.length).to.be.equal(66);
+
+      expect(res.data).to.be.deep.equal({
+        status: "success",
+        data: {
+          txHash,
+        },
+      });
+
+      // Check the transaction happened
+      const allowed = await metaTxToken.allowance(USER0, colony.address);
+      expect(allowed).to.eq.BN(1);
+    });
+
+    it("an EIP712 transaction with an invalid spender is not broadcast and mined", async function () {
+      await metaTxToken.mint(USER0, 1500000, { from: USER0 });
+
+      const deadline = Math.floor(Date.now() / 1000) + 3600;
+
+      const { r, s, v } = await getPermitParameters(USER0, USER1, 1, deadline, metaTxToken.address);
+
+      // Send to endpoint
+
+      const jsonData = {
+        target: metaTxToken.address,
+        owner: USER0,
+        spender: USER1,
+        value: 1,
+        deadline,
+        r,
+        s,
+        v,
+      };
+
+      let errored = false;
+
+      try {
+        await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (err) {
+        errored = true;
+        expect(err.response.data).to.be.deep.equal({
+          status: "fail",
+          data: {
+            payload: "Not a spender we pay metatransactions for",
+          },
+        });
+      }
+      expect(errored).to.be.equal(true);
+
+      // Check the transaction did not happen
+      const allowed = await metaTxToken.allowance(USER0, USER1);
+      expect(allowed).to.eq.BN(0);
     });
 
     it("an invalid transaction is rejected and not mined", async function () {

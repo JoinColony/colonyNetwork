@@ -16,6 +16,8 @@ class MetatransactionBroadcaster {
     this.wallet = new ethers.Wallet(privateKey, this.provider);
     this.senderAddress = this.wallet.address;
 
+    this.gasLimit = gasLimit;
+
     console.log("Transactions will be sent from ", this.senderAddress);
     this.dbPath = dbPath;
 
@@ -37,63 +39,18 @@ class MetatransactionBroadcaster {
     });
 
     this.app.post("/broadcast", async (req, res) => {
-      try {
-        const { target, userAddress, payload, r, s, v } = req.body;
-
-        const contract = new ethers.Contract(target, this.metaTxDef.abi, this.wallet);
-        this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
-
-        let gasEstimate;
-
-        try {
-          gasEstimate = await contract.estimateGas.executeMetaTransaction(userAddress, payload, r, s, v, { gasPrice: this.gasPrice, gasLimit });
-        } catch (err) {
-          return res.status(400).send({
-            status: "fail",
-            data: {
-              payload: "Transaction reverts and will not be broadcast. It either fails outright, or uses too much gas.",
-            },
-          });
-        }
-
-        // Check target is valid
-        const addressValid = await this.isAddressValid(target);
-        // It's possible it's not a valid address, but could be a valid transaction with a token.
-        const validTokenTransaction = await this.isTokenTransactionValid(target, payload, userAddress);
-        const allowedColonyFamilyTransaction = await this.isColonyFamilyTransactionAllowed(target, payload, userAddress);
-        if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
-          const data = {};
-          if (!addressValid) {
-            data.target = "Not a contract we pay metatransactions for";
-          }
-          if (!allowedColonyFamilyTransaction) {
-            data.payload = "Not a function on colony we pay metatransactions for";
-          }
-
-          // validTokenTransaction after '||' unnecessary, but included for clarity
-          // This condition guards against a colony being set up with a native token that follows
-          // the ERC20 interface, but the functions calls do something totally different.
-          if (!validTokenTransaction || (validTokenTransaction && gasEstimate > 50000)) {
-            data.payload = "Not a transaction we pay metatransactions for";
-          }
-          return res.status(400).send({
-            status: "fail",
-            data,
-          });
-        }
-
-        const tx = await contract.executeMetaTransaction(userAddress, payload, r, s, v, { gasPrice: this.gasPrice });
-        return res.send({
-          status: "success",
+      // Is it a 'normal' metatransaction?
+      if (req.body.payload) {
+        return this.processMetatransaction(req, res);
+      // Is it EIP712 transaction?
+      } else if (req.body.deadline) {
+        return this.processEIP712Transaction(req, res)
+      } else {
+        return res.status(400).send({
+          status: "fail",
           data: {
-            txHash: tx.hash,
+            payload: "Not recognised type of metatransaction",
           },
-        });
-      } catch (err) {
-        console.log(err);
-        return res.status(500).send({
-          status: "error",
-          message: err,
         });
       }
     });
@@ -121,6 +78,7 @@ class MetatransactionBroadcaster {
     this.tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
 
     this.metaTxDef = await this.loader.load({ contractName: "IBasicMetaTransaction" }, { abi: true, address: false });
+    this.metaTxTokenDef = await this.loader.load({ contractName: "MetaTxToken" }, { abi: true, address: false });
   }
 
   async close() {
@@ -288,6 +246,129 @@ class MetatransactionBroadcaster {
 
     return true;
   }
+
+  async processMetatransaction(req, res) {
+    try {
+      const { target, userAddress, payload, r, s, v } = req.body;
+
+      const contract = new ethers.Contract(target, this.metaTxDef.abi, this.wallet);
+      this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
+
+      let gasEstimate;
+
+      try {
+        gasEstimate = await contract.estimateGas.executeMetaTransaction(userAddress, payload, r, s, v, { gasPrice: this.gasPrice });
+        if (gasEstimate > this.gasLimit) {
+          return res.status(400).send({
+            status: "fail",
+            data: {
+              payload: "Transaction too expensive and will not be broadcast",
+            },
+          });
+        }
+      } catch (err) {
+        return res.status(400).send({
+          status: "fail",
+          data: {
+            payload: "Transaction reverts and will not be broadcast",
+          },
+        });
+      }
+
+      // Check target is valid
+      const addressValid = await this.isAddressValid(target);
+      // It's possible it's not a valid address, but could be a valid transaction with a token.
+      const validTokenTransaction = await this.isTokenTransactionValid(target, payload, userAddress);
+      const allowedColonyFamilyTransaction = await this.isColonyFamilyTransactionAllowed(target, payload, userAddress);
+      if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
+        const data = {};
+        if (!addressValid) {
+          data.target = "Not a contract we pay metatransactions for";
+        }
+        if (!allowedColonyFamilyTransaction) {
+          data.payload = "Not a function on colony we pay metatransactions for";
+        }
+
+        // validTokenTransaction after '||' unnecessary, but included for clarity
+        // This condition guards against a colony being set up with a native token that follows
+        // the ERC20 interface, but the functions calls do something totally different.
+        if (!validTokenTransaction || (validTokenTransaction && gasEstimate > 50000)) {
+          data.payload = "Not a transaction we pay metatransactions for";
+        }
+        return res.status(400).send({
+          status: "fail",
+          data,
+        });
+      }
+
+      const tx = await contract.executeMetaTransaction(userAddress, payload, r, s, v, { gasPrice: this.gasPrice });
+      return res.send({
+        status: "success",
+        data: {
+          txHash: tx.hash,
+        },
+      });
+    } catch (err) {
+      return res.status(500).send({
+        status: "error",
+        message: err,
+      });
+    }
+  }
+
+  async processEIP712Transaction(req, res) {
+    try {
+      const { target, owner, spender, value, deadline, r, s, v } = req.body;
+      const contract = new ethers.Contract(target, this.metaTxTokenDef.abi, this.wallet);
+      this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
+
+      let gasEstimate;
+      try {
+        gasEstimate = await contract.estimateGas.permit(owner, spender, value, deadline, v, r, s, { gasPrice: this.gasPrice });
+        if (gasEstimate > this.gasLimit) {
+          return res.status(400).send({
+            status: "fail",
+            data: {
+              payload: "Transaction too expensive and will not be broadcast",
+            },
+          });
+        }
+      } catch (err) {
+        return res.status(400).send({
+          status: "fail",
+          data: {
+            payload: "Transaction reverts and will not be broadcast",
+          },
+        });
+      }
+
+      // Check spender is valid
+      console.log(spender)
+      const valid = await this.isAddressValid(spender);
+      if (!valid){
+        const data = {};
+        data.payload = "Not a spender we pay metatransactions for";
+        return res.status(400).send({
+          status: "fail",
+          data,
+        });
+      }
+
+      const tx = await contract.permit(owner, spender, value, deadline, v, r, s, { gasPrice: this.gasPrice })
+      return res.send({
+        status: "success",
+        data: {
+          txHash: tx.hash,
+        },
+      });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send({
+        status: "error",
+        message: err,
+      });
+    }
+  };
 }
 
 module.exports = MetatransactionBroadcaster;
