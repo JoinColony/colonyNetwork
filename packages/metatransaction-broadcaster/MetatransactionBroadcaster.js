@@ -42,9 +42,9 @@ class MetatransactionBroadcaster {
       // Is it a 'normal' metatransaction?
       if (req.body.payload) {
         return this.processMetatransaction(req, res);
-      // Is it EIP712 transaction?
+      // Is it EIP2612 transaction?
       } else if (req.body.deadline) {
-        return this.processEIP712Transaction(req, res)
+        return this.processEIP2612Transaction(req, res)
       } else {
         return res.status(400).send({
           status: "fail",
@@ -174,10 +174,12 @@ class MetatransactionBroadcaster {
       } else if (tx.signature === "approve(address,uint256)") {
         valid = await this.isAddressValid(tx.args[0]);
       } else if (tx.signature === "setAuthority(address)") {
+        // return true;
         // Get the most recent metatx this user sent on colonyNetwork
         let logs = await this.provider.getLogs({
           address: this.colonyNetwork.address,
-          topics: [ ethers.utils.id("MetaTransactionExecuted(address,address,bytes)")]
+          topics: [ ethers.utils.id("MetaTransactionExecuted(address,address,bytes)")],
+          fromBlock: 0
         })
         const data = logs.map((l) => { return {
           log: l,
@@ -324,7 +326,7 @@ class MetatransactionBroadcaster {
     }
   }
 
-  async processEIP712Transaction(req, res) {
+  async processEIP2612Transaction(req, res) {
     try {
       const { target, owner, spender, value, deadline, r, s, v } = req.body;
       const contract = new ethers.Contract(target, this.metaTxTokenDef.abi, this.wallet);
