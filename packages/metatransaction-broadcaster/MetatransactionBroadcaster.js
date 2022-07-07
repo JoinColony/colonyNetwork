@@ -267,10 +267,18 @@ class MetatransactionBroadcaster {
           });
         }
       } catch (err) {
+        let reason;
+        try {
+          reason = JSON.parse(err.body).error.message
+        } catch (e) {
+
+        }
+
         return res.status(400).send({
           status: "fail",
           data: {
             payload: "Transaction reverts and will not be broadcast",
+            reason
           },
         });
       }
@@ -334,10 +342,17 @@ class MetatransactionBroadcaster {
           });
         }
       } catch (err) {
+        let reason;
+        try {
+          reason = JSON.parse(err.body).error.message
+        } catch (e) {
+
+        }
         return res.status(400).send({
           status: "fail",
           data: {
             payload: "Transaction reverts and will not be broadcast",
+            reason
           },
         });
       }
