@@ -374,15 +374,9 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should allow owners to update payouts at once in one slot", async () => {
-      await colony.setExpenditureSlotPayouts(
-        1,
-        UINT256_MAX,
-        expenditureId,
-        SLOT0,
-        [token.address, otherToken.address],
-        [10, 20],
-        { from: ARBITRATOR }
-      );
+      await colony.setExpenditureSlotPayouts(1, UINT256_MAX, expenditureId, SLOT0, [token.address, otherToken.address], [10, 20], {
+        from: ARBITRATOR,
+      });
 
       let payout;
       payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
