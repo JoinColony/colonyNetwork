@@ -42,17 +42,17 @@ class MetatransactionBroadcaster {
       // Is it a 'normal' metatransaction?
       if (req.body.payload) {
         return this.processMetatransaction(req, res);
-      // Is it EIP2612 transaction?
-      } else if (req.body.deadline) {
-        return this.processEIP2612Transaction(req, res)
-      } else {
-        return res.status(400).send({
-          status: "fail",
-          data: {
-            payload: "Not recognised type of metatransaction",
-          },
-        });
+        // Is it EIP2612 transaction?
       }
+      if (req.body.deadline) {
+        return this.processEIP2612Transaction(req, res);
+      }
+      return res.status(400).send({
+        status: "fail",
+        data: {
+          payload: "Not recognised type of metatransaction",
+        },
+      });
     });
 
     this.server = this.app.listen(port, () => {
@@ -174,22 +174,25 @@ class MetatransactionBroadcaster {
       } else if (tx.signature === "approve(address,uint256)") {
         valid = await this.isAddressValid(tx.args[0]);
       } else if (tx.signature === "setAuthority(address)") {
-        // return true;
         // Get the most recent metatx this user sent on colonyNetwork
         let logs = await this.provider.getLogs({
           address: this.colonyNetwork.address,
-          topics: [ ethers.utils.id("MetaTransactionExecuted(address,address,bytes)")],
-          fromBlock: 0
-        })
-        const data = logs.map((l) => { return {
-          log: l,
-          event: this.colonyNetwork.interface.parseLog(l)
-        }}).filter(x => x.event.args.userAddress === userAddress )
+          topics: [ethers.utils.id("MetaTransactionExecuted(address,address,bytes)")],
+          fromBlock: 0,
+        });
+        const data = logs
+          .map((l) => {
+            return {
+              log: l,
+              event: this.colonyNetwork.interface.parseLog(l),
+            };
+          })
+          .filter((x) => ethers.utils.getAddress(x.event.args.userAddress) === ethers.utils.getAddress(userAddress));
         // Get the TokenAuthorityDeployed event
-        const receipt = await this.provider.getTransactionReceipt(data[data.length - 1].log.transactionHash)
-        logs = receipt.logs.map(l => this.colonyNetwork.interface.parseLog(l)).filter(e => e.name === "TokenAuthorityDeployed")
+        const receipt = await this.provider.getTransactionReceipt(data[data.length - 1].log.transactionHash);
+        logs = receipt.logs.map((l) => this.colonyNetwork.interface.parseLog(l)).filter((e) => e.name === "TokenAuthorityDeployed");
         // If the address is the same, it's valid
-        return logs[logs.length -1].args.tokenAuthorityAddress === tx.args[0]
+        return logs[logs.length - 1].args.tokenAuthorityAddress === tx.args[0];
       } else if (tx.signature === "setOwner(address)") {
         const checksummedAddress = ethers.utils.getAddress(tx.args[0]);
         const isColony = await this.colonyNetwork.isColony(checksummedAddress);
@@ -271,16 +274,14 @@ class MetatransactionBroadcaster {
       } catch (err) {
         let reason;
         try {
-          reason = JSON.parse(err.body).error.message
-        } catch (e) {
-
-        }
+          reason = JSON.parse(err.body).error.message;
+        } catch (e) {}
 
         return res.status(400).send({
           status: "fail",
           data: {
             payload: "Transaction reverts and will not be broadcast",
-            reason
+            reason,
           },
         });
       }
@@ -346,23 +347,20 @@ class MetatransactionBroadcaster {
       } catch (err) {
         let reason;
         try {
-          reason = JSON.parse(err.body).error.message
-        } catch (e) {
-
-        }
+          reason = JSON.parse(err.body).error.message;
+        } catch (e) {}
         return res.status(400).send({
           status: "fail",
           data: {
             payload: "Transaction reverts and will not be broadcast",
-            reason
+            reason,
           },
         });
       }
 
       // Check spender is valid
-      console.log(spender)
       const valid = await this.isAddressValid(spender);
-      if (!valid){
+      if (!valid) {
         const data = {};
         data.payload = "Not a spender we pay metatransactions for";
         return res.status(400).send({
@@ -371,7 +369,7 @@ class MetatransactionBroadcaster {
         });
       }
 
-      const tx = await contract.permit(owner, spender, value, deadline, v, r, s, { gasPrice: this.gasPrice })
+      const tx = await contract.permit(owner, spender, value, deadline, v, r, s, { gasPrice: this.gasPrice });
       return res.send({
         status: "success",
         data: {
@@ -385,7 +383,7 @@ class MetatransactionBroadcaster {
         message: err,
       });
     }
-  };
+  }
 }
 
 module.exports = MetatransactionBroadcaster;
