@@ -3,12 +3,15 @@
 const path = require("path");
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const fs = require("fs");
+const request = require("async-request");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const { DEFAULT_STAKE, INITIAL_FUNDING, UINT256_MAX } = require("../../helpers/constants");
-const { forwardTime, currentBlock, advanceMiningCycleNoContest, getActiveRepCycle } = require("../../helpers/test-helper");
+const { forwardTime, currentBlock, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter } = require("../../helpers/test-helper");
 const { giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerClient = require("../../packages/reputation-miner/ReputationMinerClient");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -225,6 +228,50 @@ process.env.SOLIDITY_COVERAGE
 
           const clientHash3 = await reputationMiner1.reputationTree.getRootHash();
           expect(clientHash2).to.equal(clientHash3);
+        });
+
+        it("should be able to download a sqlite file containing the latest state", async () => {
+          const adapter = new TestAdapter();
+          const client = new ReputationMinerClient({ loader, realProviderPort, minerAddress: MINER1, useJsTree: true, auto: false, adapter });
+          await client.initialise(colonyNetwork.address, 1);
+
+          await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
+          await reputationMiner1.saveCurrentState();
+
+          const currentState = await colonyNetwork.getReputationRootHash();
+          await colonyNetwork.getReputationRootHashNLeaves();
+
+          const url = `http://127.0.0.1:3000/latestState`;
+          const res = await request(url);
+          expect(res.statusCode).to.equal(200);
+
+          const fileName = "./latestConfirmed.sqlite";
+
+          // Does it exist?
+          expect(fs.existsSync(fileName)).to.equal(true);
+
+          // Does it contain a valid state?
+          const reputationMiner3 = new ReputationMinerTestWrapper({
+            loader,
+            minerAddress: MINER1,
+            realProviderPort,
+            useJsTree: true,
+            dbPath: fileName,
+          });
+          await reputationMiner3.initialise(colonyNetwork.address);
+          await reputationMiner3.sync("latest");
+
+          const loadedState = await reputationMiner3.getRootHash();
+          expect(loadedState).to.equal(currentState);
+          // delete it
+          fs.unlinkSync(fileName);
+          fs.unlinkSync(`${fileName}-shm`);
+          fs.unlinkSync(`${fileName}-wal`);
+          await client.close();
         });
       });
     });
