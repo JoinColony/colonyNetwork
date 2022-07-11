@@ -203,6 +203,16 @@ class ReputationMinerClient {
           return res.status(500).send({ message: "An error occurred querying the reputation" });
         }
       });
+
+      this._app.get("/latestState", cache('1 hour'), async (req, res) => {
+        try {
+          const dbPathLatest = await this._miner.saveLatestToFile();
+          return res.download(dbPathLatest)
+        } catch (err) {
+          console.log(err)
+          return res.status(500).send({ message: "An error occurred generating the database of the state" });
+        }
+      });
     }
   }
 
@@ -263,13 +273,12 @@ class ReputationMinerClient {
       await this._miner.initialise(colonyNetworkAddress);
 
       // Get latest state from database if available, otherwise sync to current state on-chain
-      await this._miner.createDB();
+      await ReputationMiner.createDB(this._miner.db);
       await this._miner.loadState(latestConfirmedReputationHash);
       if (this._miner.nReputations.eq(0)) {
         this._adapter.log("Latest state not found - need to sync");
         await this._miner.sync(startingBlock, true);
       }
-
       // Initial call to process the existing log from the cycle we're currently in
       await this.processReputationLog();
     }
