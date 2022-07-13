@@ -24,7 +24,6 @@ const ColonyExtension = artifacts.require("ColonyExtension");
 const CoinMachine = artifacts.require("CoinMachine");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const Resolver = artifacts.require("Resolver");
-const VotingReputation = artifacts.require("VotingReputation");
 const GasGuzzler = artifacts.require("GasGuzzler");
 
 chai.use(bnChai(web3.utils.BN));
@@ -36,9 +35,10 @@ const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
 });
 
-contract.only("Metatransaction broadcaster", (accounts) => {
+contract("Metatransaction broadcaster", (accounts) => {
   const USER0 = accounts[0];
   const USER1 = accounts[1];
+  const USER2 = accounts[2];
 
   let colonyNetwork;
   let colony;
@@ -102,28 +102,6 @@ contract.only("Metatransaction broadcaster", (accounts) => {
 
       const valid = await broadcaster.isAddressValid(coinMachineAddress);
       expect(valid).to.be.equal(true);
-    });
-
-    it("transactions that try to execute a forbidden method on Reputation Voting extension are rejected", async function () {
-      const REP_VOTING = soliditySha3("VotingReputation");
-
-      const votingReputationImplementation = await VotingReputation.new();
-      const resolver = await Resolver.new();
-      await setupEtherRouter("VotingReputation", { VotingReputation: votingReputationImplementation.address }, resolver);
-
-      const versionSig = await resolver.stringToSig("version()");
-      const target = await resolver.lookup(versionSig);
-      const extensionImplementation = await ColonyExtension.at(target);
-      const votingReputationVersion = await extensionImplementation.version();
-
-      await colony.installExtension(REP_VOTING, votingReputationVersion);
-      const votingAddress = await colonyNetwork.getExtensionInstallation(REP_VOTING, colony.address);
-
-      const voting = await VotingReputation.at(votingAddress);
-
-      const txData = await voting.contract.methods.finalizeMotion(1).encodeABI();
-      const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
-      expect(valid).to.be.equal(false);
     });
 
     it("transactions that try to execute a forbidden method on a Colony are rejected", async function () {
@@ -238,12 +216,138 @@ contract.only("Metatransaction broadcaster", (accounts) => {
       expect(balanceAccount2).to.eq.BN(300000);
     });
 
-    it("a valid EIP712 transaction is broadcast and mined", async function () {
+    it("valid transactions broadcast near-simultaneously are still mined", async function () {
+      await metaTxToken.unlock();
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
+      await metaTxToken.mint(USER1, 1500000, { from: USER0 });
 
       const txData = await metaTxToken.contract.methods.transfer(colony.address, 300000).encodeABI();
 
-      const deadline = Math.floor(Date.now()/1000) + 3600;
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
+      const { r: r2, s: s2, v: v2 } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
+
+      // Send to endpoint
+
+      const jsonData = {
+        target: metaTxToken.address,
+        payload: txData,
+        userAddress: USER0,
+        r,
+        s,
+        v,
+      };
+
+      const req = axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      jsonData.r = r2;
+      jsonData.s = s2;
+      jsonData.v = v2;
+      jsonData.userAddress = USER1;
+
+      const req2 = axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const res = await req;
+      const res2 = await req2;
+
+      const { txHash } = res.data.data;
+      const { txHash: txHash2 } = res2.data.data;
+
+      expect(txHash.length).to.be.equal(66);
+
+      expect(res.data).to.be.deep.equal({
+        status: "success",
+        data: {
+          txHash,
+        },
+      });
+
+      expect(res2.data).to.be.deep.equal({
+        status: "success",
+        data: {
+          txHash: txHash2,
+        },
+      });
+
+      // Check the transaction happened
+      const balanceAccount1 = await metaTxToken.balanceOf(USER0);
+      expect(balanceAccount1).to.eq.BN(1200000);
+      const balanceAccount2 = await metaTxToken.balanceOf(USER1);
+      expect(balanceAccount2).to.eq.BN(1200000);
+      const balanceColony = await metaTxToken.balanceOf(colony.address);
+      expect(balanceColony).to.eq.BN(600000);
+    });
+
+    it("a valid transaction is broadcast and mined, even if the broadcaster's nonce manager fell behind", async function () {
+      await metaTxToken.unlock();
+      await metaTxToken.mint(USER0, 1500000, { from: USER0 });
+      await metaTxToken.mint(USER1, 1500000, { from: USER0 });
+
+      const txData = await metaTxToken.contract.methods.transfer(colony.address, 300000).encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
+      const { r: r2, s: s2, v: v2 } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
+
+      // Send to endpoint
+
+      const jsonData = {
+        target: metaTxToken.address,
+        payload: txData,
+        userAddress: USER0,
+        r,
+        s,
+        v,
+      };
+
+      const res = await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      // Make an unexpected transaction
+      await metaTxToken.mint(USER2, 1500000, { from: USER0 });
+
+      jsonData.r = r2;
+      jsonData.s = s2;
+      jsonData.v = v2;
+      jsonData.userAddress = USER1;
+
+      await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const { txHash } = res.data.data;
+
+      expect(txHash.length).to.be.equal(66);
+
+      expect(res.data).to.be.deep.equal({
+        status: "success",
+        data: {
+          txHash,
+        },
+      });
+
+      // Check the transaction happened
+      const balanceAccount1 = await metaTxToken.balanceOf(USER0);
+      expect(balanceAccount1).to.eq.BN(1200000);
+      const balanceAccount2 = await metaTxToken.balanceOf(colony.address);
+      expect(balanceAccount2).to.eq.BN(600000);
+    });
+
+    it("a valid EIP712 transaction is broadcast and mined", async function () {
+      await metaTxToken.mint(USER0, 1500000, { from: USER0 });
+
+      const deadline = Math.floor(Date.now() / 1000) + 3600;
 
       const { r, s, v } = await getPermitParameters(USER0, colony.address, 1, deadline, metaTxToken.address);
 
@@ -285,9 +389,7 @@ contract.only("Metatransaction broadcaster", (accounts) => {
     it("an EIP712 transaction with an invalid spender is not broadcast and mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
-      const txData = await metaTxToken.contract.methods.transfer(colony.address, 300000).encodeABI();
-
-      const deadline = Math.floor(Date.now()/1000) + 3600;
+      const deadline = Math.floor(Date.now() / 1000) + 3600;
 
       const { r, s, v } = await getPermitParameters(USER0, USER1, 1, deadline, metaTxToken.address);
 
@@ -327,7 +429,6 @@ contract.only("Metatransaction broadcaster", (accounts) => {
       const allowed = await metaTxToken.allowance(USER0, USER1);
       expect(allowed).to.eq.BN(0);
     });
-
 
     it("an invalid transaction is rejected and not mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
@@ -403,6 +504,7 @@ contract.only("Metatransaction broadcaster", (accounts) => {
           status: "fail",
           data: {
             payload: "Transaction reverts and will not be broadcast",
+            reason: "VM Exception while processing transaction: revert colony-metatx-function-call-unsuccessful",
           },
         });
       }

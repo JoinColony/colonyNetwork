@@ -6,6 +6,9 @@ import bnChai from "bn-chai";
 import shortid from "shortid";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
+import path from "path";
+import { TruffleLoader } from "../../packages/package-utils"; // eslint-disable-line import/no-unresolved
+import MetatransactionBroadcaster from "../../packages/metatransaction-broadcaster/MetatransactionBroadcaster";
 
 import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, CHALLENGE_RESPONSE_WINDOW_DURATION } from "../../helpers/constants";
 
@@ -24,6 +27,8 @@ import {
 import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 import PatriciaTree from "../../packages/reputation-miner/patricia";
+
+const ganacheAccounts = require("../../ganache-accounts.json");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -1517,6 +1522,71 @@ contract("Voting Reputation", (accounts) => {
       const slotHash = hashExpenditureSlot(action);
       const pastVote = await voting.getExpenditurePastVote(slotHash);
       expect(pastVote).to.eq.BN(REQUIRED_STAKE);
+    });
+
+    it("transactions that try to execute an allowed method on Reputation Voting extension are accepted by the MTX broadcaster", async function () {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      const txData = await voting.contract.methods.finalizeMotion(1).encodeABI();
+
+      const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+      const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
+
+      const loader = new TruffleLoader({
+        contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
+      });
+
+      const broadcaster = new MetatransactionBroadcaster({
+        privateKey: `0x${ganacheAccounts.private_keys[accounts[0].toLowerCase()]}`,
+        loader,
+        provider,
+      });
+      await broadcaster.initialise(colonyNetwork.address);
+
+      const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
+      expect(valid).to.be.equal(true);
+      await broadcaster.close();
+    });
+
+    it("transactions that try to execute a forbidden method on Reputation Voting extension are rejected by the MTX broadcaster", async function () {
+      const action = await encodeTxData(colony, "makeArbitraryTransaction", [colony.address, "0x00"]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      const txData = await voting.contract.methods.finalizeMotion(motionId.toString()).encodeABI();
+
+      const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+      const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
+
+      const loader = new TruffleLoader({
+        contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
+      });
+
+      const broadcaster = new MetatransactionBroadcaster({
+        privateKey: `0x${ganacheAccounts.private_keys[accounts[0].toLowerCase()]}`,
+        loader,
+        provider,
+      });
+      await broadcaster.initialise(colonyNetwork.address);
+
+      const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
+      expect(valid).to.be.equal(false);
+      await broadcaster.close();
     });
   });
 
