@@ -137,6 +137,14 @@ contract("Colony Recovery", (accounts) => {
       const metaColony = await IMetaColony.at(metaColonyAddress);
       await metaColony.enterRecoveryMode();
 
+      let sig;
+      sig = "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256[],address[])";
+      const moveFundsBetweenPots1 = metaColony.methods[sig];
+      sig = "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)";
+      const moveFundsBetweenPots2 = metaColony.methods[sig];
+      sig = "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)";
+      const moveFundsBetweenPots3 = metaColony.methods[sig];
+
       await checkErrorRevert(colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.addGlobalSkill(), "colony-in-recovery-mode");
@@ -189,6 +197,7 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.setExpenditureSkill(0, 0, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditureClaimDelay(0, 0, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditureState(0, 0, 0, 0, [], [], HASHZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.setExpenditureValues(0, [], [], [], [], [], [], [], [], [], [[]], [[]]), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setArbitrationRole(0, 0, ADDRESS_ZERO, 0, true), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setArchitectureRole(0, 0, ADDRESS_ZERO, 0, true), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setFundingRole(0, 0, ADDRESS_ZERO, 0, true), "colony-in-recovery-mode");
@@ -219,8 +228,9 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.claimExpenditurePayout(0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.claimPayment(0, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setPaymentPayout(0, 0, 0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.moveFundsBetweenPots(0, 0, 0, 0, 0, 0, 0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.moveFundsBetweenPots(0, 0, 0, 0, 0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(moveFundsBetweenPots1(0, 0, 0, 0, 0, 0, 0, [], []), "colony-in-recovery-mode");
+      await checkErrorRevert(moveFundsBetweenPots2(0, 0, 0, 0, 0, 0, 0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(moveFundsBetweenPots3(0, 0, 0, 0, 0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.claimColonyFunds(ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.startNextRewardPayout(ADDRESS_ZERO, HASHZERO, HASHZERO, 0, []), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.claimRewardPayout(0, [0, 0, 0, 0, 0, 0, 0], HASHZERO, HASHZERO, 0, []), "colony-in-recovery-mode");

@@ -43,8 +43,8 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   validFundingTransfer(_fromPot, _toPot)
   {
-    require(validateDomainInheritance(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot)), "colony-invalid-domain-inheritence");
-    require(validateDomainInheritance(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot)), "colony-invalid-domain-inheritence");
+    require(validateDomainInheritance(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot)), "colony-invalid-domain-inheritance");
+    require(validateDomainInheritance(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot)), "colony-invalid-domain-inheritance");
     require(_amounts.length == _tokens.length, "colony-invalid-arguments");
 
     for (uint256 i; i < _amounts.length; i++) {
@@ -70,8 +70,8 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   validFundingTransfer(_fromPot, _toPot)
   {
-    require(validateDomainInheritance(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot)), "colony-invalid-domain-inheritence");
-    require(validateDomainInheritance(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot)), "colony-invalid-domain-inheritence");
+    require(validateDomainInheritance(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot)), "colony-invalid-domain-inheritance");
+    require(validateDomainInheritance(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot)), "colony-invalid-domain-inheritance");
 
     moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
   }

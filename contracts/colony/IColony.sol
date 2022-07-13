@@ -154,7 +154,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) external view returns (bool hasRole);
 
   /// @notice Check whether a given user has a given role for the colony, in a child domain.
-  /// Calls the function of the same name on the colony's authority contract and an internal inheritence validator function
+  /// Calls the function of the same name on the colony's authority contract and an internal inheritance validator function
   /// @param _user The user whose role we want to check
   /// @param _domainId Domain in which the caller has the role
   /// @param _role The role we want to check for

@@ -123,6 +123,52 @@ contract("Colony Funding", (accounts) => {
       expect(pot2OtherTokenBalance).to.eq.BN(100);
     });
 
+    it("should not be able to move multiple tokens from a deprecated domain", async () => {
+      // Create domain 2 and deprecate it
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await colony.deprecateDomain(1, 0, 2, true);
+
+      const sig = "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256[],address[])";
+      const moveFundsBetweenPots = colony.methods[sig];
+
+      await checkErrorRevert(moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, 1, 2, [], []), "colony-domain-deprecated");
+    });
+
+    it("should not be able to move multiple tokens with invalid funding pots", async () => {
+      const sig = "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256[],address[])";
+      const moveFundsBetweenPots = colony.methods[sig];
+
+      await checkErrorRevert(
+        moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, 1, 1, [], []),
+        "colony-funding-cannot-move-funds-between-the-same-pot"
+      );
+      await checkErrorRevert(
+        moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, 0, 1, [], []),
+        "colony-funding-cannot-move-funds-from-rewards-pot"
+      );
+    });
+
+    it("should not be able to move multiple tokens with an invalid domain proof", async () => {
+      const sig = "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256[],address[])";
+      const moveFundsBetweenPots = colony.methods[sig];
+
+      // Create domain 2
+      await colony.addDomain(1, UINT256_MAX, 1);
+
+      await checkErrorRevert(moveFundsBetweenPots(1, 0, 1, UINT256_MAX, 0, 1, 2, [], []), "ds-auth-invalid-domain-inheritance");
+      await checkErrorRevert(moveFundsBetweenPots(1, UINT256_MAX, 1, 0, 0, 1, 2, [], []), "colony-invalid-domain-inheritance");
+      await checkErrorRevert(moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 2, [], []), "colony-invalid-domain-inheritance");
+    });
+
+    it("should not be able to move multiple tokens with invalid arguments", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+
+      const sig = "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256[],address[])";
+      const moveFundsBetweenPots = colony.methods[sig];
+
+      await checkErrorRevert(moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, 1, 2, [10], []), "colony-invalid-arguments");
+    });
+
     it("when moving tokens between pots, should respect permission inheritance", async () => {
       await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
       await fundColonyWithTokens(colony, otherToken, 100);

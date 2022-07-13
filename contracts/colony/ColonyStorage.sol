@@ -197,7 +197,12 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   modifier expenditureOwnerOrSelf(uint256 _id) {
-    require(expenditures[_id].owner == msgSender() || address(this) == msgSender(), "colony-expenditure-not-self-or-owner");
+    require(expenditures[_id].owner == msgSender() || address(this) == msgSender(), "colony-expenditure-not-owner-or-self");
+    _;
+  }
+
+  modifier expenditureOwner(uint256 _id) {
+    require(expenditures[_id].owner == msgSender(), "colony-expenditure-not-owner");
     _;
   }
 
@@ -233,7 +238,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   // Note that these require messages currently cannot propogate up because of the `executeTaskRoleAssignment` logic
   modifier isAdmin(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _user) {
     require(ColonyAuthority(address(authority)).hasUserRole(_user, _permissionDomainId, uint8(ColonyRole.Administration)), "colony-not-admin");
-    require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, tasks[_id].domainId), "ds-auth-invalid-domain-inheritence");
+    require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, tasks[_id].domainId), "ds-auth-invalid-domain-inheritance");
     _;
   }
 
@@ -257,7 +262,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     require(domainExists(_permissionDomainId), "ds-auth-permission-domain-does-not-exist");
     require(domainExists(_childDomainId), "ds-auth-child-domain-does-not-exist");
     require(isAuthorized(msgSender(), _permissionDomainId, msg.sig), "ds-auth-unauthorized");
-    require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-inheritence");
+    require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-inheritance");
     _;
   }
 

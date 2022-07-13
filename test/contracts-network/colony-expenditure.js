@@ -111,7 +111,7 @@ contract("Colony Expenditure", (accounts) => {
       let expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.status).to.eq.BN(DRAFT);
 
-      await checkErrorRevert(colony.cancelExpenditure(expenditureId, { from: USER }), "colony-expenditure-not-self-or-owner");
+      await checkErrorRevert(colony.cancelExpenditure(expenditureId, { from: USER }), "colony-expenditure-not-owner");
       await colony.cancelExpenditure(expenditureId, { from: ADMIN });
 
       expenditure = await colony.getExpenditure(expenditureId);
@@ -126,7 +126,7 @@ contract("Colony Expenditure", (accounts) => {
       let expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.owner).to.equal(ADMIN);
 
-      await checkErrorRevert(colony.transferExpenditure(expenditureId, USER), "colony-expenditure-not-self-or-owner");
+      await checkErrorRevert(colony.transferExpenditure(expenditureId, USER), "colony-expenditure-not-owner");
       await colony.transferExpenditure(expenditureId, USER, { from: ADMIN });
 
       expenditure = await colony.getExpenditure(expenditureId);
@@ -205,7 +205,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await expectEvent(tx, "ExpenditureMetadataSet", [ADMIN, expenditureId, IPFS_HASH]);
 
-      await checkErrorRevert(setExpenditureMetadata(expenditureId, IPFS_HASH, { from: USER }), "colony-expenditure-not-self-or-owner");
+      await checkErrorRevert(setExpenditureMetadata(expenditureId, IPFS_HASH, { from: USER }), "colony-expenditure-not-owner");
     });
 
     it("should allow arbitrators to update the metadata", async () => {
@@ -232,7 +232,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should allow only owners to update many slot recipients at once", async () => {
       await checkErrorRevert(
         colony.setExpenditureRecipients(expenditureId, [SLOT1, SLOT2], [RECIPIENT, USER], { from: USER }),
-        "colony-expenditure-not-self-or-owner"
+        "colony-expenditure-not-owner"
       );
 
       await colony.setExpenditureRecipients(expenditureId, [SLOT1, SLOT2], [RECIPIENT, USER], { from: ADMIN });
@@ -311,10 +311,7 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should allow only owners to update a slot claim delay", async () => {
-      await checkErrorRevert(
-        colony.setExpenditureClaimDelay(expenditureId, SLOT0, SECONDS_PER_DAY, { from: USER }),
-        "colony-expenditure-not-self-or-owner"
-      );
+      await checkErrorRevert(colony.setExpenditureClaimDelay(expenditureId, SLOT0, SECONDS_PER_DAY, { from: USER }), "colony-expenditure-not-owner");
 
       await colony.setExpenditureClaimDelay(expenditureId, SLOT0, SECONDS_PER_DAY, { from: ADMIN });
 
@@ -340,7 +337,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should allow only owners to update many slot payout modifiers at once", async () => {
       await checkErrorRevert(
         colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(2), WAD], { from: USER }),
-        "colony-expenditure-not-self-or-owner"
+        "colony-expenditure-not-owner"
       );
 
       await colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(2), WAD], { from: ADMIN });
@@ -412,8 +409,8 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should not allow non-owners to update skills or payouts", async () => {
-      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID), "colony-expenditure-not-self-or-owner");
-      await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD), "colony-expenditure-not-self-or-owner");
+      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID), "colony-expenditure-not-owner");
+      await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD), "colony-expenditure-not-owner");
     });
 
     it("should allow owners to add a slot payout", async () => {
@@ -526,6 +523,22 @@ contract("Colony Expenditure", (accounts) => {
       expect(payout).to.eq.BN(WAD.muln(40));
     });
 
+    it("should not allow owners to update many values simultaneously if not owner", async () => {
+      await checkErrorRevert(
+        colony.setExpenditureValues(expenditureId, [], [], [], [], [], [], [], [], [], [[], []], [[], []], { from: USER }),
+        "colony-expenditure-not-owner"
+      );
+    });
+
+    it("should not allow owners to update many values simultaneously if not in draft", async () => {
+      await colony.cancelExpenditure(expenditureId, { from: ADMIN });
+
+      await checkErrorRevert(
+        colony.setExpenditureValues(expenditureId, [], [], [], [], [], [], [], [], [], [[], []], [[], []], { from: ADMIN }),
+        "colony-expenditure-not-draft"
+      );
+    });
+
     it("will not update values if empty arrays are passed", async () => {
       await colony.setExpenditureValues(expenditureId, [], [], [], [], [], [], [], [], [], [[], []], [[], []], { from: ADMIN });
 
@@ -582,7 +595,7 @@ contract("Colony Expenditure", (accounts) => {
       let expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.status).to.eq.BN(DRAFT);
 
-      await checkErrorRevert(colony.lockExpenditure(expenditureId, { from: USER }), "colony-expenditure-not-self-or-owner");
+      await checkErrorRevert(colony.lockExpenditure(expenditureId, { from: USER }), "colony-expenditure-not-owner");
       await colony.lockExpenditure(expenditureId, { from: ADMIN });
 
       expenditure = await colony.getExpenditure(expenditureId);
@@ -635,7 +648,7 @@ contract("Colony Expenditure", (accounts) => {
       let expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.status).to.eq.BN(DRAFT);
 
-      await checkErrorRevert(colony.finalizeExpenditure(expenditureId, { from: USER }), "colony-expenditure-not-self-or-owner");
+      await checkErrorRevert(colony.finalizeExpenditure(expenditureId, { from: USER }), "colony-expenditure-not-owner");
       const tx = await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       const currTime = await getBlockTime(tx.receipt.blockNumber);
 
