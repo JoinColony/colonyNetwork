@@ -9,9 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@ethersproject/experimental": "^5.6.3",
     "body-parser": "^1.20.0",
     "ethers": "^5.6.8",
     "express": "^4.18.1",
+    "express-queue": "^0.0.13",
     "jsonfile": "^6.1.0",
     "slack": "^11.0.2",
     "sqlite": "^4.1.1",
