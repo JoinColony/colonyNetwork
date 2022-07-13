@@ -90,7 +90,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 3;
+    return 4;
   }
 
   /// @notice Configures the extension
@@ -141,12 +141,12 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
     require(
       (domainSkillId == fromSkillId && _fromChildSkillIndex == UINT256_MAX) ||
       fromSkillId == colonyNetwork.getChildSkillId(domainSkillId, _fromChildSkillIndex),
-      "funding-queue-bad-inheritence-from"
+      "funding-queue-bad-inheritance-from"
     );
     require(
       (domainSkillId == toSkillId && _toChildSkillIndex == UINT256_MAX) ||
       toSkillId == colonyNetwork.getChildSkillId(domainSkillId, _toChildSkillIndex),
-      "funding-queue-bad-inheritence-to"
+      "funding-queue-bad-inheritance-to"
     );
 
     proposalCount++;

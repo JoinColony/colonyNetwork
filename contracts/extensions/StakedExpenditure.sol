@@ -90,6 +90,8 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
 
   // Public
 
+  /// @notice Sets the stake fraction
+  /// @param _stakeFraction WAD-denominated fraction, used to determine stake as fraction of rep in domain
   function setStakeFraction(uint256 _stakeFraction) public onlyRoot {
     require(_stakeFraction <= WAD, "staked-expenditure-value-too-large");
     stakeFraction = _stakeFraction;
@@ -97,6 +99,14 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     emit StakeFractionSet(_stakeFraction);
   }
 
+  /// @notice Make an expenditure by putting up a stake
+  /// @param _permissionDomainId The domainId in which the extension has the administration permission
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
+  /// @param _domainId The domain where the expenditure belongs
+  /// @param _key A reputation hash tree key, of the total reputation in _domainId
+  /// @param _value Reputation value indicating the total reputation in _domainId
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
   function makeExpenditureWithStake(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -121,6 +131,8 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     emit ExpenditureMadeViaStake(msgSender(), expenditureId, stakeAmount);
   }
 
+  /// @notice Reclaims the stake if the expenditure is finalized or cancelled
+  /// @param _expenditureId The id of the expenditure
   function reclaimStake(uint256 _expenditureId) public {
     Stake storage stake = stakes[_expenditureId];
     require(stake.creator != address(0x0), "staked-expenditure-nothing-to-claim");
@@ -141,6 +153,11 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     emit StakeReclaimed(_expenditureId);
   }
 
+  /// @notice Cancel the expenditure and reclaim the stake in one transaction
+  /// @notice Can only be called by expenditure owner while expenditure is in draft state
+  /// @param _permissionDomainId The domainId in which the extension has the arbitration permission
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _expenditureId The id of the expenditure
   function cancelAndReclaimStake(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -164,6 +181,14 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     reclaimStake(_expenditureId);
   }
 
+  /// @notice Cancel the expenditure and punish the staker
+  /// @notice Can only be called by an arbitration user
+  /// @param _permissionDomainId The domainId in which the extension has the arbitration permission
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _callerPermissionDomainId The domainId in which the caller has the arbitration permission
+  /// @param _callerChildSkillIndex The index that the `_domainId` is relative to `_callerPermissionDomainId`
+  /// @param _expenditureId The id of the expenditure
+  /// @param _punish Whether the staker should be punished by losing an amount of reputation equal to the stake
   function cancelAndPunish(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -220,10 +245,14 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
 
   // View
 
+  /// @notice Get the stake fraction
+  /// @return stakeFraction The stake fraction
   function getStakeFraction() public view returns (uint256) {
     return stakeFraction;
   }
 
+  /// @notice Get the stake for an expenditure
+  /// @param stake The stake, a struct holding the staker's address and the stake amount
   function getStake(uint256 _expenditureId) public view returns (Stake memory stake) {
     return stakes[_expenditureId];
   }
