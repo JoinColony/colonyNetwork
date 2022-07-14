@@ -201,7 +201,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
-  modifier expenditureOwner(uint256 _id) {
+  modifier expenditureOnlyOwner(uint256 _id) {
     require(expenditures[_id].owner == msgSender(), "colony-expenditure-not-owner");
     _;
   }

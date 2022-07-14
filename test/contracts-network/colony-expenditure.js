@@ -370,7 +370,7 @@ contract("Colony Expenditure", (accounts) => {
       expect(payout).to.eq.BN(20);
     });
 
-    it("should allow owners to update payouts at once in one slot", async () => {
+    it("should allow arbitrators to update payouts at once in one slot", async () => {
       await colony.setExpenditureSlotPayouts(1, UINT256_MAX, expenditureId, SLOT0, [token.address, otherToken.address], [10, 20], {
         from: ARBITRATOR,
       });
@@ -410,7 +410,7 @@ contract("Colony Expenditure", (accounts) => {
 
     it("should not allow non-owners to update skills or payouts", async () => {
       await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID), "colony-expenditure-not-owner");
-      await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD), "colony-expenditure-not-owner");
+      await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD), "colony-expenditure-not-owner-or-self");
     });
 
     it("should allow owners to add a slot payout", async () => {
@@ -463,6 +463,19 @@ contract("Colony Expenditure", (accounts) => {
 
       totalPayout = await colony.getFundingPotPayout(expenditure.fundingPotId, token.address);
       expect(totalPayout).to.eq.BN(WAD);
+    });
+
+    it("should not allow owners to set a payout when out of draft state", async () => {
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+
+      await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN }), "colony-expenditure-not-draft");
+    });
+
+    it("should not allow non-owners to set a payout", async () => {
+      await checkErrorRevert(
+        colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: USER }),
+        "colony-expenditure-not-owner-or-self"
+      );
     });
 
     it("should allow owners to update many values simultaneously", async () => {
