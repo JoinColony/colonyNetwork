@@ -227,14 +227,22 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     require(_tokens.length == _amounts.length, "colony-funding-mismatched-arguments");
+
+    uint256[] memory slots = new uint256[](1);
+    slots[0] = _slot;
+    uint256[] memory amounts = new uint256[](1);
+
     for (uint256 i; i < _tokens.length; i++) {
-      setExpenditurePayout(_id, _slot, _tokens[i], _amounts[i]);
+      amounts[0] = _amounts[i];
+      setExpenditurePayoutsInternal(_id, slots, _tokens[i], amounts);
     }
   }
 
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)
   public
   stoppable
+  expenditureDraft(_id)
+  expenditureOwnerOrSelf(_id)
   {
     uint256[] memory slots = new uint256[](1);
     slots[0] = _slot;

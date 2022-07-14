@@ -69,7 +69,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureDraftOrLocked(_id)
-    expenditureOwner(_id)
+    expenditureOnlyOwner(_id)
   {
     expenditures[_id].owner = _newOwner;
 
@@ -97,7 +97,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureDraft(_id)
-    expenditureOwner(_id)
+    expenditureOnlyOwner(_id)
   {
     expenditures[_id].status = ExpenditureStatus.Cancelled;
 
@@ -108,7 +108,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureDraft(_id)
-    expenditureOwner(_id)
+    expenditureOnlyOwner(_id)
   {
     expenditures[_id].status = ExpenditureStatus.Locked;
 
@@ -119,7 +119,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureDraftOrLocked(_id)
-    expenditureOwner(_id)
+    expenditureOnlyOwner(_id)
   {
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     require(fundingPot.payoutsWeCannotMake == 0, "colony-expenditure-not-funded");
@@ -134,7 +134,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureDraft(_id)
-    expenditureOwner(_id)
+    expenditureOnlyOwner(_id)
   {
     emit ExpenditureMetadataSet(msgSender(), _id, _metadata);
   }
@@ -157,7 +157,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureDraft(_id)
-    expenditureOwner(_id)
+    expenditureOnlyOwner(_id)
   {
     require(_slots.length == _recipients.length, "colony-expenditure-bad-slots");
 
@@ -172,7 +172,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureDraft(_id)
-    expenditureOwner(_id)
+    expenditureOnlyOwner(_id)
   {
     require(_slots.length == _skillIds.length, "colony-expenditure-bad-slots");
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
@@ -194,7 +194,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureDraft(_id)
-    expenditureOwner(_id)
+    expenditureOnlyOwner(_id)
   {
     require(_slots.length == _claimDelays.length, "colony-expenditure-bad-slots");
 
@@ -209,7 +209,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureDraft(_id)
-    expenditureOwner(_id)
+    expenditureOnlyOwner(_id)
   {
     require(_slots.length == _payoutModifiers.length, "colony-expenditure-bad-slots");
 
@@ -237,7 +237,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureDraft(_id)
-    expenditureOwner(_id)
+    expenditureOnlyOwner(_id)
   {
     if (_recipients.length > 0) { setExpenditureRecipients(_id, _recipientSlots, _recipients); }
     if (_skillIds.length > 0) { setExpenditureSkills(_id, _skillIdSlots, _skillIds); }
