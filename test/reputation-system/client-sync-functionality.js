@@ -132,7 +132,7 @@ process.env.SOLIDITY_COVERAGE
           // Do some additional updates.
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 
-          fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
+          await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
           for (let i = 0; i < 5; i += 1) {
             await setupFinalizedTask({ colonyNetwork, colony: metaColony });
           }
