@@ -1647,8 +1647,15 @@ contract("Voting Reputation", (accounts) => {
         contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
       });
 
+      // Old and new versions of ganache (which currently represents with or without coverage...)
+      // either do or don't have the hex prefix...
+      let privateKey = ganacheAccounts.private_keys[accounts[0].toLowerCase()];
+      if (privateKey.slice(0, 2) !== "0x") {
+        privateKey = `0x${privateKey}`;
+      }
+
       const broadcaster = new MetatransactionBroadcaster({
-        privateKey: `0x${ganacheAccounts.private_keys[accounts[0].toLowerCase()]}`,
+        privateKey,
         loader,
         provider,
       });
@@ -1678,8 +1685,15 @@ contract("Voting Reputation", (accounts) => {
         contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
       });
 
+      // Old and new versions of ganache (which currently represents with or without coverage...)
+      // either do or don't have the hex prefix...
+      let privateKey = ganacheAccounts.private_keys[accounts[0].toLowerCase()];
+      if (privateKey.slice(0, 2) !== "0x") {
+        privateKey = `0x${privateKey}`;
+      }
+
       const broadcaster = new MetatransactionBroadcaster({
-        privateKey: `0x${ganacheAccounts.private_keys[accounts[0].toLowerCase()]}`,
+        privateKey,
         loader,
         provider,
       });
