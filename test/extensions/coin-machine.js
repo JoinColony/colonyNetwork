@@ -554,7 +554,7 @@ contract("Coin Machine", (accounts) => {
       await forwardTime(periodLength.toNumber(), this);
       await coinMachine.updatePeriod();
 
-      const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
+      const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(new BN(0).mul(alphaAsWad));
       const expectedPrice = emaIntake.div(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(expectedPrice);
@@ -609,7 +609,7 @@ contract("Coin Machine", (accounts) => {
       await forwardTime(periodLength.toNumber(), this);
       await coinMachine.updatePeriod();
 
-      const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
+      const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(new BN(0).mul(alphaAsWad));
       const expectedPrice = emaIntake.div(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(expectedPrice);
