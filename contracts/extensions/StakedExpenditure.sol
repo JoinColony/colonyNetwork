@@ -222,22 +222,29 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     );
 
     if (_punish) {
-      Stake storage stake = stakes[_expenditureId];
-      require(stake.amount > 0, "staked-expenditure-nothing-to-slash");
-
-      uint256 stakeAmount = stake.amount;
-      address stakeCreator = stake.creator;
+      uint256 stakeAmount = stakes[_expenditureId].amount;
+      address stakeCreator = stakes[_expenditureId].creator;
       delete stakes[_expenditureId];
 
-      colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), stakeCreator, expenditure.domainId, stakeAmount, address(0x0));
+      if (stakeAmount > 0) {
+        colony.transferStake(
+          _permissionDomainId,
+          _childSkillIndex,
+          address(this),
+          stakeCreator,
+          expenditure.domainId,
+          stakeAmount,
+          address(0x0)
+        );
 
-      colony.emitDomainReputationPenalty(
-        _permissionDomainId,
-        _childSkillIndex,
-        expenditure.domainId,
-        stakeCreator,
-        -int256(stakeAmount)
-      );
+        colony.emitDomainReputationPenalty(
+          _permissionDomainId,
+          _childSkillIndex,
+          expenditure.domainId,
+          stakeCreator,
+          -int256(stakeAmount)
+        );
+      }
     }
 
     cancelExpenditure(_permissionDomainId, _childSkillIndex, _expenditureId, expenditure.owner);
