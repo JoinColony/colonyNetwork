@@ -1103,7 +1103,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     uint256 permissionDomainId;
     uint256 childSkillIndex;
     uint256 expenditureId;
-    uint256 storageSlot;
+    uint256 storageSlot; // This value is only used if getSig(action) == SET_EXPENDITURE_STATE
 
     assembly {
       permissionDomainId := mload(add(action, 0x24))
