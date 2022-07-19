@@ -624,8 +624,9 @@ contract("Coin Machine", (accounts) => {
       await purchaseToken.mint(USER0, maxPerPeriod.muln(10000), { from: USER0 });
       await purchaseToken.approve(coinMachine.address, maxPerPeriod.muln(10000), { from: USER0 });
 
+      const numIter = (process.env.CIRCLE_ENV === "true") ? 100 : 5;
       let previousPrice = maxPerPeriod.muln(10000); // A very large number.
-      for (let i = 0; i < 100; i += 1) {
+      for (let i = 0; i < numIter; i += 1) {
         // There used to be a check for a 'steady state' price here, but
         // that only worked by chance.
         currentPrice = await coinMachine.getCurrentPrice();
