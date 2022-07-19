@@ -327,6 +327,8 @@ contract ColonyExpenditure is ColonyStorage {
     }
 
     executeStateChange(_id, _storageSlot, _mask, _keys, _value);
+
+    emit ExpenditureStateChanged(msgSender(), _id, _storageSlot, _mask, _keys, _value);
   }
 
   // Public view functions
@@ -392,7 +394,5 @@ contract ColonyExpenditure is ColonyStorage {
     assembly {
       sstore(slot, value) // ignore-swc-124
     }
-
-    emit ExpenditureStateChanged(msgSender(), _id, slot, value);
   }
 }

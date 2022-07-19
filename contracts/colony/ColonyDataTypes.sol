@@ -160,9 +160,18 @@ interface ColonyDataTypes {
   /// @notice Event logged when an expenditure slot payout modifier changes
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the expenditure
-  /// @param slot Memory slot being set
+  /// @param storageSlot Initial storage slot being set (expenditures or expenditureSlots)
+  /// @param mask Mask indicating whether we are making mapping or array operations
+  /// @param keys Values used to construct final slot via mapping or array operations
   /// @param value Value being set in the slot
-  event ExpenditureStateChanged(address agent, uint256 indexed expenditureId, bytes32 slot, bytes32 value);
+  event ExpenditureStateChanged(
+    address agent,
+    uint256 indexed expenditureId,
+    uint256 indexed storageSlot,
+    bool[] mask,
+    bytes32[] keys,
+    bytes32 value
+  );
 
   /// @notice Event logged when a new payment is added
   /// @param agent The address that is responsible for triggering this event
