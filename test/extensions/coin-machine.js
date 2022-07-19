@@ -615,6 +615,34 @@ contract("Coin Machine", (accounts) => {
       expect(currentPrice).to.eq.BN(expectedPrice);
     });
 
+    it("can correctly account for sold tokens between periods when adding a balance", async () => {
+      await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      coinMachine = await CoinMachine.at(coinMachineAddress);
+
+      await purchaseToken.mint(USER0, WAD.muln(10), { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, WAD.muln(10), { from: USER0 });
+
+      // Iniitalise with a zero balance, then add tokens
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD, WAD, ADDRESS_ZERO);
+      await token.mint(coinMachine.address, WAD.muln(200));
+
+      const periodLength = await coinMachine.getPeriodLength();
+
+      let activeSold;
+
+      await coinMachine.buyTokens(WAD, { from: USER0 });
+      activeSold = await coinMachine.getActiveSold();
+      expect(activeSold).to.eq.BN(WAD);
+
+      await forwardTime(periodLength.toNumber(), this);
+
+      await coinMachine.buyTokens(WAD, { from: USER0 });
+      activeSold = await coinMachine.getActiveSold();
+      expect(activeSold).to.eq.BN(WAD);
+    });
+
     it("it monotonically adjusts prices according to demand", async () => {
       const periodLength = await coinMachine.getPeriodLength();
       const maxPerPeriod = await coinMachine.getMaxPerPeriod();
@@ -624,7 +652,7 @@ contract("Coin Machine", (accounts) => {
       await purchaseToken.mint(USER0, maxPerPeriod.muln(10000), { from: USER0 });
       await purchaseToken.approve(coinMachine.address, maxPerPeriod.muln(10000), { from: USER0 });
 
-      const numIter = (process.env.CIRCLE_ENV === "true") ? 100 : 5;
+      const numIter = process.env.CIRCLE_ENV === "true" ? 100 : 5;
       let previousPrice = maxPerPeriod.muln(10000); // A very large number.
       for (let i = 0; i < numIter; i += 1) {
         // There used to be a check for a 'steady state' price here, but

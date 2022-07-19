@@ -91,7 +91,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 5;
+    return 6;
   }
 
   /// @notice Configures the extension
@@ -279,6 +279,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       // Update the price
       activePrice = wdiv(emaIntake, targetPerPeriod);
     }
+
     activeIntake = 0;
     activeSold = 0;
 
