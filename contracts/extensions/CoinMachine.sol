@@ -91,7 +91,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 5;
+    return 6;
   }
 
   /// @notice Configures the extension
@@ -267,8 +267,6 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     // We need to update the price if the active period is not the current one.
     if (activePeriod < currentPeriod) {
       emaIntake = wmul((WAD - alpha), emaIntake) + wmul(alpha, activeIntake); // wmul(wad, int) => int
-      activeIntake = 0;
-      activeSold = 0;
 
       // Handle any additional missed periods
       uint256 periodGap = currentPeriod - activePeriod - 1;
@@ -281,6 +279,9 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       // Update the price
       activePrice = wdiv(emaIntake, targetPerPeriod);
     }
+
+    activeIntake = 0;
+    activeSold = 0;
 
     emit PeriodUpdated(initialActivePeriod, currentPeriod);
   }
