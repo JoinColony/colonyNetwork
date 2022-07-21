@@ -751,47 +751,6 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditure.globalClaimDelay).to.be.zero;
     });
 
-    it("can update the expenditure slot claimDelay if voting on expenditure slot payout states", async () => {
-      await colony.makeExpenditure(1, UINT256_MAX, 1);
-      const expenditureId = await colony.getExpenditureCount();
-      await colony.finalizeExpenditure(expenditureId);
-
-      // Set payout to WAD for expenditure slot 0, internal token
-      const action = await encodeTxData(colony, "setExpenditureSlotPayouts", [1, UINT256_MAX, expenditureId, 0, [token.address], [WAD]]);
-
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      motionId = await voting.getMotionCount();
-
-      let expenditureMotionCount;
-      let expenditureSlot;
-
-      expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
-      expect(expenditureMotionCount).to.be.zero;
-
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.be.zero;
-
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
-      expect(expenditureMotionCount).to.eq.BN(1);
-
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.eq.BN(UINT256_MAX.divn(3));
-
-      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
-
-      await forwardTime(STAKE_PERIOD, this);
-
-      await voting.finalizeMotion(motionId);
-
-      expenditureMotionCount = await voting.getExpenditureMotionCount(soliditySha3(expenditureId, 0));
-      expect(expenditureMotionCount).to.be.zero;
-
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.claimDelay).to.be.zero;
-    });
-
     it("can update the expenditure slot claimDelay if voting on multiple expenditure states", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();

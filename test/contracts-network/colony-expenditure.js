@@ -370,25 +370,6 @@ contract("Colony Expenditure", (accounts) => {
       expect(payout).to.eq.BN(20);
     });
 
-    it("should allow arbitrators to update payouts at once in one slot", async () => {
-      await colony.setExpenditureSlotPayouts(1, UINT256_MAX, expenditureId, SLOT0, [token.address, otherToken.address], [10, 20], {
-        from: ARBITRATOR,
-      });
-
-      let payout;
-      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
-      expect(payout).to.eq.BN(10);
-      payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, otherToken.address);
-      expect(payout).to.eq.BN(20);
-    });
-
-    it("should not allow owners to update payouts at once in one slot with mismatched arguments", async () => {
-      await checkErrorRevert(
-        colony.setExpenditureSlotPayouts(1, UINT256_MAX, expenditureId, SLOT0, [token.address, otherToken.address], [10], { from: ARBITRATOR }),
-        "colony-funding-mismatched-arguments"
-      );
-    });
-
     it("should not allow owners to update many slot payouts with mismatched arguments", async () => {
       const setExpenditurePayouts = colony.methods["setExpenditurePayouts(uint256,uint256[],address,uint256[])"];
 
