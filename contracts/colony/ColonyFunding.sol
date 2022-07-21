@@ -166,6 +166,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
   }
 
+  /// @notice For owners to update payouts with many tokens and many slots
   function setExpenditurePayouts(
     uint256 _id,
     uint256[][] memory _slots,
@@ -183,6 +184,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   }
 
   /// @notice @deprecated
+  /// @notice For owners to update payouts with one token and many slots
   function setExpenditurePayouts(
     uint256 _id,
     uint256[] memory _slots,
@@ -197,6 +199,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
   }
 
+  /// @notice For arbitrators to update payouts with one token and many slots
   function setExpenditurePayouts(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -213,31 +216,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
   }
 
-  function setExpenditureSlotPayouts(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    uint256 _slot,
-    address[] memory _tokens,
-    uint256[] memory _amounts
-  )
-  public
-  stoppable
-  validExpenditure(_id)
-  authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
-  {
-    require(_tokens.length == _amounts.length, "colony-funding-mismatched-arguments");
-
-    uint256[] memory slots = new uint256[](1);
-    slots[0] = _slot;
-    uint256[] memory amounts = new uint256[](1);
-
-    for (uint256 i; i < _tokens.length; i++) {
-      amounts[0] = _amounts[i];
-      setExpenditurePayoutsInternal(_id, slots, _tokens[i], amounts);
-    }
-  }
-
+  /// @notice For owners to update payouts with one token and one slot
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)
   public
   stoppable
