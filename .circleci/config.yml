@@ -2,7 +2,7 @@ version: 2
 
 job_common: &job_common
   docker:
-    - image: cimg/node:16.15.0
+    - image: cimg/node:14.18.2
       auth:
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
