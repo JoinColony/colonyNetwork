@@ -97,7 +97,7 @@ contract("Voting Reputation", (accounts) => {
   // const REVEAL = 3;
   // const CLOSED = 4;
   const EXECUTABLE = 5;
-  // const EXECUTED = 6;
+  const EXECUTED = 6;
   const FAILED = 7;
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
@@ -1524,6 +1524,22 @@ contract("Voting Reputation", (accounts) => {
       const slotHash = hashExpenditureSlot(action);
       const pastVote = await voting.getExpenditurePastVote(slotHash);
       expect(pastVote).to.eq.BN(REQUIRED_STAKE);
+    });
+
+    it("motions with the special NO_ACTION signature do not require (and cannot be) executed, and go straight to that state", async function () {
+      const action = "0x12345678";
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
+
+      const motionState = await voting.getMotionState(motionId);
+      expect(motionState).to.eq.BN(EXECUTED);
     });
   });
 
