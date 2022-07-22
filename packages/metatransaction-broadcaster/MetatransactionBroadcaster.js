@@ -3,7 +3,7 @@ const express = require("express");
 const sqlite = require("sqlite");
 const sqlite3 = require("sqlite3");
 const queue = require("express-queue");
-const { NonceManager } = require("@ethersproject/experimental");
+const NonceManager = require("./ExtendedNonceManager");
 const { colonyIOCors, ConsoleAdapter, updateGasEstimate } = require("../package-utils");
 
 class MetatransactionBroadcaster {
@@ -333,7 +333,7 @@ class MetatransactionBroadcaster {
       } catch (err) {
         if (err.body.indexOf("nonce") > -1) {
           // Maybe our nonce has gone wrong? Let's reset it and try the tx again
-          const txCount = this.provider.getTransactionCount(this.wallet.address);
+          const txCount = await this.provider.getTransactionCount(this.wallet.address);
           this.nonceManager.setTransactionCount(txCount);
           return this.processTransactionLogic(req, res, estimateGas, execute, args);
         }

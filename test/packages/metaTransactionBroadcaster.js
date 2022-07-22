@@ -343,6 +343,66 @@ contract("Metatransaction broadcaster", (accounts) => {
       expect(balanceAccount2).to.eq.BN(600000);
     });
 
+    it("a valid transaction is broadcast and mined, even if the broadcaster's nonce manager got ahead", async function () {
+      await metaTxToken.unlock();
+      await metaTxToken.mint(USER0, 1500000, { from: USER0 });
+      await metaTxToken.mint(USER1, 1500000, { from: USER0 });
+
+      const txData = await metaTxToken.contract.methods.transfer(colony.address, 300000).encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
+      const { r: r2, s: s2, v: v2 } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
+
+      // Send to endpoint
+
+      const jsonData = {
+        target: metaTxToken.address,
+        payload: txData,
+        userAddress: USER0,
+        r,
+        s,
+        v,
+      };
+
+      let res = await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      // Set the nonce
+      const txCount = await provider.getTransactionCount(accounts[0]);
+      await broadcaster.nonceManager.setTransactionCount(txCount + 1);
+
+      jsonData.r = r2;
+      jsonData.s = s2;
+      jsonData.v = v2;
+      jsonData.userAddress = USER1;
+
+      res = await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const { txHash } = res.data.data;
+
+      expect(txHash.length).to.be.equal(66);
+
+      expect(res.data).to.be.deep.equal({
+        status: "success",
+        data: {
+          txHash,
+        },
+      });
+
+      // Check the transaction happened
+      const balanceAccount1 = await metaTxToken.balanceOf(USER0);
+      expect(balanceAccount1).to.eq.BN(1200000);
+      const balanceAccount2 = await metaTxToken.balanceOf(colony.address);
+      expect(balanceAccount2).to.eq.BN(600000);
+    });
+
     it("a valid EIP712 transaction is broadcast and mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
