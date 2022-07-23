@@ -201,6 +201,7 @@ class ReputationMiner {
     );
 
     this.queries.getReputationStateCount = this.db.prepare(`SELECT COUNT ( * ) AS "n" FROM reputation_states WHERE root_hash=? AND n_leaves=?`);
+    this.queries.getReputationHashCount = this.db.prepare(`SELECT COUNT ( * ) AS "n" FROM reputation_states WHERE root_hash=?`);
   }
 
   /**
@@ -901,8 +902,8 @@ class ReputationMiner {
 
     // Not in the accepted or next tree, so let's look at the DB
 
-    const allReputations = await this.queries.getAllReputationsInHash.all(rootHash);
-    if (allReputations.length === 0) {
+    const res = await this.queries.getReputationHashCount.get(rootHash);
+    if (res.n === 0){
       return new Error("No such reputation state");
     }
 
@@ -921,6 +922,8 @@ class ReputationMiner {
 
     const tree = new PatriciaTree();
     // Load all reputations from that state.
+
+    const allReputations = await this.queries.getAllReputationsInHash.all(rootHash);
 
     for (let i = 0; i < allReputations.length; i += 1) {
       const row = allReputations[i];
@@ -955,10 +958,11 @@ class ReputationMiner {
       return new Error("Requested reputation does not exist")
     }
 
-    let res = await this.queries.getAllReputationsInHash.all(rootHash);
-    if (res.length === 0) {
+    let res = await this.queries.getReputationHashCount.get(rootHash);
+    if (res.n === 0){
       return new Error("No such reputation state");
     }
+
     const keyElements = ReputationMiner.breakKeyInToElements(key);
     const [colonyAddress, , userAddress] = keyElements;
     const skillId = parseInt(keyElements[1], 16);
