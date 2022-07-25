@@ -241,14 +241,6 @@
     core-js "^2.6.5"
     regenerator-runtime "^0.13.4"
 
-"@babel/polyfill@^7.0.0":
-  version "7.12.1"
-  resolved "https://registry.yarnpkg.com/@babel/polyfill/-/polyfill-7.12.1.tgz#1f2d6371d1261bbd961f3c5d5909150e12d0bd96"
-  integrity sha512-X0pi0V6gxLi6lFZpGmeNa4zxtwEmCs42isWLNjZZDE0Y8yVfgu0T2OAHlzBbdYlqbW/YXVvoBHpATEM+goCj8g==
-  dependencies:
-    core-js "^2.6.5"
-    regenerator-runtime "^0.13.4"
-
 "@babel/runtime@^7.6.3", "@babel/runtime@^7.9.2":
   version "7.18.6"
   resolved "https://registry.npmjs.org/@babel/runtime/-/runtime-7.18.6.tgz"
@@ -1548,56 +1540,6 @@
 "@umaprotocol/web3-subprovider@^4.74.3":
   version "4.74.5"
   resolved "https://registry.npmjs.org/@umaprotocol/web3-subprovider/-/web3-subprovider-4.74.5.tgz"
-  integrity sha512-ISZQtpPRqrMTaSYLwKpMsbRdrQI3JPo0hp68BW7snKLFkzEYGNX0NgSAtBwA/RgUlnD1oL0PBZ+wEvkVNdXM0Q==
-  dependencies:
-    "@ledgerhq/hw-app-eth" "^4.74.2"
-    "@ledgerhq/hw-transport" "^4.74.2"
-    "@ledgerhq/hw-transport-u2f" "^4.74.2"
-    "@umaprotocol/web3-provider-engine" "^15.0.5"
-    ethereumjs-tx "^1.3.7"
-    strip-hex-prefix "^1.0.0"
-
-"@umaprotocol/truffle-ledger-provider@^1.0.5":
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/@umaprotocol/truffle-ledger-provider/-/truffle-ledger-provider-1.0.5.tgz#e30025c4ecc2f2540825c46788ef1291474080be"
-  integrity sha512-RPkhftL0GIrkX6QB7IsvsUx8dl6NUXs4kv2U1TtnLXkq6EsfEhmZeLm8jrtBKcY05Uuq4BqyfxcM5o0C3Oljlw==
-  optionalDependencies:
-    "@babel/polyfill" "^7.0.0"
-    "@ledgerhq/hw-transport-node-hid" "^4.32.0"
-    "@umaprotocol/web3-provider-engine" "^15.0.4"
-    "@umaprotocol/web3-subprovider" "^4.74.3"
-    ethereumjs-wallet "^0.6.0"
-
-"@umaprotocol/web3-provider-engine@^15.0.4", "@umaprotocol/web3-provider-engine@^15.0.5":
-  version "15.0.5"
-  resolved "https://registry.yarnpkg.com/@umaprotocol/web3-provider-engine/-/web3-provider-engine-15.0.5.tgz#7edd5e60edde1b0453174ee20d336c3b5eabe0f6"
-  integrity sha512-bygswdrRMZ3z+fSMi9aOx5T/Mm4geIopcj3NLQjd56Ekek/PlXw8L5OLlwb0VLePyknFn4jwT4hgZOg/Tu7uWw==
-  dependencies:
-    async "^2.5.0"
-    backoff "^2.5.0"
-    clone "^2.0.0"
-    cross-fetch "^2.1.0"
-    eth-block-tracker "^3.0.0"
-    eth-json-rpc-infura "^3.1.0"
-    eth-sig-util "^1.4.2"
-    ethereumjs-block "^1.2.2"
-    ethereumjs-tx "^1.2.0"
-    ethereumjs-util "^5.1.5"
-    ethereumjs-vm "^2.3.4"
-    json-rpc-error "^2.0.0"
-    json-stable-stringify "^1.0.1"
-    promise-to-callback "^1.0.0"
-    readable-stream "^2.2.9"
-    request "^2.85.0"
-    semaphore "^1.0.3"
-    tape "^4.4.0"
-    ws "^5.1.1"
-    xhr "^2.2.0"
-    xtend "^4.0.1"
-
-"@umaprotocol/web3-subprovider@^4.74.3":
-  version "4.74.5"
-  resolved "https://registry.yarnpkg.com/@umaprotocol/web3-subprovider/-/web3-subprovider-4.74.5.tgz#b755fe4df015bfae1e38b5fcada91638294e1347"
   integrity sha512-ISZQtpPRqrMTaSYLwKpMsbRdrQI3JPo0hp68BW7snKLFkzEYGNX0NgSAtBwA/RgUlnD1oL0PBZ+wEvkVNdXM0Q==
   dependencies:
     "@ledgerhq/hw-app-eth" "^4.74.2"
@@ -10816,17 +10758,7 @@ semver@6.2.0:
   resolved "https://registry.npmjs.org/semver/-/semver-6.2.0.tgz"
   integrity sha512-jdFC1VdUGT/2Scgbimf7FSx9iJLXoqfglSF+gJeuNWVpiE37OIbc1jywR/GJyFdz3mnkz2/id0L0J/cr0izR5A==
 
-semver@^5.3.0, semver@^5.4.1, semver@^5.5.0, semver@^5.5.1, semver@^5.6.0, semver@^5.7.0:
-  version "5.7.1"
-  resolved "https://registry.npmjs.org/semver/-/semver-5.7.1.tgz"
-  integrity sha512-sauaDf/PZdVgrLTNYHRtpXa1iRiKcaebiKQ1BJdpQlWH2lCvexQdX55snPFyK7QzpudqbCI0qXFfOasHdyNDGQ==
-
-semver@^6.0.0, semver@^6.3.0:
-  version "6.3.0"
-  resolved "https://registry.npmjs.org/semver/-/semver-6.3.0.tgz"
-  integrity sha512-b39TBaTSfV6yBrapU89p5fKekE2m/NwnDocOVruQFS1/veMgdzuPcnOM34M6CwxW8jH/lxEa5rBoDeUwu5HHTw==
-
-semver@^7.3.4, semver@^7.3.5:
+semver@7.3.7, semver@^7.3.4, semver@^7.3.5:
   version "7.3.7"
   resolved "https://registry.npmjs.org/semver/-/semver-7.3.7.tgz"
   integrity sha512-QlYTucUYOews+WeEujDoEGziz4K6c47V/Bd+LjSSYcA94p+DmINdf7ncaUinThfvZyu13lN9OY1XDxt8C0Tw0g==
