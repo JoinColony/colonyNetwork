@@ -46,20 +46,12 @@ class MetatransactionBroadcaster {
         let gasEstimate;
 
         try {
-          gasEstimate = await contract.estimateGas.executeMetaTransaction(userAddress, payload, r, s, v, { gasPrice: this.gasPrice });
-          if (gasEstimate > gasLimit) {
-            return res.status(400).send({
-              status: "fail",
-              data: {
-                payload: "Transaction too expensive and will not be broadcast",
-              },
-            });
-          }
+          gasEstimate = await contract.estimateGas.executeMetaTransaction(userAddress, payload, r, s, v, { gasPrice: this.gasPrice, gasLimit });
         } catch (err) {
           return res.status(400).send({
             status: "fail",
             data: {
-              payload: "Transaction reverts and will not be broadcast",
+              payload: "Transaction reverts and will not be broadcast. It either fails outright, or uses too much gas.",
             },
           });
         }
