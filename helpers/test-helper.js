@@ -10,6 +10,7 @@ const { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, CHALLENGE_
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
@@ -991,7 +992,12 @@ exports.getColonyEditable = async function getColonyEditable(colony, colonyNetwo
 exports.getWaitForNSubmissionsPromise = async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, n) {
   return new Promise(function (resolve, reject) {
     repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nLeaves, _jrh, _entryIndex, event) => {
-      const nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
+      let nSubmissions;
+      if (rootHash) {
+        nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
+      } else {
+        nSubmissions = await repCycleEthers.getNSubmissionsForHash(_hash, _nLeaves, _jrh);
+      }
       if (nSubmissions.toNumber() >= n) {
         event.removeListener();
         resolve();
@@ -1004,6 +1010,24 @@ exports.getWaitForNSubmissionsPromise = async function getWaitForNSubmissionsPro
     setTimeout(() => {
       reject(new Error("Timeout while waiting for 12 hash submissions"));
     }, 60 * 1000);
+  });
+};
+
+exports.getMiningCycleCompletePromise = async function getMiningCycleCompletePromise(colonyNetworkEthers, oldHash, expectedHash) {
+  return new Promise(function (resolve, reject) {
+    colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
+      const colonyNetwork = await IColonyNetwork.at(colonyNetworkEthers.address);
+      const newHash = await colonyNetwork.getReputationRootHash();
+      expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
+      expect(newHash).to.equal(expectedHash, "The network root hash doens't match the one submitted");
+      event.removeListener();
+      resolve();
+    });
+
+    // After 30s, we throw a timeout error
+    setTimeout(() => {
+      reject(new Error("ERROR: timeout while waiting for confirming hash"));
+    }, 30000);
   });
 };
 

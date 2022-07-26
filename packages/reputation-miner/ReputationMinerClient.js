@@ -223,6 +223,7 @@ class ReputationMinerClient {
    */
   async initialise(colonyNetworkAddress, startingBlock) {
     this.resolveBlockChecksFinished = undefined;
+    this.startingBlock = startingBlock;
     await this._miner.initialise(colonyNetworkAddress);
 
     let resumedSuccessfully = false;
@@ -277,7 +278,7 @@ class ReputationMinerClient {
       await this._miner.loadState(latestConfirmedReputationHash);
       if (this._miner.nReputations.eq(0)) {
         this._adapter.log("Latest state not found - need to sync");
-        await this._miner.sync(startingBlock, true);
+        await this._miner.sync(this.startingBlock, true);
       }
       // Initial call to process the existing log from the cycle we're currently in
       await this.processReputationLog();
@@ -388,6 +389,19 @@ class ReputationMinerClient {
           return;
         }
 
+        // First check is the confirmed cycle the one we expect?
+        // Note no blocktags in these calls - we care if we're up-to-date, not the historical state (here)
+        // If we're not, we back out and resync
+        const nLeaves = await this._miner.colonyNetwork.getReputationRootHashNNodes();
+        const currentRootHash = await this._miner.colonyNetwork.getReputationRootHash();
+        const localRootHash = await this._miner.reputationTree.getRootHash();
+        if (!nLeaves.eq(this._miner.nReputations) || localRootHash !== currentRootHash) {
+          this._adapter.log(`Unexpected confirmed hash seen on colonyNetwork. Let's resync.`)
+          await this._miner.sync(this.startingBlock, true);
+          this.endDoBlockChecks();
+          return;
+        }
+
         await this._miner.updatePeriodLength(repCycle);
         await this.processReputationLog();
 
@@ -426,6 +440,8 @@ class ReputationMinerClient {
             const gasPrice = await updateGasEstimate("average", this.chainId, this._adapter);
             await this._miner.setGasPrice(gasPrice);
             await this.submitEntry(entryIndex);
+            this.endDoBlockChecks();
+            return;
           }
         }
       }
@@ -453,7 +469,10 @@ class ReputationMinerClient {
 
         if (oppSubmission.proposedNewRootHash === ethers.constants.AddressZero){
           const responsePossible = await repCycle.getResponsePossible(disputeStages.INVALIDATE_HASH, entry.lastResponseTimestamp);
-          if (!responsePossible) { return; }
+          if (!responsePossible) {
+            this.endDoBlockChecks();
+            return;
+          }
           // Then we don't have an opponent
           if (round.eq(0)) {
             // We can only advance if the window is closed
@@ -645,9 +664,9 @@ class ReputationMinerClient {
 
   }
 
-  async processReputationLog() {
+  async processReputationLog(blockNumber) {
     this._adapter.log("📁 Processing reputation update log");
-    await this._miner.addLogContentsToReputationTree();
+    await this._miner.addLogContentsToReputationTree(blockNumber);
     this._adapter.log("💾 Writing new reputation state to database");
     await this._miner.saveCurrentState();
     this._adapter.log("💾 Caching justification tree to disk");
