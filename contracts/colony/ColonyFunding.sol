@@ -26,33 +26,6 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
   // Public
 
- function moveFundsBetweenPots(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainId,
-    uint256 _fromChildSkillIndex,
-    uint256 _toChildSkillIndex,
-    uint256 _fromPot,
-    uint256 _toPot,
-    uint256[] memory _amounts,
-    address[] memory _tokens
-  )
-  public
-  stoppable
-  domainNotDeprecated(getDomainFromFundingPot(_toPot))
-  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  validFundingTransfer(_fromPot, _toPot)
-  {
-    require(validateDomainInheritance(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot)), "colony-invalid-domain-inheritance");
-    require(validateDomainInheritance(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot)), "colony-invalid-domain-inheritance");
-    require(_amounts.length == _tokens.length, "colony-invalid-arguments");
-
-    for (uint256 i; i < _amounts.length; i++) {
-      moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amounts[i], _tokens[i]);
-    }
-  }
-
-  /// @notice @deprecated
   function moveFundsBetweenPots(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -76,7 +49,6 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
   }
 
-  /// @notice @deprecated
   function moveFundsBetweenPots(
     uint256 _permissionDomainId,
     uint256 _fromChildSkillIndex,
@@ -166,24 +138,6 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
   }
 
-  /// @notice For owners to update payouts with many tokens and many slots
-  function setExpenditurePayouts(
-    uint256 _id,
-    uint256[][] memory _slots,
-    address[] memory _tokens,
-    uint256[][] memory _amounts
-  )
-  public
-  stoppable
-  expenditureDraft(_id)
-  expenditureOwnerOrSelf(_id)
-  {
-    for (uint256 i; i < _tokens.length; i++) {
-      setExpenditurePayoutsInternal(_id, _slots[i], _tokens[i], _amounts[i]);
-    }
-  }
-
-  /// @notice @deprecated
   /// @notice For owners to update payouts with one token and many slots
   function setExpenditurePayouts(
     uint256 _id,

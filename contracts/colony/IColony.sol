@@ -436,7 +436,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _amount Payout amount
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount) external;
 
-  /// @notice @deprecated
   /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
   /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
@@ -444,14 +443,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amounts Payout amounts
   function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts) external;
-
-  /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
-  /// @dev Can only be called while expenditure is in draft state.
-  /// @param _id Id of the expenditure
-  /// @param _slots 2D array of slots to set payouts
-  /// @param _tokens Array of token addresses, `0x0` value indicates Ether
-  /// @param _amounts 2D array of payout amounts
-  function setExpenditurePayouts(uint256 _id, uint256[][] memory _slots, address[] memory _tokens, uint256[][] memory _amounts) external;
 
   /// @notice Set the token payout in a given expenditure slot. Can only be called by an Arbitration user.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
@@ -469,7 +460,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
     uint256 _amount
   ) external;
 
-  /// @notice Deprecated
+  /// @notice @deprecated
   /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
@@ -986,28 +977,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return payout Funding pot payout amount
   function getFundingPotPayout(uint256 _potId, address _token) external view returns (uint256 payout);
-
-  /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
-  /// @param _permissionDomainId The domainId in which I have the permission to take this action
-  /// @param _childSkillIndex The child index in _permissionDomainId where I will be taking this action
-  /// @param _domainId The domain where I am taking this action, pointed to by _permissionDomainId and _childSkillIndex
-  /// @param _fromChildSkillIndex In the array of child skills for the skill associated with the domain pointed to by _permissionDomainId + _childSkillIndex, the index of the skill associated with the domain that contains _fromPot
-  /// @param _toChildSkillIndex The same, but for the _toPot which the funds are being moved to
-  /// @param _fromPot Funding pot id providing the funds
-  /// @param _toPot Funding pot id receiving the funds
-  /// @param _amounts An array of the amounts of funds
-  /// @param _tokens An array of the addresses of the tokens, `0x0` value indicates Ether
-  function moveFundsBetweenPots(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainId,
-    uint256 _fromChildSkillIndex,
-    uint256 _toChildSkillIndex,
-    uint256 _fromPot,
-    uint256 _toPot,
-    uint256[] memory _amounts,
-    address[] memory _tokens
-    ) external;
 
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
