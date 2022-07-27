@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 
 You will need:
 
-* [NodeJS](https://nodejs.org/en/) v12.x (use [nvm](https://github.com/nvm-sh/nvm))
+* [NodeJS](https://nodejs.org/en/) v14.x (use [nvm](https://github.com/nvm-sh/nvm))
 * [Docker](https://docs.docker.com/get-docker/) (at least v18, **optional**)
 
 The Colony Network contracts are written in [Solidity](https://soliditylang.org/) and are built, tested and deployed using the [Truffle Suite](https://trufflesuite.com/). With the above dependencies in place you can just follow the instructions below and the Colony Network build scripts will sort out everything else for you.
@@ -47,7 +47,8 @@ Check out a tagged git release if you want to develop _against_ the ColonyNetwor
 Then, install the required dependencies using `npm`:
 
 ```bash
-npm ci # make sure you are using node version 12.x
+nvm use # alternatively, make sure you are using node version 14.x
+npm ci # make sure you are using node version 14.x
 ```
 
 This will take some time. If you run into issues, see the Troubleshooting section below.
@@ -94,3 +95,7 @@ pyenv local 2.7.18
 ```
 
 This will create a file called `.python-version` and instruct pyenv to use Python in version `2.7.18`. After that, try running `npm ci` again.
+
+### Q: I'm trying to deploy but it can't connect to the local ganache instance
+
+A: Use NodeJS version 14.x [nvm](https://github.com/nvm-sh/nvm) can help!
