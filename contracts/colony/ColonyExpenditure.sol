@@ -243,7 +243,7 @@ contract ColonyExpenditure is ColonyStorage {
     if (_skillIds.length > 0) { setExpenditureSkills(_id, _skillIdSlots, _skillIds); }
     if (_claimDelays.length > 0) { setExpenditureClaimDelays(_id, _claimDelaySlots, _claimDelays); }
     if (_payoutModifiers.length > 0) { setExpenditurePayoutModifiers(_id, _payoutModifierSlots, _payoutModifiers); }
-    if (_payoutTokens.length > 0) { IColony(address(this)).setExpenditurePayouts(_id, _payoutSlots, _payoutTokens, _payoutValues); }
+    if (_payoutTokens.length > 0) { setExpenditurePayouts(_id, _payoutTokens, _payoutSlots, _payoutValues); }
   }
 
   // Deprecated
@@ -350,6 +350,20 @@ contract ColonyExpenditure is ColonyStorage {
   }
 
   // Internal functions
+
+  // Used to avoid stack error in setExpenditureValues
+  function setExpenditurePayouts(
+    uint256 _id,
+    address[] memory _tokens,
+    uint256[][] memory _slots,
+    uint256[][] memory _values
+  )
+    internal
+  {
+    for (uint256 i; i < _tokens.length; i++) {
+      IColony(address(this)).setExpenditurePayouts(_id, _slots[i], _tokens[i], _values[i]);
+    }
+  }
 
   bool constant MAPPING = false;
   bool constant ARRAY = true;

@@ -358,8 +358,7 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should allow owners to update many slot payouts at once", async () => {
-      const setExpenditurePayouts = colony.methods["setExpenditurePayouts(uint256,uint256[],address,uint256[])"];
-      await setExpenditurePayouts(expenditureId, [SLOT1, SLOT2], token.address, [10, 20], { from: ADMIN });
+      await colony.setExpenditurePayouts(expenditureId, [SLOT1, SLOT2], token.address, [10, 20], { from: ADMIN });
 
       let payout;
       payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
@@ -371,10 +370,8 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should not allow owners to update many slot payouts with mismatched arguments", async () => {
-      const setExpenditurePayouts = colony.methods["setExpenditurePayouts(uint256,uint256[],address,uint256[])"];
-
       await checkErrorRevert(
-        setExpenditurePayouts(expenditureId, [SLOT0, SLOT1], token.address, [WAD], { from: ADMIN }),
+        colony.setExpenditurePayouts(expenditureId, [SLOT0, SLOT1], token.address, [WAD], { from: ADMIN }),
         "colony-expenditure-bad-slots"
       );
     });
@@ -647,9 +644,10 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should not allow the owner to set payouts", async () => {
-      const setExpenditurePayouts = colony.methods["setExpenditurePayouts(uint256,uint256[],address,uint256[])"];
-
-      await checkErrorRevert(setExpenditurePayouts(expenditureId, [SLOT0], token.address, [WAD], { from: ADMIN }), "colony-expenditure-not-draft");
+      await checkErrorRevert(
+        colony.setExpenditurePayouts(expenditureId, [SLOT0], token.address, [WAD], { from: ADMIN }),
+        "colony-expenditure-not-draft"
+      );
     });
   });
 
