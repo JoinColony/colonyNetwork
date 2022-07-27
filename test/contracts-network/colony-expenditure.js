@@ -1286,12 +1286,12 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
     });
 
-    it("should allow arbitration users to update expenditure slot payouts", async () => {
-      const setExpenditurePayouts = colony.methods["setExpenditurePayouts(uint256,uint256,uint256,uint256[],address,uint256[])"];
-      await setExpenditurePayouts(1, UINT256_MAX, expenditureId, [0], token.address, [100], { from: ARBITRATOR });
+    it("should allow arbitrators to update a payout in one slot", async () => {
+      const setExpenditurePayout = colony.methods["setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"];
+      await setExpenditurePayout(1, UINT256_MAX, expenditureId, SLOT0, token.address, 10, { from: ARBITRATOR });
 
-      const expenditureSlotPayout = await colony.getExpenditureSlotPayout(expenditureId, 0, token.address);
-      expect(expenditureSlotPayout).to.eq.BN(100);
+      const payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
+      expect(payout).to.eq.BN(10);
     });
 
     it("should not allow arbitration users to pass invalid slots", async () => {
