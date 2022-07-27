@@ -254,9 +254,9 @@ contract("Funding Queues", (accounts) => {
       expect(deprecated).to.equal(true);
     });
 
-    it("cannot create a basic proposal with bad inheritance", async () => {
-      await checkErrorRevert(fundingQueue.createProposal(1, 0, 1, 1, 3, WAD, token.address, { from: USER0 }), "funding-queue-bad-inheritance-from");
-      await checkErrorRevert(fundingQueue.createProposal(1, 1, 0, 3, 1, WAD, token.address, { from: USER0 }), "funding-queue-bad-inheritance-to");
+    it("cannot create a basic proposal with bad inheritence", async () => {
+      await checkErrorRevert(fundingQueue.createProposal(1, 0, 1, 1, 3, WAD, token.address, { from: USER0 }), "funding-queue-bad-inheritence-from");
+      await checkErrorRevert(fundingQueue.createProposal(1, 1, 0, 3, 1, WAD, token.address, { from: USER0 }), "funding-queue-bad-inheritence-to");
     });
 
     it("can stake a proposal", async () => {
