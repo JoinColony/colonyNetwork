@@ -312,11 +312,11 @@ contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
+    sig = bytes4(keccak256("setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+
     sig = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256[],address[])"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Funding), address(this), sig, true);
-
-    sig = bytes4(keccak256("setExpenditurePayouts(uint256,uint256,uint256,uint256[],address,uint256[])"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
   }
 
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
