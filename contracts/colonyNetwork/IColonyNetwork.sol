@@ -20,13 +20,14 @@ pragma experimental "ABIEncoderV2";
 
 import "./../common/IRecovery.sol";
 import "./../common/IBasicMetaTransaction.sol";
+import "./../common/IMulticall.sol";
 
 import "./ColonyNetworkDataTypes.sol";
 
 
 /// @title Colony Network interface
 /// @notice All externally available functions are available here and registered to work with EtherRouter Network contract
-interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransaction {
+interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
 
   /// @notice Query if a contract implements an interface
   /// @param _interfaceID The interface identifier, as specified in ERC-165

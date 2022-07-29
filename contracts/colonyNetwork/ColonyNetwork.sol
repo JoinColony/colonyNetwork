@@ -21,9 +21,10 @@ pragma experimental "ABIEncoderV2";
 import "./../common/BasicMetaTransaction.sol";
 import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
+import "./../common/Multicall.sol";
 
 
-contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
+contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall {
 
   function isColony(address _colony) public view returns (bool) {
     return _isColony[_colony];

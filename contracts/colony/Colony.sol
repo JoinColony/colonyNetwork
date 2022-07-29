@@ -19,12 +19,13 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../common/ERC20Extended.sol";
+import "./../common/Multicall.sol";
 import "./../common/IEtherRouter.sol";
 import "./../common/BasicMetaTransaction.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
-contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
+contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeProofs {
 
   // V11: G Lightweight Spaceship 2
   // This function, exactly as defined, is used in build scripts. Take care when updating.
