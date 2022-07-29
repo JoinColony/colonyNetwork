@@ -310,7 +310,7 @@ contract("Metatransaction broadcaster", (accounts) => {
         expect(err.response.data).to.be.deep.equal({
           status: "fail",
           data: {
-            payload: "Transaction reverts and will not be broadcast",
+            payload: "Transaction reverts and will not be broadcast. It either fails outright, or uses too much gas.",
           },
         });
       }
@@ -370,7 +370,7 @@ contract("Metatransaction broadcaster", (accounts) => {
         expect(err.response.data).to.be.deep.equal({
           status: "fail",
           data: {
-            payload: "Transaction too expensive and will not be broadcast",
+            payload: "Transaction reverts and will not be broadcast. It either fails outright, or uses too much gas.",
           },
         });
       }
