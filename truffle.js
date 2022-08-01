@@ -1,7 +1,7 @@
 const HDWalletProvider = require("truffle-hdwallet-provider");
 const ganache = require("ganache");
 
-const ganacheProvider = ganache.provider({ total_accounts: 14, seed: "smoketest" });
+const ganacheProvider = ganache.provider({ total_accounts: 14, seed: "smoketest", logging: { quiet: true } });
 const LedgerWalletProvider = require("@umaprotocol/truffle-ledger-provider");
 
 const ledgerOptions = {
