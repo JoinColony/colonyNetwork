@@ -149,11 +149,11 @@ contract("Contract Storage", (accounts) => {
       console.log("miningCycleStateHash:", miningCycleStateHash);
       console.log("tokenLockingStateHash:", tokenLockingStateHash);
 
-      expect(colonyNetworkAccount.stateRoot.toString("hex")).to.equal("fbf05628d7259729ca8bdac5bb0b6b24875eed7233dc6480cc901a05ba7b2f23");
-      expect(colonyAccount.stateRoot.toString("hex")).to.equal("6811ce1a09d9f33b29aa3f5b3b0bcf6b978e38ebab0c1d91737eb9d79efe7fe1");
-      expect(metaColonyAccount.stateRoot.toString("hex")).to.equal("31f60621a5962866bbdf2e57daf564ab54b91f5161d8639106162d30ead7dcb5");
-      expect(miningCycleAccount.stateRoot.toString("hex")).to.equal("a8de47224d4c226b1f19a3aa5405a785396c0bf26656485ab3e0b7f336380e62");
-      expect(tokenLockingAccount.stateRoot.toString("hex")).to.equal("f3e4c63c882e5604318197d45ce6282245253b67349ebc0a45b9c5ac1a69ed16");
+      expect(colonyNetworkStateHash).to.equal("0x225612c3bf05b92dddf480ee2d44e2a71400b4eab1fa2ddf5c99245ee3952988");
+      expect(colonyStateHash).to.equal("0x3461a9d484a0f29eed70f61c5d5b8e7b0805dbb2c785876196f7e09c3f6241c0");
+      expect(metaColonyStateHash).to.equal("0xff23657f917385e6a94f328907443fef625f08b8b3224e065a53b690f91be0bb");
+      expect(miningCycleStateHash).to.equal("0x264d4a83e21fef92f687f9fabacae9370966b0b30ebc15307653c4c3d33a0035");
+      expect(tokenLockingStateHash).to.equal("0x983a56a52582ce548e98659e15a9baa5387886fcb0ac1185dbd746dfabf00338");
     });
   });
 });
