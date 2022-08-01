@@ -238,7 +238,7 @@ contract("Colony Staking", (accounts) => {
       expect(balance).to.eq.BN(WAD);
     });
 
-    it("should burn the stake if sent to address(0x0) and the token supports burning", async () => {
+    it.skip("should burn the stake if sent to address(0x0) and the token supports burning", async () => {
       const supplyBefore = await token.totalSupply();
 
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
@@ -249,7 +249,7 @@ contract("Colony Staking", (accounts) => {
       expect(supplyBefore.sub(supplyAfter)).to.eq.BN(WAD);
     });
 
-    it("should send the stake to address(0x0) if the token does not support burning", async () => {
+    it.skip("should send the stake to address(0x0) if the token does not support burning", async () => {
       // This token does not support burning
       token = await ToggleableToken.new(WAD, { from: USER1 });
       colony = await setupColony(colonyNetwork, token.address);
