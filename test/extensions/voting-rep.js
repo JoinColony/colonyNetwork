@@ -96,8 +96,8 @@ contract("Voting Reputation", (accounts) => {
   const SUBMIT = 2;
   // const REVEAL = 3;
   // const CLOSED = 4;
-  const EXECUTABLE = 5;
-  const EXECUTED = 6;
+  const FINALIZBLE = 5;
+  const FINALIZED = 6;
   const FAILED = 7;
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
@@ -1539,7 +1539,7 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
 
       const motionState = await voting.getMotionState(motionId);
-      expect(motionState).to.eq.BN(EXECUTED);
+      expect(motionState).to.eq.BN(FINALIZED);
     });
   });
 
@@ -2129,7 +2129,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       const state = await voting.getMotionState(motionId);
-      expect(state).to.eq.BN(EXECUTABLE);
+      expect(state).to.eq.BN(FINALIZBLE);
     });
 
     it("can skip the staking phase if no new stake is required", async () => {
