@@ -799,10 +799,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
         return MotionState.Staking;
       // If not, did the YAY side stake?
       } else if (motion.stakes[YAY] == requiredStake) {
-        return getSig(motion.action) == NO_ACTION ? MotionState.Finalized : MotionState.Finalizable;
+        return finalizableOrFinalized(motion.action);
       // If not, was there a prior vote we can fall back on?
       } else if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
-        return getSig(motion.action) == NO_ACTION ? MotionState.Finalized : MotionState.Finalizable;
+        return finalizableOrFinalized(motion.action);
       // Otherwise, the motion failed
       } else {
         return MotionState.Failed;
@@ -821,9 +821,15 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
       ) {
         return MotionState.Closed;
       } else {
-        return getSig(motion.action) == NO_ACTION ? MotionState.Finalized : MotionState.Finalizable;
+        return finalizableOrFinalized(motion.action);
       }
     }
+  }
+
+  // If we decide that the motion is finalizable, we might actually want it to report as finalized if it's a no-action
+  // motion.
+  function finalizableOrFinalized(bytes memory action) internal pure returns (MotionState) {
+    return getSig(action) == NO_ACTION ? MotionState.Finalized : MotionState.Finalizable;
   }
 
   /// @notice Get the voter reward
