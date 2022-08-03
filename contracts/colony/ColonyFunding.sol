@@ -148,7 +148,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   public
   stoppable
   expenditureDraft(_id)
-  expenditureOwnerOrSelf(_id)
+  expenditureOnlyOwner(_id)
   {
     setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
   }
@@ -179,7 +179,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   public
   stoppable
   expenditureDraft(_id)
-  expenditureOwnerOrSelf(_id)
+  expenditureOnlyOwner(_id)
   {
     uint256[] memory slots = new uint256[](1);
     slots[0] = _slot;

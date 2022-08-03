@@ -361,7 +361,13 @@ contract ColonyExpenditure is ColonyStorage {
     internal
   {
     for (uint256 i; i < _tokens.length; i++) {
-      IColony(address(this)).setExpenditurePayouts(_id, _slots[i], _tokens[i], _values[i]);
+      (bool success, bytes memory returndata) = address(this).delegatecall(abi.encodeWithSignature("setExpenditurePayouts(uint256,uint256[],address,uint256[])", _id, _slots[i], _tokens[i], _values[i]));
+      if (!success) {
+        if (returndata.length == 0) revert();
+        assembly {
+          revert(add(32, returndata), mload(returndata))
+        }
+      }
     }
   }
 

@@ -388,7 +388,7 @@ contract("Colony Expenditure", (accounts) => {
 
     it("should not allow non-owners to update skills or payouts", async () => {
       await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID), "colony-expenditure-not-owner");
-      await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD), "colony-expenditure-not-owner-or-self");
+      await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD), "colony-expenditure-not-owner");
     });
 
     it("should allow owners to add a slot payout", async () => {
@@ -450,10 +450,7 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should not allow non-owners to set a payout", async () => {
-      await checkErrorRevert(
-        colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: USER }),
-        "colony-expenditure-not-owner-or-self"
-      );
+      await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: USER }), "colony-expenditure-not-owner");
     });
 
     it("should allow owners to update many values simultaneously", async () => {
@@ -512,6 +509,30 @@ contract("Colony Expenditure", (accounts) => {
       expect(payout).to.eq.BN(WAD.muln(30));
       payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT2, otherToken.address);
       expect(payout).to.eq.BN(WAD.muln(40));
+    });
+
+    it("should revert with an error even if the delegatecall in setExpenditurePayouts is used and fails", async () => {
+      await checkErrorRevert(
+        colony.setExpenditureValues(
+          expenditureId,
+          [SLOT0, SLOT1, SLOT2],
+          [RECIPIENT, USER, ADMIN],
+          [SLOT1, SLOT2],
+          [GLOBAL_SKILL_ID, GLOBAL_SKILL_ID],
+          [SLOT0, SLOT1],
+          [10, 20],
+          [SLOT0, SLOT2],
+          [WAD.divn(3), WAD.divn(2)],
+          [token.address, otherToken.address],
+          [[SLOT0], [SLOT1, SLOT2]],
+          [
+            [WAD.muln(10), WAD.muln(20)],
+            [WAD.muln(30), WAD.muln(40)],
+          ],
+          { from: ADMIN }
+        ),
+        "colony-expenditure-bad-slots"
+      );
     });
 
     it("should not allow owners to update many values simultaneously if not owner", async () => {
