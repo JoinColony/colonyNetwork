@@ -49,6 +49,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   uint256 constant SUBMIT_END = 1;
   uint256 constant REVEAL_END = 2;
 
+  bytes4 constant NO_ACTION = 0x12345678;
+
   bytes32 constant ROOT_ROLES = (
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Recovery) |
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
@@ -117,7 +119,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   /// @notice Return the version number
   /// @return The version number
   function version() public pure override returns (uint256) {
-    return 4;
+    return 5;
   }
 
   /// @notice Install the extension
@@ -797,10 +799,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
         return MotionState.Staking;
       // If not, did the YAY side stake?
       } else if (motion.stakes[YAY] == requiredStake) {
-        return MotionState.Finalizable;
+        return finalizableOrFinalized(motion.action);
       // If not, was there a prior vote we can fall back on?
       } else if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
-        return MotionState.Finalizable;
+        return finalizableOrFinalized(motion.action);
       // Otherwise, the motion failed
       } else {
         return MotionState.Failed;
@@ -819,10 +821,15 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
       ) {
         return MotionState.Closed;
       } else {
-        return MotionState.Finalizable;
+        return finalizableOrFinalized(motion.action);
       }
-
     }
+  }
+
+  // If we decide that the motion is finalizable, we might actually want it to report as finalized if it's a no-action
+  // motion.
+  function finalizableOrFinalized(bytes memory action) internal pure returns (MotionState) {
+    return getSig(action) == NO_ACTION ? MotionState.Finalized : MotionState.Finalizable;
   }
 
   /// @notice Get the voter reward
@@ -1024,7 +1031,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     }
   }
 
-  function getSig(bytes memory action) internal returns (bytes4 sig) {
+  function getSig(bytes memory action) internal pure returns (bytes4 sig) {
     assembly {
       sig := mload(add(action, 0x20))
     }

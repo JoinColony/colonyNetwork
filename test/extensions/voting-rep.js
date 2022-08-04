@@ -96,8 +96,8 @@ contract("Voting Reputation", (accounts) => {
   const SUBMIT = 2;
   // const REVEAL = 3;
   // const CLOSED = 4;
-  const EXECUTABLE = 5;
-  // const EXECUTED = 6;
+  const FINALIZBLE = 5;
+  const FINALIZED = 6;
   const FAILED = 7;
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
@@ -1525,6 +1525,22 @@ contract("Voting Reputation", (accounts) => {
       const pastVote = await voting.getExpenditurePastVote(slotHash);
       expect(pastVote).to.eq.BN(REQUIRED_STAKE);
     });
+
+    it("motions with the special NO_ACTION signature do not require (and cannot be) executed, and go straight to that state", async function () {
+      const action = "0x12345678";
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
+
+      const motionState = await voting.getMotionState(motionId);
+      expect(motionState).to.eq.BN(FINALIZED);
+    });
   });
 
   describe("claiming rewards", async () => {
@@ -2113,7 +2129,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       const state = await voting.getMotionState(motionId);
-      expect(state).to.eq.BN(EXECUTABLE);
+      expect(state).to.eq.BN(FINALIZBLE);
     });
 
     it("can skip the staking phase if no new stake is required", async () => {
