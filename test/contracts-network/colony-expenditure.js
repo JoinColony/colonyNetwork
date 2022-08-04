@@ -1108,7 +1108,7 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
     });
 
-    it("should allow arbitration users to update expenditure slot payouts", async () => {
+    it.only("should allow arbitration users to update expenditure slot payouts", async () => {
       const mask = [MAPPING, MAPPING];
       const keys = ["0x0", bn2bytes32(new BN(token.address.slice(2), 16))];
       const value = bn2bytes32(new BN(100));
@@ -1117,6 +1117,13 @@ contract("Colony Expenditure", (accounts) => {
 
       const expenditureSlotPayout = await colony.getExpenditureSlotPayout(expenditureId, 0, token.address);
       expect(expenditureSlotPayout).to.eq.BN(100);
+
+      // Should have also updated the funding pot's payoutsWeCannotMake
+      const expenditure = await colony.getExpenditure(expenditureId);
+      const fundingPotId = await expenditure.fundingPotId;
+      const fundingPot = await colony.getFundingPot(fundingPotId);
+
+      expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
     });
 
     it("should not allow arbitration users to pass invalid slots", async () => {
