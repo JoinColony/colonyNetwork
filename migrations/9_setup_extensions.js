@@ -6,6 +6,7 @@ const { setupEtherRouter } = require("../helpers/upgradable-contracts");
 
 const CoinMachine = artifacts.require("./CoinMachine");
 const EvaluatedExpenditure = artifacts.require("./EvaluatedExpenditure");
+const StakedExpenditure = artifacts.require("./StakedExpenditure");
 const FundingQueue = artifacts.require("./FundingQueue");
 const OneTxPayment = artifacts.require("./OneTxPayment");
 const StreamingPayments = artifacts.require("./StreamingPayments");
@@ -38,6 +39,7 @@ module.exports = async function (deployer, network, accounts) {
 
   await addExtension(colonyNetwork, "CoinMachine", CoinMachine);
   await addExtension(colonyNetwork, "EvaluatedExpenditure", EvaluatedExpenditure);
+  await addExtension(colonyNetwork, "StakedExpenditure", StakedExpenditure);
   await addExtension(colonyNetwork, "FundingQueue", FundingQueue);
   await addExtension(colonyNetwork, "OneTxPayment", OneTxPayment);
   await addExtension(colonyNetwork, "StreamingPayments", StreamingPayments);

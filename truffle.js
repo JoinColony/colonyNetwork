@@ -1,7 +1,7 @@
 const HDWalletProvider = require("truffle-hdwallet-provider");
 const ganache = require("ganache");
 
-const ganacheProvider = ganache.provider({ total_accounts: 14, seed: "smoketest" });
+const ganacheProvider = ganache.provider({ total_accounts: 14, seed: "smoketest", logging: { quiet: true } });
 const LedgerWalletProvider = require("@umaprotocol/truffle-ledger-provider");
 
 const ledgerOptions = {
@@ -13,6 +13,28 @@ const ledgerOptions = {
 };
 
 const DISABLE_DOCKER = !process.env.DISABLE_DOCKER;
+
+const coverageOptimiserSettings = {
+  enabled: false,
+  runs: 200,
+  details: {
+    peephole: false,
+    jumpdestRemover: false,
+    orderLiterals: true, // <-- TRUE! Stack too deep when false
+    deduplicate: false,
+    cse: false,
+    constantOptimizer: false,
+    yul: true,
+    yulDetails: {
+      stackAllocation: true,
+    },
+  },
+};
+
+const normalOptimizerSettings = {
+  enabled: true,
+  runs: 200,
+};
 
 module.exports = {
   networks: {
@@ -97,10 +119,7 @@ module.exports = {
       docker: DISABLE_DOCKER,
       parser: "solcjs",
       settings: {
-        optimizer: {
-          enabled: true,
-          runs: 200,
-        },
+        optimizer: process.env.SOLIDITY_COVERAGE ? coverageOptimiserSettings : normalOptimizerSettings,
         evmVersion: "istanbul",
       },
     },

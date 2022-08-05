@@ -4,7 +4,7 @@ section: Interface
 order: 3
 ---
 
-  
+
 ## Interface Methods
 
 ### `addDomain`
@@ -1033,7 +1033,7 @@ Gets the bytes32 representation of the roles for a user in a given domain
 
 ### `hasInheritedUserRole`
 
-Check whether a given user has a given role for the colony, in a child domain. Calls the function of the same name on the colony's authority contract and an internal inheritence validator function
+Check whether a given user has a given role for the colony, in a child domain. Calls the function of the same name on the colony's authority contract and an internal inheritance validator function
 
 
 **Parameters**

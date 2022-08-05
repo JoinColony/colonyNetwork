@@ -477,7 +477,7 @@ contract("ColonyPermissions", (accounts) => {
           token.address,
           { from: USER2 }
         ),
-        "ds-auth-invalid-domain-inheritence"
+        "ds-auth-invalid-domain-inheritance"
       );
       await checkErrorRevert(
         colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
@@ -490,7 +490,7 @@ contract("ColonyPermissions", (accounts) => {
           token.address,
           { from: USER2 }
         ),
-        "ds-auth-invalid-domain-inheritence"
+        "ds-auth-invalid-domain-inheritance"
       );
 
       // The newest version
@@ -507,7 +507,7 @@ contract("ColonyPermissions", (accounts) => {
           token.address,
           { from: USER2 }
         ),
-        "colony-invalid-domain-inheritence"
+        "colony-invalid-domain-inheritance"
       );
 
       await checkErrorRevert(
@@ -523,7 +523,7 @@ contract("ColonyPermissions", (accounts) => {
           token.address,
           { from: USER2 }
         ),
-        "colony-invalid-domain-inheritence"
+        "colony-invalid-domain-inheritance"
       );
     });
 

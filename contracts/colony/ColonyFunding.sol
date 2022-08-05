@@ -26,7 +26,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
   // Public
 
- function moveFundsBetweenPots(
+  function moveFundsBetweenPots(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _domainId,
@@ -43,8 +43,8 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   validFundingTransfer(_fromPot, _toPot)
   {
-    require(validateDomainInheritance(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot)), "colony-invalid-domain-inheritence");
-    require(validateDomainInheritance(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot)), "colony-invalid-domain-inheritence");
+    require(validateDomainInheritance(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot)), "colony-invalid-domain-inheritance");
+    require(validateDomainInheritance(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot)), "colony-invalid-domain-inheritance");
 
     moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
   }
@@ -138,25 +138,54 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
   }
 
-  function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts)
+  /// @notice For owners to update payouts with one token and many slots
+  function setExpenditurePayouts(
+    uint256 _id,
+    uint256[] memory _slots,
+    address _token,
+    uint256[] memory _amounts
+  )
   public
   stoppable
-  expenditureExists(_id)
   expenditureDraft(_id)
   expenditureOnlyOwner(_id)
   {
     setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
   }
 
-  function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)
+  /// @notice For arbitrators to update payouts with one token and one slot
+  function setExpenditurePayout(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _slot,
+    address _token,
+    uint256 _amount
+  )
   public
   stoppable
+  validExpenditure(_id)
+  authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     uint256[] memory slots = new uint256[](1);
     slots[0] = _slot;
     uint256[] memory amounts = new uint256[](1);
     amounts[0] = _amount;
-    setExpenditurePayouts(_id, slots, _token, amounts);
+    setExpenditurePayoutsInternal(_id, slots, _token, amounts);
+  }
+
+  /// @notice For owners to update payouts with one token and one slot
+  function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)
+  public
+  stoppable
+  expenditureDraft(_id)
+  expenditureOnlyOwner(_id)
+  {
+    uint256[] memory slots = new uint256[](1);
+    slots[0] = _slot;
+    uint256[] memory amounts = new uint256[](1);
+    amounts[0] = _amount;
+    setExpenditurePayoutsInternal(_id, slots, _token, amounts);
   }
 
   int256 constant MAX_PAYOUT_MODIFIER = int256(WAD);
@@ -164,7 +193,6 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
   function claimExpenditurePayout(uint256 _id, uint256 _slot, address _token) public
   stoppable
-  expenditureExists(_id)
   expenditureFinalized(_id)
   {
     Expenditure storage expenditure = expenditures[_id];
@@ -188,12 +216,9 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     uint256 tokenPayout = min(initialPayout, repPayout);
     uint256 tokenSurplus = sub(initialPayout, tokenPayout);
 
-    // Send any surplus back to the domain (for payoutScalars < 1)
+    // Deduct any surplus from the outstanding payouts (for payoutScalars < 1)
     if (tokenSurplus > 0) {
       fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], tokenSurplus);
-      fundingPot.balance[_token] = sub(fundingPot.balance[_token], tokenSurplus);
-      FundingPot storage domainFundingPot = fundingPots[domains[expenditure.domainId].fundingPotId];
-      domainFundingPot.balance[_token] = add(domainFundingPot.balance[_token], tokenSurplus);
     }
 
     // Process reputation updates if internal token
@@ -420,6 +445,8 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
   }
 
   function processPayout(uint256 _fundingPotId, address _token, uint256 _payout, address payable _user) private {
+    refundDomain(_fundingPotId, _token);
+
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
 
@@ -449,5 +476,14 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
 
     emit PayoutClaimed(msgSender(), _fundingPotId, _token, remainder);
+  }
+
+  function refundDomain(uint256 _fundingPotId, address _token) private {
+    FundingPot storage fundingPot = fundingPots[_fundingPotId];
+    if (fundingPot.payouts[_token] < fundingPot.balance[_token]) {
+      uint256 domainId = getDomainFromFundingPot(_fundingPotId);
+      uint256 surplus = sub(fundingPot.balance[_token], fundingPot.payouts[_token]);
+      moveFundsBetweenPotsFunctionality(_fundingPotId, domains[domainId].fundingPotId, surplus, _token);
+    }
   }
 }
