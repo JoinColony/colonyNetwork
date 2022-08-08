@@ -391,13 +391,9 @@ class ReputationMinerClient {
 
         // First check is the confirmed cycle the one we expect?
         // Note no blocktags in these calls - we care if we're up-to-date, not the historical state (here)
-        // If we're not, we back out and resync
-        const nLeaves = await this._miner.colonyNetwork.getReputationRootHashNNodes();
-        const currentRootHash = await this._miner.colonyNetwork.getReputationRootHash();
-        const localRootHash = await this._miner.reputationTree.getRootHash();
-        if (!nLeaves.eq(this._miner.nReputations) || localRootHash !== currentRootHash) {
-          this._adapter.log(`Unexpected confirmed hash seen on colonyNetwork. Let's resync.`)
-          await this._miner.sync(this.startingBlock, true);
+        // If we're not, we resync and stop here for this block.
+        const syncCheck = await this.ensureSynced();
+        if (!syncCheck) {
           this.endDoBlockChecks();
           return;
         }
@@ -662,6 +658,18 @@ class ReputationMinerClient {
       clearTimeout(this.confirmTimeoutCheck);
     }
 
+  }
+
+  async ensureSynced() {
+    const nLeaves = await this._miner.colonyNetwork.getReputationRootHashNNodes();
+    const currentRootHash = await this._miner.colonyNetwork.getReputationRootHash();
+    const localRootHash = await this._miner.reputationTree.getRootHash();
+    if (!nLeaves.eq(this._miner.nReputations) || localRootHash !== currentRootHash) {
+      this._adapter.log(`Unexpected confirmed hash seen on colonyNetwork. Let's resync.`)
+      await this._miner.sync(this.startingBlock, true);
+      return false;
+    }
+    return true;
   }
 
   async processReputationLog(blockNumber) {
