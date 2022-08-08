@@ -1638,7 +1638,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      const txData = await voting.contract.methods.finalizeMotion(1).encodeABI();
+      const txData = await voting.contract.methods.finalizeMotion(motionId).encodeABI();
 
       const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
       const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);

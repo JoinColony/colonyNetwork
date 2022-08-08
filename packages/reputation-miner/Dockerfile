@@ -1,4 +1,4 @@
-FROM node:16.15.0
+FROM node:14-bullseye
 COPY ./packages ./packages
 COPY ./package.json ./
 COPY ./yarn.lock ./
