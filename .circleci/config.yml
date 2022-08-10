@@ -30,6 +30,7 @@ step_setup_global_packages: &step_setup_global_packages
     command: |
       sudo apt-get update
       sudo apt-get install libudev-dev libusb-1.0-0-dev
+      npm set cache ~/.npm
       sudo npm install -g npm@8.5.5
       npm ci
       git submodule update --remote --init

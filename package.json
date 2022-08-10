@@ -80,6 +80,7 @@
   "devDependencies": {
     "@codechecks/client": "^0.1.12",
     "@colony/eslint-config-colony": "9.0.2",
+    "@umaprotocol/truffle-ledger-provider": "^1.0.5",
     "async-request": "^1.2.0",
     "axios": "^0.27.2",
     "bignumber.js": "^9.0.2",
@@ -107,6 +108,7 @@
     "istanbul-combine": "^0.3.0",
     "mocha": "^10.0.0",
     "mocha-circleci-reporter": "^0.0.3",
+    "node-hid": "^2.1.1",
     "nthline": "^1.0.2",
     "nyc": "^15.1.0",
     "openzeppelin-solidity": "^3.4.2",
@@ -129,8 +131,5 @@
     "packages/package-utils",
     "packages/reputation-miner"
   ],
-  "dependencies": {
-    "@umaprotocol/truffle-ledger-provider": "^1.0.5",
-    "node-hid": "^2.1.1"
-  }
+  "dependencies": {}
 }
