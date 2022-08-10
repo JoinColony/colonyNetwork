@@ -993,7 +993,7 @@ exports.getWaitForNSubmissionsPromise = async function getWaitForNSubmissionsPro
   return new Promise(function (resolve, reject) {
     repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nLeaves, _jrh, _entryIndex, event) => {
       let nSubmissions;
-      if (rootHash) {
+      if (rootHash === _hash) {
         nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
       } else {
         nSubmissions = await repCycleEthers.getNSubmissionsForHash(_hash, _nLeaves, _jrh);
