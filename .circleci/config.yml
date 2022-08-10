@@ -7,6 +7,7 @@ job_common: &job_common
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
+  run: 
 job_python: &job_python
   docker:
     - image: cimg/python:3.8.13-node
@@ -27,6 +28,9 @@ step_setup_global_packages: &step_setup_global_packages
   run:
     name: "Set up global packages"
     command: |
+      sudo apt-get update
+      sudo apt-get install libudev-dev libusb-1.0-0-dev
+      sudo npm install -g npm@8.5.5
       npm ci
       git submodule update --remote --init
       npm run provision:token:contracts
