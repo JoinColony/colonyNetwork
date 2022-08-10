@@ -1625,83 +1625,68 @@ contract("Voting Reputation", (accounts) => {
       expect(motionState).to.eq.BN(FINALIZED);
     });
 
-    it("transactions that try to execute an allowed method on Reputation Voting extension are accepted by the MTX broadcaster", async function () {
-      await colony.makeExpenditure(1, UINT256_MAX, 1);
-      const expenditureId = await colony.getExpenditureCount();
+    describe("via metatransactions", async () => {
+      let broadcaster;
 
-      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
+      beforeEach(async () => {
+        const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+        const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
 
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      motionId = await voting.getMotionCount();
+        const loader = new TruffleLoader({
+          contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
+        });
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+        // Old and new versions of ganache (which currently represents with or without coverage...)
+        // either do or don't have the hex prefix...
+        let privateKey = ganacheAccounts.private_keys[accounts[0].toLowerCase()];
+        if (privateKey.slice(0, 2) !== "0x") {
+          privateKey = `0x${privateKey}`;
+        }
 
-      await forwardTime(STAKE_PERIOD, this);
-
-      const txData = await voting.contract.methods.finalizeMotion(motionId).encodeABI();
-
-      const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
-      const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
-
-      const loader = new TruffleLoader({
-        contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
+        broadcaster = new MetatransactionBroadcaster({
+          privateKey,
+          loader,
+          provider,
+        });
+        await broadcaster.initialise(colonyNetwork.address);
       });
 
-      // Old and new versions of ganache (which currently represents with or without coverage...)
-      // either do or don't have the hex prefix...
-      let privateKey = ganacheAccounts.private_keys[accounts[0].toLowerCase()];
-      if (privateKey.slice(0, 2) !== "0x") {
-        privateKey = `0x${privateKey}`;
-      }
+      it("transactions that try to execute an allowed method on Reputation Voting extension are accepted by the MTX broadcaster", async function () {
+        await colony.makeExpenditure(1, UINT256_MAX, 1);
+        const expenditureId = await colony.getExpenditureCount();
 
-      const broadcaster = new MetatransactionBroadcaster({
-        privateKey,
-        loader,
-        provider,
-      });
-      await broadcaster.initialise(colonyNetwork.address);
+        const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
 
-      const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
-      expect(valid).to.be.equal(true);
-      await broadcaster.close();
-    });
+        await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+        motionId = await voting.getMotionCount();
 
-    it("transactions that try to execute a forbidden method on Reputation Voting extension are rejected by the MTX broadcaster", async function () {
-      const action = await encodeTxData(colony, "makeArbitraryTransaction", [colony.address, "0x00"]);
+        await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      motionId = await voting.getMotionCount();
+        await forwardTime(STAKE_PERIOD, this);
 
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+        const txData = await voting.contract.methods.finalizeMotion(motionId).encodeABI();
 
-      await forwardTime(STAKE_PERIOD, this);
-
-      const txData = await voting.contract.methods.finalizeMotion(motionId.toString()).encodeABI();
-
-      const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
-      const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
-
-      const loader = new TruffleLoader({
-        contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
+        const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
+        expect(valid).to.be.equal(true);
+        await broadcaster.close();
       });
 
-      // Old and new versions of ganache (which currently represents with or without coverage...)
-      // either do or don't have the hex prefix...
-      let privateKey = ganacheAccounts.private_keys[accounts[0].toLowerCase()];
-      if (privateKey.slice(0, 2) !== "0x") {
-        privateKey = `0x${privateKey}`;
-      }
+      it("transactions that try to execute a forbidden method on Reputation Voting extension are rejected by the MTX broadcaster", async function () {
+        const action = await encodeTxData(colony, "makeArbitraryTransaction", [colony.address, "0x00"]);
 
-      const broadcaster = new MetatransactionBroadcaster({
-        privateKey,
-        loader,
-        provider,
+        await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+        motionId = await voting.getMotionCount();
+
+        await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+        await forwardTime(STAKE_PERIOD, this);
+
+        const txData = await voting.contract.methods.finalizeMotion(motionId.toString()).encodeABI();
+
+        const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
+        expect(valid).to.be.equal(false);
+        await broadcaster.close();
       });
-      await broadcaster.initialise(colonyNetwork.address);
-
-      const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
-      expect(valid).to.be.equal(false);
-      await broadcaster.close();
     });
   });
 

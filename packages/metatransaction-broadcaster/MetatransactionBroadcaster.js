@@ -219,12 +219,13 @@ class MetatransactionBroadcaster {
         if (motionTarget === "0x0000000000000000000000000000000000000000") {
           motionTarget = await possibleVotingRep.getColony();
         }
-        // Is the motion doing something we'd allow? Duplicated logic from main function
-
-        const addressValid = await this.isAddressValid(motionTarget);
-        // It's possible it's not a valid address, but could be a valid transaction with a token.
-        const validTokenTransaction = await this.isTokenTransactionValid(motionTarget, motion.action, userAddress);
-        const allowedColonyFamilyTransaction = await this.isColonyFamilyTransactionAllowed(motionTarget, motion.action);
+        // Is the motion doing something we'd allow?
+        const { addressValid, validTokenTransaction, allowedColonyFamilyTransaction } = await this.doValidTransactionChecks(
+          motionTarget,
+          motion.action,
+          userAddress
+        );
+        console.log(addressValid, validTokenTransaction, allowedColonyFamilyTransaction);
         if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
           return false;
         }
@@ -298,10 +299,12 @@ class MetatransactionBroadcaster {
         }
       } else if (!spender && target) {
         // Then it's a 'normal' metatransaction.
-        const addressValid = await this.isAddressValid(target);
-        // It's possible it's not a valid address, but could be a valid transaction with a token.
-        const validTokenTransaction = await this.isTokenTransactionValid(target, payload, userAddress);
-        const allowedColonyFamilyTransaction = await this.isColonyFamilyTransactionAllowed(target, payload, userAddress);
+        const { addressValid, validTokenTransaction, allowedColonyFamilyTransaction } = await this.doValidTransactionChecks(
+          target,
+          payload,
+          userAddress
+        );
+
         if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
           const data = {};
           if (!addressValid) {
@@ -356,6 +359,14 @@ class MetatransactionBroadcaster {
         message: err,
       });
     }
+  }
+
+  async doValidTransactionChecks(target, payload, userAddress) {
+    const addressValid = await this.isAddressValid(target);
+    // It's possible it's not a valid address, but could be a valid transaction with a token.
+    const validTokenTransaction = await this.isTokenTransactionValid(target, payload, userAddress);
+    const allowedColonyFamilyTransaction = await this.isColonyFamilyTransactionAllowed(target, payload, userAddress);
+    return { addressValid, validTokenTransaction, allowedColonyFamilyTransaction };
   }
 
   async processMetatransaction(req, res) {
