@@ -124,7 +124,10 @@
   },
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/kyc-oracle",
+    "packages/metatransaction-broadcaster",
+    "packages/package-utils",
+    "packages/reputation-miner"
   ],
   "dependencies": {
     "@umaprotocol/truffle-ledger-provider": "^1.0.5",
