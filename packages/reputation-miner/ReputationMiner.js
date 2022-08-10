@@ -116,8 +116,13 @@ class ReputationMiner {
     }
     console.log(`Mining on behalf of ${this.minerAddress}`)
 
+    const miningStake = await this.colonyNetwork.getMiningStake(this.minerAddress);
     const signingBalance = await this.realProvider.getBalance(signingAddress);
-    console.log(`With a balance of ${ethers.utils.formatUnits(signingBalance)}. I hope that's enough!`);
+
+    console.log(
+      `With a CLNY stake of ${ethers.utils.formatUnits(miningStake.amount)} ` +
+      `and an XDAI balance of ${ethers.utils.formatUnits(signingBalance)}. I hope that's enough!`
+    );
 
     process.on('exit', () => this.db.close());
     process.on('SIGHUP', () => process.exit(128 + 1));
@@ -923,7 +928,7 @@ class ReputationMiner {
     const tree = new PatriciaTree();
     // Load all reputations from that state.
 
-    const allReputations = await this.queries.getAllReputationsInHash.all(rootHash);
+    const allReputations = await this.getAllReputationsInHash(rootHash);
 
     for (let i = 0; i < allReputations.length; i += 1) {
       const row = allReputations[i];
@@ -1480,13 +1485,16 @@ class ReputationMiner {
   }
 
   async loadState(reputationRootHash) {
+    console.log(`Loading reputation state ${reputationRootHash}`);
+
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
 
     this.reputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
-    const res = await this.queries.getAllReputationsInHash.all(reputationRootHash);
+    const res = await this.getAllReputationsInHash(reputationRootHash);
     this.nReputations = ethers.BigNumber.from(res.length);
+
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
       const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
@@ -1503,11 +1511,13 @@ class ReputationMiner {
   }
 
   async loadStateToPrevious(reputationRootHash) {
+    console.log(`Loading reputation state ${reputationRootHash} to previous`);
+
     this.previousReputations = {};
 
     this.previousReputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
-    const res = await this.queries.getAllReputationsInHash.all(reputationRootHash);
+    const res = await this.getAllReputationsInHash(reputationRootHash);
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
       const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
@@ -1633,7 +1643,7 @@ class ReputationMiner {
 
     const db = new Database("./latestConfirmed.sqlite", { });
     await ReputationMiner.createDB(db);
-    const allReputations = await this.queries.getAllReputationsInHash.all(latestConfirmedReputationHash);
+    const allReputations = await this.getAllReputationsInHash(latestConfirmedReputationHash);
 
     if (allReputations.length === 0) {
       return new Error("No such reputation state");
