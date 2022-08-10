@@ -17,12 +17,11 @@
     "axios": "^0.27.2",
     "body-parser": "^1.20.0",
     "etherpass": "^1.0.2",
-    "ethers": "^5.6.8",
+    "ethers": "^5.6.9",
     "express": "^4.18.1",
     "jsonfile": "^6.1.0",
-    "sqlite": "^4.1.1",
-    "sqlite3": "^5.0.8",
+    "sqlite": "^4.1.2",
+    "sqlite3": "^5.0.11",
     "yargs": "^17.5.1"
-  },
-  "devDependencies": {}
+  }
 }
