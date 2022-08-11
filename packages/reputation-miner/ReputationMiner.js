@@ -1741,6 +1741,35 @@ class ReputationMiner {
       console.log("Index for /all endpoint added to reputations table")
     }
 
+    // reputation_rowid was text, not integer. Do we need to upgrade?
+    res = await db.prepare("SELECT type FROM PRAGMA_TABLE_INFO('reputations') WHERE name='reputation_rowid'").all();
+    if (res[0].type === "TEXT"){
+      console.log("reputation_rowid is text, not integer. Upgrading")
+      await db.prepare(
+        `CREATE TABLE reputations2 (
+          reputation_rowid INTEGER NOT NULL,
+          colony_rowid INTEGER NOT NULL,
+          skill_id INTEGER NOT NULL,
+          user_rowid INTEGER NOT NULL,
+          value text NOT NULL,
+          PRIMARY KEY("reputation_rowid","colony_rowid","skill_id","user_rowid")
+        )`
+      ).run();
+
+      await db.prepare(`INSERT INTO reputations2 SELECT * FROM reputations`).run()
+      await db.prepare(`DROP TABLE reputations`).run()
+      await db.prepare(`ALTER TABLE reputations2 RENAME TO reputations`).run()
+      console.log("reputation_rowid changed from TEXT to INTEGER")
+
+      // Recreate index for /all endpoint
+      await db.prepare(
+        `CREATE INDEX allEndpoint ON reputations (colony_rowid, user_rowid, reputation_rowid)`
+      ).run()
+      console.log("Index for /all endpoint added to reputations table")
+
+    }
+
+
   }
 
   async resetDB() {
