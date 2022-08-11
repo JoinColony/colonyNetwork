@@ -3,14 +3,28 @@
 // adjustments
 pragma solidity 0.7.3;
 pragma experimental "ABIEncoderV2";
+import "./MetaTransactionMsgSender.sol";
 
 /// @title Multicall
 /// @notice Enables calling multiple methods in a single call to the contract
-abstract contract Multicall {
+abstract contract Multicall is MetaTransactionMsgSender {
+
+
     function multicall(bytes[] calldata data) public returns (bytes[] memory results) {
+        bytes32 METATRANSACTION_FLAG_TMP = keccak256("METATRANSACTION");
+
+        // First off, is this a metatransaction?
+
+        address sender = msgSender();
+        bytes memory affix;
+        if (msg.sender == address(this) && sender != address(this)){
+            // If it's a metatransaction, we re-append the metatransaction identifier to each call we make
+            affix = abi.encodePacked(METATRANSACTION_FLAG, sender);
+        }
+
         results = new bytes[](data.length);
         for (uint256 i = 0; i < data.length; i++) {
-            (bool success, bytes memory result) = address(this).delegatecall(data[i]);
+            (bool success, bytes memory result) = address(this).delegatecall(abi.encodePacked(data[i], affix));
 
             if (!success) {
                 // Next 5 lines from https://ethereum.stackexchange.com/a/83577

@@ -9,6 +9,7 @@ const { soliditySha3 } = require("web3-utils");
 const axios = require("axios");
 const { TruffleLoader } = require("../../packages/package-utils");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
+const { UINT256_MAX } = require("../../helpers/constants");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 const { getMetaTransactionParameters, getPermitParameters, setupColony } = require("../../helpers/test-data-generator");
@@ -34,7 +35,7 @@ const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
 });
 
-contract("Metatransaction broadcaster", (accounts) => {
+contract.only("Metatransaction broadcaster", (accounts) => {
   const USER0 = accounts[0];
   const USER1 = accounts[1];
   const USER2 = accounts[2];
@@ -285,7 +286,7 @@ contract("Metatransaction broadcaster", (accounts) => {
     });
 
     it("a valid transaction is broadcast and mined, even if the broadcaster's nonce manager fell behind", async function () {
-      await metaTxToken.unlock();
+      await metaTxToken.unlock()f
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
       await metaTxToken.mint(USER1, 1500000, { from: USER0 });
 
@@ -488,6 +489,51 @@ contract("Metatransaction broadcaster", (accounts) => {
       const allowed = await metaTxToken.allowance(USER0, USER1);
       expect(allowed).to.eq.BN(0);
     });
+
+    it("a valid transaction that uses multicall is broadcast and mined", async function () {
+      await colony.contract.methods.setArchitectureRole(1, UINT256_MAX, USER1, 1, true).send({from: USER0});
+      const tx = await colony.contract.methods.setFundingRole(1, UINT256_MAX, USER1, 1, true).send({from: USER0});
+      const awardPermission1 = await colony.contract.methods.setArchitectureRole(1, UINT256_MAX, USER1, 1, true).encodeABI();
+      const awardPermission2 = await colony.contract.methods.setFundingRole(1, UINT256_MAX, USER1, 1, true).encodeABI();
+
+      const txData = await colony.contract.methods.multicall([awardPermission1, awardPermission2]).encodeABI()
+      console.log(txData)
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
+      // Send to endpoint
+
+      const jsonData = {
+        target: colony.address,
+        payload: txData,
+        userAddress: USER0,
+        r,
+        s,
+        v,
+      };
+      try {
+        const res = await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const { txHash } = res.data.data;
+
+        expect(txHash.length).to.be.equal(66);
+
+        expect(res.data).to.be.deep.equal({
+          status: "success",
+          data: {
+            txHash,
+          },
+        });
+      } catch (err) {
+        console.log(err.response.data);
+        process.exit();
+      }
+      // Check the transaction happened
+    });
+
+    it.skip("an invalid transaction that uses multicall is rejected", async function () {});
 
     it("an invalid transaction is rejected and not mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
