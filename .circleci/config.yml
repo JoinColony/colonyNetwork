@@ -2,7 +2,7 @@ version: 2
 
 job_common: &job_common
   docker:
-    - image: cimg/python:3.7.12-node
+    - image: cimg/node:14.18.2
       auth:
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
@@ -28,8 +28,6 @@ step_setup_global_packages: &step_setup_global_packages
   run:
     name: "Set up global packages"
     command: |
-      sudo apt-get update
-      sudo apt-get install libudev-dev libusb-1.0-0-dev
       npm set cache ~/.npm
       sudo npm install -g npm@8.5.5
       npm ci
