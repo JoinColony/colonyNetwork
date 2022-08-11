@@ -92,7 +92,7 @@ module.exports = {
     },
     xdai: {
       provider: () => {
-        return new HDWalletProvider("replace-with-private-key-when-using", "https://xdai-archive.blockscout.com/",);
+        return new HDWalletProvider("replace-with-private-key-when-using", "https://xdai-archive.blockscout.com/");
       },
       gasPrice: 2000000000,
       network_id: 100,
