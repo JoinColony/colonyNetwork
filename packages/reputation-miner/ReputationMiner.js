@@ -165,7 +165,8 @@ class ReputationMiner {
        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
        INNER JOIN users ON users.rowid=reputations.user_rowid
        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-       WHERE reputation_states.root_hash=?`
+       WHERE reputation_states.root_hash=?
+       ORDER BY reputations.rowid ASC`
     );
 
     this.queries.getReputationValue = this.db.prepare(
