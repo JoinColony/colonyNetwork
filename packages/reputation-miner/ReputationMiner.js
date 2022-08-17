@@ -166,7 +166,7 @@ class ReputationMiner {
        INNER JOIN users ON users.rowid=reputations.user_rowid
        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
        WHERE reputation_states.root_hash=?
-       ORDER BY reputations.rowid ASC`
+       ORDER BY substr(reputations.value, 67) ASC`
     );
 
     this.queries.getReputationValue = this.db.prepare(
@@ -1680,13 +1680,15 @@ class ReputationMiner {
 
   static async createDB(db) {
     // Not regularly used, so not preparing them and saving the statement for reuse
-    await db.prepare("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE )").run();
-    await db.prepare("CREATE TABLE IF NOT EXISTS reputation_states ( root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)").run();
-    await db.prepare("CREATE TABLE IF NOT EXISTS colonies ( address text NOT NULL UNIQUE )").run();
+    await db.prepare("CREATE TABLE IF NOT EXISTS users ( rowid INTEGER PRIMARY KEY, address text NOT NULL UNIQUE )").run();
+    await db.prepare(
+      "CREATE TABLE IF NOT EXISTS reputation_states ( rowid INTEGER PRIMARY KEY, root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)"
+    ).run();
+    await db.prepare("CREATE TABLE IF NOT EXISTS colonies ( rowid INTEGER PRIMARY KEY, address text NOT NULL UNIQUE )").run();
     await db.prepare("CREATE TABLE IF NOT EXISTS skills ( skill_id INTEGER PRIMARY KEY )").run();
     await db.prepare(
       `CREATE TABLE IF NOT EXISTS reputations (
-        reputation_rowid text NOT NULL,
+        reputation_rowid INTEGER NOT NULL,
         colony_rowid INTEGER NOT NULL,
         skill_id INTEGER NOT NULL,
         user_rowid INTEGER NOT NULL,
@@ -1718,7 +1720,7 @@ class ReputationMiner {
     if (res[0].c === 0){
       await db.prepare(
         `CREATE TABLE reputations2 (
-          reputation_rowid text NOT NULL,
+          reputation_rowid INTEGER NOT NULL,
           colony_rowid INTEGER NOT NULL,
           skill_id INTEGER NOT NULL,
           user_rowid INTEGER NOT NULL,
@@ -1768,9 +1770,26 @@ class ReputationMiner {
       ).run()
       console.log("Index for /all endpoint added to reputations table")
 
+      // At the same time, we added rowid as an explicit primary key to relevant tables
+      await db.prepare("CREATE TABLE IF NOT EXISTS users2 ( rowid INTEGER PRIMARY KEY, address text NOT NULL UNIQUE )").run();
+      await db.prepare(`INSERT INTO users2 (rowid, address) SELECT rowid, address FROM users;`).run()
+      await db.prepare(`DROP TABLE users`).run()
+      await db.prepare(`ALTER TABLE users2 RENAME TO users`).run()
+
+      await db.prepare(
+        "CREATE TABLE IF NOT EXISTS reputation_states2 ( rowid INTEGER PRIMARY KEY, root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)"
+      ).run();
+      await db.prepare(`INSERT INTO reputation_states2 ( rowid, root_hash, n_leaves) SELECT rowid, root_hash, n_leaves FROM reputation_states;`).run()
+      await db.prepare(`DROP TABLE reputation_states`).run()
+      await db.prepare(`ALTER TABLE reputation_states2 RENAME TO reputation_states`).run()
+
+      await db.prepare("CREATE TABLE IF NOT EXISTS colonies2 ( rowid INTEGER PRIMARY KEY, address text NOT NULL UNIQUE )").run();
+      await db.prepare(`INSERT INTO colonies2 (rowid, address) SELECT rowid, address FROM colonies;`).run()
+      await db.prepare(`DROP TABLE colonies`).run()
+      await db.prepare(`ALTER TABLE colonies2 RENAME TO colonies`).run()
+
+      console.log('Explicit primary keys added to secondary tables');
     }
-
-
   }
 
   async resetDB() {
