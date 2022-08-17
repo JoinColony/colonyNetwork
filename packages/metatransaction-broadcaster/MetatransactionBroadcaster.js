@@ -225,7 +225,6 @@ class MetatransactionBroadcaster {
           motion.action,
           userAddress
         );
-        console.log(addressValid, validTokenTransaction, allowedColonyFamilyTransaction);
         if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
           return false;
         }
