@@ -1,5 +1,6 @@
 ---
 description: All about the Colony of Colony
+sidebar_position: 2
 ---
 
 # The Meta Colony and CLNY
@@ -16,7 +17,7 @@ CLNY is the Token of “The Meta Colony”.
 
 Just like in a "normal" colony, accounts holding both CLNY and Reputation in the Meta Colony may claim a share of the revenue of the Meta Colony proportional to combined Reputation and CLNY holdings.
 
-CNLY is required as a stake to participate in [Reputation Mining](reputationmining.md). Miners earn a reward in CLNY, as well as reputation within the Meta Colony tagged with a special 'mining' skill.
+CNLY is required as a stake to participate in [Reputation Mining](reputation-mining.md). Miners earn a reward in CLNY, as well as reputation within the Meta Colony tagged with a special 'mining' skill.
 
 ## Revenue and Rewards
 
@@ -32,4 +33,4 @@ The Meta Colony also curates a global list of skill tags, used by _all colonies_
 
 Even though the skill hierarchy is universal, reputation earned in the skill hierarchy is unique to each colony. Earning reputation in a skill in one colony has no effect on the user’s reputation in that skill in any other colonies.
 
-For information about querying skills and specific implementation details, see the [ColonyJS](https://app.gitbook.com/o/-MTaEZ\_7xhxpButTDDNj/s/QcRjzRciEwod6UqfA3ta/) `colonyNetworkClient` API.
+For information about querying skills and specific implementation details, see the [ColonyJS `colonyNetworkClient`](/docs/colonyjs/api/interfaces/ColonyNetworkClient) API.

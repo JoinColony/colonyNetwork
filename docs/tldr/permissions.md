@@ -1,3 +1,8 @@
+---
+description: Permissions and Roles
+sidebar_position: 6
+---
+
 # Modular Permissions
 
 In the full implementation of the Colony protocol, decision making will be determined by the reputation score of an account. Actions that are currently permissioned, such as moving shared funds and creating a task, will be allowed proportionate to an account's reputation score. This functionality is planned for later releases.

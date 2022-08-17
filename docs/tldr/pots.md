@@ -1,10 +1,15 @@
+---
+description: About pots and funding in Colony
+sidebar_position: 4
+---
+
 # Pots and Funding
 
 All funding within a colony resides in pots. To each pot, a colony can associate any number of unassigned tokens it holds. Pots can be thought of as 'earmarked' funds for a specific purpose, and depending on context, might be called a bounty, a budget, working capital, or rewards.
 
 Assigning funding to pots is purely a bookkeeping mechanism for a colony. From the perspective of the blockchain, ether and tokens are held by the colony contract until they are paid out when a task is completed.
 
-A colony's internal token, chosen at the time of creation, has a special role within colony funding. When paid to a user through the task mechanism, the token confers reputation to that user, which can influence rewards payouts. See the [ColonyJS](https://app.gitbook.com/o/-MTaEZ\_7xhxpButTDDNj/s/QcRjzRciEwod6UqfA3ta/) `tokenClient` API for information about the internal token and related administration.
+A colony's internal token, chosen at the time of creation, has a special role within colony funding. When paid to a user through the task mechanism, the token confers reputation to that user, which can influence rewards payouts. See the [ColonyJS `tokenClient`](/docs/colonyjs/api/interfaces/ColonyTokenClient) API for information about the internal token and related administration.
 
 ## Types of Pots
 
@@ -30,7 +35,7 @@ Each task created within a domain also has its own pot, which is funded from the
 
 ## Funding Proposals
 
-Note: Funding Proposals are not slated for implementation in the first version of the colonyNetwork. Instead, movement of funds between pots in a colony is permissioned activity based on [authority roles](../../colonyjs/topics-managing-permissions/). The rest of this page explains funding proposals as described in the Colony Whitepaper, which will be implemented in subsequent upgrades to the Colony Network.
+Note: Funding Proposals are not slated for implementation in the first version of the colonyNetwork. Instead, movement of funds between pots in a colony is permissioned activity based on [authority roles](permissions.md). The rest of this page explains funding proposals as described in the Colony Whitepaper, which will be implemented in subsequent upgrades to the Colony Network.
 
 Funding proposals are the mechanism that mediates the flow of funds between pots. Funding proposals are created by any user with sufficient reputation to stake in the relevant domain.
 

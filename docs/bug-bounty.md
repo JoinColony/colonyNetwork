@@ -1,10 +1,15 @@
+---
+description: The Colony Network Bug Bounty Program
+sidebar_position: 7
+---
+
 # Bug Bounty Program
 
 The Colony Network is a set of smart contracts designed to manage shared resources of multiple individuals in a secure and predictable manner. These digital assets could be of great value; it is therefore imperative that the system behaves as the Bagginses did before Bilbo: without ever doing anything unexpected.
 
 To this end, Colony is offering substantial rewards to external developers who report bugs and flaws in the colonyNetwork contracts ([terms apply](bug-bounty.md#service-level-agreement)).
 
-This bug bounty does _not_ apply to Colony tools such as Purser. See [Ineligible bugs](bug-bounty.md#ineligible-bugs) for more information.
+This bug bounty does _not_ apply to Colony tools such as Purser. See [Ineligible bugs](#ineligible-bugs) for more information.
 
 ## Scope
 

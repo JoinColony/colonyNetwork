@@ -1,5 +1,6 @@
 ---
 description: How You Can Help By Verifying Reputation on the Colony Network
+sidebar_position: 9
 ---
 
 # Reputation Mining

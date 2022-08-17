@@ -1,5 +1,6 @@
 ---
 description: Colony Domains and Skills explained
+sidebar_position: 3
 ---
 
 # Domains and Skills
@@ -14,7 +15,7 @@ Skills are a similar structure that categorize the _type_ of work done, independ
 
 Like a file system that contains files and sub-folders, any domain can contain tasks, sub-domains, or both.
 
-![Example Domains](../.gitbook/assets/domains\_1.png)
+![Example Domains](../img/domains\_1.png)
 
 With the exception of the top-level colony domain, which contains all tasks and sub-domains, every domain in a colony belongs to a larger parent domain.
 
@@ -34,7 +35,7 @@ Even though the global set of Skills is shared by all colonies, reputation earne
 
 Skill tags are meant to provide a more fine-grained categorization of work than domains, allowing for tasks within the same domain to be further differentiated.
 
-See the [ColonyJS](https://app.gitbook.com/o/-MTaEZ\_7xhxpButTDDNj/s/QcRjzRciEwod6UqfA3ta/) `colonyClient` API for implementation details.
+See the [ColonyJS](/docs/colonyjs) `colonyClient` API for implementation details.
 
 ## Disputes
 

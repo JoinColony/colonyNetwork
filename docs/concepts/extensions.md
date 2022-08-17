@@ -1,5 +1,6 @@
 ---
 description: Colony Network Extensions
+sidebar_position: 1
 ---
 
 # Extensions
@@ -37,7 +38,7 @@ Must be able to mint tokens, so requires the `Root` permission.
 
 ## OneTxPayment
 
-Ordinarily payments require more than one transaction, because the payment lifecycle requires more than one permissioned [role](../tldr/permissions.md).
+Ordinarily payments require more than one transaction, because the payment lifecycle requires more than one permissioned [role](../tldr/permissions).
 
 In some use cases, there might be a need for one authorized individual to be able to create, funds, and finalize a payment within a single transaction.
 

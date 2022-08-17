@@ -1,5 +1,6 @@
 ---
 description: Reputation-weighted Voting
+sidebar_position: 8
 ---
 
 # Objections and Disputes

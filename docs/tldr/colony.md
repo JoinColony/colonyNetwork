@@ -1,5 +1,6 @@
 ---
 description: A Quick Overview of the Important Colony Concepts
+sidebar_position: 1
 ---
 
 # Colony
@@ -25,7 +26,7 @@ There is intentionally no further prescription for how a task is meant to be use
 
 At a minimum, a newly created task must be assigned a `domainId` and reference a specification for the task's completion, i.e. a description of the work to be done and how that work will be evaluated.
 
-[More about Tasks](../../colonynetwork/whitepaper-tldr-tasks-and-payments/)
+[More about Tasks](tasks.md)
 
 ## Reputation and Tokens
 
@@ -43,7 +44,7 @@ Within a colony, both tokens and reputation are required in order to create task
 
 It's up to each colony to decide how they use their token. Creators of a colony get to determine an initial `TokenSupplyCeiling` and `TokenIssuanceRate`. Depending on how these parameters are set and what the colony does, tokens could be valuable and bought/sold for a hefty price, or they could be ubiquitous and more of a symbolic gesture -- like an upvote.
 
-[More about Reputation and Tokens](../../colonynetwork/whitepaper-tldr-reputation/)
+[More about Reputation and Tokens](reputation.md)
 
 ## Domains and Skills
 
@@ -53,7 +54,7 @@ Domains are a structure for compartmentalizing the work and shared resources of 
 
 Skills are a similar structure that categorize the _type_ of work done, independent of the domain or colony in which the work took place.
 
-[More about Domains and Skills](../../colonynetwork/whitepaper-tldr-domains-and-skills/)
+[More about Domains and Skills](domains-skills.md)
 
 ## Pots
 
@@ -63,4 +64,4 @@ When domains (and tasks within those domains) are created, they each are assigne
 
 Every colony has a special pot, `pots[0]`, which accrues funds by taking a small percentage of colony revenue. Members of the colony may claim rewards from this pot based on the number of colony tokens they have.
 
-[More about Pots](../../colonynetwork/whitepaper-tldr-pots-and-funding/)
+[More about Pots](pots.md)

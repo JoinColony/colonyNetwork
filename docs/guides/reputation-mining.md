@@ -1,5 +1,6 @@
 ---
 description: How to use the Reputation Mining Client
+sidebar_position: 2
 ---
 
 # Reputation Mining Client
@@ -8,11 +9,11 @@ description: How to use the Reputation Mining Client
 
 The reputation mining client can be run locally to sync with a local ganache instance, the `goerli` testnet, or with glider on `mainnet`.
 
-To participate in the reputation mining process you need to have staked at least the [minimum amount of CLNY Tokens](../interfaces/ireputationminingcycle.md#getminstake-uint256-minstake), for at least [one full mining cycle duration](../interfaces/ireputationminingcycle.md#getminingwindowduration-uint256-miningwindowduration) before you can submit a new reputation root hash.
+To participate in the reputation mining process you need to have staked at least the [minimum amount of CLNY Tokens](../interfaces/ireputationminingcycle#getminstake-uint256-minstake), for at least [one full mining cycle duration](../interfaces/ireputationminingcycle#getminingwindowduration-uint256-miningwindowduration) before you can submit a new reputation root hash.
 
 Usage:
 
-```
+```bash
 node packages/reputation-miner/bin/index.js (--arguments <params>) [--arguments <params>]
 ```
 
@@ -42,7 +43,7 @@ Private key of the miner account which the client will sign reputation mining co
 
 #### `--colonyNetworkAddress`
 
-The address of the Colony Network's `EtherRouter`. See [Upgrades to the Colony Network](../docs/upgrades.md) for more information about the EtherRouter design pattern. This address is static on `goerli` and `mainnet` `goerli` `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B` `mainnet` `0x5346d0f80e2816fad329f2c140c870ffc3c3e2ef`
+The address of the Colony Network's `EtherRouter`. See [Upgrades to the Colony Network](../concepts/upgrades) for more information about the EtherRouter design pattern. This address is static on `goerli` and `mainnet` `goerli` `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B` `mainnet` `0x5346d0f80e2816fad329f2c140c870ffc3c3e2ef`
 
 #### `--dbPath`
 
@@ -75,7 +76,7 @@ The "auto" reputation mining client will:
 * Respond to challenges if there are disagreeing submissions.
 * Confirm the last hash after the mining window closes and any disputes have been resolved.
 
-Reputation mining protocol details can be found in the [Whitepaper TLDR](../tldr/reputationmining.md).
+Reputation mining protocol details can be found in the [Whitepaper TLDR](../tldr/reputation-mining).
 
 ## Visualizations
 
@@ -87,13 +88,13 @@ The client is set to provide a reputation update once every 24 hours. For testin
 
 You can move the network forward by 24 hours with the following command.
 
-```
+```bash
 curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_increaseTime","params":[86400],"id": 1}' localhost:8545
 ```
 
 Once you have moved the network forward 24 hours, you can then mine a new block with the following command.
 
-```
+```bash
 curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_mine","params":[]}' localhost:8545
 ```
 

@@ -1,5 +1,6 @@
 ---
 description: Structure and Architecture of the Colony Network Files
+sidebar_position: 0
 ---
 
 # Overview
@@ -12,9 +13,9 @@ Colony is designed to be modular, upgradable, and eternally backwards-compatible
 
 ## Smart Contracts Architecture
 
-The Colony Network contracts are separated out into four functional layers, and four logical entities outlined below. This design is to an extent mandated by the [contract upgrade mechanism](../../colonynetwork/docs-upgrade-design/) we use.
+The Colony Network contracts are separated out into four functional layers, and four logical entities outlined below. This design is to an extent mandated by the [contract upgrade mechanism](upgrades.md) we use.
 
-![Interface, Logic, Data](img/colonyNetwork\_diagram\_r12.png) Starting from the layer closes to the user:
+![Interface, Logic, Data](../img/colonyNetwork\_diagram\_r12.png) Starting from the layer closes to the user:
 
 **Interface layer**
 
@@ -28,7 +29,7 @@ The Colony Network contracts are separated out into four functional layers, and 
 
 All public and external functions from the logic contracts for an entity are composed into a single interface. For example the Colony interface - `IColony.sol` is a superset of the public and external functions from the logic contracts for a Colony entity, i.e. `Colony.sol`, `ColonyFunding.sol`, etc.
 
-This layer represents the Colony Network API, documented in the [Interface section](https://docs.colony.io/colonynetwork/interface-ietherrouter) of the documentation.
+This layer represents the Colony Network API, documented in the [Interface section](../interfaces) of the documentation.
 
 **Logic layer**
 
@@ -36,7 +37,7 @@ All function declarations live in this layer, which constitutes the majority of 
 
 For example, the logic for a colony is distributed across `Colony.sol`, `ColonyFunding.sol`, and so on. Likewise for the ColonyNetwork and ReputationMiningCycle entities.
 
-Note that this logic distribution is possible due to the [contract upgrade mechanism](../../colonynetwork/docs-upgrade-design/), in which all functions are called from the same underlying `EtherRouter` delegate proxy instance, regardless of where they are implemented.
+Note that this logic distribution is possible due to the [contract upgrade mechanism](upgrades.md), in which all functions are called from the same underlying `EtherRouter` delegate proxy instance, regardless of where they are implemented.
 
 **Access layer**
 

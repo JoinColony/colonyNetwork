@@ -1,5 +1,6 @@
 ---
 description: How to set up the Reputation Miner for local development
+sidebar_position: 1
 ---
 
 # Reputation Oracle Setup
@@ -8,19 +9,19 @@ If you'd like to run the reputation oracle locally (for development purposes or 
 
 ## Deploy Colony locally
 
-First we need to deploy the Colony Network contracts locally. Please follow [this guide](deploying-colony-locally.md) to the end to do that first.
+First we need to deploy the Colony Network contracts locally. Please follow [this guide](deploying-colony-locally) to the end to do that first.
 
-{% hint style="info" %}
+:::info
 After successful deployment, leave the Ganache development server running. The Reputation Oracle makes heavy use of it and the contracts that are deployed on our local chain!
-{% endhint %}
+:::
 
 ## Starting the Reputation Oracle
 
 The Reputation Oracle sets up an HTTP API that provides information about reputation states in Colonies.
 
-{% hint style="info" %}
+:::caution
 Make sure you're on a recent version of the `colonyNetwork`, git hash `eac730e` should work or, in the future the git tag `glwss`.
-{% endhint %}
+:::
 
 To start the oracle, go to the `colonyNetwork` directory and run this command:
 

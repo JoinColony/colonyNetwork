@@ -1,16 +1,18 @@
 ---
-description: >-
-  A guide on how to deploy and run the Colony Network Smart Contracts on your
-  machine
+description: A guide on how to deploy and run the Colony Network Smart Contracts on your machine
+sidebar_position: 0
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 # Deploying Colony Locally
 
 This guide will cover the basics of getting the Colony Network Smart Contracts running on your local development machine.
 
-{% hint style="info" %}
+:::info
 Keep in mind that following this guide will enable you to only _deploy_ and _run_ the contracts locally in order to develop software against the Colony API that needs an [RPC endpoint](https://eth.wiki/json-rpc/API) (like [ColonyJS](https://app.gitbook.com/o/-MTaEZ\_7xhxpButTDDNj/s/QcRjzRciEwod6UqfA3ta/) or the [Colony SDK](https://app.gitbook.com/o/-MTaEZ\_7xhxpButTDDNj/s/slSiNQHJDrgYgciBacVr/)). If you would like to work on the Colony Network contracts _themselves_, please see [Contributing](../contributing.md).
-{% endhint %}
+:::
 
 ## Starting out
 
@@ -36,27 +38,31 @@ npm run start:blockchain:client
 
 This will run Ganache on port `8545`. Do not close the window, we're about to deploy the contracts!
 
-{% hint style="info" %}
+:::tip
 Ganache will also create a file called `ganache-accounts.json` in the `colonyNetwork` directory. This file contains the public and private keys of development accounts you can use (see the `private_keys` property at the bottom). These accounts will be used to deploy the ColonyNetwork contracts and will be funded with ETH on the local blockchain. You are encouraged to use them in your own code!
-{% endhint %}
+:::
 
 ### Deploying the Colony Network contracts
 
 To deploy the Colony Network contracts to the running development RPC node (Ganache) we use the following command (**make sure you're using the same NodeJS version as for Ganache**):
 
-{% tabs %}
-{% tab title="Using Docker" %}
+
+<Tabs>
+<TabItem value="docker" label="Using Docker" default>
+
 ```bash
 npx truffle migrate --reset --compile-all
 ```
-{% endtab %}
+</TabItem>
 
-{% tab title="Without Docker" %}
+<TabItem value="nodocker" label="Without Docker" default>
+
 ```bash
 DISABLE_DOCKER=true npx truffle migrate --reset --compile-all
 ```
-{% endtab %}
-{% endtabs %}
+
+</TabItem>
+</Tabs>
 
 This will run Truffle's so called **migrations**, to deploy all contracts. Keep in mind that this will not only deploy the main `ColonyNetwork` contract, but also set up the MetaColony alongside all its extensions. Please be patient, this will take some time. When you see something akin to the following output, everything was successfully deployed:
 
@@ -69,9 +75,9 @@ Summary
 
 The migration scripts will also create a file called `etherrouter-address.json`. It contains the address for the main entry point for the Colony Contracts and can be instantiated as the `ColonyNetwork` contract. From this one you will be able to figure out all relevant addresses by just calling the corresponding functions on the `ColonyNetwork` contract.
 
-{% hint style="info" %}
+:::info
 Why `etherrouter-address`? Colony uses the so called _EtherRouter_ pattern for upgradeable Smart Contracts. Read more about that [here](https://blog.colony.io/writing-upgradeable-contracts-in-solidity-6743f0eecc88/). Or watch [this video](https://www.youtube.com/watch?v=Sw9O2LWgWC0). It's up to you :)
-{% endhint %}
+:::
 
 What does that mean in practice? Act as if the `etherrouter-address` is the Address for the deployed `ColonyNetwork` contract.
 
@@ -94,14 +100,15 @@ What we're doing here is issuing a `call` to the [`getMetaColony()`](https://git
 
 To reiterate:
 
-| Function signature                                                                                                               | `getMetaColony()`                                                  |   |
-| -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | - |
-| Function signature `keccak256` hash (use for example [this online tool](https://emn178.github.io/online-tools/keccak\_256.html)) | `731bc22f478b87eebe748e766203ce0cbda401a2dd97cc0679f3a69a209ed724` |   |
-| First four bytes                                                                                                                 | `731bc22f`                                                         |   |
+|  Property                                                                                                               | Value
+| -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------
+| Function signature                                                                                                               | `getMetaColony()`                                                 
+| Function signature `keccak256` hash (use for example [this online tool](https://emn178.github.io/online-tools/keccak\_256.html)) | `731bc22f478b87eebe748e766203ce0cbda401a2dd97cc0679f3a69a209ed724`
+| First four bytes                                                                                                                 | `731bc22f`                                                        
 
-{% hint style="info" %}
+:::tip
 If this way of communication with Ethereum Smart Contracts seems cumbersome to you - that's because it is! Luckily some wonderful people in the Open Source community built tools to make all this a lot easier. For general solutions look into [`ethers.js`](https://docs.ethers.io/v5/) or [`web3.js`](https://web3js.readthedocs.io/).
-{% endhint %}
+:::
 
 The Ganache server will answer with the address of the deployed MetaColony (plus some 0-padding): `0x1133560db4aebbebc712d4273c8e3137f58c3a65`.
 
@@ -125,8 +132,4 @@ Or just go down the easy path! We created [Colony SDK](https://app.gitbook.com/o
 
 ### Where to go from here?
 
-If you would like to access the reputation related functionality within your development work (mainly to get a user's reputation), please see the following guide:
-
-{% content-ref url="reputation-oracle-setup.md" %}
-[reputation-oracle-setup.md](reputation-oracle-setup.md)
-{% endcontent-ref %}
+If you would like to access the reputation related functionality within your development work (mainly to get a user's reputation), please see the [this guide](reputation-oracle-setup).

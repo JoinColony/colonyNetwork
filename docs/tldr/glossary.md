@@ -1,5 +1,6 @@
 ---
 description: Learn About Important Terms Within Colony
+sidebar_position: 0
 ---
 
 # Glossary of Terms

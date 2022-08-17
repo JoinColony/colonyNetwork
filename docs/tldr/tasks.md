@@ -1,3 +1,8 @@
+---
+description: About tasks and payments in Colony
+sidebar_position: 5
+---
+
 # Tasks and Payments
 
 Funds controlled by a colony can be transferred to an external account either through a `task` or a `payment`.
@@ -10,7 +15,7 @@ There is intentionally no further prescription for how tasks or payments are mea
 
 ### Task structure
 
-This is a general description of the Task as it functions in the current Colony Network implementation, with some aspects suppressed for legibility. For a more exact description, please refer to the [ColonyJS](https://app.gitbook.com/o/-MTaEZ\_7xhxpButTDDNj/s/QcRjzRciEwod6UqfA3ta/) API or [IColony.sol](../interfaces/icolony.md).
+This is a general description of the Task as it functions in the current Colony Network implementation, with some aspects suppressed for legibility. For a more exact description, please refer to the [ColonyJS](/docs/colonyjs/api) API or [IColony.sol](../interfaces/icolony).
 
 | component              | description                                                                                             |
 | ---------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -39,7 +44,7 @@ Additionally, in the first version of the Colony Network, the creation and modif
 
 ### Create
 
-![What's required to create a task](../.gitbook/assets/taskCreation\_1.png)
+![What's required to create a task](../img/taskCreation\_1.png)
 
 A newly created task must be assigned to a domain and must reference a specification for the task's completion, i.e. a description of the work to be done and how that work will be evaluated.
 
@@ -49,7 +54,7 @@ A due date for the task and a skill tag may also be added at task creation if de
 
 ### Modify
 
-![Methods to modify a task](../.gitbook/assets/taskModification\_r2.png)
+![Methods to modify a task](../img/taskModification\_r2.png)
 
 Once created, the task may be modified to include additional data. This could be setting the task's due date, payouts for completion, or domain.
 
@@ -65,7 +70,7 @@ At any time before a task is finalized, the task can be canceled, which allows a
 
 ### Rate
 
-![Methods connected to task ratings](../.gitbook/assets/taskRatings\_r2.png)
+![Methods connected to task ratings](../img/taskRatings\_r2.png)
 
 When work is submitted, the work rating period begins.
 
@@ -93,6 +98,6 @@ During the rating period, if either party fails to commit or reveal their rating
 
 ### Finalize
 
-![Finalizing a task](../.gitbook/assets/taskPayout\_1.png)
+![Finalizing a task](../img/taskPayout\_1.png)
 
 After the rating period has finished, the task may be finalized, which prevents any further task modifications and allows each role to claim their payout.

@@ -1,2 +1,0 @@
-# Whitepaper tl;dr
-

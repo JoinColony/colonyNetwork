@@ -1,10 +1,12 @@
 ---
+id: "index"
 description: Documentation for the Colony Network Smart Contracts
+sidebar_position: 2
 ---
 
 # The Colony Network
 
-![](.gitbook/assets/logo\_network\_no\_padding.svg)
+![](img/logo\_network\_no\_padding.svg)
 
 Colony is a platform for organizations that operate via software rather than paperwork and management hierarchy.
 
@@ -14,11 +16,7 @@ It's infrastructure for the future of the firm, built to organize and incentiviz
 
 ## Want to jump right in?
 
-Feeling like an eager beaver? Jump in to the quick start docs and get the Smart Contracts running on your machine:
-
-{% content-ref url="quick-start.md" %}
-[quick-start.md](quick-start.md)
-{% endcontent-ref %}
+Feeling like an eager beaver? Jump in to the [quick start docs](quick-start) and get the Smart Contracts running on your machine:
 
 ## The Colony Ecosystem
 
@@ -50,17 +48,17 @@ The current colonyNetwork release is [`flwss`](https://github.com/JoinColony/col
 
 The Colony Network is maintained and improved by the [Meta Colony](tldr/metacolony.md) (which is, itself, a colony on the network with special permissions).
 
-Membership in the Metacolony is open to all (and heartily encouraged!), but changes such as [network upgrades](docs/upgrades.md) require a minimum _reputation_ within the Metacolony to proceed.
+Membership in the Metacolony is open to all (and heartily encouraged!), but changes such as [network upgrades](concepts/upgrades.md) require a minimum _reputation_ within the Metacolony to proceed.
 
 ### Colony SDK
 
-The Colony SDK is a JavaScript library designed to make interaction with the Colony Network as straightforward as possible for (d)app developers.&#x20;
+The Colony SDK is a JavaScript library designed to make interaction with the Colony Network as straightforward as possible for (d)app developers.
 
 Using the Colony SDK, all of the functions of a colony can be imported and called as methods within a JavaScript application. It runs on all modern browsers as well as in an NodeJS environment.
 
 Things like parsing returned parameters from a transaction, and signing transactions with a wallet provider are all handled by this library while providing a small API with sane defaults.
 
-To learn more about how to use the Colony SDK with your dapp, or to get specific info about the Colony SDK API, see its [docs](https://app.gitbook.com/o/-MTaEZ\_7xhxpButTDDNj/s/slSiNQHJDrgYgciBacVr/).
+To learn more about how to use the Colony SDK with your dapp, or to get specific info about the Colony SDK API, see its [docs](/docs/colonysdk).
 
 ### Developer Portal
 
