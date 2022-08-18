@@ -234,6 +234,25 @@ class MetatransactionBroadcaster {
       // Not a voting rep related transaction (we recognise)
     }
 
+    const multicallDef = await this.loader.load({ contractName: "Multicall" }, { abi: true, address: false });
+    const possibleMulticall = new ethers.Contract(target, multicallDef.abi, this.wallet);
+
+    try {
+      const tx = possibleMulticall.interface.parseTransaction({ data: txData });
+      if (tx.signature === "multicall(bytes[])") {
+        // We check for each multicall whether it's doing something we'd allow
+        for (let i = 0; i < tx.args[0].length; i += 1) {
+          const action = tx.args[0][i];
+          const valid = await this.isColonyFamilyTransactionAllowed(target, action, userAddress);
+          if (!valid) {
+            return false;
+          }
+        }
+      }
+    } catch (err) {
+      // Not a multicall transaction
+    }
+
     return true;
   }
 

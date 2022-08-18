@@ -35,7 +35,7 @@ const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
 });
 
-contract.only("Metatransaction broadcaster", (accounts) => {
+contract("Metatransaction broadcaster", (accounts) => {
   const USER0 = accounts[0];
   const USER1 = accounts[1];
   const USER2 = accounts[2];
@@ -286,7 +286,7 @@ contract.only("Metatransaction broadcaster", (accounts) => {
     });
 
     it("a valid transaction is broadcast and mined, even if the broadcaster's nonce manager fell behind", async function () {
-      await metaTxToken.unlock()f
+      await metaTxToken.unlock();
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
       await metaTxToken.mint(USER1, 1500000, { from: USER0 });
 
@@ -491,13 +491,11 @@ contract.only("Metatransaction broadcaster", (accounts) => {
     });
 
     it("a valid transaction that uses multicall is broadcast and mined", async function () {
-      await colony.contract.methods.setArchitectureRole(1, UINT256_MAX, USER1, 1, true).send({from: USER0});
-      const tx = await colony.contract.methods.setFundingRole(1, UINT256_MAX, USER1, 1, true).send({from: USER0});
+      await colony.contract.methods.setArchitectureRole(1, UINT256_MAX, USER1, 1, true).send({ from: USER0 });
       const awardPermission1 = await colony.contract.methods.setArchitectureRole(1, UINT256_MAX, USER1, 1, true).encodeABI();
       const awardPermission2 = await colony.contract.methods.setFundingRole(1, UINT256_MAX, USER1, 1, true).encodeABI();
 
-      const txData = await colony.contract.methods.multicall([awardPermission1, awardPermission2]).encodeABI()
-      console.log(txData)
+      const txData = await colony.contract.methods.multicall([awardPermission1, awardPermission2]).encodeABI();
       const { r, s, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
       // Send to endpoint
 
@@ -528,12 +526,86 @@ contract.only("Metatransaction broadcaster", (accounts) => {
         });
       } catch (err) {
         console.log(err.response.data);
-        process.exit();
       }
+
       // Check the transaction happened
+      const roles = await colony.getUserRoles(USER1, 1);
+      const roleArchitecture = ethers.BigNumber.from(2 ** 3).toHexString();
+      const roleFunding = ethers.BigNumber.from(2 ** 5).toHexString();
+
+      const expectedRoles = roleArchitecture | roleFunding; // eslint-disable-line no-bitwise
+      expect(roles).to.equal(ethers.utils.hexZeroPad(ethers.BigNumber.from(expectedRoles).toHexString(), 32));
     });
 
-    it.skip("an invalid transaction that uses multicall is rejected", async function () {});
+    it("a multicall transaction that calls something invalid is rejected", async function () {
+      const txData1 = await colony.contract.methods.setArchitectureRole(1, UINT256_MAX, USER1, 1, true).encodeABI();
+
+      const colonyAsEtherRouter = await EtherRouter.at(colony.address);
+      const resolverAddress = await colonyAsEtherRouter.resolver();
+
+      const txData2 = await colony.contract.methods
+        .makeArbitraryTransaction(resolverAddress, web3.utils.soliditySha3("owner()").slice(0, 10))
+        .encodeABI();
+      const txData = await colony.contract.methods.multicall([txData1, txData2]).encodeABI();
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
+      // Send to endpoint
+
+      const jsonData = {
+        target: colony.address,
+        payload: txData,
+        userAddress: USER0,
+        r,
+        s,
+        v,
+      };
+      let failed = false;
+      try {
+        await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (err) {
+        failed = true;
+      }
+      expect(failed).to.be.equal(true);
+    });
+
+    it("a multicall transaction that calls a multicall that does something invalid is rejected", async function () {
+      const txData1 = await colony.contract.methods.setArchitectureRole(1, UINT256_MAX, USER1, 1, true).encodeABI();
+
+      const colonyAsEtherRouter = await EtherRouter.at(colony.address);
+      const resolverAddress = await colonyAsEtherRouter.resolver();
+
+      const txData2 = await colony.contract.methods
+        .makeArbitraryTransaction(resolverAddress, web3.utils.soliditySha3("owner()").slice(0, 10))
+        .encodeABI();
+      const txDataCombined = await colony.contract.methods.multicall([txData1, txData2]).encodeABI();
+      const txData = await colony.contract.methods.multicall([txData1, txDataCombined]).encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
+      // Send to endpoint
+
+      const jsonData = {
+        target: colony.address,
+        payload: txDataCombined,
+        userAddress: USER0,
+        r,
+        s,
+        v,
+      };
+      let failed = false;
+      try {
+        await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (err) {
+        failed = true;
+      }
+      expect(failed).to.be.equal(true);
+    });
 
     it("an invalid transaction is rejected and not mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });

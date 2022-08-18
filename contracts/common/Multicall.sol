@@ -11,10 +11,7 @@ abstract contract Multicall is MetaTransactionMsgSender {
 
 
     function multicall(bytes[] calldata data) public returns (bytes[] memory results) {
-        bytes32 METATRANSACTION_FLAG_TMP = keccak256("METATRANSACTION");
-
         // First off, is this a metatransaction?
-
         address sender = msgSender();
         bytes memory affix;
         if (msg.sender == address(this) && sender != address(this)){
