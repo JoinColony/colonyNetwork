@@ -6,6 +6,9 @@ const bnChai = require("bn-chai");
 const shortid = require("shortid");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
+const path = require("path");
+const { TruffleLoader } = require("../../packages/package-utils"); // eslint-disable-line import/no-unresolved
+const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 
 const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
 
@@ -25,6 +28,8 @@ const {
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const PatriciaTree = require("../../packages/reputation-miner/patricia");
+
+const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -1618,6 +1623,70 @@ contract("Voting Reputation", (accounts) => {
 
       const motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(FINALIZED);
+    });
+
+    describe("via metatransactions", async () => {
+      let broadcaster;
+
+      beforeEach(async () => {
+        const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+        const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
+
+        const loader = new TruffleLoader({
+          contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
+        });
+
+        // Old and new versions of ganache (which currently represents with or without coverage...)
+        // either do or don't have the hex prefix...
+        let privateKey = ganacheAccounts.private_keys[accounts[0].toLowerCase()];
+        if (privateKey.slice(0, 2) !== "0x") {
+          privateKey = `0x${privateKey}`;
+        }
+
+        broadcaster = new MetatransactionBroadcaster({
+          privateKey,
+          loader,
+          provider,
+        });
+        await broadcaster.initialise(colonyNetwork.address);
+      });
+
+      it("transactions that try to execute an allowed method on Reputation Voting extension are accepted by the MTX broadcaster", async function () {
+        await colony.makeExpenditure(1, UINT256_MAX, 1);
+        const expenditureId = await colony.getExpenditureCount();
+
+        const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
+
+        await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+        motionId = await voting.getMotionCount();
+
+        await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+        await forwardTime(STAKE_PERIOD, this);
+
+        const txData = await voting.contract.methods.finalizeMotion(motionId).encodeABI();
+
+        const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
+        expect(valid).to.be.equal(true);
+        await broadcaster.close();
+      });
+
+      it("transactions that try to execute a forbidden method on Reputation Voting extension are rejected by the MTX broadcaster", async function () {
+        const action = await encodeTxData(colony, "makeArbitraryTransaction", [colony.address, "0x00"]);
+
+        await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+        motionId = await voting.getMotionCount();
+
+        await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+        await forwardTime(STAKE_PERIOD, this);
+
+        const txData = await voting.contract.methods.finalizeMotion(motionId.toString()).encodeABI();
+
+        const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
+        expect(valid).to.be.equal(false);
+        await broadcaster.close();
+      });
     });
   });
 
