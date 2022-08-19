@@ -91,9 +91,21 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   uint256 submitPeriod; // Length of time for submitting votes
   uint256 revealPeriod; // Length of time for revealing votes
   uint256 escalationPeriod; // Length of time for escalating after a vote
+
+  uint256 motionCount;
+  mapping (uint256 => Motion) motions;
+  mapping (uint256 => mapping (address => mapping (uint256 => uint256))) stakes;
+  mapping (uint256 => mapping (address => bytes32)) voteSecrets;
+
+  mapping (bytes32 => uint256) expenditurePastVotes; // expenditure slot signature => voting power
+  mapping (bytes32 => uint256) expenditureMotionCounts; // expenditure struct signature => count
+
   mapping(address => uint256) metatransactionNonces;
   function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
+    // This offset is a result of fixing the storage layout, and having to prevent metatransactions being able to be replayed as a result
+    // of the nonce resetting. The broadcaster has made ~3000 transactions in total at time of commit, so we definitely won't have a single
+    // account at 1 million nonce by then.
+    return metatransactionNonces[userAddress] + 1000000;
   }
 
   function incrementMetatransactionNonce(address user) override internal {
@@ -117,7 +129,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   /// @notice Return the version number
   /// @return The version number
   function version() public pure override returns (uint256) {
-    return 4;
+    return 5;
   }
 
   /// @notice Install the extension
@@ -183,7 +195,21 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
+  function finishUpgrade() public override auth {
+    // For colonies that have been made since this the previous version's deployment,
+    // or have done the majority of their motions since, let's at least avoid double-emitting events for motions with
+    // the same id where we can, going forward.
+
+    // Load the value from the wrong storage slot in the previous version
+    uint256 wrongSlotValue;
+    assembly {
+      wrongSlotValue := sload(add(motionCount.slot, 1))
+    }
+    // Set the correct storage slot to the larger of the two values.
+    if (wrongSlotValue > motionCount){
+      motionCount = wrongSlotValue;
+    }
+  } // solhint-disable-line no-empty-blocks
 
   /// @notice Called when deprecating (or undeprecating) the extension
   function deprecate(bool _deprecated) public override auth {
@@ -214,15 +240,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     address altTarget;
     bytes action;
   }
-
-  // Storage
-  uint256 motionCount;
-  mapping (uint256 => Motion) motions;
-  mapping (uint256 => mapping (address => mapping (uint256 => uint256))) stakes;
-  mapping (uint256 => mapping (address => bytes32)) voteSecrets;
-
-  mapping (bytes32 => uint256) expenditurePastVotes; // expenditure slot signature => voting power
-  mapping (bytes32 => uint256) expenditureMotionCounts; // expenditure struct signature => count
 
   // Public functions (interface)
 
@@ -774,8 +791,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     Motion storage motion = motions[_motionId];
     uint256 requiredStake = getRequiredStake(_motionId);
 
-    // Check for valid motion Id
-    if (_motionId == 0 || _motionId > motionCount) {
+    // Check for valid motion Id / motion
+    if (_motionId == 0 || _motionId > motionCount || motion.action.length == 0) {
 
       return MotionState.Null;
 
