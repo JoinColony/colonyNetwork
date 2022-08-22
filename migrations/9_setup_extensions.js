@@ -9,6 +9,7 @@ const EvaluatedExpenditure = artifacts.require("./EvaluatedExpenditure");
 const FundingQueue = artifacts.require("./FundingQueue");
 const OneTxPayment = artifacts.require("./OneTxPayment");
 const VotingReputation = artifacts.require("./VotingReputation");
+const VotingReputationMisalignedRecovery = artifacts.require("./VotingReputationMisalignedRecovery");
 const TokenSupplier = artifacts.require("./TokenSupplier");
 const Whitelist = artifacts.require("./Whitelist");
 
@@ -17,17 +18,21 @@ const EtherRouter = artifacts.require("./EtherRouter");
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const IMetaColony = artifacts.require("./IMetaColony");
 
-async function addExtension(colonyNetwork, name, implementation) {
+async function addExtension(colonyNetwork, interfaceName, extensionName, implementations) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
 
-  const NAME_HASH = soliditySha3(name);
-  const deployment = await implementation.new();
+  const NAME_HASH = soliditySha3(extensionName);
+  const deployments = await Promise.all(implementations.map((x) => x.new()));
   const resolver = await Resolver.new();
-  // Computed property names! Fancy!
-  await setupEtherRouter(name, { [name]: deployment.address }, resolver);
+
+  const deployedImplementations = {};
+  for (const idx in implementations) {
+    deployedImplementations[implementations[idx].contractName] = deployments[idx].address;
+  }
+  await setupEtherRouter(interfaceName, deployedImplementations, resolver);
   await metaColony.addExtensionToNetwork(NAME_HASH, resolver.address);
-  console.log(`### ${name} extension installed`);
+  console.log(`### ${extensionName} extension installed`);
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -35,11 +40,11 @@ module.exports = async function (deployer, network, accounts) {
   const etherRouterDeployed = await EtherRouter.deployed();
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
 
-  await addExtension(colonyNetwork, "CoinMachine", CoinMachine);
-  await addExtension(colonyNetwork, "EvaluatedExpenditure", EvaluatedExpenditure);
-  await addExtension(colonyNetwork, "FundingQueue", FundingQueue);
-  await addExtension(colonyNetwork, "OneTxPayment", OneTxPayment);
-  await addExtension(colonyNetwork, "VotingReputation", VotingReputation);
-  await addExtension(colonyNetwork, "TokenSupplier", TokenSupplier);
-  await addExtension(colonyNetwork, "Whitelist", Whitelist);
+  await addExtension(colonyNetwork, "CoinMachine", "CoinMachine", [CoinMachine]);
+  await addExtension(colonyNetwork, "EvaluatedExpenditure", "EvaluatedExpenditure", [EvaluatedExpenditure]);
+  await addExtension(colonyNetwork, "FundingQueue", "FundingQueue", [FundingQueue]);
+  await addExtension(colonyNetwork, "OneTxPayment", "OneTxPayment", [OneTxPayment]);
+  await addExtension(colonyNetwork, "IVotingReputation", "VotingReputation", [VotingReputation, VotingReputationMisalignedRecovery]);
+  await addExtension(colonyNetwork, "TokenSupplier", "TokenSupplier", [TokenSupplier]);
+  await addExtension(colonyNetwork, "Whitelist", "Whitelist", [Whitelist]);
 };

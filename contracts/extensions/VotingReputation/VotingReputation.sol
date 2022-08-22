@@ -18,28 +18,17 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../colony/ColonyRoles.sol";
-import "./../common/BasicMetaTransaction.sol";
-import "./../common/ERC20Extended.sol";
-import "./../patriciaTree/PatriciaTreeProofs.sol";
-import "./../tokenLocking/ITokenLocking.sol";
-import "./ColonyExtension.sol";
+import "./../../colonyNetwork/IColonyNetwork.sol";
+import "./../../colony/ColonyRoles.sol";
+import "./../../common/BasicMetaTransaction.sol";
+import "./../../common/ERC20Extended.sol";
+import "./../../patriciaTree/PatriciaTreeProofs.sol";
+import "./../../tokenLocking/ITokenLocking.sol";
+import "./../ColonyExtension.sol";
+import "./VotingReputationDataTypes.sol";
 
 
-contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTransaction {
-
-  // Events
-  event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
-  event MotionStaked(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);
-  event MotionVoteSubmitted(uint256 indexed motionId, address indexed voter);
-  event MotionVoteRevealed(uint256 indexed motionId, address indexed voter, uint256 indexed vote);
-  event MotionFinalized(uint256 indexed motionId, bytes action, bool executed);
-  event MotionEscalated(uint256 indexed motionId, address escalator, uint256 indexed domainId, uint256 indexed newDomainId);
-  event MotionRewardClaimed(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);
-  event MotionEventSet(uint256 indexed motionId, uint256 eventIndex);
-
-  // Constants
+contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTransaction, VotingReputationDataTypes {
   uint256 constant UINT128_MAX = 2**128 - 1;
 
   uint256 constant NAY = 0;
@@ -61,8 +50,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   bytes4 constant OLD_MOVE_FUNDS_SIG = bytes4(keccak256(
     "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"
   ));
-
-  enum ExtensionState { Deployed, Active, Deprecated }
 
   // Initialization data
   ExtensionState state;
@@ -129,7 +116,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   /// @notice Return the version number
   /// @return The version number
   function version() public pure override returns (uint256) {
-    return 5;
+    return 6;
   }
 
   /// @notice Install the extension
@@ -219,26 +206,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
     selfdestruct(address(uint160(address(colony))));
-  }
-
-  // Data structures
-  enum MotionState { Null, Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
-
-  struct Motion {
-    uint64[3] events; // For recording motion lifecycle timestamps (STAKE, SUBMIT, REVEAL)
-    bytes32 rootHash;
-    uint256 domainId;
-    uint256 skillId;
-    uint256 skillRep;
-    uint256 repSubmitted;
-    uint256 paidVoterComp;
-    uint256[2] pastVoterComp; // [nay, yay]
-    uint256[2] stakes; // [nay, yay]
-    uint256[2] votes; // [nay, yay]
-    bool escalated;
-    bool finalized;
-    address altTarget;
-    bytes action;
   }
 
   // Public functions (interface)
