@@ -993,10 +993,10 @@ exports.getWaitForNSubmissionsPromise = async function getWaitForNSubmissionsPro
   return new Promise(function (resolve, reject) {
     repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nLeaves, _jrh, _entryIndex, event) => {
       let nSubmissions;
-      // If we've passed in a hash, we check how many submissions that hash in particular has
-      // If not, and we're just waiting for N submissions from any hash, we lookup the number of
-      // submissions the hash in the emitted event that triggered this function has
-      if (rootHash === _hash) {
+      // We want to see when our hash hits N submissions
+      // If we've passed in our hash, we check how many submissions that hash has
+      // If not, we're waiting for N submissions from any hash
+      if (rootHash) {
         nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
       } else {
         nSubmissions = await repCycleEthers.getNSubmissionsForHash(_hash, _nLeaves, _jrh);
