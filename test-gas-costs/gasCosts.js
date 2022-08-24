@@ -1,6 +1,7 @@
 /* globals artifacts */
 
 const path = require("path");
+const { soliditySha3 } = require("web3-utils");
 const { TruffleLoader } = require("../packages/package-utils");
 
 const {
@@ -49,6 +50,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const OneTxPayment = artifacts.require("OneTxPayment");
+const ReputationBootstrapper = artifacts.require("ReputationBootstrapper");
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
@@ -367,6 +369,29 @@ contract("All", function (accounts) {
 
       await forwardTime(5184001);
       await newColony.finalizeRewardPayout(payoutId2);
+    });
+
+    it("when bootstrapping reputation", async function () {
+      const reputationBootstrapper = await ReputationBootstrapper.new();
+      await reputationBootstrapper.install(colony.address);
+      await colony.setRootRole(reputationBootstrapper.address, true);
+
+      await reputationBootstrapper.setGrants([soliditySha3(1)], [WAD], { from: MANAGER });
+
+      await reputationBootstrapper.claimGrant(1, { from: WORKER });
+    });
+
+    it("when bootstrapping reputation with decay", async function () {
+      const reputationBootstrapper = await ReputationBootstrapper.new();
+      await reputationBootstrapper.install(colony.address);
+      await colony.setRootRole(reputationBootstrapper.address, true);
+
+      await reputationBootstrapper.setGrants([soliditySha3(1)], [WAD], { from: MANAGER });
+
+      // Reputation decays by half in 90 days
+      await forwardTime(SECONDS_PER_DAY * 90, this);
+
+      await reputationBootstrapper.claimGrant(1, { from: WORKER });
     });
   });
 });
