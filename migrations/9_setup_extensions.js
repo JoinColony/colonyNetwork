@@ -27,7 +27,7 @@ async function addExtension(colonyNetwork, interfaceName, extensionName, impleme
   const resolver = await Resolver.new();
 
   const deployedImplementations = {};
-  for (const idx in implementations) {
+  for (let idx = 0; idx < implementations.length; idx += 1) {
     deployedImplementations[implementations[idx].contractName] = deployments[idx].address;
   }
   await setupEtherRouter(interfaceName, deployedImplementations, resolver);

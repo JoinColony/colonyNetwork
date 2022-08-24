@@ -34,6 +34,7 @@
     "test:contracts:chainid:coverage": "SOLIDITY_COVERAGE=1 truffle run coverage --solcoverjs ./.solcover.chainid.js --network coverage --temp build --file='./test-chainid/**/*'",
     "test:contracts:upgrade:parity": "npm run start:blockchain:client parity & npm run generate:test:contracts && truffle migrate --reset --compile-all && truffle test ./test-upgrade/* --network integration",
     "test:contracts:upgrade:ganache": "npm run start:blockchain:client & npm run generate:test:contracts && truffle migrate --reset --compile-all && truffle test ./test-upgrade/* --network development",
+    "test:contracts:upgrade:coverage": "npm run generate:test:contracts && SOLIDITY_COVERAGE=1 truffle run coverage --solcoverjs ./.solcover.upgrade.js --network coverage --temp build --file='./test-upgrade/*'",
     "test:contracts:gasCosts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test test-gas-costs/gasCosts.js --network development",
     "test:contracts:patricia": "npm run start:blockchain:client parity & truffle migrate --reset --compile-all && truffle test packages/reputation-miner/patricia-test.js --network development",
     "test:contracts:coverage": "SOLIDITY_COVERAGE=1 truffle run coverage --network coverage --temp build --file='./test/contracts-network/*'",

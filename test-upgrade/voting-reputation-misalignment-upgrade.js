@@ -2,9 +2,10 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
+import shortid from "shortid";
 import { setupRandomColony } from "../helpers/test-data-generator";
 import { UINT256_MAX, WAD, MINING_CYCLE_DURATION, SECONDS_PER_DAY, CHALLENGE_RESPONSE_WINDOW_DURATION } from "../helpers/constants";
-import { makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime, encodeTxData } from "../helpers/test-helper";
+import { makeReputationKey, makeReputationValue, getActiveRepCycle, forwardTime, encodeTxData, checkErrorRevert } from "../helpers/test-helper";
 
 import PatriciaTree from "../packages/reputation-miner/patricia";
 
@@ -35,7 +36,7 @@ const SUBMIT_PERIOD = SECONDS_PER_DAY * 2;
 const REVEAL_PERIOD = SECONDS_PER_DAY * 2;
 const ESCALATION_PERIOD = SECONDS_PER_DAY;
 
-// const NAY = 0;
+const NAY = 0;
 const YAY = 1;
 
 // const NULL = 0;
@@ -84,6 +85,8 @@ contract("Voting Reputation Misalignment upgrade", (accounts) => {
   let user1Siblings;
   let badVersion;
   const NAME_HASH = soliditySha3("VotingReputation");
+
+  const SALT = soliditySha3({ type: "string", value: shortid.generate() });
 
   before(async function () {
     const etherRouterColonyNetwork = await EtherRouter.deployed();
@@ -248,6 +251,183 @@ contract("Voting Reputation Misalignment upgrade", (accounts) => {
 
       await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER0, YAY);
       await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER1, YAY);
+    });
+
+    it("can reclaim stake from ghost motion that was finalized after going to a vote", async function () {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(STAKE_PERIOD, this);
+
+      const { logs } = await voting.finalizeMotion(motionId);
+      expect(logs[0].args.executed).to.be.true;
+
+      let count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Upgrade
+
+      await colony.upgradeExtension(VOTING_REPUTATION, badVersion.toNumber() + 1);
+
+      count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Reclaim ghost stakes.
+
+      await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER0, YAY);
+      await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER1, NAY);
+    });
+
+    it("can reclaim stake from ghost motion that was finalized, but didn't execute due to vote decision after going to a vote", async function () {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await voting.revealVote(motionId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(STAKE_PERIOD, this);
+
+      const { logs } = await voting.finalizeMotion(motionId);
+      expect(logs[0].args.executed).to.be.false;
+
+      let count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Upgrade
+
+      await colony.upgradeExtension(VOTING_REPUTATION, badVersion.toNumber() + 1);
+
+      count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Reclaim ghost stakes.
+
+      await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER0, YAY);
+      await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER1, NAY);
+    });
+
+    it("can reclaim stake from ghost motion that was finalized after being staked but not voted on", async function () {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      const half = REQUIRED_STAKE.divn(2);
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, half, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      const { logs } = await voting.finalizeMotion(motionId);
+      expect(logs[0].args.executed).to.be.true;
+
+      let count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Upgrade
+
+      await colony.upgradeExtension(VOTING_REPUTATION, badVersion.toNumber() + 1);
+
+      count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Reclaim ghost stakes.
+
+      await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER0, YAY);
+      await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER1, NAY);
+    });
+
+    it("can reclaim stake from ghost motion that could have been finalized, but wasn't", async function () {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      let count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Upgrade
+
+      await colony.upgradeExtension(VOTING_REPUTATION, badVersion.toNumber() + 1);
+
+      count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Reclaim ghost stakes.
+
+      await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER0, YAY);
+
+      // Can't reclaim twice
+      await checkErrorRevert(voting.claimMisalignedReward(1, 1, UINT256_MAX, USER0, YAY), "voting-rep-nothing-to-claim");
+    });
+
+    it("can reclaim stake from ghost motion that never was staked fully", async function () {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      const half = REQUIRED_STAKE.divn(2);
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, half, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, half, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      let count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Upgrade
+
+      await colony.upgradeExtension(VOTING_REPUTATION, badVersion.toNumber() + 1);
+
+      count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Reclaim ghost stakes.
+
+      await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER0, YAY);
+      await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER1, NAY);
+    });
+
+    it("can reclaim stake from ghost motion that was staked fully, no-one voted on, and was then finalized", async function () {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await forwardTime(STAKE_PERIOD, this);
+      await forwardTime(SUBMIT_PERIOD, this);
+      await forwardTime(REVEAL_PERIOD, this);
+
+      const { logs } = await voting.finalizeMotion(motionId);
+      expect(logs[0].args.executed).to.be.false;
+
+      let count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Upgrade
+
+      await colony.upgradeExtension(VOTING_REPUTATION, badVersion.toNumber() + 1);
+
+      count = await voting.getMotionCount();
+      expect(count).to.eq.BN(1);
+      // Reclaim ghost stakes.
+
+      await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER0, YAY);
+      await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER1, NAY);
     });
   });
 });
