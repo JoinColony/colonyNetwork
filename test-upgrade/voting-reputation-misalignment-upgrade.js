@@ -429,5 +429,13 @@ contract("Voting Reputation Misalignment upgrade", (accounts) => {
       await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER0, YAY);
       await voting.claimMisalignedReward(1, 1, UINT256_MAX, USER1, NAY);
     });
+
+    it("metatransaction nonces skip a million", async function () {
+      let nonce = await voting.getMetatransactionNonce(USER0);
+      expect(nonce).to.eq.BN(0);
+      await colony.upgradeExtension(VOTING_REPUTATION, badVersion.toNumber() + 1);
+      nonce = await voting.getMetatransactionNonce(USER0);
+      expect(nonce).to.eq.BN(1000000);
+    });
   });
 });
