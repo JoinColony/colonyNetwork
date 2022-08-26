@@ -118,6 +118,12 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "makeArbitraryTransactions(address[],bytes[],bool)");
     addRoleCapability(ROOT_ROLE, "setDefaultGlobalClaimDelay(uint256)");
     addRoleCapability(ARBITRATION_ROLE, "setExpenditureMetadata(uint256,uint256,uint256,string)");
+
+    // Added in colony v9 (f-lwss)
+    addRoleCapability(ROOT_ROLE, "addLocalSkill()");
+    addRoleCapability(ROOT_ROLE, "deprecateLocalSkill(uint256,bool)");
+    addRoleCapability(ARCHITECTURE_ROLE, "deprecateDomain(uint256,uint256,uint256,bool)");
+    addRoleCapability(ROOT_ROLE, "editColonyByDelta(string)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

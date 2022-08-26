@@ -19,17 +19,18 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/erc20.sol";
+import "./../common/BasicMetaTransaction.sol";
 import "./ColonyExtension.sol";
 import "./Whitelist.sol";
 
 // ignore-file-swc-108
 
 
-contract CoinMachine is ColonyExtension {
+contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
   // Events
 
-  event TokensBought(address buyer, uint256 numTokens, uint256 totalCost);
+  event TokensBought(address indexed buyer, address token, uint256 numTokens, uint256 totalCost);
   event PeriodUpdated(uint256 activePeriod, uint256 currentPeriod);
   event PriceEvolutionSet(bool evolvePrice);
   event WhitelistSet(address whitelist);
@@ -65,10 +66,19 @@ contract CoinMachine is ColonyExtension {
   uint256 soldTotal; // Total tokens sold by the coin machine
   mapping(address => uint256) soldUser; // Tokens sold to a particular user
 
+  mapping(address => uint256) metatransactionNonces;
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
+  }
+
+  function incrementMetatransactionNonce(address user) override internal {
+    metatransactionNonces[user]++;
+  }
+
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "coin-machine-caller-not-root");
+    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "coin-machine-caller-not-root");
     _;
   }
 
@@ -81,7 +91,7 @@ contract CoinMachine is ColonyExtension {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 4;
+    return 5;
   }
 
   /// @notice Configures the extension
@@ -196,16 +206,16 @@ contract CoinMachine is ColonyExtension {
     updatePeriod();
 
     require(
-      whitelist == address(0x0) || Whitelist(whitelist).isApproved(msg.sender),
+      whitelist == address(0x0) || Whitelist(whitelist).isApproved(msgSender()),
       "coin-machine-unauthorised"
     );
 
-    uint256 maxPurchase = getMaxPurchase(msg.sender);
+    uint256 maxPurchase = getMaxPurchase(msgSender());
     uint256 numTokens = min(maxPurchase, _numTokens);
     uint256 totalCost = wmul(numTokens, activePrice);
 
     if (numTokens <= 0) {
-      if (msg.value > 0) { msg.sender.transfer(msg.value); } // Refund any balance
+      if (msg.value > 0) { msgSender().transfer(msg.value); } // Refund any balance
       return;
     }
 
@@ -217,7 +227,7 @@ contract CoinMachine is ColonyExtension {
     // Do userLimitFraction bookkeeping (only if needed)
     if (userLimitFraction < WAD) {
       soldTotal = add(soldTotal, numTokens);
-      soldUser[msg.sender] = add(soldUser[msg.sender], numTokens);
+      soldUser[msgSender()] = add(soldUser[msgSender()], numTokens);
     }
 
     // Check if we've sold out
@@ -225,15 +235,15 @@ contract CoinMachine is ColonyExtension {
 
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
-      if (msg.value > totalCost) { msg.sender.transfer(msg.value - totalCost); } // Refund any balance
+      if (msg.value > totalCost) { msgSender().transfer(msg.value - totalCost); } // Refund any balance
       payable(address(colony)).transfer(totalCost);
     } else {
-      require(ERC20(purchaseToken).transferFrom(msg.sender, address(colony), totalCost), "coin-machine-purchase-failed");
+      require(ERC20(purchaseToken).transferFrom(msgSender(), address(colony), totalCost), "coin-machine-purchase-failed");
     }
 
-    require(ERC20(token).transfer(msg.sender, numTokens), "coin-machine-transfer-failed");
+    require(ERC20(token).transfer(msgSender(), numTokens), "coin-machine-transfer-failed");
 
-    emit TokensBought(msg.sender, numTokens, totalCost);
+    emit TokensBought(msgSender(), token, numTokens, totalCost);
   }
 
   /// @notice Bring the token accounting current

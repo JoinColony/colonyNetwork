@@ -19,16 +19,18 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyExtension.sol";
+import "./../common/BasicMetaTransaction.sol";
 
 // ignore-file-swc-108
 
 
-contract EvaluatedExpenditure is ColonyExtension {
+contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
 
   uint256 constant EXPENDITURESLOTS_SLOT = 26;
   uint256 constant PAYOUT_MODIFIER_OFFSET = 2;
   bool constant MAPPING = false;
   bool constant ARRAY = true;
+  mapping(address => uint256) metatransactionNonces;
 
   /// @notice Returns the identifier of the extension
   function identifier() public override pure returns (bytes32) {
@@ -37,7 +39,7 @@ contract EvaluatedExpenditure is ColonyExtension {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 1;
+    return 2;
   }
 
   /// @notice Configures the extension
@@ -61,6 +63,14 @@ contract EvaluatedExpenditure is ColonyExtension {
     selfdestruct(address(uint160(address(colony))));
   }
 
+  function getMetatransactionNonce(address _userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[_userAddress];
+  }
+
+  function incrementMetatransactionNonce(address _user) override internal {
+    metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
+  }
+
   /// @notice Sets the payout modifiers in given expenditure slots, using the arbitration permission
   /// @param _permissionDomainId The domainId in which the extension has the arbitration permission
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
@@ -77,7 +87,7 @@ contract EvaluatedExpenditure is ColonyExtension {
     public
   {
     require(_slots.length == _payoutModifiers.length, "evaluated-expenditure-bad-slots");
-    require(colony.getExpenditure(_id).owner == msg.sender, "evaluated-expenditure-not-owner");
+    require(colony.getExpenditure(_id).owner == msgSender(), "evaluated-expenditure-not-owner");
 
     bool[] memory mask = new bool[](2);
     bytes32[] memory keys = new bytes32[](2);

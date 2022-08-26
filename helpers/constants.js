@@ -9,7 +9,7 @@ const INT256_MIN = new BN(2).pow(new BN(255)).mul(new BN(-1));
 const INT128_MAX = new BN(2).pow(new BN(127)).sub(new BN(1));
 const INT128_MIN = new BN(2).pow(new BN(127)).mul(new BN(-1));
 
-const CURR_VERSION = 8;
+const CURR_VERSION = 9;
 
 const RECOVERY_ROLE = 0;
 const ROOT_ROLE = 1;
@@ -59,14 +59,14 @@ const FINALIZED_TASK_STATE = 2;
 const SECONDS_PER_DAY = 86400;
 
 const MINING_CYCLE_DURATION = 60 * 60 * 1; // 1 hour
-const MINING_CYCLE_TIMEOUT = 60 * 10; // Ten minutes
-const SUBMITTER_ONLY_WINDOW = 60 * 10; // Ten minutes
+const CHALLENGE_RESPONSE_WINDOW_DURATION = 60 * 20; // Twenty minutes
+const ALL_ENTRIES_ALLOWED_END_OF_WINDOW = 60 * 10; // Ten minutes
 const DECAY_RATE = {
   NUMERATOR:    new BN("999679150010889"), // eslint-disable-line prettier/prettier
   DENOMINATOR: new BN("1000000000000000"),
 };
 
-const GLOBAL_SKILL_ID = new BN("3"); // Not a root global skill ID or anything, just the first global skill's ID
+const GLOBAL_SKILL_ID = new BN("4"); // Not a root global skill ID or anything, just the first global skill's ID
 
 module.exports = {
   UINT256_MAX,
@@ -109,8 +109,8 @@ module.exports = {
   FINALIZED_TASK_STATE,
   SECONDS_PER_DAY,
   MINING_CYCLE_DURATION,
-  SUBMITTER_ONLY_WINDOW,
-  MINING_CYCLE_TIMEOUT,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
   DECAY_RATE,
   GLOBAL_SKILL_ID,
   IPFS_HASH,

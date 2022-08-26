@@ -31,8 +31,9 @@ import "./ColonyDataTypes.sol";
 // ignore-file-swc-108
 
 
-contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes, DSMath {
+contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage {
   uint256 constant COLONY_NETWORK_SLOT = 6;
+  uint256 constant ROOT_LOCAL_SKILL_SLOT = 36;
 
   // Storage
 
@@ -104,6 +105,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
 
   uint256 defaultGlobalClaimDelay; // Storage slot 34
 
+  uint256 constant METATRANSACTION_NONCES_SLOT = 35;
+  mapping(address => uint256) metatransactionNonces; // Storage slot 35
+
+  uint256 rootLocalSkill; // Storage slot 36
+  mapping (uint256 => bool) localSkills; // Storage slot 37
+
   // Constants
 
   uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs
@@ -111,6 +118,14 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   bytes32 constant BYTES32_1 = bytes32(uint256(1));
 
   // Modifiers
+
+  modifier domainNotDeprecated(uint256 _id) {
+    require(
+      !IColonyNetwork(colonyNetworkAddress).getSkill(domains[_id].skillId).deprecated,
+      "colony-domain-deprecated"
+    );
+    _;
+  }
 
   modifier validPayoutAmount(uint256 _amount) {
     require(_amount <= MAX_PAYOUT, "colony-payout-too-large");
@@ -135,7 +150,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
 
   modifier confirmTaskRoleIdentity(uint256 _id, TaskRole _role) {
     Role storage role = tasks[_id].roles[uint8(_role)];
-    require(msg.sender == role.user, "colony-task-role-identity-mismatch");
+    require(msgSender() == role.user, "colony-task-role-identity-mismatch");
     _;
   }
 
@@ -184,21 +199,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   }
 
   modifier expenditureOnlyOwner(uint256 _id) {
-    require(expenditures[_id].owner == msg.sender, "colony-expenditure-not-owner");
+    require(expenditures[_id].owner == msgSender(), "colony-expenditure-not-owner");
     _;
   }
 
-  modifier validGlobalSkill(uint256 _skillId) {
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    Skill memory skill = colonyNetworkContract.getSkill(_skillId);
-    require(skill.globalSkill, "colony-not-global-skill");
-    require(!skill.deprecated, "colony-deprecated-global-skill");
-    _;
-  }
-
-  modifier skillExists(uint256 _skillId) {
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    require(_skillId > 0 && _skillId <= colonyNetworkContract.getSkillCount(), "colony-skill-does-not-exist");
+  modifier validGlobalOrLocalSkill(uint256 _skillId) {
+    require(isValidGlobalOrLocalSkill(_skillId), "colony-not-valid-global-or-local-skill");
     _;
   }
 
@@ -234,30 +240,31 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
   }
 
   modifier self() {
-    require(address(this) == msg.sender, "colony-not-self");
+    require(address(this) == msgSender(), "colony-not-self");
     _;
   }
 
   modifier onlyOwnExtension() {
-    require(isOwnExtension(msg.sender), "colony-must-be-own-extension");
+    require(isOwnExtension(msgSender()), "colony-must-be-own-extension");
+    assert(msgSender() == msg.sender);
     _;
   }
 
   modifier auth override {
-    require(isAuthorized(msg.sender, 1, msg.sig), "ds-auth-unauthorized");
+    require(isAuthorized(msgSender(), 1, msg.sig), "ds-auth-unauthorized");
     _;
   }
 
   modifier authDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _childDomainId) {
     require(domainExists(_permissionDomainId), "ds-auth-permission-domain-does-not-exist");
     require(domainExists(_childDomainId), "ds-auth-child-domain-does-not-exist");
-    require(isAuthorized(msg.sender, _permissionDomainId, msg.sig), "ds-auth-unauthorized");
+    require(isAuthorized(msgSender(), _permissionDomainId, msg.sig), "ds-auth-unauthorized");
     require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-inheritence");
     _;
   }
 
   modifier archSubdomain(uint256 _permissionDomainId, uint256 _childDomainId) {
-    if (canCallOnlyBecauseArchitect(msg.sender, _permissionDomainId, msg.sig)) {
+    if (canCallOnlyBecauseArchitect(msgSender(), _permissionDomainId, msg.sig)) {
       require(_permissionDomainId != _childDomainId, "ds-auth-only-authorized-in-child-domain");
     }
     _;
@@ -319,6 +326,10 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     }
   }
 
+  function isValidGlobalOrLocalSkill(uint256 skillId) internal view returns (bool) {
+    Skill memory skill = IColonyNetwork(colonyNetworkAddress).getSkill(skillId);
+    return (skill.globalSkill || localSkills[skillId]) && !skill.deprecated;
+  }
 
   function domainExists(uint256 domainId) internal view returns (bool) {
     return domainId > 0 && domainId <= domainCount;

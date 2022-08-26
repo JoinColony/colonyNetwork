@@ -7,15 +7,15 @@ import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID, FUNDING_ROLE, ADMINISTRATION_ROLE } from "../../helpers/constants";
 import { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent } from "../../helpers/test-helper";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+import { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
+const EtherRouter = artifacts.require("EtherRouter");
 const OneTxPayment = artifacts.require("OneTxPayment");
-const ColonyExtension = artifacts.require("ColonyExtension");
-const Resolver = artifacts.require("Resolver");
 
 const ONE_TX_PAYMENT = soliditySha3("OneTxPayment");
 
@@ -25,7 +25,7 @@ contract("One transaction payments", (accounts) => {
   let colonyNetwork;
   let metaColony;
   let oneTxPayment;
-  let oneTxPaymentVersion;
+  let version;
 
   const USER1 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[1] : accounts[2];
   const USER2 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[2] : accounts[1];
@@ -34,20 +34,14 @@ contract("One transaction payments", (accounts) => {
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    const oneTxPaymentImplementation = await OneTxPayment.new();
-    const resolver = await Resolver.new();
-    await setupEtherRouter("OneTxPayment", { OneTxPayment: oneTxPaymentImplementation.address }, resolver);
-    await metaColony.addExtensionToNetwork(ONE_TX_PAYMENT, resolver.address);
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
 
-    const versionSig = await resolver.stringToSig("version()");
-    const target = await resolver.lookup(versionSig);
-    const extensionImplementation = await ColonyExtension.at(target);
-    oneTxPaymentVersion = await extensionImplementation.version();
+    const extension = await OneTxPayment.new();
+    version = await extension.version();
   });
 
   beforeEach(async () => {
@@ -57,7 +51,7 @@ contract("One transaction payments", (accounts) => {
 
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-    await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
+    await colony.installExtension(ONE_TX_PAYMENT, version);
     const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
     oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
 
@@ -73,9 +67,7 @@ contract("One transaction payments", (accounts) => {
       await checkErrorRevert(oneTxPayment.install(colony.address), "extension-already-installed");
 
       const identifier = await oneTxPayment.identifier();
-      const version = await oneTxPayment.version();
       expect(identifier).to.equal(ONE_TX_PAYMENT);
-      expect(version).to.eq.BN(oneTxPaymentVersion);
 
       const capabilityRoles = await oneTxPayment.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -90,9 +82,9 @@ contract("One transaction payments", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
+      await colony.installExtension(ONE_TX_PAYMENT, version);
 
-      await checkErrorRevert(colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion), "colony-network-extension-already-installed");
+      await checkErrorRevert(colony.installExtension(ONE_TX_PAYMENT, version), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(ONE_TX_PAYMENT, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(ONE_TX_PAYMENT);
@@ -105,6 +97,33 @@ contract("One transaction payments", (accounts) => {
       expect(balanceBefore).to.be.zero;
 
       const tx = await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID);
+
+      const balanceAfter = await token.balanceOf(USER1);
+      expect(balanceAfter).to.eq.BN(9);
+
+      await expectEvent(tx, "OneTxPaymentMade", [accounts[0], 1, 1]);
+    });
+
+    it("should allow a single-transaction payment of tokens to occur via metatransaction", async () => {
+      const balanceBefore = await token.balanceOf(USER1);
+      expect(balanceBefore).to.be.zero;
+
+      const txData = await oneTxPayment.contract.methods
+        .makePaymentFundedFromDomain(
+          1,
+          UINT256_MAX.toString(),
+          1,
+          UINT256_MAX.toString(),
+          [USER1],
+          [token.address],
+          [10],
+          1,
+          GLOBAL_SKILL_ID.toString()
+        )
+        .encodeABI();
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[0], oneTxPayment.address);
+
+      const tx = await oneTxPayment.executeMetaTransaction(accounts[0], txData, r, s, v, { from: USER2 });
 
       const balanceAfter = await token.balanceOf(USER1);
       expect(balanceAfter).to.eq.BN(9);
@@ -205,7 +224,7 @@ contract("One transaction payments", (accounts) => {
     it("should not allow an admin to specify a non-global skill", async () => {
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 2),
-        "colony-not-global-skill"
+        "colony-not-valid-global-or-local-skill"
       );
     });
 
@@ -216,7 +235,7 @@ contract("One transaction payments", (accounts) => {
 
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, skillId),
-        "colony-deprecated-global-skill"
+        "colony-not-valid-global-or-local-skill"
       );
     });
 
@@ -230,7 +249,7 @@ contract("One transaction payments", (accounts) => {
     it("should not allow an admin to specify a non-existent skill", async () => {
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 99),
-        "colony-skill-does-not-exist"
+        "colony-not-valid-global-or-local-skill"
       );
     });
 

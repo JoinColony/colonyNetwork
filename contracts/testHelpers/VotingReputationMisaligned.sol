@@ -18,15 +18,16 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "./../colony/ColonyRoles.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../colony/ColonyRoles.sol";
+import "./../common/BasicMetaTransaction.sol";
 import "./../common/ERC20Extended.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
-import "./ColonyExtension.sol";
+import "./../extensions/ColonyExtension.sol";
 
 
-contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
+contract VotingReputationMisaligned is ColonyExtension, PatriciaTreeProofs, BasicMetaTransaction {
 
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
@@ -90,11 +91,19 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   uint256 submitPeriod; // Length of time for submitting votes
   uint256 revealPeriod; // Length of time for revealing votes
   uint256 escalationPeriod; // Length of time for escalating after a vote
+  mapping(address => uint256) metatransactionNonces;
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
+  }
+
+  function incrementMetatransactionNonce(address user) override internal {
+    metatransactionNonces[user]++;
+  }
 
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msg.sender, 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-caller-not-root");
+    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-caller-not-root");
     _;
   }
 
@@ -108,7 +117,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
   /// @notice Return the version number
   /// @return The version number
   function version() public pure override returns (uint256) {
-    return 3;
+    return 5;
   }
 
   /// @notice Install the extension
@@ -284,7 +293,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     motion.altTarget = _altTarget;
     motion.action = _action;
 
-    emit MotionCreated(motionCount, msg.sender, _domainId);
+    emit MotionCreated(motionCount, msgSender(), _domainId);
   }
 
   /// @notice Create a motion in the root domain (DEPRECATED)
@@ -360,10 +369,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     uint256 amount = min(_amount, sub(requiredStake, motion.stakes[_vote]));
     require(amount > 0, "voting-rep-bad-amount");
 
-    uint256 stakerTotalAmount = add(stakes[_motionId][msg.sender][_vote], amount);
+    uint256 stakerTotalAmount = add(stakes[_motionId][msgSender()][_vote], amount);
 
     require(
-      stakerTotalAmount <= getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings),
+      stakerTotalAmount <= getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings),
       "voting-rep-insufficient-rep"
     );
     require(
@@ -374,7 +383,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     // Update the stake
     motion.stakes[_vote] = add(motion.stakes[_vote], amount);
-    stakes[_motionId][msg.sender][_vote] = stakerTotalAmount;
+    stakes[_motionId][msgSender()][_vote] = stakerTotalAmount;
 
     // Increment counter & extend claim delay if staking for an expenditure state change
     if (
@@ -391,7 +400,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
     }
 
-    emit MotionStaked(_motionId, msg.sender, _vote, amount);
+    emit MotionStaked(_motionId, msgSender(), _vote, amount);
 
     // Move to vote submission once both sides are fully staked
     if (motion.stakes[NAY] == requiredStake && motion.stakes[YAY] == requiredStake) {
@@ -419,8 +428,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     // Do the external bookkeeping
     tokenLocking.deposit(token, 0, true); // Faux deposit to clear any locks
-    colony.obligateStake(msg.sender, motion.domainId, amount);
-    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, motion.domainId, amount, address(this));
+    colony.obligateStake(msgSender(), motion.domainId, amount);
+    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msgSender(), motion.domainId, amount, address(this));
   }
 
   /// @notice Submit a vote secret for a motion
@@ -444,16 +453,16 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     require(getMotionState(_motionId) == MotionState.Submit, "voting-rep-motion-not-open");
     require(_voteSecret != bytes32(0), "voting-rep-invalid-secret");
 
-    uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
+    uint256 userRep = getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings);
 
     // Count reputation if first submission
-    if (voteSecrets[_motionId][msg.sender] == bytes32(0)) {
+    if (voteSecrets[_motionId][msgSender()] == bytes32(0)) {
       motion.repSubmitted = add(motion.repSubmitted, userRep);
     }
 
-    voteSecrets[_motionId][msg.sender] = _voteSecret;
+    voteSecrets[_motionId][msgSender()] = _voteSecret;
 
-    emit MotionVoteSubmitted(_motionId, msg.sender);
+    emit MotionVoteSubmitted(_motionId, msgSender());
 
     if (motion.repSubmitted >= wmul(motion.skillRep, maxVoteFraction)) {
       motion.events[SUBMIT_END] = uint64(block.timestamp);
@@ -486,17 +495,17 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     require(getMotionState(_motionId) == MotionState.Reveal, "voting-rep-motion-not-reveal");
     require(_vote <= 1, "voting-rep-bad-vote");
 
-    uint256 userRep = getReputationFromProof(_motionId, msg.sender, _key, _value, _branchMask, _siblings);
+    uint256 userRep = getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings);
     motion.votes[_vote] = add(motion.votes[_vote], userRep);
 
-    bytes32 voteSecret = voteSecrets[_motionId][msg.sender];
+    bytes32 voteSecret = voteSecrets[_motionId][msgSender()];
     require(voteSecret == getVoteSecret(_salt, _vote), "voting-rep-secret-no-match");
-    delete voteSecrets[_motionId][msg.sender];
+    delete voteSecrets[_motionId][msgSender()];
 
     uint256 voterReward = getVoterReward(_motionId, userRep);
     motion.paidVoterComp = add(motion.paidVoterComp, voterReward);
 
-    emit MotionVoteRevealed(_motionId, msg.sender, _vote);
+    emit MotionVoteRevealed(_motionId, msgSender(), _vote);
 
     // See if reputation revealed matches reputation submitted
     if (add(motion.votes[NAY], motion.votes[YAY]) == motion.repSubmitted) {
@@ -505,7 +514,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
       emit MotionEventSet(_motionId, REVEAL_END);
     }
 
-    tokenLocking.transfer(token, voterReward, msg.sender, true);
+    tokenLocking.transfer(token, voterReward, msgSender(), true);
   }
 
   /// @notice Escalate a motion to a higher domain
@@ -553,7 +562,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     motion.escalated = true;
 
-    emit MotionEscalated(_motionId, msg.sender, domainId, _newDomainId);
+    emit MotionEscalated(_motionId, msgSender(), domainId, _newDomainId);
 
     if (motion.events[STAKE_END] <= uint64(block.timestamp)) {
       emit MotionEventSet(_motionId, STAKE_END);

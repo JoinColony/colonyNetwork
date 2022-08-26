@@ -241,6 +241,17 @@ interface ColonyDataTypes {
   /// @param taskId Id of the canceled task
   event TaskCanceled(uint256 indexed taskId);
 
+  /// @notice Event logged when a new local skill is added
+  /// @param agent The address that is responsible for triggering this event
+  /// @param localSkillId Id of the newly-created local skill
+  event LocalSkillAdded(address agent, uint256 localSkillId);
+
+  /// @notice Event logged when a new local skill is added
+  /// @param agent The address that is responsible for triggering this event
+  /// @param localSkillId Id of the newly-created local skill
+  /// @param deprecated Deprecation status of the local skill
+  event LocalSkillDeprecated(address agent, uint256 localSkillId, bool deprecated);
+
   /// @notice Event logged when a new Domain is added
   /// @param agent The address that is responsible for triggering this event
   /// @param domainId Id of the newly-created Domain
@@ -252,10 +263,21 @@ interface ColonyDataTypes {
   /// @param metadata IPFS hash of the metadata
   event DomainMetadata(address agent, uint256 indexed domainId, string metadata);
 
+  /// @notice Event logged when domain metadata is updated
+  /// @param agent The address that is responsible for triggering this event
+  /// @param domainId Id of the domain
+  /// @param deprecated Whether or not the domain is deprecated
+  event DomainDeprecated(address agent, uint256 indexed domainId, bool deprecated);
+
   /// @notice Event logged when Colony metadata is updated
   /// @param agent The address that is responsible for triggering this event
   /// @param metadata IPFS hash of the metadata
   event ColonyMetadata(address agent, string metadata);
+
+  /// @notice Event logged when Colony metadata is updated via a delta
+  /// @param agent The address that is responsible for triggering this event
+  /// @param metadata IPFS hash of the delta
+  event ColonyMetadataDelta(address agent, string metadata);
 
   /// @notice Event logged when a new FundingPot is added
   /// @param fundingPotId Id of the newly-created FundingPot
@@ -299,7 +321,8 @@ interface ColonyDataTypes {
 
   /// @notice Event emitted when the colony unlocks its native token through the
   /// provided function
-  event TokenUnlocked();
+  /// @param agent The address that is responsible for triggering this event
+  event TokenUnlocked(address agent);
 
   /// @notice Event logged when a manual reputation reward/penalty is made
   /// @param agent The address that is responsible for triggering this event
@@ -410,5 +433,9 @@ interface ColonyDataTypes {
   struct Domain {
     uint256 skillId;
     uint256 fundingPotId;
+  }
+
+  struct LocalSkill {
+    bool exists;
   }
 }

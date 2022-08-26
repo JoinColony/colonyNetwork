@@ -5,7 +5,7 @@ import BN from "bn.js";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import { UINT256_MAX, WAD, MAX_PAYOUT } from "../../helpers/constants";
+import { UINT256_MAX, WAD, MAX_PAYOUT, GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { checkErrorRevert, getTokenArgs, expectEvent } from "../../helpers/test-helper";
 import { fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
@@ -34,6 +34,7 @@ contract("Colony Payment", (accounts) => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
 
@@ -104,7 +105,7 @@ contract("Colony Payment", (accounts) => {
 
       await checkErrorRevert(
         colony.addPayment(1, UINT256_MAX, RECIPIENT, token.address, 0, 1, skillId, { from: COLONY_ADMIN }),
-        "colony-deprecated-global-skill"
+        "colony-not-valid-global-or-local-skill"
       );
     });
 
@@ -146,10 +147,12 @@ contract("Colony Payment", (accounts) => {
 
       let payment = await colony.getPayment(paymentId);
       expect(payment.skills[0]).to.eq.BN(0);
-      const tx = await colony.setPaymentSkill(1, UINT256_MAX, paymentId, 3, { from: COLONY_ADMIN });
+
+      const tx = await colony.setPaymentSkill(1, UINT256_MAX, paymentId, GLOBAL_SKILL_ID, { from: COLONY_ADMIN });
       payment = await colony.getPayment(paymentId);
-      expect(payment.skills[0]).to.eq.BN(3);
-      await expectEvent(tx, "PaymentSkillSet", [COLONY_ADMIN, paymentId, 3]);
+      expect(payment.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+
+      await expectEvent(tx, "PaymentSkillSet", [COLONY_ADMIN, paymentId, GLOBAL_SKILL_ID]);
     });
 
     it("should not allow admins to update payment with deprecated global skill", async () => {
@@ -160,7 +163,10 @@ contract("Colony Payment", (accounts) => {
       const skillId = await colonyNetwork.getSkillCount();
       await metaColony.deprecateGlobalSkill(skillId);
 
-      await checkErrorRevert(colony.setPaymentSkill(1, UINT256_MAX, paymentId, skillId, { from: COLONY_ADMIN }), "colony-deprecated-global-skill");
+      await checkErrorRevert(
+        colony.setPaymentSkill(1, UINT256_MAX, paymentId, skillId, { from: COLONY_ADMIN }),
+        "colony-not-valid-global-or-local-skill"
+      );
     });
 
     it("should not allow non-admins to update recipient", async () => {

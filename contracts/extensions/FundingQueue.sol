@@ -18,14 +18,15 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
+import "./../colony/ColonyDataTypes.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../common/BasicMetaTransaction.sol";
 import "./../common/ERC20Extended.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyExtension.sol";
-import "./../colony/ColonyDataTypes.sol";
 
-contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
+contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransaction {
 
   // Events
   event ProposalCreated(uint256 id, uint256 indexed fromPot, uint256 indexed toPot, address indexed token, uint256 amount);
@@ -71,6 +72,14 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
   mapping (uint256 => mapping (address => uint256)) supporters;
   // Technically a circular singly-linked list
   mapping (uint256 => uint256) queue; // proposalId => nextProposalId
+  mapping(address => uint256) metatransactionNonces;
+  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+    return metatransactionNonces[userAddress];
+  }
+
+  function incrementMetatransactionNonce(address user) override internal {
+    metatransactionNonces[user]++;
+  }
 
   // Public functions
 
@@ -81,7 +90,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 2;
+    return 3;
   }
 
   /// @notice Configures the extension
@@ -143,7 +152,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     proposalCount++;
     proposals[proposalCount] = Proposal(
       ProposalState.Inactive,
-      msg.sender,
+      msgSender(),
       _token,
       _domainId,
       0,
@@ -166,7 +175,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
 
     require(proposal.state != ProposalState.Cancelled, "funding-queue-already-cancelled");
     require(proposal.state != ProposalState.Completed, "funding-queue-already-completed");
-    require(proposal.creator == msg.sender, "funding-queue-not-creator");
+    require(proposal.creator == msgSender(), "funding-queue-not-creator");
     require(queue[_prevId] == _id, "funding-queue-bad-prev-id");
 
     proposal.state = ProposalState.Cancelled;
@@ -192,13 +201,13 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     Proposal storage proposal = proposals[_id];
 
     require(proposal.state == ProposalState.Inactive, "funding-queue-not-inactive");
-    require(proposal.creator == msg.sender, "funding-queue-not-creator");
+    require(proposal.creator == msgSender(), "funding-queue-not-creator");
 
     proposal.state = ProposalState.Active;
     proposal.domainTotalRep = checkReputation(_id, address(0x0), _key, _value, _branchMask, _siblings);
 
     uint256 stake = wmul(proposal.domainTotalRep, STAKE_FRACTION);
-    colony.obligateStake(msg.sender, proposal.domainId, stake);
+    colony.obligateStake(msgSender(), proposal.domainId, stake);
 
     emit ProposalStaked(_id, proposal.domainTotalRep);
   }
@@ -220,17 +229,17 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     require(proposal.state == ProposalState.Active, "funding-queue-proposal-not-active");
     require(_id != _newPrevId, "funding-queue-cannot-insert-after-self"); // NOTE: this may be redundant
 
-    uint256 userRep = checkReputation(_id, msg.sender, _key, _value, _branchMask, _siblings);
+    uint256 userRep = checkReputation(_id, msgSender(), _key, _value, _branchMask, _siblings);
     require(_backing <= userRep, "funding-queue-insufficient-reputation");
 
     // Update the user's reputation backing
-    uint256 prevBacking = supporters[_id][msg.sender];
+    uint256 prevBacking = supporters[_id][msgSender()];
     if (_backing >= prevBacking) {
       proposal.totalSupport = add(proposal.totalSupport, sub(_backing, prevBacking));
     } else {
       proposal.totalSupport = sub(proposal.totalSupport, sub(prevBacking, _backing));
     }
-    supporters[_id][msg.sender] = _backing;
+    supporters[_id][msgSender()] = _backing;
 
     // Remove the proposal from its current position, if exists
     require(queue[_currPrevId] == _id, "funding-queue-bad-prev-id");
@@ -257,7 +266,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs {
     queue[_newPrevId] = _id; // prev proposal => this proposal
     queue[_id] = nextId; // this proposal => next proposal
 
-    emit ProposalBacked(_id, _newPrevId, msg.sender, _backing, prevBacking);
+    emit ProposalBacked(_id, _newPrevId, msgSender(), _backing, prevBacking);
   }
 
   function pingProposal(uint256 _id) public {

@@ -5,9 +5,15 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
-import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
+import { TruffleLoader } from "../../packages/package-utils";
 import { getTokenArgs, checkErrorRevert, makeReputationKey, advanceMiningCycleNoContest, expectEvent } from "../../helpers/test-helper";
-import { giveUserCLNYTokensAndStake, setupColony, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
+import {
+  giveUserCLNYTokensAndStake,
+  setupColony,
+  setupRandomColony,
+  fundColonyWithTokens,
+  getMetaTransactionParameters,
+} from "../../helpers/test-data-generator";
 import { UINT256_MAX, DEFAULT_STAKE } from "../../helpers/constants";
 import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 
@@ -47,6 +53,7 @@ contract("Token Locking", (addresses) => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   });
@@ -175,6 +182,21 @@ contract("Token Locking", (addresses) => {
 
       const balance = await token.balanceOf(otherUserAddress);
       expect(balance).to.eq.BN(usersTokens);
+    });
+
+    it("should allow deposits to be made via metatransaction", async () => {
+      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
+
+      const txData = await tokenLocking.contract.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true).encodeABI();
+      const { r, s, v } = await getMetaTransactionParameters(txData, userAddress, tokenLocking.address);
+
+      await tokenLocking.executeMetaTransaction(userAddress, txData, r, s, v, { from: otherUserAddress });
+
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      expect(info.balance).to.eq.BN(usersTokens);
+
+      const tokenLockingContractBalance = await token.balanceOf(tokenLocking.address);
+      expect(tokenLockingContractBalance).to.eq.BN(usersTokens);
     });
   });
 

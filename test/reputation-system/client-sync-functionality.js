@@ -4,8 +4,8 @@ import path from "path";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import TruffleLoader from "../../packages/reputation-miner/TruffleLoader";
-import { DEFAULT_STAKE, MIN_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
+import { TruffleLoader } from "../../packages/package-utils";
+import { DEFAULT_STAKE, INITIAL_FUNDING, UINT256_MAX } from "../../helpers/constants";
 import { forwardTime, currentBlock, advanceMiningCycleNoContest, getActiveRepCycle } from "../../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -55,11 +55,11 @@ process.env.SOLIDITY_COVERAGE
       });
 
       beforeEach(async () => {
-        await reputationMiner1.resetDB();
         await reputationMiner1.initialise(colonyNetwork.address);
+        await reputationMiner1.resetDB();
 
         const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-        expect(lock.balance).to.eq.BN(MIN_STAKE);
+        expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
 
         // Advance two cycles to clear active and inactive state.
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -105,8 +105,8 @@ process.env.SOLIDITY_COVERAGE
         await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
         await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 
-        await reputationMiner2.resetDB();
         await reputationMiner2.initialise(colonyNetwork.address);
+        await reputationMiner2.resetDB();
       });
 
       describe("when synchronising reputation mining client", () => {
@@ -133,6 +133,7 @@ process.env.SOLIDITY_COVERAGE
           for (let i = 0; i < 5; i += 1) {
             await setupFinalizedTask({ colonyNetwork, colony: metaColony });
           }
+          await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, accounts[2], -100, { from: accounts[0] });
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 
@@ -173,9 +174,17 @@ process.env.SOLIDITY_COVERAGE
           // updates that it already knew about.
           await reputationMiner2.sync(startingBlockNumber);
 
+          // And load a state on a client that's not using the JS Tree
+          const reputationMiner3 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER2, realProviderPort, useJsTree: !useJsTree });
+          await reputationMiner3.initialise(colonyNetwork.address);
+          await reputationMiner3.loadState(savedHash);
+          await reputationMiner3.sync(startingBlockNumber);
+
           const client1Hash = await reputationMiner1.reputationTree.getRootHash();
           const client2Hash = await reputationMiner2.reputationTree.getRootHash();
+          const client3Hash = await reputationMiner3.reputationTree.getRootHash();
           expect(client1Hash).to.equal(client2Hash);
+          expect(client1Hash).to.equal(client3Hash);
         });
 
         it("should be able to successfully save the current state to the database and then load it", async () => {

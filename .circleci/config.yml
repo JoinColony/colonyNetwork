@@ -2,7 +2,7 @@ version: 2
 
 job_common: &job_common
   docker:
-    - image: circleci/node:12.16.3-stretch
+    - image: cimg/node:12.22.12
       auth:
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
@@ -122,6 +122,9 @@ jobs:
           name: "Checking contract recovery modifiers"
           command: yarn run check:recoverymods
       - run:
+          name: "Checking contract versions"
+          command: yarn run check:versioning
+      - run:
           name: "Checking contract authDomain modifiers"
           command: yarn run check:auth
       - run:
@@ -171,6 +174,24 @@ jobs:
           root: ./
           paths:
             - coverage-contracts
+  test-upgrade-coverage:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: 19.03.13
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running upgrade tests with coverage"
+          command: yarn run test:contracts:upgrade:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-upgrade
   test-contracts-extensions-coverage:
     <<: *job_common
     steps:
@@ -305,6 +326,8 @@ workflows:
           context: dockerhub-credentials
       - test-chainid-coverage:
           context: dockerhub-credentials
+      - test-upgrade-coverage:
+          context: dockerhub-credentials
       - check-coverage:
           context: dockerhub-credentials
           requires:
@@ -312,6 +335,7 @@ workflows:
             - test-contracts-extensions-coverage
             - test-reputation-coverage
             - test-chainid-coverage
+            - test-upgrade-coverage
  # nightly:
  #   triggers:
  #     - schedule:

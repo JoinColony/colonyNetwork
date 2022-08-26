@@ -30,17 +30,17 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {
-    require(msg.sender == activeReputationMiningCycle, "colony-reputation-mining-sender-not-active-reputation-cycle");
+    require(msgSender() == activeReputationMiningCycle, "colony-reputation-mining-sender-not-active-reputation-cycle");
     _;
   }
 
   function setMiningDelegate(address _delegate, bool _allowed) public stoppable {
     if (miningDelegators[_delegate] != address(0x00)){
-      require(miningDelegators[_delegate] == msg.sender, "colony-reputation-mining-not-your-delegate");
+      require(miningDelegators[_delegate] == msgSender(), "colony-reputation-mining-not-your-delegate");
     }
 
     if (_allowed){
-      miningDelegators[_delegate] = msg.sender;
+      miningDelegators[_delegate] = msgSender();
     } else {
       miningDelegators[_delegate] = address(0x00);
     }
@@ -245,19 +245,19 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
   function stakeForMining(uint256 _amount) public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
 
-    ITokenLocking(tokenLocking).approveStake(msg.sender, _amount, clnyToken);
-    ITokenLocking(tokenLocking).obligateStake(msg.sender, _amount, clnyToken);
+    ITokenLocking(tokenLocking).approveStake(msgSender(), _amount, clnyToken);
+    ITokenLocking(tokenLocking).obligateStake(msgSender(), _amount, clnyToken);
 
-    miningStakes[msg.sender].timestamp = getNewTimestamp(miningStakes[msg.sender].amount, _amount, miningStakes[msg.sender].timestamp, block.timestamp);
-    miningStakes[msg.sender].amount = add(miningStakes[msg.sender].amount, _amount);
+    miningStakes[msgSender()].timestamp = getNewTimestamp(miningStakes[msgSender()].amount, _amount, miningStakes[msgSender()].timestamp, block.timestamp);
+    miningStakes[msgSender()].amount = add(miningStakes[msgSender()].amount, _amount);
   }
 
   function unstakeForMining(uint256 _amount) public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
     // Prevent those involved in a mining cycle withdrawing stake during the mining process.
-    require(!IReputationMiningCycle(activeReputationMiningCycle).userInvolvedInMiningCycle(msg.sender), "colony-network-hash-submitted");
-    ITokenLocking(tokenLocking).deobligateStake(msg.sender, _amount, clnyToken);
-    miningStakes[msg.sender].amount = sub(miningStakes[msg.sender].amount, _amount);
+    require(!IReputationMiningCycle(activeReputationMiningCycle).userInvolvedInMiningCycle(msgSender()), "colony-network-hash-submitted");
+    ITokenLocking(tokenLocking).deobligateStake(msgSender(), _amount, clnyToken);
+    miningStakes[msgSender()].amount = sub(miningStakes[msgSender()].amount, _amount);
   }
 
   function getMiningStake(address _user) public stoppable returns (MiningStake memory) {
@@ -302,5 +302,20 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     }
 
     return add(mul(prevWeight, _prevTime), mul(currWeight, _currTime)) / add(prevWeight, currWeight);
+  }
+
+  function setMiningResolver(address _miningResolver) public
+  stoppable
+  auth
+  {
+    require(_miningResolver != address(0x0), "colony-mining-resolver-cannot-be-zero");
+
+    miningCycleResolver = _miningResolver;
+
+    emit MiningCycleResolverSet(_miningResolver);
+  }
+
+  function getMiningResolver() public view returns (address) {
+    return miningCycleResolver;
   }
 }

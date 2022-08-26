@@ -2,12 +2,13 @@
 import { BN } from "bn.js";
 import { soliditySha3, isAddress } from "web3-utils";
 import { ethers } from "ethers";
-import sqlite3 from 'sqlite3';
+import Database from "better-sqlite3";
 
 import PatriciaTreeNoHash from "./patriciaNoHashKey";
 import PatriciaTree from "./patricia";
 
-const sqlite = require("sqlite");
+const fs = require('fs').promises;
+const path = require('path');
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.
@@ -26,6 +27,8 @@ class ReputationMiner {
   constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false, dbPath = "./reputationStates.sqlite" }) {
     this.loader = loader;
     this.dbPath = dbPath;
+    this.justificationCachePath = `${path.dirname(dbPath)}/justificationTreeCache.json`
+    this.justificationHashes = {}
 
     this.useJsTree = useJsTree;
     if (!this.useJsTree) {
@@ -37,7 +40,7 @@ class ReputationMiner {
         network_id: 515,
         vmErrorsOnRPCResponse: false,
         locked: false,
-        verbose: true,
+        logger: console,
         accounts: [
           {
             balance: "0x10000000000000000000000000",
@@ -82,26 +85,25 @@ class ReputationMiner {
     const metaColony = new ethers.Contract(metaColonyAddress, this.colonyContractDef.abi, this.realWallet);
     this.clnyAddress = await metaColony.getToken();
 
-    if (this.useJsTree) {
-      this.reputationTree = new PatriciaTree();
-    } else {
+
+    if (!this.useJsTree) {
       this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
       this.patriciaTreeNoHashContractDef = await this.loader.load(
         { contractName: "PatriciaTreeNoHash" },
         { abi: true, address: false, bytecode: true }
       );
-
-      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
-      const contract = await contractFactory.deploy();
-      await contract.deployed();
-      this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
+
+    this.reputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
     this.gasPrice = ethers.utils.hexlify(20000000000);
     const repCycle = await this.getActiveRepCycle();
     await this.updatePeriodLength(repCycle);
+    this.db = new Database(this.dbPath, { });
+    // this.db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
+    await this.createDB();
 
     // NB some technical debt here with names. The minerAddress arg passed in on the command line, which
     // has been used for realWallet and is where transactions will be signed from may or may not be acting
@@ -114,31 +116,127 @@ class ReputationMiner {
       this.minerAddress = delegator;
     }
     console.log(`Mining on behalf of ${this.minerAddress}`)
+
+    process.on('exit', () => this.db.close());
+    process.on('SIGHUP', () => process.exit(128 + 1));
+    process.on('SIGINT', () => process.exit(128 + 2));
+    process.on('SIGTERM', () => process.exit(128 + 15));
+  }
+
+  prepareQueries() {
+    this.queries = {}
+    this.queries.saveHashAndLeaves = this.db.prepare(`INSERT OR IGNORE INTO reputation_states (root_hash, n_leaves) VALUES (?, ?)`);
+    this.queries.saveColony = this.db.prepare(`INSERT OR IGNORE INTO colonies (address) VALUES (?)`);
+    this.queries.saveUser = this.db.prepare(`INSERT OR IGNORE INTO users (address) VALUES (?)`);
+    this.queries.saveSkill = this.db.prepare(`INSERT OR IGNORE INTO skills (skill_id) VALUES (?)`);
+
+    this.queries.getReputationCount = this.db.prepare(
+      `SELECT COUNT ( * ) AS "n"
+      FROM reputations
+      INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+      INNER JOIN users ON users.rowid=reputations.user_rowid
+      INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+      WHERE reputation_states.root_hash=?
+      AND colonies.address=?
+      AND reputations.skill_id=?
+      AND users.address=?`
+    );
+
+    this.queries.insertReputation = this.db.prepare(
+      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
+      SELECT
+      (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash=?),
+      (SELECT colonies.rowid FROM colonies WHERE colonies.address=?),
+      ?,
+      (SELECT users.rowid FROM users WHERE users.address=?),
+      ?`
+    );
+
+    this.queries.getAllReputationsInHash = this.db.prepare(
+      `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
+       FROM reputations
+       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+       INNER JOIN users ON users.rowid=reputations.user_rowid
+       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       WHERE reputation_states.root_hash=?`
+    );
+
+    this.queries.getReputationValue = this.db.prepare(
+      `SELECT reputations.value
+      FROM reputations
+      INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+      INNER JOIN users ON users.rowid=reputations.user_rowid
+      INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+      WHERE reputation_states.root_hash=?
+      AND users.address=?
+      AND reputations.skill_id=?
+      AND colonies.address=?`
+    );
+
+    this.queries.getAddressesWithReputation = this.db.prepare(
+      `SELECT DISTINCT users.address as user_address, reputations.value as value
+       FROM reputations
+       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+       INNER JOIN users ON users.rowid=reputations.user_rowid
+       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       WHERE reputation_states.root_hash=?
+       AND colonies.address=?
+       AND reputations.skill_id=?
+       AND users.address!='0x0000000000000000000000000000000000000000'
+       ORDER BY reputations.value DESC`
+    );
+
+    this.queries.getReputationsForAddress = this.db.prepare(
+      `SELECT DISTINCT reputations.skill_id as skill_id, reputations.value as value
+       FROM reputations
+       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+       INNER JOIN users ON users.rowid=reputations.user_rowid
+       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       WHERE reputation_states.root_hash=?
+       AND colonies.address=?
+       AND users.address=?
+       ORDER BY reputations.value DESC`
+    );
+
+    this.queries.getReputationStateCount = this.db.prepare(`SELECT COUNT ( * ) AS "n" FROM reputation_states WHERE root_hash=? AND n_leaves=?`);
   }
 
   /**
-   * When called, adds the entire contents of the current (active) log to its reputation tree. It also builds a Justification Tree as it does so
-   * in case a dispute is called which would require it.
+   * When called, adds the entire contents of the current (active) log to its reputation tree. It also optionally
+   * builds a Justification Tree as it does so in case a dispute is called which would require it.
    * @return {Promise}
    */
-  async addLogContentsToReputationTree(blockNumber = "latest") {
-    if (this.useJsTree) {
-      this.justificationTree = new PatriciaTreeNoHash();
+  async addLogContentsToReputationTree(blockNumber = "latest", buildJustificationTree = true) {
+    let jtType;
+    if (buildJustificationTree){
+      if (this.useJsTree) {
+        jtType = "js";
+      } else {
+        jtType = "solidity";
+      }
     } else {
-      const contractFactory = new ethers.ContractFactory(
-        this.patriciaTreeNoHashContractDef.abi,
-        this.patriciaTreeNoHashContractDef.bytecode,
-        this.ganacheWallet
-      );
-
-      const contract = await contractFactory.deploy();
-      await contract.deployed();
-
-      this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeNoHashContractDef.abi, this.ganacheWallet);
+        jtType = "noop"
     }
+
+    // TODO: Can this be better?
+    this.previousReputations = JSON.parse(JSON.stringify(this.reputations));
+
+    this.previousReputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
+
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const key of Object.keys(this.reputations)){
+      const tx = await this.previousReputationTree.insert(key, this.reputations[key])
+      if (!this.useJsTree) {
+        await tx.wait();
+      }
+    }
+
+    await this.instantiateJustificationTree(jtType);
+
     this.justificationHashes = {};
     this.reverseReputationHashLookup = {};
-    const repCycle = await this.getActiveRepCycle(blockNumber)
+    const repCycle = await this.getActiveRepCycle(blockNumber);
     // Update fractions
     const decayFraction = await repCycle.getDecayConstant({ blockTag: blockNumber });
     this.decayNumerator = decayFraction.numerator;
@@ -279,7 +377,7 @@ class ReputationMiner {
       // Then the user-specifc sums in the order children, parents, skill.
       if (amount.lt(0)) {
         const nUpdates = ethers.BigNumber.from(logEntry.nUpdates);
-        const [nParents] = await this.colonyNetwork.getSkill(logEntry.skillId);
+        const [nParents] = await this.colonyNetwork.getSkill(logEntry.skillId, {blockTag: blockNumber});
         const nChildUpdates = nUpdates.div(2).sub(1).sub(nParents);
         const relativeUpdateNumber = updateNumber.sub(logEntry.nPreviousUpdates).sub(this.nReputationsBeforeLatestLog);
         // Child updates are two sets: colonywide sums for children - located in the first nChildUpdates,
@@ -287,7 +385,7 @@ class ReputationMiner {
 
         // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
         const originSkillUpdateNumber = updateNumber.sub(relativeUpdateNumber).add(nUpdates).sub(1);
-        const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
+        const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber, blockNumber);
         originReputationProof = await this.getReputationProofObject(originSkillKey);
         const originSkillKeyExists = this.reputations[originSkillKey] !== undefined;
 
@@ -312,9 +410,9 @@ class ReputationMiner {
           let keyUsedInCalculations;
           if (relativeUpdateNumber.lt(nChildUpdates)) {
             const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
-            keyUsedInCalculations = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
+            keyUsedInCalculations = await this.getKeyForUpdateNumber(childSkillUpdateNumber, blockNumber);
           } else {
-            keyUsedInCalculations = await this.getKeyForUpdateNumber(updateNumber);
+            keyUsedInCalculations = await this.getKeyForUpdateNumber(updateNumber, blockNumber);
           }
           childReputationProof = await this.getReputationProofObject(keyUsedInCalculations);
 
@@ -625,7 +723,6 @@ class ReputationMiner {
    */
   async getActiveRepCycle(blockNumber = "latest") {
     const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
-
     if (addr === ethers.constants.AddressZero) {
       throw new Error(`No active mining cycle found for block number ${blockNumber}`);
     }
@@ -761,49 +858,110 @@ class ReputationMiner {
   }
 
   /**
-   * Get a Merkle proof and value for `key` in a past reputation state with root hash `rootHash`
+   * Get a Merkle proof and value for `key` in a (possibly) past reputation state with root hash `rootHash`
    * @param  {[type]}  rootHash A previous root hash of a reputation state
    * @param  {[type]}  key      A key in that root hash we wish to know the value and proof for
    * @return {Promise}          A promise that resolves to [branchmask, siblings, value] for the supplied key in the supplied root hash
    */
   async getHistoricalProofAndValue(rootHash, key) {
-    const tree = new PatriciaTree();
-    // Load all reputations from that state.
+    const currentRootHash = await this.reputationTree.getRootHash();
 
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
+    if (currentRootHash === rootHash) {
+      if (!this.reputations[key]){
+        return new Error("Requested reputation does not exist")
+      }
+      try {
+        const [branchMask, siblings] = await this.reputationTree.getProof(key);
 
-    let res = await db.all(
-      `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
-       FROM reputations
-       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-       INNER JOIN users ON users.rowid=reputations.user_rowid
-       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-       WHERE reputation_states.root_hash="${rootHash}"`
-    );
-    if (res.length === 0) {
-      return new Error("No such reputation state");
+        const retBranchMask = ReputationMiner.getHexString(branchMask);
+        return [retBranchMask, siblings, this.reputations[key]];
+      } catch (err) {
+        return err;
+      }
     }
-    for (let i = 0; i < res.length; i += 1) {
-      const row = res[i];
-      const rowKey = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
-      await tree.insert(rowKey, row.value);
+
+    const previousRootHash = await this.previousReputationTree.getRootHash();
+    if (previousRootHash === rootHash) {
+      if (!this.previousReputations[key]){
+        return new Error("Requested reputation does not exist")
+      }
+      try {
+        const [branchMask, siblings] = await this.previousReputationTree.getProof(key);
+        if (branchMask === "0x"){
+          return new Error("No such reputation")
+        }
+        const retBranchMask = ReputationMiner.getHexString(branchMask);
+        return [retBranchMask, siblings, this.previousReputations[key]];
+      } catch (err) {
+        return err;
+      }
+    }
+
+    // Not in the accepted or next tree, so let's look at the DB
+
+    const allReputations = await this.queries.getAllReputationsInHash.all(rootHash);
+    if (allReputations.length === 0) {
+      return new Error("No such reputation state");
     }
 
     const keyElements = ReputationMiner.breakKeyInToElements(key);
     const [colonyAddress, , userAddress] = keyElements;
     const skillId = parseInt(keyElements[1], 16);
-    res = await db.all(
-      `SELECT reputations.value
-      FROM reputations
-      INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-      INNER JOIN users ON users.rowid=reputations.user_rowid
-      INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-      WHERE reputation_states.root_hash="${rootHash}"
-      AND users.address="${userAddress}"
-      AND reputations.skill_id="${skillId}"
-      AND colonies.address="${colonyAddress}"`
-    );
-    await db.close();
+    const reputationValue = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
+
+    if (reputationValue.length === 0) {
+      return new Error("No such reputation");
+    }
+
+    if (reputationValue.length > 1) {
+      return new Error("Multiple such reputations found. Something is wrong!");
+    }
+
+    const tree = new PatriciaTree();
+    // Load all reputations from that state.
+
+    for (let i = 0; i < allReputations.length; i += 1) {
+      const row = allReputations[i];
+      const rowKey = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      await tree.insert(rowKey, row.value);
+    }
+
+    const [branchMask, siblings] = await tree.getProof(key);
+    const retBranchMask = ReputationMiner.getHexString(branchMask);
+    return [retBranchMask, siblings, reputationValue[0].value];
+  }
+
+  async getHistoricalValue(rootHash, key) {
+
+    const currentRootHash = await this.reputationTree.getRootHash();
+
+    if (currentRootHash === rootHash) {
+      if (this.reputations[key]){
+        return this.reputations[key]
+      }
+      // Otherwise, not in requested state
+      return new Error("Requested reputation does not exist")
+    }
+
+    const previousRootHash = await this.previousReputationTree.getRootHash();
+
+    if (previousRootHash === rootHash) {
+      if (this.previousReputations[key]){
+        return this.previousReputations[key]
+      }
+      // Otherwise, not in requested state
+      return new Error("Requested reputation does not exist")
+    }
+
+    let res = await this.queries.getAllReputationsInHash.all(rootHash);
+    if (res.length === 0) {
+      return new Error("No such reputation state");
+    }
+    const keyElements = ReputationMiner.breakKeyInToElements(key);
+    const [colonyAddress, , userAddress] = keyElements;
+    const skillId = parseInt(keyElements[1], 16);
+
+    res = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
 
     if (res.length === 0) {
       return new Error("No such reputation");
@@ -812,10 +970,7 @@ class ReputationMiner {
     if (res.length > 1) {
       return new Error("Multiple such reputations found. Something is wrong!");
     }
-
-    const [branchMask, siblings] = await tree.getProof(key);
-    const retBranchMask = ReputationMiner.getHexString(branchMask);
-    return [retBranchMask, siblings, res[0].value];
+    return res[0].value;
   }
 
   /**
@@ -875,7 +1030,7 @@ class ReputationMiner {
       round = round.add(1);
       disputeRound = await repCycle.getDisputeRound(round);
     }
-    return [ethers.constants.negativeOne, ethers.constants.negativeOne];
+    return [ethers.constants.NegativeOne, ethers.constants.NegativeOne];
   }
 
   /**
@@ -1187,13 +1342,31 @@ class ReputationMiner {
     let localHash = await this.reputationTree.getRootHash();
     let applyLogs = false;
 
+    // Run through events backwards find the most recent one that we know...
+    let syncFromIndex = 0;
+    for (let i = events.length - 1 ; i >= 0 ; i -= 1){
+      const event = events[i];
+      const hash = event.data.slice(0, 66);
+      const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
+      // Do we have such a state?
+      const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
+      if (res.n === 1){
+        // We know that state! We can just sync from the next one...
+        syncFromIndex = i + 1;
+        await this.loadState(hash);
+        applyLogs = true;
+        break;
+      }
+    }
+
     // We're not going to apply the logs unless we're syncing from scratch (which is this if statement)
     // or we find a hash that we recognise as our current state, and we're going to sync from there (which
     // is the if statement at the end of the loop below
     if (localHash === `0x${new BN(0).toString(16, 64)}`) {
       applyLogs = true;
     }
-    for (let i = 0; i < events.length; i += 1) {
+
+    for (let i = syncFromIndex; i < events.length; i += 1) {
       console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
       const event = events[i];
       if (i === 0) {
@@ -1213,19 +1386,28 @@ class ReputationMiner {
       if (applyLogs) {
         const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
         const previousBlock = event.blockNumber - 1;
-        await this.addLogContentsToReputationTree(previousBlock);
+        await this.addLogContentsToReputationTree(previousBlock, false);
         localHash = await this.reputationTree.getRootHash();
         const localNLeaves = this.nReputations;
         if (localHash !== hash || !localNLeaves.eq(nLeaves)) {
           console.log("WARNING: Either sync has failed, or some log entries have been replaced. Continuing sync, as we might recover");
         }
         if (saveHistoricalStates) {
-          await this.saveCurrentState(event.blockNumber);
+          await this.saveCurrentState();
         }
       }
       if (applyLogs === false && localHash === hash) {
         applyLogs = true;
       }
+    }
+
+    // Some more cycles might have completed since we started syncing
+    const lastEventBlock = events[events.length - 1].blockNumber
+    filter.fromBlock = lastEventBlock;
+    const sinceEvents = await this.realProvider.getLogs(filter);
+    if (sinceEvents.length > 1){
+      console.log("Some more cycles have completed during the sync process. Continuing to sync...")
+      await this.sync(lastEventBlock, saveHistoricalStates);
     }
 
     // Check final state
@@ -1257,74 +1439,43 @@ class ReputationMiner {
     }
   }
 
+  // Gas price should be a hex string
+  async setGasPrice(_gasPrice){
+    if (!ethers.utils.isHexString(_gasPrice)){
+      throw new Error("Passed gas price was not a hex string")
+    }
+    const passedPrice = ethers.BigNumber.from(_gasPrice);
+    const minimumPrice = ethers.BigNumber.from("1100000000");
+    if (passedPrice.lt(minimumPrice)){
+      this.gasPrice = minimumPrice.toHexString();
+    } else {
+      this.gasPrice = _gasPrice;
+    }
+  }
+
   async saveCurrentState() {
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
-
     const currentRootHash = await this.getRootHash();
-    let res = await db.run(`INSERT OR IGNORE INTO reputation_states (root_hash, n_leaves) VALUES ('${currentRootHash}', ${this.nReputations})`);
-
+    this.queries.saveHashAndLeaves.run(currentRootHash, this.nReputations.toString());
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
       const key = Object.keys(this.reputations)[i];
       const value = this.reputations[key];
       const keyElements = ReputationMiner.breakKeyInToElements(key);
       const [colonyAddress, , userAddress] = keyElements;
       const skillId = parseInt(keyElements[1], 16);
-
-      res = await db.run(`INSERT OR IGNORE INTO colonies (address) VALUES ('${colonyAddress}')`);
-      res = await db.run(`INSERT OR IGNORE INTO users (address) VALUES ('${userAddress}')`);
-      res = await db.run(`INSERT OR IGNORE INTO skills (skill_id) VALUES ('${skillId}')`);
-
-      let query;
-      query = `SELECT COUNT ( * ) AS "n"
-        FROM reputations
-        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-        INNER JOIN users ON users.rowid=reputations.user_rowid
-        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-        WHERE reputation_states.root_hash="${currentRootHash}"
-        AND colonies.address="${colonyAddress}"
-        AND reputations.skill_id="${skillId}"
-        AND users.address="${userAddress}"`;
-      res = await db.get(query);
-
-      if (res.n === 0) {
-        query = `INSERT INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
-          SELECT
-          (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash='${currentRootHash}'),
-          (SELECT colonies.rowid FROM colonies WHERE colonies.address='${colonyAddress}'),
-          ${skillId},
-          (SELECT users.rowid FROM users WHERE users.address='${userAddress}'),
-          '${value}'`;
-        await db.run(query);
-      }
+      this.queries.saveColony.run(colonyAddress);
+      this.queries.saveUser.run(userAddress);
+      this.queries.saveSkill.run(skillId);
+      this.queries.insertReputation.run(currentRootHash, colonyAddress, skillId, userAddress, value);
     }
-    await db.close();
   }
 
   async loadState(reputationRootHash) {
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
 
-    if (this.useJsTree) {
-      this.reputationTree = new PatriciaTree();
-    } else {
-      this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
+    this.reputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
-      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
-      const contract = await contractFactory.deploy();
-      await contract.deployed();
-
-      this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
-    }
-
-    const res = await db.all(
-      `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
-       FROM reputations
-       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-       INNER JOIN users ON users.rowid=reputations.user_rowid
-       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-       WHERE reputation_states.root_hash="${reputationRootHash}"`
-    );
+    const res = await this.queries.getAllReputationsInHash.all(reputationRootHash);
     this.nReputations = ethers.BigNumber.from(res.length);
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
@@ -1339,67 +1490,197 @@ class ReputationMiner {
     if (currentStateHash !== reputationRootHash) {
       console.log("WARNING: The supplied state failed to be recreated successfully. Are you sure it was saved?");
     }
-    await db.close();
+  }
+
+  async loadStateToPrevious(reputationRootHash) {
+    this.previousReputations = {};
+
+    this.previousReputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
+
+    const res = await this.queries.getAllReputationsInHash.all(reputationRootHash);
+    for (let i = 0; i < res.length; i += 1) {
+      const row = res[i];
+      const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      const tx = await this.previousReputationTree.insert(key, row.value, { gasLimit: 4000000 });
+      if (!this.useJsTree) {
+        await tx.wait();
+      }
+      this.previousReputations[key] = row.value;
+    }
+    const currentStateHash = await this.previousReputationTree.getRootHash();
+    if (currentStateHash !== reputationRootHash) {
+      console.log("WARNING: The supplied state failed to be recreated successfully. Are you sure it was saved?");
+    }
+  }
+
+  async loadJustificationTree(justificationRootHash) {
+    this.justificationHashes = {};
+    let jtType;
+    if (this.useJsTree) {
+      jtType = "js"
+    } else {
+      jtType = "solidity"
+    }
+
+    await this.instantiateJustificationTree(jtType);
+
+    try {
+
+      const justificationHashFile = await fs.readFile(this.justificationCachePath, 'utf8')
+      this.justificationHashes = JSON.parse(justificationHashFile);
+
+      for (let i = 0; i < Object.keys(this.justificationHashes).length; i += 1) {
+        const hash = Object.keys(this.justificationHashes)[i];
+        const tx = await this.justificationTree.insert(
+          hash,
+          this.justificationHashes[hash].jhLeafValue,
+          { gasLimit: 4000000 }
+        );
+        if (!this.useJsTree) {
+          await tx.wait();
+        }
+        if (i === 0){
+          this.nReputationsBeforeLatestLog = this.justificationHashes[hash].nLeaves
+        }
+      }
+    } catch (err) {
+      console.log(err);
+    }
+
+    const currentJRH = await this.justificationTree.getRootHash();
+    if (justificationRootHash && currentJRH !== justificationRootHash) {
+      console.log("WARNING: The supplied JRH failed to be recreated successfully. Are you sure it was saved?");
+      this.nReputationsBeforeLatestLog = undefined;
+    }
+  }
+
+  async instantiateJustificationTree(type = "js") {
+    this.justificationTree = await this.getNewPatriciaTree(type, false);
+  }
+
+  // Type can be js, solidity or noop, as appropriate. 'hash' is whether the tree (in the first two instances)
+  // hashes the contents or not before adding to the tree.
+  async getNewPatriciaTree(type = "js", hash = true){
+    if (type === "js") {
+      if (hash){
+        return new PatriciaTree()
+      }
+      return new PatriciaTreeNoHash();
+    }
+
+    if (type === "solidity") {
+      let abi;
+      let bytecode;
+      if (hash) {
+        abi = this.patriciaTreeContractDef.abi
+        bytecode = this.patriciaTreeContractDef.bytecode
+      } else {
+        abi = this.patriciaTreeNoHashContractDef.abi
+        bytecode = this.patriciaTreeNoHashContractDef.bytecode
+      }
+
+      const contractFactory = new ethers.ContractFactory(abi, bytecode, this.ganacheWallet);
+      const contract = await contractFactory.deploy();
+      await contract.deployed();
+
+      return new ethers.Contract(contract.address, abi, this.ganacheWallet);
+    }
+
+    if (type === "noop") {
+      return {
+        insert: () => {return { wait: () => {}}},
+        getRootHash: () => {},
+        getImpliedRoot: () => {},
+        getProof: () => {},
+      }
+    }
+    console.log(`UNKNOWN TYPE for patricia tree instantiation: ${type}`)
+    return new PatriciaTree();
+  }
+
+  async saveJustificationTree(){
+    await fs.writeFile(this.justificationCachePath, JSON.stringify(this.justificationHashes));
   }
 
   async getAddressesWithReputation(reputationRootHash, colonyAddress, skillId) {
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
-    const res = await db.all(
-      `SELECT DISTINCT users.address as user_address, reputations.value as value
-       FROM reputations
-       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-       INNER JOIN users ON users.rowid=reputations.user_rowid
-       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-       WHERE reputation_states.root_hash="${reputationRootHash}"
-       AND colonies.address="${colonyAddress.toLowerCase()}"
-       AND reputations.skill_id="${skillId}"
-       AND users.address!="0x0000000000000000000000000000000000000000"
-       ORDER BY reputations.value DESC`
-    );
-    await db.close();
+    const res = await this.queries.getAddressesWithReputation.all(reputationRootHash, colonyAddress.toLowerCase(), skillId);
     const addresses = res.map(x => x.user_address)
-    return addresses;
+    const reputations = res.map(x => new BN(x.value.slice(2, 66), 16).toString())
+    return { addresses, reputations };
+  }
+
+  async getReputationsForAddress(reputationRootHash, colonyAddress, userAddress) {
+    const res = await this.queries.getReputationsForAddress.all(reputationRootHash, colonyAddress.toLowerCase(), userAddress.toLowerCase());
+    return res.map(function(x){ return {
+      skill_id: x.skill_id,
+      reputationAmount: ethers.BigNumber.from(`0x${x.value.slice(2, 66)}`).toString()
+    }});
   }
 
   async createDB() {
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
-    await db.run("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE )");
-    await db.run("CREATE TABLE IF NOT EXISTS reputation_states ( root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)");
-    await db.run("CREATE TABLE IF NOT EXISTS colonies ( address text NOT NULL UNIQUE )");
-    await db.run("CREATE TABLE IF NOT EXISTS skills ( skill_id INTEGER PRIMARY KEY )");
-    await db.run(
+    // Not regularly used, so not preparing them and saving the statement for reuse
+    await this.db.prepare("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE )").run();
+    await this.db.prepare("CREATE TABLE IF NOT EXISTS reputation_states ( root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)").run();
+    await this.db.prepare("CREATE TABLE IF NOT EXISTS colonies ( address text NOT NULL UNIQUE )").run();
+    await this.db.prepare("CREATE TABLE IF NOT EXISTS skills ( skill_id INTEGER PRIMARY KEY )").run();
+    await this.db.prepare(
       `CREATE TABLE IF NOT EXISTS reputations (
         reputation_rowid text NOT NULL,
         colony_rowid INTEGER NOT NULL,
         skill_id INTEGER NOT NULL,
         user_rowid INTEGER NOT NULL,
-        value text NOT NULL
+        value text NOT NULL,
+        PRIMARY KEY("reputation_rowid","colony_rowid","skill_id","user_rowid")
       )`
-    );
+    ).run();
 
     // Do we have to do a database upgrade, from when we renamed n_nodes to n_leaves?
-    const nNodesColumn = await db.all("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') WHERE name='n_nodes';")
+    const nNodesColumn = await this.db.prepare("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') WHERE name='n_nodes';").all()
     if (nNodesColumn.length === 1) {
-      await db.run("ALTER TABLE 'reputation_states' RENAME COLUMN n_nodes to n_leaves");
-      const check1 = await db.all("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') where name='n_nodes'")
-      const check2 = await db.all("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') where name='n_leaves'")
+      await this.db.prepare("ALTER TABLE 'reputation_states' RENAME COLUMN n_nodes to n_leaves").run();
+      const check1 = await this.db.prepare("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') where name='n_nodes'").all()
+      const check2 = await this.db.prepare("SELECT * FROM PRAGMA_TABLE_INFO('reputation_states') where name='n_leaves'").all()
       if (check1.length !== 0 || check2.length !== 1){
         console.log('Unexpected result of DB upgrade');
         process.exit();
       }
       console.log('n_nodes -> n_leaves database upgrade complete');
     }
-    await db.close();
+    await this.db.pragma('journal_mode = WAL');
+    await this.db.prepare('CREATE INDEX IF NOT EXISTS reputation_states_root_hash ON reputation_states (root_hash)').run();
+    await this.db.prepare('CREATE INDEX IF NOT EXISTS users_address ON users (address)').run();
+    await this.db.prepare('CREATE INDEX IF NOT EXISTS reputation_skill_id ON reputations (skill_id)').run();
+    await this.db.prepare('CREATE INDEX IF NOT EXISTS colonies_address ON colonies (address)').run();
+
+    // We added a composite key to reputations - do we need to port it over?
+    const res = await this.db.prepare("SELECT COUNT(pk) AS c FROM PRAGMA_TABLE_INFO('reputations') WHERE pk <> 0").all();
+    if (res[0].c === 0){
+      await this.db.prepare(
+        `CREATE TABLE reputations2 (
+          reputation_rowid text NOT NULL,
+          colony_rowid INTEGER NOT NULL,
+          skill_id INTEGER NOT NULL,
+          user_rowid INTEGER NOT NULL,
+          value text NOT NULL,
+          PRIMARY KEY("reputation_rowid","colony_rowid","skill_id","user_rowid")
+        )`
+      ).run();
+
+      await this.db.prepare(`INSERT INTO reputations2 SELECT * FROM reputations`).run()
+      await this.db.prepare(`DROP TABLE reputations`).run()
+      await this.db.prepare(`ALTER TABLE reputations2 RENAME TO reputations`).run()
+      console.log("Composite primary key added to reputations table")
+    }
+    this.prepareQueries()
   }
 
   async resetDB() {
-    const db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
-    await db.run(`DROP TABLE IF EXISTS users`);
-    await db.run(`DROP TABLE IF EXISTS colonies`);
-    await db.run(`DROP TABLE IF EXISTS skills`);
-    await db.run(`DROP TABLE IF EXISTS reputations`);
-    await db.run(`DROP TABLE IF EXISTS reputation_states`);
-    await db.close();
+    // Again, not regularly used, so not preparing and saving the statements for reuse.
+    await this.db.prepare(`DROP TABLE IF EXISTS users`).run();
+    await this.db.prepare(`DROP TABLE IF EXISTS colonies`).run();
+    await this.db.prepare(`DROP TABLE IF EXISTS skills`).run();
+    await this.db.prepare(`DROP TABLE IF EXISTS reputations`).run();
+    await this.db.prepare(`DROP TABLE IF EXISTS reputation_states`).run();
     await this.createDB();
   }
 }
