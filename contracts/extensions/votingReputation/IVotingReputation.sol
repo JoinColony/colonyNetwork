@@ -28,11 +28,7 @@ import "./VotingReputationDataTypes.sol";
 // import "./ColonyExtension.sol";
 
 
-interface IVotingReputation is IBasicMetaTransaction, IColonyExtension, VotingReputationDataTypes {
-
-  // function getMetatransactionNonce(address userAddress) override external view returns (uint256 nonce);
-
-
+interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @notice Initialise the extension
   /// @param _totalStakeFraction The fraction of the domain's reputation we need to stake
   /// @param _userMinStakeFraction The minimum per-user stake as fraction of total stake
@@ -53,8 +49,6 @@ interface IVotingReputation is IBasicMetaTransaction, IColonyExtension, VotingRe
     uint256 _escalationPeriod
   )
     external;
-
- //  // Data structures
 
   // external functions (interface)
 
@@ -193,8 +187,9 @@ interface IVotingReputation is IBasicMetaTransaction, IColonyExtension, VotingRe
   )
     external;
 
+  /// @notice Finalized a motion, executing its action if appropriate
+  /// @param _motionId The id of the motion to finalize
   function finalizeMotion(uint256 _motionId) external;
-
 
   /// @notice Return whether a motion, assuming it's in the finalizable state,
   // is allowed to finalize without the call executing successfully.
@@ -251,7 +246,6 @@ interface IVotingReputation is IBasicMetaTransaction, IColonyExtension, VotingRe
   /// @notice Get the escalation period
   /// @return The escalation period
   function getEscalationPeriod() external view returns (uint256);
-
 
   /// @notice Get the total motion count
   /// @return The total motion count
@@ -310,6 +304,13 @@ interface IVotingReputation is IBasicMetaTransaction, IColonyExtension, VotingRe
     external
     returns (bytes memory);
 
+  /// @notice Claim the staker's reward from a motion that was created with v4 of the extension, and is
+  /// now missing and cannot be interacted with via the normal claim function.
+  /// @param _motionId The id of the motion
+  /// @param _permissionDomainId The domain where the extension has the arbitration permission
+  /// @param _childSkillIndex For the domain in which the motion is occurring
+  /// @param _staker The staker whose reward is being claimed
+  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
   function claimMisalignedReward(
     uint256 _motionId,
     uint256 _permissionDomainId,

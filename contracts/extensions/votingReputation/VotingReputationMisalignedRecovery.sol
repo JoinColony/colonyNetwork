@@ -19,16 +19,13 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../../colonyNetwork/IColonyNetwork.sol";
-import "./../../colony/ColonyRoles.sol";
-import "./../../common/BasicMetaTransaction.sol";
-import "./../../common/ERC20Extended.sol";
-import "./../../patriciaTree/PatriciaTreeProofs.sol";
+import "./../../colony/IColony.sol";
 import "./../../tokenLocking/ITokenLocking.sol";
-import "./../ColonyExtension.sol";
 import "./../../../lib/dappsys/math.sol";
+import "./../../../lib/dappsys/auth.sol";
 import "./VotingReputationDataTypes.sol";
 
-contract VotingReputationMisalignedRecovery is PatriciaTreeProofs, DSMath, DSAuth, VotingReputationDataTypes {
+contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationDataTypes {
 
   // THIS FILE IS DELIBERATELY WRONG. IF YOU'RE EDITING THIS FILE, AND YOU'VE NOT BEEN EXPLICITLY
   // TOLD TO DO SO, LEAVE NOW. THERE BE DRAGONS HERE.
@@ -42,46 +39,33 @@ contract VotingReputationMisalignedRecovery is PatriciaTreeProofs, DSMath, DSAut
   address resolver; // Align storage with EtherRouter
 
   IColony colony;
-  bool deprecated;
+  bool DO_NOT_USE_deprecated;
 
-  ExtensionState state;
+  ExtensionState DO_NOT_USE_state;
 
   IColonyNetwork colonyNetwork;
   ITokenLocking tokenLocking;
   address token;
-
-  // All `Fraction` variables are stored as WADs i.e. fixed-point numbers with 18 digits after the radix. So
-  // 1 WAD = 10**18, which is interpreted as 1.
-
-  uint256 totalStakeFraction; // Fraction of the domain's reputation needed to stake on each side in order to go to a motion.
-  // This can be set to a maximum of 0.5.
-  uint256 voterRewardFraction; // Fraction of staked tokens paid out to voters as rewards. This will be paid from the staked
-  // tokens of the losing side. This can be set to a maximum of 0.5.
-
-  uint256 userMinStakeFraction; // Minimum stake as fraction of required stake. 1 means a single user will be required to
-  // provide the whole stake on each side, which may not be possible depending on totalStakeFraction and the distribution of
-  // reputation in a domain.
-  uint256 maxVoteFraction; // Fraction of total domain reputation that needs to commit votes before closing to further votes.
-  // Setting this to anything other than 1 will mean it is likely not all those eligible to vote will be able to do so.
-
-  // All `Period` variables are second-denominated
-
-  uint256 stakePeriod; // Length of time for staking
-  uint256 submitPeriod; // Length of time for submitting votes
-  uint256 revealPeriod; // Length of time for revealing votes
-  uint256 escalationPeriod; // Length of time for escalating after a vote
+  uint256 totalStakeFraction;
+  uint256 DO_NOT_USE_voterRewardFraction;
+  uint256 DO_NOT_USE_userMinStakeFraction;
+  uint256 DO_NOT_USE_maxVoteFraction;
+  uint256 DO_NOT_USE_stakePeriod;
+  uint256 DO_NOT_USE_submitPeriod;
+  uint256 DO_NOT_USE_revealPeriod;
+  uint256 DO_NOT_USE_escalationPeriod;
 
   // Here we deliberately recreate the misalignment in the storage slots, so solidity can correctly
   // find the incorrect data in the mappings.
-  mapping(address => uint256) metatransactionNonces;
+  mapping(address => uint256) DO_NOT_USE_metatransactionNonces;
 
-  uint256 motionCount;
+  uint256 DO_NOT_USE_motionCount;
   mapping (uint256 => Motion) motions;
   mapping (uint256 => mapping (address => mapping (uint256 => uint256))) stakes;
-  mapping (uint256 => mapping (address => bytes32)) voteSecrets;
+  mapping (uint256 => mapping (address => bytes32)) DO_NOT_USE_voteSecrets;
 
-  mapping (bytes32 => uint256) expenditurePastVotes; // expenditure slot signature => voting power
-  mapping (bytes32 => uint256) expenditureMotionCounts; // expenditure struct signature => count
+  mapping (bytes32 => uint256) DO_NOT_USE_expenditurePastVotes;
+  mapping (bytes32 => uint256) DO_NOT_USE_expenditureMotionCounts;
 
   // Public functions (interface)
 

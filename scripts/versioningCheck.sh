@@ -50,15 +50,15 @@ do
 		continue
 	fi
 
-	if [ $file = "contracts/extensions/VotingReputation/VotingReputationDataTypes.sol" ]; then
+	if [ $file = "contracts/extensions/votingReputation/VotingReputationDataTypes.sol" ]; then
 		continue
 	fi
 
-	if [ $file = "contracts/extensions/VotingReputation/VotingReputationMisalignedRecovery.sol" ]; then
+	if [ $file = "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol" ]; then
 		continue
 	fi
 
-	if [ $file = "contracts/extensions/VotingReputation/IVotingReputation.sol" ]; then
+	if [ $file = "contracts/extensions/votingReputation/IVotingReputation.sol" ]; then
 		continue
 	fi
 

@@ -33,6 +33,7 @@ const IMetaColony = artifacts.require("IMetaColony");
 const EtherRouter = artifacts.require("EtherRouter");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TokenLocking = artifacts.require("TokenLocking");
+const IVotingReputation = artifacts.require("VotingReputation");
 const VotingReputation = artifacts.require("VotingReputation");
 const OneTxPayment = artifacts.require("OneTxPayment");
 
@@ -133,7 +134,7 @@ contract("Voting Reputation", (accounts) => {
 
     await colony.installExtension(VOTING_REPUTATION, version);
     const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
-    voting = await VotingReputation.at(votingAddress);
+    voting = await IVotingReputation.at(votingAddress);
 
     await voting.initialise(
       TOTAL_STAKE_FRACTION,

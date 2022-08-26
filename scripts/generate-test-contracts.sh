@@ -41,7 +41,7 @@ sed -i.bak "s/interface IReputationMiningCycle/interface IUpdatedReputationMinin
 sed -i.bak "s/function resetWindow() public;/function resetWindow() public; function isUpdated() public pure returns(bool);/g" ./contracts/reputationMiningCycle/IUpdatedReputationMiningCycle.sol
 # Modify VotingReputationMisaligned to have the correct version
 
-votingVersion="$(grep 'return [0-9]*;' ./contracts/extensions/VotingReputation/VotingReputation.sol | sed 's/    return //' | sed 's/;//')"
+votingVersion="$(grep 'return [0-9]*;' ./contracts/extensions/votingReputation/VotingReputation.sol | sed 's/    return //' | sed 's/;//')"
 echo "Current Voting contract version is $votingVersion"
 previous_version=$(($votingVersion - 1))
 echo "Updating test contract to $previous_version"

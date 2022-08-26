@@ -17,8 +17,9 @@
 
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
+import "./../common/IBasicMetaTransaction.sol";
 
-interface IColonyExtension {
+interface IColonyExtension is IBasicMetaTransaction {
 
   function identifier() external pure returns (bytes32);
   function version() external pure virtual returns (uint256);
