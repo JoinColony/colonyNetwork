@@ -36,7 +36,8 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/extensions/OneTxPayment.sol",
       "contracts/extensions/StreamingPayments.sol",
       "contracts/extensions/TokenSupplier.sol",
-      "contracts/extensions/VotingReputation.sol",
+      "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol",
+      "contracts/extensions/votingReputation/VotingReputation.sol",
       "contracts/extensions/Whitelist.sol",
       "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
       "contracts/patriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
@@ -44,6 +45,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/ToggleableToken.sol",
       "contracts/testHelpers/TestExtensions.sol",
       "contracts/testHelpers/GasGuzzler.sol",
+      "contracts/testHelpers/VotingReputationMisaligned.sol",
       "contracts/tokenLocking/TokenLockingStorage.sol",
       "contracts/Migrations.sol",
       "contracts/Token.sol", // Imported from colonyToken repo
