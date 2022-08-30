@@ -39,3 +39,10 @@ sed -i.bak "s| is ReputationMiningCycleCommon {| is ReputationMiningCycleCommon 
 # Modify IReputationMiningCycle contract
 sed -i.bak "s/interface IReputationMiningCycle/interface IUpdatedReputationMiningCycle/g" ./contracts/reputationMiningCycle/IUpdatedReputationMiningCycle.sol
 sed -i.bak "s/function resetWindow() public;/function resetWindow() public; function isUpdated() public pure returns(bool);/g" ./contracts/reputationMiningCycle/IUpdatedReputationMiningCycle.sol
+# Modify VotingReputationMisaligned to have the correct version
+
+votingVersion="$(grep 'return [0-9]*;' ./contracts/extensions/votingReputation/VotingReputation.sol | sed 's/    return //' | sed 's/;//')"
+echo "Current Voting contract version is $votingVersion"
+previous_version=$(($votingVersion - 1))
+echo "Updating test contract to $previous_version"
+sed -i.bak "s/return 4/return $previous_version/g" ./contracts/testHelpers/VotingReputationMisaligned.sol

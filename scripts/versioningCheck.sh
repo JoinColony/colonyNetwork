@@ -42,7 +42,23 @@ do
 		continue
 	fi
 
+	if [ $file = "contracts/extensions/IColonyExtension.sol" ]; then
+		continue
+	fi
+
 	if [ $file = "contracts/extensions/ColonyExtensionMeta.sol" ]; then
+		continue
+	fi
+
+	if [ $file = "contracts/extensions/votingReputation/VotingReputationDataTypes.sol" ]; then
+		continue
+	fi
+
+	if [ $file = "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol" ]; then
+		continue
+	fi
+
+	if [ $file = "contracts/extensions/votingReputation/IVotingReputation.sol" ]; then
 		continue
 	fi
 

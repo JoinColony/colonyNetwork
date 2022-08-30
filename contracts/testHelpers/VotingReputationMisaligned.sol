@@ -24,10 +24,10 @@ import "./../common/BasicMetaTransaction.sol";
 import "./../common/ERC20Extended.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
-import "./ColonyExtension.sol";
+import "./../extensions/ColonyExtension.sol";
 
 
-contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTransaction {
+contract VotingReputationMisaligned is ColonyExtension, PatriciaTreeProofs, BasicMetaTransaction {
 
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
@@ -49,19 +49,13 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   uint256 constant SUBMIT_END = 1;
   uint256 constant REVEAL_END = 2;
 
-  bytes4 constant NO_ACTION = 0x12345678;
-
   bytes32 constant ROOT_ROLES = (
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Recovery) |
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
   );
 
-  bytes4 constant SET_EXPENDITURE_STATE = bytes4(keccak256(
+  bytes4 constant CHANGE_FUNCTION_SIG = bytes4(keccak256(
     "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"
-  ));
-
-  bytes4 constant SET_EXPENDITURE_PAYOUT = bytes4(keccak256(
-    "setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"
   ));
 
   bytes4 constant OLD_MOVE_FUNDS_SIG = bytes4(keccak256(
@@ -302,8 +296,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     emit MotionCreated(motionCount, msgSender(), _domainId);
   }
 
-  /// @notice @deprecated
-  /// @notice Create a motion in the root domain
+  /// @notice Create a motion in the root domain (DEPRECATED)
   /// @param _altTarget The contract to which we send the action (0x0 for the colony)
   /// @param _action A bytes array encoding a function call
   /// @param _key Reputation tree key for the root domain
@@ -323,8 +316,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     createMotion(1, UINT256_MAX, _altTarget, _action, _key, _value, _branchMask, _siblings);
   }
 
-  /// @notice @deprecated
-  /// @notice Create a motion in any domain
+  /// @notice Create a motion in any domain (DEPRECATED)
   /// @param _domainId The domain where we vote on the motion
   /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
   /// @param _action A bytes array encoding a function call
@@ -397,10 +389,9 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     if (
       _vote == YAY &&
       !motion.escalated &&
-      motion.stakes[YAY] == requiredStake && (
-        getSig(motion.action) == SET_EXPENDITURE_STATE ||
-        getSig(motion.action) == SET_EXPENDITURE_PAYOUT
-      ) && motion.altTarget == address(0x0)
+      motion.stakes[YAY] == requiredStake &&
+      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
+      motion.altTarget == address(0x0)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
       expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
@@ -594,10 +585,9 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
       motion.votes[NAY] < motion.votes[YAY]
     );
 
-    if ((
-        getSig(motion.action) == SET_EXPENDITURE_STATE ||
-        getSig(motion.action) == SET_EXPENDITURE_PAYOUT
-      ) && getTarget(motion.altTarget) == address(colony)
+    if (
+      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
+      getTarget(motion.altTarget) == address(colony)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
       expenditureMotionCounts[structHash] = sub(expenditureMotionCounts[structHash], 1);
@@ -805,10 +795,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
         return MotionState.Staking;
       // If not, did the YAY side stake?
       } else if (motion.stakes[YAY] == requiredStake) {
-        return finalizableOrFinalized(motion.action);
+        return MotionState.Finalizable;
       // If not, was there a prior vote we can fall back on?
       } else if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
-        return finalizableOrFinalized(motion.action);
+        return MotionState.Finalizable;
       // Otherwise, the motion failed
       } else {
         return MotionState.Failed;
@@ -827,15 +817,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
       ) {
         return MotionState.Closed;
       } else {
-        return finalizableOrFinalized(motion.action);
+        return MotionState.Finalizable;
       }
-    }
-  }
 
-  // If we decide that the motion is finalizable, we might actually want it to report as finalized if it's a no-action
-  // motion.
-  function finalizableOrFinalized(bytes memory action) internal pure returns (MotionState) {
-    return getSig(action) == NO_ACTION ? MotionState.Finalized : MotionState.Finalizable;
+    }
   }
 
   /// @notice Get the voter reward
@@ -1037,51 +1022,41 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     }
   }
 
-  function getSig(bytes memory action) internal pure returns (bytes4 sig) {
+  function getSig(bytes memory action) internal returns (bytes4 sig) {
     assembly {
       sig := mload(add(action, 0x20))
     }
   }
 
   function hashExpenditureAction(bytes memory action) internal returns (bytes32 hash) {
-    bytes4 sig = getSig(action);
-    assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
-
-    uint256 valueLoc = (sig == SET_EXPENDITURE_STATE) ? 0xe4 : 0xc4;
-
-    // Hash all but the domain proof and action value, so actions for the
-    //   same storage slot return the same hash.
-    // Recall: mload(action) gives the length of the bytes array
-    // So skip past the three bytes32 (length + domain proof),
-    //   plus 4 bytes for the sig (0x64). Subtract the same from the end, less
-    //   the length bytes32 (0x44). And zero out the value.
-
     assembly {
-      mstore(add(action, valueLoc), 0x0)
+      // Hash all but the domain proof and value, so actions for the same
+      //   storage slot return the same value.
+      // Recall: mload(action) gives length of bytes array
+      // So skip past the three bytes32 (length + domain proof),
+      //   plus 4 bytes for the sig. Subtract the same from the end, less
+      //   the length bytes32. The value itself is located at 0xe4, zero it out.
+      mstore(add(action, 0xe4), 0x0)
       hash := keccak256(add(action, 0x64), sub(mload(action), 0x44))
     }
   }
 
   function hashExpenditureActionStruct(bytes memory action) internal returns (bytes32 hash) {
-    bytes4 sig = getSig(action);
-    assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
+    assert(getSig(action) == CHANGE_FUNCTION_SIG);
 
     uint256 expenditureId;
-    uint256 storageSlot; // This value is only used if (sig == SET_EXPENDITURE_STATE)
+    uint256 storageSlot;
     uint256 expenditureSlot;
 
     assembly {
       expenditureId := mload(add(action, 0x64))
       storageSlot := mload(add(action, 0x84))
+      expenditureSlot := mload(add(action, 0x184))
     }
 
-    if (sig == SET_EXPENDITURE_STATE && storageSlot == 25) {
+    if (storageSlot == 25) {
       hash = keccak256(abi.encodePacked(expenditureId));
     } else {
-      uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
-      assembly {
-        expenditureSlot := mload(add(action, expenditureSlotLoc))
-      }
       hash = keccak256(abi.encodePacked(expenditureId, expenditureSlot));
     }
   }
@@ -1098,18 +1073,14 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     //   of 0x20 represents advancing one byte, 4 is the function signature.
     // So: 0x[length][sig][args...]
 
-    bytes4 sig = getSig(action);
-    assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
-
-    bytes4 functionSignature = SET_EXPENDITURE_STATE;
-
+    bytes32 functionSignature;
     uint256 permissionDomainId;
     uint256 childSkillIndex;
     uint256 expenditureId;
-    uint256 storageSlot; // This value is only used if (sig == SET_EXPENDITURE_STATE)
-    uint256 expenditureSlot;
+    uint256 storageSlot;
 
     assembly {
+      functionSignature := mload(add(action, 0x20))
       permissionDomainId := mload(add(action, 0x24))
       childSkillIndex := mload(add(action, 0x44))
       expenditureId := mload(add(action, 0x64))
@@ -1117,50 +1088,49 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     }
 
     // If we are editing the main expenditure struct
-    if (sig == SET_EXPENDITURE_STATE && storageSlot == 25) {
+    if (storageSlot == 25) {
+
       bytes memory mainClaimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
-
       assembly {
-        mstore(add(mainClaimDelayAction, 0x20), functionSignature)
-        mstore(add(mainClaimDelayAction, 0x24), permissionDomainId)
-        mstore(add(mainClaimDelayAction, 0x44), childSkillIndex)
-        mstore(add(mainClaimDelayAction, 0x64), expenditureId)
-        mstore(add(mainClaimDelayAction, 0x84), 25)     // expenditure storage slot
-        mstore(add(mainClaimDelayAction, 0xa4), 0xe0)   // mask location
-        mstore(add(mainClaimDelayAction, 0xc4), 0x120)  // keys location
-        mstore(add(mainClaimDelayAction, 0xe4), value)
-        mstore(add(mainClaimDelayAction, 0x104), 1)     // mask length
-        mstore(add(mainClaimDelayAction, 0x124), 1)     // offset
-        mstore(add(mainClaimDelayAction, 0x144), 1)     // keys length
-        mstore(add(mainClaimDelayAction, 0x164), 4)     // globalClaimDelay offset
+          mstore(add(mainClaimDelayAction, 0x20), functionSignature)
+          mstore(add(mainClaimDelayAction, 0x24), permissionDomainId)
+          mstore(add(mainClaimDelayAction, 0x44), childSkillIndex)
+          mstore(add(mainClaimDelayAction, 0x64), expenditureId)
+          mstore(add(mainClaimDelayAction, 0x84), 25)     // expenditure storage slot
+          mstore(add(mainClaimDelayAction, 0xa4), 0xe0)   // mask location
+          mstore(add(mainClaimDelayAction, 0xc4), 0x120)  // keys location
+          mstore(add(mainClaimDelayAction, 0xe4), value)
+          mstore(add(mainClaimDelayAction, 0x104), 1)     // mask length
+          mstore(add(mainClaimDelayAction, 0x124), 1)     // offset
+          mstore(add(mainClaimDelayAction, 0x144), 1)     // keys length
+          mstore(add(mainClaimDelayAction, 0x164), 4)     // globalClaimDelay offset
       }
-
       return mainClaimDelayAction;
 
     // If we are editing an expenditure slot
     } else {
+
       bytes memory slotClaimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
-      uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
+      uint256 expenditureSlot;
 
       assembly {
-        expenditureSlot := mload(add(action, expenditureSlotLoc))
+          expenditureSlot := mload(add(action, 0x184))
 
-        mstore(add(slotClaimDelayAction, 0x20), functionSignature)
-        mstore(add(slotClaimDelayAction, 0x24), permissionDomainId)
-        mstore(add(slotClaimDelayAction, 0x44), childSkillIndex)
-        mstore(add(slotClaimDelayAction, 0x64), expenditureId)
-        mstore(add(slotClaimDelayAction, 0x84), 26)     // expenditureSlot storage slot
-        mstore(add(slotClaimDelayAction, 0xa4), 0xe0)   // mask location
-        mstore(add(slotClaimDelayAction, 0xc4), 0x140)  // keys location
-        mstore(add(slotClaimDelayAction, 0xe4), value)
-        mstore(add(slotClaimDelayAction, 0x104), 2)     // mask length
-        mstore(add(slotClaimDelayAction, 0x124), 0)     // mapping
-        mstore(add(slotClaimDelayAction, 0x144), 1)     // offset
-        mstore(add(slotClaimDelayAction, 0x164), 2)     // keys length
-        mstore(add(slotClaimDelayAction, 0x184), expenditureSlot)
-        mstore(add(slotClaimDelayAction, 0x1a4), 1)     // claimDelay offset
+          mstore(add(slotClaimDelayAction, 0x20), functionSignature)
+          mstore(add(slotClaimDelayAction, 0x24), permissionDomainId)
+          mstore(add(slotClaimDelayAction, 0x44), childSkillIndex)
+          mstore(add(slotClaimDelayAction, 0x64), expenditureId)
+          mstore(add(slotClaimDelayAction, 0x84), 26)     // expenditureSlot storage slot
+          mstore(add(slotClaimDelayAction, 0xa4), 0xe0)   // mask location
+          mstore(add(slotClaimDelayAction, 0xc4), 0x140)  // keys location
+          mstore(add(slotClaimDelayAction, 0xe4), value)
+          mstore(add(slotClaimDelayAction, 0x104), 2)     // mask length
+          mstore(add(slotClaimDelayAction, 0x124), 0)     // mapping
+          mstore(add(slotClaimDelayAction, 0x144), 1)     // offset
+          mstore(add(slotClaimDelayAction, 0x164), 2)     // keys length
+          mstore(add(slotClaimDelayAction, 0x184), expenditureSlot)
+          mstore(add(slotClaimDelayAction, 0x1a4), 1)     // claimDelay offset
       }
-
       return slotClaimDelayAction;
 
     }

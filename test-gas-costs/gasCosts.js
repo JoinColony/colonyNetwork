@@ -267,6 +267,7 @@ contract("All", function (accounts) {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" },
       });
       const repCycle = await getActiveRepCycle(colonyNetwork);
+
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(2, { from: STAKER1 });
 
