@@ -18,10 +18,10 @@
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
-import "../extensions/ColonyExtension.sol";
+import "../extensions/ColonyExtensionMeta.sol";
 
 
-abstract contract TestExtension is ColonyExtension {
+abstract contract TestExtension is ColonyExtensionMeta {
   function install(address _colony) public override auth {
     require(address(colony) == address(0x0), "extension-already-installed");
 

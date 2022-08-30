@@ -221,6 +221,46 @@ Create the Meta Colony, same as a normal colony plus the root skill.
 |_tokenAddress|address|Address of the CLNY token
 
 
+### `deployTokenAuthority`
+
+Called to deploy a token authority
+
+*Note: This is more expensive than deploying a token directly, but is able to be done via a metatransaction*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|The address of the otken
+|_colony|address|The address of the colony in control of the token
+|allowedToTransfer|address[]|An array of addresses that are allowed to transfer the token even if it's locked
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|address|address|
+
+### `deployTokenViaNetwork`
+
+Called to deploy a token.
+
+*Note: This is more expensive than deploying a token directly, but is able to be done via a metatransaction*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_name|string|The name of the token
+|_symbol|string|The short 'ticket' symbol for the token
+|_decimals|uint8|The number of decimal places that 1 user-facing token can be divided up in to In the case of ETH, and most tokens, this is 18.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|address|address|
+
 ### `deprecateExtension`
 
 Set the deprecation of an extension in a colony. Can only be called by a Colony.
@@ -236,7 +276,7 @@ Set the deprecation of an extension in a colony. Can only be called by a Colony.
 
 ### `deprecateSkill`
 
-Mark a global skill as deprecated which stops new tasks and payments from using it.
+Mark a skill as deprecated which stops new tasks and payments from using it.
 
 
 **Parameters**
@@ -244,6 +284,19 @@ Mark a global skill as deprecated which stops new tasks and payments from using 
 |Name|Type|Description|
 |---|---|---|
 |_skillId|uint256|Id of the skill
+
+
+### `deprecateSkill`
+
+Set deprecation status for a skill
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|Id of the skill
+|_deprecated|bool|Deprecation status
 
 
 ### `getChildSkillId`
@@ -667,6 +720,18 @@ Creates initial inactive reputation mining cycle.
 
 
 
+
+### `initialiseRootLocalSkill`
+
+Initialise the local skills tree for a colony
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|rootLocalSkillId|uint256|The root local skill
 
 ### `installExtension`
 

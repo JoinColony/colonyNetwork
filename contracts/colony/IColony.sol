@@ -19,12 +19,13 @@ pragma solidity >=0.7.3; // ignore-swc-103
 pragma experimental ABIEncoderV2;
 
 import "./../common/IRecovery.sol";
+import "./../common/IBasicMetaTransaction.sol";
 import "./ColonyDataTypes.sol";
 
 
 /// @title Colony interface
 /// @notice All externally available functions are available here and registered to work with EtherRouter Network contract
-interface IColony is ColonyDataTypes, IRecovery {
+interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   // Implemented in DSAuth.sol
   /// @notice Get the `ColonyAuthority` for the colony.
   /// @return colonyAuthority The `ColonyAuthority` contract address
@@ -227,6 +228,11 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _metadata IPFS hash of the metadata
   function editColony(string memory _metadata) external;
 
+  /// @notice Called to change the metadata associated with a colony. Expected to be a IPFS hash of a
+  /// delta to a JSON blob, but not enforced to any degree by the contracts
+  /// @param _metadataDelta IPFS hash of the metadata delta
+  function editColonyByDelta(string memory _metadataDelta) external;
+
   /// @notice Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to `_users`.
   /// This reputation is assigned in the colony-wide domain. Secured function to authorised members.
   /// @dev Only allowed to be called when `taskCount` is `0` by authorized addresses.
@@ -281,6 +287,21 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param extensionId keccak256 hash of the extension name, used as an indentifier
   function uninstallExtension(bytes32 extensionId) external;
 
+  /// @notice Initialise the local skill tree for the colony.
+  function initialiseRootLocalSkill() external;
+
+  /// @notice Add a new local skill for the colony. Secured function to authorised members.
+  function addLocalSkill() external;
+
+  /// @notice Deprecate a local skill for the colony. Secured function to authorised members.
+  /// @param localSkillId Id for the local skill
+  /// @param deprecated Deprecation status to set for the skill
+  function deprecateLocalSkill(uint256 localSkillId, bool deprecated) external;
+
+  /// @notice Get the root local skill id
+  /// @return rootLocalSkill The root local skill id
+  function getRootLocalSkill() external view returns (uint256 rootLocalSkill);
+
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`.
   /// New funding pot is created and associated with the domain here.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
@@ -306,6 +327,13 @@ interface IColony is ColonyDataTypes, IRecovery {
   /// @param _domainId Id of the domain being edited
   /// @param _metadata Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
   function editDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, string memory _metadata) external;
+
+  /// @notice Deprecate a domain, preventing certain actions from happening there
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _domainId Id of the domain being deprecated
+  /// @param _deprecated Whether or not the domain is deprecated
+  function deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated) external;
 
   /// @notice Get a domain by id.
   /// @param _id Id of the domain which details to get

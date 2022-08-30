@@ -10,8 +10,6 @@ import {
   setupRatedTask,
   setupFundedTask,
   setupFinalizedTask,
-  setupColonyNetwork,
-  setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
 } from "../../helpers/test-data-generator";
 
@@ -52,6 +50,9 @@ const ADDRESS_ZERO = ethers.constants.AddressZero;
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const EtherRouter = artifacts.require("EtherRouter");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const Token = artifacts.require("Token");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
@@ -69,13 +70,14 @@ contract("Reputation Updates", (accounts) => {
   let inactiveReputationMiningCycle;
 
   before(async () => {
-    // Setup a new network instance as we'll be modifying the global skills tree
-    colonyNetwork = await setupColonyNetwork();
-    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
+
+    const clnyTokenAddress = await metaColony.getToken();
+    clnyToken = await Token.at(clnyTokenAddress);
   });
 
   beforeEach(async function () {
@@ -418,7 +420,7 @@ contract("Reputation Updates", (accounts) => {
       repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       expect(repLogEntryManager.user).to.equal(RECIPIENT);
       expect(repLogEntryManager.amount).to.eq.BN(WAD);
-      expect(repLogEntryManager.skillId).to.eq.BN(3);
+      expect(repLogEntryManager.skillId).to.eq.BN(GLOBAL_SKILL_ID);
     });
 
     it("should not add entries to the reputation log for payments that are not in the colony home token", async () => {
@@ -468,6 +470,7 @@ contract("Reputation Updates", (accounts) => {
       await metaColony.finalizeTask(taskId);
       const numUpdates = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       expect(numUpdates).to.eq.BN(7);
+
       // Update 1 is the reputation miner reward.
       // Updates 2, 3, and 4 are the domain-reputation rewards for the task.
       // So update 5 is the update corresponding to the first skill in the task's array.
@@ -475,7 +478,7 @@ contract("Reputation Updates", (accounts) => {
       let logEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(4);
       expect(logEntry.user).to.equal(WORKER);
       expect(logEntry.amount).to.eq.BN(WORKER_PAYOUT.divn(3));
-      expect(logEntry.skillId).to.eq.BN(3);
+      expect(logEntry.skillId).to.eq.BN(GLOBAL_SKILL_ID);
       expect(logEntry.nUpdates).to.eq.BN(2);
 
       logEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(5);

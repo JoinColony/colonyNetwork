@@ -25,12 +25,12 @@ import "./ColonyStorage.sol";
 contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   function lockToken() public stoppable onlyOwnExtension returns (uint256) {
     uint256 lockId = ITokenLocking(tokenLockingAddress).lockToken(token);
-    tokenLocks[msg.sender][lockId] = true;
+    tokenLocks[msgSender()][lockId] = true;
     return lockId;
   }
 
   function unlockTokenForUser(address _user, uint256 _lockId) public stoppable onlyOwnExtension {
-    require(tokenLocks[msg.sender][_lockId], "colony-bad-lock-id");
+    require(tokenLocks[msgSender()][_lockId], "colony-bad-lock-id");
     ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, _user, _lockId);
   }
 
@@ -183,7 +183,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
 
     updatePayoutsWeCannotMakeAfterBudgetChange(payment.fundingPotId, _token, currentTotalAmount);
 
-    emit PaymentPayoutSet(msg.sender, _id, _token, _amount);
+    emit PaymentPayoutSet(msgSender(), _id, _token, _amount);
   }
 
   function getFundingPotCount() public view returns (uint256 count) {
@@ -218,6 +218,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   )
   public
   stoppable
+  domainNotDeprecated(getDomainFromFundingPot(_toPot))
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   validFundingTransfer(_fromPot, _toPot)
   {
@@ -238,6 +239,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   )
   public
   stoppable
+  domainNotDeprecated(getDomainFromFundingPot(_toPot))
   authDomain(_permissionDomainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot))
   authDomain(_permissionDomainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot))
   validFundingTransfer(_fromPot, _toPot)
@@ -267,7 +269,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     fundingPots[1].balance[_token] = add(fundingPots[1].balance[_token], remainder);
     fundingPots[0].balance[_token] = add(fundingPots[0].balance[_token], feeToPay);
 
-    emit ColonyFundsClaimed(msg.sender, _token, feeToPay, remainder);
+    emit ColonyFundsClaimed(msgSender(), _token, feeToPay, remainder);
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {
@@ -309,7 +311,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       false
     );
 
-    emit RewardPayoutCycleStarted(msg.sender, totalLockCount);
+    emit RewardPayoutCycleStarted(msgSender(), totalLockCount);
   }
 
   // slither-disable-next-line reentrancy-no-eth
@@ -325,7 +327,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     uint256 userReputation = checkReputation(
       rewardPayoutCycles[_payoutId].reputationState,
       domains[1].skillId,
-      msg.sender,
+      msgSender(),
       key,
       value,
       branchMask,
@@ -336,7 +338,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     uint256 reward;
     (tokenAddress, reward) = calculateRewardForUser(_payoutId, _squareRoots, userReputation);
 
-    ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, msg.sender, _payoutId);
+    ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, msgSender(), _payoutId);
 
     uint fee = calculateNetworkFeeForPayout(reward);
     uint remainder = sub(reward, fee);
@@ -348,10 +350,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     );
     rewardPayoutCycles[_payoutId].amountRemaining = sub(rewardPayoutCycles[_payoutId].amountRemaining, reward);
 
-    assert(ERC20Extended(tokenAddress).transfer(msg.sender, remainder));
+    assert(ERC20Extended(tokenAddress).transfer(msgSender(), remainder));
     assert(ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee));
 
-    emit RewardPayoutClaimed(_payoutId, msg.sender, fee, remainder);
+    emit RewardPayoutClaimed(_payoutId, msgSender(), fee, remainder);
   }
 
   function finalizeRewardPayout(uint256 _payoutId) public stoppable {
@@ -363,7 +365,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     rewardPayoutCycles[_payoutId].finalized = true;
     pendingRewardPayments[payout.tokenAddress] = sub(pendingRewardPayments[payout.tokenAddress], payout.amountRemaining);
 
-    emit RewardPayoutCycleEnded(msg.sender, _payoutId);
+    emit RewardPayoutCycleEnded(msgSender(), _payoutId);
   }
 
   function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle memory rewardPayoutCycle) {
@@ -377,7 +379,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     require(_rewardInverse > 0, "colony-reward-inverse-cannot-be-zero");
     rewardInverse = _rewardInverse;
 
-    emit ColonyRewardInverseSet(msg.sender, _rewardInverse);
+    emit ColonyRewardInverseSet(msgSender(), _rewardInverse);
   }
 
   function getRewardInverse() public view returns (uint256) {
@@ -422,7 +424,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     // Checking if payout is active
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
 
-    uint256 userTokens = ITokenLocking(tokenLockingAddress).getUserLock(token, msg.sender).balance;
+    uint256 userTokens = ITokenLocking(tokenLockingAddress).getUserLock(token, msgSender()).balance;
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
     require(userReputation > 0, "colony-reward-payout-invalid-user-reputation");
 
@@ -509,7 +511,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _amount);
     }
 
-    emit ColonyFundsMovedBetweenFundingPots(msg.sender, _fromPot, _toPot, _amount, _token);
+    emit ColonyFundsMovedBetweenFundingPots(msgSender(), _fromPot, _toPot, _amount, _token);
   }
 
 
@@ -584,7 +586,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       fundingPot.payouts[_token] = add(sub(currentTotal, currentPayout), _amounts[i]);
 
 
-      emit ExpenditurePayoutSet(msg.sender, _id, _slots[i], _token, _amounts[i]);
+      emit ExpenditurePayoutSet(msgSender(), _id, _slots[i], _token, _amounts[i]);
     }
 
     updatePayoutsWeCannotMakeAfterBudgetChange(expenditures[_id].fundingPotId, _token, currentTotal);
@@ -648,7 +650,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
       }
     }
 
-    emit PayoutClaimed(msg.sender, _fundingPotId, _token, remainder);
+    emit PayoutClaimed(msgSender(), _fundingPotId, _token, remainder);
   }
 
   function calculateNetworkFeeForPayout(uint256 _payout) private view returns (uint256 fee) {
@@ -661,16 +663,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     } else {
       fee = _payout/feeInverse + 1;
     }
-  }
-
-  function burnTokens(address _token, uint256 _amount) public stoppable auth {
-    // Check the root funding pot has enought
-    require(fundingPots[1].balance[_token] >= _amount, "colony-not-enough-tokens");
-    fundingPots[1].balance[_token] -= _amount;
-
-    ERC20Extended(_token).burn(_amount);
-
-    emit TokensBurned(msg.sender, _token, _amount);
   }
 
 }

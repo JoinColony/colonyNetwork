@@ -22,6 +22,8 @@ import "../colony/ColonyDataTypes.sol";
 import "../colonyNetwork/IColonyNetwork.sol";
 import "../extensions/ColonyExtension.sol";
 import "./ColonyNetworkStorage.sol";
+import "./../metaTxToken/MetaTxToken.sol";
+import "./../common/TokenAuthority.sol";
 
 
 contract ColonyNetworkExtensions is ColonyNetworkStorage {
@@ -52,15 +54,15 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     calledByColony
   {
     require(resolvers[_extensionId][_version] != address(0x0), "colony-network-extension-bad-version");
-    require(installations[_extensionId][msg.sender] == address(0x0), "colony-network-extension-already-installed");
+    require(installations[_extensionId][msgSender()] == address(0x0), "colony-network-extension-already-installed");
 
     EtherRouter extension = new EtherRouter();
-    installations[_extensionId][msg.sender] = address(extension);
+    installations[_extensionId][msgSender()] = address(extension);
 
     extension.setResolver(resolvers[_extensionId][_version]);
-    ColonyExtension(address(extension)).install(msg.sender);
+    ColonyExtension(address(extension)).install(msgSender());
 
-    emit ExtensionInstalled(_extensionId, msg.sender, _version);
+    emit ExtensionInstalled(_extensionId, msgSender(), _version);
   }
 
   function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
@@ -68,9 +70,9 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     stoppable
     calledByColony
   {
-    require(installations[_extensionId][msg.sender] != address(0x0), "colony-network-extension-not-installed");
+    require(installations[_extensionId][msgSender()] != address(0x0), "colony-network-extension-not-installed");
 
-    address payable extension = installations[_extensionId][msg.sender];
+    address payable extension = installations[_extensionId][msgSender()];
     require(_newVersion == ColonyExtension(extension).version() + 1, "colony-network-extension-bad-increment");
     require(resolvers[_extensionId][_newVersion] != address(0x0), "colony-network-extension-bad-version");
 
@@ -78,7 +80,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     ColonyExtension(extension).finishUpgrade();
     assert(ColonyExtension(extension).version() == _newVersion);
 
-    emit ExtensionUpgraded(_extensionId, msg.sender, _newVersion);
+    emit ExtensionUpgraded(_extensionId, msgSender(), _newVersion);
   }
 
   function deprecateExtension(bytes32 _extensionId, bool _deprecated)
@@ -86,9 +88,9 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     stoppable
     calledByColony
   {
-    ColonyExtension(installations[_extensionId][msg.sender]).deprecate(_deprecated);
+    ColonyExtension(installations[_extensionId][msgSender()]).deprecate(_deprecated);
 
-    emit ExtensionDeprecated(_extensionId, msg.sender, _deprecated);
+    emit ExtensionDeprecated(_extensionId, msgSender(), _deprecated);
   }
 
   function uninstallExtension(bytes32 _extensionId)
@@ -96,13 +98,13 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     stoppable
     calledByColony
   {
-    require(installations[_extensionId][msg.sender] != address(0x0), "colony-network-extension-not-installed");
+    require(installations[_extensionId][msgSender()] != address(0x0), "colony-network-extension-not-installed");
 
-    ColonyExtension extension = ColonyExtension(installations[_extensionId][msg.sender]);
-    installations[_extensionId][msg.sender] = address(0x0);
+    ColonyExtension extension = ColonyExtension(installations[_extensionId][msgSender()]);
+    installations[_extensionId][msgSender()] = address(0x0);
     extension.uninstall();
 
-    emit ExtensionUninstalled(_extensionId, msg.sender);
+    emit ExtensionUninstalled(_extensionId, msgSender());
   }
 
   // Public view functions
@@ -138,4 +140,25 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     address extension = Resolver(_resolver).lookup(VERSION_SIG);
     return ColonyExtension(extension).version();
   }
+
+  function deployTokenViaNetwork(string memory _name, string memory _symbol, uint8 _decimals) public
+  stoppable
+  returns (address)
+  {
+    MetaTxToken token = new MetaTxToken(_name, _symbol, _decimals);
+    token.setOwner(msgSender());
+
+    emit TokenDeployed(address(token));
+  }
+
+  function deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer) public
+  stoppable
+  returns (address)
+  {
+    TokenAuthority tokenAuthority = new TokenAuthority(_token, _colony, allowedToTransfer);
+
+    emit TokenAuthorityDeployed(address(tokenAuthority));
+  }
+
+
 }

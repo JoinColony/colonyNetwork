@@ -128,17 +128,35 @@ contract("ColonyPermissions", (accounts) => {
       expect(hasRole).to.be.true;
 
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address, {
-          from: USER1,
-        }),
+        colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+          1,
+          UINT256_MAX,
+          1,
+          UINT256_MAX,
+          0,
+          domain1.fundingPotId,
+          domain2.fundingPotId,
+          WAD,
+          token.address,
+          { from: USER1 }
+        ),
         "ds-auth-unauthorized"
       );
 
       const taskId = await makeTask({ colonyNetwork, colony, domainId: 2 });
       const task = await colony.getTask(taskId);
-      await colony.moveFundsBetweenPots(2, UINT256_MAX, 2, UINT256_MAX, UINT256_MAX, domain2.fundingPotId, task.fundingPotId, WAD, token.address, {
-        from: USER1,
-      });
+      await colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+        2,
+        UINT256_MAX,
+        2,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain2.fundingPotId,
+        task.fundingPotId,
+        WAD,
+        token.address,
+        { from: USER1 }
+      );
     });
 
     it("should allow users with administration permission manipulate expenditures in their domains only", async () => {
@@ -320,7 +338,7 @@ contract("ColonyPermissions", (accounts) => {
       tx = await colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, 100, { from: FOUNDER });
       await expectEvent(tx, "ArbitraryReputationUpdate", [FOUNDER, USER2, GLOBAL_SKILL_ID, 100]);
 
-      await checkErrorRevert(colony.emitSkillReputationReward(0, USER2, 100, { from: FOUNDER }), "colony-not-global-skill");
+      await checkErrorRevert(colony.emitSkillReputationReward(0, USER2, 100, { from: FOUNDER }), "colony-not-valid-global-or-local-skill");
       await checkErrorRevert(colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, -100, { from: FOUNDER }), "colony-reward-must-be-positive");
       await checkErrorRevert(colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "ds-auth-unauthorized");
     });
@@ -341,7 +359,7 @@ contract("ColonyPermissions", (accounts) => {
       tx = await colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, -100, { from: USER1 });
       await expectEvent(tx, "ArbitraryReputationUpdate", [USER1, USER2, GLOBAL_SKILL_ID, -100]);
 
-      await checkErrorRevert(colony.emitSkillReputationPenalty(0, USER2, 100, { from: USER1 }), "colony-not-global-skill");
+      await checkErrorRevert(colony.emitSkillReputationPenalty(0, USER2, 100, { from: USER1 }), "colony-not-valid-global-or-local-skill");
       await checkErrorRevert(colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");
       await checkErrorRevert(colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, -100, { from: USER2 }), "ds-auth-unauthorized");
     });
@@ -392,10 +410,31 @@ contract("ColonyPermissions", (accounts) => {
       );
 
       // Newest version
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address, {
-        from: USER2,
-      });
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, 0, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 });
+      await colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        0,
+        domain1.fundingPotId,
+        domain2.fundingPotId,
+        WAD,
+        token.address,
+        { from: USER2 }
+      );
+
+      await colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+        1,
+        UINT256_MAX,
+        1,
+        0,
+        1,
+        domain2.fundingPotId,
+        domain3.fundingPotId,
+        WAD,
+        token.address,
+        { from: USER2 }
+      );
 
       // But only with valid proofs. Deprecated version of this function
       await checkErrorRevert(
@@ -427,11 +466,34 @@ contract("ColonyPermissions", (accounts) => {
 
       // The newest version
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, 1, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 }),
+        colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+          1,
+          UINT256_MAX,
+          1,
+          1,
+          1,
+          domain2.fundingPotId,
+          domain3.fundingPotId,
+          WAD,
+          token.address,
+          { from: USER2 }
+        ),
         "colony-invalid-domain-inheritence"
       );
+
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, 0, 0, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 }),
+        colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+          1,
+          UINT256_MAX,
+          1,
+          0,
+          0,
+          domain2.fundingPotId,
+          domain3.fundingPotId,
+          WAD,
+          token.address,
+          { from: USER2 }
+        ),
         "colony-invalid-domain-inheritence"
       );
     });

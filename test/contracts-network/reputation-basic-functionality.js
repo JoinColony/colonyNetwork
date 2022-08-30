@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
-import { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, SUBMITTER_ONLY_WINDOW } from "../../helpers/constants";
+import { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, CHALLENGE_RESPONSE_WINDOW_DURATION } from "../../helpers/constants";
 import { forwardTime, checkErrorRevert, getActiveRepCycle, advanceMiningCycleNoContest, getBlockTime } from "../../helpers/test-helper";
 
 const { expect } = chai;
@@ -33,12 +33,15 @@ contract("Reputation mining - basic functionality", (accounts) => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
+
     const clnyAddress = await metaColony.getToken();
     clnyToken = await Token.at(clnyAddress);
+
+    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   });
 
   afterEach(async () => {
@@ -189,7 +192,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
       expect(nSubmissionsForHash).to.eq.BN(1);
 
       // Cleanup
-      await forwardTime(SUBMITTER_ONLY_WINDOW + 1, this);
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(0, { from: MINER1 });
     });
   });

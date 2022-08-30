@@ -18,32 +18,12 @@
 pragma solidity 0.7.3;
 pragma experimental "ABIEncoderV2";
 
-import "./../common/EtherRouter.sol";
-import "./../common/ERC20Extended.sol";
-import "./../common/MultiChain.sol";
-import "./../colony/ColonyAuthority.sol";
-import "./../colony/IColony.sol";
-import "./../colony/IMetaColony.sol";
+import "./../common/BasicMetaTransaction.sol";
 import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
 
 
-contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
-  // Meta Colony allowed to manage Global skills
-  // All colonies are able to manage their Local (domain associated) skills
-  modifier allowedToAddSkill(bool globalSkill) {
-    if (globalSkill) {
-      require(msg.sender == metaColony, "colony-must-be-meta-colony");
-    } else {
-      require(_isColony[msg.sender] || msg.sender == address(this), "colony-caller-must-be-colony");
-    }
-    _;
-  }
-
-  modifier skillExists(uint skillId) {
-    require(skillCount >= skillId, "colony-invalid-skill-id");
-    _;
-  }
+contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
 
   function isColony(address _colony) public view returns (bool) {
     return _isColony[_colony];
@@ -105,87 +85,6 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
 
   function getTokenLocking() public view returns (address) {
     return tokenLocking;
-  }
-
-  function setMiningResolver(address _miningResolver) public
-  stoppable
-  auth
-  {
-    require(_miningResolver != address(0x0), "colony-mining-resolver-cannot-be-zero");
-
-    miningCycleResolver = _miningResolver;
-
-    emit MiningCycleResolverSet(_miningResolver);
-  }
-
-  function getMiningResolver() public view returns (address) {
-    return miningCycleResolver;
-  }
-
-  function createMetaColony(address _tokenAddress) public
-  stoppable
-  auth
-  {
-    require(metaColony == address(0x0), "colony-meta-colony-exists-already");
-
-    metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
-
-    // Add the special mining skill
-    reputationMiningSkillId = this.addSkill(skillCount);
-
-    emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
-  }
-
-  // DEPRECATED, only deploys version 3 colonies.
-  function createColony(address _tokenAddress) public
-  stoppable
-  returns (address)
-  {
-    return createColony(_tokenAddress, 3, "", "");
-  }
-
-  // DEPRECATED, only deploys version 4 colonies.
-  function createColony(
-    address _tokenAddress,
-    uint256 _version, // solhint-disable-line no-unused-vars
-    string memory _colonyName,
-    string memory _orbitdb, // solhint-disable-line no-unused-vars
-    bool _useExtensionManager // solhint-disable-line no-unused-vars
-  ) public stoppable returns (address)
-  {
-    return createColony(_tokenAddress, 4, _colonyName, "");
-  }
-
-  function createColony(
-    address _tokenAddress,
-    uint256 _version,
-    string memory _colonyName
-  ) public stoppable returns (address)
-  {
-    return createColony(_tokenAddress, _version, _colonyName, "");
-  }
-
-  function createColony(
-    address _tokenAddress,
-    uint256 _version,
-    string memory _colonyName,
-    string memory _metadata
-  ) public stoppable returns (address)
-  {
-    uint256 version = (_version == 0) ? currentColonyVersion : _version;
-    address colonyAddress = deployColony(_tokenAddress, version);
-
-    if (bytes(_colonyName).length > 0) {
-      IColony(colonyAddress).registerColonyLabel(_colonyName, "");
-    }
-
-    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
-      IColony(colonyAddress).editColony(_metadata);
-    }
-
-    setFounderPermissions(colonyAddress);
-
-    return colonyAddress;
   }
 
   function addColonyVersion(uint _version, address _resolver) public
@@ -289,10 +188,26 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
     }
   }
 
-  function deprecateSkill(uint256 _skillId) public stoppable
-  allowedToAddSkill(true)
+  function deprecateSkill(uint256 _skillId, bool _deprecated) public stoppable
+  allowedToAddSkill(skills[_skillId].nParents == 0)
+  returns (bool)
   {
-    skills[_skillId].deprecated = true;
+    bool changed = skills[_skillId].deprecated != _deprecated;
+    skills[_skillId].deprecated = _deprecated;
+    return changed;
+  }
+
+  // DEPRECATED
+  function deprecateSkill(uint256 _skillId) public stoppable {
+    deprecateSkill(_skillId, true);
+  }
+
+  function initialiseRootLocalSkill() public
+  stoppable
+  calledByColony
+  returns (uint256)
+  {
+    return skillCount++;
   }
 
   function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public
@@ -315,7 +230,7 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
       _user,
       _amount,
       _skillId,
-      msg.sender,
+      msgSender(),
       nParents,
       nChildren
     );
@@ -337,8 +252,8 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
     emit NetworkFeeInverseSet(_feeInverse);
   }
 
-  function getPayoutWhitelist(address _token) public view returns (bool) {
-    return payoutWhitelist[_token];
+  function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
+    return metatransactionNonces[_user];
   }
 
   function setPayoutWhitelist(address _token, bool _status) public stoppable
@@ -349,52 +264,18 @@ contract ColonyNetwork is ColonyNetworkStorage, MultiChain {
     emit TokenWhitelisted(_token, _status);
   }
 
-  function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {
-    require(_tokenAddress != address(0x0), "colony-token-invalid-address");
-    require(colonyVersionResolver[_version] != address(0x00), "colony-network-invalid-version");
-
-    EtherRouter etherRouter = new EtherRouter();
-    IColony colony = IColony(address(etherRouter));
-
-    address resolverForColonyVersion = colonyVersionResolver[_version]; // ignore-swc-107
-    etherRouter.setResolver(resolverForColonyVersion); // ignore-swc-113
-
-    // Creating new instance of colony's authority
-    ColonyAuthority colonyAuthority = new ColonyAuthority(address(colony));
-
-    DSAuth dsauth = DSAuth(etherRouter);
-    dsauth.setAuthority(colonyAuthority);
-
-    colonyAuthority.setOwner(address(etherRouter));
-
-    // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
-    skillCount += 1;
-    colonyCount += 1;
-    colonies[colonyCount] = address(colony);
-    _isColony[address(colony)] = true;
-
-    colony.initialiseColony(address(this), _tokenAddress);
-
-    emit ColonyAdded(colonyCount, address(etherRouter), _tokenAddress);
-
-    return address(etherRouter);
+  function getPayoutWhitelist(address _token) public view returns (bool) {
+    return payoutWhitelist[_token];
   }
 
-  function setFounderPermissions(address _colonyAddress) internal {
-    require(DSAuth(_colonyAddress).owner() == address(this), "colony-network-not-colony-owner");
-
-    // Assign all permissions in root domain
-    IColony colony = IColony(_colonyAddress);
-    colony.setRecoveryRole(msg.sender);
-    colony.setRootRole(msg.sender, true);
-    colony.setArbitrationRole(1, UINT256_MAX, msg.sender, 1, true);
-    colony.setArchitectureRole(1, UINT256_MAX, msg.sender, 1, true);
-    colony.setFundingRole(1, UINT256_MAX, msg.sender, 1, true);
-    colony.setAdministrationRole(1, UINT256_MAX, msg.sender, 1, true);
-
-    // Colony will not have owner
-    DSAuth dsauth = DSAuth(_colonyAddress);
-    dsauth.setOwner(address(0x0));
+  function incrementMetatransactionNonce(address _user) override internal {
+    // We need to protect the metatransaction nonce slots, otherwise those with recovery
+    // permissions could replay metatransactions, which would be a disaster.
+    // What slot are we setting?
+    // This mapping is in slot 41 (see ColonyNetworkStorage.sol);
+    uint256 slot = uint256(keccak256(abi.encode(uint256(_user), uint256(METATRANSACTION_NONCES_SLOT))));
+    protectSlot(slot);
+    metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
   }
 
   function ascendSkillTree(uint _skillId, uint _parentSkillNumber) internal view returns (uint256) {

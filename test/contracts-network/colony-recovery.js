@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 
 import { UINT256_MAX, SPECIFICATION_HASH } from "../../helpers/constants";
 import { web3GetStorageAt, checkErrorRevert, expectEvent } from "../../helpers/test-helper";
-import { setupRandomColony } from "../../helpers/test-data-generator";
+import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -195,13 +195,44 @@ contract("Colony Recovery", (accounts) => {
       expect(unprotected).to.eq.BN(`0xdeadbeef${"0".repeat(56)}`);
     });
 
-    it("should not allow editing of protected variables", async () => {
+    it("should not allow editing of protected variables in a protected slot", async () => {
       await colony.enterRecoveryMode();
       await checkErrorRevert(colony.setStorageSlotRecovery(0, "0xdeadbeef"), "colony-common-protected-variable");
       await checkErrorRevert(colony.setStorageSlotRecovery(1, "0xdeadbeef"), "colony-common-protected-variable");
       await checkErrorRevert(colony.setStorageSlotRecovery(2, "0xdeadbeef"), "colony-common-protected-variable");
       // '6' is a protected location in Colony, but not ColonyNetwork. We get a different error.
       await checkErrorRevert(colony.setStorageSlotRecovery(6, "0xdeadbeef"), "colony-protected-variable");
+      await checkErrorRevert(colony.setStorageSlotRecovery(36, "0xdeadbeef"), "colony-protected-variable");
+    });
+
+    it("should not allow editing of a protected variable in a mapping", async () => {
+      // First, set a variable in a protected mapping. Currently, the only way we do that
+      // is via a metatransaction
+      const txData = await colony.contract.methods.mintTokens(100).encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[0], colony.address);
+
+      await colony.executeMetaTransaction(accounts[0], txData, r, s, v, { from: accounts[1] });
+
+      // Put colony in to recovery mode
+      await colony.enterRecoveryMode();
+      // work out the storage slot
+      // Metatransaction nonce mapping is storage slot 35
+      // So this user has their nonce stored at
+      const user0MetatransactionNonceSlot = await web3.utils.soliditySha3(
+        { type: "bytes32", value: ethers.utils.hexZeroPad(accounts[0], 32) },
+        { type: "uint256", value: "35" }
+      );
+
+      // Try and edit that slot
+      await checkErrorRevert(
+        colony.setStorageSlotRecovery(user0MetatransactionNonceSlot, "0x00000000000000000000000000000000000000000000000000000000000000ff"),
+        "colony-protected-variable"
+      );
+
+      // Try and edit the protection
+      const user0MetatransactionNonceProtectionSlot = web3.utils.soliditySha3("RECOVERY_PROTECTED", user0MetatransactionNonceSlot);
+      await checkErrorRevert(colony.setStorageSlotRecovery(user0MetatransactionNonceProtectionSlot, "0x00"), "colony-protected-variable");
     });
 
     it("should allow upgrade to be called on a colony in and out of recovery mode", async () => {

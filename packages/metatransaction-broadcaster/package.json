@@ -1,0 +1,26 @@
+{
+  "name": "metatransaction-broadcaster",
+  "version": "1.0.0",
+  "description": "Service to validate and execute acceptable metatransactions",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.14.7",
+    "@babel/register": "^7.14.5",
+    "body-parser": "^1.19.0",
+    "discord.js": "^12.5.3",
+    "ethers": "^5.4.1",
+    "express": "^4.17.1",
+    "jsonfile": "^6.1.0",
+    "request-promise": "^4.2.6",
+    "slack": "^11.0.2",
+    "sqlite": "^4.0.23",
+    "sqlite3": "^5.0.3",
+    "yargs": "^17.0.1"
+  }
+}

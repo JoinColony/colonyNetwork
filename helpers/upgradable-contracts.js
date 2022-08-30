@@ -72,22 +72,26 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
 
 export async function setupColonyVersionResolver(
   colony,
+  colonyDomains,
   colonyExpenditure,
   colonyTask,
   colonyPayment,
   colonyFunding,
   colonyRoles,
   contractRecovery,
+  colonyArbitraryTransaction,
   resolver
 ) {
   const deployedImplementations = {};
   deployedImplementations.Colony = colony.address;
+  deployedImplementations.ColonyDomains = colonyDomains.address;
   deployedImplementations.ColonyExpenditure = colonyExpenditure.address;
   deployedImplementations.ColonyTask = colonyTask.address;
   deployedImplementations.ColonyRoles = colonyRoles.address;
   deployedImplementations.ColonyPayment = colonyPayment.address;
   deployedImplementations.ColonyFunding = colonyFunding.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
+  deployedImplementations.ColonyArbitraryTransaction = colonyArbitraryTransaction.address;
 
   await setupEtherRouter("IMetaColony", deployedImplementations, resolver);
 }
@@ -96,6 +100,7 @@ export async function setupUpgradableColonyNetwork(
   etherRouter,
   resolver,
   colonyNetwork,
+  colonyNetworkDeployer,
   colonyNetworkMining,
   colonyNetworkAuction,
   colonyNetworkENS,
@@ -104,6 +109,7 @@ export async function setupUpgradableColonyNetwork(
 ) {
   const deployedImplementations = {};
   deployedImplementations.ColonyNetwork = colonyNetwork.address;
+  deployedImplementations.ColonyNetworkDeployer = colonyNetworkDeployer.address;
   deployedImplementations.ColonyNetworkMining = colonyNetworkMining.address;
   deployedImplementations.ColonyNetworkAuction = colonyNetworkAuction.address;
   deployedImplementations.ColonyNetworkENS = colonyNetworkENS.address;

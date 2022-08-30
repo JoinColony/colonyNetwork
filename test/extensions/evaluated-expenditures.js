@@ -6,16 +6,15 @@ import { ethers } from "ethers";
 import { soliditySha3 } from "web3-utils";
 
 import { UINT256_MAX, WAD } from "../../helpers/constants";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
 import { checkErrorRevert, web3GetCode } from "../../helpers/test-helper";
-import { setupColonyNetwork, setupRandomColony, setupMetaColonyWithLockedCLNYToken } from "../../helpers/test-data-generator";
+import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const EtherRouter = artifacts.require("EtherRouter");
 const EvaluatedExpenditure = artifacts.require("EvaluatedExpenditure");
-const Resolver = artifacts.require("Resolver");
-const ColonyExtension = artifacts.require("ColonyExtension");
 
 const EVALUATED_EXPENDITURE = soliditySha3("EvaluatedExpenditure");
 
@@ -23,30 +22,23 @@ contract("EvaluatedExpenditure", (accounts) => {
   let colonyNetwork;
   let colony;
   let evaluatedExpenditure;
-  let evaluatedExpenditureVersion;
+  let version;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
 
   before(async () => {
-    colonyNetwork = await setupColonyNetwork();
-    const { metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    const evaluatedExpenditureImplementation = await EvaluatedExpenditure.new();
-    const resolver = await Resolver.new();
-    await setupEtherRouter("EvaluatedExpenditure", { EvaluatedExpenditure: evaluatedExpenditureImplementation.address }, resolver);
-    await metaColony.addExtensionToNetwork(EVALUATED_EXPENDITURE, resolver.address);
-
-    const versionSig = await resolver.stringToSig("version()");
-    const target = await resolver.lookup(versionSig);
-    const extensionImplementation = await ColonyExtension.at(target);
-    evaluatedExpenditureVersion = await extensionImplementation.version();
+    const extension = await EvaluatedExpenditure.new();
+    version = await extension.version();
   });
 
   beforeEach(async () => {
     ({ colony } = await setupRandomColony(colonyNetwork));
 
-    await colony.installExtension(EVALUATED_EXPENDITURE, evaluatedExpenditureVersion);
+    await colony.installExtension(EVALUATED_EXPENDITURE, version);
 
     const evaluatedExpenditureAddress = await colonyNetwork.getExtensionInstallation(EVALUATED_EXPENDITURE, colony.address);
     evaluatedExpenditure = await EvaluatedExpenditure.at(evaluatedExpenditureAddress);
@@ -62,9 +54,7 @@ contract("EvaluatedExpenditure", (accounts) => {
       await checkErrorRevert(evaluatedExpenditure.install(colony.address), "extension-already-installed");
 
       const identifier = await evaluatedExpenditure.identifier();
-      const version = await evaluatedExpenditure.version();
       expect(identifier).to.equal(EVALUATED_EXPENDITURE);
-      expect(version).to.eq.BN(evaluatedExpenditureVersion);
 
       const capabilityRoles = await evaluatedExpenditure.getCapabilityRoles("0x0");
       expect(capabilityRoles).to.equal(ethers.constants.HashZero);
@@ -79,13 +69,9 @@ contract("EvaluatedExpenditure", (accounts) => {
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
-      await colony.installExtension(EVALUATED_EXPENDITURE, evaluatedExpenditureVersion, { from: USER0 });
+      await colony.installExtension(EVALUATED_EXPENDITURE, version, { from: USER0 });
 
-      await checkErrorRevert(
-        colony.installExtension(EVALUATED_EXPENDITURE, evaluatedExpenditureVersion, { from: USER0 }),
-        "colony-network-extension-already-installed"
-      );
-
+      await checkErrorRevert(colony.installExtension(EVALUATED_EXPENDITURE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER0 });
@@ -126,6 +112,23 @@ contract("EvaluatedExpenditure", (accounts) => {
         evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [WAD], { from: USER1 }),
         "evaluated-expenditure-not-owner"
       );
+    });
+
+    it("can set the payout modifier via metatransaction", async () => {
+      const txData = await evaluatedExpenditure.contract.methods
+        .setExpenditurePayoutModifiers(1, UINT256_MAX.toString(), expenditureId.toString(), [0], [WAD.toString()])
+        .encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, evaluatedExpenditure.address);
+
+      let expenditureSlot;
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.payoutModifier).to.be.zero;
+
+      await evaluatedExpenditure.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD);
     });
   });
 });

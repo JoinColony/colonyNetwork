@@ -2,6 +2,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 
 import {
   getTokenArgs,
@@ -13,7 +14,12 @@ import {
   getColonyEditable,
 } from "../../helpers/test-helper";
 import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } from "../../helpers/constants";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
+import {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  setupRandomColony,
+  getMetaTransactionParameters,
+} from "../../helpers/test-data-generator";
 import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
 
 const namehash = require("eth-ens-namehash");
@@ -25,8 +31,17 @@ const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
+const TokenAuthority = artifacts.require("TokenAuthority");
+const MetaTxToken = artifacts.require("MetaTxToken");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
+
+const copyWiring = async function (resolverFrom, resolverTo, functionSig) {
+  const sig = await resolverFrom.stringToSig(functionSig);
+  const functionLocation = await resolverFrom.lookup(sig);
+  await resolverTo.register(functionSig, functionLocation);
+};
 
 contract("Colony Network", (accounts) => {
   let newResolverAddress;
@@ -49,13 +64,15 @@ contract("Colony Network", (accounts) => {
     // For upgrade tests, we need a resolver...
     const r = await Resolver.new();
     newResolverAddress = r.address.toLowerCase();
+    const newResolver = await Resolver.at(newResolverAddress);
     // ... that knows the .finishUpgrade() function
-    const sig = await r.stringToSig("finishUpgrade()");
     const metaColonyAsEtherRouter = await EtherRouter.at(metaColony.address);
     const wiredResolverAddress = await metaColonyAsEtherRouter.resolver();
     const wiredResolver = await Resolver.at(wiredResolverAddress);
-    const finishUpgradeFunctionLocation = await wiredResolver.lookup(sig);
-    await r.register("finishUpgrade()", finishUpgradeFunctionLocation);
+    await copyWiring(wiredResolver, newResolver, "finishUpgrade()");
+
+    // While v9 the latest, need to also know initialiseRootLocalSkill()`
+    await copyWiring(wiredResolver, newResolver, "initialiseRootLocalSkill()");
   });
 
   describe("when initialised", () => {
@@ -163,11 +180,6 @@ contract("Colony Network", (accounts) => {
   describe("when creating new colonies at a specific version", () => {
     beforeEach(async () => {
       // The new resolver also needs to know a load of functions to let createColony work...
-      const copyWiring = async function (resolverFrom, resolverTo, functionSig) {
-        const sig = await resolverFrom.stringToSig(functionSig);
-        const functionLocation = await resolverFrom.lookup(sig);
-        await resolverTo.register(functionSig, functionLocation);
-      };
 
       const metaColonyAsEtherRouter = await EtherRouter.at(metaColony.address);
       const wiredResolverAddress = await metaColonyAsEtherRouter.resolver();
@@ -271,9 +283,10 @@ contract("Colony Network", (accounts) => {
       expect(colonyCount).to.eq.BN(8);
     });
 
-    it("when meta colony is created, should have the root global and local skills initialised, plus the local mining skill", async () => {
+    it("when meta colony is created, should have the root global, domain, and local skills initialised, plus the local mining skill", async () => {
       const skillCount = await colonyNetwork.getSkillCount();
-      expect(skillCount).to.eq.BN(3);
+      expect(skillCount).to.eq.BN(4);
+
       const globalSkill = await colonyNetwork.getSkill(GLOBAL_SKILL_ID);
       expect(parseInt(globalSkill.nParents, 10)).to.be.zero;
       expect(parseInt(globalSkill.nChildren, 10)).to.be.zero;
@@ -286,7 +299,7 @@ contract("Colony Network", (accounts) => {
       expect(localSkill2.globalSkill).to.be.false;
 
       const miningSkillId = await colonyNetwork.getReputationMiningSkillId();
-      expect(miningSkillId).to.eq.BN(2);
+      expect(miningSkillId).to.eq.BN(3);
     });
 
     it("should fail to create meta colony if it already exists", async () => {
@@ -298,23 +311,26 @@ contract("Colony Network", (accounts) => {
       await checkErrorRevert(colonyNetwork.createColony(ethers.constants.AddressZero, 0, "", ""), "colony-token-invalid-address");
     });
 
-    it("when any colony is created, should have the root local skill initialised", async () => {
+    it("when any colony is created, should have the root domain and local skills initialised", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
+      const skillCount = await colonyNetwork.getSkillCount();
+      const rootDomainSkillId = skillCount.subn(1);
 
-      const rootLocalSkill = await colonyNetwork.getSkill(4);
+      const rootLocalSkill = await colonyNetwork.getSkill(skillCount);
+      expect(rootLocalSkill.globalSkill).to.be.false;
       expect(parseInt(rootLocalSkill.nParents, 10)).to.be.zero;
       expect(parseInt(rootLocalSkill.nChildren, 10)).to.be.zero;
 
-      const skillCount = await colonyNetwork.getSkillCount();
-      const skill = await colonyNetwork.getSkill(skillCount.addn(1));
-      expect(skill.globalSkill).to.be.false;
-
-      const rootDomain = await colony.getDomain(1);
-      expect(rootDomain.skillId).to.eq.BN(4);
-      expect(rootDomain.fundingPotId).to.eq.BN(1);
+      const rootDomainSkill = await colonyNetwork.getSkill(rootDomainSkillId);
+      expect(parseInt(rootDomainSkill.nParents, 10)).to.be.zero;
+      expect(parseInt(rootDomainSkill.nChildren, 10)).to.be.zero;
 
       const domainCount = await colony.getDomainCount();
       expect(domainCount).to.eq.BN(1);
+
+      const rootDomain = await colony.getDomain(1);
+      expect(rootDomain.skillId).to.eq.BN(rootDomainSkillId);
+      expect(rootDomain.fundingPotId).to.eq.BN(1);
     });
 
     it("should fail if ETH is sent", async () => {
@@ -332,6 +348,38 @@ contract("Colony Network", (accounts) => {
       const colonyCount = await colonyNetwork.getColonyCount();
       const colonyAddress = await colonyNetwork.getColony(colonyCount);
       await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
+    });
+  });
+
+  describe("when users create tokens", () => {
+    it("should allow users to create new tokens", async () => {
+      const tx = await colonyNetwork.deployTokenViaNetwork("TEST", "TST", 18);
+      await expectEvent(tx, "TokenDeployed", []);
+    });
+
+    it("should have the user as the owner of the token", async () => {
+      const tx = await colonyNetwork.deployTokenViaNetwork("TEST", "TST", 18);
+      const address = tx.logs[0].args.tokenAddress;
+      const token = await MetaTxToken.at(address);
+      const owner = await token.owner();
+      expect(owner).to.equal(accounts[0]);
+    });
+
+    it("should allow users to create new token authorities", async () => {
+      let tx = await colonyNetwork.deployTokenViaNetwork("TEST", "TST", 18);
+      const { tokenAddress } = tx.logs[0].args;
+      tx = await colonyNetwork.deployTokenAuthority(tokenAddress, metaColony.address, [accounts[0]]);
+      await expectEvent(tx, "TokenAuthorityDeployed", []);
+      const authorityAddress = tx.logs[0].args.tokenAuthorityAddress;
+      const authority = await TokenAuthority.at(authorityAddress);
+
+      const transferSig = soliditySha3("transfer(address,uint256)").slice(0, 10);
+      let ableToTransfer = await authority.canCall(metaColony.address, tokenAddress, transferSig);
+      expect(ableToTransfer).to.be.true;
+      ableToTransfer = await authority.canCall(accounts[0], tokenAddress, transferSig);
+      expect(ableToTransfer).to.be.true;
+      ableToTransfer = await authority.canCall(accounts[1], tokenAddress, transferSig);
+      expect(ableToTransfer).to.be.false;
     });
   });
 
@@ -361,6 +409,11 @@ contract("Colony Network", (accounts) => {
     it("should be able to upgrade a colony, if a sender has root role", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       const colonyEtherRouter = await EtherRouter.at(colony.address);
+
+      // 8->9 upgrade, unlike other upgrades to date, not idempotent, so have to delete
+      // the local root skill id
+      const editableColony = await getColonyEditable(colony, colonyNetwork);
+      await editableColony.setStorageSlot(36, "0x0000000000000000000000000000000000000000000000000000000000000000");
 
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1);
@@ -638,6 +691,64 @@ contract("Colony Network", (accounts) => {
     it("should not allow a colony to change its orbitDBAddress without having registered a label", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       await checkErrorRevert(colony.updateColonyOrbitDB("anotherstring", { from: accounts[0] }), "colony-colony-not-labeled");
+    });
+  });
+
+  describe("when executing metatransactions", () => {
+    beforeEach(async () => {
+      const ensRegistry = await ENSRegistry.new();
+      await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
+    });
+
+    it("should allow colony creation via metatransactions, with ENS registration afterwards", async () => {
+      const tokenArgs = getTokenArgs();
+      const token = await Token.new(...tokenArgs);
+
+      let txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "").encodeABI();
+
+      let { r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colonyNetwork.address);
+
+      let tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      const colonyCount = await colonyNetwork.getColonyCount();
+      const colonyAddress = await colonyNetwork.getColony(colonyCount);
+      await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
+
+      const colony = await IColony.at(colonyAddress);
+      txData = await colony.contract.methods.registerColonyLabel("someColonyName", "").encodeABI();
+
+      ({ r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colony.address));
+
+      tx = await colony.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+    });
+
+    it("should allow colony creation via metatransactions, with ENS registration at the time", async () => {
+      const tokenArgs = getTokenArgs();
+      const token = await Token.new(...tokenArgs);
+
+      let txData = await colonyNetwork.contract.methods["createColony(address,uint256,string)"](token.address, CURR_VERSION, "").encodeABI();
+
+      txData = await colonyNetwork.contract.methods.createColony(token.address, CURR_VERSION, "someColonyName").encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colonyNetwork.address);
+
+      const tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      const colonyCount = await colonyNetwork.getColonyCount();
+      const colonyAddress = await colonyNetwork.getColony(colonyCount);
+      await expectEvent(tx, "ColonyAdded", [colonyCount, colonyAddress, token.address]);
+    });
+
+    it("should have the user as the owner of a token deployed through ColonyNetwork via metatransaction", async () => {
+      const txData = await colonyNetwork.contract.methods["deployTokenViaNetwork(string,string,uint8)"]("Test token", "TST", 18).encodeABI();
+      const { r, s, v } = await getMetaTransactionParameters(txData, accounts[1], colonyNetwork.address);
+
+      const tx = await colonyNetwork.executeMetaTransaction(accounts[1], txData, r, s, v, { from: accounts[0] });
+
+      const address = tx.logs[0].args.tokenAddress;
+      const token = await MetaTxToken.at(address);
+      const owner = await token.owner();
+      expect(owner).to.equal(accounts[1]);
     });
   });
 });
