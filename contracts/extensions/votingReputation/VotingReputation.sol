@@ -120,7 +120,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
   }
 
   function version() public pure override returns (uint256 _version) {
-    return 7;
+    return 8;
   }
 
   function install(address _colony) public override {
