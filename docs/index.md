@@ -6,7 +6,7 @@ sidebar_position: 2
 
 # The Colony Network
 
-![](img/logo\_network\_no\_padding.svg)
+![](https://raw.githubusercontent.com/JoinColony/brand/v1.0.0/logo_network.svg)
 
 Colony is a platform for organizations that operate via software rather than paperwork and management hierarchy.
 

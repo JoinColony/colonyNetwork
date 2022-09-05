@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://rawcdn.githack.com/JoinColony/colonyNetwork/c8d22052/docs/img/colonyNetwork_color.svg" width="600" />
+  <img src="https://raw.githubusercontent.com/JoinColony/brand/v1.0.0/logo_network.svg" width="600" />
 </div>
 <div align="center">
   <a href="https://circleci.com/gh/JoinColony/colonyNetwork">
