@@ -7,7 +7,7 @@ See [here](https://colony.gitbook.io/colony/extensions/whitelist) for more infor
   
 ## Interface Methods
 
-### ▸ **`approveUsers(address[] memory _users, bool _status)`**
+### ▸ `approveUsers(address[] memory _users, bool _status)`
 
 Sets user statuses in the whitelist
 
@@ -20,7 +20,7 @@ Sets user statuses in the whitelist
 |_status|bool|The whitelist status to set
 
 
-### ▸ **`deprecate(bool _deprecated)`**
+### ▸ `deprecate(bool _deprecated)`
 
 Called when deprecating (or undeprecating) the extension
 
@@ -32,14 +32,14 @@ Called when deprecating (or undeprecating) the extension
 |_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
 
 
-### ▸ **`finishUpgrade()`**
+### ▸ `finishUpgrade()`
 
 Called when upgrading the extension
 
 
 
 
-### ▸ **`getAgreementHash():string hash`**
+### ▸ `getAgreementHash():string hash`
 
 Get the agreementHash
 
@@ -51,7 +51,7 @@ Get the agreementHash
 |---|---|---|
 |hash|string|The agreement hash
 
-### ▸ **`getApproval(address _user):bool status`**
+### ▸ `getApproval(address _user):bool status`
 
 Get the user's approval status
 
@@ -68,7 +68,7 @@ Get the user's approval status
 |---|---|---|
 |status|bool|The user's approval status
 
-### ▸ **`getMetatransactionNonce(address userAddress):uint256 nonce`**
+### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
 
 Gets the next nonce for a meta-transaction
 
@@ -85,7 +85,7 @@ Gets the next nonce for a meta-transaction
 |---|---|---|
 |nonce|uint256|The nonce
 
-### ▸ **`getSignature(address _user):bool status`**
+### ▸ `getSignature(address _user):bool status`
 
 Get the user's signature status
 
@@ -102,7 +102,7 @@ Get the user's signature status
 |---|---|---|
 |status|bool|The user's signature status
 
-### ▸ **`getUseApprovals():bool useApprovals`**
+### ▸ `getUseApprovals():bool useApprovals`
 
 Get the useApprovals boolean
 
@@ -114,7 +114,7 @@ Get the useApprovals boolean
 |---|---|---|
 |useApprovals|bool|Whether `useApprovals` is `true`
 
-### ▸ **`identifier():bytes32 identifier`**
+### ▸ `identifier():bytes32 identifier`
 
 Returns the identifier of the extension
 
@@ -126,7 +126,7 @@ Returns the identifier of the extension
 |---|---|---|
 |identifier|bytes32|The extension's identifier
 
-### ▸ **`initialise(bool _useApprovals, string memory _agreementHash)`**
+### ▸ `initialise(bool _useApprovals, string memory _agreementHash)`
 
 Initialise the extension
 
@@ -139,7 +139,7 @@ Initialise the extension
 |_agreementHash|string|An agreement hash (such as an IPFS URI)
 
 
-### ▸ **`install(address _colony)`**
+### ▸ `install(address _colony)`
 
 Configures the extension
 
@@ -151,7 +151,7 @@ Configures the extension
 |_colony|address|The colony in which the extension holds permissions
 
 
-### ▸ **`isApproved(address _user):bool approved`**
+### ▸ `isApproved(address _user):bool approved`
 
 Get the user's overall whitelist status
 
@@ -168,7 +168,7 @@ Get the user's overall whitelist status
 |---|---|---|
 |approved|bool|Is `true` when the user is approved
 
-### ▸ **`signAgreement(string memory _agreementHash)`**
+### ▸ `signAgreement(string memory _agreementHash)`
 
 The user's signature on the agreement
 
@@ -180,14 +180,14 @@ The user's signature on the agreement
 |_agreementHash|string|The agreement hash being signed
 
 
-### ▸ **`uninstall()`**
+### ▸ `uninstall()`
 
 Called when uninstalling the extension
 
 
 
 
-### ▸ **`version():uint256 version`**
+### ▸ `version():uint256 version`
 
 Returns the version of the extension
 

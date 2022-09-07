@@ -51,7 +51,7 @@ const INTERFACES = [
     outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "onetxpayment.md"),
   },
   {
-    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "VotingReputation.sol"),
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "votingReputation", "VotingReputation.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "votingreputation.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "votingreputation.md"),
   },
@@ -262,7 +262,7 @@ function printMethods(methods) {
 ${methods
   .map(
     (method) => `
-### ▸ **\`${astToSig(method)}\`**\n
+### ▸ \`${astToSig(method)}\`\n
 ${method.natspec.notice ? method.natspec.notice : ""}
 ${
   method.natspec.dev

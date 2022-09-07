@@ -3,7 +3,7 @@
   
 ## Interface Methods
 
-### ▸ **`addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId)`**
+### ▸ `addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId)`
 
 Add a colony domain, and its respective local skill under skill with id `_parentSkillId`. New funding pot is created and associated with the domain here.
 
@@ -18,7 +18,7 @@ Add a colony domain, and its respective local skill under skill with id `_parent
 |_parentDomainId|uint256|Id of the domain under which the new one will be added
 
 
-### ▸ **`addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId, string memory _metadata)`**
+### ▸ `addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId, string memory _metadata)`
 
 Add a colony domain, and its respective local skill under skill with id `_parentSkillId`. New funding pot is created and associated with the domain here.
 
@@ -34,14 +34,14 @@ Add a colony domain, and its respective local skill under skill with id `_parent
 |_metadata|string|Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
 
 
-### ▸ **`addLocalSkill()`**
+### ▸ `addLocalSkill()`
 
 Add a new local skill for the colony. Secured function to authorised members.
 
 
 
 
-### ▸ **`addPayment(uint256 _permissionDomainId, uint256 _childSkillIndex, address _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId):uint256 paymentId`**
+### ▸ `addPayment(uint256 _permissionDomainId, uint256 _childSkillIndex, address _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId):uint256 paymentId`
 
 Add a new payment in the colony. Secured function to authorised members.
 
@@ -64,7 +64,7 @@ Add a new payment in the colony. Secured function to authorised members.
 |---|---|---|
 |paymentId|uint256|Identifier of the newly created payment
 
-### ▸ **`annotateTransaction(bytes32 _txHash, string memory _metadata)`**
+### ▸ `annotateTransaction(bytes32 _txHash, string memory _metadata)`
 
 Emit a metadata string for a transaction
 
@@ -77,7 +77,7 @@ Emit a metadata string for a transaction
 |_metadata|string|String of metadata for tx
 
 
-### ▸ **`approveStake(address _approvee, uint256 _domainId, uint256 _amount)`**
+### ▸ `approveStake(address _approvee, uint256 _domainId, uint256 _amount)`
 
 Allow the _approvee to obligate some amount of tokens as a stake.
 
@@ -91,7 +91,7 @@ Allow the _approvee to obligate some amount of tokens as a stake.
 |_amount|uint256|Amount of internal token up to which we are willing to be obligated.
 
 
-### ▸ **`authority():address colonyAuthority`**
+### ▸ `authority():address colonyAuthority`
 
 Get the `ColonyAuthority` for the colony.
 
@@ -103,7 +103,7 @@ Get the `ColonyAuthority` for the colony.
 |---|---|---|
 |colonyAuthority|address|The `ColonyAuthority` contract address
 
-### ▸ **`bootstrapColony(address[] memory _users, int[] memory _amount)`**
+### ▸ `bootstrapColony(address[] memory _users, int[] memory _amount)`
 
 Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to `_users`. This reputation is assigned in the colony-wide domain. Secured function to authorised members.
 
@@ -117,7 +117,7 @@ Allows the colony to bootstrap itself by having initial reputation and token `_a
 |_amount|int[]|Amount of reputation/tokens for every address
 
 
-### ▸ **`burnTokens(address token, uint256 amount)`**
+### ▸ `burnTokens(address token, uint256 amount)`
 
 Burn tokens held by the colony. Can only burn tokens held in the root funding pot.
 
@@ -130,7 +130,7 @@ Burn tokens held by the colony. Can only burn tokens held in the root funding po
 |amount|uint256|The amount of tokens to burn
 
 
-### ▸ **`cancelExpenditure(uint256 _id)`**
+### ▸ `cancelExpenditure(uint256 _id)`
 
 Cancels the expenditure and prevents further editing. Can only be called by expenditure owner.
 
@@ -142,7 +142,7 @@ Cancels the expenditure and prevents further editing. Can only be called by expe
 |_id|uint256|Expenditure identifier
 
 
-### ▸ **`cancelTask(uint256 _id)`**
+### ▸ `cancelTask(uint256 _id)`
 
 Cancel a task at any point before it is finalized. Secured function to authorised members. Any funds assigned to its funding pot can be moved back to the domain via `IColony.moveFundsBetweenPots`.
 
@@ -155,7 +155,7 @@ Cancel a task at any point before it is finalized. Secured function to authorise
 |_id|uint256|Id of the task
 
 
-### ▸ **`claimColonyFunds(address _token)`**
+### ▸ `claimColonyFunds(address _token)`
 
 Move any funds received by the colony in `_token` denomination to the top-level domain pot, siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
 
@@ -167,7 +167,7 @@ Move any funds received by the colony in `_token` denomination to the top-level 
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
-### ▸ **`claimExpenditurePayout(uint256 _id, uint256 _slot, address _token)`**
+### ▸ `claimExpenditurePayout(uint256 _id, uint256 _slot, address _token)`
 
 Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
 
@@ -181,7 +181,7 @@ Claim the payout for an expenditure slot. Here the network receives a fee from e
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
-### ▸ **`claimPayment(uint256 _id, address _token)`**
+### ▸ `claimPayment(uint256 _id, address _token)`
 
 Claim the payout in `_token` denomination for payment `_id`. Here the network receives its fee from each payout. Same as for tasks, ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
 
@@ -194,7 +194,7 @@ Claim the payout in `_token` denomination for payment `_id`. Here the network re
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
-### ▸ **`claimRewardPayout(uint256 _payoutId, uint256[[object Object]] memory _squareRoots, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)`**
+### ▸ `claimRewardPayout(uint256 _payoutId, uint256[[object Object]] memory _squareRoots, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)`
 
 Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation which will be proven via Merkle proof inside this function. Can only be called if payout is active, i.e if 60 days have not passed from its creation. Can only be called if next in queue.
 
@@ -211,7 +211,7 @@ Claim the reward payout at `_payoutId`. User needs to provide their reputation a
 |siblings|bytes32[]|The siblings of the proof
 
 
-### ▸ **`claimTaskPayout(uint256 _id, uint8 _role, address _token)`**
+### ▸ `claimTaskPayout(uint256 _id, uint8 _role, address _token)`
 
 Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`. Allowed only after task is finalized. Here the network receives its fee from each payout. Ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
 
@@ -225,7 +225,7 @@ Claim the payout in `_token` denomination for work completed in task `_id` by co
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
-### ▸ **`completeTask(uint256 _id)`**
+### ▸ `completeTask(uint256 _id)`
 
 Mark a task as complete after the due date has passed. This allows the task to be rated and finalized (and funds recovered) even in the presence of a worker who has disappeared. Note that if the due date was not set, then this function will throw.
 
@@ -237,7 +237,7 @@ Mark a task as complete after the due date has passed. This allows the task to b
 |_id|uint256|Id of the task
 
 
-### ▸ **`deobligateStake(address _user, uint256 _domainId, uint256 _amount)`**
+### ▸ `deobligateStake(address _user, uint256 _domainId, uint256 _amount)`
 
 Deobligate the user some amount of tokens, releasing the stake.
 
@@ -251,7 +251,7 @@ Deobligate the user some amount of tokens, releasing the stake.
 |_amount|uint256|Amount of internal token we are deobligating.
 
 
-### ▸ **`deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated)`**
+### ▸ `deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated)`
 
 Deprecate a domain, preventing certain actions from happening there
 
@@ -266,7 +266,7 @@ Deprecate a domain, preventing certain actions from happening there
 |_deprecated|bool|Whether or not the domain is deprecated
 
 
-### ▸ **`deprecateExtension(bytes32 extensionId, bool deprecated)`**
+### ▸ `deprecateExtension(bytes32 extensionId, bool deprecated)`
 
 Set the deprecation of an extension in a colony. Secured function to authorised members.
 
@@ -279,7 +279,7 @@ Set the deprecation of an extension in a colony. Secured function to authorised 
 |deprecated|bool|Whether to deprecate the extension or not
 
 
-### ▸ **`deprecateLocalSkill(uint256 localSkillId, bool deprecated)`**
+### ▸ `deprecateLocalSkill(uint256 localSkillId, bool deprecated)`
 
 Deprecate a local skill for the colony. Secured function to authorised members.
 
@@ -292,7 +292,7 @@ Deprecate a local skill for the colony. Secured function to authorised members.
 |deprecated|bool|Deprecation status to set for the skill
 
 
-### ▸ **`editColony(string memory _metadata)`**
+### ▸ `editColony(string memory _metadata)`
 
 Called to change the metadata associated with a colony. Expected to be a IPFS hash of a JSON blob, but not enforced to any degree by the contracts
 
@@ -304,7 +304,7 @@ Called to change the metadata associated with a colony. Expected to be a IPFS ha
 |_metadata|string|IPFS hash of the metadata
 
 
-### ▸ **`editColonyByDelta(string memory _metadataDelta)`**
+### ▸ `editColonyByDelta(string memory _metadataDelta)`
 
 Called to change the metadata associated with a colony. Expected to be a IPFS hash of a delta to a JSON blob, but not enforced to any degree by the contracts
 
@@ -316,7 +316,7 @@ Called to change the metadata associated with a colony. Expected to be a IPFS ha
 |_metadataDelta|string|IPFS hash of the metadata delta
 
 
-### ▸ **`editDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, string memory _metadata)`**
+### ▸ `editDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, string memory _metadata)`
 
 Add a colony domain, and its respective local skill under skill with id `_parentSkillId`. New funding pot is created and associated with the domain here.
 
@@ -331,7 +331,7 @@ Add a colony domain, and its respective local skill under skill with id `_parent
 |_metadata|string|Metadata relating to the domain. Expected to be the IPFS hash of a JSON blob, but not enforced by the contracts.
 
 
-### ▸ **`emitDomainReputationPenalty(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, address _user, int256 _amount)`**
+### ▸ `emitDomainReputationPenalty(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, address _user, int256 _amount)`
 
 Emit a negative domain reputation update. Available only to Arbitration role holders
 
@@ -347,7 +347,7 @@ Emit a negative domain reputation update. Available only to Arbitration role hol
 |_amount|int256|The (negative) amount of reputation to lose
 
 
-### ▸ **`emitDomainReputationReward(uint256 _domainId, address _user, int256 _amount)`**
+### ▸ `emitDomainReputationReward(uint256 _domainId, address _user, int256 _amount)`
 
 Emit a positive domain reputation update. Available only to Root role holders
 
@@ -361,7 +361,7 @@ Emit a positive domain reputation update. Available only to Root role holders
 |_amount|int256|The (positive) amount of reputation to gain
 
 
-### ▸ **`emitSkillReputationPenalty(uint256 _skillId, address _user, int256 _amount)`**
+### ▸ `emitSkillReputationPenalty(uint256 _skillId, address _user, int256 _amount)`
 
 Emit a negative skill reputation update. Available only to Arbitration role holders in the root domain
 
@@ -375,7 +375,7 @@ Emit a negative skill reputation update. Available only to Arbitration role hold
 |_amount|int256|The (negative) amount of reputation to lose
 
 
-### ▸ **`emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount)`**
+### ▸ `emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount)`
 
 Emit a positive skill reputation update. Available only to Root role holders
 
@@ -389,7 +389,7 @@ Emit a positive skill reputation update. Available only to Root role holders
 |_amount|int256|The (positive) amount of reputation to gain
 
 
-### ▸ **`executeTaskChange(uint8[] memory _sigV, bytes32[] memory _sigR, bytes32[] memory _sigS, uint8[] memory _mode, uint256 _value, bytes memory _data)`**
+### ▸ `executeTaskChange(uint8[] memory _sigV, bytes32[] memory _sigR, bytes32[] memory _sigS, uint8[] memory _mode, uint256 _value, bytes memory _data)`
 
 Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker) using the detached signatures for these users.
 
@@ -407,7 +407,7 @@ Executes a task update transaction `_data` which is approved and signed by two o
 |_data|bytes|The transaction data
 
 
-### ▸ **`executeTaskRoleAssignment(uint8[] memory _sigV, bytes32[] memory _sigR, bytes32[] memory _sigS, uint8[] memory _mode, uint256 _value, bytes memory _data)`**
+### ▸ `executeTaskRoleAssignment(uint8[] memory _sigV, bytes32[] memory _sigR, bytes32[] memory _sigS, uint8[] memory _mode, uint256 _value, bytes memory _data)`
 
 Executes a task role update transaction `_data` which is approved and signed by two of addresses. depending of which function we are calling. Allowed functions are `setTaskManagerRole`, `setTaskEvaluatorRole` and `setTaskWorkerRole`. Upon successful execution the `taskChangeNonces` entry for the task is incremented.
 
@@ -424,7 +424,7 @@ Executes a task role update transaction `_data` which is approved and signed by 
 |_data|bytes|The transaction data
 
 
-### ▸ **`finalizeExpenditure(uint256 _id)`**
+### ▸ `finalizeExpenditure(uint256 _id)`
 
 Finalizes the expenditure and allows for funds to be claimed. Can only be called by expenditure owner.
 
@@ -436,7 +436,7 @@ Finalizes the expenditure and allows for funds to be claimed. Can only be called
 |_id|uint256|Expenditure identifier
 
 
-### ▸ **`finalizePayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id)`**
+### ▸ `finalizePayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id)`
 
 Finalizes the payment and logs the reputation log updates. Allowed to be called once after payment is fully funded. Secured function to authorised members.
 
@@ -450,7 +450,7 @@ Finalizes the payment and logs the reputation log updates. Allowed to be called 
 |_id|uint256|Payment identifier
 
 
-### ▸ **`finalizeRewardPayout(uint256 _payoutId)`**
+### ▸ `finalizeRewardPayout(uint256 _payoutId)`
 
 Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`. Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation.
 
@@ -462,7 +462,7 @@ Finalises the reward payout. Allows creation of next reward payouts for token th
 |_payoutId|uint256|Id of the reward payout
 
 
-### ▸ **`finalizeTask(uint256 _id)`**
+### ▸ `finalizeTask(uint256 _id)`
 
 Called after task work rating is complete which closes the task and logs the respective reputation log updates. Allowed to be called once per task. Secured function to authorised members.
 
@@ -475,7 +475,7 @@ Called after task work rating is complete which closes the task and logs the res
 |_id|uint256|Id of the task
 
 
-### ▸ **`finishUpgrade()`**
+### ▸ `finishUpgrade()`
 
 A function to be called after an upgrade has been done from v2 to v3.
 
@@ -483,7 +483,7 @@ A function to be called after an upgrade has been done from v2 to v3.
 
 
 
-### ▸ **`generateSecret(bytes32 _salt, uint256 _value):bytes32 secret`**
+### ▸ `generateSecret(bytes32 _salt, uint256 _value):bytes32 secret`
 
 Helper function used to generage consistently the rating secret using salt value `_salt` and value to hide `_value`
 
@@ -501,7 +501,7 @@ Helper function used to generage consistently the rating secret using salt value
 |---|---|---|
 |secret|bytes32|`keccak256` hash of joint _salt and _value
 
-### ▸ **`getApproval(address _user, address _obligator, uint256 _domainId):uint256 approval`**
+### ▸ `getApproval(address _user, address _obligator, uint256 _domainId):uint256 approval`
 
 View an approval to obligate tokens.
 
@@ -520,7 +520,7 @@ View an approval to obligate tokens.
 |---|---|---|
 |approval|uint256|The amount the user has approved
 
-### ▸ **`getCapabilityRoles(bytes4 _sig):bytes32 roles`**
+### ▸ `getCapabilityRoles(bytes4 _sig):bytes32 roles`
 
 Gets the bytes32 representation of the roles authorized to call a function
 
@@ -537,7 +537,7 @@ Gets the bytes32 representation of the roles authorized to call a function
 |---|---|---|
 |roles|bytes32|bytes32 representation of the authorized roles
 
-### ▸ **`getColonyNetwork():address colonyNetwork`**
+### ▸ `getColonyNetwork():address colonyNetwork`
 
 Returns the colony network address set on the Colony.
 
@@ -550,7 +550,7 @@ Returns the colony network address set on the Colony.
 |---|---|---|
 |colonyNetwork|address|The address of Colony Network instance
 
-### ▸ **`getDomain(uint256 _id):Domain domain`**
+### ▸ `getDomain(uint256 _id):Domain domain`
 
 Get a domain by id.
 
@@ -567,7 +567,7 @@ Get a domain by id.
 |---|---|---|
 |domain|Domain|The domain
 
-### ▸ **`getDomainCount():uint256 count`**
+### ▸ `getDomainCount():uint256 count`
 
 Get the number of domains in the colony.
 
@@ -579,7 +579,7 @@ Get the number of domains in the colony.
 |---|---|---|
 |count|uint256|The domain count. Min 1 as the root domain is created at the same time as the colony
 
-### ▸ **`getDomainFromFundingPot(uint256 _fundingPotId):uint256 domainId`**
+### ▸ `getDomainFromFundingPot(uint256 _fundingPotId):uint256 domainId`
 
 Get the domain corresponding to a funding pot
 
@@ -596,7 +596,7 @@ Get the domain corresponding to a funding pot
 |---|---|---|
 |domainId|uint256|Id of the corresponding domain
 
-### ▸ **`getExpenditure(uint256 _id):Expenditure expenditure`**
+### ▸ `getExpenditure(uint256 _id):Expenditure expenditure`
 
 Returns an existing expenditure.
 
@@ -613,7 +613,7 @@ Returns an existing expenditure.
 |---|---|---|
 |expenditure|Expenditure|The expenditure
 
-### ▸ **`getExpenditureCount():uint256 count`**
+### ▸ `getExpenditureCount():uint256 count`
 
 Get the number of expenditures in the colony.
 
@@ -625,7 +625,7 @@ Get the number of expenditures in the colony.
 |---|---|---|
 |count|uint256|The expenditure count
 
-### ▸ **`getExpenditureSlot(uint256 _id, uint256 _slot):ExpenditureSlot expenditureSlot`**
+### ▸ `getExpenditureSlot(uint256 _id, uint256 _slot):ExpenditureSlot expenditureSlot`
 
 Returns an existing expenditure slot.
 
@@ -643,7 +643,7 @@ Returns an existing expenditure slot.
 |---|---|---|
 |expenditureSlot|ExpenditureSlot|The expenditure slot
 
-### ▸ **`getExpenditureSlotPayout(uint256 _id, uint256 _slot, address _token):uint256 amount`**
+### ▸ `getExpenditureSlotPayout(uint256 _id, uint256 _slot, address _token):uint256 amount`
 
 Returns an existing expenditure slot's payout for a token.
 
@@ -662,7 +662,7 @@ Returns an existing expenditure slot's payout for a token.
 |---|---|---|
 |amount|uint256|Amount of the payout for that slot/token.
 
-### ▸ **`getFundingPot(uint256 _id):FundingPotAssociatedType associatedType, uint256 associatedTypeId, uint256 payoutsWeCannotMake`**
+### ▸ `getFundingPot(uint256 _id):FundingPotAssociatedType associatedType, uint256 associatedTypeId, uint256 payoutsWeCannotMake`
 
 Get the non-mapping properties of a pot by id.
 
@@ -682,7 +682,7 @@ Get the non-mapping properties of a pot by id.
 |associatedTypeId|uint256|Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
 |payoutsWeCannotMake|uint256|Number of payouts that cannot be completed with the current funding
 
-### ▸ **`getFundingPotBalance(uint256 _potId, address _token):uint256 balance`**
+### ▸ `getFundingPotBalance(uint256 _potId, address _token):uint256 balance`
 
 Get the `_token` balance of pot with id `_potId`.
 
@@ -700,7 +700,7 @@ Get the `_token` balance of pot with id `_potId`.
 |---|---|---|
 |balance|uint256|Funding pot supply balance
 
-### ▸ **`getFundingPotCount():uint256 count`**
+### ▸ `getFundingPotCount():uint256 count`
 
 Get the number of funding pots in the colony.
 
@@ -712,7 +712,7 @@ Get the number of funding pots in the colony.
 |---|---|---|
 |count|uint256|The funding pots count
 
-### ▸ **`getFundingPotPayout(uint256 _potId, address _token):uint256 payout`**
+### ▸ `getFundingPotPayout(uint256 _potId, address _token):uint256 payout`
 
 Get the assigned `_token` payouts of pot with id `_potId`.
 
@@ -730,7 +730,7 @@ Get the assigned `_token` payouts of pot with id `_potId`.
 |---|---|---|
 |payout|uint256|Funding pot payout amount
 
-### ▸ **`getNonRewardPotsTotal(address _token):uint256 amount`**
+### ▸ `getNonRewardPotsTotal(address _token):uint256 amount`
 
 Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
 
@@ -747,7 +747,7 @@ Get the total amount of tokens `_token` minus amount reserved to be paid to the 
 |---|---|---|
 |amount|uint256|Total amount of tokens in funding pots other than the rewards pot (id 0)
 
-### ▸ **`getObligation(address _user, address _obligator, uint256 _domainId):uint256 obligation`**
+### ▸ `getObligation(address _user, address _obligator, uint256 _domainId):uint256 obligation`
 
 View an obligation of tokens.
 
@@ -766,7 +766,7 @@ View an obligation of tokens.
 |---|---|---|
 |obligation|uint256|The amount that is currently obligated
 
-### ▸ **`getPayment(uint256 _id):Payment payment`**
+### ▸ `getPayment(uint256 _id):Payment payment`
 
 Returns an exiting payment.
 
@@ -783,7 +783,7 @@ Returns an exiting payment.
 |---|---|---|
 |payment|Payment|The Payment data structure
 
-### ▸ **`getPaymentCount():uint256 count`**
+### ▸ `getPaymentCount():uint256 count`
 
 Get the number of payments in the colony.
 
@@ -795,7 +795,7 @@ Get the number of payments in the colony.
 |---|---|---|
 |count|uint256|The payment count
 
-### ▸ **`getRewardInverse():uint256 rewardInverse`**
+### ▸ `getRewardInverse():uint256 rewardInverse`
 
 Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), return 100.
 
@@ -807,7 +807,7 @@ Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), 
 |---|---|---|
 |rewardInverse|uint256|The inverse of the reward
 
-### ▸ **`getRewardPayoutInfo(uint256 _payoutId):RewardPayoutCycle rewardPayoutCycle`**
+### ▸ `getRewardPayoutInfo(uint256 _payoutId):RewardPayoutCycle rewardPayoutCycle`
 
 Get useful information about specific reward payout.
 
@@ -824,7 +824,7 @@ Get useful information about specific reward payout.
 |---|---|---|
 |rewardPayoutCycle|RewardPayoutCycle|RewardPayoutCycle, containing propertes:  `reputationState` Reputation root hash at the time of creation,  `colonyWideReputation` Colony wide reputation in `reputationState`,  `totalTokens` Total colony tokens at the time of creation,  `amount` Total amount of tokens taken aside for reward payout,  `tokenAddress` Token address,  `blockTimestamp` Block number at the time of creation.
 
-### ▸ **`getRootLocalSkill():uint256 rootLocalSkill`**
+### ▸ `getRootLocalSkill():uint256 rootLocalSkill`
 
 Get the root local skill id
 
@@ -836,7 +836,7 @@ Get the root local skill id
 |---|---|---|
 |rootLocalSkill|uint256|The root local skill id
 
-### ▸ **`getTask(uint256 _id):bytes32 specificationHash, bytes32 deliverableHash, TaskStatus status, uint256 dueDate, uint256 fundingPotId, uint256 completionTimestamp, uint256 domainId, uint256[] skillIds`**
+### ▸ `getTask(uint256 _id):bytes32 specificationHash, bytes32 deliverableHash, TaskStatus status, uint256 dueDate, uint256 fundingPotId, uint256 completionTimestamp, uint256 domainId, uint256[] skillIds`
 
 Get a task with id `_id`
 
@@ -860,7 +860,7 @@ Get a task with id `_id`
 |domainId|uint256|Task domain id, default is root colony domain with id 1
 |skillIds|uint256[]|Array of global skill ids assigned to task
 
-### ▸ **`getTaskChangeNonce(uint256 _id):uint256 nonce`**
+### ▸ `getTaskChangeNonce(uint256 _id):uint256 nonce`
 
 Starts from 0 and is incremented on every co-reviewed task change via `executeTaskChange` call.
 
@@ -877,7 +877,7 @@ Starts from 0 and is incremented on every co-reviewed task change via `executeTa
 |---|---|---|
 |nonce|uint256|The current task change nonce value
 
-### ▸ **`getTaskCount():uint256 count`**
+### ▸ `getTaskCount():uint256 count`
 
 Get the number of tasks in the colony.
 
@@ -889,7 +889,7 @@ Get the number of tasks in the colony.
 |---|---|---|
 |count|uint256|The task count
 
-### ▸ **`getTaskPayout(uint256 _id, uint8 _role, address _token):uint256 amount`**
+### ▸ `getTaskPayout(uint256 _id, uint8 _role, address _token):uint256 amount`
 
 Get payout amount in `_token` denomination for role `_role` in task `_id`.
 
@@ -908,7 +908,7 @@ Get payout amount in `_token` denomination for role `_role` in task `_id`.
 |---|---|---|
 |amount|uint256|Payout amount
 
-### ▸ **`getTaskRole(uint256 _id, uint8 _role):Role role`**
+### ▸ `getTaskRole(uint256 _id, uint8 _role):Role role`
 
 Get the `Role` properties back for role `_role` in task `_id`.
 
@@ -926,7 +926,7 @@ Get the `Role` properties back for role `_role` in task `_id`.
 |---|---|---|
 |role|Role|The Role
 
-### ▸ **`getTaskWorkRatingSecret(uint256 _id, uint8 _role):bytes32 secret`**
+### ▸ `getTaskWorkRatingSecret(uint256 _id, uint8 _role):bytes32 secret`
 
 Get the rating secret submitted for role `_role` in task `_id`
 
@@ -944,7 +944,7 @@ Get the rating secret submitted for role `_role` in task `_id`
 |---|---|---|
 |secret|bytes32|Rating secret `bytes32` value
 
-### ▸ **`getTaskWorkRatingSecretsInfo(uint256 _id):uint256 nSecrets, uint256 lastSubmittedAt`**
+### ▸ `getTaskWorkRatingSecretsInfo(uint256 _id):uint256 nSecrets, uint256 lastSubmittedAt`
 
 Get the `ColonyStorage.RatingSecrets` information for task `_id`.
 
@@ -962,7 +962,7 @@ Get the `ColonyStorage.RatingSecrets` information for task `_id`.
 |nSecrets|uint256|Number of secrets
 |lastSubmittedAt|uint256|Timestamp of the last submitted rating secret
 
-### ▸ **`getToken():address tokenAddress`**
+### ▸ `getToken():address tokenAddress`
 
 Get the colony token.
 
@@ -974,7 +974,7 @@ Get the colony token.
 |---|---|---|
 |tokenAddress|address|Address of the token contract
 
-### ▸ **`getTokenApproval(address token, address spender):uint256 amount`**
+### ▸ `getTokenApproval(address token, address spender):uint256 amount`
 
 Get the current approval amount
 
@@ -992,7 +992,7 @@ Get the current approval amount
 |---|---|---|
 |amount|uint256|The token approval amount
 
-### ▸ **`getTotalTokenApproval(address token):uint256 amount`**
+### ▸ `getTotalTokenApproval(address token):uint256 amount`
 
 Get the current total approval amount across all spenders
 
@@ -1009,7 +1009,7 @@ Get the current total approval amount across all spenders
 |---|---|---|
 |amount|uint256|The total token approval amount
 
-### ▸ **`getUserRoles(address _user, uint256 _domain):bytes32 roles`**
+### ▸ `getUserRoles(address _user, uint256 _domain):bytes32 roles`
 
 Gets the bytes32 representation of the roles for a user in a given domain
 
@@ -1027,7 +1027,7 @@ Gets the bytes32 representation of the roles for a user in a given domain
 |---|---|---|
 |roles|bytes32|bytes32 representation of the held roles
 
-### ▸ **`hasInheritedUserRole(address _user, uint256 _domainId, ColonyRole _role, uint256 _childSkillIndex, uint256 _childDomainId):bool hasRole`**
+### ▸ `hasInheritedUserRole(address _user, uint256 _domainId, ColonyRole _role, uint256 _childSkillIndex, uint256 _childDomainId):bool hasRole`
 
 Check whether a given user has a given role for the colony, in a child domain. Calls the function of the same name on the colony's authority contract and an internal inheritance validator function
 
@@ -1048,7 +1048,7 @@ Check whether a given user has a given role for the colony, in a child domain. C
 |---|---|---|
 |hasRole|bool|Boolean indicating whether the given user has the given role in domain
 
-### ▸ **`hasUserRole(address _user, uint256 _domainId, ColonyRole _role):bool hasRole`**
+### ▸ `hasUserRole(address _user, uint256 _domainId, ColonyRole _role):bool hasRole`
 
 Check whether a given user has a given role for the colony. Calls the function of the same name on the colony's authority contract.
 
@@ -1067,7 +1067,7 @@ Check whether a given user has a given role for the colony. Calls the function o
 |---|---|---|
 |hasRole|bool|Boolean indicating whether the given user has the given role in domain
 
-### ▸ **`initialiseColony(address _colonyNetworkAddress, address _token)`**
+### ▸ `initialiseColony(address _colonyNetworkAddress, address _token)`
 
 Called once when the colony is created to initialise certain storage slot values.
 
@@ -1081,14 +1081,14 @@ Called once when the colony is created to initialise certain storage slot values
 |_token|address|Address of the colony ERC20 Token
 
 
-### ▸ **`initialiseRootLocalSkill()`**
+### ▸ `initialiseRootLocalSkill()`
 
 Initialise the local skill tree for the colony.
 
 
 
 
-### ▸ **`installExtension(bytes32 extensionId, uint256 version)`**
+### ▸ `installExtension(bytes32 extensionId, uint256 version)`
 
 Install an extension to the colony. Secured function to authorised members.
 
@@ -1101,7 +1101,7 @@ Install an extension to the colony. Secured function to authorised members.
 |version|uint256|The new extension version to install
 
 
-### ▸ **`lockExpenditure(uint256 _id)`**
+### ▸ `lockExpenditure(uint256 _id)`
 
 Locks the expenditure and prevents further editing. Can only be called by expenditure owner.
 
@@ -1113,7 +1113,7 @@ Locks the expenditure and prevents further editing. Can only be called by expend
 |_id|uint256|Expenditure identifier
 
 
-### ▸ **`lockToken():uint256 timesLocked`**
+### ▸ `lockToken():uint256 timesLocked`
 
 Lock the colony's token. Can only be called by a network-managed extension.
 
@@ -1125,7 +1125,7 @@ Lock the colony's token. Can only be called by a network-managed extension.
 |---|---|---|
 |timesLocked|uint256|The amount of times the token was locked
 
-### ▸ **`makeArbitraryTransaction(address _to, bytes memory _action):bool success`**
+### ▸ `makeArbitraryTransaction(address _to, bytes memory _action):bool success`
 
 Execute arbitrary transaction on behalf of the Colony
 
@@ -1143,7 +1143,7 @@ Execute arbitrary transaction on behalf of the Colony
 |---|---|---|
 |success|bool|Boolean indicating whether the transaction succeeded
 
-### ▸ **`makeArbitraryTransactions(address[] memory _targets, bytes[] memory _actions, bool _strict):bool success`**
+### ▸ `makeArbitraryTransactions(address[] memory _targets, bytes[] memory _actions, bool _strict):bool success`
 
 Execute arbitrary transactions on behalf of the Colony in series
 
@@ -1162,7 +1162,7 @@ Execute arbitrary transactions on behalf of the Colony in series
 |---|---|---|
 |success|bool|Boolean indicating whether the transactions succeeded
 
-### ▸ **`makeExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId):uint256 expenditureId`**
+### ▸ `makeExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId):uint256 expenditureId`
 
 Add a new expenditure in the colony. Secured function to authorised members.
 
@@ -1181,7 +1181,7 @@ Add a new expenditure in the colony. Secured function to authorised members.
 |---|---|---|
 |expenditureId|uint256|Identifier of the newly created expenditure
 
-### ▸ **`makeSingleArbitraryTransaction(address _target, bytes memory _action):bool success`**
+### ▸ `makeSingleArbitraryTransaction(address _target, bytes memory _action):bool success`
 
 Executes a single arbitrary transaction
 
@@ -1200,7 +1200,7 @@ Executes a single arbitrary transaction
 |---|---|---|
 |success|bool|Boolean indicating whether the transactions succeeded
 
-### ▸ **`makeTask(uint256 _permissionDomainId, uint256 _childSkillIndex, bytes32 _specificationHash, uint256 _domainId, uint256 _skillId, uint256 _dueDate)`**
+### ▸ `makeTask(uint256 _permissionDomainId, uint256 _childSkillIndex, bytes32 _specificationHash, uint256 _domainId, uint256 _skillId, uint256 _dueDate)`
 
 Make a new task in the colony. Secured function to authorised members.
 
@@ -1217,7 +1217,7 @@ Make a new task in the colony. Secured function to authorised members.
 |_dueDate|uint256|The due date of the task, can set to `0` for no-op
 
 
-### ▸ **`mintTokens(uint256 _wad)`**
+### ▸ `mintTokens(uint256 _wad)`
 
 Mint `_wad` amount of colony tokens. Secured function to authorised members.
 
@@ -1229,7 +1229,7 @@ Mint `_wad` amount of colony tokens. Secured function to authorised members.
 |_wad|uint256|Amount to mint
 
 
-### ▸ **`mintTokensFor(address _guy, uint256 _wad)`**
+### ▸ `mintTokensFor(address _guy, uint256 _wad)`
 
 Mint `_wad` amount of colony tokens and send to `_guy`. Secured function to authorised members.
 
@@ -1242,7 +1242,7 @@ Mint `_wad` amount of colony tokens and send to `_guy`. Secured function to auth
 |_wad|uint256|Amount to mint
 
 
-### ▸ **`moveFundsBetweenPots(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token)`**
+### ▸ `moveFundsBetweenPots(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token)`
 
 Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
 
@@ -1262,7 +1262,7 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
-### ▸ **`moveFundsBetweenPots(uint256 _permissionDomainId, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token)`**
+### ▸ `moveFundsBetweenPots(uint256 _permissionDomainId, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token)`
 
 Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
 
@@ -1280,7 +1280,7 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
-### ▸ **`obligateStake(address _user, uint256 _domainId, uint256 _amount)`**
+### ▸ `obligateStake(address _user, uint256 _domainId, uint256 _amount)`
 
 Obligate the user some amount of tokens as a stake.
 
@@ -1294,7 +1294,7 @@ Obligate the user some amount of tokens as a stake.
 |_amount|uint256|Amount of internal token we are obligating.
 
 
-### ▸ **`owner():address colonyOwner`**
+### ▸ `owner():address colonyOwner`
 
 Get the colony `owner` address. This should be address(0x0) at all times.
 
@@ -1307,7 +1307,7 @@ Get the colony `owner` address. This should be address(0x0) at all times.
 |---|---|---|
 |colonyOwner|address|Address of the colony owner
 
-### ▸ **`registerColonyLabel(string memory colonyName, string memory orbitdb)`**
+### ▸ `registerColonyLabel(string memory colonyName, string memory orbitdb)`
 
 Register colony's ENS label.
 
@@ -1320,7 +1320,7 @@ Register colony's ENS label.
 |orbitdb|string|The path of the orbitDB database associated with the colony name
 
 
-### ▸ **`removeTaskEvaluatorRole(uint256 _id)`**
+### ▸ `removeTaskEvaluatorRole(uint256 _id)`
 
 Removing evaluator role. Agreed between manager and currently assigned evaluator.
 
@@ -1332,7 +1332,7 @@ Removing evaluator role. Agreed between manager and currently assigned evaluator
 |_id|uint256|Id of the task
 
 
-### ▸ **`removeTaskWorkerRole(uint256 _id)`**
+### ▸ `removeTaskWorkerRole(uint256 _id)`
 
 Removing worker role. Agreed between manager and currently assigned worker.
 
@@ -1344,7 +1344,7 @@ Removing worker role. Agreed between manager and currently assigned worker.
 |_id|uint256|Id of the task
 
 
-### ▸ **`revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt)`**
+### ▸ `revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt)`
 
 Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_id` and task role with id `_role`. Allowed within 5 days period starting which whichever is first from either both rating secrets being submitted (via `IColony.submitTaskWorkRating`) or the 5 day rating period expiring.
 
@@ -1360,7 +1360,7 @@ Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_
 |_salt|bytes32|Salt value used to generate the rating secret
 
 
-### ▸ **`setAdministrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`**
+### ▸ `setAdministrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`
 
 Set new colony admin role. Can be called by root role or architecture role.
 
@@ -1376,7 +1376,7 @@ Set new colony admin role. Can be called by root role or architecture role.
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
-### ▸ **`setAllTaskPayouts(uint256 _id, address _token, uint256 _managerAmount, uint256 _evaluatorAmount, uint256 _workerAmount)`**
+### ▸ `setAllTaskPayouts(uint256 _id, address _token, uint256 _managerAmount, uint256 _evaluatorAmount, uint256 _workerAmount)`
 
 Set `_token` payout for all roles in task `_id` to the respective amounts.
 
@@ -1393,7 +1393,7 @@ Set `_token` payout for all roles in task `_id` to the respective amounts.
 |_workerAmount|uint256|Payout amount for worker
 
 
-### ▸ **`setArbitrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`**
+### ▸ `setArbitrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`
 
 Set new colony arbitration role. Can be called by root role or architecture role.
 
@@ -1409,7 +1409,7 @@ Set new colony arbitration role. Can be called by root role or architecture role
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
-### ▸ **`setArchitectureRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`**
+### ▸ `setArchitectureRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`
 
 Set new colony architecture role. Can be called by root role or architecture role.
 
@@ -1425,7 +1425,7 @@ Set new colony architecture role. Can be called by root role or architecture rol
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
-### ▸ **`setDefaultGlobalClaimDelay(uint256 _globalClaimDelay)`**
+### ▸ `setDefaultGlobalClaimDelay(uint256 _globalClaimDelay)`
 
 Update the default global claim delay for expenditures
 
@@ -1437,7 +1437,7 @@ Update the default global claim delay for expenditures
 |_globalClaimDelay|uint256|The new default global claim delay
 
 
-### ▸ **`setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)`**
+### ▸ `setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)`
 
 Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
 
@@ -1451,7 +1451,7 @@ Sets the claim delay on an expenditure slot. Can only be called by expenditure o
 |_claimDelay|uint256|Duration of time (in seconds) to delay
 
 
-### ▸ **`setExpenditureClaimDelays(uint256 _id, uint256[] memory _slots, uint256[] memory _claimDelays)`**
+### ▸ `setExpenditureClaimDelays(uint256 _id, uint256[] memory _slots, uint256[] memory _claimDelays)`
 
 Sets the claim delays in given expenditure slots. Can only be called by expenditure owner.
 
@@ -1465,7 +1465,7 @@ Sets the claim delays in given expenditure slots. Can only be called by expendit
 |_claimDelays|uint256[]|Durations of time (in seconds) to delay
 
 
-### ▸ **`setExpenditureMetadata(uint256 _id, string memory _metadata)`**
+### ▸ `setExpenditureMetadata(uint256 _id, string memory _metadata)`
 
 Sets the metadata for an expenditure. Can only be called by expenditure owner.
 
@@ -1479,7 +1479,7 @@ Sets the metadata for an expenditure. Can only be called by expenditure owner.
 |_metadata|string|IPFS hash of the metadata
 
 
-### ▸ **`setExpenditureMetadata(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, string memory _metadata)`**
+### ▸ `setExpenditureMetadata(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, string memory _metadata)`
 
 Sets the metadata for an expenditure. Can only be called by Arbitration role.
 
@@ -1494,7 +1494,7 @@ Sets the metadata for an expenditure. Can only be called by Arbitration role.
 |_metadata|string|IPFS hash of the metadata
 
 
-### ▸ **`setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)`**
+### ▸ `setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)`
 
 Set the token payout on an expenditure slot. Can only be called by expenditure owner.
 
@@ -1510,7 +1510,7 @@ Set the token payout on an expenditure slot. Can only be called by expenditure o
 |_amount|uint256|Payout amount
 
 
-### ▸ **`setExpenditurePayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _slot, address _token, uint256 _amount)`**
+### ▸ `setExpenditurePayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _slot, address _token, uint256 _amount)`
 
 Set the token payout in a given expenditure slot. Can only be called by an Arbitration user.
 
@@ -1527,7 +1527,7 @@ Set the token payout in a given expenditure slot. Can only be called by an Arbit
 |_amount|uint256|Payout amount
 
 
-### ▸ **`setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers)`**
+### ▸ `setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers)`
 
 Sets the payout modifiers in given expenditure slots. Can only be called by expenditure owner.
 
@@ -1541,7 +1541,7 @@ Sets the payout modifiers in given expenditure slots. Can only be called by expe
 |_payoutModifiers|int256[]|Values (between +/- WAD) to modify the payout & reputation bonus
 
 
-### ▸ **`setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts)`**
+### ▸ `setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts)`
 
 Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
 
@@ -1557,7 +1557,7 @@ Set the token payouts in given expenditure slots. Can only be called by expendit
 |_amounts|uint256[]|Payout amounts
 
 
-### ▸ **`setExpenditureRecipient(uint256 _id, uint256 _slot, address _recipient)`**
+### ▸ `setExpenditureRecipient(uint256 _id, uint256 _slot, address _recipient)`
 
 Sets the recipient on an expenditure slot. Can only be called by expenditure owner.
 
@@ -1572,7 +1572,7 @@ Sets the recipient on an expenditure slot. Can only be called by expenditure own
 |_recipient|address|Address of the recipient
 
 
-### ▸ **`setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address[] memory _recipients)`**
+### ▸ `setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address[] memory _recipients)`
 
 Sets the recipients in given expenditure slots. Can only be called by expenditure owner.
 
@@ -1587,7 +1587,7 @@ Sets the recipients in given expenditure slots. Can only be called by expenditur
 |_recipients|address[]|Addresses of the recipients
 
 
-### ▸ **`setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId)`**
+### ▸ `setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId)`
 
 Sets the skill on an expenditure slot. Can only be called by expenditure owner.
 
@@ -1601,7 +1601,7 @@ Sets the skill on an expenditure slot. Can only be called by expenditure owner.
 |_skillId|uint256|Id of the new skill to set
 
 
-### ▸ **`setExpenditureSkills(uint256 _id, uint256[] memory _slots, uint256[] memory _skillIds)`**
+### ▸ `setExpenditureSkills(uint256 _id, uint256[] memory _slots, uint256[] memory _skillIds)`
 
 Sets the skill on an expenditure slot. Can only be called by expenditure owner.
 
@@ -1615,7 +1615,7 @@ Sets the skill on an expenditure slot. Can only be called by expenditure owner.
 |_skillIds|uint256[]|Ids of the new skills to set
 
 
-### ▸ **`setExpenditureState(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _storageSlot, bool[] memory _mask, bytes32[] memory _keys, bytes32 _value)`**
+### ▸ `setExpenditureState(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _storageSlot, bool[] memory _mask, bytes32[] memory _keys, bytes32 _value)`
 
 Set arbitrary state on an expenditure slot. Can only be called by Arbitration role.
 
@@ -1633,7 +1633,7 @@ Set arbitrary state on an expenditure slot. Can only be called by Arbitration ro
 |_value|bytes32|Value to set at location
 
 
-### ▸ **`setExpenditureValues(uint256 _id, uint256[] memory _recipientSlots, address[] memory _recipients, uint256[] memory _skillIdSlots, uint256[] memory _skillIds, uint256[] memory _claimDelaySlots, uint256[] memory _claimDelays, uint256[] memory _payoutModifierSlots, int256[] memory _payoutModifiers, address[] memory _payoutTokens, undefined[] memory _payoutSlots, undefined[] memory _payoutValues)`**
+### ▸ `setExpenditureValues(uint256 _id, uint256[] memory _recipientSlots, address[] memory _recipients, uint256[] memory _skillIdSlots, uint256[] memory _skillIds, uint256[] memory _claimDelaySlots, uint256[] memory _claimDelays, uint256[] memory _payoutModifierSlots, int256[] memory _payoutModifiers, address[] memory _payoutTokens, undefined[] memory _payoutSlots, undefined[] memory _payoutValues)`
 
 Set many values of an expenditure simultaneously. Can only be called by expenditure owner.
 
@@ -1656,7 +1656,7 @@ Set many values of an expenditure simultaneously. Can only be called by expendit
 |_payoutValues|undefined[]|
 
 
-### ▸ **`setFundingRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`**
+### ▸ `setFundingRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`
 
 Set new colony funding role. Can be called by root role or architecture role.
 
@@ -1672,7 +1672,7 @@ Set new colony funding role. Can be called by root role or architecture role.
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
-### ▸ **`setPaymentPayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _token, uint256 _amount)`**
+### ▸ `setPaymentPayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _token, uint256 _amount)`
 
 Sets the payout for a given token on an existing payment. Secured function to authorised members.
 
@@ -1688,7 +1688,7 @@ Sets the payout for a given token on an existing payment. Secured function to au
 |_amount|uint256|Payout amount
 
 
-### ▸ **`setPaymentRecipient(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _recipient)`**
+### ▸ `setPaymentRecipient(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _recipient)`
 
 Sets the recipient on an existing payment. Secured function to authorised members.
 
@@ -1703,7 +1703,7 @@ Sets the recipient on an existing payment. Secured function to authorised member
 |_recipient|address|Address of the payment recipient
 
 
-### ▸ **`setPaymentSkill(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _skillId)`**
+### ▸ `setPaymentSkill(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _skillId)`
 
 Sets the skill on an existing payment. Secured function to authorised members.
 
@@ -1718,7 +1718,7 @@ Sets the skill on an existing payment. Secured function to authorised members.
 |_skillId|uint256|Id of the new skill to set
 
 
-### ▸ **`setRewardInverse(uint256 _rewardInverse)`**
+### ▸ `setRewardInverse(uint256 _rewardInverse)`
 
 Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100.
 
@@ -1730,7 +1730,7 @@ Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01),
 |_rewardInverse|uint256|The inverse of the reward
 
 
-### ▸ **`setRootRole(address _user, bool _setTo)`**
+### ▸ `setRootRole(address _user, bool _setTo)`
 
 Set new colony root role. Can be called by root role only.
 
@@ -1743,7 +1743,7 @@ Set new colony root role. Can be called by root role only.
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
-### ▸ **`setTaskBrief(uint256 _id, bytes32 _specificationHash)`**
+### ▸ `setTaskBrief(uint256 _id, bytes32 _specificationHash)`
 
 Set the hash for the task brief, aka task work specification, which identifies the task brief content in ddb. Allowed before a task is finalized.
 
@@ -1756,7 +1756,7 @@ Set the hash for the task brief, aka task work specification, which identifies t
 |_specificationHash|bytes32|Unique hash of the task brief in ddb
 
 
-### ▸ **`setTaskDueDate(uint256 _id, uint256 _dueDate)`**
+### ▸ `setTaskDueDate(uint256 _id, uint256 _dueDate)`
 
 Set the due date on task `_id`. Allowed before a task is finalized.
 
@@ -1769,7 +1769,7 @@ Set the due date on task `_id`. Allowed before a task is finalized.
 |_dueDate|uint256|Due date as seconds since unix epoch
 
 
-### ▸ **`setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount)`**
+### ▸ `setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount)`
 
 Set `_token` payout for evaluator in task `_id` to `_amount`.
 
@@ -1783,7 +1783,7 @@ Set `_token` payout for evaluator in task `_id` to `_amount`.
 |_amount|uint256|Payout amount
 
 
-### ▸ **`setTaskEvaluatorRole(uint256 _id, address _user)`**
+### ▸ `setTaskEvaluatorRole(uint256 _id, address _user)`
 
 Assigning evaluator role. Can only be set if there is no one currently assigned to be an evaluator. Manager of the task and user we want to assign role to both need to agree. Managers can assign themselves to this role, if there is no one currently assigned to it.
 
@@ -1797,7 +1797,7 @@ Assigning evaluator role. Can only be set if there is no one currently assigned 
 |_user|address|Address of the user we want to give a evaluator role to
 
 
-### ▸ **`setTaskManagerPayout(uint256 _id, address _token, uint256 _amount)`**
+### ▸ `setTaskManagerPayout(uint256 _id, address _token, uint256 _amount)`
 
 Set `_token` payout for manager in task `_id` to `_amount`.
 
@@ -1811,7 +1811,7 @@ Set `_token` payout for manager in task `_id` to `_amount`.
 |_amount|uint256|Payout amount
 
 
-### ▸ **`setTaskManagerRole(uint256 _id, address _user, uint256 _permissionDomainId, uint256 _childSkillIndex)`**
+### ▸ `setTaskManagerRole(uint256 _id, address _user, uint256 _permissionDomainId, uint256 _childSkillIndex)`
 
 Assigning manager role. Current manager and user we want to assign role to both need to agree. User we want to set here also needs to be an admin. Note that the domain proof data comes at the end here to not interfere with the assembly argument unpacking.
 
@@ -1827,7 +1827,7 @@ Assigning manager role. Current manager and user we want to assign role to both 
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 
 
-### ▸ **`setTaskSkill(uint256 _id, uint256 _skillId)`**
+### ▸ `setTaskSkill(uint256 _id, uint256 _skillId)`
 
 Set the skill for task `_id`.
 
@@ -1841,7 +1841,7 @@ Set the skill for task `_id`.
 |_skillId|uint256|Id of the skill which has to be a global skill
 
 
-### ▸ **`setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount)`**
+### ▸ `setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount)`
 
 Set `_token` payout for worker in task `_id` to `_amount`.
 
@@ -1855,7 +1855,7 @@ Set `_token` payout for worker in task `_id` to `_amount`.
 |_amount|uint256|Payout amount
 
 
-### ▸ **`setTaskWorkerRole(uint256 _id, address _user)`**
+### ▸ `setTaskWorkerRole(uint256 _id, address _user)`
 
 Assigning worker role. Can only be set if there is no one currently assigned to be a worker. Manager of the task and user we want to assign role to both need to agree.
 
@@ -1869,7 +1869,7 @@ Assigning worker role. Can only be set if there is no one currently assigned to 
 |_user|address|Address of the user we want to give a worker role to
 
 
-### ▸ **`setUserRoles(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bytes32 _roles)`**
+### ▸ `setUserRoles(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bytes32 _roles)`
 
 Set several roles in one transaction. Can be called by root role or architecture role.
 
@@ -1885,7 +1885,7 @@ Set several roles in one transaction. Can be called by root role or architecture
 |_roles|bytes32|Byte array representing the desired role setting (1 for on, 0 for off)
 
 
-### ▸ **`startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)`**
+### ▸ `startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)`
 
 Add a new payment in the colony. Can only be called by users with root permission. All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
 
@@ -1901,7 +1901,7 @@ Add a new payment in the colony. Can only be called by users with root permissio
 |siblings|bytes32[]|The siblings of the proof
 
 
-### ▸ **`submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash)`**
+### ▸ `submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash)`
 
 Submit the task deliverable, i.e. the output of the work performed for task `_id`. Submission is allowed only to the assigned worker before the task due date. Submissions cannot be overwritten.
 
@@ -1915,7 +1915,7 @@ Submit the task deliverable, i.e. the output of the work performed for task `_id
 |_deliverableHash|bytes32|Unique hash of the task deliverable content in ddb
 
 
-### ▸ **`submitTaskDeliverableAndRating(uint256 _id, bytes32 _deliverableHash, bytes32 _ratingSecret)`**
+### ▸ `submitTaskDeliverableAndRating(uint256 _id, bytes32 _deliverableHash, bytes32 _ratingSecret)`
 
 Submit the task deliverable for Worker and rating for Manager.
 
@@ -1930,7 +1930,7 @@ Submit the task deliverable for Worker and rating for Manager.
 |_ratingSecret|bytes32|Rating secret for manager
 
 
-### ▸ **`submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret)`**
+### ▸ `submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret)`
 
 Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role`. Allowed within 5 days period starting which whichever is first from either the deliverable being submitted or the dueDate been reached. Allowed only for evaluator to rate worker and for worker to rate manager performance. Once submitted ratings can not be changed or overwritten.
 
@@ -1944,7 +1944,7 @@ Submit a hashed secret of the rating for work in task `_id` which was performed 
 |_ratingSecret|bytes32|`keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50). Can be generated via `IColony.generateSecret` helper function.
 
 
-### ▸ **`transferExpenditure(uint256 _id, address _newOwner)`**
+### ▸ `transferExpenditure(uint256 _id, address _newOwner)`
 
 Updates the expenditure owner. Can only be called by expenditure owner.
 
@@ -1957,7 +1957,7 @@ Updates the expenditure owner. Can only be called by expenditure owner.
 |_newOwner|address|New owner of expenditure
 
 
-### ▸ **`transferExpenditureViaArbitration(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _newOwner)`**
+### ▸ `transferExpenditureViaArbitration(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _newOwner)`
 
 Updates the expenditure owner. Can only be called by Arbitration role.
 
@@ -1973,7 +1973,7 @@ Updates the expenditure owner. Can only be called by Arbitration role.
 |_newOwner|address|New owner of expenditure
 
 
-### ▸ **`transferStake(uint256 _permissionDomainId, uint256 _childSkillIndex, address _obligator, address _user, uint256 _domainId, uint256 _amount, address _recipient)`**
+### ▸ `transferStake(uint256 _permissionDomainId, uint256 _childSkillIndex, address _obligator, address _user, uint256 _domainId, uint256 _amount, address _recipient)`
 
 Transfer some amount of obligated tokens. Can be called by the arbitration role.
 
@@ -1991,7 +1991,7 @@ Transfer some amount of obligated tokens. Can be called by the arbitration role.
 |_recipient|address|Recipient of the transferred tokens.
 
 
-### ▸ **`uninstallExtension(bytes32 extensionId)`**
+### ▸ `uninstallExtension(bytes32 extensionId)`
 
 Uninstall an extension from a colony. Secured function to authorised members.
 
@@ -2004,14 +2004,14 @@ Uninstall an extension from a colony. Secured function to authorised members.
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 
 
-### ▸ **`unlockToken()`**
+### ▸ `unlockToken()`
 
 unlock the native colony token, if possible
 
 
 
 
-### ▸ **`unlockTokenForUser(address user, uint256 lockId)`**
+### ▸ `unlockTokenForUser(address user, uint256 lockId)`
 
 Unlock the colony's token for a user. Can only be called by a network-managed extension.
 
@@ -2024,7 +2024,7 @@ Unlock the colony's token for a user. Can only be called by a network-managed ex
 |lockId|uint256|The specific lock to unlock
 
 
-### ▸ **`updateApprovalAmount(address token, address spender)`**
+### ▸ `updateApprovalAmount(address token, address spender)`
 
 Update the internal bookkeeping around external ERC20 approvals
 
@@ -2037,7 +2037,7 @@ Update the internal bookkeeping around external ERC20 approvals
 |spender|address|The account we have approved
 
 
-### ▸ **`updateColonyOrbitDB(string memory orbitdb)`**
+### ▸ `updateColonyOrbitDB(string memory orbitdb)`
 
 Update a colony's orbitdb address. Can only be called by a colony with a registered subdomain
 
@@ -2049,7 +2049,7 @@ Update a colony's orbitdb address. Can only be called by a colony with a registe
 |orbitdb|string|The path of the orbitDB database to be associated with the colony
 
 
-### ▸ **`upgrade(uint _newVersion)`**
+### ▸ `upgrade(uint _newVersion)`
 
 Upgrades a colony to a new Colony contract version `_newVersion`.
 
@@ -2062,7 +2062,7 @@ Upgrades a colony to a new Colony contract version `_newVersion`.
 |_newVersion|uint|The target version for the upgrade
 
 
-### ▸ **`upgradeExtension(bytes32 extensionId, uint256 newVersion)`**
+### ▸ `upgradeExtension(bytes32 extensionId, uint256 newVersion)`
 
 Upgrade an extension in a colony. Secured function to authorised members.
 
@@ -2075,7 +2075,7 @@ Upgrade an extension in a colony. Secured function to authorised members.
 |newVersion|uint256|The version to upgrade to (must be one larger than the current version)
 
 
-### ▸ **`userCanSetRoles(address _user, uint256 _domainId, uint256 _childSkillIndex, uint256 _childDomainId):bool canSet`**
+### ▸ `userCanSetRoles(address _user, uint256 _domainId, uint256 _childSkillIndex, uint256 _childDomainId):bool canSet`
 
 Check whether a given user can modify roles in the target domain `_childDomainId`. Mostly a convenience function to provide a uniform interface for extension contracts validating permissions
 
@@ -2095,7 +2095,7 @@ Check whether a given user can modify roles in the target domain `_childDomainId
 |---|---|---|
 |canSet|bool|Boolean indicating whether the given user is allowed to edit roles in the target domain.
 
-### ▸ **`verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings):bool isValid`**
+### ▸ `verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings):bool isValid`
 
 Helper function that can be used by a client to verify the correctness of a patricia proof they have been supplied with.
 
@@ -2116,7 +2116,7 @@ Helper function that can be used by a client to verify the correctness of a patr
 |---|---|---|
 |isValid|bool|True if the proof is valid, false otherwise.
 
-### ▸ **`version():uint256 colonyVersion`**
+### ▸ `version():uint256 colonyVersion`
 
 Get the Colony contract version. Starts from 1 and is incremented with every deployed contract change.
 

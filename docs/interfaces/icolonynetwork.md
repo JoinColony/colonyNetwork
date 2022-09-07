@@ -3,7 +3,7 @@
   
 ## Interface Methods
 
-### ▸ **`addColonyVersion(uint256 _version, address _resolver)`**
+### ▸ `addColonyVersion(uint256 _version, address _resolver)`
 
 Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members. Allowed to be called by the Meta Colony only.
 
@@ -16,7 +16,7 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 |_resolver|address|Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
 
 
-### ▸ **`addExtensionToNetwork(bytes32 extensionId, address resolver)`**
+### ▸ `addExtensionToNetwork(bytes32 extensionId, address resolver)`
 
 Add a new extension resolver to the Extensions repository.
 
@@ -30,7 +30,7 @@ Add a new extension resolver to the Extensions repository.
 |resolver|address|The deployed resolver containing the extension contract logic
 
 
-### ▸ **`addSkill(uint256 _parentSkillId):uint256 skillId`**
+### ▸ `addSkill(uint256 _parentSkillId):uint256 skillId`
 
 Adds a new skill to the global or local skills tree, under skill `_parentSkillId`. Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`. Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`.
 
@@ -48,7 +48,7 @@ Adds a new skill to the global or local skills tree, under skill `_parentSkillId
 |---|---|---|
 |skillId|uint256|Id of the added skill
 
-### ▸ **`addr(bytes32 node):address address`**
+### ▸ `addr(bytes32 node):address address`
 
 Returns the address the supplied node resolves do, if we are the resolver.
 
@@ -65,7 +65,7 @@ Returns the address the supplied node resolves do, if we are the resolver.
 |---|---|---|
 |address|address|The address the supplied node resolves to
 
-### ▸ **`appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId)`**
+### ▸ `appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId)`
 
 Adds a reputation update entry to log.
 
@@ -80,7 +80,7 @@ Adds a reputation update entry to log.
 |_skillId|uint256|The skill for the reputation update
 
 
-### ▸ **`burnUnneededRewards(uint256 _amount)`**
+### ▸ `burnUnneededRewards(uint256 _amount)`
 
 Used to burn tokens that are not needed to pay out rewards (because not every possible defence was made for all submissions)
 
@@ -93,7 +93,7 @@ Used to burn tokens that are not needed to pay out rewards (because not every po
 |_amount|uint256|The amount of CLNY to burn
 
 
-### ▸ **`calculateMinerWeight(uint256 _timeStaked, uint256 _submissonIndex):uint256 minerWeight`**
+### ▸ `calculateMinerWeight(uint256 _timeStaked, uint256 _submissonIndex):uint256 minerWeight`
 
 Calculate raw miner weight in WADs.
 
@@ -111,7 +111,7 @@ Calculate raw miner weight in WADs.
 |---|---|---|
 |minerWeight|uint256|The weight of miner reward
 
-### ▸ **`claimMiningReward(address _recipient)`**
+### ▸ `claimMiningReward(address _recipient)`
 
 Used by a user to claim any mining rewards due to them. This will place them in their balance or pending balance, as appropriate.
 
@@ -124,7 +124,7 @@ Used by a user to claim any mining rewards due to them. This will place them in 
 |_recipient|address|The user whose rewards to claim
 
 
-### ▸ **`createColony(address _tokenAddress):address colonyAddress`**
+### ▸ `createColony(address _tokenAddress):address colonyAddress`
 
 Creates a new colony in the network, at version 3
 
@@ -142,7 +142,7 @@ Creates a new colony in the network, at version 3
 |---|---|---|
 |colonyAddress|address|Address of the newly created colony
 
-### ▸ **`createColony(address _tokenAddress, uint256 _version, string memory _colonyName):address colonyAddress`**
+### ▸ `createColony(address _tokenAddress, uint256 _version, string memory _colonyName):address colonyAddress`
 
 Creates a new colony in the network, with an optional ENS name
 
@@ -162,7 +162,7 @@ Creates a new colony in the network, with an optional ENS name
 |---|---|---|
 |colonyAddress|address|Address of the newly created colony
 
-### ▸ **`createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _metadata):address colonyAddress`**
+### ▸ `createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _metadata):address colonyAddress`
 
 Creates a new colony in the network, with an optional ENS name
 
@@ -183,7 +183,7 @@ Creates a new colony in the network, with an optional ENS name
 |---|---|---|
 |colonyAddress|address|Address of the newly created colony
 
-### ▸ **`createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _orbitdb, bool _useExtensionManager):address colonyAddress`**
+### ▸ `createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _orbitdb, bool _useExtensionManager):address colonyAddress`
 
 Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options, at version 4
 
@@ -205,7 +205,7 @@ Overload of the simpler `createColony` -- creates a new colony in the network wi
 |---|---|---|
 |colonyAddress|address|Address of the newly created colony
 
-### ▸ **`createMetaColony(address _tokenAddress)`**
+### ▸ `createMetaColony(address _tokenAddress)`
 
 Create the Meta Colony, same as a normal colony plus the root skill.
 
@@ -217,7 +217,7 @@ Create the Meta Colony, same as a normal colony plus the root skill.
 |_tokenAddress|address|Address of the CLNY token
 
 
-### ▸ **`deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer):address tokenAuthority`**
+### ▸ `deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer):address tokenAuthority`
 
 Called to deploy a token authority
 
@@ -237,7 +237,7 @@ Called to deploy a token authority
 |---|---|---|
 |tokenAuthority|address|The address of the newly deployed TokenAuthority
 
-### ▸ **`deployTokenViaNetwork(string memory _name, string memory _symbol, uint8 _decimals):address token`**
+### ▸ `deployTokenViaNetwork(string memory _name, string memory _symbol, uint8 _decimals):address token`
 
 Called to deploy a token.
 
@@ -257,7 +257,7 @@ Called to deploy a token.
 |---|---|---|
 |token|address|The address of the newly deployed token
 
-### ▸ **`deprecateExtension(bytes32 extensionId, bool deprecated)`**
+### ▸ `deprecateExtension(bytes32 extensionId, bool deprecated)`
 
 Set the deprecation of an extension in a colony. Can only be called by a Colony.
 
@@ -270,7 +270,7 @@ Set the deprecation of an extension in a colony. Can only be called by a Colony.
 |deprecated|bool|Whether to deprecate the extension or not
 
 
-### ▸ **`deprecateSkill(uint256 _skillId)`**
+### ▸ `deprecateSkill(uint256 _skillId)`
 
 Mark a skill as deprecated which stops new tasks and payments from using it.
 
@@ -283,7 +283,7 @@ Mark a skill as deprecated which stops new tasks and payments from using it.
 |_skillId|uint256|Id of the skill
 
 
-### ▸ **`deprecateSkill(uint256 _skillId, bool _deprecated):bool changed`**
+### ▸ `deprecateSkill(uint256 _skillId, bool _deprecated):bool changed`
 
 Set deprecation status for a skill
 
@@ -301,7 +301,7 @@ Set deprecation status for a skill
 |---|---|---|
 |changed|bool|Whether the deprecated state was changed
 
-### ▸ **`getChildSkillId(uint256 _skillId, uint256 _childSkillIndex):uint256 skillId`**
+### ▸ `getChildSkillId(uint256 _skillId, uint256 _childSkillIndex):uint256 skillId`
 
 Get the id of the child skill at index `_childSkillIndex` for skill with Id `_skillId`.
 
@@ -319,7 +319,7 @@ Get the id of the child skill at index `_childSkillIndex` for skill with Id `_sk
 |---|---|---|
 |skillId|uint256|Skill Id of the requested child skill
 
-### ▸ **`getColony(uint256 _id):address colonyAddress`**
+### ▸ `getColony(uint256 _id):address colonyAddress`
 
 Get a colony address by its Id in the network.
 
@@ -336,7 +336,7 @@ Get a colony address by its Id in the network.
 |---|---|---|
 |colonyAddress|address|The colony address, if no colony was found, returns 0x0
 
-### ▸ **`getColonyCount():uint256 count`**
+### ▸ `getColonyCount():uint256 count`
 
 Get the number of colonies in the network.
 
@@ -348,7 +348,7 @@ Get the number of colonies in the network.
 |---|---|---|
 |count|uint256|The colony count
 
-### ▸ **`getColonyVersionResolver(uint256 _version):address resolverAddress`**
+### ▸ `getColonyVersionResolver(uint256 _version):address resolverAddress`
 
 Get the `Resolver` address for Colony contract version `_version`.
 
@@ -365,7 +365,7 @@ Get the `Resolver` address for Colony contract version `_version`.
 |---|---|---|
 |resolverAddress|address|Address of the `Resolver` contract
 
-### ▸ **`getCurrentColonyVersion():uint256 version`**
+### ▸ `getCurrentColonyVersion():uint256 version`
 
 Returns the latest Colony contract version. This is the version used to create all new colonies.
 
@@ -377,7 +377,7 @@ Returns the latest Colony contract version. This is the version used to create a
 |---|---|---|
 |version|uint256|The current / latest Colony contract version
 
-### ▸ **`getENSRegistrar():address address`**
+### ▸ `getENSRegistrar():address address`
 
 Returns the address of the ENSRegistrar for the Network.
 
@@ -389,7 +389,7 @@ Returns the address of the ENSRegistrar for the Network.
 |---|---|---|
 |address|address|The address the ENSRegistrar resolves to
 
-### ▸ **`getExtensionInstallation(bytes32 extensionId, address colony):address installation`**
+### ▸ `getExtensionInstallation(bytes32 extensionId, address colony):address installation`
 
 Get an extension's installation.
 
@@ -407,7 +407,7 @@ Get an extension's installation.
 |---|---|---|
 |installation|address|The address of the installed extension
 
-### ▸ **`getExtensionResolver(bytes32 extensionId, uint256 version):address resolver`**
+### ▸ `getExtensionResolver(bytes32 extensionId, uint256 version):address resolver`
 
 Get an extension's resolver.
 
@@ -425,7 +425,7 @@ Get an extension's resolver.
 |---|---|---|
 |resolver|address|The address of the deployed resolver
 
-### ▸ **`getFeeInverse():uint256 _feeInverse`**
+### ▸ `getFeeInverse():uint256 _feeInverse`
 
 Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
 
@@ -437,7 +437,7 @@ Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), retur
 |---|---|---|
 |_feeInverse|uint256|The inverse of the network fee
 
-### ▸ **`getMetaColony():address colonyAddress`**
+### ▸ `getMetaColony():address colonyAddress`
 
 Get the Meta Colony address.
 
@@ -449,7 +449,7 @@ Get the Meta Colony address.
 |---|---|---|
 |colonyAddress|address|The Meta colony address, if no colony was found, returns 0x0
 
-### ▸ **`getMiningDelegator(address _delegate):address delegator`**
+### ▸ `getMiningDelegator(address _delegate):address delegator`
 
 Called to get the address _delegate is allowed to mine for
 
@@ -466,7 +466,7 @@ Called to get the address _delegate is allowed to mine for
 |---|---|---|
 |delegator|address|The address they are allowed to mine on behalf of
 
-### ▸ **`getMiningResolver():address miningResolverAddress`**
+### ▸ `getMiningResolver():address miningResolverAddress`
 
 Get the resolver to be used by new instances of ReputationMiningCycle.
 
@@ -478,7 +478,7 @@ Get the resolver to be used by new instances of ReputationMiningCycle.
 |---|---|---|
 |miningResolverAddress|address|The address of the mining cycle resolver currently used by new instances
 
-### ▸ **`getMiningStake(address _user):MiningStake _info`**
+### ▸ `getMiningStake(address _user):MiningStake _info`
 
 returns how much CLNY _user has staked for the purposes of reputation mining
 
@@ -495,7 +495,7 @@ returns how much CLNY _user has staked for the purposes of reputation mining
 |---|---|---|
 |_info|MiningStake|The amount staked and the timestamp the stake was made at.
 
-### ▸ **`getParentSkillId(uint256 _skillId, uint256 _parentSkillIndex):uint256 skillId`**
+### ▸ `getParentSkillId(uint256 _skillId, uint256 _parentSkillIndex):uint256 skillId`
 
 Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_skillId`.
 
@@ -513,7 +513,7 @@ Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_
 |---|---|---|
 |skillId|uint256|Skill Id of the requested parent skill
 
-### ▸ **`getPayoutWhitelist(address _token):bool status`**
+### ▸ `getPayoutWhitelist(address _token):bool status`
 
 Get a token's status in the payout whitelist
 
@@ -530,7 +530,7 @@ Get a token's status in the payout whitelist
 |---|---|---|
 |status|bool|Will be `true` if token is whitelisted
 
-### ▸ **`getProfileDBAddress(bytes32 node):string orbitDB`**
+### ▸ `getProfileDBAddress(bytes32 node):string orbitDB`
 
 Retrieve the orbitdb address corresponding to a registered account.
 
@@ -547,7 +547,7 @@ Retrieve the orbitdb address corresponding to a registered account.
 |---|---|---|
 |orbitDB|string|A string containing the address of the orbit database
 
-### ▸ **`getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id):ReputationLogEntry reputationLogEntry`**
+### ▸ `getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id):ReputationLogEntry reputationLogEntry`
 
 Get a replacement log entry (if set) for the log entry `_id` in the mining cycle that was at the address `_reputationMiningCycle`.
 
@@ -565,7 +565,7 @@ Get a replacement log entry (if set) for the log entry `_id` in the mining cycle
 |---|---|---|
 |reputationLogEntry|ReputationLogEntry|ReputationLogEntry instance with the details of the log entry (if it exists)
 
-### ▸ **`getReplacementReputationUpdateLogsExist(address _reputationMiningCycle):bool exists`**
+### ▸ `getReplacementReputationUpdateLogsExist(address _reputationMiningCycle):bool exists`
 
 Used by the client to avoid doubling the number of RPC calls when syncing from scratch.
 
@@ -582,7 +582,7 @@ Used by the client to avoid doubling the number of RPC calls when syncing from s
 |---|---|---|
 |exists|bool|Boolean indicating whether there is a replacement log
 
-### ▸ **`getReputationMiningCycle(bool _active):address repMiningCycleAddress`**
+### ▸ `getReputationMiningCycle(bool _active):address repMiningCycleAddress`
 
 Get the address of either the active or inactive reputation mining cycle, based on `active`. The active reputation mining cycle is the one currently under consideration by reputation miners. The inactive reputation cycle is the one with the log that is being appended to.
 
@@ -599,7 +599,7 @@ Get the address of either the active or inactive reputation mining cycle, based 
 |---|---|---|
 |repMiningCycleAddress|address|address of active or inactive ReputationMiningCycle
 
-### ▸ **`getReputationMiningCycleReward():uint256 amount`**
+### ▸ `getReputationMiningCycleReward():uint256 amount`
 
 Called to get the total per-cycle reputation mining reward.
 
@@ -611,7 +611,7 @@ Called to get the total per-cycle reputation mining reward.
 |---|---|---|
 |amount|uint256|The CLNY awarded per mining cycle to the miners
 
-### ▸ **`getReputationMiningSkillId():uint256 skillId`**
+### ▸ `getReputationMiningSkillId():uint256 skillId`
 
 Get the `skillId` of the reputation mining skill. Only set once the metacolony is set up.
 
@@ -623,7 +623,7 @@ Get the `skillId` of the reputation mining skill. Only set once the metacolony i
 |---|---|---|
 |skillId|uint256|The `skillId` of the reputation mining skill.
 
-### ▸ **`getReputationRootHash():bytes32 rootHash`**
+### ▸ `getReputationRootHash():bytes32 rootHash`
 
 Get the root hash of the current reputation state tree.
 
@@ -635,7 +635,7 @@ Get the root hash of the current reputation state tree.
 |---|---|---|
 |rootHash|bytes32|The current Reputation Root Hash
 
-### ▸ **`getReputationRootHashNLeaves():uint256 nLeaves`**
+### ▸ `getReputationRootHashNLeaves():uint256 nLeaves`
 
 Get the number of leaves in the current reputation state tree.
 
@@ -648,7 +648,7 @@ Get the number of leaves in the current reputation state tree.
 |---|---|---|
 |nLeaves|uint256|uint256 The number of leaves in the state tree
 
-### ▸ **`getReputationRootHashNNodes():uint256 nNodes`**
+### ▸ `getReputationRootHashNNodes():uint256 nNodes`
 
 Get the number of leaves in the current reputation state tree.
 
@@ -661,7 +661,7 @@ Get the number of leaves in the current reputation state tree.
 |---|---|---|
 |nNodes|uint256|uint256 The number of leaves in the state tree
 
-### ▸ **`getSkill(uint256 _skillId):Skill skill`**
+### ▸ `getSkill(uint256 _skillId):Skill skill`
 
 Get the `nParents` and `nChildren` of skill with id `_skillId`.
 
@@ -678,7 +678,7 @@ Get the `nParents` and `nChildren` of skill with id `_skillId`.
 |---|---|---|
 |skill|Skill|The Skill struct
 
-### ▸ **`getSkillCount():uint256 count`**
+### ▸ `getSkillCount():uint256 count`
 
 Get the number of skills in the network including both global and local skills.
 
@@ -690,7 +690,7 @@ Get the number of skills in the network including both global and local skills.
 |---|---|---|
 |count|uint256|The skill count
 
-### ▸ **`getTokenLocking():address lockingAddress`**
+### ▸ `getTokenLocking():address lockingAddress`
 
 Get token locking contract address.
 
@@ -702,7 +702,7 @@ Get token locking contract address.
 |---|---|---|
 |lockingAddress|address|Token locking contract address
 
-### ▸ **`initialise(address _resolver, uint256 _version)`**
+### ▸ `initialise(address _resolver, uint256 _version)`
 
 Initialises the colony network by setting the first Colony version resolver to `_resolver` address.
 
@@ -716,14 +716,14 @@ Initialises the colony network by setting the first Colony version resolver to `
 |_version|uint256|Version of the Colony contract the resolver represents
 
 
-### ▸ **`initialiseReputationMining()`**
+### ▸ `initialiseReputationMining()`
 
 Creates initial inactive reputation mining cycle.
 
 
 
 
-### ▸ **`initialiseRootLocalSkill():uint256 rootLocalSkillId`**
+### ▸ `initialiseRootLocalSkill():uint256 rootLocalSkillId`
 
 Initialise the local skills tree for a colony
 
@@ -735,7 +735,7 @@ Initialise the local skills tree for a colony
 |---|---|---|
 |rootLocalSkillId|uint256|The root local skill
 
-### ▸ **`installExtension(bytes32 extensionId, uint256 version)`**
+### ▸ `installExtension(bytes32 extensionId, uint256 version)`
 
 Install an extension in a colony. Can only be called by a Colony.
 
@@ -748,7 +748,7 @@ Install an extension in a colony. Can only be called by a Colony.
 |version|uint256|Version of the extension to install
 
 
-### ▸ **`isColony(address _colony):bool addressIsColony`**
+### ▸ `isColony(address _colony):bool addressIsColony`
 
 Check if specific address is a colony created on colony network.
 
@@ -765,7 +765,7 @@ Check if specific address is a colony created on colony network.
 |---|---|---|
 |addressIsColony|bool|true if specified address is a colony, otherwise false
 
-### ▸ **`lookupRegisteredENSDomain(address addr):string domain`**
+### ▸ `lookupRegisteredENSDomain(address addr):string domain`
 
 Reverse lookup a username from an address.
 
@@ -782,7 +782,7 @@ Reverse lookup a username from an address.
 |---|---|---|
 |domain|string|A string containing the colony-based ENS name corresponding to addr
 
-### ▸ **`punishStakers(address[] memory _stakers, uint256 _amount)`**
+### ▸ `punishStakers(address[] memory _stakers, uint256 _amount)`
 
 Function called to punish people who staked against a new reputation root hash that turned out to be incorrect.
 
@@ -796,7 +796,7 @@ Function called to punish people who staked against a new reputation root hash t
 |_amount|uint256|Amount of stake to slash
 
 
-### ▸ **`registerColonyLabel(string memory colonyName, string memory orbitdb)`**
+### ▸ `registerColonyLabel(string memory colonyName, string memory orbitdb)`
 
 Register a "colony.joincolony.eth" label. Can only be called by a Colony.
 
@@ -809,7 +809,7 @@ Register a "colony.joincolony.eth" label. Can only be called by a Colony.
 |orbitdb|string|The path of the orbitDB database associated with the colony name
 
 
-### ▸ **`registerUserLabel(string memory username, string memory orbitdb)`**
+### ▸ `registerUserLabel(string memory username, string memory orbitdb)`
 
 Register a "user.joincolony.eth" label.
 
@@ -822,7 +822,7 @@ Register a "user.joincolony.eth" label.
 |orbitdb|string|The path of the orbitDB database associated with the user profile
 
 
-### ▸ **`reward(address _recipient, uint256 _amount)`**
+### ▸ `reward(address _recipient, uint256 _amount)`
 
 Used to track that a user is eligible to claim a reward
 
@@ -836,7 +836,7 @@ Used to track that a user is eligible to claim a reward
 |_amount|uint256|The amount of CLNY to be awarded
 
 
-### ▸ **`setFeeInverse(uint256 _feeInverse)`**
+### ▸ `setFeeInverse(uint256 _feeInverse)`
 
 Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as `_feeInverse`.
 
@@ -848,7 +848,7 @@ Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as 
 |_feeInverse|uint256|The inverse of the network fee to set
 
 
-### ▸ **`setMiningDelegate(address _delegate, bool _allowed)`**
+### ▸ `setMiningDelegate(address _delegate, bool _allowed)`
 
 Called to give or remove another address's permission to mine on your behalf
 
@@ -861,7 +861,7 @@ Called to give or remove another address's permission to mine on your behalf
 |_allowed|bool|Whether they are allowed (true) or not (false) to mine on your behalf
 
 
-### ▸ **`setMiningResolver(address miningResolverAddress)`**
+### ▸ `setMiningResolver(address miningResolverAddress)`
 
 Set the resolver to be used by new instances of ReputationMiningCycle.
 
@@ -873,7 +873,7 @@ Set the resolver to be used by new instances of ReputationMiningCycle.
 |miningResolverAddress|address|The address of the Resolver contract with the functions correctly wired.
 
 
-### ▸ **`setPayoutWhitelist(address _token, bool _status)`**
+### ▸ `setPayoutWhitelist(address _token, bool _status)`
 
 Set a token's status in the payout whitelist
 
@@ -886,7 +886,7 @@ Set a token's status in the payout whitelist
 |_status|bool|The whitelist status
 
 
-### ▸ **`setReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id, address _user, int _amount, uint256 _skillId, address _colony, uint128 _nUpdates, uint128 _nPreviousUpdates)`**
+### ▸ `setReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id, address _user, int _amount, uint256 _skillId, address _colony, uint128 _nUpdates, uint128 _nPreviousUpdates)`
 
 Set a replacement log entry if we're in recovery mode.
 
@@ -906,7 +906,7 @@ Set a replacement log entry if we're in recovery mode.
 |_nPreviousUpdates|uint128|The number of updates in the log before this entry
 
 
-### ▸ **`setReputationMiningCycleReward(uint256 _amount)`**
+### ▸ `setReputationMiningCycleReward(uint256 _amount)`
 
 Called to set the total per-cycle reputation reward, which will be split between all miners.
 
@@ -919,7 +919,7 @@ Called to set the total per-cycle reputation reward, which will be split between
 |_amount|uint256|The CLNY awarded per mining cycle to the miners
 
 
-### ▸ **`setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers)`**
+### ▸ `setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers)`
 
 Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
 
@@ -933,7 +933,7 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 
 
-### ▸ **`setTokenLocking(address _tokenLockingAddress)`**
+### ▸ `setTokenLocking(address _tokenLockingAddress)`
 
 Sets the token locking address. This is only set once, and can't be changed afterwards.
 
@@ -945,7 +945,7 @@ Sets the token locking address. This is only set once, and can't be changed afte
 |_tokenLockingAddress|address|Address of the locking contract
 
 
-### ▸ **`setupRegistrar(address _ens, bytes32 _rootNode)`**
+### ▸ `setupRegistrar(address _ens, bytes32 _rootNode)`
 
 Setup registrar with ENS and root node.
 
@@ -958,7 +958,7 @@ Setup registrar with ENS and root node.
 |_rootNode|bytes32|Namehash of the root node for the domain
 
 
-### ▸ **`stakeForMining(uint256 _amount)`**
+### ▸ `stakeForMining(uint256 _amount)`
 
 Stake CLNY to allow the staker to participate in reputation mining.
 
@@ -970,14 +970,14 @@ Stake CLNY to allow the staker to participate in reputation mining.
 |_amount|uint256|Amount of CLNY to stake for the purposes of mining
 
 
-### ▸ **`startNextCycle()`**
+### ▸ `startNextCycle()`
 
 Starts a new Reputation Mining cycle. Explicitly called only the first time, subsequently called from within `setReputationRootHash`.
 
 
 
 
-### ▸ **`startTokenAuction(address _token)`**
+### ▸ `startTokenAuction(address _token)`
 
 Create and start a new `DutchAuction` for the entire amount of `_token` owned by the Colony Network.
 
@@ -989,7 +989,7 @@ Create and start a new `DutchAuction` for the entire amount of `_token` owned by
 |_token|address|Address of the token held by the network to be auctioned
 
 
-### ▸ **`supportsInterface(bytes4 interfaceID):bool status`**
+### ▸ `supportsInterface(bytes4 interfaceID):bool status`
 
 Query if a contract implements an interface
 
@@ -1007,7 +1007,7 @@ Query if a contract implements an interface
 |---|---|---|
 |status|bool|`true` if the contract implements `interfaceID`
 
-### ▸ **`uninstallExtension(bytes32 extensionId)`**
+### ▸ `uninstallExtension(bytes32 extensionId)`
 
 Uninstall an extension in a colony. Can only be called by a Colony.
 
@@ -1019,7 +1019,7 @@ Uninstall an extension in a colony. Can only be called by a Colony.
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 
 
-### ▸ **`unstakeForMining(uint256 _amount)`**
+### ▸ `unstakeForMining(uint256 _amount)`
 
 Unstake CLNY currently staked for reputation mining.
 
@@ -1031,7 +1031,7 @@ Unstake CLNY currently staked for reputation mining.
 |_amount|uint256|Amount of CLNY staked for mining to unstake
 
 
-### ▸ **`updateColonyOrbitDB(string memory orbitdb)`**
+### ▸ `updateColonyOrbitDB(string memory orbitdb)`
 
 Update a colony's orbitdb address. Can only be called by a colony with a registered subdomain
 
@@ -1043,7 +1043,7 @@ Update a colony's orbitdb address. Can only be called by a colony with a registe
 |orbitdb|string|The path of the orbitDB database to be associated with the colony
 
 
-### ▸ **`updateUserOrbitDB(string memory orbitdb)`**
+### ▸ `updateUserOrbitDB(string memory orbitdb)`
 
 Update a user's orbitdb address. Can only be called by a user with a registered subdomain
 
@@ -1055,7 +1055,7 @@ Update a user's orbitdb address. Can only be called by a user with a registered 
 |orbitdb|string|The path of the orbitDB database to be associated with the user
 
 
-### ▸ **`upgradeExtension(bytes32 extensionId, uint256 newVersion)`**
+### ▸ `upgradeExtension(bytes32 extensionId, uint256 newVersion)`
 
 Upgrade an extension in a colony. Can only be called by a Colony.
 

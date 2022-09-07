@@ -3,7 +3,7 @@
   
 ## Interface Methods
 
-### ▸ **`approveStake(address _user, uint256 _amount, address _token)`**
+### ▸ `approveStake(address _user, uint256 _amount, address _token)`
 
 Allow the colony to obligate some amount of tokens as a stake.
 
@@ -18,7 +18,7 @@ Allow the colony to obligate some amount of tokens as a stake.
 |_token|address|The colony's internal token address
 
 
-### ▸ **`deobligateStake(address _user, uint256 _amount, address _token)`**
+### ▸ `deobligateStake(address _user, uint256 _amount, address _token)`
 
 Deobligate the user some amount of tokens, releasing the stake. Can only be called by a colony or colonyNetwork.
 
@@ -32,7 +32,7 @@ Deobligate the user some amount of tokens, releasing the stake. Can only be call
 |_token|address|The colony's internal token address
 
 
-### ▸ **`deposit(address _token, uint256 _amount)`**
+### ▸ `deposit(address _token, uint256 _amount)`
 
 Deposit `_amount` of deposited tokens. Can only be called if user tokens are not locked. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
 
@@ -45,7 +45,7 @@ Deposit `_amount` of deposited tokens. Can only be called if user tokens are not
 |_amount|uint256|Amount to deposit
 
 
-### ▸ **`deposit(address _token, uint256 _amount, bool _force)`**
+### ▸ `deposit(address _token, uint256 _amount, bool _force)`
 
 Deposit `_amount` of colony tokens. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
 
@@ -59,7 +59,7 @@ Deposit `_amount` of colony tokens. Before calling this function user has to all
 |_force|bool|Pass true to forcibly unlock the token
 
 
-### ▸ **`depositFor(address _token, uint256 _amount, address _recipient)`**
+### ▸ `depositFor(address _token, uint256 _amount, address _recipient)`
 
 Deposit `_amount` of colony tokens in the recipient's account. Goes into pendingBalance if token is locked.
 
@@ -73,7 +73,7 @@ Deposit `_amount` of colony tokens in the recipient's account. Goes into pending
 |_recipient|address|User to receive the tokens
 
 
-### ▸ **`getApproval(address _user, address _token, address _obligator):uint256 approval`**
+### ▸ `getApproval(address _user, address _token, address _obligator):uint256 approval`
 
 See how much an address has approved another address to obligate on their behalf.
 
@@ -92,7 +92,7 @@ See how much an address has approved another address to obligate on their behalf
 |---|---|---|
 |approval|uint256|The total amount for this obligation
 
-### ▸ **`getColonyNetwork():address networkAddress`**
+### ▸ `getColonyNetwork():address networkAddress`
 
 Get ColonyNetwork address.
 
@@ -104,7 +104,7 @@ Get ColonyNetwork address.
 |---|---|---|
 |networkAddress|address|ColonyNetwork address
 
-### ▸ **`getObligation(address _user, address _token, address _obligator):uint256 approval`**
+### ▸ `getObligation(address _user, address _token, address _obligator):uint256 approval`
 
 See how much a user is currently obligated by another.
 
@@ -123,7 +123,7 @@ See how much a user is currently obligated by another.
 |---|---|---|
 |approval|uint256|The total amount for this obligation
 
-### ▸ **`getTotalLockCount(address _token):uint256 lockCount`**
+### ▸ `getTotalLockCount(address _token):uint256 lockCount`
 
 Get global lock count for a specific token.
 
@@ -140,7 +140,7 @@ Get global lock count for a specific token.
 |---|---|---|
 |lockCount|uint256|Global token lock count
 
-### ▸ **`getTotalObligation(address _user, address _token):uint256 obligation`**
+### ▸ `getTotalObligation(address _user, address _token):uint256 obligation`
 
 See the total amount of a user's obligation.
 
@@ -158,7 +158,7 @@ See the total amount of a user's obligation.
 |---|---|---|
 |obligation|uint256|The total amount this user is obligated
 
-### ▸ **`getUserLock(address _token, address _user):Lock lock`**
+### ▸ `getUserLock(address _token, address _user):Lock lock`
 
 Get user token lock info (lock count and deposited amount).
 
@@ -176,7 +176,7 @@ Get user token lock info (lock count and deposited amount).
 |---|---|---|
 |lock|Lock|Lock object containing:   `lockCount` User's token lock count,   `balance` User's deposited amount,   `DEPRECATED_timestamp` Timestamp of deposit (deprecated)   `pendingBalance` Tokens that have been sent to them, but are inaccessible until all locks are cleared and then these                    tokens are claimed
 
-### ▸ **`incrementLockCounterTo(address _token, uint256 _lockId)`**
+### ▸ `incrementLockCounterTo(address _token, uint256 _lockId)`
 
 Increments sender's lock count to `_lockId`.
 
@@ -189,7 +189,7 @@ Increments sender's lock count to `_lockId`.
 |_lockId|uint256|Id of the lock user wants to increment to
 
 
-### ▸ **`lockToken(address _token):uint256 lockCount`**
+### ▸ `lockToken(address _token):uint256 lockCount`
 
 Locks everyones' tokens on `_token` address.
 
@@ -206,7 +206,7 @@ Locks everyones' tokens on `_token` address.
 |---|---|---|
 |lockCount|uint256|Updated total token lock count
 
-### ▸ **`obligateStake(address _user, uint256 _amount, address _token)`**
+### ▸ `obligateStake(address _user, uint256 _amount, address _token)`
 
 Obligate the user some amount of tokens as a stake. Can only be called by a colony or colonyNetwork.
 
@@ -220,7 +220,7 @@ Obligate the user some amount of tokens as a stake. Can only be called by a colo
 |_token|address|The colony's internal token address
 
 
-### ▸ **`reward(address _recipient, uint256 _amount)`**
+### ▸ `reward(address _recipient, uint256 _amount)`
 
 This function is deprecated and only exists to aid upgrades.
 
@@ -234,7 +234,7 @@ This function is deprecated and only exists to aid upgrades.
 |_amount|uint256|The amount to reward
 
 
-### ▸ **`setColonyNetwork(address _colonyNetwork)`**
+### ▸ `setColonyNetwork(address _colonyNetwork)`
 
 Set the ColonyNetwork contract address.
 
@@ -247,7 +247,7 @@ Set the ColonyNetwork contract address.
 |_colonyNetwork|address|Address of the ColonyNetwork
 
 
-### ▸ **`transfer(address _token, uint256 _amount, address _recipient, bool _force)`**
+### ▸ `transfer(address _token, uint256 _amount, address _recipient, bool _force)`
 
 Transfer tokens to a recipient's pending balance. Can only be called if user tokens are not locked.
 
@@ -262,7 +262,7 @@ Transfer tokens to a recipient's pending balance. Can only be called if user tok
 |_force|bool|Pass true to forcibly unlock the token
 
 
-### ▸ **`transferStake(address _user, uint256 _amount, address _token, address _recipient)`**
+### ▸ `transferStake(address _user, uint256 _amount, address _token, address _recipient)`
 
 Transfer some amount of staked tokens. Can only be called by a colony or colonyNetwork.
 
@@ -277,7 +277,7 @@ Transfer some amount of staked tokens. Can only be called by a colony or colonyN
 |_recipient|address|Recipient of the slashed tokens
 
 
-### ▸ **`unlockTokenForUser(address _token, address _user, uint256 _lockId)`**
+### ▸ `unlockTokenForUser(address _token, address _user, uint256 _lockId)`
 
 Increments the lock counter to `_lockId` for the `_user` if user's lock count is less than `_lockId` by 1. Can only be called by a colony.
 
@@ -291,7 +291,7 @@ Increments the lock counter to `_lockId` for the `_user` if user's lock count is
 |_lockId|uint256|Id of the lock we want to increment to
 
 
-### ▸ **`withdraw(address _token, uint256 _amount)`**
+### ▸ `withdraw(address _token, uint256 _amount)`
 
 Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
 
@@ -304,9 +304,9 @@ Withdraw `_amount` of deposited tokens. Can only be called if user tokens are no
 |_amount|uint256|Amount to withdraw
 
 
-### ▸ **`withdraw(address _token, uint256 _amount, bool _force)`**
+### ▸ `withdraw(address _token, uint256 _amount, bool _force)`
 
-Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+Withdraw `_amount` of deposited tokens. Set `_force` to `true` to forcibly unlock the token before the withdrawal.
 
 
 **Parameters**
