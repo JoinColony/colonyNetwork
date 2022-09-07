@@ -121,7 +121,7 @@
     "solidity-parser-diligence": "^0.4.18",
     "solidity-steamroller": "^1.1.0",
     "truffle": "^5.5.18",
-    "truffle-hdwallet-provider": "^1.0.9",
+    "truffle-hdwallet-provider": "^1.0.17",
     "web3-utils": "^1.7.3"
   },
   "private": true,
