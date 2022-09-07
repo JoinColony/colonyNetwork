@@ -300,10 +300,6 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @return The staker reward and the reputation penalty (if any)
   function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256, uint256);
 
-  function createClaimDelayAction(bytes memory action, uint256 value)
-    external
-    returns (bytes memory);
-
   /// @notice Claim the staker's reward from a motion that was created with v4 of the extension, and is
   /// now missing and cannot be interacted with via the normal claim function.
   /// @param _motionId The id of the motion
