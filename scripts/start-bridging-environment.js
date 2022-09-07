@@ -94,7 +94,7 @@ async function start() {
   await fb.deployTransaction.wait();
 
   // Deploy a home bridge
-  const homeBridgeFactory = new ethers.ContractFactory(HomeBridgeMock.abi, HomeBridgeMock.bytecode, ethersForeignSigner);
+  const homeBridgeFactory = new ethers.ContractFactory(HomeBridgeMock.abi, HomeBridgeMock.bytecode, ethersHomeSigner);
 
   const hb = await homeBridgeFactory.deploy();
   await hb.deployTransaction.wait();
