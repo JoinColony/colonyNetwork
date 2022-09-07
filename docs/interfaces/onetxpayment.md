@@ -32,7 +32,7 @@ Called when upgrading the extension
 
 
 
-### ▸ `getCapabilityRoles(bytes4 _sig):bytes32 roles`
+### ▸ `getCapabilityRoles(bytes4 _sig):bytes32 _roles`
 
 Return the permissions required for each function
 
@@ -47,7 +47,7 @@ Return the permissions required for each function
 
 |Name|Type|Description|
 |---|---|---|
-|roles|bytes32|The byte32 of permissions required
+|_roles|bytes32|The byte32 of permissions required
 
 ### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
 
@@ -66,7 +66,7 @@ Gets the next nonce for a meta-transaction
 |---|---|---|
 |nonce|uint256|The nonce
 
-### ▸ `identifier():bytes32 identifier`
+### ▸ `identifier():bytes32 _identifier`
 
 Returns the identifier of the extension
 
@@ -76,7 +76,7 @@ Returns the identifier of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|identifier|bytes32|The extension's identifier
+|_identifier|bytes32|The extension's identifier
 
 ### ▸ `install(address _colony)`
 
@@ -139,7 +139,7 @@ Called when uninstalling the extension
 
 
 
-### ▸ `version():uint256 version`
+### ▸ `version():uint256 _version`
 
 Returns the version of the extension
 
@@ -149,4 +149,4 @@ Returns the version of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|version|uint256|The extension's version number
+|_version|uint256|The extension's version number

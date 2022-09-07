@@ -7,6 +7,22 @@ See [here](https://colony.gitbook.io/colony/extensions/governance) for more info
   
 ## Interface Methods
 
+### ▸ `claimMisalignedReward(uint256 _motionId, uint256 _permissionDomainId, uint256 _childSkillIndex, address _staker, uint256 _vote)`
+
+Claim the staker's reward from a motion that was created with v4 of the extension, and is now missing and cannot be interacted with via the normal claim function.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_motionId|uint256|The id of the motion
+|_permissionDomainId|uint256|The domain where the extension has the arbitration permission
+|_childSkillIndex|uint256|For the domain in which the motion is occurring
+|_staker|address|The staker whose reward is being claimed
+|_vote|uint256|The side being supported (0 = NAY, 1 = YAY)
+
+
 ### ▸ `claimReward(uint256 _motionId, uint256 _permissionDomainId, uint256 _childSkillIndex, address _staker, uint256 _vote)`
 
 Claim the staker's reward
@@ -25,7 +41,7 @@ Claim the staker's reward
 
 ### ▸ `createDomainMotion(uint256 _domainId, uint256 _childSkillIndex, bytes memory _action, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
 
-Create a motion in any domain
+Create a motion in any domain (DEPRECATED)
 
 
 **Parameters**
@@ -62,7 +78,7 @@ Create a motion
 
 ### ▸ `createRootMotion(address _altTarget, bytes memory _action, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
 
-Create a motion in the root domain
+Create a motion in the root domain (DEPRECATED)
 
 
 **Parameters**
@@ -75,18 +91,6 @@ Create a motion in the root domain
 |_value|bytes|Reputation tree value for the root domain
 |_branchMask|uint256|The branchmask of the proof
 |_siblings|bytes32[]|The siblings of the proof
-
-
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
 
 
 ### ▸ `escalateMotion(uint256 _motionId, uint256 _newDomainId, uint256 _childSkillIndex, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
@@ -107,11 +111,11 @@ Escalate a motion to a higher domain
 |_siblings|bytes32[]|The siblings of the proof
 
 
-### ▸ `failingExecutionAllowed(uint256 _motionId):bool allowed`
+### ▸ `failingExecutionAllowed(uint256 _motionId):bool _allowed`
 
 Return whether a motion, assuming it's in the finalizable state, is allowed to finalize without the call executing successfully.
 
-*Note: We are only expecting this to be called from finalize motion in the contracts. It is marked as public only so that the frontend can use it.*
+*Note: We are only expecting this to be called from finalize motion in the contracts. It is marked as external only so that the frontend can use it.*
 
 **Parameters**
 
@@ -123,28 +127,21 @@ Return whether a motion, assuming it's in the finalizable state, is allowed to f
 
 |Name|Type|Description|
 |---|---|---|
-|allowed|bool|Is `true` if the motion is allowed to be finalized
+|_allowed|bool|If motion is allowed to finalize without successful action
 
 ### ▸ `finalizeMotion(uint256 _motionId)`
 
-Finalize a motion
+Finalized a motion, executing its action if appropriate
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_motionId|uint256|The id of the motion
+|_motionId|uint256|The id of the motion to finalize
 
 
-### ▸ `finishUpgrade()`
-
-Called when upgrading the extension
-
-
-
-
-### ▸ `getEscalationPeriod():uint256 period`
+### ▸ `getEscalationPeriod():uint256 _period`
 
 Get the escalation period
 
@@ -154,9 +151,9 @@ Get the escalation period
 
 |Name|Type|Description|
 |---|---|---|
-|period|uint256|The escalation period
+|_period|uint256|The escalation period
 
-### ▸ `getExpenditureMotionCount(bytes32 _structHash):uint256 ongoing`
+### ▸ `getExpenditureMotionCount(bytes32 _structHash):uint256 _count`
 
 Get the number of ongoing motions for a single expenditure / expenditure slot
 
@@ -171,9 +168,9 @@ Get the number of ongoing motions for a single expenditure / expenditure slot
 
 |Name|Type|Description|
 |---|---|---|
-|ongoing|uint256|The number of ongoing motions
+|_count|uint256|The number of ongoing motions
 
-### ▸ `getExpenditurePastVote(bytes32 _actionHash):uint256 largest`
+### ▸ `getExpenditurePastVote(bytes32 _actionHash):uint256 _vote`
 
 Get the largest past vote on a single expenditure variable
 
@@ -188,9 +185,9 @@ Get the largest past vote on a single expenditure variable
 
 |Name|Type|Description|
 |---|---|---|
-|largest|uint256|The largest past vote on this variable
+|_vote|uint256|The largest past vote on this variable
 
-### ▸ `getMaxVoteFraction():uint256 fraction`
+### ▸ `getMaxVoteFraction():uint256 _fraction`
 
 Get the max vote fraction
 
@@ -200,26 +197,9 @@ Get the max vote fraction
 
 |Name|Type|Description|
 |---|---|---|
-|fraction|uint256|The max vote fraction
+|_fraction|uint256|The max vote fraction
 
-### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
-
-Gets the next nonce for a meta-transaction
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|userAddress|address|The user's address
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|nonce|uint256|The nonce
-
-### ▸ `getMotion(uint256 _motionId):Motion motion`
+### ▸ `getMotion(uint256 _motionId):Motion _motion`
 
 Get the data for a single motion
 
@@ -234,9 +214,9 @@ Get the data for a single motion
 
 |Name|Type|Description|
 |---|---|---|
-|motion|Motion|The motion struct
+|_motion|Motion|The motion struct
 
-### ▸ `getMotionCount():uint256 count`
+### ▸ `getMotionCount():uint256 _count`
 
 Get the total motion count
 
@@ -246,9 +226,9 @@ Get the total motion count
 
 |Name|Type|Description|
 |---|---|---|
-|count|uint256|The total motion count
+|_count|uint256|The total motion count
 
-### ▸ `getMotionState(uint256 _motionId):MotionState state`
+### ▸ `getMotionState(uint256 _motionId):MotionState _motionState`
 
 Get the current state of the motion
 
@@ -263,9 +243,9 @@ Get the current state of the motion
 
 |Name|Type|Description|
 |---|---|---|
-|state|MotionState|The current motion state
+|_motionState|MotionState|The current motion state
 
-### ▸ `getRevealPeriod():uint256 period`
+### ▸ `getRevealPeriod():uint256 _period`
 
 Get the reveal period
 
@@ -275,9 +255,9 @@ Get the reveal period
 
 |Name|Type|Description|
 |---|---|---|
-|period|uint256|The reveal period
+|_period|uint256|The reveal period
 
-### ▸ `getStake(uint256 _motionId, address _staker, uint256 _vote):uint256 stake`
+### ▸ `getStake(uint256 _motionId, address _staker, uint256 _vote):uint256 _stake`
 
 Get a user's stake on a motion
 
@@ -294,9 +274,9 @@ Get a user's stake on a motion
 
 |Name|Type|Description|
 |---|---|---|
-|stake|uint256|The user's stake
+|_stake|uint256|The user's stake
 
-### ▸ `getStakePeriod():uint256 period`
+### ▸ `getStakePeriod():uint256 _period`
 
 Get the stake period
 
@@ -306,9 +286,9 @@ Get the stake period
 
 |Name|Type|Description|
 |---|---|---|
-|period|uint256|The stake period
+|_period|uint256|The stake period
 
-### ▸ `getStakerReward(uint256 _motionId, address _staker, uint256 _vote):uint256 reward, uint256 penalty`
+### ▸ `getStakerReward(uint256 _motionId, address _staker, uint256 _vote):uint256 _reward, uint256 _penalty`
 
 Get the staker reward
 
@@ -325,10 +305,10 @@ Get the staker reward
 
 |Name|Type|Description|
 |---|---|---|
-|reward|uint256|The staker reward
-|penalty|uint256|The reputation penalty (if any)
+|_reward|uint256|The staker reward (if any)
+|_penalty|uint256|The reputation penalty (if any)
 
-### ▸ `getSubmitPeriod():uint256 period`
+### ▸ `getSubmitPeriod():uint256 _period`
 
 Get the submit period
 
@@ -338,9 +318,9 @@ Get the submit period
 
 |Name|Type|Description|
 |---|---|---|
-|period|uint256|The submit period
+|_period|uint256|The submit period
 
-### ▸ `getTotalStakeFraction():uint256 fraction`
+### ▸ `getTotalStakeFraction():uint256 _fraction`
 
 Get the total stake fraction
 
@@ -350,9 +330,9 @@ Get the total stake fraction
 
 |Name|Type|Description|
 |---|---|---|
-|fraction|uint256|The total stake fraction
+|_fraction|uint256|The total stake fraction
 
-### ▸ `getUserMinStakeFraction():uint256 fraction`
+### ▸ `getUserMinStakeFraction():uint256 _fraction`
 
 Get the user min stake fraction
 
@@ -362,9 +342,9 @@ Get the user min stake fraction
 
 |Name|Type|Description|
 |---|---|---|
-|fraction|uint256|The user min stake fraction
+|_fraction|uint256|The user min stake fraction
 
-### ▸ `getVoterReward(uint256 _motionId, uint256 _voterRep):uint256 reward`
+### ▸ `getVoterReward(uint256 _motionId, uint256 _voterRep):uint256 _reward`
 
 Get the voter reward NB This function will only return a meaningful value if in the reveal state. Prior to the reveal state, getVoterRewardRange should be used.
 
@@ -380,9 +360,9 @@ Get the voter reward NB This function will only return a meaningful value if in 
 
 |Name|Type|Description|
 |---|---|---|
-|reward|uint256|The voter reward
+|_reward|uint256|The voter reward
 
-### ▸ `getVoterRewardFraction():uint256 fraction`
+### ▸ `getVoterRewardFraction():uint256 _fraction`
 
 Get the voter reward fraction
 
@@ -392,9 +372,9 @@ Get the voter reward fraction
 
 |Name|Type|Description|
 |---|---|---|
-|fraction|uint256|The voter reward fraction
+|_fraction|uint256|The voter reward fraction
 
-### ▸ `getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress):uint256 min, uint256 max`
+### ▸ `getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress):uint256 _rewardMin, uint256 _rewardMax`
 
 Get the range of potential rewards for a voter on a specific motion, intended to be used when the motion is in the reveal state. Once a motion is in the reveal state the reward is known, and getVoterRewardRange should be used.
 
@@ -411,20 +391,8 @@ Get the range of potential rewards for a voter on a specific motion, intended to
 
 |Name|Type|Description|
 |---|---|---|
-|min|uint256|The voter reward range minimum
-|max|uint256|The voter reward range maximum
-
-### ▸ `identifier():bytes32 identifier`
-
-Returns the identifier of the extension
-
-
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|identifier|bytes32|The extension's identifier
+|_rewardMin|uint256|The voter reward range lower bound
+|_rewardMax|uint256|The voter reward range upper bound
 
 ### ▸ `initialise(uint256 _totalStakeFraction, uint256 _voterRewardFraction, uint256 _userMinStakeFraction, uint256 _maxVoteFraction, uint256 _stakePeriod, uint256 _submitPeriod, uint256 _revealPeriod, uint256 _escalationPeriod)`
 
@@ -443,18 +411,6 @@ Initialise the extension
 |_submitPeriod|uint256|The length of the submit period in seconds
 |_revealPeriod|uint256|The length of the reveal period in seconds
 |_escalationPeriod|uint256|The length of the escalation period in seconds
-
-
-### ▸ `install(address _colony)`
-
-Install the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|Base colony for the installation
 
 
 ### ▸ `revealVote(uint256 _motionId, bytes32 _salt, uint256 _vote, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
@@ -510,23 +466,3 @@ Submit a vote secret for a motion
 |_value|bytes|Reputation tree value for the staker/domain
 |_branchMask|uint256|The branchmask of the proof
 |_siblings|bytes32[]|The siblings of the proof
-
-
-### ▸ `uninstall()`
-
-Called when uninstalling the extension
-
-
-
-
-### ▸ `version():uint256 version`
-
-Returns the version of the extension
-
-
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|version|uint256|The extension's version number

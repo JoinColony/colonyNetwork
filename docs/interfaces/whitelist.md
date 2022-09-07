@@ -39,7 +39,7 @@ Called when upgrading the extension
 
 
 
-### ▸ `getAgreementHash():string hash`
+### ▸ `getAgreementHash():string _hash`
 
 Get the agreementHash
 
@@ -49,9 +49,9 @@ Get the agreementHash
 
 |Name|Type|Description|
 |---|---|---|
-|hash|string|The agreement hash
+|_hash|string|The agreement hash
 
-### ▸ `getApproval(address _user):bool status`
+### ▸ `getApproval(address _user):bool _status`
 
 Get the user's approval status
 
@@ -66,7 +66,7 @@ Get the user's approval status
 
 |Name|Type|Description|
 |---|---|---|
-|status|bool|The user's approval status
+|_status|bool|The user's approval status
 
 ### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
 
@@ -85,7 +85,7 @@ Gets the next nonce for a meta-transaction
 |---|---|---|
 |nonce|uint256|The nonce
 
-### ▸ `getSignature(address _user):bool status`
+### ▸ `getSignature(address _user):bool _status`
 
 Get the user's signature status
 
@@ -100,9 +100,9 @@ Get the user's signature status
 
 |Name|Type|Description|
 |---|---|---|
-|status|bool|The user's signature status
+|_status|bool|The user's signature status
 
-### ▸ `getUseApprovals():bool useApprovals`
+### ▸ `getUseApprovals():bool _useApprovals`
 
 Get the useApprovals boolean
 
@@ -112,9 +112,9 @@ Get the useApprovals boolean
 
 |Name|Type|Description|
 |---|---|---|
-|useApprovals|bool|Whether `useApprovals` is `true`
+|_useApprovals|bool|Whether `useApprovals` is `true`
 
-### ▸ `identifier():bytes32 identifier`
+### ▸ `identifier():bytes32 _identifier`
 
 Returns the identifier of the extension
 
@@ -124,7 +124,7 @@ Returns the identifier of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|identifier|bytes32|The extension's identifier
+|_identifier|bytes32|The extension's identifier
 
 ### ▸ `initialise(bool _useApprovals, string memory _agreementHash)`
 
@@ -151,7 +151,7 @@ Configures the extension
 |_colony|address|The colony in which the extension holds permissions
 
 
-### ▸ `isApproved(address _user):bool approved`
+### ▸ `isApproved(address _user):bool _approved`
 
 Get the user's overall whitelist status
 
@@ -166,7 +166,7 @@ Get the user's overall whitelist status
 
 |Name|Type|Description|
 |---|---|---|
-|approved|bool|Is `true` when the user is approved
+|_approved|bool|Is `true` when the user is approved
 
 ### ▸ `signAgreement(string memory _agreementHash)`
 
@@ -187,7 +187,7 @@ Called when uninstalling the extension
 
 
 
-### ▸ `version():uint256 version`
+### ▸ `version():uint256 _version`
 
 Returns the version of the extension
 
@@ -197,4 +197,4 @@ Returns the version of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|version|uint256|The extension's version number
+|_version|uint256|The extension's version number

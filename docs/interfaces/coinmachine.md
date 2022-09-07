@@ -38,7 +38,7 @@ Called when upgrading the extension
 
 
 
-### ▸ `getActiveIntake():uint256 intake`
+### ▸ `getActiveIntake():uint256 _intake`
 
 Get the number of tokens received in the period that the price was last updated for or a purchase was made
 
@@ -48,9 +48,9 @@ Get the number of tokens received in the period that the price was last updated 
 
 |Name|Type|Description|
 |---|---|---|
-|intake|uint256|Amount of tokens received
+|_intake|uint256|Amount of tokens received
 
-### ▸ `getActivePeriod():uint256 period`
+### ▸ `getActivePeriod():uint256 _period`
 
 Get the period that the price was last updated for or a purchase was made
 
@@ -60,9 +60,9 @@ Get the period that the price was last updated for or a purchase was made
 
 |Name|Type|Description|
 |---|---|---|
-|period|uint256|The active period
+|_period|uint256|The active period
 
-### ▸ `getActiveSold():uint256 sold`
+### ▸ `getActiveSold():uint256 _sold`
 
 Get the number of tokens sold in the period that the price was last updated for or a purchase was made
 
@@ -72,9 +72,9 @@ Get the number of tokens sold in the period that the price was last updated for 
 
 |Name|Type|Description|
 |---|---|---|
-|sold|uint256|Amount of tokens sold
+|_sold|uint256|Amount of tokens sold
 
-### ▸ `getCurrentPrice():uint256 price`
+### ▸ `getCurrentPrice():uint256 _price`
 
 Get the current price per token
 
@@ -84,9 +84,9 @@ Get the current price per token
 
 |Name|Type|Description|
 |---|---|---|
-|price|uint256|Current price
+|_price|uint256|Current price
 
-### ▸ `getEMAIntake():uint256 amount`
+### ▸ `getEMAIntake():uint256 _amount`
 
 Get the EMA of the number of tokens received each period
 
@@ -96,9 +96,9 @@ Get the EMA of the number of tokens received each period
 
 |Name|Type|Description|
 |---|---|---|
-|amount|uint256|Amount of tokens received
+|_amount|uint256|Amount of tokens received
 
-### ▸ `getEvolvePrice():bool evolve`
+### ▸ `getEvolvePrice():bool _evolve`
 
 Get the evolvePrice boolean
 
@@ -108,9 +108,9 @@ Get the evolvePrice boolean
 
 |Name|Type|Description|
 |---|---|---|
-|evolve|bool|The evolvePrice boolean
+|_evolve|bool|The evolvePrice boolean
 
-### ▸ `getMaxPerPeriod():uint256 max`
+### ▸ `getMaxPerPeriod():uint256 _max`
 
 Get the maximum number of tokens to sell per period
 
@@ -120,9 +120,9 @@ Get the maximum number of tokens to sell per period
 
 |Name|Type|Description|
 |---|---|---|
-|max|uint256|Maximum number of tokens
+|_max|uint256|Maximum number of tokens
 
-### ▸ `getMaxPurchase(address _user):uint256 max`
+### ▸ `getMaxPurchase(address _user):uint256 _max`
 
 Get the maximum amount of tokens a user can purchase in a period
 
@@ -137,9 +137,9 @@ Get the maximum amount of tokens a user can purchase in a period
 
 |Name|Type|Description|
 |---|---|---|
-|max|uint256|Maximum amount of tokens
+|_max|uint256|Maximum amount of tokens
 
-### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
+### ▸ `getMetatransactionNonce(address _userAddress):uint256 _nonce`
 
 Gets the next nonce for a meta-transaction
 
@@ -148,15 +148,15 @@ Gets the next nonce for a meta-transaction
 
 |Name|Type|Description|
 |---|---|---|
-|userAddress|address|The user's address
+|_userAddress|address|The user's address
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|nonce|uint256|The nonce
+|_nonce|uint256|The nonce
 
-### ▸ `getPeriodLength():uint256 length`
+### ▸ `getPeriodLength():uint256 _length`
 
 Get the length of the sale period
 
@@ -166,9 +166,9 @@ Get the length of the sale period
 
 |Name|Type|Description|
 |---|---|---|
-|length|uint256|Length of the sale period
+|_length|uint256|Length of the sale period
 
-### ▸ `getPurchaseToken():address token`
+### ▸ `getPurchaseToken():address _token`
 
 Get the address of the token being used to make purchases
 
@@ -178,9 +178,9 @@ Get the address of the token being used to make purchases
 
 |Name|Type|Description|
 |---|---|---|
-|token|address|The token's address
+|_token|address|The token's address
 
-### ▸ `getSellableTokens():uint256 remaining`
+### ▸ `getSellableTokens():uint256 _remaining`
 
 Get the number of remaining tokens for sale this period
 
@@ -190,9 +190,9 @@ Get the number of remaining tokens for sale this period
 
 |Name|Type|Description|
 |---|---|---|
-|remaining|uint256|Tokens remaining
+|_remaining|uint256|Tokens remaining
 
-### ▸ `getTargetPerPeriod():uint256 target`
+### ▸ `getTargetPerPeriod():uint256 _target`
 
 Get the target number of tokens to sell per period
 
@@ -202,9 +202,9 @@ Get the target number of tokens to sell per period
 
 |Name|Type|Description|
 |---|---|---|
-|target|uint256|Target number of tokens
+|_target|uint256|Target number of tokens
 
-### ▸ `getToken():address token`
+### ▸ `getToken():address _token`
 
 Get the address of the token being sold
 
@@ -214,9 +214,9 @@ Get the address of the token being sold
 
 |Name|Type|Description|
 |---|---|---|
-|token|address|The token's address
+|_token|address|The token's address
 
-### ▸ `getTokenBalance():uint256 balance`
+### ▸ `getTokenBalance():uint256 _balance`
 
 Get the remaining balance of tokens
 
@@ -226,9 +226,9 @@ Get the remaining balance of tokens
 
 |Name|Type|Description|
 |---|---|---|
-|balance|uint256|Remaining token balance
+|_balance|uint256|Remaining token balance
 
-### ▸ `getUserLimit(address _user):uint256 max`
+### ▸ `getUserLimit(address _user):uint256 _max`
 
 Get the maximum amount of tokens a user can purchase in total
 
@@ -243,9 +243,9 @@ Get the maximum amount of tokens a user can purchase in total
 
 |Name|Type|Description|
 |---|---|---|
-|max|uint256|Maximum amount of tokens
+|_max|uint256|Maximum amount of tokens
 
-### ▸ `getWhitelist():address whitelist`
+### ▸ `getWhitelist():address _whitelist`
 
 Get the address of the whitelist (if exists)
 
@@ -255,9 +255,9 @@ Get the address of the whitelist (if exists)
 
 |Name|Type|Description|
 |---|---|---|
-|whitelist|address|Address of Whitelist contract
+|_whitelist|address|Address of Whitelist contract
 
-### ▸ `getWindowSize():uint256 size`
+### ▸ `getWindowSize():uint256 _size`
 
 Get the size of the averaging window
 
@@ -267,9 +267,9 @@ Get the size of the averaging window
 
 |Name|Type|Description|
 |---|---|---|
-|size|uint256|Size of the averaging window
+|_size|uint256|Size of the averaging window
 
-### ▸ `identifier():bytes32 identifier`
+### ▸ `identifier():bytes32 _identifier`
 
 Returns the identifier of the extension
 
@@ -279,7 +279,7 @@ Returns the identifier of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|identifier|bytes32|The extension's identifier
+|_identifier|bytes32|The extension's identifier
 
 ### ▸ `initialise(address _token, address _purchaseToken, uint256 _periodLength, uint256 _windowSize, uint256 _targetPerPeriod, uint256 _maxPerPeriod, uint256 _userLimitFraction, uint256 _startingPrice, address _whitelist)`
 
@@ -339,7 +339,7 @@ Bring the token accounting current
 
 
 
-### ▸ `version():uint256 version`
+### ▸ `version():uint256 _version`
 
 Returns the version of the extension
 
@@ -349,4 +349,4 @@ Returns the version of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|version|uint256|The extension's version number
+|_version|uint256|The extension's version number

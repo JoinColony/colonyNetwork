@@ -60,12 +60,8 @@
     "posttest:contracts:patricia": "npm run stop:blockchain:client",
     "posttest:contracts:watch": "npm run stop:blockchain:client",
     "viz:bootstrap": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle exec --network development scripts/viz-bootstrap.js",
-    "kyc:bootstrap": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle exec --network development scripts/kyc-bootstrap.js"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm run check:versioning && npm run eslint-staged && npm run solhint-staged && npm run build:docs && git add docs"
-    }
+    "kyc:bootstrap": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle exec --network development scripts/kyc-bootstrap.js",
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",
@@ -113,7 +109,6 @@
     "nthline": "^1.0.2",
     "nyc": "^15.1.0",
     "openzeppelin-solidity": "^3.4.2",
-    "pre-commit": "^1.2.2",
     "prettier": "^2.7.1",
     "rimraf": "^3.0.2",
     "shortid": "^2.2.16",
