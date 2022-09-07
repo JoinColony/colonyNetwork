@@ -44,14 +44,14 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   }
 
   /// @notice Returns the identifier of the extension
-  /// @return identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 identifier) {
+  /// @return _identifier The extension's identifier
+  function identifier() public override pure returns (bytes32 _identifier) {
     return keccak256("OneTxPayment");
   }
 
   /// @notice Returns the version of the extension
-  /// @return version The extension's version number
-  function version() public override pure returns (uint256 version) {
+  /// @return _version The extension's version number
+  function version() public override pure returns (uint256 _version) {
     return 4;
   }
 
@@ -90,8 +90,8 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Return the permissions required for each function
   /// @param _sig The function signature
-  /// @return roles The byte32 of permissions required
-  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32 roles) {
+  /// @return _roles The byte32 of permissions required
+  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32 _roles) {
     if (_sig == MAKE_PAYMENT_SIG || _sig == MAKE_PAYMENT_DOMAIN_SIG) {
       return REQUIRED_ROLES;
     } else {

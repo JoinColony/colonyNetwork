@@ -62,14 +62,14 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   // Public
 
   /// @notice Returns the identifier of the extension
-  /// @return identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 identifier) {
+  /// @return _identifier The extension's identifier
+  function identifier() public override pure returns (bytes32 _identifier) {
     return keccak256("Whitelist");
   }
 
   /// @notice Returns the version of the extension
-  /// @return version The extension's version number
-  function version() public override pure returns (uint256 version) {
+  /// @return _version The extension's version number
+  function version() public override pure returns (uint256 _version) {
     return 3;
   }
 
@@ -140,8 +140,8 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Get the user's overall whitelist status
   /// @param _user The address of the user
-  /// @return approved Is `true` when the user is approved
-  function isApproved(address _user) public initialised view returns (bool approved) {
+  /// @return _approved Is `true` when the user is approved
+  function isApproved(address _user) public initialised view returns (bool _approved) {
     return (
       !deprecated &&
       (!useApprovals || approvals[_user]) &&
@@ -150,28 +150,28 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   }
 
   /// @notice Get the useApprovals boolean
-  /// @return useApprovals Whether `useApprovals` is `true`
-  function getUseApprovals() public view returns (bool useApprovals) {
+  /// @return _useApprovals Whether `useApprovals` is `true`
+  function getUseApprovals() public view returns (bool _useApprovals) {
     return useApprovals;
   }
 
   /// @notice Get the agreementHash
-  /// @return hash The agreement hash
-  function getAgreementHash() public view returns (string memory hash) {
+  /// @return _hash The agreement hash
+  function getAgreementHash() public view returns (string memory _hash) {
     return agreementHash;
   }
 
   /// @notice Get the user's approval status
   /// @param _user The address of the user
-  /// @return status The user's approval status
-  function getApproval(address _user) public view returns (bool status) {
+  /// @return _status The user's approval status
+  function getApproval(address _user) public view returns (bool _status) {
     return approvals[_user];
   }
 
   /// @notice Get the user's signature status
   /// @param _user The address of the user
-  /// @return status The user's signature status
-  function getSignature(address _user) public view returns (bool status) {
+  /// @return _status The user's signature status
+  function getSignature(address _user) public view returns (bool _status) {
     return signatures[_user];
   }
 }

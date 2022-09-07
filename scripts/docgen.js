@@ -51,7 +51,7 @@ const INTERFACES = [
     outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "onetxpayment.md"),
   },
   {
-    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "votingReputation", "VotingReputation.sol"),
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "votingReputation", "IVotingReputation.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "votingreputation.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "votingreputation.md"),
   },
@@ -61,6 +61,8 @@ const INTERFACES = [
     outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "whitelist.md"),
   },
 ];
+
+let foundError = false;
 
 const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
   const contractFileString = fs.readFileSync(contractFile).toString();
@@ -231,7 +233,8 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
         }
       } else {
         // Log warning for any methods without a valid notice line
-        console.warn(`Warning: ${method.name} is missing a natspec @notice`);
+        console.error(`Warning: ${method.name} is missing a natspec @notice`);
+        foundError = true;
       }
 
       // Push the method and append natspec
@@ -247,6 +250,11 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 };
 
 INTERFACES.forEach(generateMarkdown);
+
+// If warnings were generated, we exit with 1 to fail CI
+if (foundError) {
+  process.exit(1);
+}
 
 function printMethods(methods) {
   if (!methods.length) return "";
@@ -345,7 +353,8 @@ function printParamEntry(method, param, index, natspecParams) {
   if (matchingDescription) {
     description = natspecParams[index].slice(name.length + 1);
   } else {
-    console.warn(`Warning: ${method.name} ${name} has no matching natspec comment`);
+    console.error(`Warning: ${method.name} ${name} has no matching natspec comment`);
+    foundError = true;
   }
   return `|${name}|${type}|${description}`;
 }

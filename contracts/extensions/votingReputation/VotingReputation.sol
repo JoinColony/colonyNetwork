@@ -96,13 +96,13 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   mapping(address => uint256) metatransactionNonces;
 
   /// @notice Gets the next nonce for a meta-transaction
-  /// @param userAddress The user's address
-  /// @return nonce The nonce
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+  /// @param _userAddress The user's address
+  /// @return _nonce The nonce
+  function getMetatransactionNonce(address _userAddress) override public view returns (uint256 _nonce){
     // This offset is a result of fixing the storage layout, and having to prevent metatransactions being able to be replayed as a result
     // of the nonce resetting. The broadcaster has made ~3000 transactions in total at time of commit, so we definitely won't have a single
     // account at 1 million nonce by then.
-    return metatransactionNonces[userAddress] + 1000000;
+    return metatransactionNonces[_userAddress] + 1000000;
   }
 
   function incrementMetatransactionNonce(address user) override internal {
@@ -119,14 +119,14 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   // Public
 
   /// @notice Returns the identifier of the extension
-  /// @return identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 identifier) {
+  /// @return _identifier The extension's identifier
+  function identifier() public override pure returns (bytes32 _identifier) {
     return keccak256("VotingReputation");
   }
 
   /// @notice Returns the version of the extension
-  /// @return version The extension's version number
-  function version() public pure override returns (uint256 version) {
+  /// @return _version The extension's version number
+  function version() public pure override returns (uint256 _version) {
     return 6;
   }
 
@@ -628,8 +628,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   /// @param _motionId The id of the motion
   /// @dev We are only expecting this to be called from finalize motion in the contracts.
   /// It is marked as public only so that the frontend can use it.
-  /// @return allowed Is `true` if the motion is allowed to be finalized
-  function failingExecutionAllowed(uint256 _motionId) public view returns (bool allowed) {
+  /// @return _allowed Is `true` if the motion is allowed to be finalized
+  function failingExecutionAllowed(uint256 _motionId) public view returns (bool _allowed) {
     Motion storage motion = motions[_motionId];
     uint256 requiredStake = getRequiredStake(_motionId);
 
@@ -688,93 +688,93 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   // Public view functions
 
   /// @notice Get the total stake fraction
-  /// @return fraction The total stake fraction
-  function getTotalStakeFraction() public view returns (uint256 fraction) {
+  /// @return _fraction The total stake fraction
+  function getTotalStakeFraction() public view returns (uint256 _fraction) {
     return totalStakeFraction;
   }
 
   /// @notice Get the voter reward fraction
-  /// @return fraction The voter reward fraction
-  function getVoterRewardFraction() public view returns (uint256 fraction) {
+  /// @return _fraction The voter reward fraction
+  function getVoterRewardFraction() public view returns (uint256 _fraction) {
     return voterRewardFraction;
   }
 
   /// @notice Get the user min stake fraction
-  /// @return fraction The user min stake fraction
-  function getUserMinStakeFraction() public view returns (uint256 fraction) {
+  /// @return _fraction The user min stake fraction
+  function getUserMinStakeFraction() public view returns (uint256 _fraction) {
     return userMinStakeFraction;
   }
 
   /// @notice Get the max vote fraction
-  /// @return fraction The max vote fraction
-  function getMaxVoteFraction() public view returns (uint256 fraction) {
+  /// @return _fraction The max vote fraction
+  function getMaxVoteFraction() public view returns (uint256 _fraction) {
     return maxVoteFraction;
   }
 
   /// @notice Get the stake period
-  /// @return period The stake period
-  function getStakePeriod() public view returns (uint256 period) {
+  /// @return _period The stake period
+  function getStakePeriod() public view returns (uint256 _period) {
     return stakePeriod;
   }
 
   /// @notice Get the submit period
-  /// @return period The submit period
-  function getSubmitPeriod() public view returns (uint256 period) {
+  /// @return _period The submit period
+  function getSubmitPeriod() public view returns (uint256 _period) {
     return submitPeriod;
   }
 
   /// @notice Get the reveal period
-  /// @return period The reveal period
-  function getRevealPeriod() public view returns (uint256 period) {
+  /// @return _period The reveal period
+  function getRevealPeriod() public view returns (uint256 _period) {
     return revealPeriod;
   }
 
   /// @notice Get the escalation period
-  /// @return period The escalation period
-  function getEscalationPeriod() public view returns (uint256 period) {
+  /// @return _period The escalation period
+  function getEscalationPeriod() public view returns (uint256 _period) {
     return escalationPeriod;
   }
 
   /// @notice Get the total motion count
-  /// @return count The total motion count
-  function getMotionCount() public view returns (uint256 count) {
+  /// @return _count The total motion count
+  function getMotionCount() public view returns (uint256 _count) {
     return motionCount;
   }
 
   /// @notice Get the data for a single motion
   /// @param _motionId The id of the motion
-  /// @return motion The motion struct
-  function getMotion(uint256 _motionId) public view returns (Motion memory motion) {
-    motion = motions[_motionId];
+  /// @return _motion The motion struct
+  function getMotion(uint256 _motionId) public view returns (Motion memory _motion) {
+    _motion = motions[_motionId];
   }
 
   /// @notice Get a user's stake on a motion
   /// @param _motionId The id of the motion
   /// @param _staker The staker address
   /// @param _vote The side being supported (0 = NAY, 1 = YAY)
-  /// @return stake The user's stake
-  function getStake(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256 stake) {
+  /// @return _stake The user's stake
+  function getStake(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256 _stake) {
     return stakes[_motionId][_staker][_vote];
   }
 
   /// @notice Get the number of ongoing motions for a single expenditure / expenditure slot
   /// @param _structHash The hash of the expenditureId or expenditureId*expenditureSlot
-  /// @return ongoing The number of ongoing motions
-  function getExpenditureMotionCount(bytes32 _structHash) public view returns (uint256 ongoing) {
+  /// @return _count The number of ongoing motions
+  function getExpenditureMotionCount(bytes32 _structHash) public view returns (uint256 _count) {
     return expenditureMotionCounts[_structHash];
   }
 
   /// @notice Get the largest past vote on a single expenditure variable
   /// @param _actionHash The hash of the particular expenditure action
-  /// @return largest The largest past vote on this variable
-  function getExpenditurePastVote(bytes32 _actionHash) public view returns (uint256 largest) {
+  /// @return _vote The largest past vote on this variable
+  function getExpenditurePastVote(bytes32 _actionHash) public view returns (uint256 _vote) {
     return expenditurePastVotes[_actionHash];
   }
 
   /// @notice Get the current state of the motion
   /// @param _motionId The id of the motion
-  /// @return state The current motion state
-  function getMotionState(uint256 _motionId) public view returns (MotionState state) {
+  /// @return _motionState The current motion state
+  function getMotionState(uint256 _motionId) public view returns (MotionState _motionState) {
     Motion storage motion = motions[_motionId];
     uint256 requiredStake = getRequiredStake(_motionId);
 
@@ -837,8 +837,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   /// Prior to the reveal state, getVoterRewardRange should be used.
   /// @param _motionId The id of the motion
   /// @param _voterRep The reputation the voter has in the domain
-  /// @return reward The voter reward
-  function getVoterReward(uint256 _motionId, uint256 _voterRep) public view returns (uint256 reward) {
+  /// @return _reward The voter reward
+  function getVoterReward(uint256 _motionId, uint256 _voterRep) public view returns (uint256 _reward) {
     Motion storage motion = motions[_motionId];
     uint256 fractionUserReputation = wdiv(_voterRep, motion.repSubmitted);
     uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
@@ -851,9 +851,9 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   /// @param _motionId The id of the motion
   /// @param _voterRep The reputation the voter has in the domain
   /// @param _voterAddress The address the user will be voting as
-  /// @return min The voter reward range minimum
-  /// @return max The voter reward range maximum
-  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) public view returns (uint256 min, uint256 max) {
+  /// @return _rewardMin The voter reward range lower bound
+  /// @return _rewardMax The voter reward range upper bound
+  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) public view returns (uint256 _rewardMin, uint256 _rewardMax) {
     Motion storage motion = motions[_motionId];
     // The minimum reward is when everyone has voted, with a total weight of motion.skillRep
     uint256 minFractionUserReputation = wdiv(_voterRep, motion.skillRep);
@@ -879,9 +879,9 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   /// @param _motionId The id of the motion
   /// @param _staker The staker's address
   /// @param _vote The vote (0 = NAY, 1 = YAY)
-  /// @return reward The staker reward
-  /// @return penalty The reputation penalty (if any)
-  function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256 reward, uint256 penalty) {
+  /// @return _reward The staker reward (if any)
+  /// @return _penalty The reputation penalty (if any)
+  function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256 _reward, uint256 _penalty) {
     Motion storage motion = motions[_motionId];
 
     uint256 totalSideStake = add(motion.stakes[_vote], motion.pastVoterComp[_vote]);
