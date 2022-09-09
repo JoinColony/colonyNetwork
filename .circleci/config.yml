@@ -120,7 +120,7 @@ jobs:
           command: npm run solhint
       - run:
           name: "Check git hooks run"
-          command: yarn run check:gitchanges
+          command: npm run check:gitchanges
       - run:
           name: "Checking contract storage variables"
           command: npm run check:storagevars
@@ -191,7 +191,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running upgrade tests with coverage"
-          command: yarn run test:contracts:upgrade:coverage
+          command: npm run test:contracts:upgrade:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
       - persist_to_workspace:

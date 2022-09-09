@@ -18,7 +18,6 @@ coverage-miner
 lib/*
 ganache-accounts.json
 .vscode/
-yarn-error.log
 reputations.json
 reputationStates.sqlite
 reputationStates.sqlite-shm
