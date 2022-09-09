@@ -120,7 +120,7 @@ jobs:
           command: npm run solhint
       - run:
           name: "Building Docs"
-          command: yarn run build:docs
+          command: npm run build:docs
       - run:
           name: "Check git hooks run"
           command: npm run check:gitchanges
