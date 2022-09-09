@@ -1,25 +1,10 @@
 /* globals artifacts */
 
-const BN = require("bn.js");
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
-const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, UINT128_MAX, WAD } = require("../../helpers/constants");
-
-const {
-  checkErrorRevert,
-  web3GetCode,
-  forwardTime,
-  web3GetBalance,
-  makeTxAtTimestamp,
-  currentBlockTime,
-  forwardTimeTo,
-  expectEvent,
-} = require("../../helpers/test-helper");
-
-const { setupRandomToken, setupRandomColony, setupColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
+const { setupRandomColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -27,9 +12,6 @@ chai.use(bnChai(web3.utils.BN));
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("TokenAuthority");
-const CoinMachine = artifacts.require("CoinMachine");
-const Whitelist = artifacts.require("Whitelist");
 const GnosisSafeProxyFactory = artifacts.require("GnosisSafeProxyFactory");
 const GnosisSafe = artifacts.require("GnosisSafe");
 const ZodiacBridgeModuleMock = artifacts.require("ZodiacBridgeModuleMock");
@@ -45,10 +27,7 @@ contract("Cross-chain", (accounts) => {
   let fb;
   let gs;
   let zb;
-
-  const USER0 = accounts[0];
-  const USER1 = accounts[1];
-  const USER2 = accounts[2];
+  let bs;
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
   const ethersForeignSigner = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8546").getSigner();
@@ -115,14 +94,18 @@ contract("Cross-chain", (accounts) => {
     hb = await HomeBridgeMock.new();
 
     // Start the bridge service
-    const bs = new BridgeMonitor(hb.address, fb.address);
+    bs = new BridgeMonitor(hb.address, fb.address);
   });
 
   beforeEach(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    ({ colony, token } = await setupRandomColony(colonyNetwork));
+    ({ colony } = await setupRandomColony(colonyNetwork));
+  });
+
+  after(async () => {
+    await bs.close();
   });
 
   describe("when controlling a gnosis wallet on another chain", async () => {
@@ -136,8 +119,6 @@ contract("Cross-chain", (accounts) => {
       // Send some to safe
       // console.log(fToken);
       await fToken["mint(address,uint256)"](gs.address, 100);
-      const b = await fToken.balanceOf(gs.address);
-      console.log(b);
 
       // We want the safe to execute this transaction...
       const txDataToExecuteFromSafe = await fToken.interface.encodeFunctionData("transfer", [ADDRESS_ZERO, 10]);
@@ -159,8 +140,7 @@ contract("Cross-chain", (accounts) => {
 
       // So 'just' call that on the colony...
 
-      const tx = await colony.makeArbitraryTransaction(hb.address, txDataToBeSentToAMB);
-      console.log(tx);
+      await colony.makeArbitraryTransaction(hb.address, txDataToBeSentToAMB);
 
       await p;
 

@@ -2,8 +2,8 @@ const ethers = require("ethers");
 
 const providerHome = new ethers.providers.JsonRpcProvider(`http://localhost:8545`).getSigner();
 const providerForeign = new ethers.providers.JsonRpcProvider(`http://localhost:8546`).getSigner();
-const homeBridgeAbi = require("../build/contracts/HomeBridgeMock.json").abi;
-const foreignBridgeAbi = require("../build/contracts/ForeignBridgeMock.json").abi;
+const homeBridgeAbi = require("../build/contracts/HomeBridgeMock.json").abi; // eslint-disable-line import/no-unresolved
+const foreignBridgeAbi = require("../build/contracts/ForeignBridgeMock.json").abi; // eslint-disable-line import/no-unresolved
 
 class BridgeMonitor {
   /**
@@ -22,6 +22,8 @@ class BridgeMonitor {
     });
     console.log("Bridge Monitor running");
   }
+
+  close() {} // eslint-disable-line class-methods-use-this
 }
 
 module.exports = BridgeMonitor;

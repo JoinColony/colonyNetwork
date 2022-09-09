@@ -6,7 +6,6 @@
  */
 
 const path = require("path");
-const http = require("http");
 const ethers = require("ethers");
 const { TruffleLoader } = require("../packages/package-utils");
 
@@ -18,7 +17,7 @@ const ADDRESS_ZERO = ethers.constants.AddressZero;
 const ethersForeignProvider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8546");
 const ethersForeignSigner = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8546").getSigner();
 const ethersHomeSigner = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8545").getSigner();
-const ethersHomeProvider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8545");
+// const ethersHomeProvider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8545");
 const BridgeMonitor = require("./bridgeMonitor");
 
 async function start() {
@@ -100,7 +99,7 @@ async function start() {
   await hb.deployTransaction.wait();
 
   // Start the bridge service
-  const x = new BridgeMonitor(hb.address, fb.address);
+  const bm = new BridgeMonitor(hb.address, fb.address); // eslint-disable-line no-unused-vars
   console.log(`Home bridge address: ${hb.address}`);
   console.log(`Foreign bridge address: ${fb.address}`);
   console.log(`Gnosis Safe address: ${gs.address}`);
