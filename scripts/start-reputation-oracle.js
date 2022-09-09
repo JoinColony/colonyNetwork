@@ -7,7 +7,8 @@
 
 const path = require("path");
 const { exec } = require("child_process");
-const http = require("http");
+// const http = require("http");
+const axios = require("axios");
 
 const { etherRouterAddress } = require("../etherrouter-address.json"); // eslint-disable-line import/no-unresolved
 
@@ -24,31 +25,19 @@ async function start() {
 }
 
 async function getGanacheAccounts() {
-  const requestAccounts = JSON.stringify({
-    jsonrpc: "2.0",
-    method: "eth_accounts",
-    params: [],
-    id: 1,
-  });
-  const response = await new Promise((resolve, reject) => {
-    const req = http.request(
-      "http://127.0.0.1:8545",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-      (res) => {
-        res.setEncoding("utf8");
-        res.on("data", (chunk) => resolve(JSON.parse(chunk)));
-      }
-    );
-    req.on("error", () => reject(new Error("Could not connect to RPC endpoint")));
-    req.write(requestAccounts);
-    req.end();
-  });
-  return response.result;
+  try {
+    const {
+      data: { result },
+    } = await axios.post("http://127.0.0.1:8545", {
+      jsonrpc: "2.0",
+      method: "eth_accounts",
+      params: [],
+      id: 1,
+    });
+    return result;
+  } catch (e) {
+    throw new Error(`Could not connect to local ganache instance. Error was: ${e.message}`);
+  }
 }
 
 start();

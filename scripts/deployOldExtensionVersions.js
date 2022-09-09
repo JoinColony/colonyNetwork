@@ -34,7 +34,7 @@ module.exports = async (callback) => {
     await exec("sed -i'' -e ' s|installed|installed at address ${resolver.address}|' ./migrations/9_setup_extensions.js");
 
     await exec("rm -rf ./build");
-    let res = await exec("yarn run truffle migrate --reset -f 9 --to 9");
+    let res = await exec("npx truffle migrate --reset -f 9 --to 9");
 
     if (res.stdout) {
       // How this response looks changes node 10->12
