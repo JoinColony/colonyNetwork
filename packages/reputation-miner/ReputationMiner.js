@@ -116,8 +116,13 @@ class ReputationMiner {
     }
     console.log(`Mining on behalf of ${this.minerAddress}`)
 
+    const miningStake = await this.colonyNetwork.getMiningStake(this.minerAddress);
     const signingBalance = await this.realProvider.getBalance(signingAddress);
-    console.log(`With a balance of ${ethers.utils.formatUnits(signingBalance)}. I hope that's enough!`);
+
+    console.log(
+      `With a CLNY stake of ${ethers.utils.formatUnits(miningStake.amount)} ` +
+      `and an XDAI balance of ${ethers.utils.formatUnits(signingBalance)}. I hope that's enough!`
+    );
 
     process.on('exit', () => this.db.close());
     process.on('SIGHUP', () => process.exit(128 + 1));
@@ -160,7 +165,8 @@ class ReputationMiner {
        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
        INNER JOIN users ON users.rowid=reputations.user_rowid
        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-       WHERE reputation_states.root_hash=?`
+       WHERE reputation_states.root_hash=?
+       ORDER BY substr(reputations.value, 67) ASC`
     );
 
     this.queries.getReputationValue = this.db.prepare(
@@ -923,7 +929,7 @@ class ReputationMiner {
     const tree = new PatriciaTree();
     // Load all reputations from that state.
 
-    const allReputations = await this.queries.getAllReputationsInHash.all(rootHash);
+    const allReputations = await this.getAllReputationsInHash(rootHash);
 
     for (let i = 0; i < allReputations.length; i += 1) {
       const row = allReputations[i];
@@ -1480,13 +1486,16 @@ class ReputationMiner {
   }
 
   async loadState(reputationRootHash) {
+    console.log(`Loading reputation state ${reputationRootHash}`);
+
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
 
     this.reputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
-    const res = await this.queries.getAllReputationsInHash.all(reputationRootHash);
+    const res = await this.getAllReputationsInHash(reputationRootHash);
     this.nReputations = ethers.BigNumber.from(res.length);
+
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
       const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
@@ -1503,11 +1512,13 @@ class ReputationMiner {
   }
 
   async loadStateToPrevious(reputationRootHash) {
+    console.log(`Loading reputation state ${reputationRootHash} to previous`);
+
     this.previousReputations = {};
 
     this.previousReputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
-    const res = await this.queries.getAllReputationsInHash.all(reputationRootHash);
+    const res = await this.getAllReputationsInHash(reputationRootHash);
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
       const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
@@ -1633,7 +1644,7 @@ class ReputationMiner {
 
     const db = new Database("./latestConfirmed.sqlite", { });
     await ReputationMiner.createDB(db);
-    const allReputations = await this.queries.getAllReputationsInHash.all(latestConfirmedReputationHash);
+    const allReputations = await this.getAllReputationsInHash(latestConfirmedReputationHash);
 
     if (allReputations.length === 0) {
       return new Error("No such reputation state");
@@ -1669,13 +1680,15 @@ class ReputationMiner {
 
   static async createDB(db) {
     // Not regularly used, so not preparing them and saving the statement for reuse
-    await db.prepare("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE )").run();
-    await db.prepare("CREATE TABLE IF NOT EXISTS reputation_states ( root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)").run();
-    await db.prepare("CREATE TABLE IF NOT EXISTS colonies ( address text NOT NULL UNIQUE )").run();
+    await db.prepare("CREATE TABLE IF NOT EXISTS users ( rowid INTEGER PRIMARY KEY, address text NOT NULL UNIQUE )").run();
+    await db.prepare(
+      "CREATE TABLE IF NOT EXISTS reputation_states ( rowid INTEGER PRIMARY KEY, root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)"
+    ).run();
+    await db.prepare("CREATE TABLE IF NOT EXISTS colonies ( rowid INTEGER PRIMARY KEY, address text NOT NULL UNIQUE )").run();
     await db.prepare("CREATE TABLE IF NOT EXISTS skills ( skill_id INTEGER PRIMARY KEY )").run();
     await db.prepare(
       `CREATE TABLE IF NOT EXISTS reputations (
-        reputation_rowid text NOT NULL,
+        reputation_rowid INTEGER NOT NULL,
         colony_rowid INTEGER NOT NULL,
         skill_id INTEGER NOT NULL,
         user_rowid INTEGER NOT NULL,
@@ -1707,7 +1720,7 @@ class ReputationMiner {
     if (res[0].c === 0){
       await db.prepare(
         `CREATE TABLE reputations2 (
-          reputation_rowid text NOT NULL,
+          reputation_rowid INTEGER NOT NULL,
           colony_rowid INTEGER NOT NULL,
           skill_id INTEGER NOT NULL,
           user_rowid INTEGER NOT NULL,
@@ -1731,6 +1744,52 @@ class ReputationMiner {
       console.log("Index for /all endpoint added to reputations table")
     }
 
+    // reputation_rowid was text, not integer. Do we need to upgrade?
+    res = await db.prepare("SELECT type FROM PRAGMA_TABLE_INFO('reputations') WHERE name='reputation_rowid'").all();
+    if (res[0].type === "TEXT"){
+      console.log("reputation_rowid is text, not integer. Upgrading")
+      await db.prepare(
+        `CREATE TABLE reputations2 (
+          reputation_rowid INTEGER NOT NULL,
+          colony_rowid INTEGER NOT NULL,
+          skill_id INTEGER NOT NULL,
+          user_rowid INTEGER NOT NULL,
+          value text NOT NULL,
+          PRIMARY KEY("reputation_rowid","colony_rowid","skill_id","user_rowid")
+        )`
+      ).run();
+
+      await db.prepare(`INSERT INTO reputations2 SELECT * FROM reputations`).run()
+      await db.prepare(`DROP TABLE reputations`).run()
+      await db.prepare(`ALTER TABLE reputations2 RENAME TO reputations`).run()
+      console.log("reputation_rowid changed from TEXT to INTEGER")
+
+      // Recreate index for /all endpoint
+      await db.prepare(
+        `CREATE INDEX allEndpoint ON reputations (colony_rowid, user_rowid, reputation_rowid)`
+      ).run()
+      console.log("Index for /all endpoint added to reputations table")
+
+      // At the same time, we added rowid as an explicit primary key to relevant tables
+      await db.prepare("CREATE TABLE IF NOT EXISTS users2 ( rowid INTEGER PRIMARY KEY, address text NOT NULL UNIQUE )").run();
+      await db.prepare(`INSERT INTO users2 (rowid, address) SELECT rowid, address FROM users;`).run()
+      await db.prepare(`DROP TABLE users`).run()
+      await db.prepare(`ALTER TABLE users2 RENAME TO users`).run()
+
+      await db.prepare(
+        "CREATE TABLE IF NOT EXISTS reputation_states2 ( rowid INTEGER PRIMARY KEY, root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)"
+      ).run();
+      await db.prepare(`INSERT INTO reputation_states2 ( rowid, root_hash, n_leaves) SELECT rowid, root_hash, n_leaves FROM reputation_states;`).run()
+      await db.prepare(`DROP TABLE reputation_states`).run()
+      await db.prepare(`ALTER TABLE reputation_states2 RENAME TO reputation_states`).run()
+
+      await db.prepare("CREATE TABLE IF NOT EXISTS colonies2 ( rowid INTEGER PRIMARY KEY, address text NOT NULL UNIQUE )").run();
+      await db.prepare(`INSERT INTO colonies2 (rowid, address) SELECT rowid, address FROM colonies;`).run()
+      await db.prepare(`DROP TABLE colonies`).run()
+      await db.prepare(`ALTER TABLE colonies2 RENAME TO colonies`).run()
+
+      console.log('Explicit primary keys added to secondary tables');
+    }
   }
 
   async resetDB() {
