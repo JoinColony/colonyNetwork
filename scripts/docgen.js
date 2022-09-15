@@ -43,22 +43,22 @@ const INTERFACES = [
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "CoinMachine.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "coinmachine.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "coinmachine.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "coinmachine.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "OneTxPayment.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "onetxpayment.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "onetxpayment.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "onetxpayment.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "votingReputation", "IVotingReputation.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "votingreputation.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "votingreputation.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "votingreputation.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "Whitelist.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "whitelist.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "whitelist.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "whitelist.md"),
   },
 ];
 
