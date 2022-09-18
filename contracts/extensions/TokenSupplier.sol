@@ -43,6 +43,9 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
 
   mapping(address => uint256) metatransactionNonces;
 
+  /// @notice Gets the next nonce for a meta-transaction
+  /// @param userAddress The user's address
+  /// @return nonce The nonce
   function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
     return metatransactionNonces[userAddress];
   }
@@ -61,13 +64,15 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   // Public
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  /// @return _identifier The extension's identifier
+  function identifier() public override pure returns (bytes32 _identifier) {
     return keccak256("TokenSupplier");
   }
 
   /// @notice Returns the version of the extension
-  function version() public override pure returns (uint256) {
-    return 3;
+  /// @return _version The extension's version number
+  function version() public override pure returns (uint256 _version) {
+    return 4;
   }
 
   /// @notice Configures the extension
@@ -82,7 +87,8 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   /// @notice Called when upgrading the extension (currently a no-op)
   function finishUpgrade() public override auth {}
 
-  /// @notice Called when deprecating (or undeprecating) the extension (currently a no-op)
+  /// @notice Called when deprecating (or undeprecating) the extension
+  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
   function deprecate(bool _deprecated) public override auth {}
 
   /// @notice Called when uninstalling the extension

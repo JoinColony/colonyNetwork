@@ -73,6 +73,10 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
   // Technically a circular singly-linked list
   mapping (uint256 => uint256) queue; // proposalId => nextProposalId
   mapping(address => uint256) metatransactionNonces;
+
+  /// @notice Gets the next nonce for a meta-transaction
+  /// @param userAddress The user's address
+  /// @return nonce The nonce
   function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
     return metatransactionNonces[userAddress];
   }
@@ -84,13 +88,15 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
   // Public functions
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  /// @return _identifier The extension's identifier
+  function identifier() public override pure returns (bytes32 _identifier) {
     return keccak256("FundingQueue");
   }
 
   /// @notice Returns the version of the extension
-  function version() public override pure returns (uint256) {
-    return 3;
+  /// @return _version The extension's version number
+  function version() public override pure returns (uint256 _version) {
+    return 4;
   }
 
   /// @notice Configures the extension
@@ -110,6 +116,7 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
   function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
 
   /// @notice Called when deprecating (or undeprecating) the extension
+  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
   }

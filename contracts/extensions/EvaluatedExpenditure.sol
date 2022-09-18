@@ -33,13 +33,15 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
   mapping(address => uint256) metatransactionNonces;
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  /// @return _identifier The extension's identifier
+  function identifier() public override pure returns (bytes32 _identifier) {
     return keccak256("EvaluatedExpenditure");
   }
 
   /// @notice Returns the version of the extension
-  function version() public override pure returns (uint256) {
-    return 2;
+  /// @return _version The extension's version number
+  function version() public override pure returns (uint256 _version) {
+    return 3;
   }
 
   /// @notice Configures the extension
@@ -54,6 +56,7 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
   function finishUpgrade() public override auth {}
 
   /// @notice Called when deprecating (or undeprecating) the extension
+  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
   }
@@ -63,6 +66,9 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
     selfdestruct(address(uint160(address(colony))));
   }
 
+  /// @notice Gets the next nonce for a meta-transaction
+  /// @param _userAddress The user's address
+  /// @return nonce The nonce
   function getMetatransactionNonce(address _userAddress) override public view returns (uint256 nonce){
     return metatransactionNonces[_userAddress];
   }

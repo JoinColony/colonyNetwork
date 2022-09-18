@@ -5,14 +5,14 @@
 
 ### ▸ `deprecate(bool _deprecated)`
 
-Called when deprecating (or undeprecating) the extension (currently a no-op)
+Called when deprecating (or undeprecating) the extension
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_deprecated|bool|
+|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
 
 
 ### ▸ `finishUpgrade()`
@@ -48,20 +48,20 @@ Called when upgrading the extension (currently a no-op)
 
 ### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
 
-
+Gets the next nonce for a meta-transaction
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|userAddress|address|
+|userAddress|address|The user's address
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|nonce|uint256|
+|nonce|uint256|The nonce
 
 ### ▸ `getTokenIssuanceRate():uint256 uint256`
 
@@ -87,7 +87,7 @@ Called when upgrading the extension (currently a no-op)
 |---|---|---|
 |uint256|uint256|
 
-### ▸ `identifier():bytes32 bytes32`
+### ▸ `identifier():bytes32 _identifier`
 
 Returns the identifier of the extension
 
@@ -97,7 +97,7 @@ Returns the identifier of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|bytes32|bytes32|
+|_identifier|bytes32|The extension's identifier
 
 ### ▸ `initialise(uint256 _tokenSupplyCeiling, uint256 _tokenIssuanceRate)`
 
@@ -133,14 +133,14 @@ Issue the appropriate amount of tokens
 
 ### ▸ `setTokenIssuanceRate(uint256 _tokenIssuanceRate)`
 
-
+Update the tokenIssuanceRate
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_tokenIssuanceRate|uint256|
+|_tokenIssuanceRate|uint256|Number of tokens to issue per day
 
 
 ### ▸ `setTokenSupplyCeiling(uint256 _tokenSupplyCeiling)`
@@ -162,7 +162,7 @@ Called when uninstalling the extension
 
 
 
-### ▸ `version():uint256 uint256`
+### ▸ `version():uint256 _version`
 
 Returns the version of the extension
 
@@ -172,4 +172,4 @@ Returns the version of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|_version|uint256|The extension's version number

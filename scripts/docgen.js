@@ -133,9 +133,11 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
       // Get the line index for the natspec notice
       while (
-        contractFileArray[noticeLineIndex] &&
-        contractFileArray[noticeLineIndex].includes("///") &&
-        !contractFileArray[noticeLineIndex].includes(" @notice ")
+        (contractFileArray[noticeLineIndex] &&
+          contractFileArray[noticeLineIndex].includes("///") &&
+          !contractFileArray[noticeLineIndex].includes(" @notice ")) ||
+        // ignore slither comments
+        contractFileArray[noticeLineIndex].includes("slither-disable")
       ) {
         noticeLineIndex -= 1;
       }

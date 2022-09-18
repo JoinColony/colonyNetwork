@@ -42,8 +42,8 @@ Cancel the streaming payment, specifically by setting endTime to block.timestamp
 
 |Name|Type|Description|
 |---|---|---|
-|_id|uint256|
-|_tokens|address[]|
+|_id|uint256|The id of the streaming payment
+|_tokens|address[]|The tokens to waive any claims to.
 
 
 ### ▸ `claim(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _id, address[] memory _tokens)`
@@ -94,7 +94,7 @@ Called when deprecating (or undeprecating) the extension
 
 |Name|Type|Description|
 |---|---|---|
-|_deprecated|bool|
+|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
 
 
 ### ▸ `finishUpgrade()`
@@ -169,7 +169,7 @@ Called when upgrading the extension
 |---|---|---|
 |streamingPayment|StreamingPayment|
 
-### ▸ `identifier():bytes32 bytes32`
+### ▸ `identifier():bytes32 _identifier`
 
 Returns the identifier of the extension
 
@@ -179,7 +179,7 @@ Returns the identifier of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|bytes32|bytes32|
+|_identifier|bytes32|The extension's identifier
 
 ### ▸ `install(address _colony)`
 
@@ -225,22 +225,22 @@ Update the startTime, only if the current startTime is in the future
 
 ### ▸ `setTokenAmount(uint256 _fundingPermissionDomainId, uint256 _fundingChildSkillIndex, uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _id, address _token, uint256 _amount)`
 
-
+Update the token amount to be paid out. Claims existing payout prior to the change
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_fundingPermissionDomainId|uint256|
-|_fundingChildSkillIndex|uint256|
-|_permissionDomainId|uint256|
-|_childSkillIndex|uint256|
-|_fromChildSkillIndex|uint256|
-|_toChildSkillIndex|uint256|
-|_id|uint256|
-|_token|address|
-|_amount|uint256|
+|_fundingPermissionDomainId|uint256|The domain in which the caller holds the funding permission
+|_fundingChildSkillIndex|uint256|The index linking the fundingPermissionDomainId to the domainId
+|_permissionDomainId|uint256|The domain in which the extension holds the funding & admin permissions
+|_childSkillIndex|uint256|The index linking the permissionDomainId to the domainId
+|_fromChildSkillIndex|uint256|The linking the domainId to the fromPot domain
+|_toChildSkillIndex|uint256|The linking the domainId to the toPot domain
+|_id|uint256|The id of the streaming payment
+|_token|address|The address of the token
+|_amount|uint256|The new amount to pay out
 
 
 ### ▸ `uninstall()`
@@ -250,7 +250,7 @@ Called when uninstalling the extension
 
 
 
-### ▸ `version():uint256 uint256`
+### ▸ `version():uint256 _version`
 
 Returns the version of the extension
 
@@ -260,4 +260,4 @@ Returns the version of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|_version|uint256|The extension's version number

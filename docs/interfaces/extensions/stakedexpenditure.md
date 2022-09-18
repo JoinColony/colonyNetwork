@@ -43,7 +43,7 @@ Called when deprecating (or undeprecating) the extension
 
 |Name|Type|Description|
 |---|---|---|
-|_deprecated|bool|
+|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
 
 
 ### ▸ `finishUpgrade()`
@@ -62,15 +62,15 @@ Get the stake for an expenditure
 
 |Name|Type|Description|
 |---|---|---|
-|_expenditureId|uint256|
+|_expenditureId|uint256|The id of the expenditure to get the stake for
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|stake|Stake|
+|stake|Stake|The stake, a struct holding the staker's address and the stake amount
 
-### ▸ `getStakeFraction():uint256 uint256`
+### ▸ `getStakeFraction():uint256 _stakeFraction`
 
 Get the stake fraction
 
@@ -80,9 +80,9 @@ Get the stake fraction
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|_stakeFraction|uint256|The stake fraction
 
-### ▸ `identifier():bytes32 bytes32`
+### ▸ `identifier():bytes32 _identifier`
 
 Returns the identifier of the extension
 
@@ -92,7 +92,7 @@ Returns the identifier of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|bytes32|bytes32|
+|_identifier|bytes32|The extension's identifier
 
 ### ▸ `install(address _colony)`
 
@@ -155,7 +155,7 @@ Called when uninstalling the extension
 
 
 
-### ▸ `version():uint256 uint256`
+### ▸ `version():uint256 _version`
 
 Returns the version of the extension
 
@@ -165,4 +165,4 @@ Returns the version of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|_version|uint256|The extension's version number

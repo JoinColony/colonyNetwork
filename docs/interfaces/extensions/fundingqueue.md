@@ -62,7 +62,7 @@ Called when deprecating (or undeprecating) the extension
 
 |Name|Type|Description|
 |---|---|---|
-|_deprecated|bool|
+|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
 
 
 ### ▸ `finishUpgrade()`
@@ -74,20 +74,20 @@ Called when upgrading the extension
 
 ### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
 
-
+Gets the next nonce for a meta-transaction
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|userAddress|address|
+|userAddress|address|The user's address
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|nonce|uint256|
+|nonce|uint256|The nonce
 
 ### ▸ `getNextProposalId(uint256 _id):uint256 uint256`
 
@@ -153,7 +153,7 @@ Called when upgrading the extension
 |---|---|---|
 |uint256|uint256|
 
-### ▸ `identifier():bytes32 bytes32`
+### ▸ `identifier():bytes32 _identifier`
 
 Returns the identifier of the extension
 
@@ -163,7 +163,7 @@ Returns the identifier of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|bytes32|bytes32|
+|_identifier|bytes32|The extension's identifier
 
 ### ▸ `install(address _colony)`
 
@@ -224,7 +224,7 @@ Called when uninstalling the extension
 
 
 
-### ▸ `version():uint256 uint256`
+### ▸ `version():uint256 _version`
 
 Returns the version of the extension
 
@@ -234,4 +234,4 @@ Returns the version of the extension
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|_version|uint256|The extension's version number
