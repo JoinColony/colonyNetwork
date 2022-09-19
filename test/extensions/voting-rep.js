@@ -1326,7 +1326,8 @@ contract("Voting Reputation", (accounts) => {
 
     it("can take an action to install an extension", async () => {
       const oneTxPayment = soliditySha3("OneTxPayment");
-      const oneTxPaymentVersion = 4; // Make sure this is the latest version
+      const oneTxPaymentInstance = await OneTxPayment.new();
+      const oneTxPaymentVersion = await oneTxPaymentInstance.version();
 
       let installation = await colonyNetwork.getExtensionInstallation(oneTxPayment, colony.address);
       expect(installation).to.be.equal(ADDRESS_ZERO);
