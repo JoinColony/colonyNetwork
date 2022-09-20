@@ -27,6 +27,8 @@ interface IAvatar {
 }
 
 contract ZodiacBridgeModuleMock {
+  event SafeTransactionExecuted(bool success);
+
   address avatar;
   constructor (address _avatar) {
     avatar = _avatar;
@@ -34,6 +36,7 @@ contract ZodiacBridgeModuleMock {
 
   function executeTransaction(address _target, uint256 _value, bytes memory _data, uint8 _operation) public {
     require(_operation == 0, "operation-must-be-zero");
-    IAvatar(avatar).execTransactionFromModule(_target, _value, _data, _operation);
+    bool success = IAvatar(avatar).execTransactionFromModule(_target, _value, _data, _operation);
+    emit SafeTransactionExecuted(success);
   }
 }
