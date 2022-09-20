@@ -39,6 +39,25 @@ Claim the staker's reward
 |_vote|uint256|The side being supported (0 = NAY, 1 = YAY)
 
 
+### ▸ `createClaimDelayAction(bytes memory _action, uint256 _value):bytes _delayAction`
+
+Create the action that should be taken based on the passed action to appropriately set the claim window of an expenditure from starting.
+
+*Note: Not expected to be used directly, could be made private in the future*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_action|bytes|The action being voted on
+|_value|uint256|The value to set the claim delay to
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_delayAction|bytes|The delay action
+
 ### ▸ `createDomainMotion(uint256 _domainId, uint256 _childSkillIndex, bytes memory _action, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
 
 Create a motion in any domain (DEPRECATED)
