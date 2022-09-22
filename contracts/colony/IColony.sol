@@ -493,6 +493,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   function setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers) external;
 
   /// @notice Set many values of an expenditure simultaneously. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
   /// @param _recipientSlots Array of slots to set recipients
   /// @param _recipients Addresses of the recipients
   /// @param _skillIdSlots Array of slots to set skills
@@ -501,8 +502,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _claimDelays Durations of time (in seconds) to delay
   /// @param _payoutModifierSlots Array of slots to set payout modifiers
   /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus
-  /// @param _payoutSlots 2-dimensional array of slots to set payouts
   /// @param _payoutTokens Addresses of the tokens, `0x0` value indicates Ether
+  /// @param _payoutSlots 2-dimensional array of slots to set payouts
   /// @param _payoutValues 2-dimensional array of the payout amounts
   function setExpenditureValues(
     uint256 _id,

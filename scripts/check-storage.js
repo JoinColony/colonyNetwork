@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const parser = require("solidity-parser-diligence");
+const parser = require("@solidity-parser/parser");
 const fs = require("fs");
 const path = require("path");
 

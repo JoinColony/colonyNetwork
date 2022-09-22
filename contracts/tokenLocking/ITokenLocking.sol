@@ -83,7 +83,7 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _amount Amount to withdraw
   function withdraw(address _token, uint256 _amount) external;
 
-  /// @notice Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+  /// @notice Withdraw `_amount` of deposited tokens. Set `_force` to `true` to forcibly unlock the token before the withdrawal.
   /// @param _token Address of the token to withdraw from
   /// @param _amount Amount to withdraw
   /// @param _force Pass true to forcibly unlock the token

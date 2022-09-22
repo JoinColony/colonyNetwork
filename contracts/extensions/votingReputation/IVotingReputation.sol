@@ -31,9 +31,9 @@ import "./VotingReputationDataTypes.sol";
 interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @notice Initialise the extension
   /// @param _totalStakeFraction The fraction of the domain's reputation we need to stake
+  /// @param _voterRewardFraction The fraction of the total stake paid out to voters as rewards
   /// @param _userMinStakeFraction The minimum per-user stake as fraction of total stake
   /// @param _maxVoteFraction The fraction of the domain's reputation which must submit for quick-end
-  /// @param _voterRewardFraction The fraction of the total stake paid out to voters as rewards
   /// @param _stakePeriod The length of the staking period in seconds
   /// @param _submitPeriod The length of the submit period in seconds
   /// @param _revealPeriod The length of the reveal period in seconds
@@ -192,11 +192,12 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   function finalizeMotion(uint256 _motionId) external;
 
   /// @notice Return whether a motion, assuming it's in the finalizable state,
-  // is allowed to finalize without the call executing successfully.
+  /// is allowed to finalize without the call executing successfully.
   /// @param _motionId The id of the motion
   /// @dev We are only expecting this to be called from finalize motion in the contracts.
   /// It is marked as external only so that the frontend can use it.
-  function failingExecutionAllowed(uint256 _motionId) external view returns (bool);
+  /// @return _allowed If motion is allowed to finalize without successful action
+  function failingExecutionAllowed(uint256 _motionId) external view returns (bool _allowed);
 
   /// @notice Claim the staker's reward
   /// @param _motionId The id of the motion
@@ -216,74 +217,75 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   // external view functions
 
   /// @notice Get the total stake fraction
-  /// @return The total stake fraction
-  function getTotalStakeFraction() external view returns (uint256);
+  /// @return _fraction The total stake fraction
+  function getTotalStakeFraction() external view returns (uint256 _fraction);
 
   /// @notice Get the voter reward fraction
-  /// @return The voter reward fraction
-  function getVoterRewardFraction() external view returns (uint256) ;
+  /// @return _fraction The voter reward fraction
+  function getVoterRewardFraction() external view returns (uint256 _fraction) ;
 
   /// @notice Get the user min stake fraction
-  /// @return The user min stake fraction
-  function getUserMinStakeFraction() external view returns (uint256) ;
+  /// @return _fraction The user min stake fraction
+  function getUserMinStakeFraction() external view returns (uint256 _fraction) ;
 
   /// @notice Get the max vote fraction
-  /// @return The max vote fraction
-  function getMaxVoteFraction() external view returns (uint256);
+  /// @return _fraction The max vote fraction
+  function getMaxVoteFraction() external view returns (uint256 _fraction);
 
   /// @notice Get the stake period
-  /// @return The stake period
-  function getStakePeriod() external view returns (uint256);
+  /// @return _period The stake period
+  function getStakePeriod() external view returns (uint256 _period);
 
   /// @notice Get the submit period
-  /// @return The submit period
-  function getSubmitPeriod() external view returns (uint256);
+  /// @return _period The submit period
+  function getSubmitPeriod() external view returns (uint256 _period);
 
   /// @notice Get the reveal period
-  /// @return The reveal period
-  function getRevealPeriod() external view returns (uint256);
+  /// @return _period The reveal period
+  function getRevealPeriod() external view returns (uint256 _period);
 
   /// @notice Get the escalation period
-  /// @return The escalation period
-  function getEscalationPeriod() external view returns (uint256);
+  /// @return _period The escalation period
+  function getEscalationPeriod() external view returns (uint256 _period);
 
   /// @notice Get the total motion count
-  /// @return The total motion count
-  function getMotionCount() external view returns (uint256) ;
+  /// @return _count The total motion count
+  function getMotionCount() external view returns (uint256 _count) ;
 
   /// @notice Get the data for a single motion
   /// @param _motionId The id of the motion
-  /// @return motion The motion struct
-  function getMotion(uint256 _motionId) external view returns (Motion memory motion);
+  /// @return _motion The motion struct
+  function getMotion(uint256 _motionId) external view returns (Motion memory _motion);
 
   /// @notice Get a user's stake on a motion
   /// @param _motionId The id of the motion
   /// @param _staker The staker address
   /// @param _vote The side being supported (0 = NAY, 1 = YAY)
-  /// @return The user's stake
-  function getStake(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256);
+  /// @return _stake The user's stake
+  function getStake(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256 _stake);
 
   /// @notice Get the number of ongoing motions for a single expenditure / expenditure slot
   /// @param _structHash The hash of the expenditureId or expenditureId*expenditureSlot
-  /// @return The number of ongoing motions
-  function getExpenditureMotionCount(bytes32 _structHash) external view returns (uint256);
+  /// @return _count The number of ongoing motions
+  function getExpenditureMotionCount(bytes32 _structHash) external view returns (uint256 _count);
 
   /// @notice Get the largest past vote on a single expenditure variable
   /// @param _actionHash The hash of the particular expenditure action
-  /// @return The largest past vote on this variable
-  function getExpenditurePastVote(bytes32 _actionHash) external view returns (uint256);
+  /// @return _vote The largest past vote on this variable
+  function getExpenditurePastVote(bytes32 _actionHash) external view returns (uint256 _vote);
 
   /// @notice Get the current state of the motion
-  /// @return The current motion state
-  function getMotionState(uint256 _motionId) external view returns (MotionState) ;
+  /// @param _motionId The id of the motion
+  /// @return _motionState The current motion state
+  function getMotionState(uint256 _motionId) external view returns (MotionState _motionState);
 
   /// @notice Get the voter reward
   /// NB This function will only return a meaningful value if in the reveal state.
   /// Prior to the reveal state, getVoterRewardRange should be used.
   /// @param _motionId The id of the motion
   /// @param _voterRep The reputation the voter has in the domain
-  /// @return The voter reward
-  function getVoterReward(uint256 _motionId, uint256 _voterRep) external view returns (uint256) ;
+  /// @return _reward The voter reward
+  function getVoterReward(uint256 _motionId, uint256 _voterRep) external view returns (uint256 _reward);
 
   /// @notice Get the range of potential rewards for a voter on a specific motion, intended to be
   /// used when the motion is in the reveal state.
@@ -291,18 +293,27 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @param _motionId The id of the motion
   /// @param _voterRep The reputation the voter has in the domain
   /// @param _voterAddress The address the user will be voting as
-  /// @return The voter reward
-  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) external view returns (uint256, uint256) ;
+  /// @return _rewardMin The voter reward range lower bound
+  /// @return _rewardMax The voter reward range upper bound
+  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) external view returns (uint256 _rewardMin, uint256 _rewardMax);
+
   /// @notice Get the staker reward
   /// @param _motionId The id of the motion
   /// @param _staker The staker's address
   /// @param _vote The vote (0 = NAY, 1 = YAY)
-  /// @return The staker reward and the reputation penalty (if any)
-  function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256, uint256);
+  /// @return _reward The staker reward (if any)
+  /// @return _penalty The reputation penalty (if any)
+  function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256 _reward, uint256 _penalty);
 
-  function createClaimDelayAction(bytes memory action, uint256 value)
+  /// @notice Create the action that should be taken based on the passed action to appropriately
+  /// set the claim window of an expenditure from starting.
+  /// @param _action The action being voted on
+  /// @param _value The value to set the claim delay to
+  /// @return _delayAction The delay action
+  /// @dev Not expected to be used directly, could be made private in the future
+  function createClaimDelayAction(bytes memory _action, uint256 _value)
     external
-    returns (bytes memory);
+    returns (bytes memory _delayAction);
 
   /// @notice Claim the staker's reward from a motion that was created with v4 of the extension, and is
   /// now missing and cannot be interacted with via the normal claim function.

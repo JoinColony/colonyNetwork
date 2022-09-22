@@ -119,6 +119,9 @@ jobs:
           name: "Linting Solidity"
           command: npm run solhint
       - run:
+          name: "Building Docs"
+          command: npm run build:docs
+      - run:
           name: "Check git hooks run"
           command: npm run check:gitchanges
       - run:
@@ -130,6 +133,9 @@ jobs:
       - run:
           name: "Checking contract versions"
           command: npm run check:versioning
+      - run:
+          name: "Provision token contracts again (needed after version check script)"
+          command: npm run provision:token:contracts
       - run:
           name: "Checking contract authDomain modifiers"
           command: npm run check:auth

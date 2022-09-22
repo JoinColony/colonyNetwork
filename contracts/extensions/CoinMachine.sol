@@ -67,8 +67,11 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   mapping(address => uint256) soldUser; // Tokens sold to a particular user
 
   mapping(address => uint256) metatransactionNonces;
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
+  /// @notice Gets the next nonce for a meta-transaction
+  /// @param _userAddress The user's address
+  /// @return _nonce The nonce
+  function getMetatransactionNonce(address _userAddress) override public view returns (uint256 _nonce){
+    return metatransactionNonces[_userAddress];
   }
 
   function incrementMetatransactionNonce(address user) override internal {
@@ -85,12 +88,14 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   // Public
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  /// @return _identifier The extension's identifier
+  function identifier() public override pure returns (bytes32 _identifier) {
     return keccak256("CoinMachine");
   }
 
   /// @notice Returns the version of the extension
-  function version() public override pure returns (uint256) {
+  /// @return _version The extension's version number
+  function version() public override pure returns (uint256 _version) {
     return 6;
   }
 
@@ -111,6 +116,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   }
 
   /// @notice Called when deprecating (or undeprecating) the extension
+  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
 
@@ -139,6 +145,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @param _windowSize Characteristic number of periods that should be used for the moving average. In the long-term, 86% of the weighting will be in this window size. The higher the number, the slower the price will be to adjust
   /// @param _targetPerPeriod The number of tokens to aim to sell per period
   /// @param _maxPerPeriod The maximum number of tokens that can be sold per period
+  /// @param _userLimitFraction The fraction of the total sale that a single user can buy (in WAD)
   /// @param _startingPrice The sale price to start at, expressed in units of _purchaseToken per token being sold, as a WAD
   /// @param _whitelist Optionally an address of a whitelist contract to use can be provided. Pass 0x0 if no whitelist being used
   function initialise(
@@ -287,62 +294,74 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   }
 
   /// @notice Get the address of the token being used to make purchases
-  function getPurchaseToken() public view returns (address) {
+  /// @return _token The token's address
+  function getPurchaseToken() public view returns (address _token) {
     return purchaseToken;
   }
 
   /// @notice Get the address of the token being sold
-  function getToken() public view returns (address) {
+  /// @return _token The token's address
+  function getToken() public view returns (address _token) {
     return token;
   }
 
   /// @notice Get the period that the price was last updated for or a purchase was made
-  function getActivePeriod() public view returns (uint256) {
+  /// @return _period The active period
+  function getActivePeriod() public view returns (uint256 _period) {
     return activePeriod;
   }
 
   /// @notice Get the number of tokens sold in the period that the price was last updated for or a purchase was made
-  function getActiveSold() public view returns (uint256) {
+  /// @return _sold Amount of tokens sold
+  function getActiveSold() public view returns (uint256 _sold) {
     return activeSold;
   }
 
   /// @notice Get the number of tokens received in the period that the price was last updated for or a purchase was made
-  function getActiveIntake() public view returns (uint256) {
+  /// @return _intake Amount of tokens received
+  function getActiveIntake() public view returns (uint256 _intake) {
     return activeIntake;
   }
 
   /// @notice Get the EMA of the number of tokens received each period
-  function getEMAIntake() public view returns (uint256) {
+  /// @return _amount Amount of tokens received
+  function getEMAIntake() public view returns (uint256 _amount) {
     return emaIntake;
   }
 
   /// @notice Get the remaining balance of tokens
-  function getTokenBalance() public view returns (uint256) {
+  /// @return _balance Remaining token balance
+  function getTokenBalance() public view returns (uint256 _balance) {
     return ERC20(token).balanceOf(address(this));
   }
 
   /// @notice Get the length of the sale period
-  function getPeriodLength() public view returns (uint256) {
+  /// @return _length Length of the sale period
+  function getPeriodLength() public view returns (uint256 _length) {
     return periodLength;
   }
 
   /// @notice Get the size of the averaging window
-  function getWindowSize() public view returns (uint256) {
+  /// @return _size Size of the averaging window
+  function getWindowSize() public view returns (uint256 _size) {
     return windowSize;
   }
 
   /// @notice Get the target number of tokens to sell per period
-  function getTargetPerPeriod() public view returns (uint256) {
+  /// @return _target Target number of tokens
+  function getTargetPerPeriod() public view returns (uint256 _target) {
     return targetPerPeriod;
   }
 
   /// @notice Get the maximum number of tokens to sell per period
-  function getMaxPerPeriod() public view returns (uint256) {
+  /// @return _max Maximum number of tokens
+  function getMaxPerPeriod() public view returns (uint256 _max) {
     return maxPerPeriod;
   }
 
   /// @notice Get the current price per token
-  function getCurrentPrice() public view returns (uint256) {
+  /// @return _price Current price
+  function getCurrentPrice() public view returns (uint256 _price) {
     uint256 currentPeriod = getCurrentPeriod();
 
     if (activePeriod >= currentPeriod || !evolvePrice) {
@@ -366,12 +385,15 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   }
 
   /// @notice Get the number of remaining tokens for sale this period
-  function getSellableTokens() public view returns (uint256) {
+  /// @return _remaining Tokens remaining
+  function getSellableTokens() public view returns (uint256 _remaining) {
     return sub(maxPerPeriod, ((activePeriod >= getCurrentPeriod()) ? activeSold : 0));
   }
 
   /// @notice Get the maximum amount of tokens a user can purchase in total
-  function getUserLimit(address _user) public view returns (uint256) {
+  /// @param _user The user's address
+  /// @return _max Maximum amount of tokens
+  function getUserLimit(address _user) public view returns (uint256 _max) {
     return
       (userLimitFraction == WAD || whitelist == address(0x0)) ?
       UINT256_MAX :
@@ -380,7 +402,9 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   }
 
   /// @notice Get the maximum amount of tokens a user can purchase in a period
-  function getMaxPurchase(address _user) public view returns (uint256) {
+  /// @param _user The user's address
+  /// @return _max Maximum amount of tokens
+  function getMaxPurchase(address _user) public view returns (uint256 _max) {
     uint256 tokenBalance = getTokenBalance();
     uint256 sellableTokens = getSellableTokens();
     uint256 userLimit = getUserLimit(_user);
@@ -388,12 +412,14 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   }
 
   /// @notice Get the address of the whitelist (if exists)
-  function getWhitelist() public view returns (address) {
+  /// @return _whitelist Address of Whitelist contract
+  function getWhitelist() public view returns (address _whitelist) {
     return whitelist;
   }
 
   /// @notice Get the evolvePrice boolean
-  function getEvolvePrice() public view returns (bool) {
+  /// @return _evolve The evolvePrice boolean
+  function getEvolvePrice() public view returns (bool _evolve) {
     return evolvePrice;
   }
 
