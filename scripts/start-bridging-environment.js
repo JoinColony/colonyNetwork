@@ -28,6 +28,7 @@ async function start() {
   const ForeignBridgeMock = await loader.load({ contractName: "ForeignBridgeMock" }, { abi: true, address: false });
   const HomeBridgeMock = await loader.load({ contractName: "HomeBridgeMock" }, { abi: true, address: false });
   const erc721Mock = await loader.load({ contractName: "ERC721Mock" }, { abi: true, address: false });
+  const TokenContract = await loader.load({ contractName: "Token" }, { abi: true, address: false });
 
   const gspf = await new ethers.Contract("0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2", GnosisSafeProxyFactory.abi, ethersForeignSigner);
 
@@ -43,19 +44,31 @@ async function start() {
   const zodiacBridgeFactory = new ethers.ContractFactory(ZodiacBridgeModuleMock.abi, ZodiacBridgeModuleMock.bytecode, ethersForeignSigner);
   const zb = await zodiacBridgeFactory.deploy(safeAddress);
   await zb.deployTransaction.wait();
-  console.log("Bridge module address", zb.address);
+  console.log("Bridge module address: ", zb.address);
 
   const erc721MockFactory = new ethers.ContractFactory(erc721Mock.abi, erc721Mock.bytecode, ethersForeignSigner);
   const erc721 = await erc721MockFactory.deploy();
   await erc721.deployTransaction.wait();
 
-  console.log("ERC721 address", erc721.address);
+  console.log("ERC721 address: ", erc721.address);
 
   const tokenId = 1;
   const mintTx = await erc721.mint(gs.address, tokenId);
   await mintTx.wait();
   const inventory = await erc721.balanceOf(gs.address);
   console.log(`Safe ${gs.address} contains ${inventory} NFT.`); // Should eq 1.
+
+  const TokenFactory = new ethers.ContractFactory(TokenContract.abi, TokenContract.bytecode, ethersForeignSigner);
+  const Token = await TokenFactory.deploy("Test", "TST", 18);
+  await Token.deployTransaction.wait();
+
+  console.log("Token address: ", Token.address);
+
+  await Token.unlock();
+  const mintTokensTx = await Token["mint(address,uint256)"](gs.address, 100);
+  await mintTokensTx.wait();
+  const safeBalance = await Token.balanceOf(gs.address);
+  console.log(`Safe ${gs.address} contains ${safeBalance} tokens.`); // Should eq 100.
 
   // Add bridge module to safe
 
@@ -111,12 +124,13 @@ async function start() {
   await hb.deployTransaction.wait();
 
   // Start the bridge service
-  const bm = new BridgeMonitor(hb.address, fb.address, erc721.address, zb.address); // eslint-disable-line no-unused-vars
+  const bm = new BridgeMonitor(hb.address, fb.address, erc721.address, Token.address, zb.address); // eslint-disable-line no-unused-vars
   console.log(`Home bridge address: ${hb.address}`);
   console.log(`Foreign bridge address: ${fb.address}`);
   console.log(`Gnosis Safe address: ${gs.address}`);
   console.log(`Zodiac Bridge module address: ${zb.address}`);
   console.log(`ERC721 address: ${erc721.address}`);
+  console.log(`Token address: ${Token.address}`);
 }
 
 async function getGanacheAccounts() {
