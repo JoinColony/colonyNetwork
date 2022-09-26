@@ -14,6 +14,8 @@ const IMetaColony = artifacts.require("IMetaColony");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const VotingReputationMisaligned = artifacts.require("VotingReputationMisaligned");
+const VotingReputationMisalignedFixed = artifacts.require("VotingReputationMisalignedFixed");
+const VotingReputationMisalignedRecovery = artifacts.require("VotingReputationMisalignedRecovery");
 const { setupEtherRouter } = require("../helpers/upgradable-contracts");
 const PatriciaTree = require("../packages/reputation-miner/patricia");
 
@@ -101,6 +103,19 @@ contract("Voting Reputation Misalignment upgrade", (accounts) => {
 
     await setupEtherRouter("VotingReputationMisaligned", { VotingReputationMisaligned: badImplementation.address }, badResolver);
     await metaColony.addExtensionToNetwork(NAME_HASH, badResolver.address);
+
+    const goodResolver = await Resolver.new();
+    const votingReputationMisalignedFixed = await VotingReputationMisalignedFixed.new();
+    const votingReputationMisalignedRecovery = await VotingReputationMisalignedRecovery.new();
+    await setupEtherRouter(
+      "IVotingReputation",
+      {
+        VotingReputationMisalignedFixed: votingReputationMisalignedFixed.address,
+        VotingReputationMisalignedRecovery: votingReputationMisalignedRecovery.address,
+      },
+      goodResolver
+    );
+    await metaColony.addExtensionToNetwork(NAME_HASH, goodResolver.address);
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await TokenLocking.at(tokenLockingAddress);
