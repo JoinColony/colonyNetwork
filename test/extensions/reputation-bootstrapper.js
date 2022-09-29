@@ -5,7 +5,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { WAD, ADDRESS_ZERO, SECONDS_PER_DAY } = require("../../helpers/constants");
+const { WAD, INT128_MAX, ADDRESS_ZERO, SECONDS_PER_DAY } = require("../../helpers/constants");
 const { checkErrorRevert, web3GetCode, forwardTime } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
@@ -105,12 +105,16 @@ contract("Reputation Bootstrapper", (accounts) => {
       expect(grant.amount).to.eq.BN(WAD);
     });
 
-    it("cannot setup repuation amounts if not root", async () => {
+    it("cannot setup reputation amounts if not root", async () => {
       await checkErrorRevert(reputationBootstrapper.setGrants([], []), "reputation-bootsrapper-caller-not-root");
     });
 
     it("cannot setup repuation amounts with mismatched arguments", async () => {
       await checkErrorRevert(reputationBootstrapper.setGrants([], [WAD]), "reputation-bootsrapper-invalid-arguments");
+    });
+
+    it("cannot setup repuation amounts with invalid values", async () => {
+      await checkErrorRevert(reputationBootstrapper.setGrants([soliditySha3(PIN1)], [INT128_MAX.addn(1)]), "reputation-bootstrapper-invalid-amount");
     });
 
     it("can claim repuation amounts", async () => {

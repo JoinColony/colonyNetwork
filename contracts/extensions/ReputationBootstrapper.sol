@@ -30,11 +30,11 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   // Constants
 
-  uint256 constant INT256_MAX = 2**255 - 1;
+  uint256 constant INT128_MAX = 2**127 - 1;
 
   // Events
 
-  event GrantSet(bytes32 hashedPin, uint256 reputationAmount);
+  event GrantSet(bytes32 hashedSecret, uint256 reputationAmount);
   event GrantClaimed(address recipient, uint256 reputationAmount, uint256 tokenAmount);
 
   // Data structures
@@ -48,6 +48,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   address public token;
 
+  uint256 decayPeriod;
   uint256 decayNumerator;
   uint256 decayDenominator;
 
@@ -82,6 +83,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
     address colonyNetwork = colony.getColonyNetwork();
     address repCycle = IColonyNetwork(colonyNetwork).getReputationMiningCycle(false);
+    decayPeriod = IReputationMiningCycle(repCycle).getMiningWindowDuration();
     (decayNumerator, decayDenominator) = IReputationMiningCycle(repCycle).getDecayConstant();
   }
 
@@ -95,16 +97,19 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
+    uint256 balance = ERC20(token).balanceOf(address(this));
+    require(ERC20(token).transfer(address(colony), balance), "reputation-bootstrapper-transfer-failed");
+
     selfdestruct(address(uint160(address(colony))));
   }
 
   // Public
 
-  function setGrants(bytes32[] memory _hashedSecrets, uint256[] memory _amounts) public onlyRoot {
+  function setGrants(bytes32[] memory _hashedSecrets, uint256[] memory _amounts) public onlyRoot notDeprecated {
     require(_hashedSecrets.length == _amounts.length, "reputation-bootsrapper-invalid-arguments");
 
     for (uint256 i; i < _hashedSecrets.length; i++) {
-      require(_amounts[i] <= INT256_MAX, "repuatation-bootsrapper-invalid-amount");
+      require(_amounts[i] <= INT128_MAX, "reputation-bootstrapper-invalid-amount");
       grants[_hashedSecrets[i]] = Grant(_amounts[i], block.timestamp);
 
       emit GrantSet(_hashedSecrets[i], _amounts[i]);
@@ -112,18 +117,18 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   }
 
   function claimGrant(uint256 _secret) public {
-    bytes32 hashedPin = keccak256(abi.encodePacked(_secret));
-    uint256 grantAmount = grants[hashedPin].amount;
-    uint256 grantTimestamp = grants[hashedPin].timestamp;
+    bytes32 hashedSecret = keccak256(abi.encodePacked(_secret));
+    uint256 grantAmount = grants[hashedSecret].amount;
+    uint256 grantTimestamp = grants[hashedSecret].timestamp;
 
     require(grantAmount > 0, "reputation-bootstrapper-nothing-to-claim");
 
-    delete grants[hashedPin];
+    delete grants[hashedSecret];
 
     uint256 tokenAmount = min(ERC20(token).balanceOf(address(this)), grantAmount);
     require(tokenAmount >= uint256(grantAmount) || tokenAmount <= 0, "reputation-bootstrapper-insufficient-tokens");
 
-    for (; grantTimestamp <= block.timestamp - 1 hours; grantTimestamp += 1 hours) {
+    for (; grantTimestamp <= block.timestamp - decayPeriod; grantTimestamp += decayPeriod) {
       grantAmount = grantAmount * decayNumerator / decayDenominator;
     }
 
