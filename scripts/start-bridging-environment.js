@@ -8,6 +8,7 @@
 const path = require("path");
 const ethers = require("ethers");
 const { TruffleLoader } = require("../packages/package-utils");
+const { WAD } = require("../helpers/constants");
 
 const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "build", "contracts"),
@@ -65,10 +66,10 @@ async function start() {
   console.log("Token address: ", Token.address);
 
   await Token.unlock();
-  const mintTokensTx = await Token["mint(address,uint256)"](gs.address, 100);
+  const mintTokensTx = await Token["mint(address,uint256)"](gs.address, WAD.muln(100).toString());
   await mintTokensTx.wait();
   const safeBalance = await Token.balanceOf(gs.address);
-  console.log(`Safe ${gs.address} contains ${safeBalance} tokens.`); // Should eq 100.
+  console.log(`Safe ${gs.address} contains ${safeBalance} tokens.`); // Should eq 100000000000000000000.
 
   // Add bridge module to safe
 
