@@ -166,19 +166,27 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
     }
   }
 
-  function getTokenSupplyCeiling() public view returns (uint256) {
+  /// @notice Get the token supply ceiling
+  /// @return supplyCeiling The token supply ceiling
+  function getTokenSupplyCeiling() public view returns (uint256 supplyCeiling) {
     return tokenSupplyCeiling;
   }
 
-  function getTokenIssuanceRate() public view returns (uint256) {
+  /// @notice Get the token issuance rate
+  /// @return issuanceRate The token issuance rate
+  function getTokenIssuanceRate() public view returns (uint256 issuanceRate) {
     return tokenIssuanceRate;
   }
 
-  function getLastPinged() public view returns (uint256) {
+  /// @notice Get the time of the last token minting event
+  /// @return lastPinged The timestamp of the last ping
+  function getLastPinged() public view returns (uint256 lastPinged) {
     return lastIssue;
   }
 
-  function getLastRateUpdate() public view returns (uint256) {
+  /// @notice Get the time of the last change in issuance rate
+  /// @return lastUpdate The timestamp of the last update
+  function getLastRateUpdate() public view returns (uint256 lastUpdate) {
     return lastRateUpdate;
   }
 

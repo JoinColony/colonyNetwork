@@ -27,21 +27,9 @@ Called when upgrading the extension (currently a no-op)
 
 
 
-### ▸ `getLastPinged():uint256 uint256`
+### ▸ `getLastPinged():uint256 lastPinged`
 
-
-
-
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|uint256|uint256|
-
-### ▸ `getLastRateUpdate():uint256 uint256`
-
-
+Get the time of the last token minting event
 
 
 
@@ -49,7 +37,19 @@ Called when upgrading the extension (currently a no-op)
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|lastPinged|uint256|The timestamp of the last ping
+
+### ▸ `getLastRateUpdate():uint256 lastUpdate`
+
+Get the time of the last change in issuance rate
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|lastUpdate|uint256|The timestamp of the last update
 
 ### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
 
@@ -68,21 +68,9 @@ Gets the next nonce for a meta-transaction
 |---|---|---|
 |nonce|uint256|The nonce
 
-### ▸ `getTokenIssuanceRate():uint256 uint256`
+### ▸ `getTokenIssuanceRate():uint256 issuanceRate`
 
-
-
-
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|uint256|uint256|
-
-### ▸ `getTokenSupplyCeiling():uint256 uint256`
-
-
+Get the token issuance rate
 
 
 
@@ -90,7 +78,19 @@ Gets the next nonce for a meta-transaction
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|issuanceRate|uint256|The token issuance rate
+
+### ▸ `getTokenSupplyCeiling():uint256 supplyCeiling`
+
+Get the token supply ceiling
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|supplyCeiling|uint256|The token supply ceiling
 
 ### ▸ `identifier():bytes32 _identifier`
 
