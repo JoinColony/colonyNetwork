@@ -110,27 +110,27 @@ Called when upgrading the extension
 
 
 
-### ▸ `getAmountEntitledFromStart(uint256 _id, address _token):uint256 uint256`
+### ▸ `getAmountEntitledFromStart(uint256 _id, address _token):uint256 amount`
 
-
+Get the amount entitled to claim from the start of the stream
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_id|uint256|
-|_token|address|
+|_id|uint256|The id of the streaming payment
+|_token|address|The address of the token
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|amount|uint256|The amount entitled
 
-### ▸ `getNumStreamingPayments():uint256 uint256`
+### ▸ `getNumStreamingPayments():uint256 numPayments`
 
-
+Get the total number of streaming payments
 
 
 
@@ -138,42 +138,42 @@ Called when upgrading the extension
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|numPayments|uint256|The total number of streaming payments
 
 ### ▸ `getPaymentToken(uint256 _id, address _token):PaymentToken paymentToken`
 
-
+Get the payment token struct by Id and token
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_id|uint256|
-|_token|address|
+|_id|uint256|The id of the streaming payment
+|_token|address|The address of the token
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|paymentToken|PaymentToken|
+|paymentToken|PaymentToken|The payment token struct
 
 ### ▸ `getStreamingPayment(uint256 _id):StreamingPayment streamingPayment`
 
-
+Get the streaming payment struct by Id
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_id|uint256|
+|_id|uint256|The id of the streaming payment
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|streamingPayment|StreamingPayment|
+|streamingPayment|StreamingPayment|The streaming payment struct
 
 ### ▸ `identifier():bytes32 _identifier`
 
