@@ -58,7 +58,7 @@ Create a new funding proposal
 |_fromPot|uint256|Funding pot id providing the funds
 |_toPot|uint256|Funding pot id receiving the funds
 |_totalRequested|uint256|The total amount being requested
-|_token|address|
+|_token|address|The token being transferred
 
 
 ### ▸ `deprecate(bool _deprecated)`
@@ -153,13 +153,13 @@ Gets the reputation support from a user to a proposal
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256|The proposal Id
-|_supporter|address|
+|_supporter|address|The supporter
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|support|uint256|
+|support|uint256|The support amount
 
 ### ▸ `identifier():bytes32 _identifier`
 

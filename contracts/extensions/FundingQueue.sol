@@ -126,6 +126,16 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
     selfdestruct(address(uint160(address(colony))));
   }
 
+  // Public
+
+  /// @notice Create a new funding proposal
+  /// @param _domainId The domain the extension has the funding permission
+  /// @param _fromChildSkillIndex The index of the fromPot's domain in _domainId.children[]
+  /// @param _toChildSkillIndex The index of the toPot's domain in _domainId.children[]
+  /// @param _fromPot Funding pot id providing the funds
+  /// @param _toPot Funding pot id receiving the funds
+  /// @param _totalRequested The total amount being requested
+  /// @param _token The token being transferred
   function createProposal(
     uint256 _domainId,
     uint256 _fromChildSkillIndex,
@@ -177,6 +187,9 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
     emit ProposalCreated(proposalCount, _fromPot, _toPot, _token, _totalRequested);
   }
 
+  /// @notice Cancel a funding proposal and remove from linked list
+  /// @param _id The proposal Id
+  /// @param _prevId The id of the preceding proposal in the linked list
   function cancelProposal(uint256 _id, uint256 _prevId) public {
     Proposal storage proposal = proposals[_id];
 
@@ -196,6 +209,12 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
     emit ProposalCancelled(_id);
   }
 
+  /// @notice Stake a funding proposal
+  /// @param _id The proposal Id
+  /// @param _key A reputation hash tree key, of the total reputation in _domainId
+  /// @param _value Reputation value indicating the total reputation in _domainId
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
   function stakeProposal(
     uint256 _id,
     bytes memory _key,
@@ -219,6 +238,15 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
     emit ProposalStaked(_id, proposal.domainTotalRep);
   }
 
+  /// @notice Back a funding proposal and advance it along the list
+  /// @param _id The proposal Id
+  /// @param _backing The amount of backing to give the proposal (up to user's reputation)
+  /// @param _currPrevId The current previous proposal in the list
+  /// @param _newPrevId The new previous proposal after we re-arrange
+  /// @param _key A reputation hash tree key, of the caller's reputation in _domainId
+  /// @param _value Reputation value indicating the caller's reputation in _domainId
+  /// @param _branchMask The branchmask of the proof
+  /// @param _siblings The siblings of the proof
   function backProposal(
     uint256 _id,
     uint256 _backing,
@@ -276,6 +304,8 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
     emit ProposalBacked(_id, _newPrevId, msgSender(), _backing, prevBacking);
   }
 
+  /// @notice Transfer the marginal funds
+  /// @param _id The proposal Id
   function pingProposal(uint256 _id) public {
     Proposal storage proposal = proposals[_id];
 
@@ -331,6 +361,8 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
     emit ProposalPinged(_id, actualFundingToTransfer);
   }
 
+  /// @notice Reclaim the stake after the proposal is funded
+  /// @param _id The proposal Id
   function reclaimStake(uint256 _id) public {
     Proposal storage proposal = proposals[_id];
 
@@ -345,19 +377,31 @@ contract FundingQueue is ColonyExtension, PatriciaTreeProofs, BasicMetaTransacti
 
   // Public view functions
 
-  function getProposalCount() public view returns (uint256) {
+  /// @notice Get the total number of proposals
+  /// @return count The count
+  function getProposalCount() public view returns (uint256 count) {
     return proposalCount;
   }
 
+  /// @notice Get the proposal struct for a given proposal
+  /// @param _id The proposal Id
+  /// @return proposal The proposal struct
   function getProposal(uint256 _id) public view returns (Proposal memory proposal) {
     return proposals[_id];
   }
 
-  function getSupport(uint256 _id, address _supporter) public view returns (uint256) {
+  /// @notice Gets the reputation support from a user to a proposal
+  /// @param _id The proposal Id
+  /// @param _supporter The supporter
+  /// @return support The support amount
+  function getSupport(uint256 _id, address _supporter) public view returns (uint256 support) {
     return supporters[_id][_supporter];
   }
 
-  function getNextProposalId(uint256 _id) public view returns (uint256) {
+  /// @notice Gets the id of the next proposal in the list
+  /// @param _id The proposal Id
+  /// @return nextId The next proposal Id in the list
+  function getNextProposalId(uint256 _id) public view returns (uint256 nextId) {
     return queue[_id];
   }
 
