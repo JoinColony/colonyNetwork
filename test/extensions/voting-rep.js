@@ -1643,8 +1643,6 @@ contract("Voting Reputation", (accounts) => {
       const user0Value2 = makeReputationValue(WAD.divn(3), 9);
       const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
 
-      console.log(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
-
       await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
       motionId = await voting.getMotionCount();
 
