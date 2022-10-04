@@ -46,7 +46,6 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/TestExtensions.sol",
       "contracts/testHelpers/GasGuzzler.sol",
       "contracts/testHelpers/VotingReputationMisaligned.sol",
-      "contracts/testHelpers/VotingReputationMisalignedFixed.sol",
       "contracts/tokenLocking/TokenLockingStorage.sol",
       "contracts/Migrations.sol",
       "contracts/Token.sol", // Imported from colonyToken repo

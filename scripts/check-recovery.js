@@ -82,7 +82,6 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/TransferTest.sol",
       "contracts/testHelpers/RequireExecuteCall.sol",
       "contracts/testHelpers/VotingReputationMisaligned.sol",
-      "contracts/testHelpers/VotingReputationMisalignedFixed.sol",
       "contracts/tokenLocking/ITokenLocking.sol",
       "contracts/tokenLocking/TokenLocking.sol",
       "contracts/tokenLocking/TokenLockingStorage.sol",
