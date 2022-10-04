@@ -15,7 +15,7 @@ There is intentionally no further prescription for how tasks or payments are mea
 
 ### Task structure
 
-This is a general description of the Task as it functions in the current Colony Network implementation, with some aspects suppressed for legibility. For a more exact description, please refer to the [ColonyJS](/docs/colonyjs/api) API or [IColony.sol](../interfaces/icolony).
+This is a general description of the Task as it functions in the current Colony Network implementation, with some aspects suppressed for legibility. For a more exact description, please refer to the [ColonyJS](https://docs.colony.io/colonyjs/api) API or [IColony.sol](../interfaces/icolony).
 
 | component              | description                                                                                             |
 | ---------------------- | ------------------------------------------------------------------------------------------------------- |

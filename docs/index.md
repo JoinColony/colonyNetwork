@@ -58,7 +58,7 @@ Using the Colony SDK, all of the functions of a colony can be imported and calle
 
 Things like parsing returned parameters from a transaction, and signing transactions with a wallet provider are all handled by this library while providing a small API with sane defaults.
 
-To learn more about how to use the Colony SDK with your dapp, or to get specific info about the Colony SDK API, see its [docs](/docs/colonysdk).
+To learn more about how to use the Colony SDK with your dapp, or to get specific info about the Colony SDK API, see its [docs](https://docs.colony.io/colonysdk).
 
 ### Developer Portal
 

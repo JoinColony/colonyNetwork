@@ -33,4 +33,4 @@ The Meta Colony also curates a global list of skill tags, used by _all colonies_
 
 Even though the skill hierarchy is universal, reputation earned in the skill hierarchy is unique to each colony. Earning reputation in a skill in one colony has no effect on the user’s reputation in that skill in any other colonies.
 
-For information about querying skills and specific implementation details, see the [ColonyJS `colonyNetworkClient`](/docs/colonyjs/api/interfaces/ColonyNetworkClient) API.
+For information about querying skills and specific implementation details, see the [ColonyJS `colonyNetworkClient`](https://docs.colony.io/colonyjs/api/interfaces/ColonyNetworkClient) API.
