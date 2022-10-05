@@ -66,6 +66,11 @@ contract("Voting Reputation", (accounts) => {
   let domain1Mask;
   let domain1Siblings;
 
+  let domain2Key;
+  let domain2Value;
+  let domain2Mask;
+  let domain2Siblings;
+
   let user0Key;
   let user0Value;
   let user0Mask;
@@ -224,6 +229,10 @@ contract("Voting Reputation", (accounts) => {
     domain1Key = makeReputationKey(colony.address, domain1.skillId);
     domain1Value = makeReputationValue(WAD.muln(3), 1);
     [domain1Mask, domain1Siblings] = await reputationTree.getProof(domain1Key);
+
+    domain2Key = makeReputationKey(colony.address, domain2.skillId);
+    domain2Value = makeReputationValue(WAD, 6);
+    [domain2Mask, domain2Siblings] = await reputationTree.getProof(domain2Key);
 
     user0Key = makeReputationKey(colony.address, domain1.skillId, USER0);
     user0Value = makeReputationValue(WAD, 2);
@@ -1627,6 +1636,27 @@ contract("Voting Reputation", (accounts) => {
       expect(motionState).to.eq.BN(FINALIZED);
     });
 
+    it("motions with the special NO_ACTION signature can be created in subdomains", async function () {
+      const action = "0x12345678";
+
+      const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
+      const user0Value2 = makeReputationValue(WAD.divn(3), 9);
+      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
+
+      await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
+      motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 2, WAD, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, 0, YAY, REQUIRED_STAKE, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-rep-motion-not-finalizable");
+
+      const motionState = await voting.getMotionState(motionId);
+      expect(motionState).to.eq.BN(FINALIZED);
+    });
+
     describe("via metatransactions", async () => {
       let broadcaster;
 
@@ -2016,10 +2046,6 @@ contract("Voting Reputation", (accounts) => {
     let votingPayout;
 
     beforeEach(async () => {
-      const domain2Key = makeReputationKey(colony.address, domain2.skillId);
-      const domain2Value = makeReputationValue(WAD, 6);
-      const [domain2Mask, domain2Siblings] = await reputationTree.getProof(domain2Key);
-
       const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
       const user0Value2 = makeReputationValue(WAD.divn(3), 9);
       const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);

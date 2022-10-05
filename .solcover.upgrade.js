@@ -10,8 +10,7 @@ function getFilesToSkip(){
   ];
 
   const output = execSync("ls ./**/*Updated*", {cwd: "./contracts/"});
-
-  return array.concat(output.toString().split('\n').slice(0,-1))
+  return array.concat(output.toString().split('\n').slice(0,-1)).concat(config.skipFiles)
 }
 
 config.istanbulFolder = "./coverage-upgrade"

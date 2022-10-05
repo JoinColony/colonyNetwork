@@ -120,7 +120,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   }
 
   function version() public pure override returns (uint256 _version) {
-    return 6;
+    return 7;
   }
 
   function install(address _colony) public override {
@@ -175,19 +175,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   }
 
   function finishUpgrade() public override auth {
-    // For colonies that have been made since this the previous version's deployment,
-    // or have done the majority of their motions since, let's at least avoid double-emitting events for motions with
-    // the same id where we can, going forward.
-
-    // Load the value from the wrong storage slot in the previous version
-    uint256 wrongSlotValue;
-    assembly {
-      wrongSlotValue := sload(add(motionCount.slot, 1))
-    }
-    // Set the correct storage slot to the larger of the two values.
-    if (wrongSlotValue > motionCount){
-      motionCount = wrongSlotValue;
-    }
   } // solhint-disable-line no-empty-blocks
 
   function deprecate(bool _deprecated) public override auth {
@@ -223,7 +210,16 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
 
     uint256 skillId;
 
-    if (ColonyRoles(target).getCapabilityRoles(action) | ROOT_ROLES == ROOT_ROLES) {
+    if ( action == NO_ACTION ) {
+      // This special action indication 'no action' for simple decisions, but
+      // there's no such function signature, so colonies don't know about it, and there's
+      // no domain to extract from the 'action'
+      // We effectively assert the 'action' is taking place in the domain the simple decision
+      // is taking place in
+      require(_childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");
+      skillId = colony.getDomain(_domainId).skillId;
+
+    } else if (ColonyRoles(target).getCapabilityRoles(action) | ROOT_ROLES == ROOT_ROLES) {
 
       // A root or unpermissioned function
       require(_domainId == 1 && _childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");

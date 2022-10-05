@@ -18,6 +18,7 @@ module.exports = {
       'patriciaTree',
       'testHelpers',
       'ens',
+      'extensions/votingReputation/VotingReputationMisalignedRecovery.sol'
     ],
     providerOptions: {
       port: 8555,
@@ -30,4 +31,3 @@ module.exports = {
     istanbulFolder: "./coverage-contracts",
     modifierWhitelist: ["always"],
 }
-
