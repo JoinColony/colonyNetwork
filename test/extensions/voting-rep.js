@@ -493,14 +493,6 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(voting.createMotion(1, 1, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
     });
 
-    it("can create a motion using the deprecated interfaces", async () => {
-      const rootAction = await encodeTxData(colony, "mintTokens", [WAD]);
-      const domainAction = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-
-      await voting.createRootMotion(ADDRESS_ZERO, rootAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      await voting.createDomainMotion(1, UINT256_MAX, domainAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-    });
-
     it("when creating a motion for moveFundsBetweenPots, permissions are correctly respected", async () => {
       // Move funds between domain 2 and domain 3 pots using the old deprecated function
       // This should not be allowed - it doesn't conform to the standard permission proofs, and so can't
@@ -2042,6 +2034,33 @@ contract("Voting Reputation", (accounts) => {
 
     it("cannot claim rewards before a motion is finalized", async () => {
       await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-rep-motion-not-claimable");
+    });
+
+    it("can finalize and claim in one transaction via multicall", async () => {
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(ESCALATION_PERIOD, this);
+
+      const finalizeData = await voting.contract.methods.finalizeMotion(motionId).encodeABI();
+      const claimData = await voting.contract.methods.claimReward(motionId, 1, UINT256_MAX, USER0, YAY).encodeABI();
+
+      const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
+      await voting.multicall([finalizeData, claimData]);
+      const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
+
+      const votingPayout = await voting.getVoterReward(motionId, new BN(user0Value.slice(2, 66), 16));
+
+      const loserStake = REQUIRED_STAKE.sub(votingPayout); // Take out voter comp
+
+      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(loserStake.add(REQUIRED_STAKE));
     });
   });
 

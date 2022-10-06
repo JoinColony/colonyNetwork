@@ -16,6 +16,7 @@
 */
 
 pragma solidity 0.7.3;
+pragma experimental ABIEncoderV2;
 
 import "./../extensions/ColonyExtensionMeta.sol";
 

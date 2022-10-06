@@ -34,4 +34,5 @@ interface IColonyExtension is IBasicMetaTransaction {
 
   function getColony() external view returns(address);
 
+  function multicall(bytes[] calldata) external virtual returns (bytes [] memory results);
 }
