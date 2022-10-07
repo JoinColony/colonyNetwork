@@ -35,7 +35,7 @@ Even though the global set of Skills is shared by all colonies, reputation earne
 
 Skill tags are meant to provide a more fine-grained categorization of work than domains, allowing for tasks within the same domain to be further differentiated.
 
-See the [ColonyJS](/docs/colonyjs) `colonyClient` API for implementation details.
+See the [ColonyJS](https://docs.colony.io/colonyjs) `colonyClient` API for implementation details.
 
 ## Disputes
 

@@ -58,12 +58,14 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
   // Overrides
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  /// @return _identifier The extension's identifier
+  function identifier() public override pure returns (bytes32 _identifier) {
     return keccak256("StakedExpenditure");
   }
 
   /// @notice Returns the version of the extension
-  function version() public override pure returns (uint256) {
+  /// @return _version The extension's version number
+  function version() public override pure returns (uint256 _version) {
     return 1;
   }
 
@@ -79,6 +81,7 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
   function finishUpgrade() public override auth {}
 
   /// @notice Called when deprecating (or undeprecating) the extension
+  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
   }
@@ -253,13 +256,14 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
   // View
 
   /// @notice Get the stake fraction
-  /// @return stakeFraction The stake fraction
-  function getStakeFraction() public view returns (uint256) {
+  /// @return _stakeFraction The stake fraction
+  function getStakeFraction() public view returns (uint256 _stakeFraction) {
     return stakeFraction;
   }
 
   /// @notice Get the stake for an expenditure
-  /// @param stake The stake, a struct holding the staker's address and the stake amount
+  /// @param _expenditureId The id of the expenditure to get the stake for
+  /// @return stake The stake, a struct holding the staker's address and the stake amount
   function getStake(uint256 _expenditureId) public view returns (Stake memory stake) {
     return stakes[_expenditureId];
   }

@@ -79,12 +79,14 @@ contract StreamingPayments is ColonyExtensionMeta {
   // Public
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  /// @return _identifier The extension's identifier
+  function identifier() public override pure returns (bytes32 _identifier) {
     return keccak256("StreamingPayments");
   }
 
   /// @notice Returns the version of the extension
-  function version() public override pure returns (uint256) {
+  /// @return _version The extension's version number
+  function version() public override pure returns (uint256 _version) {
     return 1;
   }
 
@@ -100,6 +102,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   function finishUpgrade() public override auth {}
 
   /// @notice Called when deprecating (or undeprecating) the extension
+  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
   }
@@ -341,6 +344,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   /// @notice Cancel the streaming payment, specifically by setting endTime to block.timestamp, and waive claim
   /// to specified tokens already earned. Only callable by the recipient.
+  /// @param _id The id of the streaming payment
   /// @param _tokens The tokens to waive any claims to.
   function cancelAndWaive(
     uint256 _id,
@@ -366,19 +370,32 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   // View
 
+  /// @notice Get the streaming payment struct by Id
+  /// @param _id The id of the streaming payment
+  /// @return streamingPayment The streaming payment struct
   function getStreamingPayment(uint256 _id) public view returns (StreamingPayment memory streamingPayment) {
     streamingPayment = streamingPayments[_id];
   }
 
+  /// @notice Get the payment token struct by Id and token
+  /// @param _id The id of the streaming payment
+  /// @param _token The address of the token
+  /// @return paymentToken The payment token struct
   function getPaymentToken(uint256 _id, address _token) public view returns (PaymentToken memory paymentToken) {
     paymentToken = paymentTokens[_id][_token];
   }
 
-  function getNumStreamingPayments() public view returns (uint256) {
+  /// @notice Get the total number of streaming payments
+  /// @return numPayments The total number of streaming payments
+  function getNumStreamingPayments() public view returns (uint256 numPayments) {
     return numStreamingPayments;
   }
 
-  function getAmountEntitledFromStart(uint256 _id, address _token) public view returns (uint256) {
+  /// @notice Get the amount entitled to claim from the start of the stream
+  /// @param _id The id of the streaming payment
+  /// @param _token The address of the token
+  /// @return amount The amount entitled
+  function getAmountEntitledFromStart(uint256 _id, address _token) public view returns (uint256 amount) {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     PaymentToken storage paymentToken = paymentTokens[_id][_token];
     if (streamingPayment.startTime >= block.timestamp){

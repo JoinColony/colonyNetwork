@@ -1,6 +1,6 @@
 # One Transaction Payment Extension (`OneTxPayment`)
 
-Ordinarily payments require more than one transaction, because the payment lifecycle requires more than one permissioned [role](../tldr/permissions).
+Ordinarily payments require more than one transaction, because the payment lifecycle requires more than one permissioned [role](../../tldr/permissions.md).
 
 In some use cases, there might be a need for one authorized individual to be able to create, funds, and finalize a payment within a single transaction.
 

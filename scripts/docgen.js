@@ -43,22 +43,47 @@ const INTERFACES = [
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "CoinMachine.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "coinmachine.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "coinmachine.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "coinmachine.md"),
+  },
+  {
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "EvaluatedExpenditure.sol"),
+    templateFile: path.resolve(__dirname, "..", "docs", ".templates", "evaluatedexpenditure.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "evaluatedexpenditure.md"),
+  },
+  {
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "FundingQueue.sol"),
+    templateFile: path.resolve(__dirname, "..", "docs", ".templates", "fundingqueue.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "fundingqueue.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "OneTxPayment.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "onetxpayment.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "onetxpayment.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "onetxpayment.md"),
+  },
+  {
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "StakedExpenditure.sol"),
+    templateFile: path.resolve(__dirname, "..", "docs", ".templates", "stakedexpenditure.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "stakedexpenditure.md"),
+  },
+  {
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "StreamingPayments.sol"),
+    templateFile: path.resolve(__dirname, "..", "docs", ".templates", "streamingpayments.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "streamingpayments.md"),
+  },
+  {
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "TokenSupplier.sol"),
+    templateFile: path.resolve(__dirname, "..", "docs", ".templates", "tokensupplier.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "tokensupplier.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "votingReputation", "IVotingReputation.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "votingreputation.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "votingreputation.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "votingreputation.md"),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "Whitelist.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "whitelist.md"),
-    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "whitelist.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "whitelist.md"),
   },
 ];
 
@@ -108,9 +133,11 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
       // Get the line index for the natspec notice
       while (
-        contractFileArray[noticeLineIndex] &&
-        contractFileArray[noticeLineIndex].includes("///") &&
-        !contractFileArray[noticeLineIndex].includes(" @notice ")
+        (contractFileArray[noticeLineIndex] &&
+          contractFileArray[noticeLineIndex].includes("///") &&
+          !contractFileArray[noticeLineIndex].includes(" @notice ")) ||
+        // ignore slither comments
+        contractFileArray[noticeLineIndex].includes("slither-disable")
       ) {
         noticeLineIndex -= 1;
       }
