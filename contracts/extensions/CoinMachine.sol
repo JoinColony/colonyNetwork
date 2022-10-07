@@ -250,6 +250,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
     require(ERC20(token).transfer(msgSender(), numTokens), "coin-machine-transfer-failed");
 
+    // slither-disable-next-line reentrancy-unlimited-gas
     emit TokensBought(msgSender(), token, numTokens, totalCost);
   }
 

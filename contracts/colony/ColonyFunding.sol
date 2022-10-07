@@ -475,6 +475,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
       }
     }
 
+    // slither-disable-next-line reentrancy-unlimited-gas
     emit PayoutClaimed(msgSender(), _fundingPotId, _token, remainder);
   }
 
