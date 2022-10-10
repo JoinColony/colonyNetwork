@@ -323,17 +323,6 @@ contract("StakedExpenditure", (accounts) => {
       expect(userLock.balance).to.eq.BN(WAD.sub(requiredStake));
     });
 
-    it("cannot slash a nonexistent stake", async () => {
-      await colony.makeExpenditure(1, UINT256_MAX, 1);
-      const expenditureId = await colony.getExpenditureCount();
-      await colony.lockExpenditure(expenditureId);
-
-      await checkErrorRevert(
-        stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true),
-        "staked-expenditure-nothing-to-slash"
-      );
-    });
-
     it("can reclaim the stake by cancelling the expenditure", async () => {
       await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();

@@ -191,9 +191,12 @@ exports.checkErrorRevert = async function checkErrorRevert(promise, errorMessage
       const txid = await promise;
       receipt = await exports.web3GetTransactionReceipt(txid);
       // Check the receipt `status` to ensure transaction failed.
-      expect(receipt.status, `Transaction succeeded, but expected error ${errorMessage}`).to.be.false;
     }
+    expect(receipt.status, `Transaction succeeded, but expected error ${errorMessage}`).to.be.false;
   } catch (err) {
+    if (err.toString().indexOf("AssertionError: Transaction succeeded, but expected error") === 0) {
+      throw err;
+    }
     ({ reason } = err);
     expect(reason).to.equal(errorMessage);
   }
