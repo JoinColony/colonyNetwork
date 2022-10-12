@@ -106,7 +106,7 @@ contract("Reputation Bootstrapper", (accounts) => {
     });
 
     it("cannot setup reputation amounts if not root", async () => {
-      await checkErrorRevert(reputationBootstrapper.setGrants([], []), "reputation-bootsrapper-caller-not-root");
+      await checkErrorRevert(reputationBootstrapper.setGrants([], [], { from: USER1 }), "reputation-bootsrapper-caller-not-root");
     });
 
     it("cannot setup repuation amounts with mismatched arguments", async () => {
@@ -147,7 +147,7 @@ contract("Reputation Bootstrapper", (accounts) => {
       const inactivecycle = await IReputationMiningCycle.at(inactiveCycleAddress);
       const numLogs = await inactivecycle.getReputationUpdateLogLength();
       const updateLog = await inactivecycle.getReputationUpdateLogEntry(numLogs.subn(1));
-      expect(updateLog.amount).to.eq.BN(WAD.divn(2).addn(121114)); // Numerical approximation
+      expect(updateLog.amount).to.eq.BN(WAD.divn(2).subn(21847)); // Numerical approximation
     });
 
     it("can claim repuation amounts and tokens, if available", async () => {

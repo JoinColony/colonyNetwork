@@ -19,8 +19,6 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/erc20.sol";
-import "./../reputationMiningCycle/IReputationMiningCycle.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
 import "./ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108
@@ -31,6 +29,10 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   // Constants
 
   uint256 constant INT128_MAX = 2**127 - 1;
+  // Based on a 90-day half-life
+  uint256 constant HOURLY_DECAY_NUMERATOR = 999679150010889; // e ** -(ln(2)/2160)
+  uint256 constant DAILY_DECAY_NUMERATOR =  992327946262943; // e ** -(ln(2)/90)
+  uint256 constant DECAY_DENOMINATOR =     1000000000000000;
 
   // Events
 
@@ -80,11 +82,6 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
     colony = IColony(_colony);
     token = colony.getToken();
-
-    address colonyNetwork = colony.getColonyNetwork();
-    address repCycle = IColonyNetwork(colonyNetwork).getReputationMiningCycle(false);
-    decayPeriod = IReputationMiningCycle(repCycle).getMiningWindowDuration();
-    (decayNumerator, decayDenominator) = IReputationMiningCycle(repCycle).getDecayConstant();
   }
 
   /// @notice Called when upgrading the extension
@@ -128,9 +125,15 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     uint256 tokenAmount = min(ERC20(token).balanceOf(address(this)), grantAmount);
     require(tokenAmount >= uint256(grantAmount) || tokenAmount <= 0, "reputation-bootstrapper-insufficient-tokens");
 
-    for (; grantTimestamp <= block.timestamp - decayPeriod; grantTimestamp += decayPeriod) {
-      grantAmount = grantAmount * decayNumerator / decayDenominator;
+    // First, decay by any full days
+    for (; grantTimestamp <= block.timestamp - 1 days; grantTimestamp += 1 days) {
+      grantAmount = grantAmount * DAILY_DECAY_NUMERATOR / DECAY_DENOMINATOR;
     }
+
+    // Then, decay by remaining hours
+    for (; grantTimestamp <= block.timestamp - 1 hours; grantTimestamp += 1 hours) {
+      grantAmount = grantAmount * HOURLY_DECAY_NUMERATOR / DECAY_DENOMINATOR;
+     }
 
     colony.emitDomainReputationReward(1, msgSender(), int256(grantAmount));
     require(ERC20(token).transfer(msgSender(), tokenAmount), "reputation-bootstrapper-transfer-failed");
