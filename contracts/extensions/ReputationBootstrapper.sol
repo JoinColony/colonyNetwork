@@ -19,6 +19,8 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/erc20.sol";
+import "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import "./../colonyNetwork/IColonyNetwork.sol";
 import "./ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108
@@ -29,10 +31,6 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   // Constants
 
   uint256 constant INT128_MAX = 2**127 - 1;
-  // Based on a 90-day half-life
-  uint256 constant HOURLY_DECAY_NUMERATOR = 999679150010889; // e ** -(ln(2)/2160)
-  uint256 constant DAILY_DECAY_NUMERATOR =  992327946262943; // e ** -(ln(2)/90)
-  uint256 constant DECAY_DENOMINATOR =     1000000000000000;
 
   // Events
 
@@ -50,6 +48,10 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   address public token;
   bool public giveTokens;
+
+  uint256 public decayPeriod;
+  uint256 public decayNumerator;
+  uint256 public decayDenominator;
 
   mapping (bytes32 => Grant) public grants;
 
@@ -79,6 +81,11 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
     colony = IColony(_colony);
     token = colony.getToken();
+
+    address colonyNetwork = colony.getColonyNetwork();
+    address repCycle = IColonyNetwork(colonyNetwork).getReputationMiningCycle(false);
+    decayPeriod = IReputationMiningCycle(repCycle).getMiningWindowDuration();
+    (decayNumerator, decayDenominator) = IReputationMiningCycle(repCycle).getDecayConstant();
   }
 
   /// @notice Called when upgrading the extension
@@ -124,16 +131,22 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
     delete grants[hashedSecret];
 
-    // First, decay by any full days
-    for (; grantTimestamp <= block.timestamp - 1 days; grantTimestamp += 1 days) {
+    uint256 decayEpochs = (block.timestamp - grantTimestamp) / decayPeriod;
+    uint256 adjustedNumerator = decayNumerator;
+
+    // This algorithm successively doubles the decay factor while halving the number of epochs
+    // This allows us to perform the decay in O(log(n)) time
+    // For example, a decay of 50 epochs would be applied as (k**2)(k**16)(k**32)
+    while (decayEpochs > 0){
+      // slither-disable-next-line weak-prng
+      if (decayEpochs % 2 >= 1) {
+        // slither-disable-next-line divide-before-multiply
+        grantAmount = grantAmount * adjustedNumerator / decayDenominator;
+      }
       // slither-disable-next-line divide-before-multiply
-      grantAmount = grantAmount * DAILY_DECAY_NUMERATOR / DECAY_DENOMINATOR;
+      adjustedNumerator = adjustedNumerator * adjustedNumerator / decayDenominator;
+      decayEpochs >>= 1;
     }
-    // Then, decay by remaining hours
-    for (; grantTimestamp <= block.timestamp - 1 hours; grantTimestamp += 1 hours) {
-      // slither-disable-next-line divide-before-multiply
-      grantAmount = grantAmount * HOURLY_DECAY_NUMERATOR / DECAY_DENOMINATOR;
-     }
 
     colony.emitDomainReputationReward(1, msgSender(), int256(grantAmount));
 

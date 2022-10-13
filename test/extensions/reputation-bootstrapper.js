@@ -147,7 +147,7 @@ contract("Reputation Bootstrapper", (accounts) => {
       const inactivecycle = await IReputationMiningCycle.at(inactiveCycleAddress);
       const numLogs = await inactivecycle.getReputationUpdateLogLength();
       const updateLog = await inactivecycle.getReputationUpdateLogEntry(numLogs.subn(1));
-      expect(updateLog.amount).to.eq.BN(WAD.divn(2).subn(21847)); // Numerical approximation
+      expect(updateLog.amount).to.eq.BN(WAD.divn(2).subn(406575)); // Numerical approximation
     });
 
     it("can claim repuation amounts and tokens, if set", async () => {
@@ -164,6 +164,15 @@ contract("Reputation Bootstrapper", (accounts) => {
 
     it("cannot claim a nonexistent amount", async () => {
       await checkErrorRevert(reputationBootstrapper.claimGrant(PIN1, { from: USER1 }), "reputation-bootstrapper-nothing-to-claim");
+    });
+
+    it("cannot claim reputation amounts and tokens if the token amount only partially covers the balance", async () => {
+      await token.mint(reputationBootstrapper.address, WAD.divn(2));
+      await reputationBootstrapper.setGiveTokens(true);
+
+      await reputationBootstrapper.setGrants([soliditySha3(PIN1)], [WAD]);
+
+      await checkErrorRevert(reputationBootstrapper.claimGrant(PIN1, { from: USER1 }), "ds-token-insufficient-balance");
     });
 
     it("can claim reputation via metatransactions", async () => {
