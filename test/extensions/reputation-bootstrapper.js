@@ -150,8 +150,9 @@ contract("Reputation Bootstrapper", (accounts) => {
       expect(updateLog.amount).to.eq.BN(WAD.divn(2).subn(21847)); // Numerical approximation
     });
 
-    it("can claim repuation amounts and tokens, if available", async () => {
+    it("can claim repuation amounts and tokens, if set", async () => {
       await token.mint(reputationBootstrapper.address, WAD.muln(10));
+      await reputationBootstrapper.setGiveTokens(true);
 
       await reputationBootstrapper.setGrants([soliditySha3(PIN1), soliditySha3(PIN2)], [WAD, WAD.muln(2)]);
 
@@ -163,14 +164,6 @@ contract("Reputation Bootstrapper", (accounts) => {
 
     it("cannot claim a nonexistent amount", async () => {
       await checkErrorRevert(reputationBootstrapper.claimGrant(PIN1, { from: USER1 }), "reputation-bootstrapper-nothing-to-claim");
-    });
-
-    it("cannot claim reputation amounts and tokens if the token amount only partially covers the balance", async () => {
-      await token.mint(reputationBootstrapper.address, WAD.divn(2));
-
-      await reputationBootstrapper.setGrants([soliditySha3(PIN1), soliditySha3(PIN2)], [WAD, WAD.muln(2)]);
-
-      await checkErrorRevert(reputationBootstrapper.claimGrant(PIN1, { from: USER1 }), "reputation-bootstrapper-insufficient-tokens");
     });
 
     it("can claim reputation via metatransactions", async () => {

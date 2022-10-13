@@ -49,10 +49,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   // Storage
 
   address public token;
-
-  uint256 decayPeriod;
-  uint256 decayNumerator;
-  uint256 decayDenominator;
+  bool public giveTokens;
 
   mapping (bytes32 => Grant) public grants;
 
@@ -102,6 +99,10 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   // Public
 
+  function setGiveTokens(bool _giveTokens) public onlyRoot {
+    giveTokens = _giveTokens;
+  }
+
   function setGrants(bytes32[] memory _hashedSecrets, uint256[] memory _amounts) public onlyRoot notDeprecated {
     require(_hashedSecrets.length == _amounts.length, "reputation-bootsrapper-invalid-arguments");
 
@@ -116,27 +117,29 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   function claimGrant(uint256 _secret) public {
     bytes32 hashedSecret = keccak256(abi.encodePacked(_secret));
     uint256 grantAmount = grants[hashedSecret].amount;
+    uint256 tokenAmount = grants[hashedSecret].amount;
     uint256 grantTimestamp = grants[hashedSecret].timestamp;
 
     require(grantAmount > 0, "reputation-bootstrapper-nothing-to-claim");
 
     delete grants[hashedSecret];
 
-    uint256 tokenAmount = min(ERC20(token).balanceOf(address(this)), grantAmount);
-    require(tokenAmount >= uint256(grantAmount) || tokenAmount <= 0, "reputation-bootstrapper-insufficient-tokens");
-
     // First, decay by any full days
     for (; grantTimestamp <= block.timestamp - 1 days; grantTimestamp += 1 days) {
+      // slither-disable-next-line divide-before-multiply
       grantAmount = grantAmount * DAILY_DECAY_NUMERATOR / DECAY_DENOMINATOR;
     }
-
     // Then, decay by remaining hours
     for (; grantTimestamp <= block.timestamp - 1 hours; grantTimestamp += 1 hours) {
+      // slither-disable-next-line divide-before-multiply
       grantAmount = grantAmount * HOURLY_DECAY_NUMERATOR / DECAY_DENOMINATOR;
      }
 
     colony.emitDomainReputationReward(1, msgSender(), int256(grantAmount));
-    require(ERC20(token).transfer(msgSender(), tokenAmount), "reputation-bootstrapper-transfer-failed");
+
+    if (giveTokens) {
+      require(ERC20(token).transfer(msgSender(), tokenAmount), "reputation-bootstrapper-transfer-failed");
+    }
 
     emit GrantClaimed(msgSender(), grantAmount, tokenAmount);
   }
