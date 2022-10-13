@@ -240,10 +240,10 @@ class MetatransactionBroadcaster {
     try {
       const tx = possibleMulticall.interface.parseTransaction({ data: txData });
       if (tx.signature === "multicall(bytes[])") {
+        const actions = tx.args[0];
         // We check for each multicall whether it's doing something we'd allow
-        for (let i = 0; i < tx.args[0].length; i += 1) {
-          const action = tx.args[0][i];
-          const valid = await this.isColonyFamilyTransactionAllowed(target, action, userAddress);
+        for (let i = 0; i < actions.length; i += 1) {
+          const valid = await this.isColonyFamilyTransactionAllowed(target, actions[i], userAddress);
           if (!valid) {
             return false;
           }

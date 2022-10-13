@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
+
 // Taken from Uniswap/v3-periphery repository, with payable removed
 /// @title Multicall interface
 /// @notice Enables calling multiple methods in a single call to the contract

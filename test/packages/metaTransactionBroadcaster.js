@@ -543,6 +543,8 @@ contract("Metatransaction broadcaster", (accounts) => {
       const colonyAsEtherRouter = await EtherRouter.at(colony.address);
       const resolverAddress = await colonyAsEtherRouter.resolver();
 
+      // The invalid transaction is this one, which uses makeArbitraryTransaction to try and call owner() on the
+      // colony itself.
       const txData2 = await colony.contract.methods
         .makeArbitraryTransaction(resolverAddress, web3.utils.soliditySha3("owner()").slice(0, 10))
         .encodeABI();
