@@ -5,11 +5,7 @@ pragma solidity 0.7.3;
 pragma experimental "ABIEncoderV2";
 import "./MetaTransactionMsgSender.sol";
 
-/// @title Multicall
-/// @notice Enables calling multiple methods in a single call to the contract
 abstract contract Multicall is MetaTransactionMsgSender {
-
-
     function multicall(bytes[] calldata data) public returns (bytes[] memory results) {
         // First off, is this a metatransaction?
         address sender = msgSender();
