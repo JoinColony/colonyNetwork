@@ -24,8 +24,6 @@ import "./CommonStorage.sol";
 import "./IRecovery.sol";
 
 
-/// @title Used for recovery in both ColonyNetwork and Colony instances
-/// @notice Implements functions defined in IRecovery interface
 contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignore-swc-123
   uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
 

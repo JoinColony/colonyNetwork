@@ -25,8 +25,6 @@ import "./../common/IMulticall.sol";
 import "./ColonyNetworkDataTypes.sol";
 
 
-/// @title Colony Network interface
-/// @notice All externally available functions are available here and registered to work with EtherRouter Network contract
 interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
 
   /// @notice Query if a contract implements an interface

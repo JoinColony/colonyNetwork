@@ -6,8 +6,6 @@ import "./ENS.sol";
 // (It's really the abi.encodepacked in setSubnodeOwner.
 
 
-/// @title Modified ENS registry contract.
-/// @notice https://github.com/ensdomains/ens/blob/master/contracts/ENSRegistry.sol
 contract ENSRegistry is ENS {
   struct Record {
     address owner;

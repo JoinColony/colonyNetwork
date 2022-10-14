@@ -5,8 +5,7 @@ import "./PatriciaTreeBase.sol";
 import "./IPatriciaTreeNoHash.sol";
 
 
-/// @title Patricia tree implementation
-/// @notice More info at: https://github.com/chriseth/patricia-trie
+/// More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTreeNoHash is IPatriciaTreeNoHash, PatriciaTreeBase {
 
   using Data for Data.Tree;

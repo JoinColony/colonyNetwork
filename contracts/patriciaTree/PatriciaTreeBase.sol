@@ -6,8 +6,7 @@ import {Bits} from "./Bits.sol";
 import "./PatriciaTreeProofs.sol";
 
 
-/// @title Patricia tree implementation
-/// @notice More info at: https://github.com/chriseth/patricia-trie
+/// More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTreeBase is PatriciaTreeProofs {
 
   using Data for Data.Tree;

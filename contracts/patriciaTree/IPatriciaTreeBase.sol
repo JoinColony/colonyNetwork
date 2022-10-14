@@ -4,8 +4,6 @@ pragma experimental "ABIEncoderV2";
 import {Data} from "./Data.sol";
 
 
-/// @title Interface for Patricia trees
-/// @notice More info at: https://github.com/chriseth/patricia-trie
 interface IPatriciaTreeBase {
 
   /// @notice Get the root hash
