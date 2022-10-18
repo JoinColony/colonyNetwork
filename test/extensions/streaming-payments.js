@@ -289,6 +289,22 @@ contract("Streaming Payments", (accounts) => {
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
     });
 
+    it(`can claim a streaming payment correctly where the streaming payment id is not the same as the domain id
+            or is a domain id that doesn't exist`, async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const tx = await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      const balancePre = await token.balanceOf(USER1);
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]];
+      await makeTxAtTimestamp(streamingPayments.claim, claimArgs, blockTime + SECONDS_PER_DAY * 2, this);
+      const balancePost = await token.balanceOf(USER1);
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
+    });
+
     it("cannot get more from a payment than should be able to", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(1));
 
