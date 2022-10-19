@@ -305,6 +305,33 @@ contract("Streaming Payments", (accounts) => {
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(2).subn(1)); // -1 for network fee
     });
 
+    it("can claim multiple streaming payments in a single tx via multicall", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      let tx = await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      tx = await makeTxAtTimestamp(
+        streamingPayments.create,
+        [1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]],
+        blockTime,
+        this
+      );
+      const streamingPaymentId2 = await streamingPayments.getNumStreamingPayments();
+
+      const balancePre = await token.balanceOf(USER1);
+      const claimArgs = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]];
+      const claimData = await streamingPayments.contract.methods.claim(...claimArgs).encodeABI();
+      const claimArgs2 = [1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId2, [token.address]];
+      const claimData2 = await streamingPayments.contract.methods.claim(...claimArgs2).encodeABI();
+
+      tx = await makeTxAtTimestamp(streamingPayments.multicall, [[claimData, claimData2]], blockTime + SECONDS_PER_DAY * 2, this);
+      const balancePost = await token.balanceOf(USER1);
+
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(4).subn(2)); // -2 for network fees
+    });
+
     it("cannot get more from a payment than should be able to", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(1));
 
