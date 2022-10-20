@@ -18,6 +18,7 @@ const {
   RATING_2_SECRET,
   SPECIFICATION_HASH,
   DELIVERABLE_HASH,
+  SECONDS_PER_HOUR,
   SECONDS_PER_DAY,
   DEFAULT_STAKE,
   INITIAL_FUNDING,
@@ -376,9 +377,14 @@ contract("All", function (accounts) {
       await reputationBootstrapper.install(colony.address);
       await colony.setRootRole(reputationBootstrapper.address, true);
 
-      await reputationBootstrapper.setGrants([soliditySha3(1)], [WAD], { from: MANAGER });
+      const secret = 1;
+      await reputationBootstrapper.setGrants([soliditySha3(secret)], [WAD], { from: MANAGER });
       await reputationBootstrapper.lockExtension({ from: MANAGER });
-      await reputationBootstrapper.claimGrant(1, { from: WORKER });
+
+      await reputationBootstrapper.commitSecret(soliditySha3(WORKER, secret));
+      await forwardTime(SECONDS_PER_HOUR, this);
+
+      await reputationBootstrapper.claimGrant(secret, { from: WORKER });
     });
 
     it("when bootstrapping reputation with decay", async function () {
@@ -386,13 +392,17 @@ contract("All", function (accounts) {
       await reputationBootstrapper.install(colony.address);
       await colony.setRootRole(reputationBootstrapper.address, true);
 
-      await reputationBootstrapper.setGrants([soliditySha3(1)], [WAD], { from: MANAGER });
+      const secret = 1;
+      await reputationBootstrapper.setGrants([soliditySha3(secret)], [WAD], { from: MANAGER });
       await reputationBootstrapper.lockExtension({ from: MANAGER });
+
+      await reputationBootstrapper.commitSecret(soliditySha3(WORKER, secret));
+      await forwardTime(SECONDS_PER_HOUR, this);
 
       // Reputation decays by half in 90 days
       await forwardTime(SECONDS_PER_DAY * 90, this);
 
-      await reputationBootstrapper.claimGrant(1, { from: WORKER });
+      await reputationBootstrapper.claimGrant(secret, { from: WORKER });
     });
   });
 });

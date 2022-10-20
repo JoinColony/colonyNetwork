@@ -31,6 +31,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   // Constants
 
   uint256 constant INT128_MAX = 2**127 - 1;
+  uint256 constant SECURITY_DELAY = 1 hours;
 
   // Events
 
@@ -55,6 +56,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   uint256 public decayDenominator;
 
   mapping (bytes32 => Grant) public grants;
+  mapping (bytes32 => uint256) public committedSecrets;
 
   // Modifiers
 
@@ -118,14 +120,20 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   // Public
 
+  /// @notice Lock the extension, allowing grants to the claimed and preventing new grants
   function lockExtension() public onlyRoot unlocked {
     isLocked = true;
   }
 
+  /// @notice Configure whether or not reputation claims come with tokens
+  /// @param _giveTokens A boolean setting the functionality to true or false
   function setGiveTokens(bool _giveTokens) public onlyRoot unlocked {
     giveTokens = _giveTokens;
   }
 
+  /// @notice Set an arbitrary number of grants
+  /// @param _hashedSecrets An array of (hashed) secrets
+  /// @param _amounts An array of reputation amounts claimable by the secret
   function setGrants(bytes32[] memory _hashedSecrets, uint256[] memory _amounts) public onlyRoot unlocked {
     require(_hashedSecrets.length == _amounts.length, "reputation-bootstrapper-invalid-arguments");
 
@@ -137,11 +145,27 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     }
   }
 
+  /// @notice Commit the secret, beginning the security delay window
+  /// @param _committedSecret A sha256 hash of (userAddress, secret)
+  function commitSecret(bytes32 _committedSecret) public locked {
+    committedSecrets[_committedSecret] = block.timestamp;
+  }
+
+  /// @notice Claim the grant, after committing the secret and having the security delay elapse
+  /// @param _secret The secret corresponding to a reputation grant
   function claimGrant(uint256 _secret) public locked {
+    bytes32 committedSecret = keccak256(abi.encodePacked(msgSender(), _secret));
+
+    require(
+      committedSecrets[committedSecret] > 0 &&
+      committedSecrets[committedSecret] + SECURITY_DELAY<= block.timestamp,
+      "reputation-bootstrapper-commit-window-unelapsed"
+    );
+
     bytes32 hashedSecret = keccak256(abi.encodePacked(_secret));
     uint256 grantAmount = grants[hashedSecret].amount;
     uint256 tokenAmount = grants[hashedSecret].amount;
-    uint256 grantTimestamp = grants[hashedSecret].timestamp;
+    uint256 grantTimestamp = grants[hashedSecret].timestamp + SECURITY_DELAY; // Don't decay during delay window
 
     require(grantAmount > 0, "reputation-bootstrapper-nothing-to-claim");
 

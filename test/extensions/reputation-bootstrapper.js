@@ -5,7 +5,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { WAD, INT128_MAX, ADDRESS_ZERO, SECONDS_PER_DAY } = require("../../helpers/constants");
+const { WAD, INT128_MAX, ADDRESS_ZERO, SECONDS_PER_DAY, SECONDS_PER_HOUR } = require("../../helpers/constants");
 const { checkErrorRevert, web3GetCode, forwardTime } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
@@ -122,9 +122,28 @@ contract("Reputation Bootstrapper", (accounts) => {
       await checkErrorRevert(reputationBootstrapper.setGrants([soliditySha3(PIN1)], [INT128_MAX.addn(1)]), "reputation-bootstrapper-locked");
     });
 
+    it("cannot claim reputation before committing the secret", async () => {
+      await reputationBootstrapper.setGrants([soliditySha3(PIN1), soliditySha3(PIN2)], [WAD, WAD.muln(2)]);
+      await reputationBootstrapper.lockExtension();
+
+      // Can't claim without committing the secret
+      await checkErrorRevert(reputationBootstrapper.claimGrant(PIN1, { from: USER1 }), "reputation-bootstrapper-commit-window-unelapsed");
+
+      await reputationBootstrapper.commitSecret(soliditySha3(USER1, PIN1));
+
+      // Can't claim until the delay has elapsed
+      await checkErrorRevert(reputationBootstrapper.claimGrant(PIN1, { from: USER1 }), "reputation-bootstrapper-commit-window-unelapsed");
+
+      await forwardTime(SECONDS_PER_HOUR, this);
+      await reputationBootstrapper.claimGrant(PIN1, { from: USER1 });
+    });
+
     it("can claim reputation amounts", async () => {
       await reputationBootstrapper.setGrants([soliditySha3(PIN1), soliditySha3(PIN2)], [WAD, WAD.muln(2)]);
       await reputationBootstrapper.lockExtension();
+
+      await reputationBootstrapper.commitSecret(soliditySha3(USER1, PIN1));
+      await forwardTime(SECONDS_PER_HOUR, this);
 
       await reputationBootstrapper.claimGrant(PIN1, { from: USER1 });
 
@@ -145,6 +164,9 @@ contract("Reputation Bootstrapper", (accounts) => {
       await reputationBootstrapper.setGrants([soliditySha3(PIN1), soliditySha3(PIN2)], [WAD, WAD.muln(2)]);
       await reputationBootstrapper.lockExtension();
 
+      await reputationBootstrapper.commitSecret(soliditySha3(USER1, PIN1));
+      await forwardTime(SECONDS_PER_HOUR, this);
+
       // Reputation decays by half in 90 days
       await forwardTime(SECONDS_PER_DAY * 90, this);
       await reputationBootstrapper.claimGrant(PIN1, { from: USER1 });
@@ -163,6 +185,9 @@ contract("Reputation Bootstrapper", (accounts) => {
       await reputationBootstrapper.setGrants([soliditySha3(PIN1), soliditySha3(PIN2)], [WAD, WAD.muln(2)]);
       await reputationBootstrapper.lockExtension();
 
+      await reputationBootstrapper.commitSecret(soliditySha3(USER1, PIN1));
+      await forwardTime(SECONDS_PER_HOUR, this);
+
       await reputationBootstrapper.claimGrant(PIN1, { from: USER1 });
 
       const balance = await token.balanceOf(USER1);
@@ -176,6 +201,10 @@ contract("Reputation Bootstrapper", (accounts) => {
 
     it("cannot claim a nonexistent amount", async () => {
       await reputationBootstrapper.lockExtension();
+
+      await reputationBootstrapper.commitSecret(soliditySha3(USER1, PIN1));
+      await forwardTime(SECONDS_PER_HOUR, this);
+
       await checkErrorRevert(reputationBootstrapper.claimGrant(PIN1, { from: USER1 }), "reputation-bootstrapper-nothing-to-claim");
     });
 
@@ -186,6 +215,9 @@ contract("Reputation Bootstrapper", (accounts) => {
       await reputationBootstrapper.setGrants([soliditySha3(PIN1)], [WAD]);
       await reputationBootstrapper.lockExtension();
 
+      await reputationBootstrapper.commitSecret(soliditySha3(USER1, PIN1));
+      await forwardTime(SECONDS_PER_HOUR, this);
+
       await checkErrorRevert(reputationBootstrapper.claimGrant(PIN1, { from: USER1 }), "ds-token-insufficient-balance");
     });
 
@@ -193,17 +225,20 @@ contract("Reputation Bootstrapper", (accounts) => {
       await reputationBootstrapper.setGrants([soliditySha3(PIN1)], [WAD]);
       await reputationBootstrapper.lockExtension();
 
-      const txData = await reputationBootstrapper.contract.methods.claimGrant(PIN1).encodeABI();
-      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, reputationBootstrapper.address);
+      await reputationBootstrapper.commitSecret(soliditySha3(USER1, PIN1));
+      await forwardTime(SECONDS_PER_HOUR, this);
 
-      await reputationBootstrapper.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
+      const txData = await reputationBootstrapper.contract.methods.claimGrant(PIN1).encodeABI();
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER1, reputationBootstrapper.address);
+
+      await reputationBootstrapper.executeMetaTransaction(USER1, txData, r, s, v, { from: USER1 });
 
       const inactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const inactivecycle = await IReputationMiningCycle.at(inactiveCycleAddress);
       const numLogs = await inactivecycle.getReputationUpdateLogLength();
       const updateLog = await inactivecycle.getReputationUpdateLogEntry(numLogs.subn(1));
 
-      expect(updateLog.user).to.equal(USER0);
+      expect(updateLog.user).to.equal(USER1);
       expect(updateLog.amount).to.eq.BN(WAD);
       expect(updateLog.skillId).to.eq.BN(domain1.skillId);
     });
