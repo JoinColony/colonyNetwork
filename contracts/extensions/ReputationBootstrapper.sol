@@ -48,6 +48,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   address public token;
   bool public giveTokens;
+  bool public isLocked;
 
   uint256 public decayPeriod;
   uint256 public decayNumerator;
@@ -58,7 +59,17 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "reputation-bootsrapper-caller-not-root");
+    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "reputation-bootstrapper-caller-not-root");
+    _;
+  }
+
+  modifier unlocked() {
+    require(!isLocked, "reputation-bootstrapper-locked");
+    _;
+  }
+
+  modifier locked() {
+    require(isLocked, "reputation-bootstrapper-unlocked");
     _;
   }
 
@@ -94,6 +105,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   /// @notice Called when deprecating (or undeprecating) the extension
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
+    isLocked = true;
   }
 
   /// @notice Called when uninstalling the extension
@@ -106,12 +118,16 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   // Public
 
-  function setGiveTokens(bool _giveTokens) public onlyRoot {
+  function lockExtension() public onlyRoot unlocked {
+    isLocked = true;
+  }
+
+  function setGiveTokens(bool _giveTokens) public onlyRoot unlocked {
     giveTokens = _giveTokens;
   }
 
-  function setGrants(bytes32[] memory _hashedSecrets, uint256[] memory _amounts) public onlyRoot notDeprecated {
-    require(_hashedSecrets.length == _amounts.length, "reputation-bootsrapper-invalid-arguments");
+  function setGrants(bytes32[] memory _hashedSecrets, uint256[] memory _amounts) public onlyRoot unlocked {
+    require(_hashedSecrets.length == _amounts.length, "reputation-bootstrapper-invalid-arguments");
 
     for (uint256 i; i < _hashedSecrets.length; i++) {
       require(_amounts[i] <= INT128_MAX, "reputation-bootstrapper-invalid-amount");
@@ -121,7 +137,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     }
   }
 
-  function claimGrant(uint256 _secret) public {
+  function claimGrant(uint256 _secret) public locked {
     bytes32 hashedSecret = keccak256(abi.encodePacked(_secret));
     uint256 grantAmount = grants[hashedSecret].amount;
     uint256 tokenAmount = grants[hashedSecret].amount;

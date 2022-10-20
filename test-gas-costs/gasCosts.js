@@ -377,7 +377,7 @@ contract("All", function (accounts) {
       await colony.setRootRole(reputationBootstrapper.address, true);
 
       await reputationBootstrapper.setGrants([soliditySha3(1)], [WAD], { from: MANAGER });
-
+      await reputationBootstrapper.lockExtension({ from: MANAGER });
       await reputationBootstrapper.claimGrant(1, { from: WORKER });
     });
 
@@ -387,6 +387,7 @@ contract("All", function (accounts) {
       await colony.setRootRole(reputationBootstrapper.address, true);
 
       await reputationBootstrapper.setGrants([soliditySha3(1)], [WAD], { from: MANAGER });
+      await reputationBootstrapper.lockExtension({ from: MANAGER });
 
       // Reputation decays by half in 90 days
       await forwardTime(SECONDS_PER_DAY * 90, this);
