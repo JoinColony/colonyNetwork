@@ -1,13 +1,13 @@
 /* globals artifacts */
 
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
 
-import { UINT256_MAX, IPFS_HASH } from "../../helpers/constants";
-import { checkErrorRevert, web3GetCode } from "../../helpers/test-helper";
-import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
+const { UINT256_MAX, IPFS_HASH, ADDRESS_ZERO } = require("../../helpers/constants");
+const { checkErrorRevert, web3GetCode } = require("../../helpers/test-helper");
+const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -75,6 +75,13 @@ contract("Whitelist", (accounts) => {
       await checkErrorRevert(colony.uninstallExtension(WHITELIST, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(WHITELIST, { from: USER0 });
+    });
+
+    it("can't use the network-level functions if installed via ColonyNetwork", async () => {
+      await checkErrorRevert(whitelist.install(ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(whitelist.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(whitelist.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(whitelist.uninstall({ from: USER1 }), "ds-auth-unauthorized");
     });
   });
 

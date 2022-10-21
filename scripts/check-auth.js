@@ -1,6 +1,8 @@
-import parser from "solidity-parser-diligence";
-import fs from "fs";
-import path from "path";
+#!/usr/bin/env node
+
+const parser = require("@solidity-parser/parser");
+const fs = require("fs");
+const path = require("path");
 
 // Taken from https://gist.github.com/kethinov/6658166#gistcomment-1941504
 const walkSync = (dir, filelist = []) => {

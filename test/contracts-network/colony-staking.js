@@ -1,15 +1,16 @@
 /* global artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
 
-import { UINT256_MAX, WAD, INITIAL_FUNDING } from "../../helpers/constants";
-import { fundColonyWithTokens, setupRandomColony, setupColony } from "../../helpers/test-data-generator";
-import { checkErrorRevert, expectEvent } from "../../helpers/test-helper";
+const { UINT256_MAX, WAD, INITIAL_FUNDING, ADDRESS_ZERO } = require("../../helpers/constants");
+const { fundColonyWithTokens, setupRandomColony, setupColony } = require("../../helpers/test-data-generator");
+const { checkErrorRevert, expectEvent } = require("../../helpers/test-helper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const ToggleableToken = artifacts.require("ToggleableToken");
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
@@ -235,6 +236,39 @@ contract("Colony Staking", (accounts) => {
 
       const { balance } = await tokenLocking.getUserLock(token.address, USER2);
       expect(balance).to.eq.BN(WAD);
+    });
+
+    it.skip("should burn the stake if sent to address(0x0) and the token supports burning", async () => {
+      const supplyBefore = await token.totalSupply();
+
+      await colony.approveStake(USER0, 1, WAD, { from: USER1 });
+      await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
+      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ADDRESS_ZERO, { from: USER2 });
+
+      const supplyAfter = await token.totalSupply();
+      expect(supplyBefore.sub(supplyAfter)).to.eq.BN(WAD);
+    });
+
+    it.skip("should send the stake to address(0x0) if the token does not support burning", async () => {
+      // This token does not support burning
+      token = await ToggleableToken.new(WAD, { from: USER1 });
+      colony = await setupColony(colonyNetwork, token.address);
+      await colony.setArbitrationRole(1, UINT256_MAX, USER2, 1, true);
+
+      await token.approve(tokenLocking.address, WAD, { from: USER1 });
+      await tokenLocking.deposit(token.address, WAD, true, { from: USER1 });
+
+      const supplyBefore = await token.balanceOf(tokenLocking.address);
+
+      await colony.approveStake(USER0, 1, WAD, { from: USER1 });
+      await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
+      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ADDRESS_ZERO, { from: USER2 });
+
+      const supplyAfter = await token.balanceOf(tokenLocking.address);
+      expect(supplyBefore.sub(supplyAfter)).to.eq.BN(WAD);
+
+      const nullBalance = await token.balanceOf(ADDRESS_ZERO);
+      expect(nullBalance).to.eq.BN(WAD);
     });
   });
 });

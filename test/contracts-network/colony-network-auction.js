@@ -1,10 +1,10 @@
 /* globals artifacts */
-import BN from "bn.js";
-import { ethers } from "ethers";
-import chai from "chai";
-import bnChai from "bn-chai";
+const BN = require("bn.js");
+const { ethers } = require("ethers");
+const chai = require("chai");
+const bnChai = require("bn-chai");
 
-import {
+const {
   getTokenArgs,
   web3GetTransactionReceipt,
   web3GetCode,
@@ -12,16 +12,16 @@ import {
   forwardTime,
   getBlockTime,
   getColonyEditable,
-} from "../../helpers/test-helper";
+} = require("../../helpers/test-helper");
 
-import { WAD, SECONDS_PER_DAY } from "../../helpers/constants";
-import {
+const { WAD, SECONDS_PER_DAY } = require("../../helpers/constants");
+const {
   getMetaTransactionParameters,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   unlockCLNYToken,
   giveUserCLNYTokens,
-} from "../../helpers/test-data-generator";
+} = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

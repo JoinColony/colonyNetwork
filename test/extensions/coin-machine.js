@@ -1,14 +1,14 @@
 /* globals artifacts */
 
-import BN from "bn.js";
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
+const BN = require("bn.js");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
 
-import { UINT256_MAX, UINT128_MAX, WAD } from "../../helpers/constants";
+const { UINT256_MAX, UINT128_MAX, WAD } = require("../../helpers/constants");
 
-import {
+const {
   checkErrorRevert,
   web3GetCode,
   forwardTime,
@@ -17,9 +17,9 @@ import {
   currentBlockTime,
   forwardTimeTo,
   expectEvent,
-} from "../../helpers/test-helper";
+} = require("../../helpers/test-helper");
 
-import { setupRandomToken, setupRandomColony, setupColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
+const { setupRandomToken, setupRandomColony, setupColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -178,6 +178,13 @@ contract("Coin Machine", (accounts) => {
         coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, WAD, 0, ADDRESS_ZERO, { from: USER1 }),
         "coin-machine-caller-not-root"
       );
+    });
+
+    it("can't use the network-level functions if installed via ColonyNetwork", async () => {
+      await checkErrorRevert(coinMachine.install(ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(coinMachine.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(coinMachine.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(coinMachine.uninstall({ from: USER1 }), "ds-auth-unauthorized");
     });
   });
 
@@ -547,7 +554,7 @@ contract("Coin Machine", (accounts) => {
       await forwardTime(periodLength.toNumber(), this);
       await coinMachine.updatePeriod();
 
-      const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
+      const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(new BN(0).mul(alphaAsWad));
       const expectedPrice = emaIntake.div(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(expectedPrice);
@@ -602,10 +609,38 @@ contract("Coin Machine", (accounts) => {
       await forwardTime(periodLength.toNumber(), this);
       await coinMachine.updatePeriod();
 
-      const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(maxPerPeriod.mul(alphaAsWad));
+      const emaIntake = WAD.muln(100).mul(WAD.sub(alphaAsWad)).add(new BN(0).mul(alphaAsWad));
       const expectedPrice = emaIntake.div(WAD.muln(100));
       currentPrice = await coinMachine.getCurrentPrice();
       expect(currentPrice).to.eq.BN(expectedPrice);
+    });
+
+    it("can correctly account for sold tokens between periods when adding a balance", async () => {
+      await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+      await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      coinMachine = await CoinMachine.at(coinMachineAddress);
+
+      await purchaseToken.mint(USER0, WAD.muln(10), { from: USER0 });
+      await purchaseToken.approve(coinMachine.address, WAD.muln(10), { from: USER0 });
+
+      // Iniitalise with a zero balance, then add tokens
+      await coinMachine.initialise(token.address, purchaseToken.address, 60 * 60, 10, WAD, WAD, WAD, WAD, ADDRESS_ZERO);
+      await token.mint(coinMachine.address, WAD.muln(200));
+
+      const periodLength = await coinMachine.getPeriodLength();
+
+      let activeSold;
+
+      await coinMachine.buyTokens(WAD, { from: USER0 });
+      activeSold = await coinMachine.getActiveSold();
+      expect(activeSold).to.eq.BN(WAD);
+
+      await forwardTime(periodLength.toNumber(), this);
+
+      await coinMachine.buyTokens(WAD, { from: USER0 });
+      activeSold = await coinMachine.getActiveSold();
+      expect(activeSold).to.eq.BN(WAD);
     });
 
     it("it monotonically adjusts prices according to demand", async () => {
@@ -617,8 +652,9 @@ contract("Coin Machine", (accounts) => {
       await purchaseToken.mint(USER0, maxPerPeriod.muln(10000), { from: USER0 });
       await purchaseToken.approve(coinMachine.address, maxPerPeriod.muln(10000), { from: USER0 });
 
+      const numIter = process.env.CIRCLE_ENV === "true" ? 100 : 5;
       let previousPrice = maxPerPeriod.muln(10000); // A very large number.
-      for (let i = 0; i < 100; i += 1) {
+      for (let i = 0; i < numIter; i += 1) {
         // There used to be a check for a 'steady state' price here, but
         // that only worked by chance.
         currentPrice = await coinMachine.getCurrentPrice();

@@ -7,6 +7,7 @@ test-results.xml
 0
 parityPassword
 **/build/*
+*.sqlite*
 coverageEnv
 coverage-contracts
 coverage-merged
@@ -18,14 +19,9 @@ coverage-miner
 lib/*
 ganache-accounts.json
 .vscode/
-yarn-error.log
 reputations.json
-reputationStates.sqlite
-reputationStates.sqlite-shm
-reputationStates.sqlite-wal
 justificationTreeCache.json
 truffle-security-output.json
 .coverage_contracts
 etherrouter-address.json
 ganache-chain-db
-mtxCache.sqlite

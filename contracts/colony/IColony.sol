@@ -61,8 +61,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @return tokenAddress Address of the token contract
   function getToken() external view returns (address tokenAddress);
 
+  /// @notice @deprecated
   /// @notice Execute arbitrary transaction on behalf of the Colony
-  /// DEPRECATED
   /// @param _to Contract to receive the function call (cannot be this contract, network or token locking)
   /// @param _action Bytes array encoding the function call and arguments
   /// @return success Boolean indicating whether the transaction succeeded
@@ -154,7 +154,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) external view returns (bool hasRole);
 
   /// @notice Check whether a given user has a given role for the colony, in a child domain.
-  /// Calls the function of the same name on the colony's authority contract and an internal inheritence validator function
+  /// Calls the function of the same name on the colony's authority contract and an internal inheritance validator function
   /// @param _user The user whose role we want to check
   /// @param _domainId Domain in which the caller has the role
   /// @param _role The role we want to check for
@@ -250,7 +250,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   function mintTokensFor(address _guy, uint256 _wad) external;
 
   /// @notice Lock the colony's token. Can only be called by a network-managed extension.
-  function lockToken() external returns (uint256);
+  /// @return timesLocked The amount of times the token was locked
+  function lockToken() external returns (uint256 timesLocked);
 
   /// @notice Unlock the colony's token for a user. Can only be called by a network-managed extension.
   /// @param user The user to unlock
@@ -376,7 +377,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _newOwner New owner of expenditure
   function transferExpenditure(uint256 _id, address _newOwner) external;
 
-  /// @notice DEPRECATED Updates the expenditure owner. Can only be called by Arbitration role.
+  /// @notice @deprecated
+  /// @notice Updates the expenditure owner. Can only be called by Arbitration role.
   /// @dev This is now deprecated and will be removed in a future version
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
@@ -398,6 +400,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   function finalizeExpenditure(uint256 _id) external;
 
   /// @notice Sets the metadata for an expenditure. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
   /// @param _metadata IPFS hash of the metadata
   function setExpenditureMetadata(uint256 _id, string memory _metadata) external;
@@ -409,21 +412,24 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _metadata IPFS hash of the metadata
   function setExpenditureMetadata(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, string memory _metadata) external;
 
-  /// @notice Deprecated
+  /// @notice @deprecated
   /// @notice Sets the recipient on an expenditure slot. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
   /// @param _slot Slot for the recipient address
   /// @param _recipient Address of the recipient
   function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient) external;
 
   /// @notice Sets the recipients in given expenditure slots. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
   /// @param _slots Array of slots to set recipients
   /// @param _recipients Addresses of the recipients
   function setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address payable[] memory _recipients) external;
 
-  /// @notice Deprecated
+  /// @notice @deprecated
   /// @notice Set the token payout on an expenditure slot. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
   /// @param _slot Number of the slot
   /// @param _token Address of the token, `0x0` value indicates Ether
@@ -431,13 +437,30 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   function setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount) external;
 
   /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
   /// @param _slots Array of slots to set payouts
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amounts Payout amounts
   function setExpenditurePayouts(uint256 _id, uint256[] memory _slots, address _token, uint256[] memory _amounts) external;
 
-  /// @notice Deprecated
+  /// @notice Set the token payout in a given expenditure slot. Can only be called by an Arbitration user.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _id Id of the expenditure
+  /// @param _slot The slot to set the payout
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amount Payout amount
+  function setExpenditurePayout(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _slot,
+    address _token,
+    uint256 _amount
+  ) external;
+
+  /// @notice @deprecated
   /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
@@ -450,7 +473,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _skillIds Ids of the new skills to set
   function setExpenditureSkills(uint256 _id, uint256[] memory _slots, uint256[] memory _skillIds) external;
 
-  /// @notice Deprecated
+  /// @notice @deprecated
   /// @notice Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
@@ -468,6 +491,34 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @param _slots Array of slots to set payout modifiers
   /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus
   function setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers) external;
+
+  /// @notice Set many values of an expenditure simultaneously. Can only be called by expenditure owner.
+  /// @param _id Expenditure identifier
+  /// @param _recipientSlots Array of slots to set recipients
+  /// @param _recipients Addresses of the recipients
+  /// @param _skillIdSlots Array of slots to set skills
+  /// @param _skillIds Ids of the new skills to set
+  /// @param _claimDelaySlots Array of slots to set claim delays
+  /// @param _claimDelays Durations of time (in seconds) to delay
+  /// @param _payoutModifierSlots Array of slots to set payout modifiers
+  /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus
+  /// @param _payoutTokens Addresses of the tokens, `0x0` value indicates Ether
+  /// @param _payoutSlots 2-dimensional array of slots to set payouts
+  /// @param _payoutValues 2-dimensional array of the payout amounts
+  function setExpenditureValues(
+    uint256 _id,
+    uint256[] memory _recipientSlots,
+    address payable[] memory _recipients,
+    uint256[] memory _skillIdSlots,
+    uint256[] memory _skillIds,
+    uint256[] memory _claimDelaySlots,
+    uint256[] memory _claimDelays,
+    uint256[] memory _payoutModifierSlots,
+    int256[] memory _payoutModifiers,
+    address[] memory _payoutTokens,
+    uint256[][] memory _payoutSlots,
+    uint256[][] memory _payoutValues
+  ) external;
 
   /// @notice Set arbitrary state on an expenditure slot. Can only be called by Arbitration role.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
@@ -951,7 +1002,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
     address _token
     ) external;
 
-  /// @notice DEPRECATED
+  /// @notice @deprecated
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _fromChildSkillIndex The child index in `_permissionDomainId` where we can find the domain for `_fromPotId`
@@ -1052,9 +1103,11 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction {
   /// @notice Get the current approval amount
   /// @param token The address of the token which was approved
   /// @param spender The account we have approved
+  /// @return amount The token approval amount
   function getTokenApproval(address token, address spender) external view returns (uint256 amount);
 
   /// @notice Get the current total approval amount across all spenders
   /// @param token The address of the token which was approved
+  /// @return amount The total token approval amount
   function getTotalTokenApproval(address token) external view returns (uint256 amount);
 }

@@ -1,9 +1,9 @@
 /* globals artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import { soliditySha3 } from "web3-utils";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { soliditySha3 } = require("web3-utils");
 
-import {
+const {
   MANAGER_RATING,
   WORKER_RATING,
   RATING_1_SALT,
@@ -16,9 +16,9 @@ import {
   DELIVERABLE_HASH,
   INITIAL_FUNDING,
   SECONDS_PER_DAY,
-} from "../../helpers/constants";
-import { currentBlockTime, checkErrorRevert, forwardTime, expectEvent } from "../../helpers/test-helper";
-import { fundColonyWithTokens, setupAssignedTask, setupRatedTask, setupRandomColony } from "../../helpers/test-data-generator";
+} = require("../../helpers/constants");
+const { currentBlockTime, checkErrorRevert, forwardTime, expectEvent } = require("../../helpers/test-helper");
+const { fundColonyWithTokens, setupAssignedTask, setupRatedTask, setupRandomColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

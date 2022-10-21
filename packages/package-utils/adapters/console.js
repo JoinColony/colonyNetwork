@@ -16,4 +16,4 @@ class ConsoleAdapter {
   }
 }
 
-export default ConsoleAdapter;
+module.exports = ConsoleAdapter;

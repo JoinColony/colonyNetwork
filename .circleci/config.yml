@@ -2,14 +2,15 @@ version: 2
 
 job_common: &job_common
   docker:
-    - image: cimg/node:12.22.12
+    - image: cimg/node:14.18.2
       auth:
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
+  run: 
 job_python: &job_python
   docker:
-    - image: circleci/python:3.8.0b1-stretch-node
+    - image: cimg/python:3.8.13-node
       auth:
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
@@ -17,19 +18,21 @@ job_python: &job_python
 step_save_cache: &step_save_cache
   save_cache:
     paths:
-      - ~/.cache/yarn
-    key: node-modules-{{ checksum "yarn.lock" }}
+      - ~/.npm
+    key: node-modules-{{ checksum "package-lock.json" }}
 step_restore_cache: &step_restore_cache
   restore_cache:
     keys:
-      - node-modules-{{ checksum "yarn.lock" }}
+      - node-modules-{{ checksum "package-lock.json" }}
 step_setup_global_packages: &step_setup_global_packages
   run:
     name: "Set up global packages"
     command: |
-      yarn --pure-lockfile --ignore-engines --network-concurrency 1
+      npm set cache ~/.npm
+      sudo npm install -g npm@8.5.5
+      npm ci
       git submodule update --remote --init
-      yarn run provision:token:contracts
+      npm run provision:token:contracts
 step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
@@ -41,10 +44,10 @@ step_setup_slither: &step_setup_slither
         wget https://github.com/ethereum/solidity/releases/download/v0.5.8/solc-static-linux
         chmod +x solc-static-linux
         sudo mv solc-static-linux /usr/local/bin/solc
-        sudo pip install slither-analyzer
-        sudo pip install solc-select
-        sudo solc-select install 0.7.3
-        sudo solc-select use 0.7.3
+        pip install slither-analyzer
+        pip install solc-select
+        solc-select install 0.7.3
+        solc-select use 0.7.3
 
 jobs:
   reputation-test:
@@ -63,10 +66,10 @@ jobs:
             sudo apt-get install lsof
       - run:
           name: "Running reputation system unit tests"
-          command: yarn run test:reputation
+          command: npm run test:reputation
       - run:
           name: "Running storage consistency smoke tests"
-          command: yarn run test:contracts:smoke
+          command: npm run test:contracts:smoke
   lint-and-unit-test:
     <<: *job_common
     steps:
@@ -111,43 +114,52 @@ jobs:
             sudo apt-get install lsof
       - run:
           name: "Linting JavaScript"
-          command: yarn run eslint
+          command: npm run eslint
       - run:
           name: "Linting Solidity"
-          command: yarn run solhint
+          command: npm run solhint
+      - run:
+          name: "Building Docs"
+          command: npm run build:docs
+      - run:
+          name: "Check git hooks run"
+          command: npm run check:gitchanges
       - run:
           name: "Checking contract storage variables"
-          command: yarn run check:storagevars
+          command: npm run check:storagevars
       - run:
           name: "Checking contract recovery modifiers"
-          command: yarn run check:recoverymods
+          command: npm run check:recoverymods
       - run:
           name: "Checking contract versions"
-          command: yarn run check:versioning
+          command: npm run check:versioning
+      - run:
+          name: "Provision token contracts again (needed after version check script)"
+          command: npm run provision:token:contracts
       - run:
           name: "Checking contract authDomain modifiers"
-          command: yarn run check:auth
+          command: npm run check:auth
       - run:
           name: "Running network contracts unit tests"
-          command: yarn run test:contracts
+          command: npm run test:contracts
       - run:
           name: "Cleanup ganache leftovers"
-          command: yarn run clean:ganache
+          command: npm run clean:ganache
       - run:
           name: "Running extension contracts unit tests"
-          command: yarn run test:contracts:extensions
+          command: npm run test:contracts:extensions
       - run:
           name: "Cleanup ganache leftovers"
-          command: yarn run clean:ganache
+          command: npm run clean:ganache
       - run:
           name: "Running upgrade tests"
-          command: yarn run test:contracts:upgrade:parity && yarn run test:contracts:upgrade:ganache
+          command: npm run test:contracts:upgrade:parity && npm run test:contracts:upgrade:ganache
       - run:
           name: "Running gas cost tests"
-          command: yarn run test:contracts:gasCosts && yarn run codechecks
+          command: npm run test:contracts:gasCosts && npx codechecks
       - run:
           name: "Running patricia tree tests"
-          command: yarn run test:contracts:patricia
+          command: npm run test:contracts:patricia
       - <<: *step_save_cache
       # Save test results
       - store_test_results:
@@ -167,7 +179,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running core contract unit tests with coverage"
-          command: yarn run test:contracts:coverage
+          command: npm run test:contracts:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
       - persist_to_workspace:
@@ -185,7 +197,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running upgrade tests with coverage"
-          command: yarn run test:contracts:upgrade:coverage
+          command: npm run test:contracts:upgrade:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
       - persist_to_workspace:
@@ -203,7 +215,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running extension contract unit tests with coverage"
-          command: yarn run test:contracts:extensions:coverage
+          command: npm run test:contracts:extensions:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
       - persist_to_workspace:
@@ -221,7 +233,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running reputation tests with coverage"
-          command: yarn run test:reputation:coverage
+          command: npm run test:reputation:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
       - persist_to_workspace:
@@ -239,22 +251,22 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running chainid tests with coverage for mainnet"
-          command: CHAIN_ID=1 yarn run test:contracts:chainid:coverage
+          command: CHAIN_ID=1 npm run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
       - run:
           name: "Running chainid tests with coverage for goerli"
-          command: CHAIN_ID=5 yarn run test:contracts:chainid:coverage
+          command: CHAIN_ID=5 npm run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
       - run:
           name: "Running chainid tests with coverage for xDai"
-          command: CHAIN_ID=100 yarn run test:contracts:chainid:coverage
+          command: CHAIN_ID=100 npm run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
       - run:
           name: "Running chainid tests with coverage for an unsupported network"
-          command: CHAIN_ID=777 yarn run test:contracts:chainid:coverage
+          command: CHAIN_ID=777 npm run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
       - persist_to_workspace:
@@ -271,12 +283,12 @@ jobs:
       - <<: *step_restore_cache
       - run:
           name: "Install packages"
-          command: yarn --pure-lockfile --ignore-engines --network-concurrency 1
+          command: npm ci
       - attach_workspace:
           at: ./
       - run:
           name: "Merge coverage runs and check coverage thresholds"
-          command: yarn run check:coverage
+          command: npm run check:coverage
       # Save coverage artifacts
       - store_artifacts:
           path: coverage-merged
@@ -294,7 +306,7 @@ jobs:
           name: "Slither analysis"
           command: |
             rm build/contracts/*
-            yarn run test:security:slither
+            npm run test:security:slither
   end-to-end-tests:
     <<: *job_common
     steps:
@@ -306,7 +318,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running end-to-end tests"
-          command: yarn run test:contracts:e2e
+          command: npm run test:contracts:e2e
 
 workflows:
   version: 2

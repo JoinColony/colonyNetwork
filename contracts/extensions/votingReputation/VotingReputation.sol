@@ -38,13 +38,19 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   uint256 constant SUBMIT_END = 1;
   uint256 constant REVEAL_END = 2;
 
+  bytes4 constant NO_ACTION = 0x12345678;
+
   bytes32 constant ROOT_ROLES = (
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Recovery) |
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
   );
 
-  bytes4 constant CHANGE_FUNCTION_SIG = bytes4(keccak256(
+  bytes4 constant SET_EXPENDITURE_STATE = bytes4(keccak256(
     "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"
+  ));
+
+  bytes4 constant SET_EXPENDITURE_PAYOUT = bytes4(keccak256(
+    "setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"
   ));
 
   bytes4 constant OLD_MOVE_FUNDS_SIG = bytes4(keccak256(
@@ -88,11 +94,12 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
   mapping (bytes32 => uint256) expenditureMotionCounts; // expenditure struct signature => count
 
   mapping(address => uint256) metatransactionNonces;
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+
+  function getMetatransactionNonce(address _userAddress) override public view returns (uint256 _nonce){
     // This offset is a result of fixing the storage layout, and having to prevent metatransactions being able to be replayed as a result
     // of the nonce resetting. The broadcaster has made ~3000 transactions in total at time of commit, so we definitely won't have a single
     // account at 1 million nonce by then.
-    return metatransactionNonces[userAddress] + 1000000;
+    return metatransactionNonces[_userAddress] + 1000000;
   }
 
   function incrementMetatransactionNonce(address user) override internal {
@@ -108,19 +115,14 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
 
   // Public
 
-  /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  function identifier() public override pure returns (bytes32 _identifier) {
     return keccak256("VotingReputation");
   }
 
-  /// @notice Return the version number
-  /// @return The version number
-  function version() public pure override returns (uint256) {
-    return 6;
+  function version() public pure override returns (uint256 _version) {
+    return 7;
   }
 
-  /// @notice Install the extension
-  /// @param _colony Base colony for the installation
   function install(address _colony) public override {
     require(address(colony) == address(0x0), "extension-already-installed");
 
@@ -130,15 +132,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     token = colony.getToken();
   }
 
-  /// @notice Initialise the extension
-  /// @param _totalStakeFraction The fraction of the domain's reputation we need to stake
-  /// @param _userMinStakeFraction The minimum per-user stake as fraction of total stake
-  /// @param _maxVoteFraction The fraction of the domain's reputation which must submit for quick-end
-  /// @param _voterRewardFraction The fraction of the total stake paid out to voters as rewards
-  /// @param _stakePeriod The length of the staking period in seconds
-  /// @param _submitPeriod The length of the submit period in seconds
-  /// @param _revealPeriod The length of the reveal period in seconds
-  /// @param _escalationPeriod The length of the escalation period in seconds
   function initialise(
     uint256 _totalStakeFraction,
     uint256 _voterRewardFraction,
@@ -181,44 +174,19 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     emit ExtensionInitialised();
   }
 
-  /// @notice Called when upgrading the extension
   function finishUpgrade() public override auth {
-    // For colonies that have been made since this the previous version's deployment,
-    // or have done the majority of their motions since, let's at least avoid double-emitting events for motions with
-    // the same id where we can, going forward.
-
-    // Load the value from the wrong storage slot in the previous version
-    uint256 wrongSlotValue;
-    assembly {
-      wrongSlotValue := sload(add(motionCount.slot, 1))
-    }
-    // Set the correct storage slot to the larger of the two values.
-    if (wrongSlotValue > motionCount){
-      motionCount = wrongSlotValue;
-    }
   } // solhint-disable-line no-empty-blocks
 
-  /// @notice Called when deprecating (or undeprecating) the extension
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
   }
 
-  /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
     selfdestruct(address(uint160(address(colony))));
   }
 
   // Public functions (interface)
 
-  /// @notice Create a motion
-  /// @param _domainId The domain where we vote on the motion
-  /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
-  /// @param _altTarget The contract to which we send the action (0x0 for the colony)
-  /// @param _action A bytes array encoding a function call
-  /// @param _key Reputation tree key for the root domain
-  /// @param _value Reputation tree value for the root domain
-  /// @param _branchMask The branchmask of the proof
-  /// @param _siblings The siblings of the proof
  function createMotion(
     uint256 _domainId,
     uint256 _childSkillIndex,
@@ -242,7 +210,16 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
 
     uint256 skillId;
 
-    if (ColonyRoles(target).getCapabilityRoles(action) | ROOT_ROLES == ROOT_ROLES) {
+    if ( action == NO_ACTION ) {
+      // This special action indication 'no action' for simple decisions, but
+      // there's no such function signature, so colonies don't know about it, and there's
+      // no domain to extract from the 'action'
+      // We effectively assert the 'action' is taking place in the domain the simple decision
+      // is taking place in
+      require(_childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");
+      skillId = colony.getDomain(_domainId).skillId;
+
+    } else if (ColonyRoles(target).getCapabilityRoles(action) | ROOT_ROLES == ROOT_ROLES) {
 
       // A root or unpermissioned function
       require(_domainId == 1 && _childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");
@@ -280,13 +257,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     emit MotionCreated(motionCount, msgSender(), _domainId);
   }
 
-  /// @notice Create a motion in the root domain (DEPRECATED)
-  /// @param _altTarget The contract to which we send the action (0x0 for the colony)
-  /// @param _action A bytes array encoding a function call
-  /// @param _key Reputation tree key for the root domain
-  /// @param _value Reputation tree value for the root domain
-  /// @param _branchMask The branchmask of the proof
-  /// @param _siblings The siblings of the proof
   function createRootMotion(
     address _altTarget,
     bytes memory _action,
@@ -300,14 +270,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     createMotion(1, UINT256_MAX, _altTarget, _action, _key, _value, _branchMask, _siblings);
   }
 
-  /// @notice Create a motion in any domain (DEPRECATED)
-  /// @param _domainId The domain where we vote on the motion
-  /// @param _childSkillIndex The childSkillIndex pointing to the domain of the action
-  /// @param _action A bytes array encoding a function call
-  /// @param _key Reputation tree key for the domain
-  /// @param _value Reputation tree value for the domain
-  /// @param _branchMask The branchmask of the proof
-  /// @param _siblings The siblings of the proof
   function createDomainMotion(
     uint256 _domainId,
     uint256 _childSkillIndex,
@@ -322,16 +284,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     createMotion(_domainId, _childSkillIndex, address(0x0), _action, _key, _value, _branchMask, _siblings);
   }
 
-  /// @notice Stake on a motion
-  /// @param _motionId The id of the motion
-  /// @param _permissionDomainId The domain where the extension has the arbitration permission
-  /// @param _childSkillIndex For the domain in which the motion is occurring
-  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
-  /// @param _amount The amount of tokens being staked
-  /// @param _key Reputation tree key for the staker/domain
-  /// @param _value Reputation tree value for the staker/domain
-  /// @param _branchMask The branchmask of the proof
-  /// @param _siblings The siblings of the proof
   function stakeMotion(
     uint256 _motionId,
     uint256 _permissionDomainId,
@@ -373,9 +325,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     if (
       _vote == YAY &&
       !motion.escalated &&
-      motion.stakes[YAY] == requiredStake &&
-      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
-      motion.altTarget == address(0x0)
+      motion.stakes[YAY] == requiredStake && (
+        getSig(motion.action) == SET_EXPENDITURE_STATE ||
+        getSig(motion.action) == SET_EXPENDITURE_PAYOUT
+      ) && motion.altTarget == address(0x0)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
       expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
@@ -416,13 +369,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msgSender(), motion.domainId, amount, address(this));
   }
 
-  /// @notice Submit a vote secret for a motion
-  /// @param _motionId The id of the motion
-  /// @param _voteSecret The hashed vote secret
-  /// @param _key Reputation tree key for the staker/domain
-  /// @param _value Reputation tree value for the staker/domain
-  /// @param _branchMask The branchmask of the proof
-  /// @param _siblings The siblings of the proof
   function submitVote(
     uint256 _motionId,
     bytes32 _voteSecret,
@@ -456,14 +402,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     }
   }
 
-  /// @notice Reveal a vote secret for a motion
-  /// @param _motionId The id of the motion
-  /// @param _salt The salt used to hash the vote
-  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
-  /// @param _key Reputation tree key for the staker/domain
-  /// @param _value Reputation tree value for the staker/domain
-  /// @param _branchMask The branchmask of the proof
-  /// @param _siblings The siblings of the proof
   function revealVote(
     uint256 _motionId,
     bytes32 _salt,
@@ -501,14 +439,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     tokenLocking.transfer(token, voterReward, msgSender(), true);
   }
 
-  /// @notice Escalate a motion to a higher domain
-  /// @param _motionId The id of the motion
-  /// @param _newDomainId The desired domain of escalation
-  /// @param _childSkillIndex For the current domain, relative to the escalated domain
-  /// @param _key Reputation tree key for the new domain
-  /// @param _value Reputation tree value for the new domain
-  /// @param _branchMask The branchmask of the proof
-  /// @param _siblings The siblings of the proof
   function escalateMotion(
     uint256 _motionId,
     uint256 _newDomainId,
@@ -569,9 +499,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
       motion.votes[NAY] < motion.votes[YAY]
     );
 
-    if (
-      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
-      getTarget(motion.altTarget) == address(colony)
+    if ((
+        getSig(motion.action) == SET_EXPENDITURE_STATE ||
+        getSig(motion.action) == SET_EXPENDITURE_PAYOUT
+      ) && getTarget(motion.altTarget) == address(colony)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
       expenditureMotionCounts[structHash] = sub(expenditureMotionCounts[structHash], 1);
@@ -604,13 +535,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     emit MotionFinalized(_motionId, motion.action, executed);
   }
 
-
-  /// @notice Return whether a motion, assuming it's in the finalizable state,
-  // is allowed to finalize without the call executing successfully.
-  /// @param _motionId The id of the motion
-  /// @dev We are only expecting this to be called from finalize motion in the contracts.
-  /// It is marked as public only so that the frontend can use it.
-  function failingExecutionAllowed(uint256 _motionId) public view returns (bool) {
+  function failingExecutionAllowed(uint256 _motionId) public view returns (bool _allowed) {
     Motion storage motion = motions[_motionId];
     uint256 requiredStake = getRequiredStake(_motionId);
 
@@ -624,12 +549,6 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     }
   }
 
-  /// @notice Claim the staker's reward
-  /// @param _motionId The id of the motion
-  /// @param _permissionDomainId The domain where the extension has the arbitration permission
-  /// @param _childSkillIndex For the domain in which the motion is occurring
-  /// @param _staker The staker whose reward is being claimed
-  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
   function claimReward(
     uint256 _motionId,
     uint256 _permissionDomainId,
@@ -668,93 +587,59 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
 
   // Public view functions
 
-  /// @notice Get the total stake fraction
-  /// @return The total stake fraction
-  function getTotalStakeFraction() public view returns (uint256) {
+  function getTotalStakeFraction() public view returns (uint256 _fraction) {
     return totalStakeFraction;
   }
 
-  /// @notice Get the voter reward fraction
-  /// @return The voter reward fraction
-  function getVoterRewardFraction() public view returns (uint256) {
+  function getVoterRewardFraction() public view returns (uint256 _fraction) {
     return voterRewardFraction;
   }
 
-  /// @notice Get the user min stake fraction
-  /// @return The user min stake fraction
-  function getUserMinStakeFraction() public view returns (uint256) {
+  function getUserMinStakeFraction() public view returns (uint256 _fraction) {
     return userMinStakeFraction;
   }
 
-  /// @notice Get the max vote fraction
-  /// @return The max vote fraction
-  function getMaxVoteFraction() public view returns (uint256) {
+  function getMaxVoteFraction() public view returns (uint256 _fraction) {
     return maxVoteFraction;
   }
 
-  /// @notice Get the stake period
-  /// @return The stake period
-  function getStakePeriod() public view returns (uint256) {
+  function getStakePeriod() public view returns (uint256 _period) {
     return stakePeriod;
   }
 
-  /// @notice Get the submit period
-  /// @return The submit period
-  function getSubmitPeriod() public view returns (uint256) {
+  function getSubmitPeriod() public view returns (uint256 _period) {
     return submitPeriod;
   }
 
-  /// @notice Get the reveal period
-  /// @return The reveal period
-  function getRevealPeriod() public view returns (uint256) {
+  function getRevealPeriod() public view returns (uint256 _period) {
     return revealPeriod;
   }
 
-  /// @notice Get the escalation period
-  /// @return The escalation period
-  function getEscalationPeriod() public view returns (uint256) {
+  function getEscalationPeriod() public view returns (uint256 _period) {
     return escalationPeriod;
   }
 
-  /// @notice Get the total motion count
-  /// @return The total motion count
-  function getMotionCount() public view returns (uint256) {
+  function getMotionCount() public view returns (uint256 _count) {
     return motionCount;
   }
 
-  /// @notice Get the data for a single motion
-  /// @param _motionId The id of the motion
-  /// @return motion The motion struct
-  function getMotion(uint256 _motionId) public view returns (Motion memory motion) {
-    motion = motions[_motionId];
+  function getMotion(uint256 _motionId) public view returns (Motion memory _motion) {
+    _motion = motions[_motionId];
   }
 
-  /// @notice Get a user's stake on a motion
-  /// @param _motionId The id of the motion
-  /// @param _staker The staker address
-  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
-  /// @return The user's stake
-  function getStake(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256) {
+  function getStake(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256 _stake) {
     return stakes[_motionId][_staker][_vote];
   }
 
-  /// @notice Get the number of ongoing motions for a single expenditure / expenditure slot
-  /// @param _structHash The hash of the expenditureId or expenditureId*expenditureSlot
-  /// @return The number of ongoing motions
-  function getExpenditureMotionCount(bytes32 _structHash) public view returns (uint256) {
+  function getExpenditureMotionCount(bytes32 _structHash) public view returns (uint256 _count) {
     return expenditureMotionCounts[_structHash];
   }
 
-  /// @notice Get the largest past vote on a single expenditure variable
-  /// @param _actionHash The hash of the particular expenditure action
-  /// @return The largest past vote on this variable
-  function getExpenditurePastVote(bytes32 _actionHash) public view returns (uint256) {
+  function getExpenditurePastVote(bytes32 _actionHash) public view returns (uint256 _vote) {
     return expenditurePastVotes[_actionHash];
   }
 
-  /// @notice Get the current state of the motion
-  /// @return The current motion state
-  function getMotionState(uint256 _motionId) public view returns (MotionState) {
+  function getMotionState(uint256 _motionId) public view returns (MotionState _motionState) {
     Motion storage motion = motions[_motionId];
     uint256 requiredStake = getRequiredStake(_motionId);
 
@@ -779,10 +664,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
         return MotionState.Staking;
       // If not, did the YAY side stake?
       } else if (motion.stakes[YAY] == requiredStake) {
-        return MotionState.Finalizable;
+        return finalizableOrFinalized(motion.action);
       // If not, was there a prior vote we can fall back on?
       } else if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
-        return MotionState.Finalizable;
+        return finalizableOrFinalized(motion.action);
       // Otherwise, the motion failed
       } else {
         return MotionState.Failed;
@@ -801,33 +686,25 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
       ) {
         return MotionState.Closed;
       } else {
-        return MotionState.Finalizable;
+        return finalizableOrFinalized(motion.action);
       }
-
     }
   }
 
-  /// @notice Get the voter reward
-  /// NB This function will only return a meaningful value if in the reveal state.
-  /// Prior to the reveal state, getVoterRewardRange should be used.
-  /// @param _motionId The id of the motion
-  /// @param _voterRep The reputation the voter has in the domain
-  /// @return The voter reward
-  function getVoterReward(uint256 _motionId, uint256 _voterRep) public view returns (uint256) {
+  // If we decide that the motion is finalizable, we might actually want it to report as finalized if it's a no-action
+  // motion.
+  function finalizableOrFinalized(bytes memory action) internal pure returns (MotionState) {
+    return getSig(action) == NO_ACTION ? MotionState.Finalized : MotionState.Finalizable;
+  }
+
+  function getVoterReward(uint256 _motionId, uint256 _voterRep) public view returns (uint256 _reward) {
     Motion storage motion = motions[_motionId];
     uint256 fractionUserReputation = wdiv(_voterRep, motion.repSubmitted);
     uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
     return wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
   }
 
-  /// @notice Get the range of potential rewards for a voter on a specific motion, intended to be
-  /// used when the motion is in the reveal state.
-  /// Once a motion is in the reveal state the reward is known, and getVoterRewardRange should be used.
-  /// @param _motionId The id of the motion
-  /// @param _voterRep The reputation the voter has in the domain
-  /// @param _voterAddress The address the user will be voting as
-  /// @return The voter reward
-  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) public view returns (uint256, uint256) {
+  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) public view returns (uint256 _rewardMin, uint256 _rewardMax) {
     Motion storage motion = motions[_motionId];
     // The minimum reward is when everyone has voted, with a total weight of motion.skillRep
     uint256 minFractionUserReputation = wdiv(_voterRep, motion.skillRep);
@@ -849,12 +726,7 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     );
   }
 
-  /// @notice Get the staker reward
-  /// @param _motionId The id of the motion
-  /// @param _staker The staker's address
-  /// @param _vote The vote (0 = NAY, 1 = YAY)
-  /// @return The staker reward and the reputation penalty (if any)
-  function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256, uint256) {
+  function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256 _reward, uint256 _penalty) {
     Motion storage motion = motions[_motionId];
 
     uint256 totalSideStake = add(motion.stakes[_vote], motion.pastVoterComp[_vote]);
@@ -1006,41 +878,51 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     }
   }
 
-  function getSig(bytes memory action) internal returns (bytes4 sig) {
+  function getSig(bytes memory action) internal pure returns (bytes4 sig) {
     assembly {
       sig := mload(add(action, 0x20))
     }
   }
 
   function hashExpenditureAction(bytes memory action) internal returns (bytes32 hash) {
+    bytes4 sig = getSig(action);
+    assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
+
+    uint256 valueLoc = (sig == SET_EXPENDITURE_STATE) ? 0xe4 : 0xc4;
+
+    // Hash all but the domain proof and action value, so actions for the
+    //   same storage slot return the same hash.
+    // Recall: mload(action) gives the length of the bytes array
+    // So skip past the three bytes32 (length + domain proof),
+    //   plus 4 bytes for the sig (0x64). Subtract the same from the end, less
+    //   the length bytes32 (0x44). And zero out the value.
+
     assembly {
-      // Hash all but the domain proof and value, so actions for the same
-      //   storage slot return the same value.
-      // Recall: mload(action) gives length of bytes array
-      // So skip past the three bytes32 (length + domain proof),
-      //   plus 4 bytes for the sig. Subtract the same from the end, less
-      //   the length bytes32. The value itself is located at 0xe4, zero it out.
-      mstore(add(action, 0xe4), 0x0)
+      mstore(add(action, valueLoc), 0x0)
       hash := keccak256(add(action, 0x64), sub(mload(action), 0x44))
     }
   }
 
   function hashExpenditureActionStruct(bytes memory action) internal returns (bytes32 hash) {
-    assert(getSig(action) == CHANGE_FUNCTION_SIG);
+    bytes4 sig = getSig(action);
+    assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
 
     uint256 expenditureId;
-    uint256 storageSlot;
+    uint256 storageSlot; // This value is only used if (sig == SET_EXPENDITURE_STATE)
     uint256 expenditureSlot;
 
     assembly {
       expenditureId := mload(add(action, 0x64))
       storageSlot := mload(add(action, 0x84))
-      expenditureSlot := mload(add(action, 0x184))
     }
 
-    if (storageSlot == 25) {
+    if (sig == SET_EXPENDITURE_STATE && storageSlot == 25) {
       hash = keccak256(abi.encodePacked(expenditureId));
     } else {
+      uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
+      assembly {
+        expenditureSlot := mload(add(action, expenditureSlotLoc))
+      }
       hash = keccak256(abi.encodePacked(expenditureId, expenditureSlot));
     }
   }
@@ -1057,14 +939,18 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     //   of 0x20 represents advancing one byte, 4 is the function signature.
     // So: 0x[length][sig][args...]
 
-    bytes32 functionSignature;
+    bytes4 sig = getSig(action);
+    assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
+
+    bytes4 functionSignature = SET_EXPENDITURE_STATE;
+
     uint256 permissionDomainId;
     uint256 childSkillIndex;
     uint256 expenditureId;
-    uint256 storageSlot;
+    uint256 storageSlot; // This value is only used if (sig == SET_EXPENDITURE_STATE)
+    uint256 expenditureSlot;
 
     assembly {
-      functionSignature := mload(add(action, 0x20))
       permissionDomainId := mload(add(action, 0x24))
       childSkillIndex := mload(add(action, 0x44))
       expenditureId := mload(add(action, 0x64))
@@ -1072,49 +958,50 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs, BasicMetaTrans
     }
 
     // If we are editing the main expenditure struct
-    if (storageSlot == 25) {
-
+    if (sig == SET_EXPENDITURE_STATE && storageSlot == 25) {
       bytes memory mainClaimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
+
       assembly {
-          mstore(add(mainClaimDelayAction, 0x20), functionSignature)
-          mstore(add(mainClaimDelayAction, 0x24), permissionDomainId)
-          mstore(add(mainClaimDelayAction, 0x44), childSkillIndex)
-          mstore(add(mainClaimDelayAction, 0x64), expenditureId)
-          mstore(add(mainClaimDelayAction, 0x84), 25)     // expenditure storage slot
-          mstore(add(mainClaimDelayAction, 0xa4), 0xe0)   // mask location
-          mstore(add(mainClaimDelayAction, 0xc4), 0x120)  // keys location
-          mstore(add(mainClaimDelayAction, 0xe4), value)
-          mstore(add(mainClaimDelayAction, 0x104), 1)     // mask length
-          mstore(add(mainClaimDelayAction, 0x124), 1)     // offset
-          mstore(add(mainClaimDelayAction, 0x144), 1)     // keys length
-          mstore(add(mainClaimDelayAction, 0x164), 4)     // globalClaimDelay offset
+        mstore(add(mainClaimDelayAction, 0x20), functionSignature)
+        mstore(add(mainClaimDelayAction, 0x24), permissionDomainId)
+        mstore(add(mainClaimDelayAction, 0x44), childSkillIndex)
+        mstore(add(mainClaimDelayAction, 0x64), expenditureId)
+        mstore(add(mainClaimDelayAction, 0x84), 25)     // expenditure storage slot
+        mstore(add(mainClaimDelayAction, 0xa4), 0xe0)   // mask location
+        mstore(add(mainClaimDelayAction, 0xc4), 0x120)  // keys location
+        mstore(add(mainClaimDelayAction, 0xe4), value)
+        mstore(add(mainClaimDelayAction, 0x104), 1)     // mask length
+        mstore(add(mainClaimDelayAction, 0x124), 1)     // offset
+        mstore(add(mainClaimDelayAction, 0x144), 1)     // keys length
+        mstore(add(mainClaimDelayAction, 0x164), 4)     // globalClaimDelay offset
       }
+
       return mainClaimDelayAction;
 
     // If we are editing an expenditure slot
     } else {
-
       bytes memory slotClaimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
-      uint256 expenditureSlot;
+      uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
 
       assembly {
-          expenditureSlot := mload(add(action, 0x184))
+        expenditureSlot := mload(add(action, expenditureSlotLoc))
 
-          mstore(add(slotClaimDelayAction, 0x20), functionSignature)
-          mstore(add(slotClaimDelayAction, 0x24), permissionDomainId)
-          mstore(add(slotClaimDelayAction, 0x44), childSkillIndex)
-          mstore(add(slotClaimDelayAction, 0x64), expenditureId)
-          mstore(add(slotClaimDelayAction, 0x84), 26)     // expenditureSlot storage slot
-          mstore(add(slotClaimDelayAction, 0xa4), 0xe0)   // mask location
-          mstore(add(slotClaimDelayAction, 0xc4), 0x140)  // keys location
-          mstore(add(slotClaimDelayAction, 0xe4), value)
-          mstore(add(slotClaimDelayAction, 0x104), 2)     // mask length
-          mstore(add(slotClaimDelayAction, 0x124), 0)     // mapping
-          mstore(add(slotClaimDelayAction, 0x144), 1)     // offset
-          mstore(add(slotClaimDelayAction, 0x164), 2)     // keys length
-          mstore(add(slotClaimDelayAction, 0x184), expenditureSlot)
-          mstore(add(slotClaimDelayAction, 0x1a4), 1)     // claimDelay offset
+        mstore(add(slotClaimDelayAction, 0x20), functionSignature)
+        mstore(add(slotClaimDelayAction, 0x24), permissionDomainId)
+        mstore(add(slotClaimDelayAction, 0x44), childSkillIndex)
+        mstore(add(slotClaimDelayAction, 0x64), expenditureId)
+        mstore(add(slotClaimDelayAction, 0x84), 26)     // expenditureSlot storage slot
+        mstore(add(slotClaimDelayAction, 0xa4), 0xe0)   // mask location
+        mstore(add(slotClaimDelayAction, 0xc4), 0x140)  // keys location
+        mstore(add(slotClaimDelayAction, 0xe4), value)
+        mstore(add(slotClaimDelayAction, 0x104), 2)     // mask length
+        mstore(add(slotClaimDelayAction, 0x124), 0)     // mapping
+        mstore(add(slotClaimDelayAction, 0x144), 1)     // offset
+        mstore(add(slotClaimDelayAction, 0x164), 2)     // keys length
+        mstore(add(slotClaimDelayAction, 0x184), expenditureSlot)
+        mstore(add(slotClaimDelayAction, 0x1a4), 1)     // claimDelay offset
       }
+
       return slotClaimDelayAction;
 
     }

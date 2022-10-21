@@ -68,7 +68,6 @@ contract ColonyExpenditure is ColonyStorage {
   function transferExpenditure(uint256 _id, address _newOwner)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraftOrLocked(_id)
     expenditureOnlyOwner(_id)
   {
@@ -86,9 +85,8 @@ contract ColonyExpenditure is ColonyStorage {
   )
     public
     stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
-    expenditureExists(_id)
     expenditureDraftOrLocked(_id)
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     expenditures[_id].owner = _newOwner;
 
@@ -98,7 +96,6 @@ contract ColonyExpenditure is ColonyStorage {
   function cancelExpenditure(uint256 _id)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
@@ -110,7 +107,6 @@ contract ColonyExpenditure is ColonyStorage {
   function lockExpenditure(uint256 _id)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
@@ -122,7 +118,6 @@ contract ColonyExpenditure is ColonyStorage {
   function finalizeExpenditure(uint256 _id)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraftOrLocked(_id)
     expenditureOnlyOwner(_id)
   {
@@ -138,7 +133,6 @@ contract ColonyExpenditure is ColonyStorage {
   function setExpenditureMetadata(uint256 _id, string memory _metadata)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
@@ -153,7 +147,7 @@ contract ColonyExpenditure is ColonyStorage {
   )
     public
     stoppable
-    expenditureExists(_id)
+    validExpenditure(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     emit ExpenditureMetadataSet(msgSender(), _id, _metadata);
@@ -162,7 +156,6 @@ contract ColonyExpenditure is ColonyStorage {
   function setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address payable[] memory _recipients)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
@@ -178,7 +171,6 @@ contract ColonyExpenditure is ColonyStorage {
   function setExpenditureSkills(uint256 _id, uint256[] memory _slots, uint256[] memory _skillIds)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
@@ -201,7 +193,6 @@ contract ColonyExpenditure is ColonyStorage {
   function setExpenditureClaimDelays(uint256 _id, uint256[] memory _slots, uint256[] memory _claimDelays)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
@@ -217,7 +208,6 @@ contract ColonyExpenditure is ColonyStorage {
   function setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers)
     public
     stoppable
-    expenditureExists(_id)
     expenditureDraft(_id)
     expenditureOnlyOwner(_id)
   {
@@ -228,6 +218,32 @@ contract ColonyExpenditure is ColonyStorage {
 
       emit ExpenditurePayoutModifierSet(msgSender(), _id, _slots[i], _payoutModifiers[i]);
     }
+  }
+
+  function setExpenditureValues(
+    uint256 _id,
+    uint256[] memory _recipientSlots,
+    address payable[] memory _recipients,
+    uint256[] memory _skillIdSlots,
+    uint256[] memory _skillIds,
+    uint256[] memory _claimDelaySlots,
+    uint256[] memory _claimDelays,
+    uint256[] memory _payoutModifierSlots,
+    int256[] memory _payoutModifiers,
+    address[] memory _payoutTokens,
+    uint256[][] memory _payoutSlots,
+    uint256[][] memory _payoutValues
+  )
+    public
+    stoppable
+    expenditureDraft(_id)
+    expenditureOnlyOwner(_id)
+  {
+    if (_recipients.length > 0) { setExpenditureRecipients(_id, _recipientSlots, _recipients); }
+    if (_skillIds.length > 0) { setExpenditureSkills(_id, _skillIdSlots, _skillIds); }
+    if (_claimDelays.length > 0) { setExpenditureClaimDelays(_id, _claimDelaySlots, _claimDelays); }
+    if (_payoutModifiers.length > 0) { setExpenditurePayoutModifiers(_id, _payoutModifierSlots, _payoutModifiers); }
+    if (_payoutTokens.length > 0) { setExpenditurePayouts(_id, _payoutTokens, _payoutSlots, _payoutValues); }
   }
 
   // Deprecated
@@ -268,7 +284,6 @@ contract ColonyExpenditure is ColonyStorage {
 
   uint256 constant EXPENDITURES_SLOT = 25;
   uint256 constant EXPENDITURESLOTS_SLOT = 26;
-  uint256 constant EXPENDITURESLOTPAYOUTS_SLOT = 27;
 
   function setExpenditureState(
     uint256 _permissionDomainId,
@@ -281,10 +296,11 @@ contract ColonyExpenditure is ColonyStorage {
   )
     public
     stoppable
-    expenditureExists(_id)
+    validExpenditure(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
-    // Only allow editing expenditure status, owner, and finalizedTimestamp
+    // Only allow editing expenditure status, owner, finalizedTimestamp, and globalClaimDelay
+    //  Do not allow editing of fundingPotId or domainId
     //  Note that status + owner occupy one slot
     if (_storageSlot == EXPENDITURES_SLOT) {
       require(_keys.length == 1, "colony-expenditure-bad-keys");
@@ -306,15 +322,13 @@ contract ColonyExpenditure is ColonyStorage {
         );
       }
 
-    // Should always be two mappings
-    } else if (_storageSlot == EXPENDITURESLOTPAYOUTS_SLOT) {
-      require(_keys.length == 2, "colony-expenditure-bad-keys");
-
     } else {
       require(false, "colony-expenditure-bad-slot");
     }
 
     executeStateChange(keccak256(abi.encode(_id, _storageSlot)), _mask, _keys, _value);
+
+    emit ExpenditureStateChanged(msgSender(), _id, _storageSlot, _mask, _keys, _value);
   }
 
   // Public view functions
@@ -336,6 +350,28 @@ contract ColonyExpenditure is ColonyStorage {
   }
 
   // Internal functions
+
+  // Used to avoid stack error in setExpenditureValues
+  function setExpenditurePayouts(
+    uint256 _id,
+    address[] memory _tokens,
+    uint256[][] memory _slots,
+    uint256[][] memory _values
+  )
+    internal
+  {
+    for (uint256 i; i < _tokens.length; i++) {
+      (bool success, bytes memory returndata) = address(this).delegatecall(
+        abi.encodeWithSignature("setExpenditurePayouts(uint256,uint256[],address,uint256[])", _id, _slots[i], _tokens[i], _values[i])
+      );
+      if (!success) {
+        if (returndata.length == 0) revert();
+        assembly {
+          revert(add(32, returndata), mload(returndata))
+        }
+      }
+    }
+  }
 
   bool constant MAPPING = false;
   bool constant ARRAY = true;

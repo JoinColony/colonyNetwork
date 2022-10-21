@@ -1,11 +1,40 @@
-require("@babel/register");
-require("@babel/polyfill");
 const HDWalletProvider = require("truffle-hdwallet-provider");
-const ganache = require("ganache-core");
+const ganache = require("ganache");
 
-const ganacheProvider = ganache.provider({ total_accounts: 14, seed: "smoketest" });
+const ganacheProvider = ganache.provider({ total_accounts: 14, seed: "smoketest", logging: { quiet: true } });
+const LedgerWalletProvider = require("@umaprotocol/truffle-ledger-provider");
+
+const ledgerOptions = {
+  networkId: 100, // xdai
+  path: "44'/60'/0'/0", // ledger default derivation path
+  askConfirm: false,
+  accountsLength: 1,
+  accountsOffset: 0,
+};
 
 const DISABLE_DOCKER = !process.env.DISABLE_DOCKER;
+
+const coverageOptimiserSettings = {
+  enabled: false,
+  runs: 200,
+  details: {
+    peephole: false,
+    jumpdestRemover: false,
+    orderLiterals: true, // <-- TRUE! Stack too deep when false
+    deduplicate: false,
+    cse: false,
+    constantOptimizer: false,
+    yul: true,
+    yulDetails: {
+      stackAllocation: true,
+    },
+  },
+};
+
+const normalOptimizerSettings = {
+  enabled: true,
+  runs: 200,
+};
 
 module.exports = {
   networks: {
@@ -15,6 +44,7 @@ module.exports = {
       gasPrice: 0,
       network_id: "*",
       skipDryRun: true,
+      disableConfirmationListener: true,
     },
     integration: {
       host: "localhost",
@@ -28,6 +58,7 @@ module.exports = {
       port: 8555,
       network_id: parseInt(process.env.CHAIN_ID, 10) || 1999,
       skipDryRun: true,
+      disableConfirmationListener: true,
     },
     goerliFork: {
       host: "localhost",
@@ -59,6 +90,18 @@ module.exports = {
       },
       network_id: "*",
     },
+    xdai: {
+      url: "https://xdai-archive.blockscout.com/",
+      gasPrice: 2000000000,
+      network_id: 100,
+    },
+    xdaiLedger: {
+      provider() {
+        return new LedgerWalletProvider(ledgerOptions, "https://xdai-archive.blockscout.com/");
+      },
+      network_id: 100,
+      gasPrice: 2000000000,
+    },
   },
   mocha: {
     reporter: "mocha-circleci-reporter",
@@ -76,13 +119,10 @@ module.exports = {
       docker: DISABLE_DOCKER,
       parser: "solcjs",
       settings: {
-        optimizer: {
-          enabled: true,
-          runs: 200,
-        },
+        optimizer: process.env.SOLIDITY_COVERAGE ? coverageOptimiserSettings : normalOptimizerSettings,
         evmVersion: "istanbul",
       },
     },
   },
-  plugins: ["truffle-security", "solidity-coverage"],
+  plugins: ["solidity-coverage"],
 };

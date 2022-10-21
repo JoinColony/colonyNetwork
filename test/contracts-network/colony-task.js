@@ -1,11 +1,11 @@
 /* global artifacts */
-import BN from "bn.js";
-import { ethers } from "ethers";
-import chai from "chai";
-import bnChai from "bn-chai";
-import { soliditySha3 } from "web3-utils";
+const BN = require("bn.js");
+const { ethers } = require("ethers");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { soliditySha3 } = require("web3-utils");
 
-import {
+const {
   UINT256_MAX,
   WAD,
   MANAGER_ROLE,
@@ -30,11 +30,12 @@ import {
   RATING_2_SECRET,
   MAX_PAYOUT,
   GLOBAL_SKILL_ID,
-} from "../../helpers/constants";
+  ADDRESS_ZERO,
+} = require("../../helpers/constants");
 
-import { getSigsAndTransactionData, executeSignedTaskChange, executeSignedRoleAssignment } from "../../helpers/task-review-signing";
+const { getSigsAndTransactionData, executeSignedTaskChange, executeSignedRoleAssignment } = require("../../helpers/task-review-signing");
 
-import {
+const {
   getTokenArgs,
   web3GetBalance,
   checkErrorRevert,
@@ -44,9 +45,9 @@ import {
   currentBlockTime,
   addTaskSkillEditingFunctions,
   web3GetStorageAt,
-} from "../../helpers/test-helper";
+} = require("../../helpers/test-helper");
 
-import {
+const {
   fundColonyWithTokens,
   setupFinalizedTask,
   setupRatedTask,
@@ -55,8 +56,8 @@ import {
   makeTask,
   setupRandomColony,
   assignRoles,
-} from "../../helpers/test-data-generator";
-import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+} = require("../../helpers/test-data-generator");
+const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -946,6 +947,16 @@ contract("ColonyTask", (accounts) => {
     it("should fail if a non-colony call is made to the task update functions", async () => {
       await makeTask({ colony });
       await checkErrorRevert(colony.setTaskBrief(1, SPECIFICATION_HASH_UPDATED, { from: OTHER }), "colony-not-self");
+      await checkErrorRevert(colony.setTaskManagerPayout(1, ADDRESS_ZERO, 0), "colony-not-self");
+      await checkErrorRevert(colony.setTaskEvaluatorPayout(1, ADDRESS_ZERO, 0), "colony-not-self");
+      await checkErrorRevert(colony.setTaskWorkerPayout(1, ADDRESS_ZERO, 0), "colony-not-self");
+      await checkErrorRevert(colony.setTaskManagerRole(1, ADDRESS_ZERO, 0, 0), "colony-not-self");
+      await checkErrorRevert(colony.setTaskEvaluatorRole(1, ADDRESS_ZERO), "colony-not-self");
+      await checkErrorRevert(colony.setTaskWorkerRole(1, ADDRESS_ZERO), "colony-not-self");
+      await checkErrorRevert(colony.removeTaskEvaluatorRole(1), "colony-not-self");
+      await checkErrorRevert(colony.removeTaskWorkerRole(1), "colony-not-self");
+      await checkErrorRevert(colony.setTaskDueDate(1, 0), "colony-not-self");
+      await checkErrorRevert(colony.cancelTask(1), "colony-not-self");
     });
 
     it("should fail update of task brief signed by a non-registered role", async () => {
@@ -1292,6 +1303,10 @@ contract("ColonyTask", (accounts) => {
       expect(task.status).to.eq.BN(FINALIZED_TASK_STATE);
     });
 
+    it("cannot complete a task that does not exist", async () => {
+      await checkErrorRevert(colony.completeTask(100), "colony-task-does-not-exist");
+    });
+
     it("should fail if the task work ratings have not been assigned and they still have time to be", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const dueDate = await currentBlockTime();
@@ -1347,6 +1362,20 @@ contract("ColonyTask", (accounts) => {
 
       const task = await colony.getTask(taskId);
       expect(task.status).to.eq.BN(CANCELLED_TASK_STATE);
+    });
+
+    it("cannot cancel a task that doesn't exist", async () => {
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          taskId: 100,
+          functionName: "cancelTask",
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [100],
+        }),
+        "colony-task-does-not-exist"
+      );
     });
 
     it("should be possible to return funds back to the domain", async () => {
@@ -1707,6 +1736,20 @@ contract("ColonyTask", (accounts) => {
         "colony-task-change-execution-failed" // Should be "colony-payout-too-large"
       );
     });
+
+    it("should not be able to set a payout on a task that doesn't exist", async () => {
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          taskId: 1000,
+          functionName: "setTaskManagerPayout",
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [1000, ethers.constants.AddressZero, MAX_PAYOUT.addn(1)],
+        }),
+        "colony-task-does-not-exist"
+      );
+    });
   });
 
   describe("when claiming payout for a task", () => {
@@ -1755,7 +1798,7 @@ contract("ColonyTask", (accounts) => {
       const workerBalanceBefore = await web3GetBalance(WORKER);
       const metaBalanceBefore = await web3GetBalance(metaColony.address);
 
-      await colony.claimTaskPayout(taskId, WORKER_ROLE, ethers.constants.AddressZero, { gasPrice: 0 });
+      await colony.claimTaskPayout(taskId, WORKER_ROLE, ethers.constants.AddressZero);
 
       const workerBalanceAfter = await web3GetBalance(WORKER);
       expect(new BN(workerBalanceAfter).sub(new BN(workerBalanceBefore))).to.eq.BN(new BN(197));

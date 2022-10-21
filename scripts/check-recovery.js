@@ -1,6 +1,8 @@
-import parser from "solidity-parser-diligence";
-import fs from "fs";
-import path from "path";
+#!/usr/bin/env node
+
+const parser = require("@solidity-parser/parser");
+const fs = require("fs");
+const path = require("path");
 
 // Taken from https://gist.github.com/kethinov/6658166#gistcomment-1941504
 const walkSync = (dir, filelist = []) => {
@@ -47,8 +49,10 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/extensions/ColonyExtension.sol",
       "contracts/extensions/ColonyExtensionMeta.sol",
       "contracts/extensions/EvaluatedExpenditure.sol",
+      "contracts/extensions/StakedExpenditure.sol",
       "contracts/extensions/FundingQueue.sol",
       "contracts/extensions/OneTxPayment.sol",
+      "contracts/extensions/StreamingPayments.sol",
       "contracts/extensions/TokenSupplier.sol",
       "contracts/extensions/votingReputation/VotingReputation.sol",
       "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol",

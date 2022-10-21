@@ -1,15 +1,16 @@
 /* globals artifacts */
-import shortid from "shortid";
-import chai from "chai";
-import { asciiToHex, isBN } from "web3-utils";
-import BN from "bn.js";
-import { ethers } from "ethers";
-import { BigNumber } from "bignumber.js";
+const shortid = require("shortid");
+const chai = require("chai");
+const { asciiToHex, isBN } = require("web3-utils");
+const BN = require("bn.js");
+const { ethers } = require("ethers");
+const { BigNumber } = require("bignumber.js");
 
-import { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION } from "./constants";
+const { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("./constants");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
@@ -21,88 +22,88 @@ const ColonyDomains = artifacts.require("ColonyDomains");
 
 const { expect } = chai;
 
-export function web3GetNetwork() {
+exports.web3GetNetwork = async function web3GetNetwork() {
   return new Promise((resolve, reject) => {
     web3.eth.net.getId((err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
   });
-}
+};
 
-export function web3GetClient() {
+exports.web3GetClient = async function web3GetClient() {
   return new Promise((resolve, reject) => {
     web3.eth.getNodeInfo((err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
   });
-}
+};
 
-export function web3GetBalance(account) {
+exports.web3GetBalance = async function web3GetBalance(account) {
   return new Promise((resolve, reject) => {
     web3.eth.getBalance(account, (err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
   });
-}
+};
 
-export function web3GetStorageAt(address, position) {
+exports.web3GetStorageAt = async function web3GetStorageAt(address, position) {
   return new Promise((resolve, reject) => {
     web3.eth.getStorageAt(address, position, (err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
   });
-}
+};
 
-export function web3GetTransaction(txid) {
+exports.web3GetTransaction = async function web3GetTransaction(txid) {
   return new Promise((resolve, reject) => {
     web3.eth.getTransaction(txid, (err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
   });
-}
+};
 
-export function web3GetTransactionReceipt(txid) {
+exports.web3GetTransactionReceipt = async function web3GetTransactionReceipt(txid) {
   return new Promise((resolve, reject) => {
     web3.eth.getTransactionReceipt(txid, (err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
   });
-}
+};
 
-export function web3GetFirstTransactionHashFromLastBlock() {
+exports.web3GetFirstTransactionHashFromLastBlock = async function web3GetFirstTransactionHashFromLastBlock() {
   return new Promise((resolve, reject) => {
     web3.eth.getBlock("latest", true, (err, res) => {
       if (err !== null) return reject(err);
       return resolve(res.transactions[0].hash);
     });
   });
-}
+};
 
-export function web3GetCode(a) {
+exports.web3GetCode = async function web3GetCode(a) {
   return new Promise((resolve, reject) => {
     web3.eth.getCode(a, (err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
   });
-}
+};
 
-export function web3GetAccounts() {
+exports.web3GetAccounts = async function web3GetAccounts() {
   return new Promise((resolve, reject) => {
     web3.eth.getAccounts((err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
   });
-}
+};
 
-export function web3GetChainId() {
+exports.web3GetChainId = async function web3GetChainId() {
   const packet = {
     jsonrpc: "2.0",
     method: "eth_chainId",
@@ -116,9 +117,9 @@ export function web3GetChainId() {
       return resolve(parseInt(res.result, 16));
     });
   });
-}
+};
 
-export function web3SignTypedData(address, typedData) {
+exports.web3SignTypedData = function web3SignTypedData(address, typedData) {
   const packet = {
     jsonrpc: "2.0",
     method: "eth_signTypedData",
@@ -132,13 +133,13 @@ export function web3SignTypedData(address, typedData) {
       return resolve(res.result);
     });
   });
-}
+};
 
-export function web3GetRawCall(params) {
+exports.web3GetRawCall = function web3GetRawCall(params, blockTag) {
   const packet = {
     jsonrpc: "2.0",
     method: "eth_call",
-    params: [params],
+    params: [params, blockTag],
     id: new Date().getTime(),
   };
 
@@ -148,10 +149,10 @@ export function web3GetRawCall(params) {
       return resolve(res);
     });
   });
-}
+};
 
 // Borrowed from `truffle` https://github.com/trufflesuite/truffle/blob/next/packages/truffle-contract/lib/reason.js
-export function extractReasonString(res) {
+exports.extractReasonString = function extractReasonString(res) {
   if (!res || (!res.error && !res.result)) return "";
 
   const errorStringHash = "0x08c379a0";
@@ -160,19 +161,19 @@ export function extractReasonString(res) {
   const isString = res && typeof res === "object" && typeof res.result === "string";
 
   if (isObject) {
-    const { data } = res.error;
-    const hash = Object.keys(data)[0];
-
-    if (data[hash].return && data[hash].return.includes(errorStringHash)) {
-      return web3.eth.abi.decodeParameter("string", data[hash].return.slice(10));
+    if (res && res.error && res.error.data) {
+      const hash = res.error.data;
+      if (hash.includes(errorStringHash)) {
+        return web3.eth.abi.decodeParameter("string", hash.slice(10));
+      }
     }
   } else if (isString && res.result.includes(errorStringHash)) {
     return web3.eth.abi.decodeParameter("string", res.result.slice(10));
   }
   return "";
-}
+};
 
-export async function checkErrorRevert(promise, errorMessage) {
+exports.checkErrorRevert = async function checkErrorRevert(promise, errorMessage) {
   // There is a discrepancy between how ganache-cli handles errors
   // (throwing an exception all the way up to these tests) and how geth/parity handle them
   // (still making a valid transaction and returning a txid). For the explanation of why
@@ -188,33 +189,58 @@ export async function checkErrorRevert(promise, errorMessage) {
     // If this tx has come from the mining client, the promise has just resolved to a tx hash and we need to do the following
     if (!receipt) {
       const txid = await promise;
-      receipt = await web3GetTransactionReceipt(txid);
+      receipt = await exports.web3GetTransactionReceipt(txid);
+      // Check the receipt `status` to ensure transaction failed.
     }
+    expect(receipt.status, `Transaction succeeded, but expected error ${errorMessage}`).to.be.false;
   } catch (err) {
-    ({ receipt, reason } = err);
+    if (err.toString().indexOf("AssertionError: Transaction succeeded, but expected error") === 0) {
+      throw err;
+    }
+    ({ reason } = err);
     expect(reason).to.equal(errorMessage);
   }
-  // Check the receipt `status` to ensure transaction failed.
-  expect(receipt.status, `Transaction succeeded, but expected error ${errorMessage}`).to.be.false;
-}
+};
 
-export async function checkErrorRevertEthers(promise, errorMessage) {
+exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, errorMessage) {
   let receipt;
   try {
     receipt = await promise;
   } catch (err) {
     const txid = err.transactionHash;
-    const tx = await web3GetTransaction(txid);
-    const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
-    const reason = extractReasonString(response);
+    const tx = await exports.web3GetTransaction(txid);
+    receipt = await exports.web3GetTransactionReceipt(txid);
+
+    const response = await exports.web3GetRawCall(
+      {
+        from: tx.from,
+        to: tx.to,
+        data: tx.input,
+        gas: tx.gas,
+        value: ethers.utils.hexlify(parseInt(tx.value, 10)),
+      },
+      receipt.blockNumber
+    );
+    const reason = exports.extractReasonString(response);
     expect(reason).to.equal(errorMessage);
     return;
   }
 
   expect(receipt.status, `Transaction succeeded, but expected to fail with: ${errorMessage}`).to.be.zero;
-}
+};
 
-export async function checkSuccessEthers(promise, errorMessage) {
+// Sometimes we might have to use this function because of
+// https://github.com/trufflesuite/truffle/issues/4900
+// Once that's fixed, hopefully we can get rid of it
+exports.checkErrorRevertEstimateGas = async function checkErrorRevertTruffleWorkaround(promise, errorMessage) {
+  try {
+    await promise;
+  } catch (err) {
+    expect(err.toString()).to.contain(errorMessage);
+  }
+};
+
+exports.checkSuccessEthers = async function checkSuccessEthers(promise, errorMessage) {
   let receipt;
   try {
     receipt = await promise;
@@ -226,28 +252,28 @@ export async function checkSuccessEthers(promise, errorMessage) {
     return;
   }
   const txid = receipt.transactionHash;
-  const tx = await web3GetTransaction(txid);
-  const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
-  const reason = extractReasonString(response);
+  const tx = await exports.web3GetTransaction(txid);
+  const response = await exports.web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
+  const reason = exports.extractReasonString(response);
   expect(receipt.status, `${errorMessage} with error ${reason}`).to.equal(1);
-}
+};
 
-export function getRandomString(_length) {
+exports.getRandomString = function getRandomString(_length) {
   const length = _length || 7;
   let randString = "";
   while (randString.length < length) {
     randString += shortid.generate().replace(/_/g, "").toLowerCase();
   }
   return randString.slice(0, length);
-}
+};
 
-export function getTokenArgs() {
-  const name = asciiToHex(getRandomString(5));
-  const symbol = asciiToHex(getRandomString(3));
+exports.getTokenArgs = function getTokenArgs() {
+  const name = asciiToHex(exports.getRandomString(5));
+  const symbol = asciiToHex(exports.getRandomString(3));
   return [name, symbol, 18];
-}
+};
 
-export async function currentBlockTime() {
+exports.currentBlockTime = async function currentBlockTime() {
   const p = new Promise((resolve, reject) => {
     web3.eth.getBlock("latest", (err, res) => {
       if (err) {
@@ -257,9 +283,9 @@ export async function currentBlockTime() {
     });
   });
   return p;
-}
+};
 
-export async function currentBlock() {
+exports.currentBlock = async function currentBlock() {
   const p = new Promise((resolve, reject) => {
     web3.eth.getBlock("latest", (err, res) => {
       if (err) {
@@ -269,9 +295,9 @@ export async function currentBlock() {
     });
   });
   return p;
-}
+};
 
-export async function getBlockTime(blockNumber = "latest") {
+exports.getBlockTime = async function getBlockTime(blockNumber = "latest") {
   const p = new Promise((resolve, reject) => {
     web3.eth.getBlock(blockNumber, (err, res) => {
       if (err) {
@@ -281,7 +307,7 @@ export async function getBlockTime(blockNumber = "latest") {
     });
   });
   return p;
-}
+};
 
 function hexlifyAndPad(input) {
   let i = input;
@@ -292,19 +318,19 @@ function hexlifyAndPad(input) {
   return ethers.utils.hexZeroPad(ethers.utils.hexlify(i), 32);
 }
 
-export async function expectEvent(tx, nameOrSig, args) {
+exports.expectEvent = async function expectEvent(tx, nameOrSig, args) {
   const matches = await eventMatches(tx, nameOrSig, args);
   if (matches.indexOf(true) === -1) {
     throw Error(`No matching event was found for ${nameOrSig} with args ${args}`);
   }
-}
+};
 
-export async function expectNoEvent(tx, nameOrSig, args) {
+exports.expectNoEvent = async function expectNoEvent(tx, nameOrSig, args) {
   const matches = await eventMatches(tx, nameOrSig, args);
   if (matches.indexOf(true) !== -1) {
     throw Error(`A matching event was found for ${nameOrSig} with args ${args}`);
   }
-}
+};
 
 async function eventMatches(tx, nameOrSig, args) {
   const re = /\((.*)\)/;
@@ -366,17 +392,17 @@ async function eventMatchArgs(event, args) {
   return true;
 }
 
-export async function expectAllEvents(tx, eventNames) {
+exports.expectAllEvents = async function expectAllEvents(tx, eventNames) {
   const { logs } = await tx;
   const events = eventNames.every((eventName) => logs.find((e) => e.event === eventName));
   return expect(events).to.be.true;
-}
+};
 
-export async function forwardTime(seconds, test) {
+exports.forwardTime = async function forwardTime(seconds, test) {
   if (typeof seconds !== "number") {
     throw new Error("typeof seconds is not a number");
   }
-  const client = await web3GetClient();
+  const client = await exports.web3GetClient();
   const p = new Promise((resolve, reject) => {
     if (client.indexOf("TestRPC") === -1) {
       resolve(test.skip());
@@ -412,16 +438,16 @@ export async function forwardTime(seconds, test) {
     }
   });
   return p;
-}
+};
 
-export async function forwardTimeTo(timestamp, test) {
-  const lastBlockTime = await getBlockTime("latest");
+exports.forwardTimeTo = async function forwardTimeTo(timestamp, test) {
+  const lastBlockTime = await exports.getBlockTime("latest");
   const amountToForward = new BN(timestamp).sub(new BN(lastBlockTime));
   // Forward that much
-  await forwardTime(amountToForward.toNumber(), test);
-}
+  await exports.forwardTime(amountToForward.toNumber(), test);
+};
 
-export async function mineBlock(timestamp) {
+exports.mineBlock = async function mineBlock(timestamp) {
   return new Promise((resolve, reject) => {
     web3.currentProvider.send(
       {
@@ -438,9 +464,9 @@ export async function mineBlock(timestamp) {
       }
     );
   });
-}
+};
 
-export async function stopMining() {
+exports.stopMining = async function stopMining() {
   return new Promise((resolve, reject) => {
     web3.currentProvider.send(
       {
@@ -457,9 +483,9 @@ export async function stopMining() {
       }
     );
   });
-}
+};
 
-export async function startMining() {
+exports.startMining = async function startMining() {
   return new Promise((resolve, reject) => {
     web3.currentProvider.send(
       {
@@ -476,14 +502,14 @@ export async function startMining() {
       }
     );
   });
-}
+};
 
-export async function makeTxAtTimestamp(f, args, timestamp, test) {
-  const client = await web3GetClient();
+exports.makeTxAtTimestamp = async function makeTxAtTimestamp(f, args, timestamp, test) {
+  const client = await exports.web3GetClient();
   if (client.indexOf("TestRPC") === -1) {
     test.skip();
   }
-  await stopMining();
+  await exports.stopMining();
   let mined;
   // Send the transaction to the RPC endpoint. This might be a truffle contract object, which doesn't
   // return until the transaction has been mined... but we've stopped mining. So we can't await it
@@ -507,14 +533,19 @@ export async function makeTxAtTimestamp(f, args, timestamp, test) {
     });
   while (!mined) {
     // eslint-disable-next-line no-await-in-loop
-    await mineBlock(timestamp);
+    await exports.mineBlock(timestamp);
   }
   // Turn auto-mining back on
-  await startMining();
-  return promise;
-}
+  await exports.startMining();
 
-export function bnSqrt(bn, isGreater) {
+  // Tests are written assuming all future blocks will be from this time, which used to be
+  // how ganache operated. It's not any more, so explicitly forward time.
+  await exports.forwardTimeTo(timestamp, test);
+
+  return promise;
+};
+
+exports.bnSqrt = function bnSqrt(bn, isGreater) {
   let a = bn.addn(1).divn(2);
   let b = bn;
   while (a.lt(b)) {
@@ -526,9 +557,9 @@ export function bnSqrt(bn, isGreater) {
     b = b.addn(1);
   }
   return b;
-}
+};
 
-export function makeReputationKey(colonyAddress, skillBN, accountAddress = undefined) {
+exports.makeReputationKey = function makeReputationKey(colonyAddress, skillBN, accountAddress = undefined) {
   if (!BN.isBN(skillBN)) {
     skillBN = new BN(skillBN.toString()); // eslint-disable-line no-param-reassign
   }
@@ -541,15 +572,15 @@ export function makeReputationKey(colonyAddress, skillBN, accountAddress = undef
     key += `${new BN(accountAddress.slice(2), 16).toString(16, 40)}`; // User address as bytes
   }
   return key;
-}
+};
 
 // Note: value can be anything with a `.toString()` method -- a string, number, or BN.
-export function makeReputationValue(value, reputationId) {
+exports.makeReputationValue = function makeReputationValue(value, reputationId) {
   return `0x${new BN(value.toString()).toString(16, 64)}${new BN(reputationId).toString(16, 64)}`;
-}
+};
 
-export async function getValidEntryNumber(colonyNetwork, account, hash, startingEntryNumber = 1) {
-  const repCycle = await getActiveRepCycle(colonyNetwork);
+exports.getValidEntryNumber = async function getValidEntryNumber(colonyNetwork, account, hash, startingEntryNumber = 1) {
+  const repCycle = await exports.getActiveRepCycle(colonyNetwork);
 
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IColony.at(metaColonyAddress);
@@ -569,7 +600,7 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
 
   // Iterate from `startingEntryNumber ` up until the largest entry, until we find one we can submit now
   // or return an error
-  const timestamp = await currentBlockTime();
+  const timestamp = await exports.currentBlockTime();
   for (let i = startingEntryNumber; i <= nIter; i += 1) {
     const entryHash = await repCycle.getEntryHash(account, i, hash);
     const target = new BN(timestamp).sub(reputationMiningWindowOpenTimestamp).mul(constant);
@@ -578,18 +609,18 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
     }
   }
   return new Error("No valid submission found");
-}
+};
 
-export async function submitAndForwardTimeToDispute(clients, test) {
+exports.submitAndForwardTimeToDispute = async function submitAndForwardTimeToDispute(clients, test) {
   // For there to be a dispute we need at least 2 competing submisssions
   expect(clients.length).to.be.above(1);
 
-  await forwardTime(MINING_CYCLE_DURATION / 2, test);
+  await exports.forwardTime(MINING_CYCLE_DURATION / 2, test);
   for (let i = 0; i < clients.length; i += 1) {
     await clients[i].addLogContentsToReputationTree();
     await clients[i].submitRootHash();
   }
-  await forwardTime(MINING_CYCLE_DURATION / 2, test);
+  await exports.forwardTime(MINING_CYCLE_DURATION / 2, test);
 
   // If there are multiple submissions, ensure they are all different
   const submissionsPromise = clients.map(async (client) => {
@@ -602,14 +633,14 @@ export async function submitAndForwardTimeToDispute(clients, test) {
   const submissions = await Promise.all(submissionsPromise);
   const uniqueSubmissions = [...new Set(submissions)];
   expect(submissions.length, "Submissions from clients are equal, surprisingly").to.be.equal(uniqueSubmissions.length);
-}
+};
 
-export async function runBinarySearch(client1, client2, test) {
+exports.runBinarySearch = async function runBinarySearch(client1, client2, test) {
   // Loop while doing the binary search, checking we were successful at each point
   // Binary search will error when it is complete.
   let noError = true;
   while (noError) {
-    await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION, test);
+    await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION, test);
     try {
       await client1.respondToBinarySearchForChallenge();
     } catch (err) {
@@ -622,24 +653,24 @@ export async function runBinarySearch(client1, client2, test) {
       noError = false;
     }
   }
-}
+};
 
-export async function getActiveRepCycle(colonyNetwork) {
+exports.getActiveRepCycle = async function getActiveRepCycle(colonyNetwork) {
   const addr = await colonyNetwork.getReputationMiningCycle(true);
   const repCycle = await IReputationMiningCycle.at(addr);
   return repCycle;
-}
+};
 
-export async function advanceMiningCycleNoContest({ colonyNetwork, client, minerAddress, test }) {
-  await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, test);
-  const repCycle = await getActiveRepCycle(colonyNetwork);
+exports.advanceMiningCycleNoContest = async function advanceMiningCycleNoContest({ colonyNetwork, client, minerAddress, test }) {
+  await exports.forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, test);
+  const repCycle = await exports.getActiveRepCycle(colonyNetwork);
 
   if (client !== undefined) {
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
     await client.confirmNewHash();
   } else {
-    const accounts = await web3GetAccounts();
+    const accounts = await exports.web3GetAccounts();
     minerAddress = minerAddress || accounts[5]; // eslint-disable-line no-param-reassign
     try {
       await repCycle.submitRootHash("0x00", 0, "0x00", 1, { from: minerAddress });
@@ -648,36 +679,40 @@ export async function advanceMiningCycleNoContest({ colonyNetwork, client, miner
     }
     await repCycle.confirmNewHash(0, { from: minerAddress });
   }
-}
+};
 
-export async function accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, test, client1) {
-  const repCycle = await getActiveRepCycle(colonyNetwork);
+exports.accommodateChallengeAndInvalidateHashViaTimeout = async function accommodateChallengeAndInvalidateHashViaTimeout(
+  colonyNetwork,
+  _test,
+  client1
+) {
+  const repCycle = await exports.getActiveRepCycle(colonyNetwork);
   const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
   // Make a submission from client1
   const submission1before = await repCycle.getReputationHashSubmission(client1.minerAddress);
-  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION, this);
+  await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION, this);
 
   // Submit JRH for submission 1 if needed
   // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
   if (submission1before.jrhNLeaves === "0") {
-    await checkSuccessEthers(client1.confirmJustificationRootHash(), "Client 1 was unable to confirmJustificationRootHash");
+    await exports.checkSuccessEthers(client1.confirmJustificationRootHash(), "Client 1 was unable to confirmJustificationRootHash");
   } else {
-    await checkSuccessEthers(client1.respondToBinarySearchForChallenge(), "Client 1 was unable to respondToBinarySearchForChallenge");
+    await exports.checkSuccessEthers(client1.respondToBinarySearchForChallenge(), "Client 1 was unable to respondToBinarySearchForChallenge");
   }
 
   // Timeout the other client
-  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION, this);
+  await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION, this);
 
   const toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
-  const accounts = await web3GetAccounts();
+  const accounts = await exports.web3GetAccounts();
   const minerAddress = accounts[5];
 
   return repCycle.invalidateHash(round1, toInvalidateIdx, { from: minerAddress });
-}
+};
 
-export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test, client1, client2, _errors) {
+exports.accommodateChallengeAndInvalidateHash = async function accommodateChallengeAndInvalidateHash(colonyNetwork, test, client1, client2, _errors) {
   let toInvalidateIdx;
-  const repCycle = await getActiveRepCycle(colonyNetwork);
+  const repCycle = await exports.getActiveRepCycle(colonyNetwork);
   const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
   let errors = _errors;
   // Make sure our errors object has the minimum properties to not throw an 'cannot access property x of undefined' error
@@ -716,30 +751,30 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
       toInvalidateIdx = idx1;
     }
     // Forward time, so that whichever has failed to respond by now has timed out.
-    await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION * 2, test); // First window is the response window, second window is the invalidate window
+    await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION * 2, test); // First window is the response window, second window is the invalidate window
   } else {
     toInvalidateIdx = idx1.mod(2).eq(1) ? idx1.sub(1) : idx1.add(1);
   }
-  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+  await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
   const signingAddress = await client1.realWallet.getAddress();
   return repCycle.invalidateHash(round1, toInvalidateIdx, { from: signingAddress });
-}
+};
 
 async function navigateChallenge(colonyNetwork, client1, client2, errors) {
-  const repCycle = await getActiveRepCycle(colonyNetwork);
+  const repCycle = await exports.getActiveRepCycle(colonyNetwork);
   const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
   const submission1before = await repCycle.getReputationHashSubmission(client1.minerAddress);
 
-  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
+  await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
 
   // Submit JRH for submission 1 if needed
   // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
   if (submission1before.jrhNLeaves === "0") {
     if (errors.client1.confirmJustificationRootHash) {
-      await checkErrorRevertEthers(client1.confirmJustificationRootHash(), errors.client1.confirmJustificationRootHash);
+      await exports.checkErrorRevertEthers(client1.confirmJustificationRootHash(), errors.client1.confirmJustificationRootHash);
     } else {
-      await checkSuccessEthers(client1.confirmJustificationRootHash(), "Client 1 failed unexpectedly on confirmJustificationRootHash");
+      await exports.checkSuccessEthers(client1.confirmJustificationRootHash(), "Client 1 failed unexpectedly on confirmJustificationRootHash");
     }
   }
 
@@ -751,13 +786,13 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     "Clients are not facing each other in this round"
   ).to.be.true;
 
-  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
+  await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
 
   if (submission2before.jrhNLeaves === "0") {
     if (errors.client2.confirmJustificationRootHash) {
-      await checkErrorRevertEthers(client2.confirmJustificationRootHash(), errors.client2.confirmJustificationRootHash);
+      await exports.checkErrorRevertEthers(client2.confirmJustificationRootHash(), errors.client2.confirmJustificationRootHash);
     } else {
-      await checkSuccessEthers(client2.confirmJustificationRootHash(), "Client 2 failed unexpectedly on confirmJustificationRootHash");
+      await exports.checkSuccessEthers(client2.confirmJustificationRootHash(), "Client 2 failed unexpectedly on confirmJustificationRootHash");
     }
   }
 
@@ -771,22 +806,28 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   let binarySearchStep = -1;
   let binarySearchError = false;
   while (submission1.lowerBound !== submission1.upperBound && binarySearchError === false) {
-    await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
+    await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
     binarySearchStep += 1;
     if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep]) {
-      await checkErrorRevertEthers(client1.respondToBinarySearchForChallenge(), errors.client1.respondToBinarySearchForChallenge[binarySearchStep]);
+      await exports.checkErrorRevertEthers(
+        client1.respondToBinarySearchForChallenge(),
+        errors.client1.respondToBinarySearchForChallenge[binarySearchStep]
+      );
       binarySearchError = true;
     } else {
-      await checkSuccessEthers(
+      await exports.checkSuccessEthers(
         client1.respondToBinarySearchForChallenge(),
         `Client 1 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
       );
     }
     if (errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {
-      await checkErrorRevertEthers(client2.respondToBinarySearchForChallenge(), errors.client2.respondToBinarySearchForChallenge[binarySearchStep]);
+      await exports.checkErrorRevertEthers(
+        client2.respondToBinarySearchForChallenge(),
+        errors.client2.respondToBinarySearchForChallenge[binarySearchStep]
+      );
       binarySearchError = true;
     } else {
-      await checkSuccessEthers(
+      await exports.checkSuccessEthers(
         client2.respondToBinarySearchForChallenge(),
         `Client2 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
       );
@@ -799,43 +840,43 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     return;
   }
 
-  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
+  await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
 
   if (errors.client1.confirmBinarySearchResult) {
-    await checkErrorRevertEthers(client1.confirmBinarySearchResult(), errors.client1.confirmBinarySearchResult);
+    await exports.checkErrorRevertEthers(client1.confirmBinarySearchResult(), errors.client1.confirmBinarySearchResult);
   } else {
-    await checkSuccessEthers(client1.confirmBinarySearchResult(), "Client 1 failed unexpectedly on confirmBinarySearchResult");
+    await exports.checkSuccessEthers(client1.confirmBinarySearchResult(), "Client 1 failed unexpectedly on confirmBinarySearchResult");
   }
   if (errors.client2.confirmBinarySearchResult) {
-    await checkErrorRevertEthers(client2.confirmBinarySearchResult(), errors.client2.confirmBinarySearchResult);
+    await exports.checkErrorRevertEthers(client2.confirmBinarySearchResult(), errors.client2.confirmBinarySearchResult);
   } else {
-    await checkSuccessEthers(client2.confirmBinarySearchResult(), "Client 2 failed unexpectedly on confirmBinarySearchResult");
+    await exports.checkSuccessEthers(client2.confirmBinarySearchResult(), "Client 2 failed unexpectedly on confirmBinarySearchResult");
   }
 
   if (errors.client1.confirmBinarySearchResult || errors.client2.confirmBinarySearchResult) {
     return;
   }
 
-  await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
+  await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
 
   // Respond to the challenge - usually, only one of these should work.
   // If both work, then the starting reputation is 0 and one client is lying
   // about whether the key already exists.
   if (errors.client1.respondToChallenge) {
-    await checkErrorRevertEthers(client1.respondToChallenge(), errors.client1.respondToChallenge);
+    await exports.checkErrorRevertEthers(client1.respondToChallenge(), errors.client1.respondToChallenge);
   } else {
-    await checkSuccessEthers(client1.respondToChallenge(), "Client 1 failed unexpectedly on respondToChallenge");
+    await exports.checkSuccessEthers(client1.respondToChallenge(), "Client 1 failed unexpectedly on respondToChallenge");
   }
   if (errors.client2.respondToChallenge) {
-    await checkErrorRevertEthers(client2.respondToChallenge(), errors.client2.respondToChallenge);
+    await exports.checkErrorRevertEthers(client2.respondToChallenge(), errors.client2.respondToChallenge);
   } else {
-    await checkSuccessEthers(client2.respondToChallenge(), "Client 2 failed unexpectedly on respondToChallenge");
+    await exports.checkSuccessEthers(client2.respondToChallenge(), "Client 2 failed unexpectedly on respondToChallenge");
   }
 }
 
-export async function finishReputationMiningCycle(colonyNetwork, test) {
+exports.finishReputationMiningCycle = async function finishReputationMiningCycle(colonyNetwork, test) {
   // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
-  const repCycle = await getActiveRepCycle(colonyNetwork);
+  const repCycle = await exports.getActiveRepCycle(colonyNetwork);
   const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
 
   if (nUniqueSubmittedHashes.gtn(0)) {
@@ -844,9 +885,9 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
       const roundNumber = nUniqueSubmittedHashes.eqn(1) ? 0 : 1; // Not a general solution - only works for one or two submissions.
       const disputeRound = await repCycle.getDisputeRound(roundNumber);
       const timestamp = disputeRound[0].lastResponseTimestamp;
-      await forwardTimeTo(parseInt(timestamp, 10) + MINING_CYCLE_DURATION, test);
+      await exports.forwardTimeTo(parseInt(timestamp, 10) + MINING_CYCLE_DURATION, test);
 
-      const accounts = await web3GetAccounts();
+      const accounts = await exports.web3GetAccounts();
       const minerAddress = accounts[5];
 
       await repCycle.confirmNewHash(roundNumber, { from: minerAddress });
@@ -860,9 +901,9 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
   }
 
   return true;
-}
+};
 
-export async function withdrawAllMinerStakes(colonyNetwork) {
+exports.withdrawAllMinerStakes = async function withdrawAllMinerStakes(colonyNetwork) {
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -870,7 +911,7 @@ export async function withdrawAllMinerStakes(colonyNetwork) {
   const clnyAddress = await metaColony.getToken();
   const clny = await Token.at(clnyAddress);
 
-  const accounts = await web3GetAccounts();
+  const accounts = await exports.web3GetAccounts();
   await Promise.all(
     accounts.map(async (user) => {
       const info = await tokenLocking.getUserLock(clny.address, user);
@@ -893,35 +934,35 @@ export async function withdrawAllMinerStakes(colonyNetwork) {
       }
     })
   );
-}
+};
 
-export async function removeSubdomainLimit(colonyNetwork) {
+exports.removeSubdomainLimit = async function removeSubdomainLimit(colonyNetwork) {
   // Replace addDomain with the addDomain implementation with no restrictions on depth of subdomains
   const noLimitSubdomains = await NoLimitSubdomains.new();
   const latestVersion = await colonyNetwork.getCurrentColonyVersion();
   const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
   const resolver = await Resolver.at(resolverAddress);
   await resolver.register("addDomain(uint256,uint256,uint256)", noLimitSubdomains.address);
-}
+};
 
-export async function restoreSubdomainLimit(colonyNetwork) {
+exports.restoreSubdomainLimit = async function restoreSubdomainLimit(colonyNetwork) {
   const originalSubdomains = await ColonyDomains.new();
   const latestVersion = await colonyNetwork.getCurrentColonyVersion();
   const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
   const resolver = await Resolver.at(resolverAddress);
   await resolver.register("addDomain(uint256,uint256,uint256)", originalSubdomains.address);
-}
+};
 
-export async function addTaskSkillEditingFunctions(colonyNetwork) {
+exports.addTaskSkillEditingFunctions = async function addTaskSkillEditingFunctions(colonyNetwork) {
   const taskSkillEditing = await TaskSkillEditing.new();
   const latestVersion = await colonyNetwork.getCurrentColonyVersion();
   const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
   const resolver = await Resolver.at(resolverAddress);
   await resolver.register("addTaskSkill(uint256,uint256)", taskSkillEditing.address);
   await resolver.register("removeTaskSkill(uint256,uint256)", taskSkillEditing.address);
-}
+};
 
-export async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId, _childDomainId) {
+exports.getChildSkillIndex = async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId, _childDomainId) {
   const parentDomainId = new BN(_parentDomainId);
   const childDomainId = new BN(_childDomainId);
 
@@ -939,9 +980,9 @@ export async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId,
     }
   }
   throw Error("Supplied child domain is not a child of the supplied parent domain");
-}
+};
 
-export async function getColonyEditable(colony, colonyNetwork) {
+exports.getColonyEditable = async function getColonyEditable(colony, colonyNetwork) {
   const colonyVersion = await colony.version();
   const colonyResolverAddress = await colonyNetwork.getColonyVersionResolver(colonyVersion);
   const colonyResolver = await Resolver.at(colonyResolverAddress);
@@ -949,17 +990,25 @@ export async function getColonyEditable(colony, colonyNetwork) {
   await colonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
   const colonyUnderRecovery = await ContractEditing.at(colony.address);
   return colonyUnderRecovery;
-}
+};
 
-export async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, n) {
+exports.getWaitForNSubmissionsPromise = async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, n) {
   return new Promise(function (resolve, reject) {
     repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nLeaves, _jrh, _entryIndex, event) => {
-      const nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
+      let nSubmissions;
+      // We want to see when our hash hits N submissions
+      // If we've passed in our hash, we check how many submissions that hash has
+      // If not, we're waiting for N submissions from any hash
+      if (rootHash) {
+        nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
+      } else {
+        nSubmissions = await repCycleEthers.getNSubmissionsForHash(_hash, _nLeaves, _jrh);
+      }
       if (nSubmissions.toNumber() >= n) {
         event.removeListener();
         resolve();
       } else {
-        await mineBlock();
+        await exports.mineBlock();
       }
     });
 
@@ -968,9 +1017,27 @@ export async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nL
       reject(new Error("Timeout while waiting for 12 hash submissions"));
     }, 60 * 1000);
   });
-}
+};
 
-export async function encodeTxData(colony, functionName, args) {
+exports.getMiningCycleCompletePromise = async function getMiningCycleCompletePromise(colonyNetworkEthers, oldHash, expectedHash) {
+  return new Promise(function (resolve, reject) {
+    colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
+      const colonyNetwork = await IColonyNetwork.at(colonyNetworkEthers.address);
+      const newHash = await colonyNetwork.getReputationRootHash();
+      expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
+      expect(newHash).to.equal(expectedHash, "The network root hash doens't match the one submitted");
+      event.removeListener();
+      resolve();
+    });
+
+    // After 30s, we throw a timeout error
+    setTimeout(() => {
+      reject(new Error("ERROR: timeout while waiting for confirming hash"));
+    }, 30000);
+  });
+};
+
+exports.encodeTxData = async function encodeTxData(colony, functionName, args) {
   const convertedArgs = [];
   args.forEach((arg) => {
     if (Number.isInteger(arg)) {
@@ -987,9 +1054,9 @@ export async function encodeTxData(colony, functionName, args) {
 
   const txData = await colony.contract.methods[functionName](...convertedArgs).encodeABI();
   return txData;
-}
+};
 
-export async function getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId, userAddress) {
+exports.getRewardClaimSquareRootsAndProofs = async function getRewardClaimSquareRootsAndProofs(client, tokenLocking, colony, payoutId, userAddress) {
   const payout = await colony.getRewardPayoutInfo(payoutId);
 
   const squareRoots = [0, 0, 0, 0, 0, 0, 0];
@@ -997,39 +1064,39 @@ export async function getRewardClaimSquareRootsAndProofs(client, tokenLocking, c
   const rootDomain = await colony.getDomain(1);
   const rootDomainSkill = rootDomain.skillId;
 
-  const userReputationKey = makeReputationKey(colony.address, rootDomainSkill, userAddress);
+  const userReputationKey = exports.makeReputationKey(colony.address, rootDomainSkill, userAddress);
   const userProof = await client.getReputationProofObject(userReputationKey);
 
-  squareRoots[0] = bnSqrt(new BN(userProof.reputation.slice(2), 16));
+  squareRoots[0] = exports.bnSqrt(new BN(userProof.reputation.slice(2), 16));
 
   const colonyTokenAddress = await colony.getToken();
 
   const lock = await tokenLocking.getUserLock(colonyTokenAddress, userAddress);
-  squareRoots[1] = bnSqrt(new BN(lock.balance, 10));
+  squareRoots[1] = exports.bnSqrt(new BN(lock.balance, 10));
 
-  const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
+  const colonyWideReputationKey = exports.makeReputationKey(colony.address, rootDomainSkill);
   const colonyProof = await client.getReputationProofObject(colonyWideReputationKey);
-  squareRoots[2] = bnSqrt(new BN(colonyProof.reputation.slice(2), 16), true);
+  squareRoots[2] = exports.bnSqrt(new BN(colonyProof.reputation.slice(2), 16), true);
 
-  squareRoots[3] = bnSqrt(new BN(payout.totalTokens, 10), true);
+  squareRoots[3] = exports.bnSqrt(new BN(payout.totalTokens, 10), true);
 
-  squareRoots[4] = bnSqrt(squareRoots[0].mul(squareRoots[1])); // Numerator
-  squareRoots[5] = bnSqrt(squareRoots[2].mul(squareRoots[3]), true); // Denominator
+  squareRoots[4] = exports.bnSqrt(squareRoots[0].mul(squareRoots[1])); // Numerator
+  squareRoots[5] = exports.bnSqrt(squareRoots[2].mul(squareRoots[3]), true); // Denominator
 
-  squareRoots[6] = bnSqrt(new BN(payout.amount, 10));
+  squareRoots[6] = exports.bnSqrt(new BN(payout.amount, 10));
 
   return { squareRoots, userProof };
-}
+};
 
-export function bn2bytes32(x, size = 64) {
+exports.bn2bytes32 = function bn2bytes32(x, size = 64) {
   return `0x${x.toString(16, size)}`;
-}
+};
 
-export function rolesToBytes32(roles) {
+exports.rolesToBytes32 = function rolesToBytes32(roles) {
   return `0x${new BN(roles.map((role) => new BN(1).shln(role)).reduce((a, b) => a.or(b), new BN(0))).toString(16, 64)}`;
-}
+};
 
-export class TestAdapter {
+class TestAdapter {
   constructor() {
     this.outputs = [];
   }
@@ -1043,3 +1110,5 @@ export class TestAdapter {
     this.outputs.push(line);
   }
 }
+
+exports.TestAdapter = TestAdapter;

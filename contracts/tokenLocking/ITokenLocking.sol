@@ -50,7 +50,8 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _lockId Id of the lock user wants to increment to
   function incrementLockCounterTo(address _token, uint256 _lockId) external;
 
-  /// @notice DEPRECATED Deposit `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+  /// @notice @deprecated
+  /// @notice Deposit `_amount` of deposited tokens. Can only be called if user tokens are not locked.
   /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
   /// @param _token Address of the token to deposit
   /// @param _amount Amount to deposit
@@ -76,12 +77,13 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _force Pass true to forcibly unlock the token
   function transfer(address _token, uint256 _amount, address _recipient, bool _force) external;
 
-  /// @notice DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+  /// @notice @deprecated
+  /// @notice Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
   /// @param _token Address of the token to withdraw from
   /// @param _amount Amount to withdraw
   function withdraw(address _token, uint256 _amount) external;
 
-  /// @notice Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
+  /// @notice Withdraw `_amount` of deposited tokens. Set `_force` to `true` to forcibly unlock the token before the withdrawal.
   /// @param _token Address of the token to withdraw from
   /// @param _amount Amount to withdraw
   /// @param _force Pass true to forcibly unlock the token

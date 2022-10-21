@@ -1,5 +1,5 @@
 {
-  "detectors_to_exclude": "unused-state,naming-convention,solc-version,external-function,pragma,constable-states",
+  "detectors_to_exclude": "unused-state,naming-convention,solc-version,external-function,pragma,constable-states,missing-inheritance,unintialized-state,assembly,boolean-equal,costly-loop,low-level-calls,missing-inheritance,similar-names,too-many-digits,uninitialized-state-variables,uninitialized-local-variables",
   "solc_args": "--allow-paths .",
   "solc_disable_warnings": true
 }

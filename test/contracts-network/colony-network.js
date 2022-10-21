@@ -1,10 +1,18 @@
 /* globals artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
 
-import {
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
+const namehash = require("eth-ens-namehash");
+
+const {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  setupRandomColony,
+  getMetaTransactionParameters,
+} = require("../../helpers/test-data-generator");
+const {
   getTokenArgs,
   web3GetNetwork,
   web3GetBalance,
@@ -12,17 +20,9 @@ import {
   expectEvent,
   expectNoEvent,
   getColonyEditable,
-} from "../../helpers/test-helper";
-import { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } from "../../helpers/constants";
-import {
-  setupColonyNetwork,
-  setupMetaColonyWithLockedCLNYToken,
-  setupRandomColony,
-  getMetaTransactionParameters,
-} from "../../helpers/test-data-generator";
-import { setupENSRegistrar } from "../../helpers/upgradable-contracts";
-
-const namehash = require("eth-ens-namehash");
+} = require("../../helpers/test-helper");
+const { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } = require("../../helpers/constants");
+const { setupENSRegistrar } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -149,6 +149,10 @@ contract("Colony Network", (accounts) => {
 
     it("should not allow setting the mining resolver to null", async () => {
       await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.constants.AddressZero), "colony-mining-resolver-cannot-be-zero");
+    });
+
+    it("should not allow a non-permissioned user to set the mining resolver", async () => {
+      await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.constants.AddressZero, { from: accounts[1] }), "ds-auth-unauthorized");
     });
 
     it("should not allow initialisation if the clny token is 0", async () => {

@@ -1,13 +1,13 @@
 /* globals artifacts */
 
-import BN from "bn.js";
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
+const BN = require("bn.js");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
 
-import { giveUserCLNYTokens, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
-import { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, CHALLENGE_RESPONSE_WINDOW_DURATION } from "../../helpers/constants";
-import { forwardTime, checkErrorRevert, getActiveRepCycle, advanceMiningCycleNoContest, getBlockTime } from "../../helpers/test-helper";
+const { giveUserCLNYTokens, giveUserCLNYTokensAndStake } = require("../../helpers/test-data-generator");
+const { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
+const { forwardTime, checkErrorRevert, getActiveRepCycle, advanceMiningCycleNoContest, getBlockTime } = require("../../helpers/test-helper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -213,7 +213,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
 
     it('should not allow "setReputationRootHash" to be called from an account that is not a ReputationMiningCycle', async () => {
       await checkErrorRevert(
-        colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]], 0),
+        colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]]),
         "colony-reputation-mining-sender-not-active-reputation-cycle"
       );
     });

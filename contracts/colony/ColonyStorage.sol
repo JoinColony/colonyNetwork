@@ -169,22 +169,19 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
-  modifier expenditureExists(uint256 _id) {
-    require(_id > 0 && _id <= expenditureCount, "colony-expenditure-does-not-exist");
+  modifier validExpenditure(uint256 _id) {
+    require(expenditureExists(_id), "colony-expenditure-does-not-exist");
     _;
   }
 
   modifier expenditureDraft(uint256 _id) {
+    require(expenditureExists(_id), "colony-expenditure-does-not-exist");
     require(expenditures[_id].status == ExpenditureStatus.Draft, "colony-expenditure-not-draft");
     _;
   }
 
-  modifier expenditureLocked(uint256 _id) {
-    require(expenditures[_id].status == ExpenditureStatus.Locked, "colony-expenditure-not-locked");
-    _;
-  }
-
   modifier expenditureDraftOrLocked(uint256 _id) {
+    require(expenditureExists(_id), "colony-expenditure-does-not-exist");
     require(
       expenditures[_id].status == ExpenditureStatus.Draft ||
       expenditures[_id].status == ExpenditureStatus.Locked,
@@ -194,6 +191,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   modifier expenditureFinalized(uint256 _id) {
+    require(expenditureExists(_id), "colony-expenditure-does-not-exist");
     require(expenditures[_id].status == ExpenditureStatus.Finalized, "colony-expenditure-not-finalized");
     _;
   }
@@ -235,7 +233,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   // Note that these require messages currently cannot propogate up because of the `executeTaskRoleAssignment` logic
   modifier isAdmin(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _user) {
     require(ColonyAuthority(address(authority)).hasUserRole(_user, _permissionDomainId, uint8(ColonyRole.Administration)), "colony-not-admin");
-    require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, tasks[_id].domainId), "ds-auth-invalid-domain-inheritence");
+    require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, tasks[_id].domainId), "ds-auth-invalid-domain-inheritance");
     _;
   }
 
@@ -259,7 +257,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     require(domainExists(_permissionDomainId), "ds-auth-permission-domain-does-not-exist");
     require(domainExists(_childDomainId), "ds-auth-child-domain-does-not-exist");
     require(isAuthorized(msgSender(), _permissionDomainId, msg.sig), "ds-auth-unauthorized");
-    require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-inheritence");
+    require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-inheritance");
     _;
   }
 
@@ -333,6 +331,21 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   function domainExists(uint256 domainId) internal view returns (bool) {
     return domainId > 0 && domainId <= domainCount;
+  }
+
+  function expenditureExists(uint256 expenditureId) internal view returns (bool) {
+    return expenditureId > 0 && expenditureId <= expenditureCount;
+  }
+
+  function calculateNetworkFeeForPayout(uint256 _payout) internal view returns (uint256 fee) {
+    uint256 feeInverse = IColonyNetwork(colonyNetworkAddress).getFeeInverse();
+
+    // slither-disable-next-line incorrect-equality
+    if (_payout == 0 || feeInverse == 1) {
+      fee = _payout;
+    } else {
+      fee = _payout / feeInverse + 1;
+    }
   }
 
   function executeCall(address to, uint256 value, bytes memory data) internal returns (bool success) {

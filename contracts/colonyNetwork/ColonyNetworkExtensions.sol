@@ -149,6 +149,8 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     token.setOwner(msgSender());
 
     emit TokenDeployed(address(token));
+
+    return address(token);
   }
 
   function deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer) public
@@ -158,6 +160,8 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     TokenAuthority tokenAuthority = new TokenAuthority(_token, _colony, allowedToTransfer);
 
     emit TokenAuthorityDeployed(address(tokenAuthority));
+    
+    return address(tokenAuthority);
   }
 
 

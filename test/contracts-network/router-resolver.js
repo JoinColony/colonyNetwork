@@ -1,9 +1,9 @@
 /* globals artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
 
-import { checkErrorRevert } from "../../helpers/test-helper";
+const { checkErrorRevert } = require("../../helpers/test-helper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -85,6 +85,10 @@ contract("EtherRouter / Resolver", (accounts) => {
     it("should return correctly encoded function signature", async () => {
       const signature = await resolver.stringToSig("transferFrom(address,address,uint256)");
       expect(signature).to.equal("0x23b872dd");
+    });
+
+    it("should not allow a non-owner to set a function", async () => {
+      await checkErrorRevert(resolver.register("", ethers.constants.AddressZero, { from: accounts[2] }), "ds-auth-unauthorized");
     });
   });
 });

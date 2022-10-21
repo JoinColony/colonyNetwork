@@ -1,11 +1,11 @@
-import BN from "bn.js";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
+const BN = require("bn.js");
+const ethers = require("ethers");
+const { soliditySha3 } = require("web3-utils");
 
 // //////
 // Patricia Tree
 // //////////////////
-export default class PatriciaTreeBase {
+class PatriciaTreeBase {
   // Label: { data, length } (data is the path, length says how many bits are used)
   // Edge: { nodeHash, label }
   // Node: [leftEdge, rightEdge] (no actual node)
@@ -258,3 +258,5 @@ export default class PatriciaTreeBase {
     return PatriciaTreeBase.makeLabel(label.data.shln(prefix).maskn(256), label.length - prefix);
   }
 }
+
+module.exports = PatriciaTreeBase;

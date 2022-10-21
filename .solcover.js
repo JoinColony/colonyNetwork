@@ -17,6 +17,8 @@ module.exports = {
       'common/EtherRouter.sol',
       'patriciaTree',
       'testHelpers',
+      'ens',
+      'extensions/votingReputation/VotingReputationMisalignedRecovery.sol'
     ],
     providerOptions: {
       port: 8555,
@@ -26,6 +28,6 @@ module.exports = {
       total_accounts: 18
     },
     onCompileComplete: provisionTokenContracts,
-    istanbulFolder: "./coverage-contracts"
+    istanbulFolder: "./coverage-contracts",
+    modifierWhitelist: ["always"],
 }
-

@@ -1,13 +1,13 @@
 /* globals artifacts */
 
-import path from "path";
-import BN from "bn.js";
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
+const path = require("path");
+const BN = require("bn.js");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
 
-import { TruffleLoader } from "../../packages/package-utils";
-import {
+const { TruffleLoader } = require("../../packages/package-utils");
+const {
   forwardTime,
   forwardTimeTo,
   checkErrorRevert,
@@ -21,29 +21,30 @@ import {
   finishReputationMiningCycle,
   removeSubdomainLimit,
   makeTxAtTimestamp,
-} from "../../helpers/test-helper";
+} = require("../../helpers/test-helper");
 
-import {
+const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
   setupFinalizedTask,
   fundColonyWithTokens,
-} from "../../helpers/test-data-generator";
+} = require("../../helpers/test-data-generator");
 
-import {
+const {
   UINT256_MAX,
   DEFAULT_STAKE,
   INITIAL_FUNDING,
   MINING_CYCLE_DURATION,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
-} from "../../helpers/constants";
+  HASHZERO,
+} = require("../../helpers/constants");
 
-import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
-import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
-import MaliciousReputationMinerWrongResponse from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongResponse";
-import MaliciousReputationMinerWrongProofLogEntry from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongProofLogEntry";
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
+const MaliciousReputationMinerWrongResponse = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongResponse");
+const MaliciousReputationMinerWrongProofLogEntry = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongProofLogEntry");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -131,7 +132,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
       await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
-      await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MINER1 });
+      await repCycle.submitRootHash(HASHZERO, 0, HASHZERO, 10, { from: MINER1 });
       await repCycle.confirmNewHash(0, { from: MINER1 });
 
       repCycle = await getActiveRepCycle(colonyNetwork);
@@ -202,14 +203,13 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
       await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
-      await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MINER1 });
+      await repCycle.submitRootHash(HASHZERO, 0, HASHZERO, 10, { from: MINER1 });
       await repCycle.confirmNewHash(0, { from: MINER1 });
 
       repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
       await checkErrorRevert(
-        repCycle.confirmJustificationRootHash(0, 10000, ["0x00"], ["0x00"]),
+        repCycle.confirmJustificationRootHash(0, 10000, [HASHZERO], [HASHZERO]),
         "colony-reputation-mining-index-beyond-round-length"
       );
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
@@ -218,13 +218,16 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await badClient.confirmJustificationRootHash();
 
       await checkErrorRevert(
-        repCycle.respondToBinarySearchForChallenge(0, 10000, "0x00", ["0x00"]),
+        repCycle.respondToBinarySearchForChallenge(0, 10000, HASHZERO, [HASHZERO]),
         "colony-reputation-mining-index-beyond-round-length"
       );
 
       await runBinarySearch(goodClient, badClient);
 
-      await checkErrorRevert(repCycle.confirmBinarySearchResult(0, 10000, "0x00", ["0x00"]), "colony-reputation-mining-index-beyond-round-length");
+      await checkErrorRevert(
+        repCycle.confirmBinarySearchResult(0, 10000, HASHZERO, [HASHZERO]),
+        "colony-reputation-mining-index-beyond-round-length"
+      );
 
       // // Check we can't respond to challenge before we've confirmed the binary search result
       // await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-binary-search-result-not-confirmed");
@@ -235,7 +238,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 10000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          ["0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00"],
+          [HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],
@@ -264,7 +267,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
       await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
-      await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MINER1 });
+      await repCycle.submitRootHash(HASHZERO, 0, HASHZERO, 10, { from: MINER1 });
       await repCycle.confirmNewHash(0, { from: MINER1 });
 
       await goodClient.saveCurrentState();
@@ -870,7 +873,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await checkErrorRevert(
-        repCycle.respondToBinarySearchForChallenge(0, 0, "0x00", ["0x00", "0x00", "0x00"], { from: MINER1 }),
+        repCycle.respondToBinarySearchForChallenge(0, 0, HASHZERO, [HASHZERO, HASHZERO, HASHZERO], { from: MINER1 }),
         "colony-reputation-mining-invalid-binary-search-response"
       );
 
@@ -911,7 +914,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
       await checkErrorRevert(
-        repCycle.confirmBinarySearchResult(round, index, "0x00", siblings, { from: MINER1 }),
+        repCycle.confirmBinarySearchResult(round, index, HASHZERO, siblings, { from: MINER1 }),
         "colony-reputation-mining-invalid-binary-search-confirmation"
       );
 
@@ -1122,7 +1125,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          ["0x00", skillId, userAddress, "0x00", "0x00", "0x00", "0x00"],
+          [HASHZERO, skillId, userAddress, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],
@@ -1137,7 +1140,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [colonyAddress, "0x00", userAddress, "0x00", "0x00", "0x00", "0x00"],
+          [colonyAddress, HASHZERO, userAddress, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],
@@ -1152,7 +1155,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [colonyAddress, skillId, "0x00", "0x00", "0x00", "0x00", "0x00"],
+          [colonyAddress, skillId, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],
@@ -1167,7 +1170,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [colonyAddress, skillId, userAddress, "0x00", "0x00", "0x00", "0x00"],
+          [colonyAddress, skillId, userAddress, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],
@@ -1206,7 +1209,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          ["0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00"],
+          [HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],

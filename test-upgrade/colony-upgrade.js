@@ -1,8 +1,8 @@
 /* globals artifacts */
-import { currentBlockTime, getColonyEditable } from "../helpers/test-helper";
-import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
-import { ROOT_ROLE, SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";
-import { makeTask, setupRandomColony } from "../helpers/test-data-generator";
+const { currentBlockTime, getColonyEditable } = require("../helpers/test-helper");
+const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
+const { ROOT_ROLE, SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } = require("../helpers/constants");
+const { makeTask, setupRandomColony } = require("../helpers/test-data-generator");
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -10,10 +10,11 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const ColonyDomains = artifacts.require("ColonyDomains");
 const ColonyExpenditure = artifacts.require("ColonyExpenditure");
-const ColonyTask = artifacts.require("ColonyTask");
-const ColonyPayment = artifacts.require("ColonyPayment");
 const ColonyFunding = artifacts.require("ColonyFunding");
+const ColonyPayment = artifacts.require("ColonyPayment");
+const ColonyRewards = artifacts.require("ColonyRewards");
 const ColonyRoles = artifacts.require("ColonyRoles");
+const ColonyTask = artifacts.require("ColonyTask");
 const ContractRecovery = artifacts.require("ContractRecovery");
 const ColonyArbitraryTransaction = artifacts.require("ColonyArbitraryTransaction");
 const UpdatedColony = artifacts.require("UpdatedColony");
@@ -42,10 +43,11 @@ contract("Colony contract upgrade", (accounts) => {
 
     const colonyDomains = await ColonyDomains.new();
     const colonyExpenditure = await ColonyExpenditure.new();
-    const colonyTask = await ColonyTask.new();
-    const colonyPayment = await ColonyPayment.new();
     const colonyFunding = await ColonyFunding.new();
+    const colonyPayment = await ColonyPayment.new();
     const colonyRoles = await ColonyRoles.new();
+    const colonyRewards = await ColonyRewards.new();
+    const colonyTask = await ColonyTask.new();
     const contractRecovery = await ContractRecovery.new();
     const colonyArbitraryTransaction = await ColonyArbitraryTransaction.new();
 
@@ -61,10 +63,11 @@ contract("Colony contract upgrade", (accounts) => {
       updatedColonyContract,
       colonyDomains,
       colonyExpenditure,
-      colonyTask,
-      colonyPayment,
       colonyFunding,
+      colonyPayment,
+      colonyRewards,
       colonyRoles,
+      colonyTask,
       contractRecovery,
       colonyArbitraryTransaction,
       resolver

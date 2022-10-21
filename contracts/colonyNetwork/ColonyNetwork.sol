@@ -197,7 +197,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
     return changed;
   }
 
-  // DEPRECATED
+  /// @notice @deprecated
   function deprecateSkill(uint256 _skillId) public stoppable {
     deprecateSkill(_skillId, true);
   }
@@ -236,7 +236,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage {
     );
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery { // solhint-disable-line no-empty-blocks
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view { // solhint-disable-line no-empty-blocks
   }
 
   function getFeeInverse() public view returns (uint256 _feeInverse) {

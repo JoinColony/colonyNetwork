@@ -1,14 +1,14 @@
 /* globals artifacts */
 
-import BN from "bn.js";
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
+const BN = require("bn.js");
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
 
-import { UINT256_MAX, WAD, SECONDS_PER_DAY } from "../../helpers/constants";
-import { setupRandomColony, getMetaTransactionParameters } from "../../helpers/test-data-generator";
-import { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, getBlockTime, forwardTime } from "../../helpers/test-helper";
+const { UINT256_MAX, WAD, SECONDS_PER_DAY, ADDRESS_ZERO } = require("../../helpers/constants");
+const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
+const { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, getBlockTime, forwardTime } = require("../../helpers/test-helper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -18,6 +18,8 @@ const EtherRouter = artifacts.require("EtherRouter");
 const TokenSupplier = artifacts.require("TokenSupplier");
 
 const TOKEN_SUPPLIER = soliditySha3("TokenSupplier");
+
+const ISSUETOKENS_GAS_LIMIT = 200000;
 
 contract("Token Supplier", (accounts) => {
   let colony;
@@ -90,13 +92,13 @@ contract("Token Supplier", (accounts) => {
     });
 
     it("cannot initialise with ceiling smaller than totalSupply", async () => {
-      token.mint(SUPPLY_CEILING.addn(1));
+      await token.mint(SUPPLY_CEILING.addn(1));
 
       await checkErrorRevert(tokenSupplier.initialise(SUPPLY_CEILING, WAD), "token-supplier-ceiling-too-low");
     });
 
     it("cannot issues tokens if not initialised", async () => {
-      await checkErrorRevert(tokenSupplier.issueTokens(), "token-supplier-not-initialised");
+      await checkErrorRevert(tokenSupplier.issueTokens({ gas: ISSUETOKENS_GAS_LIMIT }), "token-supplier-not-initialised");
     });
 
     it("can update the tokenSupplyCeiling if root", async () => {
@@ -113,7 +115,7 @@ contract("Token Supplier", (accounts) => {
     it("cannot update the tokenSupplyCeiling if less than totalSupply", async () => {
       await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
 
-      token.mint(SUPPLY_CEILING.muln(3));
+      await token.mint(SUPPLY_CEILING.muln(3));
 
       await checkErrorRevert(tokenSupplier.setTokenSupplyCeiling(SUPPLY_CEILING.muln(2)), "token-supplier-ceiling-too-low");
     });
@@ -121,12 +123,15 @@ contract("Token Supplier", (accounts) => {
     it("can update the tokenIssuanceRate if root", async () => {
       await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
 
-      await tokenSupplier.setTokenIssuanceRate(WAD.muln(2));
+      await tokenSupplier.setTokenIssuanceRate(WAD.muln(2), { gas: ISSUETOKENS_GAS_LIMIT });
 
       const tokenIssuanceRate = await tokenSupplier.getTokenIssuanceRate();
       expect(tokenIssuanceRate).to.eq.BN(WAD.muln(2));
 
-      await checkErrorRevert(tokenSupplier.setTokenIssuanceRate(WAD, { from: USER1 }), "token-supplier-caller-not-authorized");
+      await checkErrorRevert(
+        tokenSupplier.setTokenIssuanceRate(WAD, { from: USER1, gas: ISSUETOKENS_GAS_LIMIT }),
+        "token-supplier-caller-not-authorized"
+      );
     });
 
     it("can update the tokenIssuanceRate if root funding, by <=10% once every 4 weeks", async () => {
@@ -139,14 +144,20 @@ contract("Token Supplier", (accounts) => {
       const bigChange = WAD.add(WAD.divn(9));
 
       // Cannot change more than once in 4 weeks
-      await checkErrorRevert(tokenSupplier.setTokenIssuanceRate(smallChange, { from: USER1 }), "token-supplier-caller-not-authorized");
+      await checkErrorRevert(
+        tokenSupplier.setTokenIssuanceRate(smallChange, { from: USER1, gas: ISSUETOKENS_GAS_LIMIT }),
+        "token-supplier-caller-not-authorized"
+      );
 
       await forwardTime(SECONDS_PER_DAY * 28, this);
 
       // Cannot change more than 10%
-      await checkErrorRevert(tokenSupplier.setTokenIssuanceRate(bigChange, { from: USER1 }), "token-supplier-caller-not-authorized");
+      await checkErrorRevert(
+        tokenSupplier.setTokenIssuanceRate(bigChange, { from: USER1, gas: ISSUETOKENS_GAS_LIMIT }),
+        "token-supplier-caller-not-authorized"
+      );
 
-      await tokenSupplier.setTokenIssuanceRate(smallChange, { from: USER1 });
+      await tokenSupplier.setTokenIssuanceRate(smallChange, { from: USER1, gas: ISSUETOKENS_GAS_LIMIT });
 
       const tokenIssuanceRate = await tokenSupplier.getTokenIssuanceRate();
       expect(tokenIssuanceRate).to.eq.BN(smallChange);
@@ -154,18 +165,18 @@ contract("Token Supplier", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 28, this);
 
       // The bigChange is now within the acceptable range
-      await tokenSupplier.setTokenIssuanceRate(bigChange, { from: USER1 });
+      await tokenSupplier.setTokenIssuanceRate(bigChange, { from: USER1, gas: ISSUETOKENS_GAS_LIMIT });
     });
 
     it("can issue tokens before updating the tokenIssuanceRate", async () => {
       await tokenSupplier.initialise(SUPPLY_CEILING, WAD);
 
-      const tx = await tokenSupplier.issueTokens();
+      const tx = await tokenSupplier.issueTokens({ gas: ISSUETOKENS_GAS_LIMIT });
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
 
       const balancePre = await token.balanceOf(colony.address);
 
-      await makeTxAtTimestamp(tokenSupplier.setTokenIssuanceRate, [WAD.muln(2)], blockTime + SECONDS_PER_DAY, this);
+      await makeTxAtTimestamp(tokenSupplier.setTokenIssuanceRate, [WAD.muln(2), { gas: ISSUETOKENS_GAS_LIMIT }], blockTime + SECONDS_PER_DAY, this);
 
       const balancePost = await token.balanceOf(colony.address);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
@@ -185,6 +196,13 @@ contract("Token Supplier", (accounts) => {
       expect(lastPinged).to.eq.BN(blockTime);
       expect(lastRateUpdate).to.eq.BN(blockTime);
     });
+
+    it("can't use the network-level functions if installed via ColonyNetwork", async () => {
+      await checkErrorRevert(tokenSupplier.install(ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(tokenSupplier.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(tokenSupplier.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(tokenSupplier.uninstall({ from: USER1 }), "ds-auth-unauthorized");
+    });
   });
 
   describe("issuing tokens", async () => {
@@ -198,7 +216,7 @@ contract("Token Supplier", (accounts) => {
       let time = await currentBlockTime();
       time = new BN(time).addn(SECONDS_PER_DAY);
 
-      await makeTxAtTimestamp(tokenSupplier.issueTokens, [], time.toNumber(), this);
+      await makeTxAtTimestamp(tokenSupplier.issueTokens, [{ gas: ISSUETOKENS_GAS_LIMIT }], time.toNumber(), this);
 
       const balancePost = await token.balanceOf(colony.address);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
@@ -231,7 +249,7 @@ contract("Token Supplier", (accounts) => {
       let time = await currentBlockTime();
       time = new BN(time).addn(SECONDS_PER_DAY / 2);
 
-      await makeTxAtTimestamp(tokenSupplier.issueTokens, [], time.toNumber(), this);
+      await makeTxAtTimestamp(tokenSupplier.issueTokens, [{ gas: ISSUETOKENS_GAS_LIMIT }], time.toNumber(), this);
 
       const balancePost = await token.balanceOf(colony.address);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.divn(2));
@@ -243,26 +261,26 @@ contract("Token Supplier", (accounts) => {
       let time = await currentBlockTime();
       time = new BN(time).addn(SECONDS_PER_DAY * 10);
 
-      await makeTxAtTimestamp(tokenSupplier.issueTokens, [], time.toNumber(), this);
+      await makeTxAtTimestamp(tokenSupplier.issueTokens, [{ gas: ISSUETOKENS_GAS_LIMIT }], time.toNumber(), this);
 
       const balancePost = await token.balanceOf(colony.address);
       expect(balancePost.sub(balancePre)).to.eq.BN(SUPPLY_CEILING);
 
       await forwardTime(SECONDS_PER_DAY, this);
-      await tokenSupplier.issueTokens();
+      await tokenSupplier.issueTokens({ gas: ISSUETOKENS_GAS_LIMIT });
 
       const tokenSupply = await token.totalSupply();
       expect(tokenSupply).to.eq.BN(SUPPLY_CEILING);
     });
 
     it("can claim no tokens if the supply is larger than the ceiling", async () => {
-      token.mint(SUPPLY_CEILING.addn(1));
+      await token.mint(SUPPLY_CEILING.addn(1));
 
       const balancePre = await token.balanceOf(colony.address);
 
       await forwardTime(SECONDS_PER_DAY, this);
 
-      await tokenSupplier.issueTokens();
+      await tokenSupplier.issueTokens({ gas: ISSUETOKENS_GAS_LIMIT });
 
       const balancePost = await token.balanceOf(colony.address);
       expect(balancePost.sub(balancePre)).to.be.zero;

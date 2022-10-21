@@ -1,8 +1,9 @@
 /* global artifacts */
-import chai from "chai";
-import bnChai from "bn-chai";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
-import {
+const {
   UINT256_MAX,
   INT256_MIN,
   INT256_MAX,
@@ -17,13 +18,13 @@ import {
   INITIAL_FUNDING,
   SPECIFICATION_HASH,
   GLOBAL_SKILL_ID,
-} from "../../helpers/constants";
+  ADDRESS_ZERO,
+  HASHZERO,
+} = require("../../helpers/constants");
 
-import { fundColonyWithTokens, makeTask, setupRandomColony } from "../../helpers/test-data-generator";
-import { checkErrorRevert, expectEvent } from "../../helpers/test-helper";
-import { executeSignedRoleAssignment } from "../../helpers/task-review-signing";
-
-const ethers = require("ethers");
+const { fundColonyWithTokens, makeTask, setupRandomColony } = require("../../helpers/test-data-generator");
+const { checkErrorRevert, expectEvent } = require("../../helpers/test-helper");
+const { executeSignedRoleAssignment } = require("../../helpers/task-review-signing");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -31,6 +32,7 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const ColonyAuthority = artifacts.require("ColonyAuthority");
 
 contract("ColonyPermissions", (accounts) => {
   const FOUNDER = accounts[0];
@@ -306,6 +308,33 @@ contract("ColonyPermissions", (accounts) => {
       await colony.setAdministrationRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 });
     });
 
+    it("should not allow users without relevant permissions to set permissions", async () => {
+      await await checkErrorRevert(colony.setRootRole(USER1, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setArbitrationRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setArchitectureRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setFundingRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setAdministrationRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setUserRoles(1, UINT256_MAX, USER2, 1, HASHZERO, { from: USER1 }), "ds-auth-unauthorized");
+
+      // If you are allowed to set in a subdomain, not necessarily allowed to set in the domain you have permissions...
+      await colony.setArchitectureRole(1, UINT256_MAX, USER1, 1, true);
+      await checkErrorRevert(colony.setArbitrationRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-only-authorized-in-child-domain");
+      await checkErrorRevert(colony.setArchitectureRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-only-authorized-in-child-domain");
+      await checkErrorRevert(colony.setFundingRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }), "ds-auth-only-authorized-in-child-domain");
+    });
+
+    it("should not allow users without root permission to call root-restricted functions", async () => {
+      await checkErrorRevert(colony.editColony("", { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.editColonyByDelta("", { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.mintTokensFor(ADDRESS_ZERO, 0, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.updateColonyOrbitDB("", { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.installExtension(HASHZERO, ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.addLocalSkill({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.deprecateLocalSkill(0, true, { from: USER2 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.makeArbitraryTransactions([], [], true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.startNextRewardPayout(ADDRESS_ZERO, HASHZERO, HASHZERO, 0, [HASHZERO], { from: USER1 }), "ds-auth-unauthorized");
+    });
+
     it("should allow users with root permission manipulate root domain permissions and colony-wide parameters", async () => {
       await colony.setRootRole(USER1, true);
       hasRole = await colony.hasUserRole(USER1, 1, ROOT_ROLE);
@@ -448,7 +477,7 @@ contract("ColonyPermissions", (accounts) => {
           token.address,
           { from: USER2 }
         ),
-        "ds-auth-invalid-domain-inheritence"
+        "ds-auth-invalid-domain-inheritance"
       );
       await checkErrorRevert(
         colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
@@ -461,7 +490,7 @@ contract("ColonyPermissions", (accounts) => {
           token.address,
           { from: USER2 }
         ),
-        "ds-auth-invalid-domain-inheritence"
+        "ds-auth-invalid-domain-inheritance"
       );
 
       // The newest version
@@ -478,7 +507,7 @@ contract("ColonyPermissions", (accounts) => {
           token.address,
           { from: USER2 }
         ),
-        "colony-invalid-domain-inheritence"
+        "colony-invalid-domain-inheritance"
       );
 
       await checkErrorRevert(
@@ -494,7 +523,7 @@ contract("ColonyPermissions", (accounts) => {
           token.address,
           { from: USER2 }
         ),
-        "colony-invalid-domain-inheritence"
+        "colony-invalid-domain-inheritance"
       );
     });
 
@@ -614,6 +643,15 @@ contract("ColonyPermissions", (accounts) => {
       await colony.setUserRoles(1, 0, USER2, 2, nonexistentRole, { from: FOUNDER });
       const userRoles = await colony.getUserRoles(USER2, 2);
       expect(userRoles).to.equal(ethers.constants.HashZero);
+    });
+
+    it("authority should not allow users who aren't permissioned to set roles", async () => {
+      const authority = await ColonyAuthority.new(USER2);
+      await checkErrorRevert(authority.setUserRole(ADDRESS_ZERO, 0, true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(
+        authority.methods["setUserRole(address,uint256,uint8,bool)"](ADDRESS_ZERO, 0, 0, true, { from: USER1 }),
+        "ds-auth-unauthorized"
+      );
     });
   });
 });

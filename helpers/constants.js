@@ -1,6 +1,10 @@
-import { soliditySha3 } from "web3-utils";
-import { BN } from "bn.js";
-import shortid from "shortid";
+const { soliditySha3 } = require("web3-utils");
+const BN = require("bn.js");
+const shortid = require("shortid");
+const { ethers } = require("ethers");
+
+const HASHZERO = ethers.constants.HashZero;
+const ADDRESS_ZERO = ethers.constants.AddressZero;
 
 const UINT256_MAX = new BN(0).notn(256);
 const UINT128_MAX = new BN(0).notn(128);
@@ -9,7 +13,7 @@ const INT256_MIN = new BN(2).pow(new BN(255)).mul(new BN(-1));
 const INT128_MAX = new BN(2).pow(new BN(127)).sub(new BN(1));
 const INT128_MIN = new BN(2).pow(new BN(127)).mul(new BN(-1));
 
-const CURR_VERSION = 9;
+const CURR_VERSION = 10;
 
 const RECOVERY_ROLE = 0;
 const ROOT_ROLE = 1;
@@ -114,4 +118,6 @@ module.exports = {
   DECAY_RATE,
   GLOBAL_SKILL_ID,
   IPFS_HASH,
+  HASHZERO,
+  ADDRESS_ZERO,
 };

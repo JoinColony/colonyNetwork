@@ -1,13 +1,13 @@
 /* globals artifacts */
 
-import chai from "chai";
-import bnChai from "bn-chai";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
+const chai = require("chai");
+const bnChai = require("bn-chai");
+const { ethers } = require("ethers");
+const { soliditySha3 } = require("web3-utils");
 
-import { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID, FUNDING_ROLE, ADMINISTRATION_ROLE } from "../../helpers/constants";
-import { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent } from "../../helpers/test-helper";
-import { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters } from "../../helpers/test-data-generator";
+const { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID, FUNDING_ROLE, ADMINISTRATION_ROLE, ADDRESS_ZERO } = require("../../helpers/constants");
+const { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent } = require("../../helpers/test-helper");
+const { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -31,7 +31,6 @@ contract("One transaction payments", (accounts) => {
   const USER2 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[2] : accounts[1];
 
   const ROLES = rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]);
-  const ADDRESS_ZERO = ethers.constants.AddressZero;
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
@@ -88,6 +87,13 @@ contract("One transaction payments", (accounts) => {
       await checkErrorRevert(colony.uninstallExtension(ONE_TX_PAYMENT, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(ONE_TX_PAYMENT);
+    });
+
+    it("can't use the network-level functions if installed via ColonyNetwork", async () => {
+      await checkErrorRevert(oneTxPayment.install(ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(oneTxPayment.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(oneTxPayment.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(oneTxPayment.uninstall({ from: USER1 }), "ds-auth-unauthorized");
     });
   });
 
