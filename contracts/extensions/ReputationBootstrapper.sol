@@ -56,7 +56,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   uint256 public decayDenominator;
 
   mapping (bytes32 => Grant) public grants;
-  mapping (bytes32 => uint256) public committedSecrets;
+  mapping (bytes32 => mapping (bytes32 => uint256)) public committedSecrets;
 
   // Modifiers
 
@@ -148,17 +148,19 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   /// @notice Commit the secret, beginning the security delay window
   /// @param _committedSecret A sha256 hash of (userAddress, secret)
   function commitSecret(bytes32 _committedSecret) public locked {
-    committedSecrets[_committedSecret] = block.timestamp;
+    bytes32 addressHash = keccak256(abi.encodePacked(msgSender(), _committedSecret));
+    committedSecrets[addressHash][_committedSecret] = block.timestamp;
   }
 
   /// @notice Claim the grant, after committing the secret and having the security delay elapse
   /// @param _secret The secret corresponding to a reputation grant
   function claimGrant(uint256 _secret) public locked {
     bytes32 committedSecret = keccak256(abi.encodePacked(msgSender(), _secret));
+    bytes32 addressHash = keccak256(abi.encodePacked(msgSender(), committedSecret));
+    uint256 commitTimestamp = committedSecrets[addressHash][committedSecret];
 
     require(
-      committedSecrets[committedSecret] > 0 &&
-      committedSecrets[committedSecret] + SECURITY_DELAY<= block.timestamp,
+      commitTimestamp > 0 && commitTimestamp + SECURITY_DELAY <= block.timestamp,
       "reputation-bootstrapper-commit-window-unelapsed"
     );
 
