@@ -8,12 +8,9 @@ git checkout $LATEST_RELEASE
 
 # Compile release
 
-npm i --force && npx truffle compile
+npm ci --force && npx truffle compile
 rm -rf build-$LATEST_RELEASE || true
 mv build build-$LATEST_RELEASE
-
-git checkout yarn.lock
-rm package-lock.json
 
 # Compile current commit
 git checkout $CURRENT_BRANCH
