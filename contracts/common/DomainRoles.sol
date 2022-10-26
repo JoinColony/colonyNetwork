@@ -45,15 +45,15 @@ contract DomainRoles is DSRoles {
     return bytes32(0) != roles & shifted;
   }
 
-  function canCall(address caller, uint256 where, address code, bytes4 sig) public view returns (bool) {
+  function canCall(address caller, uint256 where, address codeAddress, bytes4 sig) public view returns (bool) {
     bytes32 hasRoles = getUserRoles(caller, where);
-    bytes32 needsOneOf = getCapabilityRoles(code, sig);
+    bytes32 needsOneOf = getCapabilityRoles(codeAddress, sig);
     return bytes32(0) != hasRoles & needsOneOf;
   }
 
-  function canCallOnlyBecause(address caller, uint256 where, uint8 role, address code, bytes4 sig) public view returns (bool) {
+  function canCallOnlyBecause(address caller, uint256 where, uint8 role, address codeAddress, bytes4 sig) public view returns (bool) {
     bytes32 hasRoles = getUserRoles(caller, where);
-    bytes32 needsOneOf = getCapabilityRoles(code, sig);
+    bytes32 needsOneOf = getCapabilityRoles(codeAddress, sig);
     bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
     // See if the permission comes from a *specific* role
     return bytes32(0) == (needsOneOf & hasRoles) ^ shifted;
@@ -69,8 +69,8 @@ contract DomainRoles is DSRoles {
     return hasUserRole(who, 1, role);
   }
 
-  function canCall(address caller, address code, bytes4 sig) public view override returns (bool) {
-    return canCall(caller, 1, code, sig);
+  function canCall(address caller, address codeAddress, bytes4 sig) public view override returns (bool) {
+    return canCall(caller, 1, codeAddress, sig);
   }
 
 }
