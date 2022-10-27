@@ -115,9 +115,9 @@
     "solhint": "^3.3.7",
     "solidity-coverage": "^0.8.0-beta.1",
     "solidity-steamroller": "^1.1.0",
-    "truffle": "^5.5.25",
-    "truffle-hdwallet-provider": "^1.0.17",
+    "truffle": "^5.5.30",
     "truffle-contract-size": "^2.0.1",
+    "truffle-hdwallet-provider": "^1.0.17",
     "web3-utils": "^1.7.3"
   },
   "private": true,

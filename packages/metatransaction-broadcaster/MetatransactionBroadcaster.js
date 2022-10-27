@@ -289,7 +289,7 @@ class MetatransactionBroadcaster {
       } catch (err) {
         let reason;
         try {
-          reason = JSON.parse(err.body).error.message;
+          reason = JSON.parse(err.error.body).error.message;
         } catch (e) {
           reason = "Unknown, unable to parse error";
         }
