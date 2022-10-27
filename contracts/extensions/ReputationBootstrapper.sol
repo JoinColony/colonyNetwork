@@ -35,7 +35,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   // Events
 
-  event GrantSet(bytes32 hashedSecret, uint256 reputationAmount);
+  event GrantSet(bool paid, bytes32 hashedSecret, uint256 reputationAmount);
   event GrantClaimed(address recipient, uint256 reputationAmount, uint256 tokenAmount);
 
   // Data structures
@@ -48,30 +48,19 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   // Storage
 
   address public token;
-  bool public giveTokens;
-  bool public isLocked;
 
   uint256 public decayPeriod;
   uint256 public decayNumerator;
   uint256 public decayDenominator;
 
-  mapping (bytes32 => Grant) public grants;
+  uint256 totalPaidGrants;
+  mapping (bool => mapping (bytes32 => Grant)) public grants;
   mapping (bytes32 => mapping (bytes32 => uint256)) public committedSecrets;
 
   // Modifiers
 
   modifier onlyRoot() {
     require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "reputation-bootstrapper-caller-not-root");
-    _;
-  }
-
-  modifier unlocked() {
-    require(!isLocked, "reputation-bootstrapper-locked");
-    _;
-  }
-
-  modifier locked() {
-    require(isLocked, "reputation-bootstrapper-unlocked");
     _;
   }
 
@@ -107,7 +96,6 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   /// @notice Called when deprecating (or undeprecating) the extension
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
-    isLocked = true;
   }
 
   /// @notice Called when uninstalling the extension
@@ -120,41 +108,44 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   // Public
 
-  /// @notice Lock the extension, allowing grants to the claimed and preventing new grants
-  function lockExtension() public onlyRoot unlocked {
-    isLocked = true;
-  }
-
-  /// @notice Configure whether or not reputation claims come with tokens
-  /// @param _giveTokens A boolean setting the functionality to true or false
-  function setGiveTokens(bool _giveTokens) public onlyRoot unlocked {
-    giveTokens = _giveTokens;
-  }
-
   /// @notice Set an arbitrary number of grants
+  /// @param _paid An array of booleans indicated pair or unpaid
   /// @param _hashedSecrets An array of (hashed) secrets
   /// @param _amounts An array of reputation amounts claimable by the secret
-  function setGrants(bytes32[] memory _hashedSecrets, uint256[] memory _amounts) public onlyRoot unlocked {
+  function setGrants(bool[] memory _paid, bytes32[] memory _hashedSecrets, uint256[] memory _amounts) public onlyRoot notDeprecated {
+    require(_paid.length == _hashedSecrets.length, "reputation-bootstrapper-invalid-arguments");
     require(_hashedSecrets.length == _amounts.length, "reputation-bootstrapper-invalid-arguments");
+    uint256 balance = ERC20(token).balanceOf(address(this));
 
     for (uint256 i; i < _hashedSecrets.length; i++) {
       require(_amounts[i] <= INT128_MAX, "reputation-bootstrapper-invalid-amount");
-      grants[_hashedSecrets[i]] = Grant(_amounts[i], block.timestamp);
 
-      emit GrantSet(_hashedSecrets[i], _amounts[i]);
+      if (_paid[i]) {
+        uint256 priorGrant = grants[_paid[i]][_hashedSecrets[i]].amount;
+        if (priorGrant < _amounts[i]) {
+          totalPaidGrants += _amounts[i] - priorGrant;
+        } else {
+          totalPaidGrants -= priorGrant - _amounts[i];
+        }
+        require(totalPaidGrants <= balance, "reputation-bootstrapper-insufficient-balance");
+      }
+
+      grants[_paid[i]][_hashedSecrets[i]] = Grant(_amounts[i], block.timestamp);
+
+      emit GrantSet(_paid[i], _hashedSecrets[i], _amounts[i]);
     }
   }
 
   /// @notice Commit the secret, beginning the security delay window
   /// @param _committedSecret A sha256 hash of (userAddress, secret)
-  function commitSecret(bytes32 _committedSecret) public locked {
+  function commitSecret(bytes32 _committedSecret) public notDeprecated {
     bytes32 addressHash = keccak256(abi.encodePacked(msgSender(), _committedSecret));
     committedSecrets[addressHash][_committedSecret] = block.timestamp;
   }
 
   /// @notice Claim the grant, after committing the secret and having the security delay elapse
   /// @param _secret The secret corresponding to a reputation grant
-  function claimGrant(uint256 _secret) public locked {
+  function claimGrant(bool _paid, uint256 _secret) public notDeprecated {
     bytes32 committedSecret = keccak256(abi.encodePacked(msgSender(), _secret));
     bytes32 addressHash = keccak256(abi.encodePacked(msgSender(), committedSecret));
     uint256 commitTimestamp = committedSecrets[addressHash][committedSecret];
@@ -165,13 +156,13 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     );
 
     bytes32 hashedSecret = keccak256(abi.encodePacked(_secret));
-    uint256 grantAmount = grants[hashedSecret].amount;
-    uint256 tokenAmount = grants[hashedSecret].amount;
-    uint256 grantTimestamp = grants[hashedSecret].timestamp + SECURITY_DELAY; // Don't decay during delay window
+    uint256 grantAmount = grants[_paid][hashedSecret].amount;
+    uint256 tokenAmount = _paid ? grants[_paid][hashedSecret].amount : 0;
+    uint256 grantTimestamp = grants[_paid][hashedSecret].timestamp + SECURITY_DELAY; // Don't decay during delay window
 
     require(grantAmount > 0, "reputation-bootstrapper-nothing-to-claim");
 
-    delete grants[hashedSecret];
+    delete grants[_paid][hashedSecret];
 
     uint256 decayEpochs = (block.timestamp - grantTimestamp) / decayPeriod;
     uint256 adjustedNumerator = decayNumerator;
@@ -192,7 +183,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
     colony.emitDomainReputationReward(1, msgSender(), int256(grantAmount));
 
-    if (giveTokens) {
+    if (tokenAmount > 0) {
       require(ERC20(token).transfer(msgSender(), tokenAmount), "reputation-bootstrapper-transfer-failed");
     }
 
