@@ -261,16 +261,7 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("miners should be randomised in terms of order of allowed responses each cycle", async function () {
-          reputationMinerClient = new ReputationMinerClient({
-            loader,
-            realProviderPort,
-            minerAddress: MINER1,
-            useJsTree: true,
-            auto: true,
-            oracle: false,
-            processingDelay: 1,
-          });
-
+          reputationMinerClient._processingDelay = 1;
           const reputationMinerClient2 = new ReputationMinerClient({
             loader,
             realProviderPort,
@@ -335,6 +326,7 @@ process.env.SOLIDITY_COVERAGE
             }
           }
           await reputationMinerClient2.close();
+          reputationMinerClient._processingDelay = 10;
         });
 
         it("should successfully complete a dispute resolution", async function () {

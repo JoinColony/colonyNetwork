@@ -216,7 +216,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     require(submissionWindowClosed(), "colony-reputation-mining-submission-window-still-open");
 
     require(
-      responsePossible(DisputeStages.ConfirmNewHash, disputeRounds[_roundNumber][0].lastResponseTimestamp),
+      responsePossible(disputeRounds[_roundNumber][0].lastResponseTimestamp),
       "colony-reputation-mining-user-ineligible-to-respond"
     );
 
@@ -256,7 +256,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
       // Is the person making this call eligible to?
       require(
-        responsePossible(DisputeStages.InvalidateHash, disputeRounds[_round][opponentIdx].lastResponseTimestamp),
+        responsePossible(disputeRounds[_round][opponentIdx].lastResponseTimestamp),
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 
@@ -292,7 +292,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
       // The submission can be invalidated - now check the person invalidating is allowed to
       require(
-        responsePossible(DisputeStages.InvalidateHash, add(disputeRounds[_round][_idx].lastResponseTimestamp, CHALLENGE_RESPONSE_WINDOW_DURATION)),
+        responsePossible(add(disputeRounds[_round][_idx].lastResponseTimestamp, CHALLENGE_RESPONSE_WINDOW_DURATION)),
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 
@@ -350,7 +350,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     require(submissionWindowClosed(), "colony-reputation-mining-cycle-submissions-not-closed");
     require(_index < disputeRounds[_round].length, "colony-reputation-mining-index-beyond-round-length");
     require(
-      responsePossible(DisputeStages.ConfirmNewHash, disputeRounds[_round][_index].lastResponseTimestamp),
+      responsePossible(disputeRounds[_round][_index].lastResponseTimestamp),
       "colony-reputation-mining-user-ineligible-to-respond"
     );
 
@@ -500,7 +500,11 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   }
 
   function getResponsePossible(DisputeStages _stage, uint256 _since) external view returns (bool) {
-    return responsePossible(_stage, _since);
+    return responsePossible(_since);
+  }
+
+  function getResponsePossible(uint256 _since) external view returns (bool) {
+    return responsePossible(_since);
   }
 
   /////////////////////////
