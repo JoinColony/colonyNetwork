@@ -277,12 +277,30 @@ Get the length of the ReputationUpdateLog stored on this instance of the Reputat
 
 Returns whether the caller is able to currently respond to a dispute stage.
 
+*Note: Deprecated*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
 |_stage|DisputeStages|The dispute stage in question. Practically, this is a number that indexes in to the corresponding enum in ReputationMiningCycleDataTypes
+|_since|uint256|The timestamp the last response for the submission in the dispute in question was made at.
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|possible|bool|bool Whether the user can respond at the current time.
+
+### ▸ `getResponsePossible(uint256 _since):bool possible`
+
+Returns whether the caller is able to currently respond to a dispute stage.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
 |_since|uint256|The timestamp the last response for the submission in the dispute in question was made at.
 
 **Return Parameters**

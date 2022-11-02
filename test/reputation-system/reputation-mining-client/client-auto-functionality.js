@@ -260,6 +260,83 @@ process.env.SOLIDITY_COVERAGE
           await miningCycleComplete;
         });
 
+        it("miners should be randomised in terms of order of allowed responses each cycle", async function () {
+          reputationMinerClient = new ReputationMinerClient({
+            loader,
+            realProviderPort,
+            minerAddress: MINER1,
+            useJsTree: true,
+            auto: true,
+            oracle: false,
+            processingDelay: 1,
+          });
+
+          const reputationMinerClient2 = new ReputationMinerClient({
+            loader,
+            realProviderPort,
+            minerAddress: MINER2,
+            useJsTree: true,
+            auto: true,
+            oracle: false,
+            processingDelay: 1,
+          });
+          await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
+          await reputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber);
+          function sleep(ms) {
+            return new Promise((resolve) => {
+              setTimeout(resolve, ms);
+            });
+          }
+
+          let differentAddresses = false;
+          const completionAddresses = [];
+          while (!differentAddresses) {
+            const colonyNetworkEthers = reputationMinerClient._miner.colonyNetwork;
+            let completionEvent;
+            const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+            const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
+
+            // Forward time and wait for the client to submit all 12 allowed entries
+            await forwardTime(MINING_CYCLE_DURATION / 2, this);
+            // await checkSuccessEthers(goodClient.submitRootHash());
+            await receive12Submissions;
+
+            let cycleComplete = false;
+            let error = false;
+            const miningCycleCompletePromise = new Promise(function (resolve, reject) {
+              colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
+                event.removeListener();
+                cycleComplete = true;
+                completionEvent = event;
+                resolve();
+              });
+
+              // After 30s, we throw a timeout error
+              setTimeout(() => {
+                error = true;
+                reject(new Error("ERROR: timeout while waiting for confirming hash"));
+              }, 30000);
+            });
+
+            while (!cycleComplete && !error) {
+              await forwardTime(MINING_CYCLE_DURATION / 10);
+              await sleep(1000);
+            }
+
+            if (error) {
+              throw miningCycleCompletePromise;
+            }
+
+            const t = await completionEvent.getTransaction();
+            completionAddresses.push(t.from);
+            // We repeat this loop until both miners have confirmed in different cycles
+            if ([...new Set(completionAddresses)].length > 1) {
+              differentAddresses = true;
+            }
+          }
+          await reputationMinerClient2.close();
+        });
+
         it("should successfully complete a dispute resolution", async function () {
           const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree: true, minerAddress: MINER3 }, 1, 0);
           await badClient.initialise(colonyNetwork.address);
