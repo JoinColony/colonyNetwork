@@ -464,7 +464,7 @@ class ReputationMinerClient {
         const oppSubmission = await repCycle.getReputationHashSubmission(oppEntry.firstSubmitter);
 
         if (oppSubmission.proposedNewRootHash === ethers.constants.AddressZero){
-          const responsePossible = await repCycle.getResponsePossible(disputeStages.INVALIDATE_HASH, entry.lastResponseTimestamp);
+          const responsePossible = await repCycle["getResponsePossible(uint8,uint256)"](disputeStages.INVALIDATE_HASH, entry.lastResponseTimestamp);
           if (!responsePossible) {
             this.endDoBlockChecks();
             return;
@@ -497,7 +497,7 @@ class ReputationMinerClient {
         // Before checking if our opponent has timed out yet, check if we can respond to something
         // 1. Do we still need to confirm JRH?
         if (submission.jrhNLeaves.eq(0)) {
-          const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
+          const responsePossible = await repCycle["getResponsePossible(uint8,uint256)"](disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
           if (responsePossible){
             const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
             await this._miner.setGasPrice(gasPrice);
@@ -512,7 +512,10 @@ class ReputationMinerClient {
           // We can respond if neither of us have responded to this stage yet or
           // if they have responded already
           if (oppEntry.challengeStepCompleted.gte(entry.challengeStepCompleted)) {
-            const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_RESPONSE, entry.lastResponseTimestamp);
+            const responsePossible = await repCycle["getResponsePossible(uint8,uint256)"](
+              disputeStages.BINARY_SEARCH_RESPONSE,
+              entry.lastResponseTimestamp
+            );
             if (responsePossible){
             const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
             await this._miner.setGasPrice(gasPrice);
@@ -530,7 +533,10 @@ class ReputationMinerClient {
           ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNLeaves)
         )
         {
-          const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
+          const responsePossible = await repCycle["getResponsePossible(uint8,uint256)"](
+            disputeStages.BINARY_SEARCH_CONFIRM,
+            entry.lastResponseTimestamp
+          );
           if (responsePossible){
             const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
             await this._miner.setGasPrice(gasPrice);
@@ -548,7 +554,10 @@ class ReputationMinerClient {
             ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNLeaves)
           )
         {
-          const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
+          const responsePossible = await repCycle["getResponsePossible(uint8,uint256)"](
+            disputeStages.RESPOND_TO_CHALLENGE,
+            entry.lastResponseTimestamp
+          );
           if (responsePossible){
             const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
             await this._miner.setGasPrice(gasPrice);
@@ -562,7 +571,7 @@ class ReputationMinerClient {
 
         const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(CHALLENGE_RESPONSE_WINDOW_DURATION);
         if (opponentTimeout){
-          const responsePossible = await repCycle.getResponsePossible(
+          const responsePossible = await repCycle["getResponsePossible(uint8,uint256)"](
             disputeStages.INVALIDATE_HASH,
             ethers.BigNumber.from(oppEntry.lastResponseTimestamp).add(CHALLENGE_RESPONSE_WINDOW_DURATION)
           );
@@ -585,7 +594,7 @@ class ReputationMinerClient {
         const disputeRound = await repCycle.getDisputeRound(round);
         const entry = disputeRound[index];
 
-        const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_NEW_HASH, entry.lastResponseTimestamp);
+        const responsePossible = await repCycle["getResponsePossible(uint8,uint256)"](disputeStages.CONFIRM_NEW_HASH, entry.lastResponseTimestamp);
         if (responsePossible){
           await this.confirmEntry();
         }
