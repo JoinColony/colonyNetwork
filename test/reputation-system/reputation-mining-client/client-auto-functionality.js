@@ -352,8 +352,8 @@ process.env.SOLIDITY_COVERAGE
           reputationMinerClient2.lockedForBlockProcessing = true;
           await mineBlock();
 
-          let startingBlock = await currentBlock();
-          startingBlockNumber = startingBlock.number;
+          let latestBlock = await currentBlock();
+          let firstSubmissionBlockNumber = latestBlock.number;
 
           let repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
           let receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
@@ -389,7 +389,7 @@ process.env.SOLIDITY_COVERAGE
           let endBlock = await currentBlock();
           let endBlockNumber = endBlock.number;
           // For every block...
-          for (let i = startingBlockNumber; i <= endBlockNumber; i += 1) {
+          for (let i = firstSubmissionBlockNumber; i <= endBlockNumber; i += 1) {
             const block = await getBlock(i);
             // Check every transaction...
             for (let txCount = 0; txCount < block.transactions.length; txCount += 1) {
@@ -412,8 +412,8 @@ process.env.SOLIDITY_COVERAGE
           repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
           receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
 
-          startingBlock = await currentBlock();
-          startingBlockNumber = startingBlock.number;
+          latestBlock = await currentBlock();
+          firstSubmissionBlockNumber = latestBlock.number;
           // Forward time and wait for the clients to submit all 12 allowed entries
           await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
@@ -424,7 +424,7 @@ process.env.SOLIDITY_COVERAGE
           const submissionAddresses = [];
 
           // For every block...
-          for (let i = startingBlockNumber; i <= endBlockNumber; i += 1) {
+          for (let i = firstSubmissionBlockNumber; i <= endBlockNumber; i += 1) {
             const block = await getBlock(i);
             // Check every transaction...
             for (let txCount = 0; txCount < block.transactions.length; txCount += 1) {
