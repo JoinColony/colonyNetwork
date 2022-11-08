@@ -753,11 +753,12 @@ class ReputationMiner {
     if (!entryIndex) {
       entryIndex = await this.getEntryIndex(); // eslint-disable-line no-param-reassign
     }
-    let gasEstimate = ethers.BigNumber.from(1000000);
+    let gasEstimate;
     try {
-      gasEstimate = await repCycle.estimate.submitRootHash(hash, nLeaves, jrh, entryIndex);
-    } catch (err) { // eslint-disable-line no-empty
-
+      gasEstimate = await repCycle.estimateGas.submitRootHash(hash, nLeaves, jrh, entryIndex);
+      gasEstimate = gasEstimate.mul(11).div(10);
+    } catch (err) {
+      gasEstimate = ethers.BigNumber.from(1000000);
     }
 
     // Submit that entry
@@ -1001,11 +1002,12 @@ class ReputationMiner {
     const [, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
     const [round, index] = await this.getMySubmissionRoundAndIndex();
 
-    let gasEstimate = ethers.BigNumber.from(6000000);
+    let gasEstimate;
     try {
-      gasEstimate = await repCycle.estimate.confirmJustificationRootHash(round, index, siblings1, siblings2);
-    } catch (err) { // eslint-disable-line no-empty
-
+      gasEstimate = await repCycle.estimateGas.confirmJustificationRootHash(round, index, siblings1, siblings2);
+      gasEstimate = gasEstimate.mul(11).div(10)
+    } catch (err) {
+      gasEstimate = ethers.BigNumber.from(6000000);
     }
 
     return repCycle.confirmJustificationRootHash(
@@ -1083,16 +1085,17 @@ class ReputationMiner {
       );
     }
 
-    let gasEstimate = ethers.BigNumber.from(1000000);
+    let gasEstimate;
     try {
-      gasEstimate = await repCycle.estimate.respondToBinarySearchForChallenge(
+      gasEstimate = await repCycle.estimateGas.respondToBinarySearchForChallenge(
         round,
         index,
         intermediateReputationHash,
         siblings
       );
-    } catch (err) { // eslint-disable-line no-empty
-
+      gasEstimate = gasEstimate.mul(11).div(10);
+    } catch (err) {
+      gasEstimate = ethers.BigNumber.from(1000000);
     }
     return repCycle.respondToBinarySearchForChallenge(
       round,
@@ -1121,12 +1124,13 @@ class ReputationMiner {
 
     const intermediateReputationHash = this.justificationHashes[targetLeafKeyAsHex].jhLeafValue;
     const [, siblings] = await this.justificationTree.getProof(targetLeafKeyAsHex);
-    let gasEstimate = ethers.BigNumber.from(1000000);
+    let gasEstimate
 
     try {
-      gasEstimate = await repCycle.estimate.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings);
-    } catch (err){ // eslint-disable-line no-empty
-
+      gasEstimate = await repCycle.estimateGas.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings);
+      gasEstimate = gasEstimate.mul(11).div(10);
+    } catch (err){
+      gasEstimate = ethers.BigNumber.from(1000000);
     }
 
     return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings, {
@@ -1225,11 +1229,12 @@ class ReputationMiner {
       lastAgreeJustifications.childReputationProof.siblings,
       lastAgreeJustifications.adjacentReputationProof.siblings]
 
-    let gasEstimate = ethers.BigNumber.from(4000000);
+    let gasEstimate;
     try {
-      gasEstimate = await repCycle.estimate.respondToChallenge(...functionArgs);
-    } catch (err){ // eslint-disable-line no-empty
-
+      gasEstimate = await repCycle.estimateGas.respondToChallenge(...functionArgs);
+      gasEstimate = gasEstimate.mul(11).div(10);
+    } catch (err){
+      gasEstimate = ethers.BigNumber.from(4000000);
     }
 
     return repCycle.respondToChallenge(...functionArgs,
@@ -1245,11 +1250,12 @@ class ReputationMiner {
     const repCycle = await this.getActiveRepCycle();
     const [round] = await this.getMySubmissionRoundAndIndex();
 
-    let gasEstimate = ethers.BigNumber.from(4000000);
+    let gasEstimate;
     try {
       gasEstimate = await repCycle.estimateGas.confirmNewHash(round);
-    } catch (err){ // eslint-disable-line no-empty
-
+      gasEstimate = gasEstimate.mul(11).div(10);
+    } catch (err){
+      gasEstimate = ethers.BigNumber.from(4000000);
     }
     return repCycle.confirmNewHash(round, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
   }
