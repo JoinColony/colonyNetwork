@@ -21,6 +21,16 @@ const CHALLENGE_RESPONSE_WINDOW_DURATION = 20 * 60;
 
 const cache = apicache.middleware
 
+const racingFunctionSignatures = [
+  "submitRootHash(bytes32,uint256,bytes32,uint256)",
+  "confirmNewHash(uint256)",
+  "invalidateHash(uint256, uint256)",
+  "respondToBinarySearchForChallenge(uint256,uint256 ,bytes,bytes32[])",
+  "confirmBinarySearchResult(uint256,uint256,bytes,bytes32[] )",
+  "respondToChallenge(uint256[26],bytes32[7],bytes32[],bytes32[],bytes32[],bytes32[],bytes32[],bytes32[])",
+  "confirmJustificationRootHash(uint256,uint256,bytes32[],bytes32[])"
+].map(x => ethers.utils.id(x).slice(0,10))
+
 class ReputationMinerClient {
   /**
    * Constructor for ReputationMiner
@@ -616,6 +626,13 @@ class ReputationMinerClient {
         return;
       }
       this._adapter.error(`Error during block checks: ${err}`);
+      if (racingFunctionSignatures.indexOf(err.transaction.data.slice(0, 10)) > -1){
+        // An error on a function that we were 'racing' to execute failed - most likely because someone else did it.
+        // So let's keep mining.
+        console.log('Sometimes-expected transaction failure - we lost a race to submit for a stage. Continuing mining')
+        this.endDoBlockChecks();
+        return;
+      }
       if (this._exitOnError) {
         this._adapter.error(`Automatically restarting`);
         process.exit(1);
