@@ -284,18 +284,17 @@ process.env.SOLIDITY_COVERAGE
           let differentAddresses = false;
           const completionAddresses = [];
           while (!differentAddresses) {
-            const colonyNetworkEthers = reputationMinerClient._miner.colonyNetwork;
-            let completionEvent;
             const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
             const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
 
             // Forward time and wait for the client to submit all 12 allowed entries
             await forwardTime(MINING_CYCLE_DURATION / 2, this);
-            // await checkSuccessEthers(goodClient.submitRootHash());
             await receive12Submissions;
 
             let cycleComplete = false;
             let error = false;
+            const colonyNetworkEthers = reputationMinerClient._miner.colonyNetwork;
+            let completionEvent;
             const miningCycleCompletePromise = new Promise(function (resolve, reject) {
               colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
                 event.removeListener();
