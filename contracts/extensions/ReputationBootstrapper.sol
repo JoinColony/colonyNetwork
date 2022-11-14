@@ -53,7 +53,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   uint256 public decayNumerator;
   uint256 public decayDenominator;
 
-  uint256 totalPaidGrants;
+  uint256 public totalPayableGrants;
   mapping (bool => mapping (bytes32 => Grant)) public grants;
   mapping (bytes32 => mapping (bytes32 => uint256)) public committedSecrets;
 
@@ -122,18 +122,15 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
       if (_paid[i]) {
         uint256 priorGrant = grants[_paid[i]][_hashedSecrets[i]].amount;
-        if (priorGrant < _amounts[i]) {
-          totalPaidGrants += _amounts[i] - priorGrant;
-        } else {
-          totalPaidGrants -= priorGrant - _amounts[i];
-        }
-        require(totalPaidGrants <= balance, "reputation-bootstrapper-insufficient-balance");
+        totalPayableGrants = totalPayableGrants - priorGrant + _amounts[i];
       }
 
       grants[_paid[i]][_hashedSecrets[i]] = Grant(_amounts[i], block.timestamp);
 
       emit GrantSet(_paid[i], _hashedSecrets[i], _amounts[i]);
     }
+
+    require(totalPayableGrants <= balance, "reputation-bootstrapper-insufficient-balance");
   }
 
   /// @notice Commit the secret, beginning the security delay window
@@ -184,6 +181,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     colony.emitDomainReputationReward(1, msgSender(), int256(grantAmount));
 
     if (tokenAmount > 0) {
+      totalPayableGrants -= tokenAmount;
       require(ERC20(token).transfer(msgSender(), tokenAmount), "reputation-bootstrapper-transfer-failed");
     }
 

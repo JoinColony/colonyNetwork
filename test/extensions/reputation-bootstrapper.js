@@ -199,7 +199,7 @@ contract("Reputation Bootstrapper", (accounts) => {
     });
 
     it("can set and claim grants continually", async () => {
-      await token.mint(reputationBootstrapper.address, WAD.muln(10));
+      await token.mint(reputationBootstrapper.address, WAD.muln(1));
 
       await reputationBootstrapper.setGrants([true], [soliditySha3(PIN1)], [WAD]);
 
@@ -208,6 +208,13 @@ contract("Reputation Bootstrapper", (accounts) => {
 
       await reputationBootstrapper.claimGrant(true, PIN1, { from: USER0 });
 
+      // Can't add new grants until funds are there
+      await checkErrorRevert(
+        reputationBootstrapper.setGrants([true], [soliditySha3(PIN2)], [WAD.muln(2)]),
+        "reputation-bootstrapper-insufficient-balance"
+      );
+
+      await token.mint(reputationBootstrapper.address, WAD.muln(2));
       await reputationBootstrapper.setGrants([true], [soliditySha3(PIN2)], [WAD.muln(2)]);
 
       await reputationBootstrapper.commitSecret(soliditySha3(USER1, PIN2), { from: USER1 });
@@ -219,6 +226,9 @@ contract("Reputation Bootstrapper", (accounts) => {
       expect(balance1).to.eq.BN(WAD);
       const balance2 = await token.balanceOf(USER1);
       expect(balance2).to.eq.BN(WAD.muln(2));
+
+      const totalPayableGrants = await reputationBootstrapper.totalPayableGrants();
+      expect(totalPayableGrants).to.be.zero;
     });
 
     it("cannot set a paid grant with insufficient funding", async () => {
