@@ -57,7 +57,7 @@ contract GasGuzzler is ColonyExtensionMeta {
 
 
   function fun(uint256 a) public {
-    for (uint256 i = 0; i < a; i++){
+    for (uint256 i; i < a; i++){
       storageVar = i;
     }
   }

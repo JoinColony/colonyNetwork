@@ -491,7 +491,6 @@ contract("Metatransaction broadcaster", (accounts) => {
     });
 
     it("a valid transaction that uses multicall is broadcast and mined", async function () {
-      await colony.contract.methods.setArchitectureRole(1, UINT256_MAX, USER1, 1, true).send({ from: USER0 });
       const awardPermission1 = await colony.contract.methods.setArchitectureRole(1, UINT256_MAX, USER1, 1, true).encodeABI();
       const awardPermission2 = await colony.contract.methods.setFundingRole(1, UINT256_MAX, USER1, 1, true).encodeABI();
 

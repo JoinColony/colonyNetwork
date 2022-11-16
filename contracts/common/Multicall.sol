@@ -16,7 +16,7 @@ abstract contract Multicall is MetaTransactionMsgSender {
         }
 
         results = new bytes[](data.length);
-        for (uint256 i = 0; i < data.length; i++) {
+        for (uint256 i; i < data.length; i++) {
             (bool success, bytes memory result) = address(this).delegatecall(abi.encodePacked(data[i], affix));
 
             if (!success) {
