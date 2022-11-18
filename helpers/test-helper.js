@@ -297,9 +297,9 @@ exports.currentBlock = async function currentBlock() {
   return p;
 };
 
-exports.getBlock = async function getBlock(blockTag) {
+exports.getBlock = async function getBlock(blockNumber) {
   const p = new Promise((resolve, reject) => {
-    web3.eth.getBlock(blockTag, (err, res) => {
+    web3.eth.getBlock(blockNumber, (err, res) => {
       if (err) {
         return reject(err);
       }
@@ -1048,7 +1048,7 @@ exports.getMiningCycleCompletePromise = async function getMiningCycleCompletePro
         expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
       }
       if (expectedHash) {
-        expect(newHash).to.equal(expectedHash, "The network root hash doens't match the one submitted");
+        expect(newHash).to.equal(expectedHash, "The network root hash doesn't match the one submitted");
       }
       event.removeListener();
       resolve();

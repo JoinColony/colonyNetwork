@@ -344,7 +344,6 @@ process.env.SOLIDITY_COVERAGE
           await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
 
           let lostRace = false;
-          // while (!lostRace) {
           while (reputationMinerClient.lockedForBlockProcessing || reputationMinerClient2.lockedForBlockProcessing) {
             await sleep(1000);
           }

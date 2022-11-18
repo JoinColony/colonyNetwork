@@ -24,9 +24,9 @@ const cache = apicache.middleware
 const racingFunctionSignatures = [
   "submitRootHash(bytes32,uint256,bytes32,uint256)",
   "confirmNewHash(uint256)",
-  "invalidateHash(uint256, uint256)",
-  "respondToBinarySearchForChallenge(uint256,uint256 ,bytes,bytes32[])",
-  "confirmBinarySearchResult(uint256,uint256,bytes,bytes32[] )",
+  "invalidateHash(uint256,uint256)",
+  "respondToBinarySearchForChallenge(uint256,uint256,bytes,bytes32[])",
+  "confirmBinarySearchResult(uint256,uint256,bytes,bytes32[])",
   "respondToChallenge(uint256[26],bytes32[7],bytes32[],bytes32[],bytes32[],bytes32[],bytes32[],bytes32[])",
   "confirmJustificationRootHash(uint256,uint256,bytes32[],bytes32[])"
 ].map(x => ethers.utils.id(x).slice(0,10))
