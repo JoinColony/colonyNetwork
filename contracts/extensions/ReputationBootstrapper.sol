@@ -36,7 +36,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   // Events
 
   event GrantSet(bool paid, bytes32 hashedSecret, uint256 reputationAmount);
-  event GrantClaimed(address recipient, uint256 reputationAmount, uint256 tokenAmount);
+  event GrantClaimed(address recipient, uint256 reputationAmount, bool paid);
 
   // Data structures
 
@@ -55,7 +55,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   uint256 public totalPayableGrants;
   mapping (bool => mapping (bytes32 => Grant)) public grants;
-  mapping (bytes32 => mapping (bytes32 => uint256)) public committedSecrets;
+  mapping (bytes32 => uint256) public committedSecrets;
 
   // Modifiers
 
@@ -137,7 +137,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   /// @param _committedSecret A sha256 hash of (userAddress, secret)
   function commitSecret(bytes32 _committedSecret) public notDeprecated {
     bytes32 addressHash = keccak256(abi.encodePacked(msgSender(), _committedSecret));
-    committedSecrets[addressHash][_committedSecret] = block.timestamp;
+    committedSecrets[addressHash] = block.timestamp;
   }
 
   /// @notice Claim the grant, after committing the secret and having the security delay elapse
@@ -145,7 +145,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   function claimGrant(bool _paid, uint256 _secret) public notDeprecated {
     bytes32 committedSecret = keccak256(abi.encodePacked(msgSender(), _secret));
     bytes32 addressHash = keccak256(abi.encodePacked(msgSender(), committedSecret));
-    uint256 commitTimestamp = committedSecrets[addressHash][committedSecret];
+    uint256 commitTimestamp = committedSecrets[addressHash];
 
     require(
       commitTimestamp > 0 && commitTimestamp + SECURITY_DELAY <= block.timestamp,
@@ -154,12 +154,16 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
     bytes32 hashedSecret = keccak256(abi.encodePacked(_secret));
     uint256 grantAmount = grants[_paid][hashedSecret].amount;
-    uint256 tokenAmount = _paid ? grants[_paid][hashedSecret].amount : 0;
-    uint256 grantTimestamp = grants[_paid][hashedSecret].timestamp + SECURITY_DELAY; // Don't decay during delay window
+    uint256 grantTimestamp = grants[_paid][hashedSecret].timestamp;
 
     require(grantAmount > 0, "reputation-bootstrapper-nothing-to-claim");
 
     delete grants[_paid][hashedSecret];
+
+    if (_paid) {
+      totalPayableGrants -= grantAmount;
+      require(ERC20(token).transfer(msgSender(), grantAmount), "reputation-bootstrapper-transfer-failed");
+    }
 
     uint256 decayEpochs = (block.timestamp - grantTimestamp) / decayPeriod;
     uint256 adjustedNumerator = decayNumerator;
@@ -180,12 +184,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
     colony.emitDomainReputationReward(1, msgSender(), int256(grantAmount));
 
-    if (tokenAmount > 0) {
-      totalPayableGrants -= tokenAmount;
-      require(ERC20(token).transfer(msgSender(), tokenAmount), "reputation-bootstrapper-transfer-failed");
-    }
-
-    emit GrantClaimed(msgSender(), grantAmount, tokenAmount);
+    emit GrantClaimed(msgSender(), grantAmount, _paid);
   }
 
 

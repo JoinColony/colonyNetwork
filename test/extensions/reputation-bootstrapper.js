@@ -160,7 +160,7 @@ contract("Reputation Bootstrapper", (accounts) => {
       const updateLog = await inactivecycle.getReputationUpdateLogEntry(numLogs.subn(1));
 
       expect(updateLog.user).to.equal(USER1);
-      expect(updateLog.amount).to.eq.BN(WAD);
+      expect(updateLog.amount).to.eq.BN("999679150010889000");
       expect(updateLog.skillId).to.eq.BN(domain1.skillId);
 
       const balance = await token.balanceOf(USER1);
@@ -181,7 +181,7 @@ contract("Reputation Bootstrapper", (accounts) => {
       const inactivecycle = await IReputationMiningCycle.at(inactiveCycleAddress);
       const numLogs = await inactivecycle.getReputationUpdateLogLength();
       const updateLog = await inactivecycle.getReputationUpdateLogEntry(numLogs.subn(1));
-      expect(updateLog.amount).to.eq.BN(WAD.divn(2).subn(406575)); // Numerical approximation
+      expect(updateLog.amount).to.eq.BN("499839575005038055"); // Numerical approximation
     });
 
     it("can claim reputation amounts and tokens, if set", async () => {
@@ -307,7 +307,7 @@ contract("Reputation Bootstrapper", (accounts) => {
       const updateLog = await inactivecycle.getReputationUpdateLogEntry(numLogs.subn(1));
 
       expect(updateLog.user).to.equal(USER1);
-      expect(updateLog.amount).to.eq.BN(WAD);
+      expect(updateLog.amount).to.eq.BN("999679150010889000");
       expect(updateLog.skillId).to.eq.BN(domain1.skillId);
     });
   });
