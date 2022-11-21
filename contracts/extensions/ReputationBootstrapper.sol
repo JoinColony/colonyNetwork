@@ -47,15 +47,15 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   // Storage
 
-  address public token;
+  address token;
 
-  uint256 public decayPeriod;
-  uint256 public decayNumerator;
-  uint256 public decayDenominator;
+  uint256 decayPeriod;
+  uint256 decayNumerator;
+  uint256 decayDenominator;
 
-  uint256 public totalPayableGrants;
-  mapping (bool => mapping (bytes32 => Grant)) public grants;
-  mapping (bytes32 => uint256) public committedSecrets;
+  uint256 totalPayableGrants;
+  mapping (bool => mapping (bytes32 => Grant)) grants;
+  mapping (bytes32 => uint256) committedSecrets;
 
   // Modifiers
 
@@ -187,5 +187,33 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     emit GrantClaimed(msgSender(), grantAmount, _paid);
   }
 
+// View
 
+  function getToken() public view returns (address) {
+    return token;
+  }
+
+  function getDecayPeriod() public view returns (uint256) {
+    return decayPeriod;
+  }
+
+  function getDecayNumerator() public view returns (uint256) {
+    return decayNumerator;
+  }
+
+  function getDecayDenominator() public view returns (uint256) {
+    return decayDenominator;
+  }
+
+  function getTotalPayableGrants() public view returns (uint256) {
+    return totalPayableGrants;
+  }
+
+  function getGrant(bool _paid, bytes32 _hashedSecret) public view returns (Grant memory grant) {
+    grant = grants[_paid][_hashedSecret];
+  }
+
+  function getCommittedSecret(bytes32 _addressHash) public view returns (uint256) {
+    return committedSecrets[_addressHash];
+  }
 }

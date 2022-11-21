@@ -6,7 +6,7 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { WAD, INT128_MAX, ADDRESS_ZERO, SECONDS_PER_DAY, SECONDS_PER_HOUR } = require("../../helpers/constants");
-const { checkErrorRevert, web3GetCode, forwardTime } = require("../../helpers/test-helper");
+const { checkErrorRevert, web3GetCode, getBlockTime, forwardTime } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -97,11 +97,26 @@ contract("Reputation Bootstrapper", (accounts) => {
     });
   });
 
-  describe("managing the extension", async () => {
+  describe("using the extension", async () => {
+    it("can get the token", async () => {
+      const tokenAddress = await reputationBootstrapper.getToken();
+      expect(tokenAddress).to.equal(token.address);
+    });
+
+    it("can get the decay parameters", async () => {
+      const decayPeriod = await reputationBootstrapper.getDecayPeriod();
+      const decayNumerator = await reputationBootstrapper.getDecayNumerator();
+      const decayDenominator = await reputationBootstrapper.getDecayDenominator();
+
+      expect(decayPeriod).to.eq.BN(SECONDS_PER_HOUR);
+      expect(decayNumerator).to.eq.BN("999679150010889");
+      expect(decayDenominator).to.eq.BN("1000000000000000");
+    });
+
     it("can setup reputation amounts", async () => {
       await reputationBootstrapper.setGrants([false, false], [soliditySha3(PIN1), soliditySha3(PIN2)], [WAD, WAD.muln(2)]);
 
-      const grant = await reputationBootstrapper.grants(false, soliditySha3(PIN1));
+      const grant = await reputationBootstrapper.getGrant(false, soliditySha3(PIN1));
       expect(grant.amount).to.eq.BN(WAD);
     });
 
@@ -120,6 +135,16 @@ contract("Reputation Bootstrapper", (accounts) => {
         reputationBootstrapper.setGrants([true], [soliditySha3(PIN1)], [INT128_MAX.addn(1)]),
         "reputation-bootstrapper-invalid-amount"
       );
+    });
+
+    it("can commit a secret", async () => {
+      const hashedSecret = soliditySha3(USER1, PIN1);
+      const addressHash = soliditySha3(USER1, hashedSecret);
+
+      const tx = await reputationBootstrapper.commitSecret(hashedSecret, { from: USER1 });
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+      const committedSecret = await reputationBootstrapper.getCommittedSecret(addressHash);
+      expect(committedSecret).to.eq.BN(blockTime);
     });
 
     it("cannot claim reputation before committing the secret", async () => {
@@ -189,10 +214,17 @@ contract("Reputation Bootstrapper", (accounts) => {
 
       await reputationBootstrapper.setGrants([true, true], [soliditySha3(PIN1), soliditySha3(PIN2)], [WAD, WAD.muln(2)]);
 
+      let totalPayableGrants;
+      totalPayableGrants = await reputationBootstrapper.getTotalPayableGrants();
+      expect(totalPayableGrants).to.eq.BN(WAD.muln(3));
+
       await reputationBootstrapper.commitSecret(soliditySha3(USER1, PIN1), { from: USER1 });
       await forwardTime(SECONDS_PER_HOUR, this);
 
       await reputationBootstrapper.claimGrant(true, PIN1, { from: USER1 });
+
+      totalPayableGrants = await reputationBootstrapper.getTotalPayableGrants();
+      expect(totalPayableGrants).to.eq.BN(WAD.muln(2));
 
       const balance = await token.balanceOf(USER1);
       expect(balance).to.eq.BN(WAD);
@@ -227,7 +259,7 @@ contract("Reputation Bootstrapper", (accounts) => {
       const balance2 = await token.balanceOf(USER1);
       expect(balance2).to.eq.BN(WAD.muln(2));
 
-      const totalPayableGrants = await reputationBootstrapper.totalPayableGrants();
+      const totalPayableGrants = await reputationBootstrapper.getTotalPayableGrants();
       expect(totalPayableGrants).to.be.zero;
     });
 
