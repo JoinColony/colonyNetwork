@@ -20,13 +20,12 @@ pragma experimental ABIEncoderV2;
 
 import "./../colony/ColonyDataTypes.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108
 
 
-contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
+contract StakedExpenditure is ColonyExtensionMeta {
 
   // Events
 
@@ -66,7 +65,7 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public override pure returns (uint256 _version) {
-    return 1;
+    return 2;
   }
 
   /// @notice Configures the extension
@@ -122,7 +121,9 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     public
     notDeprecated
   {
-    uint256 domainRep = getReputationFromProof(_domainId, _key, _value, _branchMask, _siblings);
+    bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork()).getReputationRootHash();
+    uint256 domainSkillId = colony.getDomain(_domainId).skillId;
+    uint256 domainRep = checkReputation(rootHash, domainSkillId, address(0x0), _key, _value, _branchMask, _siblings);
     uint256 stakeAmount = wmul(domainRep, stakeFraction);
 
     colony.obligateStake(msgSender(), _domainId, stakeAmount);
@@ -304,40 +305,5 @@ contract StakedExpenditure is ColonyExtensionMeta, PatriciaTreeProofs {
     );
 
     emit ExpenditureCancelled(_expenditureId);
-  }
-
-  function getReputationFromProof(
-    uint256 _domainId,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  )
-    internal
-    view
-    returns (uint256)
-  {
-    bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork()).getReputationRootHash();
-    bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
-    require(rootHash == impliedRoot, "staked-expenditure-invalid-root-hash");
-
-
-    uint256 reputationValue;
-    address keyColonyAddress;
-    uint256 keySkillId;
-    address keyUserAddress;
-
-    assembly {
-      reputationValue := mload(add(_value, 32))
-      keyColonyAddress := mload(add(_key, 20))
-      keySkillId := mload(add(_key, 52))
-      keyUserAddress := mload(add(_key, 72))
-    }
-
-    require(keyColonyAddress == address(colony), "staked-expenditure-invalid-colony-address");
-    require(keySkillId == colony.getDomain(_domainId).skillId, "staked-expenditure-invalid-skill-id");
-    require(keyUserAddress == address(0x0), "staked-expenditure-invalid-user-address");
-
-    return reputationValue;
   }
 }

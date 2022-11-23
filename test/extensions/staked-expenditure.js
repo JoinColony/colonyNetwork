@@ -201,7 +201,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "staked-expenditure-invalid-root-hash"
+        "colony-extension-invalid-root-hash"
       );
 
       key = makeReputationKey(ADDRESS_ZERO, domain1.skillId);
@@ -209,7 +209,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "staked-expenditure-invalid-colony-address"
+        "colony-extension-invalid-colony-address"
       );
 
       key = makeReputationKey(colony.address, 100);
@@ -217,7 +217,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "staked-expenditure-invalid-skill-id"
+        "colony-extension-invalid-skill-id"
       );
 
       key = makeReputationKey(colony.address, domain1.skillId, USER0);
@@ -225,7 +225,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "staked-expenditure-invalid-user-address"
+        "colony-extension-invalid-user-address"
       );
     });
 
