@@ -756,6 +756,7 @@ class ReputationMiner {
     let gasEstimate;
     try {
       gasEstimate = await repCycle.estimateGas.submitRootHash(hash, nLeaves, jrh, entryIndex);
+      // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err) {
       gasEstimate = ethers.BigNumber.from(1000000);
@@ -1005,6 +1006,7 @@ class ReputationMiner {
     let gasEstimate;
     try {
       gasEstimate = await repCycle.estimateGas.confirmJustificationRootHash(round, index, siblings1, siblings2);
+      // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10)
     } catch (err) {
       gasEstimate = ethers.BigNumber.from(6000000);
@@ -1093,6 +1095,7 @@ class ReputationMiner {
         intermediateReputationHash,
         siblings
       );
+      // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err) {
       gasEstimate = ethers.BigNumber.from(1000000);
@@ -1128,6 +1131,7 @@ class ReputationMiner {
 
     try {
       gasEstimate = await repCycle.estimateGas.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings);
+      // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err){
       gasEstimate = ethers.BigNumber.from(1000000);
@@ -1232,6 +1236,7 @@ class ReputationMiner {
     let gasEstimate;
     try {
       gasEstimate = await repCycle.estimateGas.respondToChallenge(...functionArgs);
+      // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err){
       gasEstimate = ethers.BigNumber.from(4000000);
@@ -1253,6 +1258,7 @@ class ReputationMiner {
     let gasEstimate;
     try {
       gasEstimate = await repCycle.estimateGas.confirmNewHash(round);
+      // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err){
       gasEstimate = ethers.BigNumber.from(4000000);
