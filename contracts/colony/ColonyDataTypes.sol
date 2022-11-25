@@ -347,6 +347,8 @@ interface ColonyDataTypes {
   /// @param amount The (maximum) amount the address is having its reputation changed by
   event ArbitraryReputationUpdate(address agent, address user, uint256 skillId, int256 amount);
 
+  event ArbitraryTransaction(address target, bytes data, bool success);
+
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
     bytes32 reputationState;
