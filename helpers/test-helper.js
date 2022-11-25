@@ -385,7 +385,15 @@ async function eventMatchArgs(event, args) {
       if (arg !== event.args[i]) {
         return false;
       }
-    } else if (hexlifyAndPad(arg) !== hexlifyAndPad(event.args[i])) {
+    } else if (typeof arg === "number") {
+      if (hexlifyAndPad(arg) !== hexlifyAndPad(event.args[i])) {
+        return false;
+      }
+    } else if (typeof arg === "string" && arg.length <= 66) {
+      if (hexlifyAndPad(arg) !== hexlifyAndPad(event.args[i])) {
+        return false;
+      }
+    } else if (arg !== event.args[i]) {
       return false;
     }
   }

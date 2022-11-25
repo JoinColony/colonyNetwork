@@ -94,6 +94,8 @@ contract ColonyArbitraryTransaction is ColonyStorage {
 
     if (sig == APPROVE_SIG) { approveTransactionCleanup(_to, _action); }
 
+    emit ArbitraryTransaction(_to, _action, res);
+
     return res;
   }
 
