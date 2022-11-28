@@ -189,31 +189,31 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
 // View
 
-  function getToken() public view returns (address) {
+  function getToken() external view returns (address) {
     return token;
   }
 
-  function getDecayPeriod() public view returns (uint256) {
+  function getDecayPeriod() external view returns (uint256) {
     return decayPeriod;
   }
 
-  function getDecayNumerator() public view returns (uint256) {
+  function getDecayNumerator() external view returns (uint256) {
     return decayNumerator;
   }
 
-  function getDecayDenominator() public view returns (uint256) {
+  function getDecayDenominator() external view returns (uint256) {
     return decayDenominator;
   }
 
-  function getTotalPayableGrants() public view returns (uint256) {
+  function getTotalPayableGrants() external view returns (uint256) {
     return totalPayableGrants;
   }
 
-  function getGrant(bool _paid, bytes32 _hashedSecret) public view returns (Grant memory grant) {
+  function getGrant(bool _paid, bytes32 _hashedSecret) external view returns (Grant memory grant) {
     grant = grants[_paid][_hashedSecret];
   }
 
-  function getCommittedSecret(bytes32 _addressHash) public view returns (uint256) {
+  function getCommittedSecret(bytes32 _addressHash) external view returns (uint256) {
     return committedSecrets[_addressHash];
   }
 }
