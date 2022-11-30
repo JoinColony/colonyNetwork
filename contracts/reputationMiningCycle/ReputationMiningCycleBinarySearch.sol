@@ -37,7 +37,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     require(_idx < disputeRounds[_round].length, "colony-reputation-mining-index-beyond-round-length");
     require(disputeRounds[_round][_idx].lowerBound != disputeRounds[_round][_idx].upperBound, "colony-reputation-mining-challenge-not-active");
     require(
-      responsePossible(disputeRounds[_round][_idx].lastResponseTimestamp),
+      responsePossible(DisputeStages.BinarySearchResponse, disputeRounds[_round][_idx].lastResponseTimestamp),
       "colony-reputation-mining-user-ineligible-to-respond"
     );
 
@@ -87,7 +87,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
       "colony-reputation-binary-search-result-already-confirmed"
     );
     require(
-      responsePossible(disputeRounds[_round][_idx].lastResponseTimestamp),
+      responsePossible(DisputeStages.BinarySearchConfirm, disputeRounds[_round][_idx].lastResponseTimestamp),
       "colony-reputation-mining-user-ineligible-to-respond"
     );
 

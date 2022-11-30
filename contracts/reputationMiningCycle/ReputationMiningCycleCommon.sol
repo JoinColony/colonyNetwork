@@ -146,7 +146,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   uint256 constant CHALLENGE_RESPONSE_WINDOW_DURATION = 60 * 20;
   uint256 constant Y = UINT256_MAX / (CHALLENGE_RESPONSE_WINDOW_DURATION - ALL_ENTRIES_ALLOWED_END_OF_WINDOW);
 
-  function responsePossible(uint256 _responseWindowOpened) internal view returns (bool) {
+  function responsePossible(DisputeStages _stage, uint256 _responseWindowOpened) internal view returns (bool) {
     if (_responseWindowOpened > block.timestamp) {
       // I don't think this is currently possible, but belt and braces!
       return false;
@@ -162,7 +162,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
         return false;
       }
       uint256 target = windowOpenFor * Y;
-      if (uint256(keccak256(abi.encodePacked(minerAddress, _responseWindowOpened))) > target) {
+      if (uint256(keccak256(abi.encodePacked(minerAddress, address(this), _stage))) > target) {
         return false;
       }
     }

@@ -271,12 +271,5 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// enum in ReputationMiningCycleDataTypes
   /// @param _since The timestamp the last response for the submission in the dispute in question was made at.
   /// @return possible bool Whether the user can respond at the current time.
-  /// @dev Deprecated
   function getResponsePossible(DisputeStages _stage, uint256 _since) external view returns (bool possible);
-
-  /// @notice Returns whether the caller is able to currently respond to a dispute stage.
-  /// @param _since The timestamp the last response for the submission in the dispute in question was made at.
-  /// @return possible bool Whether the user can respond at the current time.
-  function getResponsePossible(uint256 _since) external view returns (bool possible);
-
 }
