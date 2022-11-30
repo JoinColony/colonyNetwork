@@ -332,6 +332,8 @@ process.env.SOLIDITY_COVERAGE
 
         it("Losing a race shouldn't prevent a miner from continuing", async function () {
           reputationMinerClient._processingDelay = 1;
+          const SUBMISSION_SIG = web3.utils.soliditySha3("submitRootHash(bytes32,uint256,bytes32,uint256)").slice(0, 10);
+
           const reputationMinerClient2 = new ReputationMinerClient({
             loader,
             realProviderPort,
@@ -397,7 +399,7 @@ process.env.SOLIDITY_COVERAGE
               if (!txReceipt.status) {
                 // Was it actually a race?
                 const tx = await web3GetTransaction(txHash);
-                if (tx.input.slice(0, 10) === "0x3fcbcf0d") {
+                if (tx.input.slice(0, 10) === SUBMISSION_SIG) {
                   lostRace = true;
                 }
               }
@@ -429,7 +431,7 @@ process.env.SOLIDITY_COVERAGE
             for (let txCount = 0; txCount < block.transactions.length; txCount += 1) {
               const txHash = block.transactions[txCount];
               const tx = await web3GetTransaction(txHash);
-              if (tx.input.slice(0, 10) === "0x3fcbcf0d") {
+              if (tx.input.slice(0, 10) === SUBMISSION_SIG) {
                 submissionAddresses.push(tx.from);
               }
             }
