@@ -257,33 +257,6 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     emit MotionCreated(motionCount, msgSender(), _domainId);
   }
 
-  function createRootMotion(
-    address _altTarget,
-    bytes memory _action,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  )
-    public
-  {
-    createMotion(1, UINT256_MAX, _altTarget, _action, _key, _value, _branchMask, _siblings);
-  }
-
-  function createDomainMotion(
-    uint256 _domainId,
-    uint256 _childSkillIndex,
-    bytes memory _action,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  )
-    public
-  {
-    createMotion(_domainId, _childSkillIndex, address(0x0), _action, _key, _value, _branchMask, _siblings);
-  }
-
   function stakeMotion(
     uint256 _motionId,
     uint256 _permissionDomainId,

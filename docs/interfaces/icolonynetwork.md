@@ -211,6 +211,31 @@ Overload of the simpler `createColony` -- creates a new colony in the network wi
 |---|---|---|
 |_colonyAddress|address|Address of the newly created colony
 
+### ▸ `createColonyForFrontend(address _tokenAddress, string memory _name, string memory _symbol, uint8 _decimals, uint256 _version, string memory _colonyName, string memory _metadata):address token, address colony`
+
+Creates a new colony in the network, possibly with a token and token authority, with an optional ENS name
+
+*Note: We expect this function to only be used by the dapp*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token (optional)
+|_name|string|The name of the token (optional)
+|_symbol|string|The short 'ticket' symbol for the token (optional)
+|_decimals|uint8|The number of decimal places that 1 user-facing token can be divided up in to (optional) In the case of ETH, and most tokens, this is 18.
+|_version|uint256|The version of colony to deploy (pass 0 for the current version)
+|_colonyName|string|The label to register (if null, no label is registered)
+|_metadata|string|The metadata associated with the new colony
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|token|address|The address of the token - this may just be the passed _tokenAddress
+|colony|address|
+
 ### ▸ `createMetaColony(address _tokenAddress)`
 
 Create the Meta Colony, same as a normal colony plus the root skill.

@@ -58,24 +58,6 @@ Create the action that should be taken based on the passed action to appropriate
 |---|---|---|
 |_delayAction|bytes|The delay action
 
-### ▸ `createDomainMotion(uint256 _domainId, uint256 _childSkillIndex, bytes memory _action, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
-
-Create a motion in any domain (DEPRECATED)
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_domainId|uint256|The domain where we vote on the motion
-|_childSkillIndex|uint256|The childSkillIndex pointing to the domain of the action
-|_action|bytes|A bytes array encoding a function call
-|_key|bytes|Reputation tree key for the domain
-|_value|bytes|Reputation tree value for the domain
-|_branchMask|uint256|The branchmask of the proof
-|_siblings|bytes32[]|The siblings of the proof
-
-
 ### ▸ `createMotion(uint256 _domainId, uint256 _childSkillIndex, address _altTarget, bytes memory _action, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
 
 Create a motion
@@ -87,23 +69,6 @@ Create a motion
 |---|---|---|
 |_domainId|uint256|The domain where we vote on the motion
 |_childSkillIndex|uint256|The childSkillIndex pointing to the domain of the action
-|_altTarget|address|The contract to which we send the action (0x0 for the colony)
-|_action|bytes|A bytes array encoding a function call
-|_key|bytes|Reputation tree key for the root domain
-|_value|bytes|Reputation tree value for the root domain
-|_branchMask|uint256|The branchmask of the proof
-|_siblings|bytes32[]|The siblings of the proof
-
-
-### ▸ `createRootMotion(address _altTarget, bytes memory _action, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
-
-Create a motion in the root domain (DEPRECATED)
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
 |_altTarget|address|The contract to which we send the action (0x0 for the colony)
 |_action|bytes|A bytes array encoding a function call
 |_key|bytes|Reputation tree key for the root domain

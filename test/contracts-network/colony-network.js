@@ -21,7 +21,7 @@ const {
   expectNoEvent,
   getColonyEditable,
 } = require("../../helpers/test-helper");
-const { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH } = require("../../helpers/constants");
+const { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH, ADDRESS_ZERO } = require("../../helpers/constants");
 const { setupENSRegistrar } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
@@ -248,6 +248,15 @@ contract("Colony Network", (accounts) => {
       const token = await Token.new(...getTokenArgs());
 
       await colonyNetwork.createColony(token.address, 5, "", "", "");
+    });
+
+    it("should allow users to create a colony for the frontend in one transaction with an existing token", async () => {
+      const token = await Token.new(...getTokenArgs());
+      await colonyNetwork.createColonyForFrontend(token.address, "", "", 0, version, "", "");
+    });
+
+    it("should allow users to create a colony for the frontend in one transaction, deploying a new token", async () => {
+      await colonyNetwork.createColonyForFrontend(ADDRESS_ZERO, ...getTokenArgs(), version, "", "");
     });
   });
 

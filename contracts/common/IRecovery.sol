@@ -21,8 +21,6 @@ pragma experimental "ABIEncoderV2";
 import "./ContractRecoveryDataTypes.sol";
 
 
-/// @title Recovery interface
-/// @notice All externally available functions are available here and registered to work with EtherRouter Network contract
 interface IRecovery is ContractRecoveryDataTypes {
   /// @notice Put colony network mining into recovery mode.
   /// Can only be called by user with recovery role.

@@ -4,8 +4,6 @@ pragma experimental "ABIEncoderV2";
 import {Bits} from "./Bits.sol";
 
 
-/// @title Patricia tree Data library
-/// @notice Data structures and utilities used in the Patricia Tree
 /// More info at: https://github.com/chriseth/patricia-trie
 library Data {
 

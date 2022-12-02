@@ -163,6 +163,36 @@ contract("Colony Network Extensions", (accounts) => {
       await checkErrorRevert(extension.install(colony.address), "ds-auth-unauthorized");
     });
 
+    it("allows a root user to install multiple extensions in a single transaction via multicall", async () => {
+      const installExtension1Data = await colony.contract.methods.installExtension(TEST_EXTENSION, 2).encodeABI();
+      const installExtension2Data = await colony.contract.methods.installExtension(TEST_VOTING_TOKEN, 1).encodeABI();
+      await checkErrorRevert(colony.multicall([installExtension1Data, installExtension2Data], { from: USER }), "ds-auth-unauthorized");
+
+      let extension1Address = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
+      let extension2Address = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
+
+      expect(extension1Address).to.equal(ethers.constants.AddressZero);
+      expect(extension2Address).to.equal(ethers.constants.AddressZero);
+
+      await colony.multicall([installExtension1Data, installExtension2Data], { from: ROOT });
+      extension1Address = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
+      extension2Address = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
+
+      expect(extension1Address).to.not.equal(ethers.constants.AddressZero);
+      expect(extension2Address).to.not.equal(ethers.constants.AddressZero);
+
+      const res = await colonyNetwork.multicall.call([
+        colonyNetwork.contract.methods.getExtensionInstallation(TEST_EXTENSION, colony.address).encodeABI(),
+        colonyNetwork.contract.methods.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address).encodeABI(),
+      ]);
+
+      const extension1AddressViaMulticall = ethers.utils.getAddress(res[0].slice(26));
+      const extension2AddressViaMulticall = ethers.utils.getAddress(res[1].slice(26));
+
+      expect(extension1Address).to.equal(extension1AddressViaMulticall);
+      expect(extension2Address).to.equal(extension2AddressViaMulticall);
+    });
+
     it("does not allow an extension to be installed with a nonexistent resolver", async () => {
       await checkErrorRevert(colony.installExtension(TEST_EXTENSION, 0, { from: ROOT }), "colony-network-extension-bad-version");
     });

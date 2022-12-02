@@ -5,8 +5,7 @@ import {Data} from "./Data.sol";
 import {Bits} from "./Bits.sol";
 
 
-/// @title Functions related to checking Patricia Tree proofs
-/// @notice More info at: https://github.com/chriseth/patricia-trie
+/// More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTreeProofs {
   using Bits for uint;
   using Data for Data.Edge;
