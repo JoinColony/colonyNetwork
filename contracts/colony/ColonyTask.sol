@@ -570,6 +570,7 @@ contract ColonyTask is ColonyStorage {
       }
 
       reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]);
+      require(reviewerAddresses[i] != address(0), "colony-task-invalid-signature");
     }
     return reviewerAddresses;
   }
