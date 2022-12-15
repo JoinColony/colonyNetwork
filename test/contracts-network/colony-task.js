@@ -1200,6 +1200,22 @@ contract("ColonyTask", (accounts) => {
       await checkErrorRevert(colony.executeTaskChange([sigV[0]], sigR, sigS, [0], 0, txData), "colony-task-change-signatures-count-do-not-match");
     });
 
+    it("should fail to execute task change with a bad signature and only one of the relevant roles set", async () => {
+      const taskId = await makeTask({ colony });
+      const { sigR, sigS, txData } = await getSigsAndTransactionData({
+        colony,
+        taskId,
+        functionName: "setTaskDueDate",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, "1"],
+      });
+
+      // Make the signature bad
+      const sigV = [11];
+      await checkErrorRevert(colony.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "colony-task-invalid-signature");
+    });
+
     it("should fail to execute task change send for a task role assignment call (which should be using executeTaskRoleAssignment)", async () => {
       const taskId = await makeTask({ colony });
       const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
