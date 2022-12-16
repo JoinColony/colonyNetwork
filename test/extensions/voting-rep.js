@@ -493,14 +493,6 @@ contract("Voting Reputation", (accounts) => {
       await checkErrorRevert(voting.createMotion(1, 1, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
     });
 
-    it("can create a motion using the deprecated interfaces", async () => {
-      const rootAction = await encodeTxData(colony, "mintTokens", [WAD]);
-      const domainAction = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
-
-      await voting.createRootMotion(ADDRESS_ZERO, rootAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      await voting.createDomainMotion(1, UINT256_MAX, domainAction, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-    });
-
     it("when creating a motion for moveFundsBetweenPots, permissions are correctly respected", async () => {
       // Move funds between domain 2 and domain 3 pots using the old deprecated function
       // This should not be allowed - it doesn't conform to the standard permission proofs, and so can't
@@ -972,7 +964,7 @@ contract("Voting Reputation", (accounts) => {
     it("cannot stake with someone else's reputation", async () => {
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER1 }),
-        "voting-rep-invalid-user-address"
+        "colony-extension-invalid-user-address"
       );
     });
 
@@ -1151,14 +1143,14 @@ contract("Voting Reputation", (accounts) => {
       const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key);
       const [user1Mask2, user1Siblings2] = await reputationTree.getProof(user1Key);
 
-      // Set new rootHash
-      const rootHash = await reputationTree.getRootHash();
-      expect(oldRootHash).to.not.equal(rootHash);
+      const newRootHash = await reputationTree.getRootHash();
+      expect(oldRootHash).to.not.equal(newRootHash);
 
       await forwardTime(MINING_CYCLE_DURATION, this);
 
+      // Set newRootHash
       const repCycle = await getActiveRepCycle(colonyNetwork);
-      await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
+      await repCycle.submitRootHash(newRootHash, 0, "0x00", 10, { from: MINER });
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(0, { from: MINER });
 
@@ -1240,7 +1232,7 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(SUBMIT_PERIOD, this);
 
       // Invalid proof (wrong root hash)
-      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, FAKE, FAKE, 0, [], { from: USER0 }), "voting-rep-invalid-root-hash");
+      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, FAKE, FAKE, 0, [], { from: USER0 }), "colony-extension-invalid-root-hash");
 
       // Invalid colony address
       let key, value, mask, siblings; // eslint-disable-line one-var
@@ -1250,19 +1242,23 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.revealVote(motionId, SALT, NAY, key, value, mask, siblings, { from: USER0 }),
-        "voting-rep-invalid-colony-address"
+        "colony-extension-invalid-colony-address"
       );
 
       // Invalid skill id
       key = makeReputationKey(colony.address, 1234, USER0);
       value = makeReputationValue(WAD, 4);
       [mask, siblings] = await reputationTree.getProof(key);
-      await checkErrorRevert(voting.revealVote(motionId, SALT, NAY, key, value, mask, siblings, { from: USER0 }), "voting-rep-invalid-skill-id");
+
+      await checkErrorRevert(
+        voting.revealVote(motionId, SALT, NAY, key, value, mask, siblings, { from: USER0 }),
+        "colony-extension-invalid-skill-id"
+      );
 
       // Invalid user address
       await checkErrorRevert(
         voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER0 }),
-        "voting-rep-invalid-user-address"
+        "colony-extension-invalid-user-address"
       );
     });
   });
@@ -2039,6 +2035,33 @@ contract("Voting Reputation", (accounts) => {
     it("cannot claim rewards before a motion is finalized", async () => {
       await checkErrorRevert(voting.claimReward(motionId, 1, UINT256_MAX, USER0, YAY), "voting-rep-motion-not-claimable");
     });
+
+    it("can finalize and claim in one transaction via multicall", async () => {
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(ESCALATION_PERIOD, this);
+
+      const finalizeData = await voting.contract.methods.finalizeMotion(motionId).encodeABI();
+      const claimData = await voting.contract.methods.claimReward(motionId, 1, UINT256_MAX, USER0, YAY).encodeABI();
+
+      const user0LockPre = await tokenLocking.getUserLock(token.address, USER0);
+      await voting.multicall([finalizeData, claimData]);
+      const user0LockPost = await tokenLocking.getUserLock(token.address, USER0);
+
+      const votingPayout = await voting.getVoterReward(motionId, new BN(user0Value.slice(2, 66), 16));
+
+      const loserStake = REQUIRED_STAKE.sub(votingPayout); // Take out voter comp
+
+      expect(new BN(user0LockPost.balance).sub(new BN(user0LockPre.balance))).to.eq.BN(loserStake.add(REQUIRED_STAKE));
+    });
   });
 
   describe("escalating motions", async () => {
@@ -2103,7 +2126,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot internally escalate a domain motion with an invalid reputation proof", async () => {
-      await checkErrorRevert(voting.escalateMotion(motionId, 1, 0, "0x0", "0x0", "0x0", [], { from: USER0 }), "voting-rep-invalid-root-hash");
+      await checkErrorRevert(voting.escalateMotion(motionId, 1, 0, "0x0", "0x0", "0x0", [], { from: USER0 }), "colony-extension-invalid-root-hash");
     });
 
     it("can stake after internally escalating a domain motion", async () => {

@@ -440,7 +440,7 @@ exports.getMetaTransactionParameters = async function getMetaTransactionParamete
 
 exports.getPermitParameters = async function getPermitParameters(owner, spender, amount, deadline, targetAddress) {
   const contract = await MetaTxToken.at(targetAddress);
-  const nonce = await contract.getMetatransactionNonce(owner);
+  const nonce = await contract.nonces(owner);
   const multichain = await MultiChain.new();
   const chainId = await multichain.getChainId();
   const name = await contract.name();

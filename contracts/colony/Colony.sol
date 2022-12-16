@@ -19,17 +19,17 @@ pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "./../common/ERC20Extended.sol";
+import "./../common/Multicall.sol";
 import "./../common/IEtherRouter.sol";
 import "./../common/BasicMetaTransaction.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
-contract Colony is BasicMetaTransaction, ColonyStorage, PatriciaTreeProofs {
+contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeProofs {
 
-  // V10: G Lightweight Spaceship
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 10; }
+  function version() public pure returns (uint256 colonyVersion) { return 11; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;

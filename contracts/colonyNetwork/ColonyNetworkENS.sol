@@ -22,9 +22,6 @@ import "./ColonyNetworkStorage.sol";
 import "./../common/MultiChain.sol";
 
 
-/// @title First-In-First-Served ENS Registrar
-/// @notice A registrar that allocates subdomains to the first person to claim them.
-/// @notice Source modified from https://github.com/ensdomains/ens/blob/master/contracts/FIFSRegistrar.sol
 contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
 
   bytes32 constant USER_HASH = keccak256("user");

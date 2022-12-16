@@ -39,7 +39,9 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/ERC20Extended.sol",
       "contracts/common/EtherRouter.sol",
       "contracts/common/IEtherRouter.sol",
+      "contracts/common/IMulticall.sol",
       "contracts/common/IRecovery.sol",
+      "contracts/common/Multicall.sol",
       "contracts/common/Resolver.sol",
       "contracts/common/TokenAuthority.sol", // Imported from colonyToken repo
       "contracts/ens/ENS.sol",
@@ -52,6 +54,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/extensions/StakedExpenditure.sol",
       "contracts/extensions/FundingQueue.sol",
       "contracts/extensions/OneTxPayment.sol",
+      "contracts/extensions/ReputationBootstrapper.sol",
       "contracts/extensions/StreamingPayments.sol",
       "contracts/extensions/TokenSupplier.sol",
       "contracts/extensions/votingReputation/VotingReputation.sol",

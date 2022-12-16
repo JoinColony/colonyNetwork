@@ -37,6 +37,11 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
     return metatransactionNonces[_user];
   }
 
+  // EIP2612 function signature
+  function nonces(address _user) external view returns (uint256 nonce){
+    return metatransactionNonces[_user];
+  }
+
   function incrementMetatransactionNonce(address _user) override internal {
     metatransactionNonces[_user]++;
   }

@@ -143,6 +143,9 @@ jobs:
           name: "Running network contracts unit tests"
           command: npm run test:contracts
       - run:
+          name: "Check contract sizes"
+          command: npx truffle run contract-size --checkMaxSize
+      - run:
           name: "Cleanup ganache leftovers"
           command: npm run clean:ganache
       - run:

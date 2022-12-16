@@ -13,7 +13,7 @@ const INT256_MIN = new BN(2).pow(new BN(255)).mul(new BN(-1));
 const INT128_MAX = new BN(2).pow(new BN(127)).sub(new BN(1));
 const INT128_MIN = new BN(2).pow(new BN(127)).mul(new BN(-1));
 
-const CURR_VERSION = 10;
+const CURR_VERSION = 11;
 
 const RECOVERY_ROLE = 0;
 const ROOT_ROLE = 1;
@@ -60,7 +60,8 @@ const ACTIVE_TASK_STATE = 0;
 const CANCELLED_TASK_STATE = 1;
 const FINALIZED_TASK_STATE = 2;
 
-const SECONDS_PER_DAY = 86400;
+const SECONDS_PER_HOUR = 60 * 60;
+const SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
 
 const MINING_CYCLE_DURATION = 60 * 60 * 1; // 1 hour
 const CHALLENGE_RESPONSE_WINDOW_DURATION = 60 * 20; // Twenty minutes
@@ -111,6 +112,7 @@ module.exports = {
   ACTIVE_TASK_STATE,
   CANCELLED_TASK_STATE,
   FINALIZED_TASK_STATE,
+  SECONDS_PER_HOUR,
   SECONDS_PER_DAY,
   MINING_CYCLE_DURATION,
   CHALLENGE_RESPONSE_WINDOW_DURATION,

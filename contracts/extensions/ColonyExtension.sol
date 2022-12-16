@@ -20,12 +20,14 @@ pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
 import "./../common/EtherRouter.sol";
+import "./../common/Multicall.sol";
 import "./../colony/IColony.sol";
 import "./../colony/ColonyDataTypes.sol";
+import "./../colonyNetwork/IColonyNetwork.sol";
+import "./../patriciaTree/PatriciaTreeProofs.sol";
 
 
-abstract contract ColonyExtension is DSAuth, DSMath {
-
+abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall {
   uint256 constant UINT256_MAX = 2**256 - 1;
 
   event ExtensionInitialised();
@@ -59,4 +61,39 @@ abstract contract ColonyExtension is DSAuth, DSMath {
     return address(colony);
   }
 
+  function checkReputation(
+    bytes32 _rootHash,
+    uint256 _skillId,
+    address _user,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  )
+    internal
+    view
+    returns (uint256)
+  {
+    bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
+    require(_rootHash == impliedRoot, "colony-extension-invalid-root-hash");
+
+    uint256 reputationValue;
+    address keyColonyAddress;
+    uint256 keySkillId;
+    address keyUserAddress;
+
+    assembly {
+      reputationValue := mload(add(_value, 32))
+      keyColonyAddress := mload(add(_key, 20))
+      keySkillId := mload(add(_key, 52))
+      keyUserAddress := mload(add(_key, 72))
+    }
+
+    require(keyColonyAddress == address(colony), "colony-extension-invalid-colony-address");
+    // slither-disable-next-line incorrect-equality
+    require(keySkillId == _skillId, "colony-extension-invalid-skill-id");
+    require(keyUserAddress == _user, "colony-extension-invalid-user-address");
+
+    return reputationValue;
+  }
 }

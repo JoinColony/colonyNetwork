@@ -23,6 +23,7 @@ import "./../colony/ColonyAuthority.sol";
 import "./../colony/IColony.sol";
 import "./ColonyNetworkStorage.sol";
 import "./IColonyNetwork.sol";
+import "./../metaTxToken/MetaTxToken.sol";
 
 
 contract ColonyNetworkDeployer is ColonyNetworkStorage {
@@ -91,6 +92,43 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     setFounderPermissions(colonyAddress);
 
     return colonyAddress;
+  }
+
+  function createColonyForFrontend(
+    address _tokenAddress,
+    string memory _name,
+    string memory _symbol,
+    uint8 _decimals,
+    uint256 _version,
+    string memory _colonyName,
+    string memory _metadata
+  )
+  public stoppable
+  returns (address token, address colony)
+  {
+    // Create Token
+    MetaTxToken token;
+    if (_tokenAddress == address(0x0)){
+      token = MetaTxToken(IColonyNetwork(address(this)).deployTokenViaNetwork(_name, _symbol, _decimals));
+      emit TokenDeployed(address(token));
+    } else {
+      token = MetaTxToken(_tokenAddress);
+    }
+
+    // Create Colony
+    address colonyAddress = createColony(address(token), _version, _colonyName, _metadata);
+
+    // Extra token bookkeeping if we deployed it
+    if (_tokenAddress == address(0x0)){
+      // Deploy Authority
+      address[] memory allowedToTransfer;
+      address tokenAuthorityAddress = IColonyNetwork(address(this)).deployTokenAuthority(address(token), colonyAddress, allowedToTransfer);
+      // Set Authority
+      token.setAuthority(DSAuthority(tokenAuthorityAddress));
+      token.setOwner(msgSender());
+    }
+
+    return (address(token), colonyAddress);
   }
 
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {

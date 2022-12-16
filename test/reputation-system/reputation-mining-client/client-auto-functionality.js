@@ -20,6 +20,12 @@ const {
   getWaitForNSubmissionsPromise,
   getMiningCycleCompletePromise,
   TestAdapter,
+  getBlock,
+  web3GetTransactionReceipt,
+  web3GetTransaction,
+  sleep,
+  stopMining,
+  startMining,
 } = require("../../../helpers/test-helper");
 const {
   setupColonyNetwork,
@@ -258,6 +264,188 @@ process.env.SOLIDITY_COVERAGE
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
           await forwardTime(MINING_CYCLE_DURATION / 2 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
           await miningCycleComplete;
+        });
+
+        it("miners should be randomised in terms of order of allowed responses each cycle", async function () {
+          reputationMinerClient._processingDelay = 1;
+          const reputationMinerClient2 = new ReputationMinerClient({
+            loader,
+            realProviderPort,
+            minerAddress: MINER2,
+            useJsTree: true,
+            auto: true,
+            oracle: false,
+            processingDelay: 1,
+          });
+          await reputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber);
+          await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
+          await mineBlock();
+
+          let differentAddresses = false;
+          const completionAddresses = [];
+          while (!differentAddresses) {
+            const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+            const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
+
+            // Forward time and wait for the client to submit all 12 allowed entries
+            await forwardTime(MINING_CYCLE_DURATION / 2, this);
+            await receive12Submissions;
+
+            let cycleComplete = false;
+            let error = false;
+            const colonyNetworkEthers = reputationMinerClient._miner.colonyNetwork;
+            let completionEvent;
+            const miningCycleCompletePromise = new Promise(function (resolve, reject) {
+              colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
+                event.removeListener();
+                cycleComplete = true;
+                completionEvent = event;
+                resolve();
+              });
+
+              // After 30s, we throw a timeout error
+              setTimeout(() => {
+                error = true;
+                reject(new Error("ERROR: timeout while waiting for confirming hash"));
+              }, 30000);
+            });
+
+            while (!cycleComplete && !error) {
+              await forwardTime(MINING_CYCLE_DURATION / 10);
+              await sleep(1000);
+            }
+
+            if (error) {
+              throw miningCycleCompletePromise;
+            }
+
+            const t = await completionEvent.getTransaction();
+            completionAddresses.push(t.from);
+            // We repeat this loop until both miners have confirmed in different cycles
+            if ([...new Set(completionAddresses)].length > 1) {
+              differentAddresses = true;
+            }
+          }
+          await reputationMinerClient2.close();
+          reputationMinerClient._processingDelay = 10;
+        });
+
+        it("Losing a race shouldn't prevent a miner from continuing", async function () {
+          reputationMinerClient._processingDelay = 1;
+          const SUBMISSION_SIG = web3.utils.soliditySha3("submitRootHash(bytes32,uint256,bytes32,uint256)").slice(0, 10);
+
+          const reputationMinerClient2 = new ReputationMinerClient({
+            loader,
+            realProviderPort,
+            minerAddress: MINER3,
+            useJsTree: true,
+            auto: true,
+            oracle: false,
+            processingDelay: 1,
+          });
+          await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
+
+          let lostRace = false;
+          while (reputationMinerClient.lockedForBlockProcessing || reputationMinerClient2.lockedForBlockProcessing) {
+            await sleep(1000);
+          }
+          reputationMinerClient.lockedForBlockProcessing = true;
+          reputationMinerClient2.lockedForBlockProcessing = true;
+          await mineBlock();
+
+          let latestBlock = await currentBlock();
+          let firstSubmissionBlockNumber = latestBlock.number;
+
+          let repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+          let receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
+
+          await forwardTime(MINING_CYCLE_DURATION / 2, this);
+          const oldHash = await colonyNetwork.getReputationRootHash();
+
+          await goodClient.loadState(oldHash);
+          await goodClient.addLogContentsToReputationTree();
+          for (let i = 0; i < 11; i += 1) {
+            await goodClient.submitRootHash();
+          }
+          await stopMining();
+
+          const submissionIndex1 = reputationMinerClient.submissionIndex;
+          const submissionIndex2 = reputationMinerClient2.submissionIndex;
+          reputationMinerClient.lockedForBlockProcessing = false;
+          reputationMinerClient2.lockedForBlockProcessing = false;
+
+          await mineBlock();
+          while (reputationMinerClient.submissionIndex === submissionIndex1 || reputationMinerClient2.submissionIndex === submissionIndex2) {
+            await sleep(1000);
+          }
+
+          await startMining();
+          await mineBlock();
+
+          await receive12Submissions;
+          // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
+          await forwardTime(MINING_CYCLE_DURATION / 2 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+
+          await goodClient.confirmNewHash();
+          let endBlock = await currentBlock();
+          let endBlockNumber = endBlock.number;
+          // For every block...
+          for (let i = firstSubmissionBlockNumber; i <= endBlockNumber; i += 1) {
+            const block = await getBlock(i);
+            // Check every transaction...
+            for (let txCount = 0; txCount < block.transactions.length; txCount += 1) {
+              const txHash = block.transactions[txCount];
+              const txReceipt = await web3GetTransactionReceipt(txHash);
+              if (!txReceipt.status) {
+                // Was it actually a race?
+                const tx = await web3GetTransaction(txHash);
+                if (tx.input.slice(0, 10) === SUBMISSION_SIG) {
+                  lostRace = true;
+                }
+              }
+            }
+          }
+          // }
+
+          assert(lostRace, "No lostrace seen");
+
+          // So we've now seen a miner lose a race - let's check they can go through a cycle correctly.
+          repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+          receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
+
+          latestBlock = await currentBlock();
+          firstSubmissionBlockNumber = latestBlock.number;
+          // Forward time and wait for the clients to submit all 12 allowed entries
+          await forwardTime(MINING_CYCLE_DURATION / 2, this);
+
+          await receive12Submissions;
+          endBlock = await currentBlock();
+          endBlockNumber = endBlock.number;
+
+          const submissionAddresses = [];
+
+          // For every block...
+          for (let i = firstSubmissionBlockNumber; i <= endBlockNumber; i += 1) {
+            const block = await getBlock(i);
+            // Check every transaction...
+            for (let txCount = 0; txCount < block.transactions.length; txCount += 1) {
+              const txHash = block.transactions[txCount];
+              const tx = await web3GetTransaction(txHash);
+              if (tx.input.slice(0, 10) === SUBMISSION_SIG) {
+                submissionAddresses.push(tx.from);
+              }
+            }
+          }
+
+          // If we are locked for block processing (for example, after stopping block checks due to an error), this will hang
+          // Reset everything to be well behaved before testing the assertion.
+          reputationMinerClient2.lockedForBlockProcessing = false;
+          await reputationMinerClient2.close();
+          reputationMinerClient._processingDelay = 10;
+
+          if ([...new Set(submissionAddresses)].length === 1) {
+            assert(false, "Only one miner address seen");
+          }
         });
 
         it("should successfully complete a dispute resolution", async function () {

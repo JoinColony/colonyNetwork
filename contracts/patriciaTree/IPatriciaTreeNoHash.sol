@@ -5,8 +5,7 @@ import {Data} from "./Data.sol";
 import "./IPatriciaTreeBase.sol";
 
 
-/// @title Interface for Patricia trees
-/// @notice More info at: https://github.com/chriseth/patricia-trie
+/// More info at: https://github.com/chriseth/patricia-trie
 interface IPatriciaTreeNoHash is IPatriciaTreeBase {
 
   /// @notice Insert the `key`/`value`in the appropriate place in the tree

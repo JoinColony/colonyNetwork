@@ -1,8 +1,6 @@
 pragma solidity 0.7.3;
 
 
-/// @title The ENS interface.
-/// @notice https://github.com/ensdomains/ens/blob/master/contracts/ENS.sol
 interface ENS {
 
   // Logged when the owner of a node assigns a new owner to a subnode.

@@ -16,6 +16,7 @@
 */
 
 pragma solidity 0.7.3;
+pragma experimental ABIEncoderV2;
 
 import "./../extensions/ColonyExtensionMeta.sol";
 
@@ -56,7 +57,7 @@ contract GasGuzzler is ColonyExtensionMeta {
 
 
   function fun(uint256 a) public {
-    for (uint256 i = 0; i < a; i++){
+    for (uint256 i; i < a; i++){
       storageVar = i;
     }
   }

@@ -234,6 +234,25 @@ class MetatransactionBroadcaster {
       // Not a voting rep related transaction (we recognise)
     }
 
+    const multicallDef = await this.loader.load({ contractName: "Multicall" }, { abi: true, address: false });
+    const possibleMulticall = new ethers.Contract(target, multicallDef.abi, this.wallet);
+
+    try {
+      const tx = possibleMulticall.interface.parseTransaction({ data: txData });
+      if (tx.signature === "multicall(bytes[])") {
+        const actions = tx.args[0];
+        // We check for each multicall whether it's doing something we'd allow
+        for (let i = 0; i < actions.length; i += 1) {
+          const valid = await this.isColonyFamilyTransactionAllowed(target, actions[i], userAddress);
+          if (!valid) {
+            return false;
+          }
+        }
+      }
+    } catch (err) {
+      // Not a multicall transaction
+    }
+
     return true;
   }
 
@@ -270,7 +289,7 @@ class MetatransactionBroadcaster {
       } catch (err) {
         let reason;
         try {
-          reason = JSON.parse(err.body).error.message;
+          reason = JSON.parse(err.error.body).error.message;
         } catch (e) {
           reason = "Unknown, unable to parse error";
         }

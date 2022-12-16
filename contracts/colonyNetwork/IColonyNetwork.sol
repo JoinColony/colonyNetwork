@@ -20,13 +20,12 @@ pragma experimental "ABIEncoderV2";
 
 import "./../common/IRecovery.sol";
 import "./../common/IBasicMetaTransaction.sol";
+import "./../common/IMulticall.sol";
 
 import "./ColonyNetworkDataTypes.sol";
 
 
-/// @title Colony Network interface
-/// @notice All externally available functions are available here and registered to work with EtherRouter Network contract
-interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransaction {
+interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
 
   /// @notice Query if a contract implements an interface
   /// @param _interfaceID The interface identifier, as specified in ERC-165
@@ -177,6 +176,30 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @dev We expect this function to only be used by the dapp
   function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _metadata)
     external returns (address _colonyAddress);
+
+  /// @notice Creates a new colony in the network, possibly with a token and token authority,
+  /// with an optional ENS name
+  /// @param _tokenAddress Address of an ERC20 token to serve as the colony token (optional)
+  /// @param _name The name of the token (optional)
+  /// @param _symbol The short 'ticket' symbol for the token (optional)
+  /// @param _decimals The number of decimal places that 1 user-facing token can be divided up in to (optional)
+  /// In the case of ETH, and most tokens, this is 18.
+  /// @return token The address of the token - this may just be the passed _tokenAddress
+  /// @return colony
+  /// @param _version The version of colony to deploy (pass 0 for the current version)
+  /// @param _colonyName The label to register (if null, no label is registered)
+  /// @param _metadata The metadata associated with the new colony
+  /// @dev We expect this function to only be used by the dapp
+  function createColonyForFrontend(
+    address _tokenAddress,
+    string memory _name,
+    string memory _symbol,
+    uint8 _decimals,
+    uint256 _version,
+    string memory _colonyName,
+    string memory _metadata
+  )
+    external returns (address token, address colony);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
   /// Allowed to be called by the Meta Colony only.

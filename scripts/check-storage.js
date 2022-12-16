@@ -34,6 +34,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/extensions/ColonyExtension.sol",
       "contracts/extensions/ColonyExtensionMeta.sol",
       "contracts/extensions/OneTxPayment.sol",
+      "contracts/extensions/ReputationBootstrapper.sol",
       "contracts/extensions/StreamingPayments.sol",
       "contracts/extensions/TokenSupplier.sol",
       "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol",

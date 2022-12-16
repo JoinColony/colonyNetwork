@@ -213,7 +213,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     // it in ReputationMiningCycle.invalidateHash;
 
     ITokenLocking(tokenLocking).deposit(clnyToken, 0, true); // Faux deposit to clear any locks
-    for (uint256 i = 0; i < _stakers.length; i++) {
+    for (uint256 i; i < _stakers.length; i++) {
       lostStake = min(miningStakes[_stakers[i]].amount, _amount);
       miningStakes[_stakers[i]].amount = sub(miningStakes[_stakers[i]].amount, lostStake);
       ITokenLocking(tokenLocking).transferStake(_stakers[i], lostStake, clnyToken, address(this));

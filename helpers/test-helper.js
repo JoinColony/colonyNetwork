@@ -297,6 +297,18 @@ exports.currentBlock = async function currentBlock() {
   return p;
 };
 
+exports.getBlock = async function getBlock(blockNumber) {
+  const p = new Promise((resolve, reject) => {
+    web3.eth.getBlock(blockNumber, (err, res) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(res);
+    });
+  });
+  return p;
+};
+
 exports.getBlockTime = async function getBlockTime(blockNumber = "latest") {
   const p = new Promise((resolve, reject) => {
     web3.eth.getBlock(blockNumber, (err, res) => {
@@ -385,7 +397,15 @@ async function eventMatchArgs(event, args) {
       if (arg !== event.args[i]) {
         return false;
       }
-    } else if (hexlifyAndPad(arg) !== hexlifyAndPad(event.args[i])) {
+    } else if (typeof arg === "number") {
+      if (hexlifyAndPad(arg) !== hexlifyAndPad(event.args[i])) {
+        return false;
+      }
+    } else if (typeof arg === "string" && arg.length <= 66) {
+      if (hexlifyAndPad(arg) !== hexlifyAndPad(event.args[i])) {
+        return false;
+      }
+    } else if (arg !== event.args[i]) {
       return false;
     }
   }
@@ -1024,8 +1044,12 @@ exports.getMiningCycleCompletePromise = async function getMiningCycleCompletePro
     colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
       const colonyNetwork = await IColonyNetwork.at(colonyNetworkEthers.address);
       const newHash = await colonyNetwork.getReputationRootHash();
-      expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
-      expect(newHash).to.equal(expectedHash, "The network root hash doens't match the one submitted");
+      if (oldHash) {
+        expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
+      }
+      if (expectedHash) {
+        expect(newHash).to.equal(expectedHash, "The network root hash doesn't match the one submitted");
+      }
       event.removeListener();
       resolve();
     });
@@ -1094,6 +1118,12 @@ exports.bn2bytes32 = function bn2bytes32(x, size = 64) {
 
 exports.rolesToBytes32 = function rolesToBytes32(roles) {
   return `0x${new BN(roles.map((role) => new BN(1).shln(role)).reduce((a, b) => a.or(b), new BN(0))).toString(16, 64)}`;
+};
+
+exports.sleep = function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 };
 
 class TestAdapter {

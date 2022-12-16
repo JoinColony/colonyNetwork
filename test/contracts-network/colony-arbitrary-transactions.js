@@ -6,7 +6,7 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { UINT256_MAX, WAD } = require("../../helpers/constants");
-const { checkErrorRevert, encodeTxData } = require("../../helpers/test-helper");
+const { checkErrorRevert, encodeTxData, expectEvent } = require("../../helpers/test-helper");
 const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -39,7 +39,9 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     const action = await encodeTxData(token, "mint", [WAD]);
     const balancePre = await token.balanceOf(colony.address);
 
-    await colony.makeArbitraryTransaction(token.address, action);
+    const tx = await colony.makeArbitraryTransaction(token.address, action);
+
+    await expectEvent(tx, "ArbitraryTransaction(address,bytes,bool)", [token.address, action, true]);
 
     const balancePost = await token.balanceOf(colony.address);
     expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
@@ -50,7 +52,10 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     const action2 = await encodeTxData(token, "mint", [WAD.muln(2)]);
     const balancePre = await token.balanceOf(colony.address);
 
-    await colony.makeArbitraryTransactions([token.address, token.address], [action, action2], true);
+    const tx = await colony.makeArbitraryTransactions([token.address, token.address], [action, action2], true);
+
+    await expectEvent(tx, "ArbitraryTransaction(address,bytes,bool)", [token.address, action, true]);
+    await expectEvent(tx, "ArbitraryTransaction(address,bytes,bool)", [token.address, action2, true]);
 
     const balancePost = await token.balanceOf(colony.address);
     expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(3));
