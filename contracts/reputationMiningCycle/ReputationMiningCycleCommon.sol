@@ -162,7 +162,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
         return false;
       }
       uint256 target = windowOpenFor * Y;
-      if (uint256(keccak256(abi.encodePacked(minerAddress, _stage))) > target) {
+      if (uint256(keccak256(abi.encodePacked(minerAddress, address(this), _stage))) > target) {
         return false;
       }
     }
