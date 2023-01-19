@@ -109,8 +109,11 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
       require(uint256(_amounts[i]) <= fundingPots[1].balance[token], "colony-bootstrap-not-enough-tokens");
       fundingPots[1].balance[token] = sub(fundingPots[1].balance[token], uint256(_amounts[i]));
       nonRewardPotsTotal[token] = sub(nonRewardPotsTotal[token], uint256(_amounts[i]));
+    }
 
-      assert(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])));
+    // After doing all the local storage changes, then do all the external calls
+    for (uint i = 0; i < _users.length; i++) {
+      require(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])), "colony-bootstrap-token-transfer-failed");
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
     }
 
