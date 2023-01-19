@@ -21,7 +21,7 @@ import "../../lib/dappsys/auth.sol";
 
 
 contract TokenAuthority is DSAuthority {
-  address public token;
+  address public immutable token;
   mapping(address => mapping(bytes4 => bool)) authorizations;
 
   bytes4 constant BURN_FUNC_SIG = bytes4(keccak256("burn(uint256)"));

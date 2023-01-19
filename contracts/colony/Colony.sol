@@ -29,7 +29,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 11; }
+  function version() public pure returns (uint256 colonyVersion) { return 12; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
@@ -295,7 +295,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function upgrade(uint256 _newVersion) public always auth {
     // Upgrades can only go up in version, one at a time
-    uint256 currentVersion = this.version();
+    uint256 currentVersion = version();
     require(_newVersion == currentVersion + 1, "colony-version-must-be-one-newer");
     // Requested version has to be registered
     address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);

@@ -2,7 +2,7 @@ pragma solidity 0.7.3;
 
 
 contract Migrations {
-  address public owner;
+  address public immutable owner;
 
   uint public last_completed_migration;
 
