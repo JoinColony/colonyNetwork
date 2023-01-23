@@ -8,6 +8,7 @@ const { colonyIOCors, ConsoleAdapter, updateGasEstimate } = require("../package-
 
 const ETHEREUM_BRIDGE_ADDRESS = "0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59";
 const BINANCE_BRIDGE_ADDRESS = "0x162E898bD0aacB578C8D5F8d6ca588c13d2A383F";
+const REQUIRE_TO_PASS_MESSAGE_SIG = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("requireToPassMessage(address,bytes,uint256)")).slice(0, 10);
 
 class MetatransactionBroadcaster {
   /**
@@ -217,11 +218,11 @@ class MetatransactionBroadcaster {
           // If the arrays don't line up, return false.
           return false;
         }
+
         for (let i = 0; i < addresses.length; i += 1) {
           if (
             !MetatransactionBroadcaster.isBridgeAddress(addresses[i]) || // It's not going to a bridge address
-            // Or it is, but not calling the function we allow
-            calls[i].slice(0, 10) !== ethers.utils.keccak256(ethers.utils.toUtf8Bytes("requireToPassMessage(address,bytes,uint256)")).slice(0, 10)
+            calls[i].slice(0, 10) !== REQUIRE_TO_PASS_MESSAGE_SIG // Or it is, but not calling the function we allow
           ) {
             return false;
           }
