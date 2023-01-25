@@ -21,7 +21,7 @@ import "../../lib/dappsys/auth.sol";
 
 
 contract TokenAuthority is DSAuthority {
-  address public token;
+  address public immutable token;
   mapping(address => mapping(bytes4 => bool)) authorizations;
 
   bytes4 constant BURN_FUNC_SIG = bytes4(keccak256("burn(uint256)"));
@@ -38,7 +38,7 @@ contract TokenAuthority is DSAuthority {
     authorizations[_colony][mintSig] = true;
     authorizations[_colony][mintSigOverload] = true;
 
-    for (uint i = 0; i < allowedToTransfer.length; i++) {
+    for (uint256 i = 0; i < allowedToTransfer.length; i++) {
       authorizations[allowedToTransfer[i]][transferSig] = true;
       authorizations[allowedToTransfer[i]][transferFromSig] = true;
     }

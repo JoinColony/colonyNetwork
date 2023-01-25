@@ -98,20 +98,23 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
     bytes32 rolesChanged = _roles ^ existingRoles;
     bytes32 roles = _roles;
 
+    // Update the storage slot tracking number of recovery roles before all the external calls are complete
+    // This takes advantage of the fact that the recovery role is the LSB in the roles bytemaps
+    if (uint256(rolesChanged) % 2 == 1) {
+      setTo = uint256(roles) % 2 == 1;
+      if (setTo){
+        recoveryRolesCount += 1;
+      } else {
+        recoveryRolesCount -= 1;
+      }
+    }
+
     for (uint8 roleId; roleId < uint8(ColonyRole.NUMBER_OF_ROLES); roleId += 1) {
       bool changed = uint256(rolesChanged) % 2 == 1;
       if (changed) {
         setTo = uint256(roles) % 2 == 1;
 
         ColonyAuthority(address(authority)).setUserRole(_user, _domainId, roleId, setTo);
-        if (roleId == uint8(ColonyRole.Recovery)) {
-          if (setTo){
-            recoveryRolesCount++;
-          } else {
-            recoveryRolesCount--;
-          }
-          emit RecoveryRoleSet(_user, setTo);
-        }
         emit ColonyRoleSet(msgSender(), _user, _domainId, roleId, setTo);
 
       }

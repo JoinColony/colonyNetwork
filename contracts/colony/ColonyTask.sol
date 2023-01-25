@@ -517,7 +517,7 @@ contract ColonyTask is ColonyStorage {
         reputation = getReputation(payout, role.rating, false);
       }
       int256 nSkills = 0;
-      for (uint i = 0; i < task.skills.length; i += 1) {
+      for (uint256 i = 0; i < task.skills.length; i += 1) {
         if (task.skills[i] > 0 ) {
           nSkills += 1;
         }
@@ -527,7 +527,7 @@ contract ColonyTask is ColonyStorage {
 
       int256 reputationPerSkill = reputation / nSkills;
 
-      for (uint i = 0; i < task.skills.length; i += 1) {
+      for (uint256 i = 0; i < task.skills.length; i += 1) {
         if (task.skills[i] > 0) {
           colonyNetworkContract.appendReputationUpdateLog(role.user, reputationPerSkill, task.skills[i]);
         }
@@ -558,7 +558,7 @@ contract ColonyTask is ColonyStorage {
   ) internal pure returns (address[] memory)
   {
     address[] memory reviewerAddresses = new address[](_sigR.length);
-    for (uint i = 0; i < _sigR.length; i++) {
+    for (uint256 i = 0; i < _sigR.length; i++) {
       // 0 'Normal' mode - geth, etc.
       // >0 'Trezor' mode
       // Correct incantation helpfully cribbed from https://github.com/trezor/trezor-mcu/issues/163#issuecomment-368435292

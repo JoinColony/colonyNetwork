@@ -211,11 +211,14 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     uint256 lostStake;
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
     // it in ReputationMiningCycle.invalidateHash;
-
-    ITokenLocking(tokenLocking).deposit(clnyToken, 0, true); // Faux deposit to clear any locks
     for (uint256 i; i < _stakers.length; i++) {
       lostStake = min(miningStakes[_stakers[i]].amount, _amount);
       miningStakes[_stakers[i]].amount = sub(miningStakes[_stakers[i]].amount, lostStake);
+    }
+
+    ITokenLocking(tokenLocking).deposit(clnyToken, 0, true); // Faux deposit to clear any locks
+    // Do all the external calls after all the storage changes
+    for (uint256 i; i < _stakers.length; i++) {
       ITokenLocking(tokenLocking).transferStake(_stakers[i], lostStake, clnyToken, address(this));
       // TODO: Lose rep?
       emit ReputationMinerPenalised(_stakers[i], lostStake);

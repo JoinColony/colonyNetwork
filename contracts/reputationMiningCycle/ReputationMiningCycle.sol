@@ -149,7 +149,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     if (!submissionWindowClosed()) {
       return false;
     }
-    for (uint i = firstIncompleteRound; i <= _round; i += 1) {
+    for (uint256 i = firstIncompleteRound; i <= _round; i += 1) {
       if (nHashesCompletedChallengeRound[i] != disputeRounds[i].length) {
         return false;
       }

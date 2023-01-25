@@ -285,7 +285,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     }
 
     Skill storage skill = skills[_skillId];
-    for (uint i; i < skill.parents.length; i++) {
+    for (uint256 i; i < skill.parents.length; i++) {
       if (2**(i+1) > _parentSkillNumber) {
         uint _newSkillId = skill.parents[i];
         uint _newParentSkillNumber = _parentSkillNumber - 2**i;

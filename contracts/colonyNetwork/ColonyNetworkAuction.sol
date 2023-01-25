@@ -61,10 +61,10 @@ contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
 
 
 contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
-  address payable public colonyNetwork;
-  address public metaColonyAddress;
-  ERC20Extended public clnyToken;
-  ERC20Extended public token;
+  address payable public immutable colonyNetwork;
+  address public immutable metaColonyAddress;
+  ERC20Extended public immutable clnyToken;
+  ERC20Extended public immutable token;
 
   // Total number of auctioned tokens
   uint public quantity;
