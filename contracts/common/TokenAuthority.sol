@@ -38,7 +38,7 @@ contract TokenAuthority is DSAuthority {
     authorizations[_colony][mintSig] = true;
     authorizations[_colony][mintSigOverload] = true;
 
-    for (uint i = 0; i < allowedToTransfer.length; i++) {
+    for (uint256 i = 0; i < allowedToTransfer.length; i++) {
       authorizations[allowedToTransfer[i]][transferSig] = true;
       authorizations[allowedToTransfer[i]][transferFromSig] = true;
     }

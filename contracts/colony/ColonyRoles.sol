@@ -98,6 +98,17 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
     bytes32 rolesChanged = _roles ^ existingRoles;
     bytes32 roles = _roles;
 
+    // Update the storage slot tracking number of recovery roles before all the external calls are complete
+    // This takes advantage of the fact that the recovery role is the LSB in the roles bytemaps
+    if (uint256(rolesChanged) % 2 == 1) {
+      setTo = uint256(roles) % 2 == 1;
+      if (setTo){
+        recoveryRolesCount += 1;
+      } else {
+        recoveryRolesCount -= 1;
+      }
+    }
+
     for (uint8 roleId; roleId < uint8(ColonyRole.NUMBER_OF_ROLES); roleId += 1) {
       bool changed = uint256(rolesChanged) % 2 == 1;
       if (changed) {
@@ -109,19 +120,6 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
       }
       roles >>= 1;
       rolesChanged >>= 1;
-    }
-
-    // Update the storage slot tracking number of recovery roles after all the external calls are complete
-    // This takes advantage of the fact that the recovery role is the LSB in the roles bytemaps
-    bool recoveryRoleChanged = uint256(_roles ^ existingRoles) % 2 == 1;
-    if (recoveryRoleChanged) {
-      // NB using the unmodified _roles, which hasn't been right-shifted
-      setTo = uint256(_roles) % 2 == 1;
-      if (setTo){
-        recoveryRolesCount += 1;
-      } else {
-        recoveryRolesCount -= 1;
-      }
     }
   }
 

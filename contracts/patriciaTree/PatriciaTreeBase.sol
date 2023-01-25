@@ -56,7 +56,7 @@ contract PatriciaTreeBase is PatriciaTreeProofs {
     }
     if (numSiblings > 0) {
       _siblings = new bytes32[](numSiblings);
-      for (uint i = 0; i < numSiblings; i++) {
+      for (uint256 i = 0; i < numSiblings; i++) {
         _siblings[i] = siblings[i];
       }
     }

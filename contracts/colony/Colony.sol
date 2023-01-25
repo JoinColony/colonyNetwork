@@ -104,7 +104,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   {
     require(_users.length == _amounts.length, "colony-bootstrap-bad-inputs");
 
-    for (uint i = 0; i < _users.length; i++) {
+    for (uint256 i = 0; i < _users.length; i++) {
       require(_amounts[i] >= 0, "colony-bootstrap-bad-amount-input");
       require(uint256(_amounts[i]) <= fundingPots[1].balance[token], "colony-bootstrap-not-enough-tokens");
       fundingPots[1].balance[token] = sub(fundingPots[1].balance[token], uint256(_amounts[i]));
@@ -112,7 +112,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     }
 
     // After doing all the local storage changes, then do all the external calls
-    for (uint i = 0; i < _users.length; i++) {
+    for (uint256 i = 0; i < _users.length; i++) {
       require(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])), "colony-bootstrap-token-transfer-failed");
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
     }
