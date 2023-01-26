@@ -7,6 +7,7 @@ job_common: &job_common
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
+  resource_class: large
   run: 
 job_python: &job_python
   docker:
