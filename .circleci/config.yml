@@ -318,7 +318,9 @@ jobs:
       - <<: *step_restore_cache
       - run:
           name: "Install packages"
-          command: npm ci
+          command: | 
+            sudo npm install -g npm@8.5.5
+            npm ci
       - attach_workspace:
           at: ./
       - run:
