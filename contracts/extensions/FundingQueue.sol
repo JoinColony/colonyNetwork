@@ -122,7 +122,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
-    selfdestruct(payable(address(uint160(address(colony)))));
+    selfdestruct(payable(address(colony)));
   }
 
   // Public

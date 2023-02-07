@@ -135,7 +135,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       }
     }
 
-    selfdestruct(payable(address(uint160(address(colony)))));
+    selfdestruct(payable(address(colony)));
   }
 
   /// @notice Must be called before any sales can be made
