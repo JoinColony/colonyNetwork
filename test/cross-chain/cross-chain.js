@@ -15,8 +15,7 @@ const Token = artifacts.require("Token");
 const GnosisSafeProxyFactory = artifacts.require("GnosisSafeProxyFactory");
 const GnosisSafe = artifacts.require("GnosisSafe");
 const ZodiacBridgeModuleMock = artifacts.require("ZodiacBridgeModuleMock");
-const ForeignBridgeMock = artifacts.require("ForeignBridgeMock");
-const HomeBridgeMock = artifacts.require("HomeBridgeMock");
+const BridgeMock = artifacts.require("BridgeMock");
 
 const BridgeMonitor = require("../../scripts/bridgeMonitor");
 
@@ -63,17 +62,17 @@ contract("Cross-chain", (accounts) => {
     const r = `${sig.substring(2, 66)}`;
     const s = `${sig.substring(66, 130)}`;
 
+    let vOffset = process.env.SOLIDITY_COVERAGE ? 27 : 0;
     // Add 4 to v for... reasons... see https://docs.gnosis-safe.io/contracts/signatures
-    const vOffset = 4;
+    vOffset += 4;
     const v = parseInt(sig.substring(130), 16) + vOffset;
 
     // put back together
-    const modifiedSig = `0x${r}${s}${v.toString(16)}`;
+    const modifiedSig = `0x${r}${s}${ethers.utils.hexlify(v).slice(2)}`;
     console.log(modifiedSig);
 
     const res = await gs.checkNSignatures(safeDataHash, safeData, modifiedSig, 1);
     console.log(res);
-
     tx = await gs.execTransaction(...safeTxArgs.slice(0, -1), modifiedSig);
 
     console.log(tx);
@@ -86,15 +85,17 @@ contract("Cross-chain", (accounts) => {
 
     // Deploy a foreign bridge
 
-    const foreignBridgeFactory = new ethers.ContractFactory(ForeignBridgeMock.abi, ForeignBridgeMock.bytecode, ethersForeignSigner);
+    const foreignBridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, ethersForeignSigner);
     fb = await foreignBridgeFactory.deploy();
     await fb.deployTransaction.wait();
 
     // Deploy a home bridge
-    hb = await HomeBridgeMock.new();
+    hb = await BridgeMock.new();
 
+    const homeRPC = `http://127.0.0.1:${process.env.SOLIDITY_COVERAGE ? 8555 : 8545}`;
+    const foreignRPC = `http://127.0.0.1:${process.env.SOLIDITY_COVERAGE ? 8546 : 8546}`;
     // Start the bridge service
-    bs = new BridgeMonitor(hb.address, fb.address);
+    bs = new BridgeMonitor(homeRPC, foreignRPC, hb.address, fb.address);
   });
 
   beforeEach(async () => {
@@ -141,9 +142,9 @@ contract("Cross-chain", (accounts) => {
       // So 'just' call that on the colony...
 
       await colony.makeArbitraryTransaction(hb.address, txDataToBeSentToAMB);
-
+      console.log("made");
       await p;
-
+      console.log("awaited");
       // Check balances
       const b1 = await fToken.balanceOf(gs.address);
       expect(b1.toNumber()).to.equal(90);

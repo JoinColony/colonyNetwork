@@ -26,8 +26,7 @@ async function start() {
   const GnosisSafeProxyFactory = await loader.load({ contractName: "GnosisSafeProxyFactory" }, { abi: true, address: false });
   const GnosisSafe = await loader.load({ contractName: "GnosisSafe" }, { abi: true, address: false });
   const ZodiacBridgeModuleMock = await loader.load({ contractName: "ZodiacBridgeModuleMock" }, { abi: true, address: false });
-  const ForeignBridgeMock = await loader.load({ contractName: "ForeignBridgeMock" }, { abi: true, address: false });
-  const HomeBridgeMock = await loader.load({ contractName: "HomeBridgeMock" }, { abi: true, address: false });
+  const BridgeMock = await loader.load({ contractName: "BridgeMock" }, { abi: true, address: false });
   const erc721Mock = await loader.load({ contractName: "ERC721Mock" }, { abi: true, address: false });
   const TokenContract = await loader.load({ contractName: "Token" }, { abi: true, address: false });
 
@@ -114,12 +113,12 @@ async function start() {
 
   // Deploy a foreign bridge
 
-  const foreignBridgeFactory = new ethers.ContractFactory(ForeignBridgeMock.abi, ForeignBridgeMock.bytecode, ethersForeignSigner);
+  const foreignBridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, ethersForeignSigner);
   const fb = await foreignBridgeFactory.deploy();
   await fb.deployTransaction.wait();
 
   // Deploy a home bridge
-  const homeBridgeFactory = new ethers.ContractFactory(HomeBridgeMock.abi, HomeBridgeMock.bytecode, ethersHomeSigner);
+  const homeBridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, ethersHomeSigner);
 
   const hb = await homeBridgeFactory.deploy();
   await hb.deployTransaction.wait();
