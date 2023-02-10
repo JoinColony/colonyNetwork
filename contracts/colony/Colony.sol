@@ -310,12 +310,18 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     emit ColonyUpgraded(msgSender(), currentVersion, _newVersion);
   }
 
-  // v9 to v10
+  // v11 to v12
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"));
+    sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
   }
 
