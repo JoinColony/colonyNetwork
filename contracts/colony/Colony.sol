@@ -29,7 +29,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 11; }
+  function version() public pure returns (uint256 colonyVersion) { return 12; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
@@ -104,13 +104,16 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   {
     require(_users.length == _amounts.length, "colony-bootstrap-bad-inputs");
 
-    for (uint i = 0; i < _users.length; i++) {
+    for (uint256 i = 0; i < _users.length; i++) {
       require(_amounts[i] >= 0, "colony-bootstrap-bad-amount-input");
       require(uint256(_amounts[i]) <= fundingPots[1].balance[token], "colony-bootstrap-not-enough-tokens");
       fundingPots[1].balance[token] = sub(fundingPots[1].balance[token], uint256(_amounts[i]));
       nonRewardPotsTotal[token] = sub(nonRewardPotsTotal[token], uint256(_amounts[i]));
+    }
 
-      assert(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])));
+    // After doing all the local storage changes, then do all the external calls
+    for (uint256 i = 0; i < _users.length; i++) {
+      require(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])), "colony-bootstrap-token-transfer-failed");
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
     }
 
@@ -292,7 +295,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function upgrade(uint256 _newVersion) public always auth {
     // Upgrades can only go up in version, one at a time
-    uint256 currentVersion = this.version();
+    uint256 currentVersion = version();
     require(_newVersion == currentVersion + 1, "colony-version-must-be-one-newer");
     // Requested version has to be registered
     address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
@@ -307,12 +310,18 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     emit ColonyUpgraded(msgSender(), currentVersion, _newVersion);
   }
 
-  // v9 to v10
+  // v11 to v12
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"));
+    sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
   }
 

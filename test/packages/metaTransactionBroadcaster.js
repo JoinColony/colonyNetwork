@@ -118,6 +118,34 @@ contract("Metatransaction broadcaster", (accounts) => {
       expect(valid).to.be.equal(false);
     });
 
+    it(`transactions to the forbidden arbitrary transaction methods are allowed only if
+      going to a bridge calling the right function`, async function () {
+      const ETHEREUM_BRIDGE_ADDRESS = "0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59";
+      const BINANCE_BRIDGE_ADDRESS = "0x162E898bD0aacB578C8D5F8d6ca588c13d2A383F";
+
+      const AMBABI = ["function requireToPassMessage(address,bytes,uint256)"];
+      const AMBInterface = new ethers.utils.Interface(AMBABI);
+
+      const ambCall = AMBInterface.encodeFunctionData("requireToPassMessage", ["0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59", "0x00000000", 1000000]);
+
+      let txData = await colony.contract.methods.makeArbitraryTransaction(ETHEREUM_BRIDGE_ADDRESS, ambCall).encodeABI();
+      let valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
+      expect(valid).to.be.equal(true);
+
+      txData = await colony.contract.methods.makeArbitraryTransactions([BINANCE_BRIDGE_ADDRESS], [ambCall], false).encodeABI();
+      valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
+      expect(valid).to.be.equal(true);
+
+      txData = await colony.contract.methods.makeSingleArbitraryTransaction(BINANCE_BRIDGE_ADDRESS, ambCall).encodeABI();
+      valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
+      expect(valid).to.be.equal(true);
+
+      // Going to a bridge, but not the right function call
+      txData = await colony.contract.methods.makeSingleArbitraryTransaction(BINANCE_BRIDGE_ADDRESS, "0x00000000").encodeABI();
+      valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
+      expect(valid).to.be.equal(false);
+    });
+
     it("transactions to a token are not accepted based on address", async function () {
       const tokenAddress = await colony.getToken();
 

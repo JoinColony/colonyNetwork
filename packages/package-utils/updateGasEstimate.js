@@ -40,7 +40,7 @@ const updateGasEstimate = async function (_type, chainId, adapter) {
     const gasEstimates = await axios.request(options);
     let gasPrice;
     if (gasEstimates[type]) {
-      gasPrice = ethers.utils.hexlify((gasEstimates[type] / factor) * 1e9);
+      gasPrice = ethers.utils.hexlify(ethers.BigNumber.from(gasEstimates[type] * 1e9).div(factor));
     } else {
       gasPrice = defaultGasPrice;
     }

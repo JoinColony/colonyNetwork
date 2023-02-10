@@ -21,12 +21,16 @@ import "./DSTokenBaseMeta.sol";
 import "./DSAuthMeta.sol";
 
 contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
-  uint8 public decimals;
+  uint8 public immutable decimals;
+  // Immutable-states incorrectly flags strings as being able to be immutable.
+  // Can be removed when https://github.com/crytic/slither/issues/1595 is fixed
+  // slither-disable-next-line immutable-states
   string public symbol;
+  // slither-disable-next-line immutable-states
   string public name;
 
   bool public locked;
-  bytes32 public DOMAIN_SEPARATOR;
+  bytes32 public immutable DOMAIN_SEPARATOR;
 
   mapping(address => uint256) metatransactionNonces;
 

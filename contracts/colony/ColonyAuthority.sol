@@ -28,6 +28,8 @@ contract ColonyAuthority is CommonAuthority {
   uint8 constant ARCHITECTURE_ROLE = uint8(ColonyDataTypes.ColonyRole.Architecture);
   uint8 constant ROOT_ROLE = uint8(ColonyDataTypes.ColonyRole.Root);
 
+  // colony is used in the constructor by calls to addRoleCapability, despite what slither thinks
+  // slither-disable-next-line immutable-states
   address internal colony;
 
   constructor(address _colony) public CommonAuthority(_colony) {

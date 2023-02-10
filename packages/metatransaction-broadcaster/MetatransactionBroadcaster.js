@@ -6,6 +6,10 @@ const queue = require("express-queue");
 const NonceManager = require("./ExtendedNonceManager");
 const { colonyIOCors, ConsoleAdapter, updateGasEstimate } = require("../package-utils");
 
+const ETHEREUM_BRIDGE_ADDRESS = "0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59";
+const BINANCE_BRIDGE_ADDRESS = "0x162E898bD0aacB578C8D5F8d6ca588c13d2A383F";
+const REQUIRE_TO_PASS_MESSAGE_SIG = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("requireToPassMessage(address,bytes,uint256)")).slice(0, 10);
+
 class MetatransactionBroadcaster {
   /**
    * Constructor for MetatransactionBroadcaster
@@ -194,14 +198,35 @@ class MetatransactionBroadcaster {
     const possibleColony = new ethers.Contract(target, colonyDef.abi, this.wallet);
     try {
       const tx = possibleColony.interface.parseTransaction({ data: txData });
-      if (tx.signature === "makeArbitraryTransaction(address,bytes)") {
-        return false;
-      }
-      if (tx.signature === "makeArbitraryTransactions(address[],bytes[],bool)") {
-        return false;
-      }
-      if (tx.signature === "makeSingleArbitraryTransaction(address,bytes)") {
-        return false;
+      // If it's an arbitrary transaction...
+      if (
+        tx.signature === "makeArbitraryTransaction(address,bytes)" ||
+        tx.signature === "makeSingleArbitraryTransaction(address,bytes)" ||
+        tx.signature === "makeArbitraryTransactions(address[],bytes[],bool)"
+      ) {
+        // We allow it if these transactions are going only to known bridges.
+        let addresses = tx.args[0];
+        let calls = tx.args[1];
+
+        if (!Array.isArray(addresses)) {
+          addresses = [addresses];
+        }
+        if (!Array.isArray(calls)) {
+          calls = [calls];
+        }
+        if (addresses.length !== calls.length) {
+          // If the arrays don't line up, return false.
+          return false;
+        }
+
+        for (let i = 0; i < addresses.length; i += 1) {
+          if (
+            !MetatransactionBroadcaster.isBridgeAddress(addresses[i]) || // It's not going to a bridge address
+            calls[i].slice(0, 10) !== REQUIRE_TO_PASS_MESSAGE_SIG // Or it is, but not calling the function we allow
+          ) {
+            return false;
+          }
+        }
       }
     } catch (err) {
       // Not a colony related transaction (we recognise)
@@ -254,6 +279,19 @@ class MetatransactionBroadcaster {
     }
 
     return true;
+  }
+
+  static isBridgeAddress(targetOrTargets) {
+    if (targetOrTargets === ETHEREUM_BRIDGE_ADDRESS) {
+      return true;
+    }
+    if (targetOrTargets === BINANCE_BRIDGE_ADDRESS) {
+      return true;
+    }
+    if (Array.isArray(targetOrTargets)) {
+      return targetOrTargets.map((x) => MetatransactionBroadcaster.isBridgeAddress(x)).every((x) => x === true);
+    }
+    return false;
   }
 
   async isValidSetAuthorityTransaction(tx, userAddress) {

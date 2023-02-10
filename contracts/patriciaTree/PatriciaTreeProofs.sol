@@ -42,7 +42,7 @@ contract PatriciaTreeProofs {
     e.node = valueHash;
     bytes32[2] memory edgeHashes;
 
-    for (uint i = 0; i < siblings.length; i++) {
+    for (uint256 i = 0; i < siblings.length; i++) {
       uint bitSet = branchMask.lowestBitSet();
       branchMask &= ~(uint(1) << bitSet);
       (k, e.label) = k.splitAt(255 - bitSet);
