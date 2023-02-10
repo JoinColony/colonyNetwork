@@ -18,8 +18,12 @@ class BridgeMonitor {
 
     homeBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
       const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
-      const tx = await foreignBridge.execute(target, data, gasLimit, messageId, sender);
-      console.log("Bridging tx", tx);
+      await foreignBridge.execute(target, data, gasLimit, messageId, sender);
+    });
+
+    foreignBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
+      const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
+      await homeBridge.execute(target, data, gasLimit, messageId, sender);
     });
 
     console.log("Bridge Monitor running");

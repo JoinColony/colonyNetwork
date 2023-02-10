@@ -46,6 +46,14 @@ module.exports = {
       skipDryRun: true,
       disableConfirmationListener: true,
     },
+    development2: {
+      host: "localhost",
+      port: 8546,
+      gasPrice: 0,
+      network_id: "*",
+      skipDryRun: true,
+      disableConfirmationListener: true,
+    },
     integration: {
       host: "localhost",
       port: 8545,

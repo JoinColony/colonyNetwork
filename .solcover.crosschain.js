@@ -4,16 +4,15 @@ const { execSync } = require("child_process");
 
 const existingCompileComplete = config.onCompileComplete;
 
-config.istanbulFolder = "./coverage-cross-chain"
+config.istanbulFolder = `./coverage-cross-chain-${process.env.TRUFFLE_HOME ? "home" : "foreign"}`
 
 
-function provisionSafeContracts(config){
+function provisionSafeContracts(){
   let output;
   const provisionSafeContracts = `yarn run provision:safe:contracts`;
 
   log('Provisioning Safe contracts...')
-  output = execSync(provisionSafeContracts);
-  log(output.toString())
+  execSync(provisionSafeContracts);
 }
 
 config.onCompileComplete = function() {
