@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.15;
+pragma solidity 0.8.18;
 
 import "./../../lib/dappsys/auth.sol";
 import "./../common/MetaTransactionMsgSender.sol";
