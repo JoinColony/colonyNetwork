@@ -447,7 +447,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @notice Called to deploy a token authority
   /// @dev This is more expensive than deploying a token directly, but is able to be done via
   /// a metatransaction
-  /// @param _token The address of the otken
+  /// @param _token The address of the token
   /// @param _colony The address of the colony in control of the token
   /// @param _allowedToTransfer An array of addresses that are allowed to transfer the token even if it's locked
   /// @return _tokenAuthority The address of the newly deployed TokenAuthority

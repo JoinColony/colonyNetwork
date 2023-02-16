@@ -258,7 +258,7 @@ Called to deploy a token authority
 
 |Name|Type|Description|
 |---|---|---|
-|_token|address|The address of the otken
+|_token|address|The address of the token
 |_colony|address|The address of the colony in control of the token
 |_allowedToTransfer|address[]|An array of addresses that are allowed to transfer the token even if it's locked
 
