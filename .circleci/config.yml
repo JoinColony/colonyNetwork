@@ -33,7 +33,7 @@ step_setup_global_packages: &step_setup_global_packages
       npm ci
       git submodule update --init
       npm run provision:token:contracts
-      cd ./lib/safe-contracts/ && npm i || true && cd ../../
+      cd ./lib/safe-contracts && yarn --ignore-scripts && cd ../../
       npm run provision:safe:contracts
 step_pull_solc_docker: &step_pull_solc_docker
     run:
