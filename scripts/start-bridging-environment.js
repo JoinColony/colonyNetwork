@@ -18,13 +18,14 @@ const loader = new TruffleLoader({
 });
 
 const ADDRESS_ZERO = ethers.constants.AddressZero;
-const ethersForeignProvider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8546");
-const ethersForeignSigner = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8546").getSigner();
-const ethersHomeSigner = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8545").getSigner();
-// const ethersHomeProvider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8545");
-const BridgeMonitor = require("./bridgeMonitor");
+const MockBridgeMonitor = require("./mockBridgeMonitor");
 
-async function start() {
+async function setupBridging(homeRpcUrl, foreignRpcUrl) {
+  const ethersForeignProvider = new ethers.providers.JsonRpcProvider(foreignRpcUrl);
+  const ethersForeignSigner = ethersForeignProvider.getSigner();
+  const ethersHomeProvider = new ethers.providers.JsonRpcProvider(homeRpcUrl);
+  const ethersHomeSigner = ethersHomeProvider.getSigner();
+
   const accounts = await ethersForeignProvider.listAccounts();
   const GnosisSafeProxyFactory = await loader.load({ contractName: "GnosisSafeProxyFactory" }, { abi: true, address: false });
   const GnosisSafe = await loader.load({ contractName: "GnosisSafe" }, { abi: true, address: false });
@@ -37,14 +38,14 @@ async function start() {
   const gspf = await new ethers.Contract("0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2", GnosisSafeProxyFactory.abi, ethersForeignSigner);
 
   // 0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552 is the address the gnosis safe implementation should have been deployed at
-  const receipt = await gspf.createProxy("0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552", "0x");
+  let receipt = await gspf.createProxy("0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552", "0x");
   let tx = await receipt.wait();
-  console.log(tx.events[0]);
 
   const safeAddress = tx.events[0].args.proxy;
   const gnosisSafe = await new ethers.Contract(safeAddress, GnosisSafe.abi, ethersForeignSigner);
   console.log("Gnosis Safe address: ", gnosisSafe.address);
-  gnosisSafe.setup([accounts[0]], 1, ADDRESS_ZERO, "0x", ADDRESS_ZERO, ADDRESS_ZERO, 0, ADDRESS_ZERO);
+  receipt = await gnosisSafe.setup([accounts[0]], 1, ADDRESS_ZERO, "0x", ADDRESS_ZERO, ADDRESS_ZERO, 0, ADDRESS_ZERO);
+  await receipt.wait();
 
   const zodiacBridgeFactory = new ethers.ContractFactory(ZodiacBridgeModuleMock.abi, ZodiacBridgeModuleMock.bytecode, ethersForeignSigner);
   const zodiacBridge = await zodiacBridgeFactory.deploy(safeAddress);
@@ -79,7 +80,7 @@ async function start() {
   const safeBalance = await token.balanceOf(gnosisSafe.address);
   console.log(`Safe ${gnosisSafe.address} contains ${safeBalance} tokens.`); // Should eq 100000000000000000000.
   if (safeBalance.toString() !== "100000000000000000000") {
-    console.log("Safe did not contain exactly 1 NFT");
+    console.log("Safe did not contain exactly 100000000000000000000 tokens after minting");
     process.exit();
   }
 
@@ -92,34 +93,16 @@ async function start() {
   const safeData = await gnosisSafe.encodeTransactionData(...safeTxArgs);
   const safeDataHash = await gnosisSafe.getTransactionHash(...safeTxArgs);
 
-  const sig = await ethersForeignProvider.send("eth_sign", [accounts[0], safeDataHash]);
-  const r = `${sig.substring(2, 66)}`;
-  const s = `${sig.substring(66, 130)}`;
+  const sig = await getSig(ethersForeignProvider, accounts[0], safeDataHash);
 
-  // Add 4 to v for... reasons... see https://docs.gnosis-safe.io/contracts/signatures
-  const vOffset = 4;
-  const v = parseInt(sig.substring(130), 16) + vOffset;
+  await gnosisSafe.checkNSignatures(safeDataHash, safeData, sig, 1);
 
-  let vString;
-  if (v < 16) {
-    vString = `0${v.toString(16)}`;
-  } else {
-    vString = v.toString(16);
-  }
-  // put back together
-  const modifiedSig = `0x${r}${s}${vString}`;
-  console.log(modifiedSig);
-
-  const res = await gnosisSafe.checkNSignatures(safeDataHash, safeData, modifiedSig, 1);
-  console.log(res);
-
-  tx = await gnosisSafe.execTransaction(...safeTxArgs.slice(0, -1), modifiedSig);
-
-  console.log(tx);
+  tx = await gnosisSafe.execTransaction(...safeTxArgs.slice(0, -1), sig);
 
   const enabled = await gnosisSafe.isModuleEnabled(zodiacBridge.address);
 
   if (!enabled) {
+    console.log("Gnosis safe did not have bridge module enabled, exiting");
     process.exit(1);
   }
 
@@ -131,18 +114,39 @@ async function start() {
 
   // Deploy a home bridge
   const homeBridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, ethersHomeSigner);
-
   const homeBridge = await homeBridgeFactory.deploy();
   await homeBridge.deployTransaction.wait();
 
   // Start the bridge service
-  const bm = new BridgeMonitor(homeBridge.address, foreignBridge.address, erc721.address, Token.address, zodiacBridge.address); // eslint-disable-line no-unused-vars
+  const bridgeMonitor = new MockBridgeMonitor(homeRpcUrl, foreignRpcUrl, homeBridge.address, foreignBridge.address); // eslint-disable-line no-unused-vars
   console.log(`Home bridge address: ${homeBridge.address}`);
   console.log(`Foreign bridge address: ${foreignBridge.address}`);
   console.log(`Gnosis Safe address: ${gnosisSafe.address}`);
   console.log(`Zodiac Bridge module address: ${zodiacBridge.address}`);
   console.log(`ERC721 address: ${erc721.address}`);
   console.log(`Token address: ${token.address}`);
+  return { gnosisSafe, bridgeMonitor, zodiacBridge, homeBridge, foreignBridge };
 }
 
-start();
+async function getSig(provider, account, dataHash) {
+  const sig = await provider.send("eth_sign", [account, dataHash]);
+  const r = `${sig.substring(2, 66)}`;
+  const s = `${sig.substring(66, 130)}`;
+
+  // Sigs are caculated differently on the 'normal' ganache and the ganache used for coverage
+  let vOffset = provider.connection.url.indexOf("8555") > -1 ? 27 : 0;
+  // Add 4 to v for... reasons... see https://docs.gnosis-safe.io/contracts/signatures
+  vOffset += 4;
+  const v = parseInt(sig.substring(130), 16) + vOffset;
+  const vString = ethers.utils.hexlify(v).slice(2);
+  // put back together
+  const modifiedSig = `0x${r}${s}${vString}`;
+  console.log(modifiedSig);
+  return modifiedSig;
+}
+
+if (process.argv.includes("start-bridging-environment")) {
+  setupBridging("http://127.0.0.1:8545", "http://127.0.0.1:8546");
+}
+
+module.exports = setupBridging;
