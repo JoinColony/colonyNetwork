@@ -14,12 +14,6 @@ chai.use(bnChai(web3.utils.BN));
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
-// const GnosisSafeProxyFactory = artifacts.require("GnosisSafeProxyFactory");
-// const GnosisSafe = artifacts.require("GnosisSafe");
-// const ZodiacBridgeModuleMock = artifacts.require("ZodiacBridgeModuleMock");
-// const BridgeMock = artifacts.require("BridgeMock");
-
-// const BridgeMonitor = require("../../scripts/bridgeMonitor");
 
 const setupBridging = require("../../scripts/start-bridging-environment");
 
