@@ -1,4 +1,4 @@
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 
 import "../../lib/dappsys/math.sol";
 import "./MetaTransactionMsgSender.sol";

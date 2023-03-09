@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.8.15; // ignore-swc-103
+pragma solidity >=0.8.19; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
 import "./TokenLockingDataTypes.sol";
