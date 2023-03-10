@@ -95,7 +95,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public override pure returns (uint256 _version) {
-    return 4;
+    return 5;
   }
 
   /// @notice Configures the extension

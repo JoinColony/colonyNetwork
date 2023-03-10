@@ -132,12 +132,12 @@ jobs:
       - run:
           name: "Checking contract recovery modifiers"
           command: npm run check:recoverymods
-      # - run:
-      #     name: "Checking contract versions"
-      #     command: npm run check:versioning
-      # - run:
-      #     name: "Provision token contracts again (needed after version check script)"
-      #     command: npm run provision:token:contracts
+      - run:
+          name: "Checking contract versions"
+          command: npm run check:versioning
+      - run:
+          name: "Provision token contracts again (needed after version check script)"
+          command: npm run provision:token:contracts
       - run:
           name: "Checking contract authDomain modifiers"
           command: npm run check:auth
