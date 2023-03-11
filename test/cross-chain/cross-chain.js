@@ -15,7 +15,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
 
-const setupBridging = require("../../scripts/start-bridging-environment");
+const setupBridging = require("../../scripts/setup-bridging-contracts");
 
 contract("Cross-chain", () => {
   let colony;
@@ -40,12 +40,7 @@ contract("Cross-chain", () => {
   const ethersHomeSigner = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner();
 
   before(async () => {
-    await exec(
-      `cd ./lib/safe-contracts &&
-      export PK="0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae" &&
-      rm -rf ./deployments/custom &&
-      NODE_URL=http://127.0.0.1:${FOREIGN_PORT} yarn hardhat --network custom deploy`
-    );
+    await exec(`PORT=${FOREIGN_PORT} bash ./scripts/setup-foreign-chain.sh`);
 
     ({ bridgeMonitor, gnosisSafe, zodiacBridge, homeBridge, foreignBridge } = await setupBridging(homeRpcUrl, foreignRpcUrl));
 
@@ -54,7 +49,7 @@ contract("Cross-chain", () => {
       try {
         await exec(`npm run provision:token:contracts`);
         await exec(`npm run provision:safe:contracts`);
-        await exec(`npx truffle migrate --network development2`);
+        await exec(`npx truffle migrate --all --network development2`);
       } catch (err) {
         console.log(err);
         process.exit();

@@ -292,12 +292,18 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running coverage tests for home-side of bridge"
-          command: yarn run test:contracts:bridging:1:coverage
+          command: npm run test:contracts:bridging:1:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
       - run:
+          name: "Reset chains"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+            npm run stop:blockchain:client
+      - run:
           name: "Running coverage tests for foreign-side of bridge"
-          command: yarn run test:contracts:bridging:2:coverage
+          command: npm run test:contracts:bridging:2:coverage
           environment:
             NODE_OPTIONS: --max_old_space_size=4096
       - persist_to_workspace:
