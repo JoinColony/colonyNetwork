@@ -31,8 +31,10 @@ step_setup_global_packages: &step_setup_global_packages
       npm set cache ~/.npm
       sudo npm install -g npm@8.5.5
       npm ci
-      git submodule update --remote --init
+      git submodule update --init
       npm run provision:token:contracts
+      cd ./lib/safe-contracts && yarn --ignore-scripts && cd ../../
+      npm run provision:safe:contracts
 step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
@@ -279,6 +281,36 @@ jobs:
             - coverage-chainid-5
             - coverage-chainid-100
             - coverage-chainid-777
+  test-bridging-coverage:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: 19.03.13
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running coverage tests for home-side of bridge"
+          command: npm run test:contracts:bridging:1:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - run:
+          name: "Reset chains"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+            npm run stop:blockchain:client
+      - run:
+          name: "Running coverage tests for foreign-side of bridge"
+          command: npm run test:contracts:bridging:2:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-cross-chain-foreign
+            - coverage-cross-chain-home
   check-coverage:
     <<: *job_common
     steps:
@@ -343,6 +375,8 @@ workflows:
           context: dockerhub-credentials
       - test-upgrade-coverage:
           context: dockerhub-credentials
+      - test-bridging-coverage:
+          context: dockerhub-credentials
       - check-coverage:
           context: dockerhub-credentials
           requires:
@@ -351,6 +385,7 @@ workflows:
             - test-reputation-coverage
             - test-chainid-coverage
             - test-upgrade-coverage
+            - test-bridging-coverage
  # nightly:
  #   triggers:
  #     - schedule:

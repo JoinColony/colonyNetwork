@@ -6,3 +6,7 @@
 	path = lib/colonyToken
 	url = https://github.com/JoinColony/colonyToken.git
   branch = master
+[submodule "lib/safe-contracts"]
+	path = lib/safe-contracts
+	url = https://github.com/safe-global/safe-contracts
+	ignore = dirty
