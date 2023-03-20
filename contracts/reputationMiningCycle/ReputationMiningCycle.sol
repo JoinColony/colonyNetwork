@@ -546,17 +546,18 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
   function startMemberOfPair(uint256 _roundNumber, uint256 _index) internal {
     Submission storage submission = reputationHashSubmissions[disputeRounds[_roundNumber][_index].firstSubmitter];
+
     disputeRounds[_roundNumber][_index].lastResponseTimestamp = block.timestamp;
-    if (submission.jrhNLeaves != 0) {
-      disputeRounds[_roundNumber][_index].upperBound = submission.jrhNLeaves - 1;
-    }
     disputeRounds[_roundNumber][_index].lowerBound = 0;
     disputeRounds[_roundNumber][_index].targetHashDuringSearch = submission.jrh;
+
     if (submission.jrhNLeaves != 0) {
+      disputeRounds[_roundNumber][_index].upperBound = submission.jrhNLeaves - 1;
       // If this submission has confirmed their JRH, we give ourselves credit for it in the next round - it's possible
       // that a submission got a bye without confirming a JRH, which will not have this starting '1'.
       disputeRounds[_roundNumber][_index].challengeStepCompleted = 1;
     } else {
+      disputeRounds[_roundNumber][_index].upperBound = type(uint256).max;
       disputeRounds[_roundNumber][_index].challengeStepCompleted = 0;
     }
   }
