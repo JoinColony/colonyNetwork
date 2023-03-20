@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.19;
 
 import "./../colony/ColonyDataTypes.sol";
 import "./DomainRoles.sol";
@@ -24,7 +24,7 @@ import "./DomainRoles.sol";
 contract CommonAuthority is DomainRoles {
   uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
 
-  constructor(address contractAddress) public {
+  constructor(address contractAddress) {
     setRecoveryRoleCapability(contractAddress, "enterRecoveryMode()");
     setRecoveryRoleCapability(contractAddress, "approveExitRecovery()");
     setRecoveryRoleCapability(contractAddress, "setStorageSlotRecovery(uint256,bytes32)");

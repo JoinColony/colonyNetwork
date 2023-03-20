@@ -1,4 +1,4 @@
-pragma solidity 0.7.3;
+pragma solidity 0.8.19;
 
 import "./ENS.sol";
 
@@ -23,7 +23,7 @@ contract ENSRegistry is ENS {
   }
 
   /// @dev Constructs a new ENS registrar.
-  constructor() public {
+  constructor() {
     records[0x0].owner = msg.sender;
   }
 

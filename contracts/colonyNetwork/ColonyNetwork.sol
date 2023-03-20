@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.19;
 pragma experimental "ABIEncoderV2";
 
 import "./../common/BasicMetaTransaction.sol";
@@ -274,7 +274,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     // permissions could replay metatransactions, which would be a disaster.
     // What slot are we setting?
     // This mapping is in slot 41 (see ColonyNetworkStorage.sol);
-    uint256 slot = uint256(keccak256(abi.encode(uint256(_user), uint256(METATRANSACTION_NONCES_SLOT))));
+    uint256 slot = uint256(keccak256(abi.encode(uint256(uint160(_user)), uint256(METATRANSACTION_NONCES_SLOT))));
     protectSlot(slot);
     metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
   }

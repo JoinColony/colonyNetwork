@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.19;
 pragma experimental ABIEncoderV2;
 
 import "../colony/ColonyDataTypes.sol";
@@ -57,7 +57,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     require(installations[_extensionId][msgSender()] == address(0x0), "colony-network-extension-already-installed");
 
     EtherRouter extension = new EtherRouter();
-    installations[_extensionId][msgSender()] = address(extension);
+    installations[_extensionId][msgSender()] = payable(address(extension));
 
     extension.setResolver(resolvers[_extensionId][_version]);
     ColonyExtension(address(extension)).install(msgSender());
@@ -101,7 +101,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     require(installations[_extensionId][msgSender()] != address(0x0), "colony-network-extension-not-installed");
 
     ColonyExtension extension = ColonyExtension(installations[_extensionId][msgSender()]);
-    installations[_extensionId][msgSender()] = address(0x0);
+    installations[_extensionId][msgSender()] = payable(address(0x0));
     extension.uninstall();
 
     emit ExtensionUninstalled(_extensionId, msgSender());

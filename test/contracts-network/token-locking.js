@@ -212,7 +212,7 @@ contract("Token Locking", (addresses) => {
 
       await checkErrorRevert(
         tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, otherUserTokens, false, { from: userAddress }),
-        "ds-math-sub-underflow"
+        "Panic: Arithmetic overflow"
       );
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       expect(info.balance).to.eq.BN(usersTokens);

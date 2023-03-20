@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.19;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/erc20.sol";
@@ -96,7 +96,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public override pure returns (uint256 _version) {
-    return 7;
+    return 8;
   }
 
   /// @notice Configures the extension
@@ -135,7 +135,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       }
     }
 
-    selfdestruct(address(uint160(address(colony))));
+    selfdestruct(payable(address(colony)));
   }
 
   /// @notice Must be called before any sales can be made

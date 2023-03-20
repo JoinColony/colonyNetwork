@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.19;
 
 import "./../common/CommonAuthority.sol";
 import "./ColonyDataTypes.sol";
@@ -32,7 +32,7 @@ contract ColonyAuthority is CommonAuthority {
   // slither-disable-next-line immutable-states
   address internal colony;
 
-  constructor(address _colony) public CommonAuthority(_colony) {
+  constructor(address _colony) CommonAuthority(_colony) {
     require(_colony  != address(0x0), "colony-authority-colony-cannot-be-zero");
 
     colony = _colony;

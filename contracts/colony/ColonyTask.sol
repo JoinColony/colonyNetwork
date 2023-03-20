@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.19;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -329,11 +329,11 @@ contract ColonyTask is ColonyStorage {
   }
 
   function removeTaskEvaluatorRole(uint256 _id) public stoppable self {
-    setTaskRoleUser(_id, TaskRole.Evaluator, address(0x0));
+    setTaskRoleUser(_id, TaskRole.Evaluator, payable(address(0x0)));
   }
 
   function removeTaskWorkerRole(uint256 _id) public stoppable self {
-    setTaskRoleUser(_id, TaskRole.Worker, address(0x0));
+    setTaskRoleUser(_id, TaskRole.Worker, payable(address(0x0)));
   }
 
   function setTaskSkill(uint256 _id, uint256 _skillId) public

@@ -11,4 +11,8 @@ cp lib/colonyToken/build/contracts/PinnedToken.json ./$BUILD_DIR/contracts/Token
 cp lib/colonyToken/build/contracts/PinnedTokenAuthority.json ./$BUILD_DIR/contracts/TokenAuthority.json
 cp lib/colonyToken/build/contracts/PinnedMultiSigWallet.json ./$BUILD_DIR/contracts/MultiSigWallet.json
 # Provision the openzeppelin Mintable ERC20 token contract used in integration testing
-cp node_modules/openzeppelin-solidity/build/contracts/ERC20PresetMinterPauser.json ./$BUILD_DIR/contracts/ERC20PresetMinterPauser.json
+npx truffle compile --contracts_directory ./node_modules/openzeppelin-solidity/contracts
+if  [ $BUILD_DIR != "build" ]
+then
+  cp ./build/contracts/ERC20PresetMinterPauser.json ./$BUILD_DIR/contracts/ERC20PresetMinterPauser.json
+fi

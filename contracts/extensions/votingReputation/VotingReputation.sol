@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.19;
 pragma experimental ABIEncoderV2;
 
 import "./../../colonyNetwork/IColonyNetwork.sol";
@@ -120,7 +120,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
   }
 
   function version() public pure override returns (uint256 _version) {
-    return 8;
+    return 9;
   }
 
   function install(address _colony) public override {
@@ -182,7 +182,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
   }
 
   function uninstall() public override auth {
-    selfdestruct(address(uint160(address(colony))));
+    selfdestruct(payable(address(colony)));
   }
 
   // Public functions (interface)

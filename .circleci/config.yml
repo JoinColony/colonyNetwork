@@ -7,7 +7,7 @@ job_common: &job_common
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
-  run: 
+  run:
 job_python: &job_python
   docker:
     - image: cimg/python:3.8.13-node
@@ -48,8 +48,8 @@ step_setup_slither: &step_setup_slither
         sudo mv solc-static-linux /usr/local/bin/solc
         pip install slither-analyzer
         pip install solc-select
-        solc-select install 0.7.3
-        solc-select use 0.7.3
+        solc-select install 0.8.19
+        solc-select use 0.8.19
 
 jobs:
   reputation-test:
@@ -318,7 +318,9 @@ jobs:
       - <<: *step_restore_cache
       - run:
           name: "Install packages"
-          command: npm ci
+          command: | 
+            sudo npm install -g npm@8.5.5
+            npm ci
       - attach_workspace:
           at: ./
       - run:

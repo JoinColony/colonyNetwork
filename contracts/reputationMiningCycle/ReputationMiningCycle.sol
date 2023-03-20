@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.19;
 pragma experimental "ABIEncoderV2";
 
 import "./../../lib/dappsys/math.sol";
@@ -104,7 +104,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     // Prevent this being called multiple times
     require(colonyNetworkAddress == address(0x0), "colony-reputation-mining-cycle-already-initialised");
 
-    colonyNetworkAddress = msg.sender;
+    colonyNetworkAddress = payable(msg.sender);
     tokenLockingAddress = _tokenLockingAddress;
     clnyTokenAddress = _clnyTokenAddress;
   }
@@ -546,15 +546,18 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
   function startMemberOfPair(uint256 _roundNumber, uint256 _index) internal {
     Submission storage submission = reputationHashSubmissions[disputeRounds[_roundNumber][_index].firstSubmitter];
+
     disputeRounds[_roundNumber][_index].lastResponseTimestamp = block.timestamp;
-    disputeRounds[_roundNumber][_index].upperBound = submission.jrhNLeaves - 1;
     disputeRounds[_roundNumber][_index].lowerBound = 0;
     disputeRounds[_roundNumber][_index].targetHashDuringSearch = submission.jrh;
+
     if (submission.jrhNLeaves != 0) {
+      disputeRounds[_roundNumber][_index].upperBound = submission.jrhNLeaves - 1;
       // If this submission has confirmed their JRH, we give ourselves credit for it in the next round - it's possible
       // that a submission got a bye without confirming a JRH, which will not have this starting '1'.
       disputeRounds[_roundNumber][_index].challengeStepCompleted = 1;
     } else {
+      disputeRounds[_roundNumber][_index].upperBound = type(uint256).max;
       disputeRounds[_roundNumber][_index].challengeStepCompleted = 0;
     }
   }

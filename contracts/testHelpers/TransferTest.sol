@@ -1,8 +1,8 @@
-pragma solidity 0.7.3;
+pragma solidity 0.8.19;
 
 
 contract TransferTest {
-  constructor() public payable { // solhint-disable-line no-empty-blocks
+  constructor() payable { // solhint-disable-line no-empty-blocks
   }
 
   function fireTransfer(address payable target, uint256 amount) public {

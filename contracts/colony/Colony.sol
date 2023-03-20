@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.19;
 pragma experimental ABIEncoderV2;
 
 import "./../common/ERC20Extended.sol";
@@ -29,7 +29,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 12; }
+  function version() public pure returns (uint256 colonyVersion) { return 13; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
@@ -279,7 +279,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     userAddress >>= 96;
 
     // Require that the user is proving their own reputation in this colony.
-    if (address(colonyAddress) != address(this) || address(userAddress) != msgSender()) {
+    if (address(uint160(colonyAddress)) != address(this) || address(uint160(userAddress)) != msgSender()) {
       return false;
     }
 
@@ -334,7 +334,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     // permissions could replay metatransactions, which would be a disaster.
     // What slot are we setting?
     // This mapping is in slot 34 (see ColonyStorage.sol);
-    uint256 slot = uint256(keccak256(abi.encode(uint256(_user), uint256(METATRANSACTION_NONCES_SLOT))));
+    uint256 slot = uint256(keccak256(abi.encode(uint256(uint160(_user)), uint256(METATRANSACTION_NONCES_SLOT))));
     protectSlot(slot);
     metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
   }
