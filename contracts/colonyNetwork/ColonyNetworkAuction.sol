@@ -165,6 +165,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     // Total amount to end the auction at the current price
     uint totalToEndAuctionAtCurrentPrice;
     // For low quantity auctions, there are cases where q * p < 1e18 once price has decreased sufficiently
+    // slither-disable-next-line incorrect-equality
     if (quantity < TOKEN_MULTIPLIER && price() == minPrice) {
       totalToEndAuctionAtCurrentPrice = 1;
     } else {
@@ -190,6 +191,9 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     if (daysOpen > 36) {
       return minPrice;
     }
+    // This isn't a weak pseudo rng, this is a legitimate use of modulo on a timestamp to work out what
+    // fraction of a day has passed (in addition to a whole number of days)
+    //slither-disable-next-line weak-prng
     uint r = duration % 86400;
 
     uint x = 10**(36 - daysOpen) * (864000 - 9 * r) / 864000;
@@ -274,9 +278,10 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     bids[recipient] = 0;
     uint beforeClaimBalance = token.balanceOf(recipient);
     assert(token.transfer(recipient, tokens));
-    // slither-disable-next-line incorrect-equality
+    // slither-disable-start incorrect-equality
     assert(token.balanceOf(recipient) == beforeClaimBalance + tokens);
     assert(bids[recipient] == 0);
+    // slither-disable-end incorrect-equality
 
     emit AuctionClaim(recipient, tokens);
     return true;

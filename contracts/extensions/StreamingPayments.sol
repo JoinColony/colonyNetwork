@@ -403,6 +403,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     }
 
     uint256 durationToClaim = min(block.timestamp, streamingPayment.endTime) - streamingPayment.startTime;
+    // slither-disable-next-line incorrect-equality
     if (durationToClaim == 0) {
       return 0;
     }

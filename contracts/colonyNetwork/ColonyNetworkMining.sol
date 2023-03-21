@@ -289,7 +289,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
   function getNewTimestamp(uint256 _prevWeight, uint256 _currWeight, uint256 _prevTime, uint256 _currTime) internal pure returns (uint256) {
     uint256 prevWeight = _prevWeight;
     uint256 currWeight = _currWeight;
-
+    // This is the exact scenario in the docs they say this might be required - avoiding overflows
+    // slither-disable-start divide-before-multiply
     // Needed to prevent overflows in the timestamp calculation
     while ((prevWeight >= UINT192_MAX) || (currWeight >= UINT192_MAX)) {
       prevWeight /= 2;
@@ -297,6 +298,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     }
 
     return ((prevWeight * _prevTime) + (currWeight * _currTime)) / (prevWeight + currWeight);
+    // slither-disable-end divide-before-multiply
   }
 
   function setMiningResolver(address _miningResolver) public
