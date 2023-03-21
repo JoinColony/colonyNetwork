@@ -46,12 +46,12 @@ contract ToggleableToken is DSMath, ERC20Events {
 
         if (src != msg.sender) {
             require(_approvals[src][msg.sender] >= wad, "ds-token-insufficient-approval");
-            _approvals[src][msg.sender] = sub(_approvals[src][msg.sender], wad);
+            _approvals[src][msg.sender] -= wad;
         }
 
         require(_balances[src] >= wad, "ds-token-insufficient-balance");
-        _balances[src] = sub(_balances[src], wad);
-        _balances[dst] = add(_balances[dst], wad);
+        _balances[src] -= wad;
+        _balances[dst] += wad;
 
         emit Transfer(src, dst, wad);
 
@@ -67,8 +67,8 @@ contract ToggleableToken is DSMath, ERC20Events {
     }
 
     function mint(address guy, uint wad) public {
-       	_balances[guy] = add(_balances[guy], wad);
-        _supply = add(_supply, wad);
+       	_balances[guy] += wad;
+        _supply += wad;
         emit Mint(guy, wad);
         emit Transfer(address(0x0), guy, wad);
     }

@@ -95,8 +95,8 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
   }
 
   function mint(address guy, uint256 wad) public auth {
-    _balances[guy] = add(_balances[guy], wad);
-    _supply = add(_supply, wad);
+    _balances[guy] += wad;
+    _supply += wad;
 
     emit Mint(guy, wad);
     emit Transfer(address(0x0), guy, wad);
@@ -105,12 +105,12 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
   function burn(address guy, uint256 wad) public {
     if (guy != msgSender()) {
       require(_approvals[guy][msgSender()] >= wad, "ds-token-insufficient-approval");
-      _approvals[guy][msgSender()] = sub(_approvals[guy][msgSender()], wad);
+      _approvals[guy][msgSender()] -= wad;
     }
 
     require(_balances[guy] >= wad, "ds-token-insufficient-balance");
-    _balances[guy] = sub(_balances[guy], wad);
-    _supply = sub(_supply, wad);
+    _balances[guy] -=  wad;
+    _supply -= wad;
 
     emit Burn(guy, wad);
   }

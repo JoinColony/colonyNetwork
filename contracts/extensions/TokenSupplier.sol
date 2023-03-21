@@ -131,8 +131,8 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
       isRoot() || (
         isRootFunding() &&
         block.timestamp - lastRateUpdate >= 4 weeks &&
-        _tokenIssuanceRate <= add(tokenIssuanceRate, tokenIssuanceRate / 10) &&
-        _tokenIssuanceRate >= sub(tokenIssuanceRate, tokenIssuanceRate / 10)
+        _tokenIssuanceRate <= tokenIssuanceRate + tokenIssuanceRate / 10 &&
+        _tokenIssuanceRate >= tokenIssuanceRate - tokenIssuanceRate / 10
       ), "token-supplier-caller-not-authorized"
     );
 
@@ -151,11 +151,11 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
     uint256 tokenSupply = ERC20Extended(token).totalSupply();
 
     uint256 newSupply = min(
-      (tokenSupplyCeiling > tokenSupply) ? sub(tokenSupplyCeiling, tokenSupply) : 0,
+      (tokenSupplyCeiling > tokenSupply) ? (tokenSupplyCeiling - tokenSupply) : 0,
       wmul(tokenIssuanceRate, wdiv((block.timestamp - lastIssue), ISSUANCE_PERIOD))
     );
 
-    assert(newSupply == 0 || add(tokenSupply, newSupply) <= tokenSupplyCeiling);
+    assert(newSupply == 0 || (tokenSupply + newSupply) <= tokenSupplyCeiling);
 
     // Don't update lastIssue if we aren't actually issuing tokens
     if (newSupply > 0) {

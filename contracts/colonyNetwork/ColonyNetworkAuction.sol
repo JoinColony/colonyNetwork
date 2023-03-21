@@ -140,7 +140,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   }
 
   function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+    metatransactionNonces[user] += 1;
   }
 
   function start() public
@@ -168,12 +168,12 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     if (quantity < TOKEN_MULTIPLIER && price() == minPrice) {
       totalToEndAuctionAtCurrentPrice = 1;
     } else {
-      totalToEndAuctionAtCurrentPrice = mul(quantity, price()) / TOKEN_MULTIPLIER;
+      totalToEndAuctionAtCurrentPrice = quantity * price() / TOKEN_MULTIPLIER;
     }
 
     uint _remainingToEndAuction = 0;
     if (totalToEndAuctionAtCurrentPrice > receivedTotal) {
-      _remainingToEndAuction = sub(totalToEndAuctionAtCurrentPrice, receivedTotal);
+      _remainingToEndAuction = totalToEndAuctionAtCurrentPrice - receivedTotal;
     }
 
     return _remainingToEndAuction;
@@ -185,14 +185,14 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   auctionStartedAndOpen
   returns (uint256)
   {
-    uint duration = sub(block.timestamp, startTime);
+    uint duration = block.timestamp - startTime;
     uint daysOpen = duration / 86400;
     if (daysOpen > 36) {
       return minPrice;
     }
     uint r = duration % 86400;
 
-    uint x = mul(10**sub(36, daysOpen), sub(864000, mul(9,r))) / 864000;
+    uint x = 10**(36 - daysOpen) * (864000 - 9 * r) / 864000;
     uint p = x < minPrice ? minPrice : x;
     return p;
   }
@@ -221,12 +221,12 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
       bidCount += 1;
     }
 
-    bids[msgSender()] = add(bids[msgSender()], amount);
-    receivedTotal = add(receivedTotal, amount);
+    bids[msgSender()] = bids[msgSender()] + amount;
+    receivedTotal = receivedTotal + amount;
 
     require(clnyToken.transferFrom(msgSender(), address(this), amount), "colony-auction-bid-transfer-failed");
 
-    emit AuctionBid(msgSender(), amount, sub(_remainingToEndAuction, amount));
+    emit AuctionBid(msgSender(), amount, _remainingToEndAuction - amount);
   }
 
   // Finalize the auction and set the final Token price
@@ -234,7 +234,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   auctionClosed
   auctionNotFinalized
   {
-    finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity;
+    finalPrice = (receivedTotal * TOKEN_MULTIPLIER) / quantity;
     finalPrice = finalPrice <= minPrice ? minPrice : finalPrice;
     assert(finalPrice != 0);
 
@@ -259,13 +259,13 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     require(amount > 0, "colony-auction-zero-bid-total");
 
     uint tokens;
-    if (mul(amount, quantity) < receivedTotal) {
-      tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
+    if (amount * quantity < receivedTotal) {
+      tokens = (amount * TOKEN_MULTIPLIER) / finalPrice;
     } else {
       // To avoid inaccuracies we substitute finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity
       // in the above claim calculation tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
       // deriving the calculation below instead, which avoids using finaPrice altogether.
-      tokens = mul(amount, quantity) / receivedTotal;
+      tokens = (amount * quantity) / receivedTotal;
     }
 
     claimCount += 1;
@@ -275,7 +275,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     uint beforeClaimBalance = token.balanceOf(recipient);
     assert(token.transfer(recipient, tokens));
     // slither-disable-next-line incorrect-equality
-    assert(token.balanceOf(recipient) == add(beforeClaimBalance, tokens));
+    assert(token.balanceOf(recipient) == beforeClaimBalance + tokens);
     assert(bids[recipient] == 0);
 
     emit AuctionClaim(recipient, tokens);

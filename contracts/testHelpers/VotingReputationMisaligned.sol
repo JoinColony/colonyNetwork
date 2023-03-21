@@ -365,10 +365,10 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     require(getMotionState(_motionId) == MotionState.Staking, "voting-rep-motion-not-staking");
 
     uint256 requiredStake = getRequiredStake(_motionId);
-    uint256 amount = min(_amount, sub(requiredStake, motion.stakes[_vote]));
+    uint256 amount = min(_amount, requiredStake - motion.stakes[_vote]);
     require(amount > 0, "voting-rep-bad-amount");
 
-    uint256 stakerTotalAmount = add(stakes[_motionId][msgSender()][_vote], amount);
+    uint256 stakerTotalAmount = stakes[_motionId][msgSender()][_vote] + amount;
 
     require(
       stakerTotalAmount <= getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings),
@@ -376,12 +376,12 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     );
     require(
       stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction) ||
-      add(motion.stakes[_vote], amount) == requiredStake, // To prevent a residual stake from being un-stakable
+      (motion.stakes[_vote] + amount) == requiredStake, // To prevent a residual stake from being un-stakable
       "voting-rep-insufficient-stake"
     );
 
     // Update the stake
-    motion.stakes[_vote] = add(motion.stakes[_vote], amount);
+    motion.stakes[_vote] += amount;
     stakes[_motionId][msgSender()][_vote] = stakerTotalAmount;
 
     // Increment counter & extend claim delay if staking for an expenditure state change
@@ -393,7 +393,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
       motion.altTarget == address(0x0)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
-      expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
+      expenditureMotionCounts[structHash] += 1;
       // Set to UINT256_MAX / 3 to avoid overflow (finalizedTimestamp + globalClaimDelay + claimDelay)
       bytes memory claimDelayAction = createClaimDelayAction(motion.action, UINT256_MAX / 3);
       require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
@@ -456,7 +456,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
     // Count reputation if first submission
     if (voteSecrets[_motionId][msgSender()] == bytes32(0)) {
-      motion.repSubmitted = add(motion.repSubmitted, userRep);
+      motion.repSubmitted += userRep;
     }
 
     voteSecrets[_motionId][msgSender()] = _voteSecret;
@@ -495,19 +495,19 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     require(_vote <= 1, "voting-rep-bad-vote");
 
     uint256 userRep = getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings);
-    motion.votes[_vote] = add(motion.votes[_vote], userRep);
+    motion.votes[_vote] += userRep;
 
     bytes32 voteSecret = voteSecrets[_motionId][msgSender()];
     require(voteSecret == getVoteSecret(_salt, _vote), "voting-rep-secret-no-match");
     delete voteSecrets[_motionId][msgSender()];
 
     uint256 voterReward = getVoterReward(_motionId, userRep);
-    motion.paidVoterComp = add(motion.paidVoterComp, voterReward);
+    motion.paidVoterComp += voterReward;
 
     emit MotionVoteRevealed(_motionId, msgSender(), _vote);
 
     // See if reputation revealed matches reputation submitted
-    if (add(motion.votes[NAY], motion.votes[YAY]) == motion.repSubmitted) {
+    if ((motion.votes[NAY] + motion.votes[YAY]) == motion.repSubmitted) {
       motion.events[REVEAL_END] = uint64(block.timestamp);
 
       emit MotionEventSet(_motionId, REVEAL_END);
@@ -548,8 +548,8 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     motion.skillRep = getReputationFromProof(_motionId, address(0x0), _key, _value, _branchMask, _siblings);
 
     uint256 loser = (motion.votes[NAY] < motion.votes[YAY]) ? NAY : YAY;
-    motion.stakes[loser] = sub(motion.stakes[loser], motion.paidVoterComp);
-    motion.pastVoterComp[loser] = add(motion.pastVoterComp[loser], motion.paidVoterComp);
+    motion.stakes[loser] -= motion.paidVoterComp;
+    motion.pastVoterComp[loser] += motion.paidVoterComp;
     delete motion.paidVoterComp;
 
     uint256 requiredStake = getRequiredStake(_motionId);
@@ -574,7 +574,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
     assert(
       motion.stakes[YAY] == getRequiredStake(_motionId) ||
-      add(motion.votes[NAY], motion.votes[YAY]) > 0
+      (motion.votes[NAY] + motion.votes[YAY]) > 0
     );
 
     motion.finalized = true;
@@ -589,7 +589,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
       getTarget(motion.altTarget) == address(colony)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
-      expenditureMotionCounts[structHash] = sub(expenditureMotionCounts[structHash], 1);
+      expenditureMotionCounts[structHash] -= 1;
 
       // Release the claimDelay if this is the last active motion
       if (expenditureMotionCounts[structHash] == 0) {
@@ -599,7 +599,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
       }
 
       bytes32 actionHash = hashExpenditureAction(motion.action);
-      uint256 votePower = (add(motion.votes[NAY], motion.votes[YAY]) > 0) ?
+      uint256 votePower = ((motion.votes[NAY] + motion.votes[YAY]) > 0) ?
         motion.votes[YAY] : motion.stakes[YAY];
 
       if (expenditurePastVotes[actionHash] < votePower) {
@@ -796,7 +796,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
       } else if (motion.stakes[YAY] == requiredStake) {
         return MotionState.Finalizable;
       // If not, was there a prior vote we can fall back on?
-      } else if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
+      } else if ((motion.votes[NAY] + motion.votes[YAY]) > 0) {
         return MotionState.Finalizable;
       // Otherwise, the motion failed
       } else {
@@ -831,7 +831,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   function getVoterReward(uint256 _motionId, uint256 _voterRep) public view returns (uint256) {
     Motion storage motion = motions[_motionId];
     uint256 fractionUserReputation = wdiv(_voterRep, motion.repSubmitted);
-    uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
+    uint256 totalStake = motion.stakes[YAY] + motion.stakes[NAY];
     return wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
   }
 
@@ -853,11 +853,11 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     // Has the user already voted?
     if (voteSecrets[_motionId][_voterAddress] == bytes32(0)) {
       // They have not, so add their rep
-      voteTotal = add(voteTotal, _voterRep);
+      voteTotal += _voterRep;
     }
     uint256 maxFractionUserReputation = wdiv(_voterRep, voteTotal);
 
-    uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
+    uint256 totalStake = motion.stakes[YAY] + motion.stakes[NAY];
     return (
       wmul(wmul(minFractionUserReputation, totalStake), voterRewardFraction),
       wmul(wmul(maxFractionUserReputation, totalStake), voterRewardFraction)
@@ -872,7 +872,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256, uint256) {
     Motion storage motion = motions[_motionId];
 
-    uint256 totalSideStake = add(motion.stakes[_vote], motion.pastVoterComp[_vote]);
+    uint256 totalSideStake = motion.stakes[_vote] + motion.pastVoterComp[_vote];
     if (totalSideStake == 0) { return (0, 0); }
 
     uint256 stakeFraction = wdiv(stakes[_motionId][_staker][_vote], totalSideStake);
@@ -883,7 +883,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     uint256 repPenalty;
 
     // Went to a vote, use vote to determine reward or penalty
-    if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
+    if (motion.votes[NAY] + motion.votes[YAY] > 0) {
 
       uint256 loserStake;
       uint256 winnerStake;
@@ -895,17 +895,17 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
         winnerStake = motion.stakes[NAY];
       }
 
-      loserStake = sub(loserStake, motion.paidVoterComp);
-      uint256 totalVotes = add(motion.votes[NAY], motion.votes[YAY]);
+      loserStake -= motion.paidVoterComp;
+      uint256 totalVotes = motion.votes[NAY] + motion.votes[YAY];
       uint256 winFraction = wdiv(motion.votes[_vote], totalVotes);
       uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
 
       if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
         // 50% gets 0% of loser's stake, 100% gets 100% of loser's stake, linear in between
-        stakerReward = wmul(stakeFraction, add(winnerStake, wmul(loserStake, winShare - WAD)));
+        stakerReward = wmul(stakeFraction, (winnerStake + wmul(loserStake, winShare - WAD)));
       } else {
         stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));
-        repPenalty = sub(realStake, stakerReward);
+        repPenalty = realStake - stakerReward;
       }
 
     // Determine rewards based on stakes alone
@@ -921,7 +921,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
         uint256 loserStake = motion.stakes[flip(_vote)];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
-        stakerReward = wmul(stakeFraction, add(requiredStake, totalPenalty));
+        stakerReward = wmul(stakeFraction, (requiredStake + totalPenalty));
 
       // Opponent's side fully staked, pay 10% penalty
       } else if (
@@ -931,8 +931,8 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
         uint256 loserStake = motion.stakes[_vote];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
-        stakerReward = wmul(stakeFraction, sub(loserStake, totalPenalty));
-        repPenalty = sub(realStake, stakerReward);
+        stakerReward = wmul(stakeFraction, (loserStake - totalPenalty));
+        repPenalty = realStake - stakerReward;
 
       // Neither side fully staked (or no votes were revealed), no reward or penalty
       } else {
@@ -960,7 +960,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   }
 
   function flip(uint256 _vote) internal pure returns (uint256) {
-    return sub(1, _vote);
+    return 1 - _vote;
   }
 
   function getReputationFromProof(

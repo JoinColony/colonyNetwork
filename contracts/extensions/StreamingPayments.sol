@@ -188,9 +188,9 @@ contract StreamingPayments is ColonyExtensionMeta {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
 
       uint256 amountEntitledFromStart = getAmountEntitledFromStart(_id, _tokens[i]);
-      uint256 amountSinceLastClaim = sub(amountEntitledFromStart, paymentToken.pseudoAmountClaimedFromStart);
+      uint256 amountSinceLastClaim = amountEntitledFromStart - paymentToken.pseudoAmountClaimedFromStart;
       amountsToClaim[i] = getAmountClaimable(domainFundingPotId, _tokens[i], amountSinceLastClaim);
-      paymentToken.pseudoAmountClaimedFromStart = add(paymentToken.pseudoAmountClaimedFromStart, amountsToClaim[i]);
+      paymentToken.pseudoAmountClaimedFromStart = paymentToken.pseudoAmountClaimedFromStart + amountsToClaim[i];
       anythingToClaim = anythingToClaim || amountsToClaim[i] > 0;
     }
 
@@ -402,7 +402,7 @@ contract StreamingPayments is ColonyExtensionMeta {
       return 0;
     }
 
-    uint256 durationToClaim = sub(min(block.timestamp, streamingPayment.endTime), streamingPayment.startTime);
+    uint256 durationToClaim = min(block.timestamp, streamingPayment.endTime) - streamingPayment.startTime;
     if (durationToClaim == 0) {
       return 0;
     }

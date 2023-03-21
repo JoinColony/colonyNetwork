@@ -74,7 +74,7 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
   }
 
   function incrementMetatransactionNonce(address _user) override internal {
-    metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
+    metatransactionNonces[_user] += 1;
   }
 
   /// @notice Sets the payout modifiers in given expenditure slots, using the arbitration permission

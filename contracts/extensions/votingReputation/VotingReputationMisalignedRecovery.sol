@@ -122,7 +122,7 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
   function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) internal view returns (uint256, uint256) {
     Motion storage motion = motions[_motionId];
 
-    uint256 totalSideStake = add(motion.stakes[_vote], motion.pastVoterComp[_vote]);
+    uint256 totalSideStake = motion.stakes[_vote] + motion.pastVoterComp[_vote];
     if (totalSideStake == 0) { return (0, 0); }
 
     uint256 stakeFraction = wdiv(stakes[_motionId][_staker][_vote], totalSideStake);
@@ -133,7 +133,7 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
     uint256 repPenalty;
 
     // If finalized and went to a vote, use vote to determine reward or penalty
-    if (motion.finalized && add(motion.votes[NAY], motion.votes[YAY]) > 0) {
+    if (motion.finalized && (motion.votes[NAY] + motion.votes[YAY]) > 0) {
 
       uint256 loserStake;
       uint256 winnerStake;
@@ -145,17 +145,17 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
         winnerStake = motion.stakes[NAY];
       }
 
-      loserStake = sub(loserStake, motion.paidVoterComp);
-      uint256 totalVotes = add(motion.votes[NAY], motion.votes[YAY]);
+      loserStake -= motion.paidVoterComp;
+      uint256 totalVotes = motion.votes[NAY] + motion.votes[YAY];
       uint256 winFraction = wdiv(motion.votes[_vote], totalVotes);
       uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
 
       if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
         // 50% gets 0% of loser's stake, 100% gets 100% of loser's stake, linear in between
-        stakerReward = wmul(stakeFraction, add(winnerStake, wmul(loserStake, winShare - WAD)));
+        stakerReward = wmul(stakeFraction, (winnerStake + wmul(loserStake, winShare - WAD)));
       } else {
         stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));
-        repPenalty = sub(realStake, stakerReward);
+        repPenalty = realStake - stakerReward;
       }
 
     // Else if finalized, rewards based on stakes alone
@@ -171,7 +171,7 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
 
         uint256 loserStake = motion.stakes[flip(_vote)];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
-        stakerReward = wmul(stakeFraction, add(requiredStake, totalPenalty));
+        stakerReward = wmul(stakeFraction, (requiredStake + totalPenalty));
 
       // Opponent's side fully staked, pay 10% penalty
       } else if (
@@ -181,8 +181,8 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
 
         uint256 loserStake = motion.stakes[_vote];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
-        stakerReward = wmul(stakeFraction, sub(loserStake, totalPenalty));
-        repPenalty = sub(realStake, stakerReward);
+        stakerReward = wmul(stakeFraction, (loserStake - totalPenalty));
+        repPenalty = realStake - stakerReward;
 
       // Neither side fully staked (or no votes were revealed), no reward or penalty
       } else {
@@ -204,6 +204,6 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
   }
 
   function flip(uint256 _vote) internal pure returns (uint256) {
-    return sub(1, _vote);
+    return 1 - _vote;
   }
 }

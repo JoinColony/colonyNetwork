@@ -107,8 +107,8 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     for (uint256 i = 0; i < _users.length; i++) {
       require(_amounts[i] >= 0, "colony-bootstrap-bad-amount-input");
       require(uint256(_amounts[i]) <= fundingPots[1].balance[token], "colony-bootstrap-not-enough-tokens");
-      fundingPots[1].balance[token] = sub(fundingPots[1].balance[token], uint256(_amounts[i]));
-      nonRewardPotsTotal[token] = sub(nonRewardPotsTotal[token], uint256(_amounts[i]));
+      fundingPots[1].balance[token] = fundingPots[1].balance[token] - uint256(_amounts[i]);
+      nonRewardPotsTotal[token] = nonRewardPotsTotal[token] - uint256(_amounts[i]);
     }
 
     // After doing all the local storage changes, then do all the external calls
@@ -336,7 +336,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     // This mapping is in slot 34 (see ColonyStorage.sol);
     uint256 slot = uint256(keccak256(abi.encode(uint256(uint160(_user)), uint256(METATRANSACTION_NONCES_SLOT))));
     protectSlot(slot);
-    metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
+    metatransactionNonces[_user] += 1;
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view {
@@ -345,20 +345,20 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   }
 
   function approveStake(address _approvee, uint256 _domainId, uint256 _amount) public stoppable {
-    approvals[msgSender()][_approvee][_domainId] = add(approvals[msgSender()][_approvee][_domainId], _amount);
+    approvals[msgSender()][_approvee][_domainId] += _amount;
 
     ITokenLocking(tokenLockingAddress).approveStake(msgSender(), _amount, token);
   }
 
   function obligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
-    approvals[_user][msgSender()][_domainId] = sub(approvals[_user][msgSender()][_domainId], _amount);
-    obligations[_user][msgSender()][_domainId] = add(obligations[_user][msgSender()][_domainId], _amount);
+    approvals[_user][msgSender()][_domainId] -= _amount;
+    obligations[_user][msgSender()][_domainId] += _amount;
 
     ITokenLocking(tokenLockingAddress).obligateStake(_user, _amount, token);
   }
 
   function deobligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
-    obligations[_user][msgSender()][_domainId] = sub(obligations[_user][msgSender()][_domainId], _amount);
+    obligations[_user][msgSender()][_domainId] -= _amount;
 
     ITokenLocking(tokenLockingAddress).deobligateStake(_user, _amount, token);
   }
@@ -373,7 +373,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     address _beneficiary
   ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   {
-    obligations[_user][_obligator][_domainId] = sub(obligations[_user][_obligator][_domainId], _amount);
+    obligations[_user][_obligator][_domainId] -= _amount;
 
     ITokenLocking(tokenLockingAddress).transferStake(_user, _amount, token, _beneficiary);
   }

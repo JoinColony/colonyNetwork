@@ -74,21 +74,21 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     uint remainder;
     if (_token == address(0x0)) {
       // It's ether
-      toClaim = sub(sub(address(this).balance, nonRewardPotsTotal[_token]), fundingPots[0].balance[_token]);
+      toClaim = (address(this).balance - nonRewardPotsTotal[_token]) - fundingPots[0].balance[_token];
     } else {
       // Assume it's an ERC 20 token.
       ERC20Extended targetToken = ERC20Extended(_token);
-      toClaim = sub(sub(targetToken.balanceOf(address(this)), nonRewardPotsTotal[_token]), fundingPots[0].balance[_token]); // ignore-swc-123
+      toClaim = (targetToken.balanceOf(address(this)) - nonRewardPotsTotal[_token]) - fundingPots[0].balance[_token]; // ignore-swc-123
     }
 
     feeToPay = toClaim / getRewardInverse(); // ignore-swc-110 . This variable is set when the colony is
     // initialised to MAX_UINT, and cannot be set to zero via setRewardInverse, so this is a false positive. It *can* be set
     // to 0 via recovery mode, but a) That's not why MythX is balking here and b) There's only so much we can stop people being
     // able to do with recovery mode.
-    remainder = sub(toClaim, feeToPay);
-    nonRewardPotsTotal[_token] = add(nonRewardPotsTotal[_token], remainder);
-    fundingPots[1].balance[_token] = add(fundingPots[1].balance[_token], remainder);
-    fundingPots[0].balance[_token] = add(fundingPots[0].balance[_token], feeToPay);
+    remainder = toClaim - feeToPay;
+    nonRewardPotsTotal[_token] += remainder;
+    fundingPots[1].balance[_token] += remainder;
+    fundingPots[0].balance[_token] += feeToPay;
 
     emit ColonyFundsClaimed(msgSender(), _token, feeToPay, remainder);
   }
@@ -134,7 +134,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     if (!unsatisfactory) {
       processPayout(task.fundingPotId, _token, payout, task.roles[_role].user);
     } else {
-      fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], payout);
+      fundingPot.payouts[_token] -= payout;
     }
   }
 
@@ -199,7 +199,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     ExpenditureSlot storage slot = expenditureSlots[_id][_slot];
 
     require(
-      add(expenditure.finalizedTimestamp, add(expenditure.globalClaimDelay, slot.claimDelay)) <= block.timestamp,
+      expenditure.finalizedTimestamp + expenditure.globalClaimDelay + slot.claimDelay <= block.timestamp,
       "colony-expenditure-cannot-claim"
     );
 
@@ -214,11 +214,11 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
     uint256 repPayout = wmul(initialPayout, payoutScalar);
     uint256 tokenPayout = min(initialPayout, repPayout);
-    uint256 tokenSurplus = sub(initialPayout, tokenPayout);
+    uint256 tokenSurplus = initialPayout - tokenPayout;
 
     // Deduct any surplus from the outstanding payouts (for payoutScalars < 1)
     if (tokenSurplus > 0) {
-      fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], tokenSurplus);
+      fundingPot.payouts[_token] -= tokenSurplus;
     }
 
     // Process reputation updates if internal token
@@ -321,8 +321,8 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     FundingPot storage fromPot = fundingPots[_fromPot];
     FundingPot storage toPot = fundingPots[_toPot];
 
-    fromPot.balance[_token] = sub(fromPot.balance[_token], _amount);
-    toPot.balance[_token] = add(toPot.balance[_token], _amount);
+    fromPot.balance[_token] -=  _amount;
+    toPot.balance[_token] += _amount;
 
     if (_fromPot == 1){
       // If we're moving from the root pot, then check we haven't dropped below what we need
@@ -353,7 +353,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
       fromPot.associatedType == FundingPotAssociatedType.Payment ||
       fromPot.associatedType == FundingPotAssociatedType.Task
     ) {
-      uint256 fromPotPreviousAmount = add(fromPot.balance[_token], _amount);
+      uint256 fromPotPreviousAmount = fromPot.balance[_token] + _amount;
       updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
     }
 
@@ -362,12 +362,12 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
       toPot.associatedType == FundingPotAssociatedType.Payment ||
       toPot.associatedType == FundingPotAssociatedType.Task
     ) {
-      uint256 toPotPreviousAmount = sub(toPot.balance[_token], _amount);
+      uint256 toPotPreviousAmount = toPot.balance[_token] - _amount;
       updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
     }
 
     if (_toPot == 0 ) {
-      nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _amount);
+      nonRewardPotsTotal[_token] -= _amount;
     }
 
     emit ColonyFundsMovedBetweenFundingPots(msgSender(), _fromPot, _toPot, _amount, _token);
@@ -417,7 +417,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
       uint256 currentPayout = expenditureSlotPayouts[_id][_slots[i]][_token];
 
       expenditureSlotPayouts[_id][_slots[i]][_token] = _amounts[i];
-      fundingPot.payouts[_token] = add(sub(currentTotal, currentPayout), _amounts[i]);
+      fundingPot.payouts[_token] = currentTotal - currentPayout + _amounts[i];
 
 
       emit ExpenditurePayoutSet(msgSender(), _id, _slots[i], _token, _amounts[i]);
@@ -439,7 +439,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     uint currentTaskRolePayout = task.payouts[uint8(_role)][_token];
     task.payouts[uint8(_role)][_token] = _amount;
 
-    fundingPot.payouts[_token] = add(sub(currentTotalAmount, currentTaskRolePayout), _amount);
+    fundingPot.payouts[_token] = currentTotalAmount - currentTaskRolePayout + _amount;
 
     updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);
   }
@@ -450,12 +450,12 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
 
-    fundingPots[_fundingPotId].balance[_token] = sub(fundingPots[_fundingPotId].balance[_token], _payout);
-    fundingPots[_fundingPotId].payouts[_token] = sub(fundingPots[_fundingPotId].payouts[_token], _payout);
-    nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], _payout);
+    fundingPots[_fundingPotId].balance[_token] -= _payout;
+    fundingPots[_fundingPotId].payouts[_token] -= _payout;
+    nonRewardPotsTotal[_token] -= _payout;
 
     uint fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
-    uint remainder = sub(_payout, fee);
+    uint remainder = _payout - fee;
 
     if (_token == address(0x0)) {
       // Payout ether
@@ -483,7 +483,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     FundingPot storage fundingPot = fundingPots[_fundingPotId];
     if (fundingPot.payouts[_token] < fundingPot.balance[_token]) {
       uint256 domainId = getDomainFromFundingPot(_fundingPotId);
-      uint256 surplus = sub(fundingPot.balance[_token], fundingPot.payouts[_token]);
+      uint256 surplus = fundingPot.balance[_token] - fundingPot.payouts[_token];
       moveFundsBetweenPotsFunctionality(_fundingPotId, domains[domainId].fundingPotId, surplus, _token);
     }
   }
