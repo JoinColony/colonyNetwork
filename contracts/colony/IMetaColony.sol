@@ -54,4 +54,16 @@ interface IMetaColony is IColony {
   /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param _resolver The deployed resolver containing the extension contract logic
   function addExtensionToNetwork(bytes32 _extensionId, address _resolver) external;
+
+  /// @notice Called to set the details about bridge _bridgeAddress
+  /// @param _bridgeAddress The address of the bridge
+  /// @param updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
+  /// @param updateLogAfter The tx data after the dynamic part of the tx to bridge to the update log
+  /// @param gas How much gas to use for a bridged transaction
+  /// @param chainId The chainId of the corresponding network
+  /// @param skillCreationBefore The tx data before the dynamic part of the tx to brdige skill creation
+  /// @param skillCreationAfter The tx data after the dynamic part of the tx to brdige skill creation
+  /// @param setReputationRootHashBefore The tx data before the dynamic part of the tx to bridge a new reputation root hash
+  /// @param setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
+  function setBridgeData(address _bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) external;
 }

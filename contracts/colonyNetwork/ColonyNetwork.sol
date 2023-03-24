@@ -95,6 +95,31 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     emit ColonyVersionAdded(_version, _resolver);
   }
 
+  function setBridgeData(address bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) public
+  always
+  {
+    // // If there is a metacolony
+    // if (metaColony != address(0x00)){
+    //   require(msgSender() == metaColony, 'colony-network-not-metacolony');
+    // }
+    if (!isMiningChain()) {
+      bridgeAddressList[address(0x00)] = bridgeAddress;
+    } else {
+      // Is the mining chain
+      // TODO: Linked list stuff
+    }
+    bridgeData[bridgeAddress] = Bridge(updateLogBefore, updateLogAfter, gas, chainId, skillCreationBefore, skillCreationAfter, setReputationRootHashBefore, setReputationRootHashAfter);
+    // emit BridgeDataSet
+  }
+
+  function getBridgeData(address bridgeAddress) public view returns (Bridge memory) {
+    return bridgeData[bridgeAddress];
+  }
+
+  function getBridgeListEntry(address bridgeAddress) public view returns (address) {
+    return bridgeAddressList[bridgeAddress];
+  }
+
   function initialise(address _resolver, uint256 _version) public stoppable auth {
     require(currentColonyVersion == 0, "colony-network-already-initialised");
     require(_version > 0, "colony-network-invalid-version");

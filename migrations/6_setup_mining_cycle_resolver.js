@@ -8,9 +8,19 @@ const ReputationMiningCycleRespond = artifacts.require("./ReputationMiningCycleR
 const ReputationMiningCycleBinarySearch = artifacts.require("./ReputationMiningCycleBinarySearch");
 const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
+const MultiChain = artifacts.require("./MultiChain");
 
 // eslint-disable-next-line no-unused-vars
 module.exports = async function (deployer) {
+  // Check chain id
+  // If not a mining chain, then skip
+  const multichain = await MultiChain.new();
+  const chainId = await multichain.getChainId();
+
+  if (chainId.toString() !== "265669100") {
+    return;
+  }
+
   // Create a new Colony (version) and setup a new Resolver for it
   const reputationMiningCycle = await ReputationMiningCycle.deployed();
   const reputationMiningCycleRespond = await ReputationMiningCycleRespond.deployed();

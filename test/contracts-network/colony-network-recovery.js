@@ -547,7 +547,7 @@ contract("Colony Network Recovery", (accounts) => {
           await newActiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
           const arrayStartingSlot = soliditySha3(6);
           for (let i = 0; i < nLogEntries; i += 1) {
-            const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 5));
+            const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 6));
             const logEntry = await oldActiveCycle.getReputationUpdateLogEntry(i);
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
@@ -557,6 +557,7 @@ contract("Colony Network Recovery", (accounts) => {
               logEntryStartingSlot.addn(4),
               `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`,
             );
+            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${new BN(logEntry.chainId).toString(16, 64)}`);
 
             const portedLogEntry = await newActiveCycle.getReputationUpdateLogEntry(i);
             expect(portedLogEntry.user).to.equal(logEntry.user);
@@ -565,6 +566,7 @@ contract("Colony Network Recovery", (accounts) => {
             expect(portedLogEntry.colony).to.equal(logEntry.colony);
             expect(portedLogEntry.nUpdates).to.equal(logEntry.nUpdates);
             expect(portedLogEntry.nPreviousUpdates).to.equal(logEntry.nPreviousUpdates);
+            expect(portedLogEntry.chainId).to.equal(logEntry.chainId);
           }
 
           // We change the amount the first log entry is for - this is a 'wrong' entry we are fixing.
@@ -576,7 +578,7 @@ contract("Colony Network Recovery", (accounts) => {
           await newInactiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
 
           for (let i = 0; i < nLogEntries; i += 1) {
-            const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 5));
+            const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 6));
             const logEntry = await oldInactiveCycle.getReputationUpdateLogEntry(i);
             await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
             await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
@@ -586,6 +588,7 @@ contract("Colony Network Recovery", (accounts) => {
               logEntryStartingSlot.addn(4),
               `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`,
             );
+            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${new BN(logEntry.chainId).toString(16, 64)}`);
 
             const portedLogEntry = await newInactiveCycle.getReputationUpdateLogEntry(i);
 
@@ -595,6 +598,7 @@ contract("Colony Network Recovery", (accounts) => {
             expect(portedLogEntry.colony).to.equal(logEntry.colony);
             expect(portedLogEntry.nUpdates).to.equal(logEntry.nUpdates);
             expect(portedLogEntry.nPreviousUpdates).to.equal(logEntry.nPreviousUpdates);
+            expect(portedLogEntry.chainId).to.equal(logEntry.chainId);
           }
 
           // Set the new cycles

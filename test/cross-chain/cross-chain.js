@@ -23,18 +23,23 @@ chai.use(bnChai(web3.utils.BN));
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
+const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
 
 const setupBridging = require("../../scripts/setup-bridging-contracts");
 
 contract("Cross-chain", () => {
-  let colony;
+  let homeColony;
+  let foreignColony;
+  let homeColonyNetwork;
+  let foreignColonyNetwork;
   let homeBridge;
   let foreignBridge;
   let gnosisSafe;
   let zodiacBridge;
   let bridgeMonitor;
+  let foreignChainId;
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
@@ -77,9 +82,49 @@ contract("Cross-chain", () => {
     // Set up a colony on the home chain. That may or may not be the truffle chain...
     const colonyNetworkEthers = await new ethers.Contract(etherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
 
+    const foreignMCAddress = await foreignColonyNetwork.getMetaColony();
+    const foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
+    const homeMCAddress = await homeColonyNetwork.getMetaColony();
+    const homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
+
+    let tx = await foreignMetacolony.setBridgeData(
+      foreignBridge.address, // bridge address
+      "0x", // log before
+      "0x", // log after
+      1000000, // gas
+      100, // chainid
+      `0xdc8601b3000000000000000000000000${homeColonyNetwork.address.slice(
+        2
+        // eslint-disable-next-line max-len
+      )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000044`, // skill before
+      // )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000004c4b400000000000000000000000000000000000000000000000000000000000000044`, // skill before //eslint-disable-line max-len
+      "0x00000000000000000000000000000000000000000000000000000000", // skill after
+      "0x", // root hash before
+      "0x" // root hash after
+    );
+
+    await tx.wait();
+
+    tx = await homeMetacolony.setBridgeData(
+      homeBridge.address, // bridge address
+      "0x", // log before
+      "0x", // log after
+      1000000, // gas
+      foreignChainId, // chainid
+      `0x`, // skill before
+      "0x", // skill after
+      "0x", // root hash before
+      "0x" // root hash after
+    );
+
+    await tx.wait();
+  });
+
+  async function setupColony(colonyNetworkEthers) {
     let tx = await colonyNetworkEthers.deployTokenViaNetwork("Test", "TST", 18);
     let res = await tx.wait();
 
+    console.log(res);
     const { tokenAddress } = res.events.filter((x) => x.event === "TokenDeployed")[0].args;
     // token = await new ethers.Contract(tokenAddress, Token.abi, ethersHomeSigner);
 
@@ -88,7 +133,15 @@ contract("Cross-chain", () => {
 
     const { colonyAddress } = res.events.filter((x) => x.event === "ColonyAdded")[0].args;
 
-    colony = await new ethers.Contract(colonyAddress, IColony.abi, ethersHomeSigner);
+    const colony = await new ethers.Contract(colonyAddress, IColony.abi, colonyNetworkEthers.signer);
+    return colony;
+  }
+
+  beforeEach(async () => {
+    // Set up a colony on the home chain. That may or may not be the truffle chain...
+    homeColony = await setupColony(homeColonyNetwork);
+
+    foreignColony = await setupColony(foreignColonyNetwork);
   });
 
   after(async () => {
@@ -137,8 +190,7 @@ contract("Cross-chain", () => {
       // So 'just' call that on the colony...
 
       console.log("tx to home bridge address:", homeBridge.address);
-
-      const tx = await colony.makeArbitraryTransaction(homeBridge.address, txDataToBeSentToAMB);
+      const tx = await homeColony.makeArbitraryTransaction(homeBridge.address, txDataToBeSentToAMB);
       await tx.wait();
       await p;
       // Check balances
@@ -146,6 +198,50 @@ contract("Cross-chain", () => {
       expect(b1.toNumber()).to.equal(90);
       const b2 = await fToken.balanceOf(ADDRESS_ZERO);
       expect(b2.toNumber()).to.equal(10);
+    });
+  });
+
+  describe("when adding skills on another chain", async () => {
+    it("can create a skill on another chain and it's reflected on the home chain", async () => {
+      const t = homeColonyNetwork.interface.encodeFunctionData("addSkillFromBridge", [0x666666, 0x88888888]);
+      console.log(t);
+      const txDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [homeColonyNetwork.address, t, 1000000]);
+      console.log(txDataToBeSentToAMB);
+
+      // See skills on home chain
+      const beforeCount = await homeColonyNetwork.getSkillCount();
+
+      const p = new Promise((resolve, reject) => {
+        homeBridge.on("RelayedMessage", async (_sender, msgSender, _messageId, success) => {
+          console.log("bridged with ", _sender, msgSender, _messageId, success);
+          if (!success) {
+            console.log("bridged transaction did not succeed");
+            await reject(new Error("Bridged transaction did not succeed"));
+          }
+          resolve();
+        });
+      });
+
+      // Create a skill on foreign chain
+      // await foreignColony.addDomain(1);
+      const foreignBeforeCount = await foreignColonyNetwork.getSkillCount();
+      const tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, ethers.BigNumber.from(2).pow(256).sub(1), 1);
+      console.log(tx);
+      const res = await tx.wait();
+      console.log(res);
+
+      const foreignAfterCount = await foreignColonyNetwork.getSkillCount();
+      console.log(foreignBeforeCount, foreignAfterCount);
+      await p;
+
+      // Check reflected on home chain
+      const afterCount = await homeColonyNetwork.getSkillCount();
+      console.log(beforeCount, afterCount);
+
+      const pendingParent = await homeColonyNetwork.getPendingSkillAddition(foreignChainId, foreignAfterCount);
+      console.log(pendingParent);
+      // expect(beforeCount.toNumber() + 1).to.equal(afterCount.toNumber());
+      expect(pendingParent.toNumber()).to.not.equal(0);
     });
   });
 });

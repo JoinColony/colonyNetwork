@@ -7,6 +7,7 @@ const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const IMetaColony = artifacts.require("./IMetaColony");
 const ITokenLocking = artifacts.require("./ITokenLocking");
 const TokenAuthority = artifacts.require("./TokenAuthority");
+const MultiChain = artifacts.require("./MultiChain");
 
 const Resolver = artifacts.require("./Resolver");
 const EtherRouter = artifacts.require("./EtherRouter");
@@ -43,15 +44,22 @@ module.exports = async function (deployer, network, accounts) {
   await clnyToken.setAuthority(tokenAuthority.address);
   await clnyToken.setOwner(TOKEN_OWNER);
 
-  // These commands add MAIN_ACCOUNT as a reputation miner.
-  // This is necessary because the first miner must have staked before the mining cycle begins.
-  await clnyToken.mint(MAIN_ACCOUNT, DEFAULT_STAKE, { from: TOKEN_OWNER });
-  await clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE, { from: MAIN_ACCOUNT });
-  const mainAccountBalance = await clnyToken.balanceOf(MAIN_ACCOUNT);
-  assert.equal(mainAccountBalance.toString(), DEFAULT_STAKE.toString());
-  const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-  await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, DEFAULT_STAKE, true, { from: MAIN_ACCOUNT });
-  await colonyNetwork.stakeForMining(DEFAULT_STAKE, { from: MAIN_ACCOUNT });
+  // Check chain id
+  // If not a mining chain, then skip setting up mining
+  const multichain = await MultiChain.new();
+  const chainId = await multichain.getChainId();
+
+  if (chainId.toString() === "265669100") {
+    // These commands add MAIN_ACCOUNT as a reputation miner.
+    // This is necessary because the first miner must have staked before the mining cycle begins.
+    await clnyToken.mint(MAIN_ACCOUNT, DEFAULT_STAKE, { from: TOKEN_OWNER });
+    await clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE, { from: MAIN_ACCOUNT });
+    const mainAccountBalance = await clnyToken.balanceOf(MAIN_ACCOUNT);
+    assert.equal(mainAccountBalance.toString(), DEFAULT_STAKE.toString());
+    const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+    await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, DEFAULT_STAKE, true, { from: MAIN_ACCOUNT });
+    await colonyNetwork.stakeForMining(DEFAULT_STAKE, { from: MAIN_ACCOUNT });
+  }
 
   // Set up functional resolvers that identify correctly as previous versions.
   const Colony = artifacts.require("./Colony");
@@ -104,11 +112,15 @@ module.exports = async function (deployer, network, accounts) {
   await resolver4.register("version()", v4responder.address);
   await metaColony.addNetworkColonyVersion(4, resolver4.address);
 
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
-
-  const skillCount = await colonyNetwork.getSkillCount();
-  assert.equal(skillCount.toNumber(), 3); // Root domain, root local skill, mining skill
+  if (chainId.toString() === "265669100") {
+    await colonyNetwork.initialiseReputationMining();
+    await colonyNetwork.startNextCycle();
+    const skillCount = await colonyNetwork.getSkillCount();
+    assert.equal(skillCount.toNumber(), 4);
+  } else {
+    const skillCount = await colonyNetwork.getSkillCount();
+    assert.equal(skillCount.toNumber(), 3);
+  }
 
   console.log("### Meta Colony created at", metaColony.address);
 };
