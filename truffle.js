@@ -1,7 +1,7 @@
 const HDWalletProvider = require("truffle-hdwallet-provider");
 const ganache = require("ganache");
 
-const ganacheProvider = ganache.provider({ total_accounts: 14, seed: "smoketest", logging: { quiet: true } });
+const ganacheProvider = ganache.provider({ total_accounts: 14, seed: "smoketest", chain: { chainId: 265669100 }, logging: { quiet: true } });
 const LedgerWalletProvider = require("@umaprotocol/truffle-ledger-provider");
 
 const ledgerOptions = {
@@ -58,7 +58,7 @@ module.exports = {
       host: "localhost",
       port: 8545,
       gasPrice: 0,
-      network_id: 1998,
+      network_id: 265669100,
       skipDryRun: true,
     },
     coverage: {
@@ -99,7 +99,7 @@ module.exports = {
       network_id: "*",
     },
     xdai: {
-      url: "https://xdai-archive.blockscout.com/",
+      url: "https://xdai.colony.io/rpc/",
       gasPrice: 2000000000,
       network_id: 100,
     },

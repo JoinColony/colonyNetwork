@@ -44,4 +44,19 @@ contract MultiChain {
     uint256 chainId = getChainId();
     return (chainId == 5 || chainId == 2656695);
   }
+
+  function isMiningChain() internal view returns (bool) {
+    return isXdai();
+  }
+
+  modifier onlyMiningChain() {
+    require(isMiningChain(), "colony-reputation-mining-only-valid-on-mining-chain");
+    _;
+  }
+
+  modifier onlyNotMiningChain() {
+    require(!isMiningChain(), "colony-reputation-mining-only-valid-not-on-mining-chain");
+    _;
+  }
+
 }

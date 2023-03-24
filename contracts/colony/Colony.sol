@@ -210,6 +210,13 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     IColonyNetwork(colonyNetworkAddress).addColonyVersion(_version, _resolver);
   }
 
+  function setBridgeData(address bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) external
+  stoppable
+  auth
+  {
+    IColonyNetwork(colonyNetworkAddress).setBridgeData(bridgeAddress, updateLogBefore, updateLogAfter, gas, chainId, skillCreationBefore, skillCreationAfter, setReputationRootHashBefore, setReputationRootHashAfter);
+  }
+
   function addExtensionToNetwork(bytes32 _extensionId, address _resolver) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).addExtensionToNetwork(_extensionId, _resolver);
   }
@@ -255,13 +262,15 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     uint256 branchMask,
     bytes32[] memory siblings
   ) public view returns (bool) {
+    uint256 chainId;
     uint256 colonyAddress;
     uint256 skillid;
     uint256 userAddress;
     assembly {
-      colonyAddress := mload(add(key, 32))
-      skillid := mload(add(key, 52)) // Colony address was 20 bytes long, so add 20 bytes
-      userAddress := mload(add(key, 84)) // Skillid was 32 bytes long, so add 32 bytes
+      chainId := mload(add(key,32))
+      colonyAddress := mload(add(key,64))
+      skillid := mload(add(key,84)) // Colony address was 20 bytes long, so add 20 bytes
+      userAddress := mload(add(key,116)) // Skillid was 32 bytes long, so add 32 bytes
     }
     colonyAddress >>= 96;
     userAddress >>= 96;

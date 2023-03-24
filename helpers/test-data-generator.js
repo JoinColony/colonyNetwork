@@ -143,6 +143,12 @@ exports.giveUserCLNYTokens = async function giveUserCLNYTokens(colonyNetwork, us
 };
 
 exports.giveUserCLNYTokensAndStake = async function giveUserCLNYTokensAndStake(colonyNetwork, user, _amount) {
+  // const chainId = await web3GetChainId();
+  // if (chainId.toString() !== "265669100") {
+  //   test.skip();
+  //   return;
+  // }
+
   let amount;
   if (web3.utils.isBN(_amount)) {
     amount = _amount;
@@ -242,9 +248,14 @@ exports.setupColonyNetwork = async function setupColonyNetwork() {
   // Initialise with originally deployed version
   await colonyNetwork.initialise(colonyVersionResolverAddress, version);
 
-  // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
-  const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
-  await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+  const multichain = await MultiChain.new();
+  const chainId = await multichain.getChainId();
+  console.log(chainId.toString());
+  if (chainId.toString() === "265669100") {
+    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
+    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
+    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+  }
 
   // Get token-locking router from when it was deployed during migrations
   const deployedTokenLockingAddress = await deployedColonyNetwork.getTokenLocking();

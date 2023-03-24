@@ -27,8 +27,9 @@ import { IColony } from "./../colony/IColony.sol";
 import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
+import { MultiChain } from "./../common/MultiChain.sol";
 
-abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall {
+abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall, MultiChain {
   uint256 constant UINT256_MAX = 2 ** 256 - 1;
 
   event ExtensionInitialised();
@@ -80,21 +81,26 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
     require(_rootHash == impliedRoot, "colony-extension-invalid-root-hash");
 
     uint256 reputationValue;
-    address keyColonyAddress;
+    uint256 keyColonyAddress;
     uint256 keySkillId;
-    address keyUserAddress;
+    uint256 keyUserAddress;
+    uint256 keyChainId;
 
     assembly {
       reputationValue := mload(add(_value, 32))
-      keyColonyAddress := mload(add(_key, 20))
-      keySkillId := mload(add(_key, 52))
-      keyUserAddress := mload(add(_key, 72))
+      keyChainId := mload(add(_key,32))
+      keyColonyAddress := mload(add(_key,64))
+      keySkillId := mload(add(_key,84)) // Colony address was 20 bytes long, so add 20 bytes
+      keyUserAddress := mload(add(_key,116)) // Skillid was 32 bytes long, so add 32 bytes
     }
+    keyColonyAddress >>= 96;
+    keyUserAddress >>= 96;
 
-    require(keyColonyAddress == address(colony), "colony-extension-invalid-colony-address");
+    require(address(uint160(keyColonyAddress)) == address(colony), "colony-extension-invalid-colony-address");
     // slither-disable-next-line incorrect-equality
     require(keySkillId == _skillId, "colony-extension-invalid-skill-id");
-    require(keyUserAddress == _user, "colony-extension-invalid-user-address");
+    require(address(uint160(keyUserAddress)) == _user, "colony-extension-invalid-user-address");
+    require(keyChainId == getChainId(), "colony-extension-invalid-chainid");
 
     return reputationValue;
   }

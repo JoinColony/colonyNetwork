@@ -27,6 +27,7 @@ interface ReputationMiningCycleDataTypes {
     address colony;
     uint128 nUpdates;
     uint128 nPreviousUpdates;
+    uint256 chainId;
   }
 
   struct Submission {

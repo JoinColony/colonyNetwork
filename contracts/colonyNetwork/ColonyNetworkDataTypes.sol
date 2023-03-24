@@ -180,4 +180,15 @@ interface ColonyNetworkDataTypes {
     uint256 amount;
     uint256 timestamp;
   }
+
+  struct Bridge {
+    bytes updateLogBefore;
+    bytes updateLogAfter;
+    uint256 gas;
+    uint256 chainId;
+    bytes skillCreationBefore;
+    bytes skillCreationAfter;
+    bytes setReputationRootHashBefore;
+    bytes setReputationRootHashAfter;
+  }
 }

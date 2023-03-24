@@ -54,6 +54,19 @@ Adds a new skill to the domain or local skills tree, under skill `_parentSkillId
 |---|---|---|
 |_skillId|uint256|Id of the added skill
 
+### ▸ `addSkillFromBridge(uint256 _parentSkillId, uint256 _skillCount)`
+
+Function called by bridge transactions to add a new skill
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_parentSkillId|uint256|The parent id of the new skill
+|_skillCount|uint256|The number of the new skill being created
+
+
 ### ▸ `addr(bytes32 _node):address _address`
 
 Returns the address the supplied node resolves do, if we are the resolver.
@@ -333,6 +346,57 @@ Set deprecation status for a skill
 |---|---|---|
 |_changed|bool|Whether the deprecated state was changed
 
+### ▸ `getAuthorizedBridge(address _bridgeAddress):uint256 chainId`
+
+Called to get the corresponding chainId of the bridge at _bridgeAddress
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_bridgeAddress|address|The address of the bridge
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|chainId|uint256|The chainId of the corresponding network
+
+### ▸ `getBridgeData(address _bridgeAddress):Bridge bridge`
+
+Called to get the details about known bridge _bridgeAddress
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_bridgeAddress|address|The address of the bridge
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|bridge|Bridge|The bridge data
+
+### ▸ `getBridgeListEntry(address bridgeAddress):address nextBridge`
+
+Called to get the next bridge in the list after bridge _bridgeAddress
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|bridgeAddress|address|The address of the bridge
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nextBridge|address|The address of the next bridge
+
 ### ▸ `getChildSkillId(uint256 _skillId, uint256 _childSkillIndex):uint256 _childSkillId`
 
 Get the id of the child skill at index `_childSkillIndex` for skill with Id `_skillId`.
@@ -561,6 +625,24 @@ Get a token's status in the payout whitelist
 |Name|Type|Description|
 |---|---|---|
 |_status|bool|Will be `true` if token is whitelisted
+
+### ▸ `getPendingSkillAddition(uint256 _chainId, uint256 _skillCount):uint256 parentId`
+
+Called to get the information about a skill that has been bridged out of order
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId we're bridging from
+|_skillCount|uint256|The skill count
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|parentId|uint256|The parent id of the skill being added
 
 ### ▸ `getProfileDBAddress(bytes32 _node):string _orbitdb`
 
@@ -866,6 +948,26 @@ Used to track that a user is eligible to claim a reward
 |---|---|---|
 |_recipient|address|The address receiving the award
 |_amount|uint256|The amount of CLNY to be awarded
+
+
+### ▸ `setBridgeData(address _bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter)`
+
+Called to set the details about bridge _bridgeAddress
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_bridgeAddress|address|The address of the bridge
+|updateLogBefore|bytes|The tx data before the dynamic part of the tx to bridge to the update log
+|updateLogAfter|bytes|The tx data after the dynamic part of the tx to bridge to the update log
+|gas|uint256|How much gas to use for a bridged transaction
+|chainId|uint256|The chainId of the corresponding network
+|skillCreationBefore|bytes|The tx data before the dynamic part of the tx to brdige skill creation
+|skillCreationAfter|bytes|The tx data after the dynamic part of the tx to brdige skill creation
+|setReputationRootHashBefore|bytes|The tx data before the dynamic part of the tx to bridge a new reputation root hash
+|setReputationRootHashAfter|bytes|The tx data after the dynamic part of the tx to bridge a new reputation root hash
 
 
 ### ▸ `setFeeInverse(uint256 _feeInverse)`
