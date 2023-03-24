@@ -151,9 +151,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
 
     // (1 - exp{-t_n/T}) * (1 - (n-1)/N), 3rd degree Taylor expansion for exponential term
     uint256 tnDivT = wdiv(timeStakedMax * WAD, T);
-    uint256 expTnDivT = add(add(add(WAD, tnDivT), wmul(tnDivT, tnDivT) / 2), wmul(wmul(tnDivT, tnDivT), tnDivT) / 6);
-    uint256 stakeTerm = sub(WAD, wdiv(WAD, expTnDivT));
-    uint256 submissionTerm = sub(WAD, wdiv(submissonIndex * WAD, N));
+    uint256 expTnDivT = (((WAD + tnDivT) + wmul(tnDivT, tnDivT) / 2) + wmul(wmul(tnDivT, tnDivT), tnDivT) / 6);
+    uint256 stakeTerm = WAD - wdiv(WAD, expTnDivT);
+    uint256 submissionTerm = WAD - wdiv(submissonIndex * WAD, N);
     return wmul(stakeTerm, submissionTerm);
   }
 
@@ -174,7 +174,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     for (i = 0; i < stakers.length; i++) {
       timeStaked = miningStakes[stakers[i]].timestamp;
       minerWeights[i] = calculateMinerWeight(block.timestamp - timeStaked, i);
-      minerWeightsTotal = add(minerWeightsTotal, minerWeights[i]);
+      minerWeightsTotal += minerWeights[i];
     }
 
     uint256 realReward; // Used to prevent dust buildup due to small imprecisions in WAD arithmetic.
@@ -213,7 +213,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     // it in ReputationMiningCycle.invalidateHash;
     for (uint256 i; i < _stakers.length; i++) {
       lostStake = min(miningStakes[_stakers[i]].amount, _amount);
-      miningStakes[_stakers[i]].amount = sub(miningStakes[_stakers[i]].amount, lostStake);
+      miningStakes[_stakers[i]].amount -= lostStake;
     }
 
     ITokenLocking(tokenLocking).deposit(clnyToken, 0, true); // Faux deposit to clear any locks
@@ -227,7 +227,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
 
   function reward(address _recipient, uint256 _amount) public stoppable onlyReputationMiningCycle {
     // TODO: Gain rep?
-    pendingMiningRewards[_recipient] = add(pendingMiningRewards[_recipient], _amount);
+    pendingMiningRewards[_recipient] += _amount;
   }
 
   function claimMiningReward(address _recipient) public stoppable {
@@ -244,7 +244,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     ITokenLocking(tokenLocking).obligateStake(msgSender(), _amount, clnyToken);
 
     miningStakes[msgSender()].timestamp = getNewTimestamp(miningStakes[msgSender()].amount, _amount, miningStakes[msgSender()].timestamp, block.timestamp);
-    miningStakes[msgSender()].amount = add(miningStakes[msgSender()].amount, _amount);
+    miningStakes[msgSender()].amount += _amount;
   }
 
   function unstakeForMining(uint256 _amount) public stoppable {
@@ -252,7 +252,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     // Prevent those involved in a mining cycle withdrawing stake during the mining process.
     require(!IReputationMiningCycle(activeReputationMiningCycle).userInvolvedInMiningCycle(msgSender()), "colony-network-hash-submitted");
     ITokenLocking(tokenLocking).deobligateStake(msgSender(), _amount, clnyToken);
-    miningStakes[msgSender()].amount = sub(miningStakes[msgSender()].amount, _amount);
+    miningStakes[msgSender()].amount -= _amount;
   }
 
   function getMiningStake(address _user) public view returns (MiningStake memory) {
@@ -289,14 +289,16 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
   function getNewTimestamp(uint256 _prevWeight, uint256 _currWeight, uint256 _prevTime, uint256 _currTime) internal pure returns (uint256) {
     uint256 prevWeight = _prevWeight;
     uint256 currWeight = _currWeight;
-
+    // This is the exact scenario in the docs they say this might be required - avoiding overflows
+    // slither-disable-start divide-before-multiply
     // Needed to prevent overflows in the timestamp calculation
     while ((prevWeight >= UINT192_MAX) || (currWeight >= UINT192_MAX)) {
       prevWeight /= 2;
       currWeight /= 2;
     }
 
-    return add(mul(prevWeight, _prevTime), mul(currWeight, _currTime)) / add(prevWeight, currWeight);
+    return ((prevWeight * _prevTime) + (currWeight * _currTime)) / (prevWeight + currWeight);
+    // slither-disable-end divide-before-multiply
   }
 
   function setMiningResolver(address _miningResolver) public

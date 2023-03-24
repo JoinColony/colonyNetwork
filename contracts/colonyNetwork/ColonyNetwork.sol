@@ -176,7 +176,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
   }
 
   function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
-    return ascendSkillTree(_skillId, add(_parentSkillIndex,1));
+    return ascendSkillTree(_skillId, _parentSkillIndex + 1);
   }
 
   function getChildSkillId(uint _skillId, uint _childSkillIndex) public view returns (uint256) {
@@ -276,7 +276,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     // This mapping is in slot 41 (see ColonyNetworkStorage.sol);
     uint256 slot = uint256(keccak256(abi.encode(uint256(uint160(_user)), uint256(METATRANSACTION_NONCES_SLOT))));
     protectSlot(slot);
-    metatransactionNonces[_user] = add(metatransactionNonces[_user], 1);
+    metatransactionNonces[_user] += 1;
   }
 
   function ascendSkillTree(uint _skillId, uint _parentSkillNumber) internal view returns (uint256) {

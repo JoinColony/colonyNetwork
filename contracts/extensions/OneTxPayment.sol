@@ -281,7 +281,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       while (j < uniqueTokensIdx && !isMatch) {
         if (_tokens[i] == uniqueTokens[j]) {
           isMatch = true;
-          uniqueAmounts[j] = add(uniqueAmounts[j], _amounts[i]);
+          uniqueAmounts[j] += _amounts[i];
         }
         j++;
       }

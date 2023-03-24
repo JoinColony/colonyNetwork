@@ -226,15 +226,15 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       return;
     }
 
-    activeIntake = add(activeIntake, totalCost);
-    activeSold = add(activeSold, numTokens);
+    activeIntake += totalCost;
+    activeSold += numTokens;
 
     assert(activeSold <= maxPerPeriod);
 
     // Do userLimitFraction bookkeeping (only if needed)
     if (userLimitFraction < WAD) {
-      soldTotal = add(soldTotal, numTokens);
-      soldUser[msgSender()] = add(soldUser[msgSender()], numTokens);
+      soldTotal += numTokens;
+      soldUser[msgSender()] += numTokens;
     }
 
     // Check if we've sold out
@@ -388,7 +388,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @notice Get the number of remaining tokens for sale this period
   /// @return _remaining Tokens remaining
   function getSellableTokens() public view returns (uint256 _remaining) {
-    return sub(maxPerPeriod, ((activePeriod >= getCurrentPeriod()) ? activeSold : 0));
+    return (maxPerPeriod - ((activePeriod >= getCurrentPeriod()) ? activeSold : 0));
   }
 
   /// @notice Get the maximum amount of tokens a user can purchase in total
@@ -398,7 +398,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     return
       (userLimitFraction == WAD || whitelist == address(0x0)) ?
       UINT256_MAX :
-      sub(wmul(add(getTokenBalance(), soldTotal), userLimitFraction), soldUser[_user])
+      wmul(getTokenBalance() + soldTotal, userLimitFraction) - soldUser[_user]
     ;
   }
 

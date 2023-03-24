@@ -50,10 +50,10 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   function expectedBranchMask(uint256 _nLeaves, uint256 _leaf) public pure returns (uint256) {
     // Gets the expected branchmask for a patricia tree which has nLeaves, with keys from 0 to nLeaves -1
     // i.e. the tree is 'full' - there are no missing leaves
-    uint256 mask = sub(_nLeaves, 1); // Every branchmask in a full tree has at least these 1s set
+    uint256 mask = _nLeaves - 1; // Every branchmask in a full tree has at least these 1s set
     uint256 xored = mask ^ _leaf; // Where do mask and leaf differ?
     // Set every bit in the mask from the first bit where they differ to 1
-    uint256 remainderMask = sub(nextPowerOfTwoInclusive(add(xored, 1)), 1);
+    uint256 remainderMask = nextPowerOfTwoInclusive(xored + 1) - 1;
     return mask | remainderMask;
   }
 
@@ -172,7 +172,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   function nextPowerOfTwoInclusive(uint256 _v) internal pure returns (uint) { // solium-disable-line security/no-assign-params
     // Returns the next power of two, or v if v is already a power of two.
     // Doesn't work for zero.
-    _v = sub(_v, 1);
+    _v -= 1;
     _v |= _v >> 1;
     _v |= _v >> 2;
     _v |= _v >> 4;
@@ -181,7 +181,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
     _v |= _v >> 32;
     _v |= _v >> 64;
     _v |= _v >> 128;
-    _v = add(_v, 1);
+    _v += 1;
     return _v;
   }
 

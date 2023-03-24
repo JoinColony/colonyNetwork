@@ -600,7 +600,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
   // e.g. for log entry with 6 updates, the relative update number range is [0 .. 5] (inclusive)
   function getRelativeUpdateNumber(uint256[26] memory u, ReputationLogEntry memory logEntry) internal view returns (uint256) {
     uint256 nLeaves = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNLeaves();
-    uint256 updateNumber = sub(sub(disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound, 1), nLeaves);
+    uint256 updateNumber = (disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1) - nLeaves;
 
     // Check that the supplied log entry corresponds to this update number
     require(updateNumber >= logEntry.nPreviousUpdates, "colony-reputation-mining-update-number-part-of-previous-log-entry-updates");
