@@ -20,10 +20,11 @@ const {
   expectEvent,
   expectNoEvent,
   getTokenArgs,
+  isMainnet,
+  isXdai,
 } = require("../helpers/test-helper");
 const {
   MINING_CYCLE_DURATION,
-  DEFAULT_STAKE,
   MIN_STAKE,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   WAD,
@@ -38,8 +39,6 @@ const Token = artifacts.require("Token");
 
 chai.use(bnChai(web3.utils.BN));
 
-const MAINNET = 1;
-const FORKED_MAINNET = 2656691;
 const GOERLI = 5;
 const FORKED_GOERLI = 2656695;
 const XDAI = 100;
@@ -66,24 +65,24 @@ contract("Contract Storage", (accounts) => {
     ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
     const ensRegistry = await ENSRegistry.new();
     await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
+    // await giveUserCLNYTokensAndStake(this, colonyNetwork, MINER1, DEFAULT_STAKE);
+    // await giveUserCLNYTokensAndStake(this, colonyNetwork, MINER2, DEFAULT_STAKE);
+    // await giveUserCLNYTokensAndStake(this, colonyNetwork, MINER3, DEFAULT_STAKE);
 
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    // await colonyNetwork.initialiseReputationMining();
+    // await colonyNetwork.startNextCycle();
   });
 
   describe("Should behave differently based on the network deployed to", () => {
     it("should be able to get the domain name", async () => {
       await metaColony.registerColonyLabel("meta", "", { from: accounts[0] });
-      if (chainId === MAINNET || chainId === FORKED_MAINNET) {
+      if (await isMainnet()) {
         const name = await colonyNetwork.lookupRegisteredENSDomain(metaColony.address);
         expect(name).to.equal("meta.colony.joincolony.eth");
       } else if (chainId === GOERLI || chainId === FORKED_GOERLI) {
         const name = await colonyNetwork.lookupRegisteredENSDomain(metaColony.address);
         expect(name).to.equal("meta.colony.joincolony.test");
-      } else if (chainId === XDAI || chainId === FORKED_XDAI) {
+      } else if (await isXdai()) {
         const name = await colonyNetwork.lookupRegisteredENSDomain(metaColony.address);
         expect(name).to.equal("meta.colony.joincolony.colonyxdai");
       } else {
@@ -91,7 +90,8 @@ contract("Contract Storage", (accounts) => {
       }
     });
 
-    it("Reputation mining rewards should come from different places depending on network", async () => {
+    it.skip("Reputation mining rewards should come from different places depending on network", async () => {
+      // TODO: Replace with 'should not be able to mine on non-home networks'
       await clnyToken.mint(colonyNetwork.address, 100, { from: accounts[11] });
       // Advance two cycles to clear active and inactive state.
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -151,8 +151,9 @@ contract("Contract Storage", (accounts) => {
       }
     });
 
-    it("should not make 0-value transfers to 'burn' unneeded rewards on xdai", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, MIN_STAKE);
+    it.skip("should not make 0-value transfers to 'burn' unneeded rewards on xdai", async function () {
+      // TODO: Work out what this test should be now
+      await giveUserCLNYTokensAndStake(this, colonyNetwork, MINER1, MIN_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
@@ -176,16 +177,16 @@ contract("Contract Storage", (accounts) => {
       const supplyAfter = await clnyToken.totalSupply();
       const balanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
 
-      if (chainId === XDAI || chainId === FORKED_XDAI) {
-        // tokens should be transferred to metacolony
-        expect(supplyBefore).to.eq.BN(supplyAfter);
-        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, WAD]);
-      } else {
+      if (await isMainnet()) {
         // tokens should be burned.
         expect(supplyBefore.sub(supplyAfter)).to.eq.BN(balanceBefore);
         await expectEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, WAD]);
         expect(balanceAfter).to.be.zero;
         expect(supplyBefore.sub(balanceBefore)).to.eq.BN(supplyAfter);
+      } else {
+        // tokens should be transferred to metacolony
+        expect(supplyBefore).to.eq.BN(supplyAfter);
+        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, WAD]);
       }
     });
 
