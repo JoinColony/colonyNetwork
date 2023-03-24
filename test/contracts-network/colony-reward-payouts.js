@@ -19,6 +19,7 @@ const {
   makeReputationKey,
   advanceMiningCycleNoContest,
   getRewardClaimSquareRootsAndProofs,
+  web3GetChainId,
 } = require("../../helpers/test-helper");
 
 const { fundColonyWithTokens, setupFinalizedTask, giveUserCLNYTokensAndStake, setupRandomColony } = require("../../helpers/test-data-generator");
@@ -63,12 +64,16 @@ contract("Colony Reward Payouts", (accounts) => {
   const userAddress3 = accounts[2];
   let initialSquareRoots;
 
+  let chainId;
+
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+
+    chainId = await web3GetChainId();
   });
 
   beforeEach(async () => {
@@ -150,7 +155,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
-      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ethers.constants.AddressZero);
+      const globalKey = ReputationMinerTestWrapper.getKey(chainId, newColony.address, rootDomainSkill, ethers.constants.AddressZero);
       await client.insert(globalKey, new BN(10), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -405,7 +410,7 @@ contract("Colony Reward Payouts", (accounts) => {
       const result = await newColony.getDomain(1);
       const rootDomainSkill = result.skillId;
 
-      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ethers.constants.AddressZero);
+      const globalKey = ReputationMinerTestWrapper.getKey(chainId, newColony.address, rootDomainSkill, ethers.constants.AddressZero);
       await client.insert(globalKey, new BN(0), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -456,7 +461,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await colony.bootstrapColony([userAddress1], [userTokens3]);
 
-      const userKey = ReputationMinerTestWrapper.getKey(colony.address, rootDomainSkill, userAddress3);
+      const userKey = ReputationMinerTestWrapper.getKey(chainId, colony.address, rootDomainSkill, userAddress3);
       await client.insert(userKey, new BN(0), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
