@@ -3,7 +3,7 @@
 # Exit script as soon as a command fails.
 set -o errexit
 
-CHAIN_ID=${CHAIN_ID:-2656691}
+CHAIN_ID=${CHAIN_ID:-265669100}
 PORT=${PORT:-8545}
 DBPATH=${DBPATH:-./ganache-chain-db/}
 

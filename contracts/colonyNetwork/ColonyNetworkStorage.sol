@@ -106,6 +106,19 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   // Mining delegation mapping
   mapping(address => address) miningDelegators; // Storage slot 42
 
+  mapping(address => uint256) authorizedBridges; // Storage slot 43
+  address soloMiningAddress; // Storage slot 44
+
+  // A linked list of bridges that we talk to when we update the reputation mining cycle
+  mapping(address => address) bridgeAddressList; // Storage slot 45
+  mapping(address => Bridge) bridgeData; // Storage slot 46
+
+  // A mapping that maps network id -> skill count
+  mapping(uint256 => uint256) networkSkillCounts; // Storage slot 47
+  // A mapping that stores pending bridged skill additions that have been bridged out-of-order
+  // networkId -> skillCount -> parentSkillId
+  mapping(uint256 => mapping(uint256 => uint256)) pendingSkillAdditions; // Storage slot 48
+
   modifier calledByColony() {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");
     assert(msgSender() == msg.sender);

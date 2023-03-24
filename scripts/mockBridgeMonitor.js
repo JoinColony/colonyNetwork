@@ -22,14 +22,31 @@ class MockBridgeMonitor {
     homeBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
       const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
       await foreignBridge.execute(target, data, gasLimit, messageId, sender);
+      console.log("seen on home bridge");
     });
 
     foreignBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
       const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
-      await homeBridge.execute(target, data, gasLimit, messageId, sender);
+
+      const tx = await homeBridge.execute(target, data, gasLimit, messageId, sender, { gasLimit: gasLimit * 1.5 });
+      try {
+        const receipt = await tx.wait();
+
+        console.log(receipt);
+        const relayedEvent = receipt.events.filter((e) => e.event === "RelayedMessage")[0];
+        if (!relayedEvent.args.status) {
+          console.log("WARNING: Bridged transaction failed");
+        }
+      } catch (err) {
+        console.log(err);
+      }
+      console.log("seen on foreign bridge");
+      console.log("bridging transaction on home chain", tx);
     });
 
     console.log("Mock Bridge Monitor running");
+    console.log("Home bridge address: ", homeBridgeAddress);
+    console.log("Foreign bridge address: ", foreignBridgeAddress);
   }
 
   close() {} // eslint-disable-line class-methods-use-this

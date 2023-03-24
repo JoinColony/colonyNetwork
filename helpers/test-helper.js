@@ -647,6 +647,7 @@ exports.makeReputationKey = function makeReputationKey(colonyAddress, skillBN, a
     skillBN = new BN(skillBN.toString()); // eslint-disable-line no-param-reassign
   }
   let key = `0x`;
+  key += `${new BN(265669100).toString(16, 64)}`; // Chain id as bytes TODO: Make parameter
   key += `${new BN(colonyAddress.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
   key += `${skillBN.toString(16, 64)}`; // SkillId as uint256
   if (accountAddress === undefined) {
@@ -1204,6 +1205,16 @@ exports.upgradeColonyTo = async function (colony, _version) {
     await colony.upgrade(currentVersion.addn(1));
     currentVersion = await colony.version();
   }
+};
+
+exports.isMainnet = async function isMainnet() {
+  const chainId = await exports.web3GetChainId();
+  return chainId === 1 || chainId === 2656691;
+};
+
+exports.isXdai = async function isXdai() {
+  const chainId = await exports.web3GetChainId();
+  return chainId === 100 || chainId === 265669100;
 };
 
 class TestAdapter {

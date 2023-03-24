@@ -4,13 +4,13 @@ const log = console.log;
 // Copies pre-built token artifacts to .coverage_artifacts/contracts
 function provisionTokenContracts(config){
   let output;
-  const provisionColonyToken = `BUILD_DIR="build-coverage" bash ./scripts/provision-token-contracts.sh`;
+  const provisionColonyToken = `BUILD_DIR="build-coverage" npm run provision:token:contracts`;
 
   log('Provisioning ColonyToken contracts...')
   output = execSync(provisionColonyToken);
   log(output.toString())
 
-  const provisionSafeContracts = `BUILD_DIR="build-coverage" bash ./scripts/provision-safe-contracts.sh`;
+  const provisionSafeContracts = `BUILD_DIR="build-coverage" npm run provision:safe:contracts`;
 
   log('Provisioning Safe contracts...')
   output = execSync(provisionSafeContracts);
@@ -33,6 +33,9 @@ module.exports = {
       account_keys_path: "./ganache-accounts.json",
       vmErrorsOnRPCResponse: false,
       total_accounts: 18,
+      _chainId: 265669100,
+      _chainIdRpc: 265669100,
+      network_id: 265669100,
       accounts: [
         {secretKey:"0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae","balance":"100000000000000000000"},
         {secretKey:"0xe9aebe8791ad1ebd33211687e9c53f13fe8cca53b271a6529c7d7ba05eda5ce2","balance":"100000000000000000000"},

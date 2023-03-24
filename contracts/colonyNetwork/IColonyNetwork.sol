@@ -508,4 +508,43 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _delegate The address that wants to mine
   /// @return _delegator The address they are allowed to mine on behalf of
   function getMiningDelegator(address _delegate) external view returns (address _delegator);
+
+  /// @notice Called to get the corresponding chainId of the bridge at _bridgeAddress
+  /// @param _bridgeAddress The address of the bridge
+  /// @return chainId The chainId of the corresponding network
+  function getAuthorizedBridge(address _bridgeAddress) external view returns (uint256 chainId);
+
+  /// @notice Called to set the details about bridge _bridgeAddress
+  /// @param _bridgeAddress The address of the bridge
+  /// @param updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
+  /// @param updateLogAfter The tx data after the dynamic part of the tx to bridge to the update log
+  /// @param gas How much gas to use for a bridged transaction
+  /// @param chainId The chainId of the corresponding network
+  /// @param skillCreationBefore The tx data before the dynamic part of the tx to brdige skill creation
+  /// @param skillCreationAfter The tx data after the dynamic part of the tx to brdige skill creation
+  /// @param setReputationRootHashBefore The tx data before the dynamic part of the tx to bridge a new reputation root hash
+  /// @param setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
+  function setBridgeData(address _bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) external;
+
+  /// @notice Function called by bridge transactions to add a new skill
+  /// @param _parentSkillId The parent id of the new skill
+  /// @param _skillCount The number of the new skill being created
+  function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillCount) external;
+
+  /// @notice Called to get the details about known bridge _bridgeAddress
+  /// @param _bridgeAddress The address of the bridge
+  /// @return bridge The bridge data
+  function getBridgeData(address _bridgeAddress) external view returns (Bridge memory bridge);
+
+  /// @notice Called to get the next bridge in the list after bridge _bridgeAddress
+  /// @param bridgeAddress The address of the bridge
+  /// @return nextBridge The address of the next bridge
+  function getBridgeListEntry(address bridgeAddress) external view returns (address nextBridge);
+
+  /// @notice Called to get the information about a skill that has been bridged out of order
+  /// @param _chainId The chainId we're bridging from
+  /// @param _skillCount The skill count
+  /// @return parentId The parent id of the skill being added
+  function getPendingSkillAddition(uint256 _chainId, uint256 _skillCount) external view returns (uint256 parentId);
+
 }

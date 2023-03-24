@@ -138,6 +138,7 @@ class ReputationMiner {
     this.queries.saveColony = this.db.prepare(`INSERT OR IGNORE INTO colonies (address) VALUES (?)`);
     this.queries.saveUser = this.db.prepare(`INSERT OR IGNORE INTO users (address) VALUES (?)`);
     this.queries.saveSkill = this.db.prepare(`INSERT OR IGNORE INTO skills (skill_id) VALUES (?)`);
+    this.queries.saveChainId = this.db.prepare(`INSERT OR IGNORE INTO chainids (chainid) VALUES (?)`);
 
     this.queries.getReputationCount = this.db.prepare(
       `SELECT COUNT ( * ) AS "n"
@@ -152,9 +153,10 @@ class ReputationMiner {
     );
 
     this.queries.insertReputation = this.db.prepare(
-      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
+      `INSERT OR IGNORE INTO reputations (reputation_rowid, chainid_rowid, colony_rowid, skill_id, user_rowid, value)
       SELECT
       (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash=?),
+      (SELECT chainids.rowid FROM chainids WHERE chainids.chainid=?),
       (SELECT colonies.rowid FROM colonies WHERE colonies.address=?),
       ?,
       (SELECT users.rowid FROM users WHERE users.address=?),
@@ -162,10 +164,12 @@ class ReputationMiner {
     );
 
     this.queries.getAllReputationsInHash = this.db.prepare(
-      `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
+      `SELECT chainids.chainid, reputations.skill_id, reputations.value, reputation_states.root_hash,
+         colonies.address as colony_address, users.address as user_address
        FROM reputations
        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
        INNER JOIN users ON users.rowid=reputations.user_rowid
+       INNER JOIN chainids ON chainids.rowid=reputations.chainid_rowid
        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
        WHERE reputation_states.root_hash=?
        ORDER BY substr(reputations.value, 67) ASC`
@@ -175,12 +179,14 @@ class ReputationMiner {
       `SELECT reputations.value
       FROM reputations
       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+      INNER JOIN chainids ON chainids.rowid=reputations.chainid_rowid
       INNER JOIN users ON users.rowid=reputations.user_rowid
       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
       WHERE reputation_states.root_hash=?
       AND users.address=?
       AND reputations.skill_id=?
-      AND colonies.address=?`
+      AND colonies.address=?
+      AND chainids.chainid=?`
     );
 
     this.queries.getAddressesWithReputation = this.db.prepare(
@@ -533,16 +539,16 @@ class ReputationMiner {
     return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, reputation, uid, nLeaves: this.nReputations.toString() };
   }
 
-  static getKey(_colonyAddress, _skillId, _userAddress) {
+  static getKey(_chainId, _colonyAddress, _skillId, _userAddress) {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
 
-    let base = 10;
+    let skillIdBase = 10;
     let skillId = _skillId.toString();
     if (skillId.slice(0, 2) === "0x") {
       // We've been passed a hex string
       skillId = skillId.slice(2);
-      base = 16;
+      skillIdBase = 16;
     }
 
     let validAddress = isAddress(colonyAddress);
@@ -562,10 +568,19 @@ class ReputationMiner {
     }
     colonyAddress = colonyAddress.toLowerCase();
     userAddress = userAddress.toLowerCase();
-    const key = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(skillId.toString(), base).toString(16, 64)}${new BN(
-      userAddress,
-      16
-    ).toString(16, 40)}`;
+
+    let chainIdBase = 10;
+    let chainId = _chainId.toString();
+    if (chainId.slice(0, 2) === "0x") {
+      // We've been passed a hex string
+      chainId = chainId.slice(2);
+      chainIdBase = 16;
+    }
+
+    let key = `0x${new BN(chainId, chainIdBase).toString(16, 64)}`
+    key += new BN(colonyAddress, 16).toString(16, 40);
+    key += new BN(skillId.toString(), skillIdBase).toString(16, 64);
+    key += new BN(userAddress, 16).toString(16, 40);
     return key;
   }
 
@@ -628,10 +643,11 @@ class ReputationMiner {
   }
 
   static breakKeyInToElements(key) {
-    const colonyAddress = key.slice(2, 42);
-    const skillId = key.slice(42, 106);
-    const userAddress = key.slice(106);
-    return [`0x${colonyAddress}`, `0x${skillId}`, `0x${userAddress}`];
+    const chainId = key.slice(2,66)
+    const colonyAddress = key.slice(66, 106);
+    const skillId = key.slice(106, 170);
+    const userAddress = key.slice(170);
+    return [`0x${chainId}`, `0x${colonyAddress}`, `0x${skillId}`, `0x${userAddress}`];
   }
 
   /**
@@ -688,7 +704,8 @@ class ReputationMiner {
       // Then the skill being update is the skill itself - not a parent or child
       skillId = logEntry.skillId; // eslint-disable-line prefer-destructuring
     }
-    const key = ReputationMiner.getKey(logEntry.colony, skillId, skillAddress);
+
+    const key = ReputationMiner.getKey(logEntry.chainId.toHexString(), logEntry.colony, skillId, skillAddress);
     return key;
   }
 
@@ -761,7 +778,9 @@ class ReputationMiner {
       // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err) {
+      // console.log(err);
       gasEstimate = ethers.BigNumber.from(1000000);
+      // return false;
     }
 
     // Submit that entry
@@ -918,10 +937,10 @@ class ReputationMiner {
     }
 
     const keyElements = ReputationMiner.breakKeyInToElements(key);
-    const [colonyAddress, , userAddress] = keyElements;
-    const skillId = parseInt(keyElements[1], 16);
-    const reputationValue = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
-
+    const [, colonyAddress, , userAddress] = keyElements;
+    const skillId = parseInt(keyElements[2], 16);
+    const chainId = parseInt(keyElements[0], 16).toString();
+    const reputationValue = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress, chainId);
     if (reputationValue.length === 0) {
       return new Error("No such reputation");
     }
@@ -937,7 +956,7 @@ class ReputationMiner {
 
     for (let i = 0; i < allReputations.length; i += 1) {
       const row = allReputations[i];
-      const rowKey = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      const rowKey = ReputationMiner.getKey(row.chainid, row.colony_address, row.skill_id, row.user_address);
       await tree.insert(rowKey, row.value);
     }
 
@@ -947,7 +966,6 @@ class ReputationMiner {
   }
 
   async getHistoricalValue(rootHash, key) {
-
     const currentRootHash = await this.reputationTree.getRootHash();
 
     if (currentRootHash === rootHash) {
@@ -974,11 +992,10 @@ class ReputationMiner {
     }
 
     const keyElements = ReputationMiner.breakKeyInToElements(key);
-    const [colonyAddress, , userAddress] = keyElements;
-    const skillId = parseInt(keyElements[1], 16);
-
-    res = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
-
+    const [, colonyAddress, , userAddress] = keyElements;
+    const skillId = parseInt(keyElements[2], 16);
+    const chainId = parseInt(keyElements[0], 16).toString();
+    res = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress, chainId);
     if (res.length === 0) {
       return new Error("No such reputation");
     }
@@ -1484,8 +1501,10 @@ class ReputationMiner {
       const decimalValue = new BN(this.reputations[key].slice(2, 66), 16);
       const keyElements = ReputationMiner.breakKeyInToElements(key);
       const [colonyAddress, , userAddress] = keyElements;
-      const skillId = parseInt(keyElements[1], 16);
+      const skillId = parseInt(keyElements[2], 16);
+      const chainId = parseInt(keyElements[0], 16);
 
+      console.log("chainId", chainId);
       console.log("colonyAddress", colonyAddress);
       console.log("userAddress", userAddress);
       console.log("skillId", skillId);
@@ -1505,12 +1524,15 @@ class ReputationMiner {
       const key = Object.keys(this.reputations)[i];
       const value = this.reputations[key];
       const keyElements = ReputationMiner.breakKeyInToElements(key);
-      const [colonyAddress, , userAddress] = keyElements;
-      const skillId = parseInt(keyElements[1], 16);
+      const [, colonyAddress, , userAddress] = keyElements;
+      const skillId = parseInt(keyElements[2], 16);
+      const chainId = parseInt(keyElements[0], 16).toString();
+
       this.queries.saveColony.run(colonyAddress);
       this.queries.saveUser.run(userAddress);
       this.queries.saveSkill.run(skillId);
-      this.queries.insertReputation.run(currentRootHash, colonyAddress, skillId, userAddress, value);
+      this.queries.saveChainId.run(chainId);
+      this.queries.insertReputation.run(currentRootHash, chainId, colonyAddress, skillId, userAddress, value);
     }
   }
 
@@ -1531,7 +1553,7 @@ class ReputationMiner {
 
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
-      const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      const key = ReputationMiner.getKey(row.chainid, row.colony_address, row.skill_id, row.user_address);
       const tx = await this.reputationTree.insert(key, row.value, { gasLimit: 4000000 });
       if (!this.useJsTree) {
         await tx.wait();
@@ -1554,7 +1576,7 @@ class ReputationMiner {
     const res = await this.getAllReputationsInHash(reputationRootHash);
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
-      const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      const key = ReputationMiner.getKey(row.chainid, row.colony_address, row.skill_id, row.user_address);
       const tx = await this.previousReputationTree.insert(key, row.value, { gasLimit: 4000000 });
       if (!this.useJsTree) {
         await tx.wait();
@@ -1687,11 +1709,13 @@ class ReputationMiner {
     const saveColony = db.prepare(`INSERT OR IGNORE INTO colonies (address) VALUES (?)`);
     const saveUser = db.prepare(`INSERT OR IGNORE INTO users (address) VALUES (?)`);
     const saveSkill = db.prepare(`INSERT OR IGNORE INTO skills (skill_id) VALUES (?)`);
+    const saveChainId = db.prepare(`INSERT OR IGNORE INTO chainids (chainid) VALUES (?)`);
 
     const insertReputation = db.prepare(
-      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
+      `INSERT OR IGNORE INTO reputations (reputation_rowid, chainid_rowid, colony_rowid, skill_id, user_rowid, value)
       SELECT
       (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash=?),
+      (SELECT chainids.rowid FROM chainids WHERE chainids.chainid=?),
       (SELECT colonies.rowid FROM colonies WHERE colonies.address=?),
       ?,
       (SELECT users.rowid FROM users WHERE users.address=?),
@@ -1700,11 +1724,12 @@ class ReputationMiner {
     saveHashAndLeaves.run(latestConfirmedReputationHash, currentNLeaves.toString());
     for (let i = 0; i < Object.keys(allReputations).length; i += 1) {
       const reputation = allReputations[i];
-      const { skill_id: skillId, value, colony_address: colonyAddress, user_address: userAddress } = reputation;
+      const { skill_id: skillId, value, colony_address: colonyAddress, user_address: userAddress, chainid: chainId } = reputation;
       saveColony.run(colonyAddress);
       saveUser.run(userAddress);
       saveSkill.run(skillId);
-      insertReputation.run(latestConfirmedReputationHash, colonyAddress, skillId, userAddress, value);
+      saveChainId.run(chainId);
+      insertReputation.run(latestConfirmedReputationHash, chainId, colonyAddress, skillId, userAddress, value);
     }
 
     await db.close()
@@ -1823,6 +1848,45 @@ class ReputationMiner {
 
       console.log('Explicit primary keys added to secondary tables');
     }
+    // Add chain id to existing database, update latest
+    res = await db.prepare("SELECT COUNT(*) AS c FROM PRAGMA_TABLE_INFO('reputations') WHERE name='chainid_rowid'").all();
+    if (res[0].c === 0){
+      console.log("Chainid does not exist in the database, adding");
+
+      await db.prepare(
+        "CREATE TABLE IF NOT EXISTS chainids ( rowid INTEGER PRIMARY KEY, chainid text NOT NULL UNIQUE)"
+      ).run();
+      await db.prepare(
+        "INSERT INTO chainids (rowid, chainid) VALUES (1, '100')"
+      ).run()
+
+      await db.prepare(
+        "ALTER TABLE reputations ADD chainid_rowid INTEGER NOT NULL"
+      ).run();
+      // TODO: This properly to set up th enew primary key.
+      // await db.prepare(
+      //   `CREATE TABLE reputations2 (
+      //     reputation_rowid INTEGER NOT NULL,
+      //     chainid_rowid INTEGER NOT NULL,
+      //     colony_rowid INTEGER NOT NULL,
+      //     skill_id INTEGER NOT NULL,
+      //     user_rowid INTEGER NOT NULL,
+      //     value text NOT NULL,
+      //     PRIMARY KEY("reputation_rowid","colony_rowid","skill_id","user_rowid", "chainid_rowid")
+      //   )`
+      // ).run();
+
+      // await db.prepare(`INSERT INTO reputations2 SELECT * FROM reputations`).run()
+
+      await db.prepare(
+        `UPDATE reputations SET
+          chainid_rowid = 1
+        `
+      ).run();
+
+      // await db.prepare(`DROP TABLE reputations`).run()
+      // await db.prepare(`ALTER TABLE reputations2 RENAME TO reputations`).run()
+    }
   }
 
   async resetDB() {
@@ -1831,6 +1895,7 @@ class ReputationMiner {
     await this.db.prepare(`DROP TABLE IF EXISTS colonies`).run();
     await this.db.prepare(`DROP TABLE IF EXISTS skills`).run();
     await this.db.prepare(`DROP TABLE IF EXISTS reputations`).run();
+    await this.db.prepare(`DROP TABLE IF EXISTS chainids`).run();
     await this.db.prepare(`DROP TABLE IF EXISTS reputation_states`).run();
     await ReputationMiner.createDB(this.db);
   }
