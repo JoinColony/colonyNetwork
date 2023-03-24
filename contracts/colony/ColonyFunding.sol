@@ -417,7 +417,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
       uint256 currentPayout = expenditureSlotPayouts[_id][_slots[i]][_token];
 
       expenditureSlotPayouts[_id][_slots[i]][_token] = _amounts[i];
-      fundingPot.payouts[_token] = currentTotal - currentPayout + _amounts[i];
+      fundingPot.payouts[_token] = (currentTotal - currentPayout) + _amounts[i];
 
 
       emit ExpenditurePayoutSet(msgSender(), _id, _slots[i], _token, _amounts[i]);
@@ -439,7 +439,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     uint currentTaskRolePayout = task.payouts[uint8(_role)][_token];
     task.payouts[uint8(_role)][_token] = _amount;
 
-    fundingPot.payouts[_token] = currentTotalAmount - currentTaskRolePayout + _amount;
+    fundingPot.payouts[_token] = (currentTotalAmount - currentTaskRolePayout) + _amount;
 
     updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);
   }

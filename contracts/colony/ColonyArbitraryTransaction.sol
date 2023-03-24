@@ -155,10 +155,10 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     if (recordedApproval > actualApproval && !_postApproval){
       // They've spend some tokens out of root. Adjust balances accordingly
       // If we are post approval, then they have not spent tokens
-      fundingPots[1].balance[_token] = fundingPots[1].balance[_token] - recordedApproval + actualApproval;
+      fundingPots[1].balance[_token] = (fundingPots[1].balance[_token] - recordedApproval) + actualApproval;
     }
 
-    tokenApprovalTotals[_token] = tokenApprovalTotals[_token] - recordedApproval + actualApproval;
+    tokenApprovalTotals[_token] = (tokenApprovalTotals[_token] - recordedApproval) + actualApproval;
     require(fundingPots[1].balance[_token] >= tokenApprovalTotals[_token], "colony-approval-exceeds-balance");
 
     tokenApprovals[_token][_spender] = actualApproval;

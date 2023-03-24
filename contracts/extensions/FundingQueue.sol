@@ -268,7 +268,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
     // Update the user's reputation backing
     uint256 prevBacking = supporters[_id][msgSender()];
-    proposal.totalSupport = proposal.totalSupport - prevBacking + _backing;
+    proposal.totalSupport = (proposal.totalSupport - prevBacking) + _backing;
     supporters[_id][msgSender()] = _backing;
 
     // Remove the proposal from its current position, if exists
