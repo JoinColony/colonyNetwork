@@ -300,7 +300,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     }
 
     // Check the user origin reputation key matches the colony, user address and skill id of the log
-    bytes32 userOriginReputationKeyBytesHash = keccak256(abi.encodePacked(logEntry.chainId, logEntry.colony, logEntry.skillId, logEntry.user));
+    bytes32 userOriginReputationKeyBytesHash = keccak256(abi.encodePacked(logEntry.colony, logEntry.skillId, logEntry.user));
 
     checkUserOriginReputationInState(
       _u,
@@ -324,7 +324,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
     uint256 relativeUpdateNumber = getRelativeUpdateNumber(_u, logEntry);
     uint256 expectedSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(logEntry.skillId, relativeUpdateNumber);
-    bytes memory childReputationKey = abi.encodePacked(logEntry.chainId, logEntry.colony, expectedSkillId, logEntry.user);
+    bytes memory childReputationKey = abi.encodePacked(logEntry.colony, expectedSkillId, logEntry.user);
 
     checkChildReputationInState(
       _u,
@@ -372,7 +372,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     address expectedAddress;
     (expectedSkillId, expectedAddress) = getExpectedSkillIdAndAddress(u, logEntry);
 
-    require(logEntry.chainId == uint256(b32[B_REPUTATION_KEY_NETWORKID]), "colony-reputation-mining-network-id-mismatch");
     require(expectedAddress == address(uint160(uint256(b32[B_REPUTATION_KEY_USER]))), "colony-reputation-mining-user-address-mismatch");
     require(logEntry.colony == address(uint160(uint256(b32[B_REPUTATION_KEY_COLONY]))), "colony-reputation-mining-colony-address-mismatch");
     require(expectedSkillId == uint256(b32[B_REPUTATION_KEY_SKILLID]), "colony-reputation-mining-skill-id-mismatch");

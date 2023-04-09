@@ -20,6 +20,7 @@ pragma solidity 0.8.21;
 import "./../../lib/dappsys/math.sol";
 import "./../colony/IMetaColony.sol";
 import "./../common/CommonStorage.sol";
+import "./../common/MultiChain.sol";
 import "./../common/ERC20Extended.sol";
 import "./ColonyNetworkDataTypes.sol";
 
@@ -27,7 +28,7 @@ import "./ColonyNetworkDataTypes.sol";
 // ignore-file-swc-108
 
 
-contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
+contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, MultiChain {
   // Number of colonies in the network
   uint256 colonyCount; // Storage slot 6
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
@@ -147,8 +148,21 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
     _;
   }
 
-  modifier skillExists(uint skillId) {
+  modifier skillExists(uint256 skillId) {
     require(skillCount >= skillId, "colony-invalid-skill-id");
+
+    // if (isMiningChain()){
+    //   require(skillCount >= skillId, "colony-invalid-skill-id");
+    // } else {
+    //   uint256 shiftedChainId = getChainId() << 128;
+    //   require(
+    //     (
+    //       skillId > shiftedChainId &&
+    //       shiftedChainId + skillCount >= skillId
+    //     ),
+    //     "colony-invalid-skill-id"
+    //   );
+    // }
     _;
   }
 }
