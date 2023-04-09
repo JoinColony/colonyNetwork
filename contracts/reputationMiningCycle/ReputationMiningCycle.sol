@@ -533,21 +533,6 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     uint128 _nChildren
   ) public {
     require(colonyNetworkAddress == msg.sender, "colony-reputation-mining-sender-not-network");
-    uint256 networkId = getChainId();
-    appendReputationUpdateLog(_user, _amount, _skillId, _colonyAddress, networkId, _nParents, _nChildren);
-  }
-
-  function appendReputationUpdateLog(
-    address _user,
-    int256 _amount,
-    uint256 _skillId,
-    address _colonyAddress,
-    uint256 _networkId,
-    uint128 _nParents,
-    uint128 _nChildren
-  ) public
-  {
-    require(colonyNetworkAddress == msg.sender, "colony-reputation-mining-sender-not-network");
     uint reputationUpdateLogLength = reputationUpdateLog.length;
     uint128 nPreviousUpdates = 0;
     if (reputationUpdateLogLength > 0) {
@@ -576,8 +561,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
         _skillId,
         _colonyAddress,
         nUpdates,
-        nPreviousUpdates,
-        _networkId
+        nPreviousUpdates
       )
     );
   }
@@ -638,8 +622,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
           _miningSkillId, //This should be the special 'mining' skill.
           _metaColonyAddress, // They earn this reputation in the meta colony.
           4, // Updates the user's skill, and the colony's skill, both globally and for the special 'mining' skill
-          i*4, //We're zero indexed, so this is the number of updates that came before in the reputation log.
-          getChainId()
+          i*4 //We're zero indexed, so this is the number of updates that came before in the reputation log.
         )
       );
     }
