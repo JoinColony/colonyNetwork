@@ -25,7 +25,7 @@ import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { IMetaColony } from "./../colony/IMetaColony.sol";
 import { DSMath } from "./../../lib/dappsys/math.sol";
 
-contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
+contract ColonyNetworkAuction is ColonyNetworkStorage {
   function startTokenAuction(address _token) public stoppable auth {
     require(_token != address(0x0), "colony-auction-invalid-token");
 

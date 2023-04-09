@@ -23,6 +23,7 @@ import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { Multicall } from "./../common/Multicall.sol";
+import { MultiChain } from "./../common/MultiChain.sol";
 
 contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall {
   function isColony(address _colony) public view returns (bool) {
@@ -109,6 +110,9 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
       // TODO: Linked list stuff
     }
     bridgeData[bridgeAddress] = Bridge(updateLogBefore, updateLogAfter, gas, chainId, skillCreationBefore, skillCreationAfter, setReputationRootHashBefore, setReputationRootHashAfter);
+    if (networkSkillCounts[chainId] == 0) {
+      networkSkillCounts[chainId] = chainId << 128;
+    }
     // emit BridgeDataSet
   }
 
@@ -125,6 +129,10 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     require(_version > 0, "colony-network-invalid-version");
     colonyVersionResolver[_version] = _resolver;
     currentColonyVersion = _version;
+
+    if (!isMiningChain()){
+      skillCount = getChainId() << 128;
+    }
 
     emit ColonyNetworkInitialised(_resolver);
   }

@@ -342,7 +342,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
     // Check the user origin reputation key matches the colony, user address and skill id of the log
     bytes32 userOriginReputationKeyBytesHash = keccak256(
-      abi.encodePacked(logEntry.chainId, logEntry.colony, logEntry.skillId, logEntry.user)
+      abi.encodePacked(logEntry.colony, logEntry.skillId, logEntry.user)
     );
 
     checkUserOriginReputationInState(
@@ -373,8 +373,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       logEntry.skillId,
       relativeUpdateNumber
     );
+
     bytes memory childReputationKey = abi.encodePacked(
-      logEntry.chainId,
       logEntry.colony,
       expectedSkillId,
       logEntry.user
@@ -432,6 +432,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     address expectedAddress;
     (expectedSkillId, expectedAddress) = getExpectedSkillIdAndAddress(u, logEntry);
 
+<<<<<<< HEAD
     require(
       logEntry.chainId == uint256(b32[B_REPUTATION_KEY_NETWORKID]),
       "colony-reputation-mining-network-id-mismatch"
@@ -448,6 +449,16 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       expectedSkillId == uint256(b32[B_REPUTATION_KEY_SKILLID]),
       "colony-reputation-mining-skill-id-mismatch"
     );
+||||||| parent of 2b007787 (Bridge skills on creation to home chain)
+    require(logEntry.chainId == uint256(b32[B_REPUTATION_KEY_NETWORKID]), "colony-reputation-mining-network-id-mismatch");
+    require(expectedAddress == address(uint160(uint256(b32[B_REPUTATION_KEY_USER]))), "colony-reputation-mining-user-address-mismatch");
+    require(logEntry.colony == address(uint160(uint256(b32[B_REPUTATION_KEY_COLONY]))), "colony-reputation-mining-colony-address-mismatch");
+    require(expectedSkillId == uint256(b32[B_REPUTATION_KEY_SKILLID]), "colony-reputation-mining-skill-id-mismatch");
+=======
+    require(expectedAddress == address(uint160(uint256(b32[B_REPUTATION_KEY_USER]))), "colony-reputation-mining-user-address-mismatch");
+    require(logEntry.colony == address(uint160(uint256(b32[B_REPUTATION_KEY_COLONY]))), "colony-reputation-mining-colony-address-mismatch");
+    require(expectedSkillId == uint256(b32[B_REPUTATION_KEY_SKILLID]), "colony-reputation-mining-skill-id-mismatch");
+>>>>>>> 2b007787 (Bridge skills on creation to home chain)
 
     require(
       keccak256(

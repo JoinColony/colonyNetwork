@@ -36,6 +36,19 @@ Add a new extension resolver to the Extensions repository.
 |_resolver|address|The deployed resolver containing the extension contract logic
 
 
+### ▸ `addPendingSkillFromBridge(address _bridgeAddress, uint256 _skillId)`
+
+Called to add a bridged skill that wasn't next when it was bridged, but now is
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_bridgeAddress|address|The address of the bridge we're bridging from
+|_skillId|uint256|The skillId of the skill being bridged
+
+
 ### ▸ `addSkill(uint256 _parentSkillId):uint256 _skillId`
 
 Adds a new skill to the domain or local skills tree, under skill `_parentSkillId`. Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`.
@@ -97,6 +110,18 @@ Adds a reputation update entry to log.
 |_user|address|The address of the user for the reputation update
 |_amount|int256|The amount of reputation change for the update, this can be a negative as well as a positive value
 |_skillId|uint256|The skill for the reputation update
+
+
+### ▸ `bridgeSkill(uint256 skillId)`
+
+Called to re-send the bridging transaction for a skill to the
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|skillId|uint256|The skillId we're bridging the creation of
 
 
 ### ▸ `burnUnneededRewards(uint256 _amount)`
@@ -396,6 +421,23 @@ Called to get the next bridge in the list after bridge _bridgeAddress
 |Name|Type|Description|
 |---|---|---|
 |nextBridge|address|The address of the next bridge
+
+### ▸ `getBridgeSkillCounts(uint256 _chainId):uint256 skillCount`
+
+Get the (currently bridged) skill count of another chain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainid of foreign chain
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|skillCount|uint256|The skillCount of the corresponding chain
 
 ### ▸ `getChildSkillId(uint256 _skillId, uint256 _childSkillIndex):uint256 _childSkillId`
 
