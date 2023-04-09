@@ -22,7 +22,7 @@ import "./ColonyNetworkStorage.sol";
 import "./../common/MultiChain.sol";
 
 
-contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
+contract ColonyNetworkENS is ColonyNetworkStorage {
 
   bytes32 constant USER_HASH = keccak256("user");
   bytes32 constant COLONY_HASH = keccak256("colony");

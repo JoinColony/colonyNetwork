@@ -26,7 +26,7 @@ import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyNetworkStorage.sol";
 
 
-contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
+contract ColonyNetworkMining is ColonyNetworkStorage {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {

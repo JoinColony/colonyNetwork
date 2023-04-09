@@ -44,10 +44,29 @@ contract("Cross-chain", () => {
   const ethersForeignSigner = new ethers.providers.JsonRpcProvider(foreignRpcUrl).getSigner();
   const ethersHomeSigner = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner();
 
+  let getPromiseForNextNBridgedTransactions;
+
   before(async () => {
     await exec(`PORT=${FOREIGN_PORT} bash ./scripts/setup-foreign-chain.sh`);
 
     ({ bridgeMonitor, gnosisSafe, zodiacBridge, homeBridge, foreignBridge } = await setupBridging(homeRpcUrl, foreignRpcUrl));
+
+    getPromiseForNextNBridgedTransactions = function (n) {
+      return new Promise((resolve, reject) => {
+        let count = 0;
+        homeBridge.on("RelayedMessage", async (_sender, msgSender, _messageId, success) => {
+          console.log("bridged with ", _sender, msgSender, _messageId, success);
+          count += 1;
+          if (!success) {
+            console.log("bridged transaction did not succeed");
+            await reject(new Error("Bridged transaction did not succeed"));
+          }
+          if (count >= n) {
+            resolve();
+          }
+        });
+      });
+    };
 
     // Deploy colonyNetwork to whichever chain truffle hasn't already deployed to.
     try {
@@ -90,6 +109,7 @@ contract("Cross-chain", () => {
     foreignColonyNetwork = await new ethers.Contract(foreignEtherRouterAddress, IColonyNetwork.abi, ethersForeignSigner);
 
     console.log("foreign colony network", foreignColonyNetwork.address);
+    console.log("home colony network", homeColonyNetwork.address);
 
     const foreignMCAddress = await foreignColonyNetwork.getMetaColony();
     const foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
@@ -104,9 +124,9 @@ contract("Cross-chain", () => {
       100, // chainid
       `0xdc8601b3000000000000000000000000${homeColonyNetwork.address.slice(
         2
+        // )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000044`, // skill before
         // eslint-disable-next-line max-len
-      )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000044`, // skill before
-      // )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000004c4b400000000000000000000000000000000000000000000000000000000000000044`, // skill before //eslint-disable-line max-len
+      )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000001e84800000000000000000000000000000000000000000000000000000000000000044`, // skill before //eslint-disable-line max-len
       "0x00000000000000000000000000000000000000000000000000000000", // skill after
       "0x", // root hash before
       "0x" // root hash after
@@ -125,8 +145,19 @@ contract("Cross-chain", () => {
       "0x", // root hash before
       "0x" // root hash after
     );
-
     await tx.wait();
+
+    // Bridge over skills that have been created on the foreign chain
+
+    const count = await foreignColonyNetwork.getSkillCount();
+    console.log("count", count.toHexString());
+    console.log("calc", ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1));
+    for (let i = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1); i <= count; i = i.add(1)) {
+      const p = getPromiseForNextNBridgedTransactions(1);
+      tx = await foreignColonyNetwork.bridgeSkill(i);
+      await tx.wait();
+      await p;
+    }
   });
 
   async function setupColony(colonyNetworkEthers) {
@@ -150,7 +181,9 @@ contract("Cross-chain", () => {
     // Set up a colony on the home chain. That may or may not be the truffle chain...
     homeColony = await setupColony(homeColonyNetwork);
 
+    const p = getPromiseForNextNBridgedTransactions(2);
     foreignColony = await setupColony(foreignColonyNetwork);
+    await p;
   });
 
   after(async () => {
@@ -212,45 +245,41 @@ contract("Cross-chain", () => {
 
   describe("when adding skills on another chain", async () => {
     it("can create a skill on another chain and it's reflected on the home chain", async () => {
-      const t = homeColonyNetwork.interface.encodeFunctionData("addSkillFromBridge", [0x666666, 0x88888888]);
-      console.log(t);
-      const txDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [homeColonyNetwork.address, t, 1000000]);
-      console.log(txDataToBeSentToAMB);
+      // const t = homeColonyNetwork.interface.encodeFunctionData("addSkillFromBridge", [0x666666, 0x88888888]);
+      // console.log(t);
+      // const txDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [homeColonyNetwork.address, t, 1000000]);
+      // console.log(txDataToBeSentToAMB);
 
       // See skills on home chain
-      const beforeCount = await homeColonyNetwork.getSkillCount();
+      const beforeCount = await homeColonyNetwork.getBridgeSkillCounts("0x0fd5c9ed");
 
-      const p = new Promise((resolve, reject) => {
-        homeBridge.on("RelayedMessage", async (_sender, msgSender, _messageId, success) => {
-          console.log("bridged with ", _sender, msgSender, _messageId, success);
-          if (!success) {
-            console.log("bridged transaction did not succeed");
-            await reject(new Error("Bridged transaction did not succeed"));
-          }
-          resolve();
-        });
-      });
+      const p = getPromiseForNextNBridgedTransactions(1);
 
       // Create a skill on foreign chain
       // await foreignColony.addDomain(1);
       const foreignBeforeCount = await foreignColonyNetwork.getSkillCount();
       const tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, ethers.BigNumber.from(2).pow(256).sub(1), 1);
-      console.log(tx);
-      const res = await tx.wait();
-      console.log(res);
+      await tx.wait();
 
       const foreignAfterCount = await foreignColonyNetwork.getSkillCount();
-      console.log(foreignBeforeCount, foreignAfterCount);
+      expect(foreignBeforeCount.add(1).toHexString()).to.equal(foreignAfterCount.toHexString());
       await p;
 
       // Check reflected on home chain
-      const afterCount = await homeColonyNetwork.getSkillCount();
-      console.log(beforeCount, afterCount);
+      const afterCount = await homeColonyNetwork.getBridgeSkillCounts("0x0fd5c9ed");
+      expect(beforeCount.add(1).toHexString()).to.equal(afterCount.toHexString());
+    });
+  });
 
-      const pendingParent = await homeColonyNetwork.getPendingSkillAddition(foreignChainId, foreignAfterCount);
-      console.log(pendingParent);
-      // expect(beforeCount.toNumber() + 1).to.equal(afterCount.toNumber());
-      expect(pendingParent.toNumber()).to.not.equal(0);
+  describe("while earning reputation on another chain", async () => {
+    it.skip("reputation awards are ultimately reflected", async () => {
+      // Emit reputation
+      // await colony.emitDomainReputationReward(3, USER2, 100, { from: FOUNDER });
+      // See that it's bridged to the inactive log
+      // Advance mining cycle twice
+      // Check in state
+      // Check state bridged to host chain
+      assert(false, "test not written yet");
     });
   });
 });
