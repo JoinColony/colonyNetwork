@@ -547,4 +547,19 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return parentId The parent id of the skill being added
   function getPendingSkillAddition(uint256 _chainId, uint256 _skillCount) external view returns (uint256 parentId);
 
+  /// @notice Called to re-send the bridging transaction for a skill to the
+  /// @param skillId The skillId we're bridging the creation of
+  function bridgeSkill(uint256 skillId) external;
+
+  /// @notice Called to add a bridged skill that wasn't next when it was bridged,
+  /// but now is
+  /// @param _bridgeAddress The address of the bridge we're bridging from
+  /// @param _skillId The skillId of the skill being bridged
+  function addPendingSkillFromBridge(address _bridgeAddress, uint256 _skillId) external;
+
+  /// @notice Get the (currently bridged) skill count of another chain
+  /// @param _chainId The chainid of foreign chain
+  /// @return skillCount The skillCount of the corresponding chain
+  function getBridgeSkillCounts(uint256 _chainId) external view returns (uint256 skillCount);
+
 }

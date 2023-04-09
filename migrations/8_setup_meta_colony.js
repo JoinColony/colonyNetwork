@@ -1,6 +1,7 @@
 /* globals artifacts */
 
 const assert = require("assert");
+const { UINT256_MAX } = require("../helpers/constants");
 
 const Token = artifacts.require("./Token");
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
@@ -119,7 +120,7 @@ module.exports = async function (deployer, network, accounts) {
     assert.equal(skillCount.toNumber(), 4);
   } else {
     const skillCount = await colonyNetwork.getSkillCount();
-    assert.equal(skillCount.toNumber(), 3);
+    assert.equal(skillCount.shln(128).mod(UINT256_MAX).shrn(128).toNumber(), 2);
   }
 
   console.log("### Meta Colony created at", metaColony.address);
