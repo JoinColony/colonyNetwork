@@ -22,6 +22,7 @@ import "./../common/BasicMetaTransaction.sol";
 import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
 import "./../common/Multicall.sol";
+import "./../common/MultiChain.sol";
 
 
 contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall {
@@ -116,6 +117,9 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
       // TODO: Linked list stuff
     }
     bridgeData[bridgeAddress] = Bridge(updateLogBefore, updateLogAfter, gas, chainId, skillCreationBefore, skillCreationAfter, setReputationRootHashBefore, setReputationRootHashAfter);
+    if (networkSkillCounts[chainId] == 0) {
+      networkSkillCounts[chainId] = chainId << 128;
+    }
     // emit BridgeDataSet
   }
 
@@ -136,6 +140,10 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     colonyVersionResolver[_version] = _resolver;
     currentColonyVersion = _version;
 
+    if (!isMiningChain()){
+      skillCount = getChainId() << 128;
+    }
+
     emit ColonyNetworkInitialised(_resolver);
   }
 
@@ -153,34 +161,43 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
   returns (uint256)
   {
     skillCount += 1;
-    uint256 skillId;
-    if (isMiningChain()) {
-      skillId = skillCount;
-    } else {
-      skillId = uint256(keccak256(abi.encodePacked(getChainId(), skillCount)));
-    }
+    // skillId = skillCount;
+    // uint256 skillId;
+    // if (isMiningChain()) {
+    //   skillId = skillCount;
+    // } else {
+    //   skillId = (getChainId() << 128) + skillCount;
+    // }
 
-    addSkillToChainTree(_parentSkillId, skillId);
+    addSkillToChainTree(_parentSkillId, skillCount);
 
     if (!isMiningChain()) {
-      // Send bridge transaction
-      // Build the transaction we're going to send to the bridge to register the
-      // creation of this skill on the home chain
-      bytes memory payload = abi.encodePacked(
-        bridgeData[bridgeAddressList[address(0x0)]].skillCreationBefore,
-        abi.encodeWithSignature("addSkillFromBridge(uint256,uint256)", _parentSkillId, skillCount),
-        bridgeData[bridgeAddressList[address(0x0)]].skillCreationAfter
-      );
-      emit Debug(payload);
-      emit Debug3(bridgeAddressList[address(0x0)]);
-      // TODO: If there's no contract there, I think this currently succeeds (when we wouldn't want it to)
-      (bool success, bytes memory returnData) = bridgeAddressList[address(0x0)].call(payload);
-      emit Debug2(success, returnData);
-      require(success, "colony-network-unable-to-bridge-skill-creation");
+      bridgeSkill(skillCount);
+      skills[skillCount].createdOnNonMiningChain = true;
     }
 
-    emit SkillAdded(skillId, _parentSkillId);
-    return skillId;
+    emit SkillAdded(skillCount, _parentSkillId);
+    return skillCount;
+  }
+
+  function bridgeSkill(uint256 _skillId) public stoppable onlyNotMiningChain skillExists(_skillId) {
+    // Send bridge transaction
+    // Build the transaction we're going to send to the bridge to register the
+    // creation of this skill on the home chain
+
+    // skillId = uint256(abi.encodePacked(uint128(getChainId()), uint128(skillCount)));
+
+    bytes memory payload = abi.encodePacked(
+      bridgeData[bridgeAddressList[address(0x0)]].skillCreationBefore,
+      abi.encodeWithSignature("addSkillFromBridge(uint256,uint256)", skills[_skillId].parents.length == 0 ? (getChainId() << 128) : skills[_skillId].parents[0], _skillId),
+      bridgeData[bridgeAddressList[address(0x0)]].skillCreationAfter
+    );
+    emit Debug(payload);
+    emit Debug3(bridgeAddressList[address(0x0)]);
+    // TODO: If there's no contract there, I think this currently succeeds (when we wouldn't want it to)
+    (bool success, bytes memory returnData) = bridgeAddressList[address(0x0)].call(payload);
+    emit Debug2(success, returnData);
+    require(success, "colony-network-unable-to-bridge-skill-creation");
   }
 
   function addSkillToChainTree(uint256 _parentSkillId, uint256 _skillId) private {
@@ -232,19 +249,20 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     }
   }
 
-  function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillCount) public always onlyMiningChain() {
+  function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillId) public always onlyMiningChain() {
     // Require is a known bridge
     Bridge storage bridge = bridgeData[msgSender()];
     require(bridge.chainId != 0, "colony-network-not-known-bridge");
 
     // Check skill count - if not next, then store for later.
-    if (networkSkillCounts[bridge.chainId] == skillCount + 1){
-      uint256 skillId = uint256(keccak256(abi.encodePacked(bridge.chainId, skillCount)));
-      addSkillToChainTree(_parentSkillId, skillId);
+    if (networkSkillCounts[bridge.chainId] + 1 == _skillId){
+      if (_parentSkillId > bridge.chainId << 128){
+        addSkillToChainTree(_parentSkillId, _skillId);
+      }
       networkSkillCounts[bridge.chainId] += 1;
-      emit SkillAdded(skillId, _parentSkillId);
-    } else {
-      pendingSkillAdditions[bridge.chainId][_skillCount] = _parentSkillId;
+      emit SkillAdded(_skillId, _parentSkillId);
+    } else if (networkSkillCounts[bridge.chainId] < _skillId){
+      pendingSkillAdditions[bridge.chainId][_skillId] = _parentSkillId;
       // TODO: Event?
     }
   }
@@ -253,18 +271,30 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     return pendingSkillAdditions[_chainId][_skillCount];
   }
 
-  function addPendingSkillFromBridge(address _bridgeAddress, uint256 _skillCount) public always onlyMiningChain() {
+  function getBridgeSkillCounts(uint256 _chainId) public view returns (uint256){
+    return networkSkillCounts[_chainId];
+  }
+
+  function addPendingSkillFromBridge(address _bridgeAddress, uint256 _skillId) public always onlyMiningChain() {
     Bridge storage bridge = bridgeData[_bridgeAddress];
     require(bridge.chainId != 0, "colony-network-not-known-bridge");
+    // TODO: Add bridge should initialise this value
 
     // Require that specified skill is next
-    require(networkSkillCounts[bridge.chainId] == skillCount + 1, "colony-network-not-next-bridged-skill");
+    require(networkSkillCounts[bridge.chainId] + 1 == _skillId, "colony-network-not-next-bridged-skill");
 
-    uint256 skillId = uint256(keccak256(abi.encodePacked(bridge.chainId, _skillCount)));
-    uint256 parentSkillId = pendingSkillAdditions[bridge.chainId][_skillCount];
-    addSkillToChainTree(parentSkillId, skillId);
+    // TODO: Require skill from right bridge
+
+    uint256 parentSkillId = pendingSkillAdditions[bridge.chainId][_skillId];
+    require(parentSkillId != 0, "colony-network-no-such-bridged-skill");
+    if (parentSkillId > bridge.chainId << 128){
+      addSkillToChainTree(parentSkillId, _skillId);
+    }
     networkSkillCounts[bridge.chainId] += 1;
-    emit SkillAdded(skillId, parentSkillId);
+
+    // Delete the pending addition
+    pendingSkillAdditions[bridge.chainId][_skillId] = 0;
+    emit SkillAdded(_skillId, parentSkillId);
   }
 
   function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
@@ -300,7 +330,11 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
   calledByColony
   returns (uint256)
   {
-    return skillCount++;
+    skillCount += 1;
+    if (!isMiningChain()){
+      bridgeSkill(skillCount);
+    }
+    return skillCount;
   }
 
   function appendReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId) public onlyMiningChain stoppable skillExists(_skillId)
@@ -309,6 +343,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     require(bridgeData[msgSender()].chainId != 0, "colony-network-not-known-bridge");
 
     // TODO: Require skill exists - drop if doesn't exist
+    // TODO: Require chainid bridge is for matches skillid
 
     uint128 nParents = skills[_skillId].nParents;
     // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
@@ -319,7 +354,6 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
       _amount,
       _skillId,
       _colony,
-      bridgeData[msgSender()].chainId,
       nParents,
       nChildren
     );

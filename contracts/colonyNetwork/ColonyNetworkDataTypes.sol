@@ -158,6 +158,8 @@ interface ColonyNetworkDataTypes {
     bool globalSkill;
     // `true` for a global skill that is deprecated
     bool deprecated;
+    // `true` for all skills that are created not on the mining chain
+    bool createdOnNonMiningChain;
   }
 
   struct ENSRecord {
