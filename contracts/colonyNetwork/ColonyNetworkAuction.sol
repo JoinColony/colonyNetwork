@@ -21,7 +21,7 @@ import "./ColonyNetworkStorage.sol";
 import "./../common/MultiChain.sol";
 import "./../common/BasicMetaTransaction.sol";
 
-contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
+contract ColonyNetworkAuction is ColonyNetworkStorage {
   function startTokenAuction(address _token) public
   stoppable
   auth
