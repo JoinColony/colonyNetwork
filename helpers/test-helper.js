@@ -418,7 +418,13 @@ exports.expectAllEvents = async function expectAllEvents(tx, eventNames) {
   return expect(events).to.be.true;
 };
 
-exports.forwardTime = async function forwardTime(seconds, test) {
+exports.forwardTime = async function forwardTime(seconds, test, _web3provider) {
+  let web3provider;
+  if (!_web3provider) {
+    web3provider = web3.currentProvider;
+  } else {
+    web3provider = _web3provider;
+  }
   if (typeof seconds !== "number") {
     throw new Error("typeof seconds is not a number");
   }
@@ -428,7 +434,7 @@ exports.forwardTime = async function forwardTime(seconds, test) {
       resolve(test.skip());
     } else {
       // console.log(`Forwarding time with ${seconds}s ...`);
-      web3.currentProvider.send(
+      web3provider.send(
         {
           jsonrpc: "2.0",
           method: "evm_increaseTime",
@@ -439,7 +445,7 @@ exports.forwardTime = async function forwardTime(seconds, test) {
           if (err) {
             return reject(err);
           }
-          return web3.currentProvider.send(
+          return web3provider.send(
             {
               jsonrpc: "2.0",
               method: "evm_mine",
@@ -647,7 +653,6 @@ exports.makeReputationKey = function makeReputationKey(colonyAddress, skillBN, a
     skillBN = new BN(skillBN.toString()); // eslint-disable-line no-param-reassign
   }
   let key = `0x`;
-  key += `${new BN(265669100).toString(16, 64)}`; // Chain id as bytes TODO: Make parameter
   key += `${new BN(colonyAddress.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
   key += `${skillBN.toString(16, 64)}`; // SkillId as uint256
   if (accountAddress === undefined) {

@@ -17,7 +17,8 @@ module.exports = async function (deployer) {
   const multichain = await MultiChain.new();
   const chainId = await multichain.getChainId();
 
-  if (chainId.toString() !== "265669100") {
+  if (chainId.toString() !== "265669100" && chainId.toString() !== "100") {
+    console.log("Not mining chain, skipping setting up mining cycle resolver");
     return;
   }
 

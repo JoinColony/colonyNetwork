@@ -19,7 +19,6 @@ pragma solidity 0.8.21;
 
 import "./../ens/ENS.sol";
 import "./ColonyNetworkStorage.sol";
-import "./../common/MultiChain.sol";
 
 
 contract ColonyNetworkENS is ColonyNetworkStorage {
