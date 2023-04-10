@@ -3,6 +3,7 @@ const fs = require("fs");
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
+const path = require("path");
 
 const Promise = require("bluebird");
 
@@ -15,10 +16,19 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
-
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const setupBridging = require("../../scripts/setup-bridging-contracts");
 
-contract("Cross-chain", () => {
+const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
+const { forwardTime } = require("../../helpers/test-helper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const { TruffleLoader } = require("../../packages/package-utils");
+
+const contractLoader = new TruffleLoader({
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+});
+
+contract("Cross-chain", (accounts) => {
   let homeColony;
   let foreignColony;
   let homeColonyNetwork;
@@ -29,6 +39,10 @@ contract("Cross-chain", () => {
   let zodiacBridge;
   let bridgeMonitor;
   let foreignChainId;
+
+  let web3HomeProvider;
+
+  let client;
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
@@ -55,6 +69,18 @@ contract("Cross-chain", () => {
       return new Promise((resolve, reject) => {
         let count = 0;
         homeBridge.on("RelayedMessage", async (_sender, msgSender, _messageId, success) => {
+          console.log("bridged with ", _sender, msgSender, _messageId, success);
+          count += 1;
+          if (!success) {
+            console.log("bridged transaction did not succeed");
+            await reject(new Error("Bridged transaction did not succeed"));
+          }
+          if (count >= n) {
+            resolve();
+          }
+        });
+
+        foreignBridge.on("RelayedMessage", async (_sender, msgSender, _messageId, success) => {
           console.log("bridged with ", _sender, msgSender, _messageId, success);
           count += 1;
           if (!success) {
@@ -118,8 +144,11 @@ contract("Cross-chain", () => {
 
     let tx = await foreignMetacolony.setBridgeData(
       foreignBridge.address, // bridge address
-      "0x", // log before
-      "0x", // log after
+      `0xdc8601b3000000000000000000000000${homeColonyNetwork.address.slice(
+        2
+        // eslint-disable-next-line max-len
+      )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000084`, // log before
+      "0x00000000000000000000000000000000000000000000000000000000", // log after
       1000000, // gas
       100, // chainid
       `0xdc8601b3000000000000000000000000${homeColonyNetwork.address.slice(
@@ -142,8 +171,11 @@ contract("Cross-chain", () => {
       foreignChainId, // chainid
       `0x`, // skill before
       "0x", // skill after
-      "0x", // root hash before
-      "0x" // root hash after
+      `0xdc8601b3000000000000000000000000${foreignColonyNetwork.address.slice(
+        2
+        // eslint-disable-next-line max-len
+      )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000044`,
+      "0x00000000000000000000000000000000000000000000000000000000" // root hash after
     );
     await tx.wait();
 
@@ -158,6 +190,27 @@ contract("Cross-chain", () => {
       await tx.wait();
       await p;
     }
+
+    // Set up mining client
+    client = new ReputationMinerTestWrapper({
+      loader: contractLoader,
+      minerAddress: accounts[5],
+      realProviderPort: HOME_PORT,
+      useJsTree: true,
+    });
+    await client.initialise(homeColonyNetwork.address);
+    console.log(ethersHomeSigner.provider.connection.url);
+    web3HomeProvider = new web3.eth.providers.HttpProvider(ethersHomeSigner.provider.connection.url);
+
+    await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
+    await client.addLogContentsToReputationTree();
+    await client.submitRootHash();
+    await client.confirmNewHash();
+
+    await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
+    await client.addLogContentsToReputationTree();
+    await client.submitRootHash();
+    await client.confirmNewHash();
   });
 
   async function setupColony(colonyNetworkEthers) {
@@ -272,14 +325,83 @@ contract("Cross-chain", () => {
   });
 
   describe("while earning reputation on another chain", async () => {
-    it.skip("reputation awards are ultimately reflected", async () => {
+    it("reputation awards are ultimately reflected", async () => {
+      // const t = homeColonyNetwork.interface.encodeFunctionData("appendReputationUpdateLogFromBridge", [
+      //   "0x1471c2dc50d9155d80E4C88187806Df6B1a2e649",
+      //   "0x1471c2dc50d9155d80E4C88187806Df6B1a2e649",
+      //   0x666666,
+      //   0x88888888,
+      // ]);
+      // console.log(t);
+      // const txDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [homeColonyNetwork.address, t, 1000000]);
+      // console.log(txDataToBeSentToAMB);
+
+      // const t = homeColonyNetwork.interface.encodeFunctionData("bridgeSetReputationRootHash", [
+      //   "0xb8b89e7cf61d1d39d09e98c0ccbb489561e5e1173445a6b34e469f362ebdb221",
+      //   "0xb8b89e7cf61d1d39d09e98c0ccbb489561e5e1173445a6b34e469f362ebdb221"
+      // ]);
+      // console.log(t);
+      // const txDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [foreignColonyNetwork.address, t, 1000000]);
+      // console.log(txDataToBeSentToAMB);
+
+      // process.exit(1)
+
+      let p = getPromiseForNextNBridgedTransactions(1);
       // Emit reputation
-      // await colony.emitDomainReputationReward(3, USER2, 100, { from: FOUNDER });
+      await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1337");
       // See that it's bridged to the inactive log
+      await p;
+      const logAddress = await homeColonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycleInactive = await new ethers.Contract(logAddress, IReputationMiningCycle.abi, ethersHomeSigner);
+
+      const len = await reputationMiningCycleInactive.getReputationUpdateLogLength();
+
+      const entry = await reputationMiningCycleInactive.getReputationUpdateLogEntry(len.sub(1));
+
+      expect(entry.amount.toHexString()).to.equal("0x1337");
+      expect(entry.user).to.equal(accounts[0]);
+      expect(entry.colony).to.equal(foreignColony.address);
+      console.log(foreignChainId);
+
+      const domain = await foreignColony.getDomain(1);
+      console.log(domain);
+
+      console.log(domain.skillId);
+      console.log(entry.skillId);
+
+      expect(entry.skillId.toHexString()).to.equal(domain.skillId.toHexString());
+
       // Advance mining cycle twice
+      await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
+      await client.addLogContentsToReputationTree();
+      await client.submitRootHash();
+      await client.confirmNewHash();
+
+      await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
+      await client.addLogContentsToReputationTree();
+      await client.submitRootHash();
+      await client.confirmNewHash();
+
       // Check in state
+      const key = await ReputationMinerTestWrapper.getKey(foreignColony.address, entry.skillId, accounts[0]);
+      expect(client.reputations[key]).to.not.equal(undefined);
+      expect(ethers.BigNumber.from(client.reputations[key].slice(0, 66)).toHexString()).to.equal("0x1337");
+
+      // Bridge it
+
+      p = getPromiseForNextNBridgedTransactions(1);
+      const tx = await homeColonyNetwork.bridgeCurrentRootHash(homeBridge.address);
+      await tx.wait();
+      await p;
+
       // Check state bridged to host chain
-      assert(false, "test not written yet");
+      const foreignChainRootHash = await foreignColonyNetwork.getReputationRootHash();
+      const foreignNLeaves = await foreignColonyNetwork.getReputationRootHashNNodes();
+      const homeChainRootHash = await homeColonyNetwork.getReputationRootHash();
+      const homeNLeaves = await homeColonyNetwork.getReputationRootHashNNodes();
+
+      expect(foreignChainRootHash).to.equal(homeChainRootHash);
+      expect(homeNLeaves.toHexString()).to.equal(foreignNLeaves.toHexString());
     });
   });
 });
