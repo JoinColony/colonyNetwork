@@ -562,4 +562,21 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return skillCount The skillCount of the corresponding chain
   function getBridgeSkillCounts(uint256 _chainId) external view returns (uint256 skillCount);
 
+  /// @notice Adds a reputation update entry to log.
+  /// @dev Errors if it is called by anyone but a known bridge
+  /// @param _colony The colony the reputation is being awarded in
+  /// @param _user The address of the user for the reputation update
+  /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
+  /// @param _skillId The skill for the reputation update
+  function appendReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId) external;
+
+  /// @notice Update the reputation on a foreign chain from the mining chain
+  /// @dev Should error if called by anyone other than the known bridge from the mining chain
+  /// @param newHash The new root hash
+  /// @param newNLeaves The new nLeaves in the root hash
+  function bridgeSetReputationRootHash(bytes32 newHash, uint256 newNLeaves) external;
+
+  /// @notice Initiate a cross-chain update of the current reputation state
+  /// @param bridgeAddress The bridge we're going over
+  function bridgeCurrentRootHash(address bridgeAddress) external;
 }

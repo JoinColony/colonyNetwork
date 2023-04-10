@@ -27,7 +27,7 @@ const racingFunctionSignatures = [
   "invalidateHash(uint256,uint256)",
   "respondToBinarySearchForChallenge(uint256,uint256,bytes,bytes32[])",
   "confirmBinarySearchResult(uint256,uint256,bytes,bytes32[])",
-  "respondToChallenge(uint256[26],bytes32[8],bytes32[],bytes32[],bytes32[],bytes32[],bytes32[],bytes32[])",
+  "respondToChallenge(uint256[26],bytes32[7],bytes32[],bytes32[],bytes32[],bytes32[],bytes32[],bytes32[])",
   "confirmJustificationRootHash(uint256,uint256,bytes32[],bytes32[])"
 ].map(x => ethers.utils.id(x).slice(0,10))
 
@@ -173,7 +173,7 @@ class ReputationMinerClient {
         }
 
         try {
-          const key = ReputationMiner.getKey("265669100", req.params.colonyAddress, req.params.skillId, req.params.userAddress);
+          const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
           const value = await this._miner.getHistoricalValue(req.params.rootHash, key);
           if (value instanceof Error) {
             return res.status(400).send({ message: value.message.replace("Error: ") });
@@ -187,7 +187,6 @@ class ReputationMinerClient {
       });
 
       // Query specific reputation values
-      // TODO: Do the default value for queries on the old endpoint correctly - env variable, maybe?
       this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", cache('1 hour'), async (req, res) => {
         if (
           !ethers.utils.isHexString(req.params.rootHash) ||
@@ -198,7 +197,8 @@ class ReputationMinerClient {
           return res.status(400).send({ message: "One of the parameters was incorrect" });
         }
 
-        const key = ReputationMiner.getKey("265669100", req.params.colonyAddress, req.params.skillId, req.params.userAddress);
+        const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
+
         try {
           const historicalProof = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
           if (historicalProof instanceof Error) {
@@ -392,7 +392,7 @@ class ReputationMinerClient {
         // Let's process the reputation log if it's been this._processingDelay blocks
         if (this.blocksSinceCycleCompleted < this._processingDelay) {
           this.blocksSinceCycleCompleted += 1;
-		      if (this.blocksSinceCycleCompleted === 1) {
+          if (this.blocksSinceCycleCompleted === 1) {
             this._adapter.log(`⏰ Waiting for ${this._processingDelay} blocks before processing next log`)
           };
           this.endDoBlockChecks();
@@ -742,10 +742,6 @@ class ReputationMinerClient {
 
     // Submit hash
     let submitRootHashTx = await this._miner.submitRootHash(entryIndex);
-    if (submitRootHashTx === false) {
-      this._adapter.log('Unable to submit root hash');
-      return;
-    }
     if (!submitRootHashTx.nonce) {
       // Assume we've been given back the submitRootHashTx hash.
       submitRootHashTx = await this._miner.realProvider.getTransaction(submitRootHashTx);

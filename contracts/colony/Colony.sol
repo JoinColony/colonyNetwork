@@ -267,10 +267,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     uint256 skillid;
     uint256 userAddress;
     assembly {
-      chainId := mload(add(key,32))
-      colonyAddress := mload(add(key,64))
-      skillid := mload(add(key,84)) // Colony address was 20 bytes long, so add 20 bytes
-      userAddress := mload(add(key,116)) // Skillid was 32 bytes long, so add 32 bytes
+      colonyAddress := mload(add(key,32))
+      skillid := mload(add(key,52)) // Colony address was 20 bytes long, so add 20 bytes
+      userAddress := mload(add(key,84)) // Skillid was 32 bytes long, so add 32 bytes
     }
     colonyAddress >>= 96;
     userAddress >>= 96;

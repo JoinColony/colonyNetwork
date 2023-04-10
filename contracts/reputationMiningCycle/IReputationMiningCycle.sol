@@ -144,7 +144,7 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 24. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
   /// * 25. The value of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
   /// * 26. The value of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
-  /// @param _b32 A `bytes32[8]` array. The elements of this array, in order are:
+  /// @param _b32 A `bytes32[7]` array. The elements of this array, in order are:
   /// * 1. The colony address in the key of the reputation being changed that the disagreement is over.
   /// * 2. The skillid in the key of the reputation being changed that the disagreement is over.
   /// * 3. The user address in the key of the reputation being changed that the disagreement is over.
@@ -152,7 +152,6 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 5. The keccak256 hash of the key for a reputation already in the tree adjacent to the new reputation being inserted, if required.
   /// * 6. The keccak256 hash of the key of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
   /// * 7. The keccak256 hash of the key of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
-  /// * 8. The networkid in the key of the reputation being changed that the disagreement is over.
   /// @dev note that these are all bytes32; the address should be left padded from 20 bytes to 32 bytes. Strictly, I do not believe the padding matters, but you should use 0s for your own sanity!
   /// @param _reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
   /// @param _agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
@@ -164,7 +163,7 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
     uint256[26] memory _u, //An array of 26 UINT Params, ordered as given above.
-    bytes32[8] memory _b32,
+    bytes32[7] memory _b32,
     bytes32[] memory _reputationSiblings,
     bytes32[] memory _agreeStateSiblings,
     bytes32[] memory _disagreeStateSiblings,
@@ -188,24 +187,6 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
     bytes32[] memory _siblings1,
     bytes32[] memory _siblings2
   ) external;
-
-  /// @notice Add a new entry to the reputation update log.
-  /// @param _user The address of the user having their reputation changed by this log entry
-  /// @param _amount The amount by which the user's reputation is going to change. Can be positive or negative.
-  /// @param _skillId The skillId of the reputation being affected
-  /// @param _colonyAddress The address of the colony the reputation is being affected in
-  /// @param _chainId The chainId of the network hosting the colony the reputation is being affected in
-  /// @param _nParents The number of parent skills the skill defined by the skillId has
-  /// @param _nChildren The number of child skills the skill defined by the skillId has
-  function appendReputationUpdateLog(
-    address _user,
-    int256 _amount,
-    uint256 _skillId,
-    address _colonyAddress,
-    uint256 _chainId,
-    uint128 _nParents,
-    uint128 _nChildren
-    ) external;
 
   /// @notice Add a new entry to the reputation update log.
   /// @param _user The address of the user having their reputation changed by this log entry

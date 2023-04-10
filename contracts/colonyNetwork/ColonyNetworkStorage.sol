@@ -146,18 +146,6 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   modifier skillExists(uint256 skillId) {
     require(skillCount >= skillId, "colony-invalid-skill-id");
 
-    // if (isMiningChain()){
-    //   require(skillCount >= skillId, "colony-invalid-skill-id");
-    // } else {
-    //   uint256 shiftedChainId = getChainId() << 128;
-    //   require(
-    //     (
-    //       skillId > shiftedChainId &&
-    //       shiftedChainId + skillCount >= skillId
-    //     ),
-    //     "colony-invalid-skill-id"
-    //   );
-    // }
     _;
   }
 }

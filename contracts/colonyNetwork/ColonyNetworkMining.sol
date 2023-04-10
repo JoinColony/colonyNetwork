@@ -95,11 +95,23 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   // Well this is a weird hack to need
   function newAddressArray() pure internal returns (address[] memory) {}
   function bridgeSetReputationRootHash(bytes32 newHash, uint256 newNLeaves) onlyNotMiningChain stoppable public {
-    // require(authorizedBridges[msgSender()] == MINING_CHAIN_ID, 'colony-network-mining-not-a-bridge');
+    require(bridgeData[msgSender()].chainId != 0, "colony-network-not-known-bridge");
     reputationRootHash = newHash;
     reputationRootHashNLeaves = newNLeaves;
 
     emit ReputationRootHashSet(newHash, newNLeaves, newAddressArray(), 0);
+  }
+
+  function bridgeCurrentRootHash(address bridgeAddress) onlyMiningChain stoppable public {
+    require(bridgeData[bridgeAddress].chainId != 0, "colony-network-not-known-bridge");
+    bytes memory payload = abi.encodePacked(
+      bridgeData[bridgeAddress].setReputationRootHashBefore,
+      abi.encodeWithSignature("bridgeSetReputationRootHash(bytes32,uint256)", reputationRootHash, reputationRootHashNLeaves),
+      bridgeData[bridgeAddress].setReputationRootHashAfter
+    );
+    (bool success, ) = bridgeAddress.call(payload);
+    // TODO: Do we require success here?
+    require(success, "colony-mining-bridge-call-failed");
   }
 
   function setReputationRootHash(
@@ -114,19 +126,6 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     startNextCycle();
     rewardStakers(stakers);
 
-    address bridgeAddress = address(0x0);
-    while (bridgeAddressList[bridgeAddress] != address(0x0)){
-      bridgeAddress = bridgeAddressList[bridgeAddress];
-      // Build the transaction we're going to send to the bridge
-      bytes memory payload = abi.encodePacked(
-        bridgeData[bridgeAddress].setReputationRootHashBefore,
-        abi.encodeWithSignature("bridgeSetReputationRootHash(bytes32,uint256)", newHash, newNLeaves),
-        bridgeData[bridgeAddress].setReputationRootHashAfter
-      );
-      (bool success, ) = bridgeAddress.call(payload);
-      // TODO: Do we require success here?
-      require(success, "colony-mining-bridge-call-failed");
-    }
     emit ReputationRootHashSet(newHash, newNLeaves, stakers, totalMinerRewardPerCycle);
   }
 

@@ -128,17 +128,10 @@ contract ColonyAuthority is CommonAuthority {
 
     // Added in colony v10 (ginger-lwss)
     addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)");
-<<<<<<< HEAD
 
     // Added in colony v15 (hazel-lwss-2)
     addRoleCapability(ARBITRATION_ROLE, "cancelExpenditureViaArbitration(uint256,uint256,uint256)");
     addRoleCapability(ARBITRATION_ROLE, "finalizeExpenditureViaArbitration(uint256,uint256,uint256)");
-||||||| parent of 57fb1b07 (First commit, to be squashed)
-=======
-
-    // Added in colony vxxx
-    addRoleCapability(ROOT_ROLE, "setBridgeData(address,bytes,bytes,uint256,uint256,bytes,bytes,bytes,bytes)");
->>>>>>> 57fb1b07 (First commit, to be squashed)
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {
