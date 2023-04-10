@@ -245,7 +245,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 10000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
+          [HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],
@@ -1068,29 +1068,13 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const colonyAddress = ethers.utils.hexZeroPad(logEntry.colony, 32);
       const userAddress = ethers.utils.hexZeroPad(logEntry.user, 32);
       const skillId = ethers.utils.hexZeroPad(ethers.BigNumber.from(logEntry.skillId).toHexString(), 32);
-      const chainId = ethers.utils.hexZeroPad(ethers.BigNumber.from(logEntry.chainId).toHexString(), 32);
 
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [HASHZERO, colonyAddress, skillId, userAddress, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
-          [],
-          [],
-          [],
-          [],
-          [],
-          [],
-          { from: MINER1 }
-        ),
-        "colony-reputation-mining-network-id-mismatch"
-      );
-
-      await checkErrorRevert(
-        repCycle.respondToChallenge(
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [chainId, HASHZERO, skillId, userAddress, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
+          [HASHZERO, skillId, userAddress, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],
@@ -1105,7 +1089,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [chainId, colonyAddress, HASHZERO, userAddress, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
+          [colonyAddress, HASHZERO, userAddress, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],
@@ -1120,7 +1104,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [chainId, colonyAddress, skillId, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
+          [colonyAddress, skillId, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],
@@ -1135,7 +1119,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [chainId, colonyAddress, skillId, userAddress, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
+          [colonyAddress, skillId, userAddress, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],
@@ -1174,7 +1158,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
+          [HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO, HASHZERO],
           [],
           [],
           [],

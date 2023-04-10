@@ -267,10 +267,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     uint256 skillid;
     uint256 userAddress;
     assembly {
-      chainId := mload(add(key,32))
-      colonyAddress := mload(add(key,64))
-      skillid := mload(add(key,84)) // Colony address was 20 bytes long, so add 20 bytes
-      userAddress := mload(add(key,116)) // Skillid was 32 bytes long, so add 32 bytes
+      colonyAddress := mload(add(key,32))
+      skillid := mload(add(key,52)) // Colony address was 20 bytes long, so add 20 bytes
+      userAddress := mload(add(key,84)) // Skillid was 32 bytes long, so add 32 bytes
     }
     colonyAddress >>= 96;
     userAddress >>= 96;
@@ -318,6 +317,11 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     // bytes4 sig;
     // sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
     // colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+    bytes4 sig;
+
+    sig = bytes4(keccak256("setBridgeData(address,bytes,bytes,uint256,uint256,bytes,bytes,bytes,bytes)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {

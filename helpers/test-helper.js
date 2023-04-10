@@ -575,7 +575,6 @@ exports.makeReputationKey = function makeReputationKey(colonyAddress, skillBN, a
     skillBN = new BN(skillBN.toString()); // eslint-disable-line no-param-reassign
   }
   let key = `0x`;
-  key += `${new BN(265669100).toString(16, 64)}`; // Chain id as bytes TODO: Make parameter
   key += `${new BN(colonyAddress.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
   key += `${skillBN.toString(16, 64)}`; // SkillId as uint256
   if (accountAddress === undefined) {

@@ -23,7 +23,6 @@ import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { Multicall } from "./../common/Multicall.sol";
-import { MultiChain } from "./../common/MultiChain.sol";
 
 contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall {
   function isColony(address _colony) public view returns (bool) {
@@ -99,15 +98,9 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
   function setBridgeData(address bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) public
   always
   {
-    // // If there is a metacolony
-    // if (metaColony != address(0x00)){
-    //   require(msgSender() == metaColony, 'colony-network-not-metacolony');
-    // }
+    require(msgSender() == metaColony, "colony-network-not-metacolony");
     if (!isMiningChain()) {
       bridgeAddressList[address(0x00)] = bridgeAddress;
-    } else {
-      // Is the mining chain
-      // TODO: Linked list stuff
     }
     bridgeData[bridgeAddress] = Bridge(updateLogBefore, updateLogAfter, gas, chainId, skillCreationBefore, skillCreationAfter, setReputationRootHashBefore, setReputationRootHashAfter);
     if (networkSkillCounts[chainId] == 0) {
