@@ -24,13 +24,11 @@ import { ColonyStorage } from "./ColonyStorage.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
-import { MultiChain } from "./../common/MultiChain.sol";
 
 
 contract ColonyRewards is
   ColonyStorage,
-  PatriciaTreeProofs, // ignore-swc-123
-  MultiChain
+  PatriciaTreeProofs // ignore-swc-123
   {
   function lockToken() public stoppable onlyOwnExtension returns (uint256) {
     uint256 lockId = ITokenLocking(tokenLockingAddress).lockToken(token);
@@ -162,26 +160,20 @@ contract ColonyRewards is
     require(rootHash == impliedRoot, "colony-reputation-invalid-root-hash");
 
     uint256 reputationValue;
-    uint256 keyColonyAddress;
+    address keyColonyAddress;
     uint256 keySkill;
-    uint256 keyUserAddress;
-    uint256 keyChainId;
+    address keyUserAddress;
 
     assembly {
       reputationValue := mload(add(value, 32))
-      keyChainId := mload(add(key,32))
-      keyColonyAddress := mload(add(key,64))
-      keySkill := mload(add(key,84)) // Colony address was 20 bytes long, so add 20 bytes
-      keyUserAddress := mload(add(key,116)) // Skillid was 32 bytes long, so add 32 bytes
+      keyColonyAddress := mload(add(key, 20))
+      keySkill := mload(add(key, 52))
+      keyUserAddress := mload(add(key, 72))
     }
 
-    keyColonyAddress >>= 96;
-    keyUserAddress >>= 96;
-
-    require(address(uint160(keyColonyAddress)) == address(this), "colony-reputation-invalid-colony-address");
+    require(keyColonyAddress == address(this), "colony-reputation-invalid-colony-address");
     require(keySkill == skillId, "colony-reputation-invalid-skill-id");
-    require(address(uint160(keyUserAddress)) == userAddress, "colony-reputation-invalid-user-address");
-    require(keyChainId == getChainId(), "colony-reputation-invalid-chainid");
+    require(keyUserAddress == userAddress, "colony-reputation-invalid-user-address");
 
     return reputationValue;
   }

@@ -81,27 +81,21 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
     require(_rootHash == impliedRoot, "colony-extension-invalid-root-hash");
 
     uint256 reputationValue;
-    uint256 keyColonyAddress;
+    address keyColonyAddress;
     uint256 keySkillId;
-    uint256 keyUserAddress;
-    uint256 keyChainId;
+    address keyUserAddress;
 
     assembly {
       reputationValue := mload(add(_value, 32))
-      keyChainId := mload(add(_key,32))
-      keyColonyAddress := mload(add(_key,64))
-      keySkillId := mload(add(_key,84)) // Colony address was 20 bytes long, so add 20 bytes
-      keyUserAddress := mload(add(_key,116)) // Skillid was 32 bytes long, so add 32 bytes
+      keyColonyAddress := mload(add(_key, 20))
+      keySkillId := mload(add(_key, 52))
+      keyUserAddress := mload(add(_key, 72))
     }
-    keyColonyAddress >>= 96;
-    keyUserAddress >>= 96;
 
-    require(address(uint160(keyColonyAddress)) == address(colony), "colony-extension-invalid-colony-address");
+    require(keyColonyAddress == address(colony), "colony-extension-invalid-colony-address");
     // slither-disable-next-line incorrect-equality
     require(keySkillId == _skillId, "colony-extension-invalid-skill-id");
-    require(address(uint160(keyUserAddress)) == _user, "colony-extension-invalid-user-address");
-    require(keyChainId == getChainId(), "colony-extension-invalid-chainid");
+    require(keyUserAddress == _user, "colony-extension-invalid-user-address");
 
     return reputationValue;
-  }
-}
+  }}

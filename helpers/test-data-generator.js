@@ -143,12 +143,6 @@ exports.giveUserCLNYTokens = async function giveUserCLNYTokens(colonyNetwork, us
 };
 
 exports.giveUserCLNYTokensAndStake = async function giveUserCLNYTokensAndStake(colonyNetwork, user, _amount) {
-  // const chainId = await web3GetChainId();
-  // if (chainId.toString() !== "265669100") {
-  //   test.skip();
-  //   return;
-  // }
-
   let amount;
   if (web3.utils.isBN(_amount)) {
     amount = _amount;

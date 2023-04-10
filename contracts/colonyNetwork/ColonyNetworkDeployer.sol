@@ -33,18 +33,10 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
 
-<<<<<<< HEAD
-    // Add the special mining skill, parent is the root domain
-    reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(skillCount - 1);
-||||||| parent of 2b007787 (Bridge skills on creation to home chain)
-    // Add the special mining skill
-    reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(skillCount - 1);
-=======
     // Add the special mining skill
     if (isMiningChain()){
       reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(skillCount - 1);
     }
->>>>>>> 2b007787 (Bridge skills on creation to home chain)
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
@@ -159,7 +151,6 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     // Bridge if necessary
     if (!isMiningChain()) {
       IColonyNetwork(address(this)).bridgeSkill(skillCount);
-      skills[skillCount].createdOnNonMiningChain = true;
     }
     colonyCount += 1;
     colonies[colonyCount] = address(colony);

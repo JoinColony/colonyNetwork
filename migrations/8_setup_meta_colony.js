@@ -50,7 +50,7 @@ module.exports = async function (deployer, network, accounts) {
   const multichain = await MultiChain.new();
   const chainId = await multichain.getChainId();
 
-  if (chainId.toString() === "265669100") {
+  if (chainId.toString() === "265669100" || chainId.toString() === "100") {
     // These commands add MAIN_ACCOUNT as a reputation miner.
     // This is necessary because the first miner must have staked before the mining cycle begins.
     await clnyToken.mint(MAIN_ACCOUNT, DEFAULT_STAKE, { from: TOKEN_OWNER });
@@ -113,7 +113,7 @@ module.exports = async function (deployer, network, accounts) {
   await resolver4.register("version()", v4responder.address);
   await metaColony.addNetworkColonyVersion(4, resolver4.address);
 
-  if (chainId.toString() === "265669100") {
+  if (chainId.toString() === "265669100" || chainId.toString() === "100") {
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
     const skillCount = await colonyNetwork.getSkillCount();
