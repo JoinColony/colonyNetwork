@@ -82,14 +82,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
   uint constant U_USER_ORIGIN_ADJACENT_REPUTATION_VALUE = 24;
   uint constant U_CHILD_ADJACENT_REPUTATION_VALUE = 25;
 
-  uint constant B_REPUTATION_KEY_NETWORKID = 0;
-  uint constant B_REPUTATION_KEY_COLONY = 1;
-  uint constant B_REPUTATION_KEY_SKILLID = 2;
-  uint constant B_REPUTATION_KEY_USER = 3;
-  uint constant B_REPUTATION_KEY_HASH = 4;
-  uint constant B_ADJACENT_REPUTATION_KEY_HASH = 5;
-  uint constant B_ORIGIN_ADJACENT_REPUTATION_KEY_HASH = 6;
-  uint constant B_CHILD_ADJACENT_REPUTATION_KEY_HASH = 7;
+  uint constant B_REPUTATION_KEY_COLONY = 0;
+  uint constant B_REPUTATION_KEY_SKILLID = 1;
+  uint constant B_REPUTATION_KEY_USER = 2;
+  uint constant B_REPUTATION_KEY_HASH = 3;
+  uint constant B_ADJACENT_REPUTATION_KEY_HASH = 4;
+  uint constant B_ORIGIN_ADJACENT_REPUTATION_KEY_HASH = 5;
+  uint constant B_CHILD_ADJACENT_REPUTATION_KEY_HASH = 6;
 
   // Mining cycle decay constants
   // Note that these values and the mining window size (defined in ReputationMiningCycleCommon)
@@ -104,7 +103,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
   function respondToChallenge(
     uint256[26] memory _u, //An array of 27 UINT Params, ordered as given above.
-    bytes32[8] memory _b32, // An array of 8 bytes32 params, ordered as given above
+    bytes32[7] memory _b32, // An array of 7 bytes32 params, ordered as given above
     bytes32[] memory _reputationSiblings,
     bytes32[] memory _agreeStateSiblings,
     bytes32[] memory _disagreeStateSiblings,
@@ -177,7 +176,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
   function checkAdjacentReputation(
     uint256[26] memory _u,
-    bytes32[8] memory _b32,
+    bytes32[7] memory _b32,
     bytes32[] memory _adjacentReputationSiblings,
     bytes32[] memory _agreeStateSiblings,
     bytes32[] memory _disagreeStateSiblings
@@ -240,7 +239,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
   function buildNewSiblingsArray(
     uint256[26] memory _u,
-    bytes32[8] memory _b32,
+    bytes32[7] memory _b32,
     uint256 _firstDifferenceBit,
     bytes32[] memory _adjacentReputationSiblings
     ) internal pure returns (bytes32[] memory)
@@ -290,7 +289,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
   function checkUserOriginReputation(
     uint256[26] memory _u,
-    bytes32[8] memory _b32,
+    bytes32[7] memory _b32,
     bytes32[] memory _agreeStateSiblings,
     bytes32[] memory _userOriginReputationSiblings) internal view
   {
@@ -312,7 +311,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
   function checkChildReputation(
     uint256[26] memory _u,
-    bytes32[8] memory _b32,
+    bytes32[7] memory _b32,
     bytes32[] memory _agreeStateSiblings,
     bytes32[] memory _childReputationSiblings) internal view
   {
@@ -346,7 +345,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     emit ChallengeCompleted(submission.proposedNewRootHash, submission.nLeaves, submission.jrh);
   }
 
-  function checkKey(uint256[26] memory _u, bytes32[8] memory _b32) internal view {
+  function checkKey(uint256[26] memory _u, bytes32[7] memory _b32) internal view {
     // If the state transition we're checking is less than the number of leaves in the currently accepted state, it's a decay transition
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[_u[U_ROUND]][_u[U_IDX]].lowerBound - 1;
@@ -365,7 +364,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     require(u[U_AGREE_STATE_REPUTATION_UID]-1 == _updateNumber, "colony-reputation-mining-uid-not-decay");
   }
 
-  function checkKeyLogEntry(uint256[26] memory u, bytes32[8] memory b32) internal view {
+  function checkKeyLogEntry(uint256[26] memory u, bytes32[7] memory b32) internal view {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
     uint256 expectedSkillId;
@@ -378,7 +377,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
     require(
       keccak256(
-        buildReputationKey(b32[B_REPUTATION_KEY_NETWORKID], b32[B_REPUTATION_KEY_COLONY], b32[B_REPUTATION_KEY_SKILLID], b32[B_REPUTATION_KEY_USER])
+        buildReputationKey(b32[B_REPUTATION_KEY_COLONY], b32[B_REPUTATION_KEY_SKILLID], b32[B_REPUTATION_KEY_USER])
       ) == b32[B_REPUTATION_KEY_HASH],
       "colony-reputation-mining-reputation-key-and-hash-mismatch"
     );
@@ -416,7 +415,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
   function proveBeforeReputationValue(
     uint256[26] memory u,
-    bytes32[8] memory b32,
+    bytes32[7] memory b32,
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings
   ) internal view
@@ -458,7 +457,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
   function proveAfterReputationValue(
     uint256[26] memory u,
-    bytes32[8] memory b32,
+    bytes32[7] memory b32,
     bytes32[] memory reputationSiblings,
     bytes32[] memory disagreeStateSiblings
   ) internal view
@@ -638,7 +637,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
 
   function checkUserOriginReputationInState(
     uint256[26] memory u,
-    bytes32[8] memory b32,
+    bytes32[7] memory b32,
     bytes32[] memory agreeStateSiblings,
     bytes32 userOriginReputationKeyHash,
     bytes32[] memory userOriginReputationStateSiblings
@@ -752,14 +751,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     require(impliedRoot == submission.jrh, "colony-reputation-mining-child-adjacent-proof-invalid");
   }
 
-  function buildReputationKey(bytes32 networkId, bytes32 colony, bytes32 skill, bytes32 user) internal pure returns (bytes memory) {
-    bytes memory reputationKey = new bytes(104);
+  function buildReputationKey(bytes32 colony, bytes32 skill, bytes32 user) internal pure returns (bytes memory) {
+    bytes memory reputationKey = new bytes(72);
     assembly {
-        mstore(add(reputationKey, 32), networkId)
-        mstore(add(reputationKey, 64), shl(96, colony))
-        mstore(add(reputationKey, 104), user)
-        mstore(add(reputationKey, 84), skill)
+        mstore(add(reputationKey, 32), shl(96, colony))
+        mstore(add(reputationKey, 72), user)
+        mstore(add(reputationKey, 52), skill)
     }
     return reputationKey;
-  }
-}
+  }}

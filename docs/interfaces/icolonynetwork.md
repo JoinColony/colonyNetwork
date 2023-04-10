@@ -112,6 +112,48 @@ Adds a reputation update entry to log.
 |_skillId|uint256|The skill for the reputation update
 
 
+### ▸ `appendReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId)`
+
+Adds a reputation update entry to log.
+
+*Note: Errors if it is called by anyone but a known bridge*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colony|address|The colony the reputation is being awarded in
+|_user|address|The address of the user for the reputation update
+|_amount|int|The amount of reputation change for the update, this can be a negative as well as a positive value
+|_skillId|uint|The skill for the reputation update
+
+
+### ▸ `bridgeCurrentRootHash(address bridgeAddress)`
+
+Initiate a cross-chain update of the current reputation state
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|bridgeAddress|address|The bridge we're going over
+
+
+### ▸ `bridgeSetReputationRootHash(bytes32 newHash, uint256 newNLeaves)`
+
+Update the reputation on a foreign chain from the mining chain
+
+*Note: Should error if called by anyone other than the known bridge from the mining chain*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|newHash|bytes32|The new root hash
+|newNLeaves|uint256|The new nLeaves in the root hash
+
+
 ### ▸ `bridgeSkill(uint256 skillId)`
 
 Called to re-send the bridging transaction for a skill to the

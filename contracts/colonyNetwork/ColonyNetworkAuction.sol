@@ -18,7 +18,6 @@
 pragma solidity 0.8.21;
 
 import "./ColonyNetworkStorage.sol";
-import "./../common/MultiChain.sol";
 import "./../common/BasicMetaTransaction.sol";
 
 contract ColonyNetworkAuction is ColonyNetworkStorage {
