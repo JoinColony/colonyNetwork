@@ -5,8 +5,8 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ADDRESS_ZERO } = require("../../helpers/constants");
-const { setupRandomColony } = require("../../helpers/test-data-generator");
+const { UINT256_MAX, UINT128_MAX, WAD, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ADDRESS_ZERO } = require("../../helpers/constants");
+const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 const {
   checkErrorRevert,
   web3GetCode,
@@ -29,7 +29,7 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const STAKED_EXPENDITURE = soliditySha3("StakedExpenditure");
 
-contract("StakedExpenditure", (accounts) => {
+contract("Staked Expenditure", (accounts) => {
   let colonyNetwork;
   let colony;
   let token;
@@ -72,6 +72,7 @@ contract("StakedExpenditure", (accounts) => {
 
     await colony.setArbitrationRole(1, UINT256_MAX, stakedExpenditure.address, 1, true);
     await colony.setAdministrationRole(1, UINT256_MAX, stakedExpenditure.address, 1, true);
+    await colony.setFundingRole(1, UINT256_MAX, USER0, 1, true);
 
     const domain1 = await colony.getDomain(1);
 
@@ -174,7 +175,9 @@ contract("StakedExpenditure", (accounts) => {
     });
 
     it("can create an expenditure by submitting a stake", async () => {
-      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
+        from: USER0,
+      });
       const expenditureId = await colony.getExpenditureCount();
 
       const { owner } = await colony.getExpenditure(expenditureId);
@@ -200,7 +203,7 @@ contract("StakedExpenditure", (accounts) => {
       value = makeReputationValue(WAD, 10);
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
-        stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
+        stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings, false),
         "colony-extension-invalid-root-hash"
       );
 
@@ -208,7 +211,7 @@ contract("StakedExpenditure", (accounts) => {
       value = makeReputationValue(WAD, 2);
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
-        stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
+        stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings, false),
         "colony-extension-invalid-colony-address"
       );
 
@@ -216,7 +219,7 @@ contract("StakedExpenditure", (accounts) => {
       value = makeReputationValue(WAD, 3);
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
-        stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
+        stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings, false),
         "colony-extension-invalid-skill-id"
       );
 
@@ -224,7 +227,7 @@ contract("StakedExpenditure", (accounts) => {
       value = makeReputationValue(WAD, 4);
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
-        stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
+        stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings, false),
         "colony-extension-invalid-user-address"
       );
     });
@@ -239,7 +242,9 @@ contract("StakedExpenditure", (accounts) => {
     });
 
     it("can slash the stake with the arbitration permission", async () => {
-      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
+        from: USER0,
+      });
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
@@ -268,7 +273,9 @@ contract("StakedExpenditure", (accounts) => {
     });
 
     it("cannot slash the stake without the arbitration permission", async () => {
-      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
+        from: USER0,
+      });
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
@@ -279,7 +286,9 @@ contract("StakedExpenditure", (accounts) => {
     });
 
     it("can cancel the expenditure without penalty", async () => {
-      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
+        from: USER0,
+      });
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
@@ -308,7 +317,9 @@ contract("StakedExpenditure", (accounts) => {
     });
 
     it("if ownership is transferred, the original owner is still slashed", async () => {
-      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
+        from: USER0,
+      });
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
@@ -324,7 +335,9 @@ contract("StakedExpenditure", (accounts) => {
     });
 
     it("can reclaim the stake by cancelling the expenditure", async () => {
-      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
+        from: USER0,
+      });
       const expenditureId = await colony.getExpenditureCount();
 
       await colony.cancelExpenditure(expenditureId);
@@ -339,7 +352,9 @@ contract("StakedExpenditure", (accounts) => {
     });
 
     it("can cancel and reclaim the stake in one transaction", async () => {
-      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
+        from: USER0,
+      });
       const expenditureId = await colony.getExpenditureCount();
 
       await stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId);
@@ -352,7 +367,9 @@ contract("StakedExpenditure", (accounts) => {
     });
 
     it("cannot cancel and reclaim the stake in one transaction if not owner", async () => {
-      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
+        from: USER0,
+      });
       const expenditureId = await colony.getExpenditureCount();
 
       await checkErrorRevert(
@@ -362,7 +379,9 @@ contract("StakedExpenditure", (accounts) => {
     });
 
     it("can reclaim the stake by finalizing the expenditure", async () => {
-      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
+        from: USER0,
+      });
       const expenditureId = await colony.getExpenditureCount();
 
       await colony.finalizeExpenditure(expenditureId);
@@ -377,7 +396,9 @@ contract("StakedExpenditure", (accounts) => {
     });
 
     it("cannot reclaim the stake while the expenditure is in progress", async () => {
-      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
+        from: USER0,
+      });
       const expenditureId = await colony.getExpenditureCount();
 
       await checkErrorRevert(stakedExpenditure.reclaimStake(expenditureId), "staked-expenditure-expenditure-invalid-state");
@@ -385,6 +406,66 @@ contract("StakedExpenditure", (accounts) => {
 
     it("cannot reclaim a nonexistent stake", async () => {
       await checkErrorRevert(stakedExpenditure.reclaimStake(0), "staked-expenditure-nothing-to-claim");
+    });
+
+    it("can create a staged payment", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, true, {
+        from: USER0,
+      });
+      const expenditureId = await colony.getExpenditureCount();
+      const expenditure = await colony.getExpenditure(expenditureId);
+      const domain1 = await colony.getDomain(1);
+
+      await colony.setExpenditureRecipients(expenditureId, [0, 1], [USER1, USER1], { from: USER0 });
+      await colony.setExpenditureClaimDelays(expenditureId, [0, 1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
+      await colony.setExpenditurePayouts(expenditureId, [0, 1], token.address, [WAD, WAD.muln(2)], { from: USER0 });
+
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD.muln(3),
+        token.address,
+        { from: USER0 }
+      );
+
+      // Cannot release stage if not finalized
+      await checkErrorRevert(
+        stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, { from: USER0 }),
+        "staked-expenditure-not-finalized"
+      );
+
+      await colony.finalizeExpenditure(expenditureId);
+
+      // Cannot claim until the slot is released
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
+
+      // Cannot release stage if not creator
+      await checkErrorRevert(
+        stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, { from: USER1 }),
+        "staked-expenditure-not-creator"
+      );
+
+      await stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, { from: USER0 });
+      await colony.claimExpenditurePayout(expenditureId, 0, token.address);
+    });
+
+    it("cannot release a stage if not a staged payment", async () => {
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
+        from: USER0,
+      });
+      const expenditureId = await colony.getExpenditureCount();
+
+      await checkErrorRevert(
+        stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, { from: USER0 }),
+        "staked-expenditure-not-staged-payment"
+      );
     });
   });
 });

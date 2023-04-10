@@ -29,7 +29,8 @@ contract StakedExpenditure is ColonyExtensionMeta {
 
   // Events
 
-  event ExpenditureMadeViaStake(address indexed creator, uint256 expenditureId, uint256 stake);
+  event ExpenditureMadeViaStake(address indexed creator, uint256 expenditureId, uint256 stake, bool stagedPayment);
+  event StagedPaymentReleased(uint256 indexed expenditureId, uint256 slot);
   event ExpenditureCancelled(uint256 expenditureId);
   event StakeReclaimed(uint256 expenditureId);
   event StakeFractionSet(uint256 stakeFraction);
@@ -38,13 +39,13 @@ contract StakedExpenditure is ColonyExtensionMeta {
 
   struct Stake {
     address creator;
+    bool stagedPayment;
     uint256 amount;
   }
 
   // Storage
 
   uint256 stakeFraction;
-
   mapping (uint256 => Stake) stakes;
 
   // Modifiers
@@ -109,6 +110,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
   /// @param _value Reputation value indicating the total reputation in _domainId
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
+  /// @param _stagedPayment Whether the expenditure is a staged payment
   function makeExpenditureWithStake(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -116,7 +118,8 @@ contract StakedExpenditure is ColonyExtensionMeta {
     bytes memory _key,
     bytes memory _value,
     uint256 _branchMask,
-    bytes32[] memory _siblings
+    bytes32[] memory _siblings,
+    bool _stagedPayment
   )
     public
     notDeprecated
@@ -129,17 +132,44 @@ contract StakedExpenditure is ColonyExtensionMeta {
     colony.obligateStake(msgSender(), _domainId, stakeAmount);
     uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
 
-    stakes[expenditureId] = Stake({ creator: msgSender(), amount: stakeAmount });
+    stakes[expenditureId] = Stake({ creator: msgSender(), stagedPayment: _stagedPayment, amount: stakeAmount });
     colony.transferExpenditure(expenditureId, msgSender());
 
-    emit ExpenditureMadeViaStake(msgSender(), expenditureId, stakeAmount);
+    emit ExpenditureMadeViaStake(msgSender(), expenditureId, stakeAmount, _stagedPayment);
+  }
+
+  /// @notice Release a staged payment slot
+  /// @param _permissionDomainId The domainId in which the extension has the arbitration permission
+  /// @param _childSkillIndex The index that the `_expenditureId` is relative to `_permissionDomainId`,
+  /// @param _expenditureId The id of the expenditure
+  /// @param _slot The slot being released
+  function releaseStagedPayment(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _expenditureId,
+    uint256 _slot
+  )
+    public
+  {
+    require(stakes[_expenditureId].stagedPayment, "staked-expenditure-not-staged-payment");
+    require(stakes[_expenditureId].creator == msgSender(), "staked-expenditure-not-creator");
+    require(
+      colony.getExpenditure(_expenditureId).status == ColonyDataTypes.ExpenditureStatus.Finalized,
+      "staked-expenditure-not-finalized"
+    );
+
+    bool[] memory mask = new bool[](2); mask[0] = false; mask[1] = true;
+    bytes32[] memory keys = new bytes32[](2); keys[0] = bytes32(0); keys[1] = bytes32(uint256(1));
+    colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, 26, mask, keys, bytes32(0));
+
+    emit StagedPaymentReleased(_expenditureId, _slot);
   }
 
   /// @notice Reclaims the stake if the expenditure is finalized or cancelled
   /// @param _expenditureId The id of the expenditure
   function reclaimStake(uint256 _expenditureId) public {
     Stake storage stake = stakes[_expenditureId];
-    require(stake.creator != address(0x0), "staked-expenditure-nothing-to-claim");
+    require(stake.amount > 0, "staked-expenditure-nothing-to-claim");
 
     uint256 stakeAmount = stake.amount;
     address stakeCreator = stake.creator;
@@ -169,11 +199,9 @@ contract StakedExpenditure is ColonyExtensionMeta {
   )
     public
   {
-    Stake storage stake = stakes[_expenditureId];
     ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
 
     require(expenditure.owner == msgSender(), "staked-expenditure-must-be-owner");
-
     require(
       expenditure.status == ColonyDataTypes.ExpenditureStatus.Draft,
       "staked-expenditure-expenditure-not-draft"
@@ -219,7 +247,6 @@ contract StakedExpenditure is ColonyExtensionMeta {
       expenditure.status != ColonyDataTypes.ExpenditureStatus.Cancelled,
       "staked-expenditure-expenditure-already-cancelled"
     );
-
     require(
       expenditure.status != ColonyDataTypes.ExpenditureStatus.Draft,
       "staked-expenditure-expenditure-still-draft"

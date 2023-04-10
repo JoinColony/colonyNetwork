@@ -112,7 +112,7 @@ Configures the extension
 |_colony|address|The colony in which the extension holds permissions
 
 
-### ▸ `makeExpenditureWithStake(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
+### ▸ `makeExpenditureWithStake(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings, bool _stagedPayment)`
 
 Make an expenditure by putting up a stake
 
@@ -128,6 +128,7 @@ Make an expenditure by putting up a stake
 |_value|bytes|Reputation value indicating the total reputation in _domainId
 |_branchMask|uint256|The branchmask of the proof
 |_siblings|bytes32[]|The siblings of the proof
+|_stagedPayment|bool|Whether the expenditure is a staged payment
 
 
 ### ▸ `reclaimStake(uint256 _expenditureId)`
@@ -140,6 +141,21 @@ Reclaims the stake if the expenditure is finalized or cancelled
 |Name|Type|Description|
 |---|---|---|
 |_expenditureId|uint256|The id of the expenditure
+
+
+### ▸ `releaseStagedPayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _expenditureId, uint256 _slot)`
+
+Release a staged payment slot
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which the extension has the arbitration permission
+|_childSkillIndex|uint256|The index that the `_expenditureId` is relative to `_permissionDomainId`,
+|_expenditureId|uint256|The id of the expenditure
+|_slot|uint256|The slot being released
 
 
 ### ▸ `setStakeFraction(uint256 _stakeFraction)`
