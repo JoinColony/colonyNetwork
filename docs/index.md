@@ -16,7 +16,7 @@ It's infrastructure for the future of the firm, built to organize and incentiviz
 
 ## Want to jump right in?
 
-Feeling like an eager beaver? Jump in to the [quick start docs](quick-start) and get the Smart Contracts running on your machine:
+Feeling like an eager beaver? Jump in to the [quick start docs](colonynetwork/quick-start) and get the Smart Contracts running on your machine:
 
 ## The Colony Ecosystem
 
@@ -38,7 +38,7 @@ The Colony Network is the infrastructure upon which all colonies run.
 
 The colonyNetwork repository contains the solidity implementation of Colony, which is developed as free software. See our [guidelines](https://github.com/JoinColony/colonyNetwork/blob/develop/.github/CONTRIBUTING.md) if you're interested in contributing to the colonyNetwork codebase. Developers interested in contributing to the Colony Network are encouraged to look at the code on [GitHub](https://github.com/JoinColony/colonyNetwork), and to come say hi on [Discord](https://discord.gg/feVZWwysqM).
 
-The current colonyNetwork release is [`flwss`](https://github.com/JoinColony/colonyNetwork/releases/tag/flwss) (Fuchsia Lightweight Spaceship). It implements some, but not all, of the Colony Protocol:
+The current colonyNetwork release is [`glwss3`](https://github.com/JoinColony/colonyNetwork/releases/tag/glwss3) (Green Lightweight Spaceship 3). It implements some, but not all, of the Colony Protocol:
 
 * Ownership and permissions (through roles)
 * Reputation
@@ -62,6 +62,6 @@ To learn more about how to use the Colony SDK with your dapp, or to get specific
 
 ### Developer Portal
 
-If you didn't get here from there, have a look at our Developer Portal to [get started](https://www.notion.so/colony/Colony-Developer-Portal-2155ba0a012e46f9991bbd693b04de2b).
+If you didn't get here from there, have a look at our [Developer Portal](https://docs.colony.io/develop) to get started.
 
-Or, if you're feeling old skool and just want to chat, send an email to [chris@colony.io](mailto:build@colony.io) or ping chmanie#5800 on Discord!
+Or, if you're feeling old skool and just want to chat, send an email to [chris@colony.io](mailto:build@colony.io) or ping chmanie#0001 on Discord!

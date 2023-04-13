@@ -9,7 +9,7 @@ The Colony Network is a set of smart contracts designed to manage shared resourc
 
 To this end, Colony is offering substantial rewards to external developers who report bugs and flaws in the colonyNetwork contracts ([terms apply](bug-bounty.md#service-level-agreement)).
 
-This bug bounty does _not_ apply to Colony tools such as Purser. See [Ineligible bugs](#ineligible-bugs) for more information.
+This bug bounty does _not_ apply to Colony tools such as [Colony SDK](https://github.com/JoinColony/colonySDK). See [Ineligible bugs](#ineligible-bugs) for more information.
 
 ## Scope
 
@@ -22,7 +22,7 @@ Bounties for potential bugs include, but are not limited to:
 * Attacks during a network upgrade
 * Authority and permissions
 
-More generally, if it lives in the repository\* and affects the Colony smart contracts, it's fair game.
+More generally, if it lives in the [colonyNetwork](https://github.com/JoinColony/colonyNetwork) repository\* and affects the Colony smart contracts, it's fair game.
 
 _\* There are some components of the colonyNetwork repository that are not created by the Colony team, but which still could be relevant to overall security. If a bug or exploit makes use of any external libraries or submodules, it will be considered on a case-by-case basis for eligibility._
 
