@@ -208,25 +208,38 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
     receipt = await promise;
   } catch (err) {
     const txid = err.transactionHash;
-    const tx = await exports.web3GetTransaction(txid);
-    receipt = await exports.web3GetTransactionReceipt(txid);
 
-    const response = await exports.web3GetRawCall(
-      {
-        from: tx.from,
-        to: tx.to,
-        data: tx.input,
-        gas: ethers.utils.hexValue(tx.gas),
-        value: ethers.utils.hexValue(parseInt(tx.value, 10)),
-      },
-      ethers.utils.hexValue(receipt.blockNumber),
-    );
-    const reason = exports.extractReasonString(response);
+    const TRUFFLE_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+    const OTHER_RPC_PORT = 8546;
+
+    let provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${TRUFFLE_PORT}`);
+    receipt = await provider.getTransactionReceipt(txid);
+    if (!receipt) {
+      provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${OTHER_RPC_PORT}`);
+      receipt = await provider.getTransactionReceipt(txid);
+    }
+
+    const tx = await provider.getTransaction(txid);
+
+    let reason;
+    try {
+      const callResult = await provider.call(
+        {
+          from: tx.from,
+          to: tx.to,
+          data: tx.data,
+          gas: ethers.utils.hexValue(tx.gas),
+          value: ethers.utils.hexValue(parseInt(tx.value, 10)),
+        },
+        receipt.blockNumber
+      );
+      reason = web3.eth.abi.decodeParameter("string", callResult.slice(10));
+    } catch (err2) {
+      reason = web3.eth.abi.decodeParameter("string", err2.error.error.data.slice(10));
+    }
     expect(reason).to.equal(errorMessage);
-    return;
   }
-
-  expect(receipt.status, `Transaction succeeded, but expected to fail with: ${errorMessage}`).to.be.zero;
+  expect(receipt.status, `Transaction succeeded, but expected to fail with: ${errorMessage}`).to.equal(0);
 };
 
 // Sometimes we might have to use this function because of

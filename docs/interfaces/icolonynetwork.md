@@ -447,23 +447,6 @@ Called to get the details about known bridge _bridgeAddress
 |---|---|---|
 |bridge|Bridge|The bridge data
 
-### ▸ `getBridgeListEntry(address bridgeAddress):address nextBridge`
-
-Called to get the next bridge in the list after bridge _bridgeAddress
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|bridgeAddress|address|The address of the bridge
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|nextBridge|address|The address of the next bridge
-
 ### ▸ `getBridgeSkillCounts(uint256 _chainId):uint256 skillCount`
 
 Get the (currently bridged) skill count of another chain
@@ -628,6 +611,18 @@ Get the Meta Colony address.
 |Name|Type|Description|
 |---|---|---|
 |_colonyAddress|address|The Meta colony address, if no colony was found, returns 0x0
+
+### ▸ `getMiningBridgeAddress():address bridge`
+
+Called to get the next bridge in the list after bridge _bridgeAddress
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|bridge|address|The address of the bridge to the mining chain, if set
 
 ### ▸ `getMiningDelegator(address _delegate):address _delegator`
 
