@@ -309,21 +309,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   function getMiningStake(address _user) public onlyMiningChain view returns (MiningStake memory) {
-    // If queried by a mining cycle contract, if we're in solo mining mode, only allow the solo miner to be
-    // seen as staked for mining.
-    if (msgSender() == inactiveReputationMiningCycle || msgSender() == activeReputationMiningCycle){
-      if (soloMiningAddress == address(0x00) || _user == soloMiningAddress) {
-        return miningStakes[_user];
-      }
-      return MiningStake(0, 0);
-    }
     return miningStakes[_user];
-  }
-
-  function setSoloMiningAddress(address _soloMiningAddress) public onlyMiningChain stoppable auth {
-    // Only allowed if no-one has submitted a root hash this cycle
-    require(IReputationMiningCycle(activeReputationMiningCycle).getNUniqueSubmittedHashes() == 0, "colony-network-submission-made-this-cycle");
-    soloMiningAddress = _soloMiningAddress;
   }
 
   function addBridgeForNetwork(address _bridgeAddress, uint256 _networkId) public always auth {
