@@ -19,20 +19,30 @@ class MockBridgeMonitor {
     const homeBridge = new ethers.Contract(homeBridgeAddress, bridgeAbi, providerHome);
     const foreignBridge = new ethers.Contract(foreignBridgeAddress, bridgeAbi, providerForeign);
 
+    this.skipCount = 0;
+
     homeBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
+      if (this.skipCount > 0) {
+        this.skipCount -= 1;
+        return;
+      }
       const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
       await foreignBridge.execute(target, data, gasLimit, messageId, sender);
       console.log("seen on home bridge");
     });
 
     foreignBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
+      if (this.skipCount > 0) {
+        this.skipCount -= 1;
+        return;
+      }
       const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
 
       const tx = await homeBridge.execute(target, data, gasLimit, messageId, sender, { gasLimit: gasLimit * 1.5 });
       try {
         const receipt = await tx.wait();
 
-        console.log(receipt);
+        // console.log(receipt);
         const relayedEvent = receipt.events.filter((e) => e.event === "RelayedMessage")[0];
         if (!relayedEvent.args.status) {
           console.log("WARNING: Bridged transaction failed");
