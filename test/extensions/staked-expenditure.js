@@ -437,7 +437,7 @@ contract("Staked Expenditure", (accounts) => {
 
       // Cannot release stage if not finalized
       await checkErrorRevert(
-        stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, { from: USER0 }),
+        stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 }),
         "staked-expenditure-not-finalized"
       );
 
@@ -448,11 +448,11 @@ contract("Staked Expenditure", (accounts) => {
 
       // Cannot release stage if not creator
       await checkErrorRevert(
-        stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, { from: USER1 }),
+        stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER1 }),
         "staked-expenditure-not-creator"
       );
 
-      await stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, { from: USER0 });
+      await stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 });
       await colony.claimExpenditurePayout(expenditureId, 0, token.address);
     });
 
@@ -463,7 +463,7 @@ contract("Staked Expenditure", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
 
       await checkErrorRevert(
-        stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, { from: USER0 }),
+        stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 }),
         "staked-expenditure-not-staged-payment"
       );
     });

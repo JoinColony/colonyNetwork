@@ -143,11 +143,13 @@ contract StakedExpenditure is ColonyExtensionMeta {
   /// @param _childSkillIndex The index that the `_expenditureId` is relative to `_permissionDomainId`,
   /// @param _expenditureId The id of the expenditure
   /// @param _slot The slot being released
+  /// @param _tokens An array of payment tokens associated with the slot
   function releaseStagedPayment(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _expenditureId,
-    uint256 _slot
+    uint256 _slot,
+    address[] memory _tokens
   )
     public
   {
@@ -161,6 +163,10 @@ contract StakedExpenditure is ColonyExtensionMeta {
     bool[] memory mask = new bool[](2); mask[0] = false; mask[1] = true;
     bytes32[] memory keys = new bytes32[](2); keys[0] = bytes32(0); keys[1] = bytes32(uint256(1));
     colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, 26, mask, keys, bytes32(0));
+
+    for (uint256 i; i < _tokens.length; i++) {
+      colony.claimExpenditurePayout(_expenditureId, _slot, _tokens[i]);
+    }
 
     emit StagedPaymentReleased(_expenditureId, _slot);
   }

@@ -143,7 +143,7 @@ Reclaims the stake if the expenditure is finalized or cancelled
 |_expenditureId|uint256|The id of the expenditure
 
 
-### ▸ `releaseStagedPayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _expenditureId, uint256 _slot)`
+### ▸ `releaseStagedPayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _expenditureId, uint256 _slot, address[] memory _tokens)`
 
 Release a staged payment slot
 
@@ -156,6 +156,7 @@ Release a staged payment slot
 |_childSkillIndex|uint256|The index that the `_expenditureId` is relative to `_permissionDomainId`,
 |_expenditureId|uint256|The id of the expenditure
 |_slot|uint256|The slot being released
+|_tokens|address[]|An array of payment tokens associated with the slot
 
 
 ### ▸ `setStakeFraction(uint256 _stakeFraction)`
