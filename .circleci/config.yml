@@ -300,7 +300,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install lsof
-            npm run stop:blockchain:client
+            npm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
           name: "Running coverage tests for foreign-side of bridge"
           command: npm run test:contracts:bridging:2:coverage
