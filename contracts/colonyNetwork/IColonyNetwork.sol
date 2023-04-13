@@ -537,9 +537,8 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   function getBridgeData(address _bridgeAddress) external view returns (Bridge memory bridge);
 
   /// @notice Called to get the next bridge in the list after bridge _bridgeAddress
-  /// @param bridgeAddress The address of the bridge
-  /// @return nextBridge The address of the next bridge
-  function getBridgeListEntry(address bridgeAddress) external view returns (address nextBridge);
+  /// @return bridge The address of the bridge to the mining chain, if set
+  function getMiningBridgeAddress() external view returns (address bridge);
 
   /// @notice Called to get the information about a skill that has been bridged out of order
   /// @param _chainId The chainId we're bridging from

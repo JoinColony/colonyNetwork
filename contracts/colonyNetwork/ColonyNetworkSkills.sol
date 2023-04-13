@@ -46,13 +46,13 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     // creation of this skill on the home chain
 
     bytes memory payload = abi.encodePacked(
-      bridgeData[bridgeAddressList[address(0x0)]].skillCreationBefore,
+      bridgeData[miningBridgeAddress].skillCreationBefore,
       abi.encodeWithSignature("addSkillFromBridge(uint256,uint256)", skills[_skillId].parents.length == 0 ? (getChainId() << 128) : skills[_skillId].parents[0], _skillId),
-      bridgeData[bridgeAddressList[address(0x0)]].skillCreationAfter
+      bridgeData[miningBridgeAddress].skillCreationAfter
     );
 
     // TODO: If there's no contract there, I think this currently succeeds (when we wouldn't want it to)
-    (bool success, bytes memory returnData) = bridgeAddressList[address(0x0)].call(payload);
+    (bool success, bytes memory returnData) = miningBridgeAddress.call(payload);
     require(success, "colony-network-unable-to-bridge-skill-creation");
   }
 
@@ -113,6 +113,8 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       }
     }
   }
+
+
 
   function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillId) public always onlyMiningChain() {
     // Require is a known bridge
@@ -210,7 +212,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     require(bridgeData[msgSender()].chainId != 0, "colony-network-not-known-bridge");
 
     require(networkSkillCounts[_skillId >> 128] >= _skillId, "colony-network-invalid-skill-id");
-    // TODO: Require chainid bridge is for matches skillid
+    require(bridgeData[msgSender()].chainId == _skillId >> 128, "colony-network-invalid-skill-id-for-bridge");
 
     uint128 nParents = skills[_skillId].nParents;
     // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
@@ -255,17 +257,16 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     } else {
       // Send transaction to bridge.
       // Call appendReputationUpdateLogFromBridge on metacolony on xdai
-      address bridgeAddress = bridgeAddressList[address(0x0)];
       // TODO: Maybe force to be set on deployment?
-      require(bridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
+      require(miningBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
       // require(bridgeData[bridgeAddress].chainId == MINING_CHAIN_ID, "colony-network-foreign-bridge-not-set-correctly");
       // Build the transaction we're going to send to the bridge
       bytes memory payload = abi.encodePacked(
-        bridgeData[bridgeAddress].updateLogBefore,
+        bridgeData[miningBridgeAddress].updateLogBefore,
         abi.encodeWithSignature("appendReputationUpdateLogFromBridge(address,address,int256,uint256)", msgSender(), _user, _amount, _skillId),
-        bridgeData[bridgeAddress].updateLogAfter
+        bridgeData[miningBridgeAddress].updateLogAfter
       );
-      (bool success, ) = bridgeAddress.call(payload);
+      (bool success, ) = miningBridgeAddress.call(payload);
       // TODO: Do we care about success here? (probably not)
     }
   }

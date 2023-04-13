@@ -3,7 +3,7 @@ const BN = require("bn.js");
 
 const { UINT256_MAX, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING, SLOT0, SLOT1, SLOT2, ADDRESS_ZERO } = require("./constants");
 
-const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } = require("./test-helper");
+const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData, isXdai } = require("./test-helper");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -242,10 +242,7 @@ exports.setupColonyNetwork = async function setupColonyNetwork() {
   // Initialise with originally deployed version
   await colonyNetwork.initialise(colonyVersionResolverAddress, version);
 
-  const multichain = await MultiChain.new();
-  const chainId = await multichain.getChainId();
-  console.log(chainId.toString());
-  if (chainId.toString() === "265669100") {
+  if (await isXdai()) {
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
     const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
     await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);

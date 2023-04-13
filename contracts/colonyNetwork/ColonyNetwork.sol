@@ -100,7 +100,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
   {
     require(msgSender() == metaColony, "colony-network-not-metacolony");
     if (!isMiningChain()) {
-      bridgeAddressList[address(0x00)] = bridgeAddress;
+      miningBridgeAddress = bridgeAddress;
     }
     bridgeData[bridgeAddress] = Bridge(updateLogBefore, updateLogAfter, gas, chainId, skillCreationBefore, skillCreationAfter, setReputationRootHashBefore, setReputationRootHashAfter);
     if (networkSkillCounts[chainId] == 0) {
@@ -113,8 +113,8 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     return bridgeData[bridgeAddress];
   }
 
-  function getBridgeListEntry(address bridgeAddress) public view returns (address) {
-    return bridgeAddressList[bridgeAddress];
+  function getMiningBridgeAddress() public view returns (address) {
+    return miningBridgeAddress;
   }
 
   function initialise(address _resolver, uint256 _version) public stoppable auth {

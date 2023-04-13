@@ -20,7 +20,7 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const setupBridging = require("../../scripts/setup-bridging-contracts");
 
 const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
-const { forwardTime } = require("../../helpers/test-helper");
+const { forwardTime, checkErrorRevertEthers } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
 
@@ -58,39 +58,28 @@ contract("Cross-chain", (accounts) => {
   const ethersForeignSigner = new ethers.providers.JsonRpcProvider(foreignRpcUrl).getSigner();
   const ethersHomeSigner = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner();
 
-  let getPromiseForNextNBridgedTransactions;
+  let getPromiseForNextBridgedTransaction;
 
   before(async () => {
     await exec(`PORT=${FOREIGN_PORT} bash ./scripts/setup-foreign-chain.sh`);
 
     ({ bridgeMonitor, gnosisSafe, zodiacBridge, homeBridge, foreignBridge } = await setupBridging(homeRpcUrl, foreignRpcUrl));
 
-    getPromiseForNextNBridgedTransactions = function (n) {
+    getPromiseForNextBridgedTransaction = function () {
       return new Promise((resolve, reject) => {
-        let count = 0;
-        homeBridge.on("RelayedMessage", async (_sender, msgSender, _messageId, success) => {
+        const listener = async function (_sender, msgSender, _messageId, success) {
           console.log("bridged with ", _sender, msgSender, _messageId, success);
-          count += 1;
           if (!success) {
             console.log("bridged transaction did not succeed");
             await reject(new Error("Bridged transaction did not succeed"));
           }
-          if (count >= n) {
-            resolve();
-          }
-        });
+          homeBridge.off("RelayedMessage", listener);
+          foreignBridge.off("RelayedMessage", listener);
+          resolve();
+        };
 
-        foreignBridge.on("RelayedMessage", async (_sender, msgSender, _messageId, success) => {
-          console.log("bridged with ", _sender, msgSender, _messageId, success);
-          count += 1;
-          if (!success) {
-            console.log("bridged transaction did not succeed");
-            await reject(new Error("Bridged transaction did not succeed"));
-          }
-          if (count >= n) {
-            resolve();
-          }
-        });
+        homeBridge.on("RelayedMessage", listener);
+        foreignBridge.on("RelayedMessage", listener);
       });
     };
 
@@ -182,10 +171,8 @@ contract("Cross-chain", (accounts) => {
     // Bridge over skills that have been created on the foreign chain
 
     const count = await foreignColonyNetwork.getSkillCount();
-    console.log("count", count.toHexString());
-    console.log("calc", ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1));
     for (let i = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1); i <= count; i = i.add(1)) {
-      const p = getPromiseForNextNBridgedTransactions(1);
+      const p = getPromiseForNextBridgedTransaction();
       tx = await foreignColonyNetwork.bridgeSkill(i);
       await tx.wait();
       await p;
@@ -234,9 +221,11 @@ contract("Cross-chain", (accounts) => {
     // Set up a colony on the home chain. That may or may not be the truffle chain...
     homeColony = await setupColony(homeColonyNetwork);
 
-    const p = getPromiseForNextNBridgedTransactions(2);
+    const p = getPromiseForNextBridgedTransaction();
     foreignColony = await setupColony(foreignColonyNetwork);
     await p;
+
+    bridgeMonitor.skipCount = 0;
   });
 
   after(async () => {
@@ -275,12 +264,7 @@ contract("Cross-chain", (accounts) => {
       // Which we trigger by sending a transaction to the module...
 
       // Set up promise that will see it bridged across
-      const p = new Promise((resolve) => {
-        foreignBridge.on("RelayedMessage", async (_sender, msgSender, _messageId, success) => {
-          console.log("bridged with ", _sender, msgSender, _messageId, success);
-          resolve();
-        });
-      });
+      const p = getPromiseForNextBridgedTransaction();
 
       // So 'just' call that on the colony...
 
@@ -306,7 +290,7 @@ contract("Cross-chain", (accounts) => {
       // See skills on home chain
       const beforeCount = await homeColonyNetwork.getBridgeSkillCounts("0x0fd5c9ed");
 
-      const p = getPromiseForNextNBridgedTransactions(1);
+      const p = getPromiseForNextBridgedTransaction();
 
       // Create a skill on foreign chain
       // await foreignColony.addDomain(1);
@@ -321,6 +305,115 @@ contract("Cross-chain", (accounts) => {
       // Check reflected on home chain
       const afterCount = await homeColonyNetwork.getBridgeSkillCounts("0x0fd5c9ed");
       expect(beforeCount.add(1).toHexString()).to.equal(afterCount.toHexString());
+    });
+
+    it("if a skill is bridged out-of-order, it's added to the pending mapping", async () => {
+      bridgeMonitor.skipCount = 1;
+      // Create a skill on the foreign chain
+      let tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, ethers.BigNumber.from(2).pow(256).sub(1), 1);
+      await tx.wait();
+      const foreignDomain = await foreignColony.getDomain(1);
+
+      let p = getPromiseForNextBridgedTransaction();
+
+      // Create another skill on the foreign chain
+      // Bridge the latter without bridging the former
+      tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, ethers.BigNumber.from(2).pow(256).sub(1), 1);
+      await tx.wait();
+      const foreignSkillCount = await foreignColonyNetwork.getSkillCount();
+
+      await p;
+
+      // Check it's pending
+      const pendingAddition = await homeColonyNetwork.getPendingSkillAddition(foreignChainId, foreignSkillCount);
+
+      expect(pendingAddition.toHexString()).to.equal(foreignDomain.skillId.toHexString());
+
+      // Need to clean up
+      p = getPromiseForNextBridgedTransaction();
+      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      await p;
+      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      await tx.wait();
+    });
+
+    it("if a skill is bridged out-of-order, it can be added once the earlier skills are bridged ", async () => {
+      bridgeMonitor.skipCount = 1;
+      // Create a skill on the foreign chain
+      let tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, ethers.BigNumber.from(2).pow(256).sub(1), 1);
+      await tx.wait();
+
+      let p = getPromiseForNextBridgedTransaction();
+      // Create another skill on the foreign chain
+      // Bridge the latter without bridging the former
+      tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, ethers.BigNumber.from(2).pow(256).sub(1), 1);
+      await tx.wait();
+      const foreignSkillCount = await foreignColonyNetwork.getSkillCount();
+      await p;
+
+      // Try to add
+      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-not-next-bridged-skill");
+
+      // Bridge the next skill
+      p = getPromiseForNextBridgedTransaction();
+      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      await p;
+
+      // Add the pending skill
+      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      await tx.wait();
+
+      // Check it was added
+      const homeSkillCount = await homeColonyNetwork.getBridgeSkillCounts(foreignChainId);
+      expect(homeSkillCount.toHexString()).to.equal(foreignSkillCount.toHexString());
+
+      // And removed from pending
+      const pendingAddition = await homeColonyNetwork.getPendingSkillAddition(foreignChainId, foreignSkillCount);
+      expect(pendingAddition.toHexString()).to.equal("0x00");
+    });
+
+    it("if a skill that was pending is repeatedly bridged, the resuling transaction fails after the first time", async () => {
+      bridgeMonitor.skipCount = 1;
+      // Create a skill on the foreign chain
+      let tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, ethers.BigNumber.from(2).pow(256).sub(1), 1);
+      await tx.wait();
+
+      let p = getPromiseForNextBridgedTransaction();
+      // Create another skill on the foreign chain
+      // Bridge the latter without bridging the former
+      tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, ethers.BigNumber.from(2).pow(256).sub(1), 1);
+      await tx.wait();
+      const foreignSkillCount = await foreignColonyNetwork.getSkillCount();
+      await p;
+
+      // Try to add
+      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-not-next-bridged-skill");
+
+      // Bridge the next skill
+      p = getPromiseForNextBridgedTransaction();
+      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      await p;
+
+      // Add the pending skill
+      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      await tx.wait();
+
+      // Adding again doesn't work
+      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-not-next-bridged-skill");
+
+      // And bridging again doesn't work
+      p = getPromiseForNextBridgedTransaction();
+      await foreignColonyNetwork.bridgeSkill(foreignSkillCount);
+      await p;
+
+      const pendingAddition = await homeColonyNetwork.getPendingSkillAddition(foreignChainId, foreignSkillCount);
+      expect(pendingAddition.toHexString()).to.equal("0x00");
+
+      const homeSkillCount = await homeColonyNetwork.getBridgeSkillCounts(foreignChainId);
+      expect(homeSkillCount.toHexString()).to.equal(foreignSkillCount.toHexString());
     });
   });
 
@@ -346,7 +439,7 @@ contract("Cross-chain", (accounts) => {
 
       // process.exit(1)
 
-      let p = getPromiseForNextNBridgedTransactions(1);
+      let p = getPromiseForNextBridgedTransaction();
       // Emit reputation
       await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1337");
       // See that it's bridged to the inactive log
@@ -361,13 +454,8 @@ contract("Cross-chain", (accounts) => {
       expect(entry.amount.toHexString()).to.equal("0x1337");
       expect(entry.user).to.equal(accounts[0]);
       expect(entry.colony).to.equal(foreignColony.address);
-      console.log(foreignChainId);
 
       const domain = await foreignColony.getDomain(1);
-      console.log(domain);
-
-      console.log(domain.skillId);
-      console.log(entry.skillId);
 
       expect(entry.skillId.toHexString()).to.equal(domain.skillId.toHexString());
 
@@ -389,7 +477,7 @@ contract("Cross-chain", (accounts) => {
 
       // Bridge it
 
-      p = getPromiseForNextNBridgedTransactions(1);
+      p = getPromiseForNextBridgedTransaction();
       const tx = await homeColonyNetwork.bridgeCurrentRootHash(homeBridge.address);
       await tx.wait();
       await p;
