@@ -45,9 +45,11 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     // Build the transaction we're going to send to the bridge to register the
     // creation of this skill on the home chain
 
+    uint256 parentSkillId = skills[_skillId].parents.length == 0 ? (getChainId() << 128) : skills[_skillId].parents[0];
+
     bytes memory payload = abi.encodePacked(
       bridgeData[miningBridgeAddress].skillCreationBefore,
-      abi.encodeWithSignature("addSkillFromBridge(uint256,uint256)", skills[_skillId].parents.length == 0 ? (getChainId() << 128) : skills[_skillId].parents[0], _skillId),
+      abi.encodeWithSignature("addSkillFromBridge(uint256,uint256)", parentSkillId, _skillId),
       bridgeData[miningBridgeAddress].skillCreationAfter
     );
 
@@ -114,8 +116,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     }
   }
 
-
-
   function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillId) public always onlyMiningChain() {
     // Require is a known bridge
     Bridge storage bridge = bridgeData[msgSender()];
@@ -159,7 +159,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     networkSkillCounts[bridge.chainId] += 1;
 
     // Delete the pending addition
-    pendingSkillAdditions[bridge.chainId][_skillId] = 0;
+    delete pendingSkillAdditions[bridge.chainId][_skillId];
     emit SkillAdded(_skillId, parentSkillId);
   }
 

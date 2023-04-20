@@ -49,6 +49,12 @@ contract MultiChain {
     return isXdai();
   }
 
+  function isMiningChainId(uint256 chainId) internal view returns (bool) {
+    return (chainId == 100 || chainId == 265669100);
+  }
+
+  uint256 constant MINING_CHAIN_ID = 100;
+
   modifier onlyMiningChain() {
     require(isMiningChain(), "colony-reputation-mining-only-valid-on-mining-chain");
     _;

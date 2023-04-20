@@ -312,8 +312,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     return miningStakes[_user];
   }
 
-  function addBridgeForNetwork(address _bridgeAddress, uint256 _networkId) public always auth {
-    authorizedBridges[_bridgeAddress] = _networkId;
+  function addBridgeForNetwork(address _bridgeAddress, uint256 _chainId) public always auth {
+    authorizedBridges[_bridgeAddress] = _chainId;
   }
 
   function getAuthorizedBridge(address _bridgeAddress) public view returns (uint256 networkId) {
