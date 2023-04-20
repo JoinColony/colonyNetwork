@@ -94,6 +94,7 @@ contract("Cross-chain", (accounts) => {
       });
     };
 
+<<<<<<< HEAD
     // If Truffle is not on the home chain, then deploy colonyNetwork to the home chain
     if (process.env.TRUFFLE_FOREIGN === "true") {
       try {
@@ -107,6 +108,60 @@ contract("Cross-chain", (accounts) => {
         console.log(err);
         process.exit(1);
       }
+||||||| parent of c9855fb3 (Low hanging fruit from first (p)review)
+    // Deploy colonyNetwork to whichever chain truffle hasn't already deployed to.
+    try {
+      await exec(`SOLIDITY_COVERAGE="" npx truffle compile --all`);
+      await exec(`SOLIDITY_COVERAGE="" npm run provision:token:contracts`);
+      await exec(`SOLIDITY_COVERAGE="" npm run provision:safe:contracts`);
+      await exec(`npx truffle migrate --network development2`);
+    } catch (err) {
+      console.log(err);
+
+      process.exit();
+    }
+
+    // Add bridge to the foreign colony network
+    const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
+    // const homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
+
+    const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
+    foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
+
+    let etherRouterInfo;
+    // 0x539 is the chain id used by truffle by default (regardless of networkid), and if
+    // we see it in our tests that's the coverage chain, which builds the contract artifacts
+    // in to a different location. If we see another chain id, we assume it's non-coverage
+    // truffle and look for the build artifacts in the normal place.
+    if (process.env.SOLIDITY_COVERAGE && process.env.TRUFFLE_FOREIGN === "false") {
+      etherRouterInfo = JSON.parse(fs.readFileSync("./build-coverage/contracts/EtherRouter.json"));
+=======
+    // Deploy colonyNetwork to whichever chain truffle hasn't already deployed to.
+    try {
+      await exec(`SOLIDITY_COVERAGE="" npx truffle compile --all`);
+      await exec(`SOLIDITY_COVERAGE="" npm run provision:token:contracts`);
+      await exec(`SOLIDITY_COVERAGE="" npm run provision:safe:contracts`);
+      await exec(`npx truffle migrate --network development2`);
+    } catch (err) {
+      console.log(err);
+
+      process.exit();
+    }
+    // Add bridge to the foreign colony network
+    const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
+    // const homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
+
+    const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
+    foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
+
+    let etherRouterInfo;
+    // 0x539 is the chain id used by truffle by default (regardless of networkid), and if
+    // we see it in our tests that's the coverage chain, which builds the contract artifacts
+    // in to a different location. If we see another chain id, we assume it's non-coverage
+    // truffle and look for the build artifacts in the normal place.
+    if (process.env.SOLIDITY_COVERAGE && process.env.TRUFFLE_FOREIGN === "false") {
+      etherRouterInfo = JSON.parse(fs.readFileSync("./build-coverage/contracts/EtherRouter.json"));
+>>>>>>> c9855fb3 (Low hanging fruit from first (p)review)
     } else {
       etherRouterAddress = (await EtherRouter.deployed()).address;
     }
@@ -160,8 +215,9 @@ contract("Cross-chain", (accounts) => {
 
     // Bridge over skills that have been created on the foreign chain
 
-    const count = await foreignColonyNetwork.getSkillCount();
-    for (let i = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1); i <= count; i = i.add(1)) {
+    const latestSkillId = await foreignColonyNetwork.getSkillCount();
+    const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
+    for (let i = skillId; i <= latestSkillId; i = i.add(1)) {
       const p = getPromiseForNextBridgedTransaction();
       tx = await foreignColonyNetwork.bridgeSkill(i);
       await tx.wait();
@@ -175,8 +231,8 @@ contract("Cross-chain", (accounts) => {
       realProviderPort: HOME_PORT,
       useJsTree: true,
     });
+
     await client.initialise(homeColonyNetwork.address);
-    console.log(ethersHomeSigner.provider.connection.url);
     web3HomeProvider = new web3.eth.providers.HttpProvider(ethersHomeSigner.provider.connection.url);
 
     await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
@@ -194,7 +250,6 @@ contract("Cross-chain", (accounts) => {
     let tx = await colonyNetworkEthers.deployTokenViaNetwork("Test", "TST", 18);
     let res = await tx.wait();
 
-    console.log(res);
     const { tokenAddress } = res.events.filter((x) => x.event === "TokenDeployed")[0].args;
     // token = await new ethers.Contract(tokenAddress, Token.abi, ethersHomeSigner);
 
