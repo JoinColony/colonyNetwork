@@ -274,7 +274,6 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   public view
   returns (bool)
   {
-    uint256 chainId;
     uint256 colonyAddress;
     uint256 skillid;
     uint256 userAddress;
