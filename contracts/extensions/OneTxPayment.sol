@@ -131,13 +131,12 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       "one-tx-payment-not-authorized"
     );
 
-
     if (_workers.length == 1) {
-
-      uint256 paymentId = colony.addPayment(1, _childSkillIndex, _workers[0], _tokens[0], _amounts[0], _domainId, _skillId);
+      uint256 paymentId = colony.addPayment(1, _childSkillIndex, _workers[0], _tokens[0], 0, _domainId, _skillId);
       uint256 fundingPotId = colony.getPayment(paymentId).fundingPotId;
 
       colony.moveFundsBetweenPots(1, UINT256_MAX, _childSkillIndex, 1, fundingPotId, _amounts[0], _tokens[0]);
+      colony.setPaymentPayout(1, _childSkillIndex, paymentId, _tokens[0], _amounts[0]);
 
       colony.finalizePayment(1, _childSkillIndex, paymentId);
       colony.claimPayment(paymentId, _tokens[0]);

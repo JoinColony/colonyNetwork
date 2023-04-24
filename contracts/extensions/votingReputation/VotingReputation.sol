@@ -243,8 +243,6 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     Motion storage motion = motions[motionCount];
 
     motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
-    motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-    motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
     motion.rootHash = colonyNetwork.getReputationRootHash();
     motion.domainId = _domainId;
@@ -326,8 +324,6 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
       (_vote == YAY && motion.stakes[YAY] == requiredStake)
     ) {
       motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
-      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
       // New stake supersedes prior votes
       delete motion.votes;
@@ -441,11 +437,14 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     delete motion.paidVoterComp;
 
     uint256 requiredStake = getRequiredStake(_motionId);
-    motion.events[STAKE_END] = (motion.stakes[NAY] < requiredStake || motion.stakes[YAY] < requiredStake) ?
-      uint64(block.timestamp + stakePeriod) : uint64(block.timestamp);
 
-    motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-    motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
+    if (motion.stakes[NAY] < requiredStake || motion.stakes[YAY] < requiredStake) {
+      motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
+    } else {
+      motion.events[STAKE_END] = uint64(block.timestamp);
+      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
+    }
 
     motion.escalated = true;
 
