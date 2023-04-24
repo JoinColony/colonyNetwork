@@ -34,7 +34,7 @@ contract Korporatio is ColonyExtensionMeta {
   event ApplicationCreated(uint256 indexed stakeId, address indexed applicant);
   event ApplicationCancelled(uint256 indexed stakeId);
   event StakeReclaimed(uint256 indexed stakeId);
-  event StakeSlashed(uint256 indexed stakeId);
+  event ApplicationDeleted(uint256 indexed stakeId, bool punish);
   event ApplicationUpdated(uint256 indexed stakeId, bytes32 ipfsHash);
   event ApplicationSubmitted(uint256 indexed stakeId);
 
@@ -51,6 +51,7 @@ contract Korporatio is ColonyExtensionMeta {
   address colonyNetworkAddress;
 
   uint256 stakeFraction;
+  uint256 repFraction;
   uint256 claimDelay;
 
   uint256 numApplications;
@@ -99,13 +100,14 @@ contract Korporatio is ColonyExtensionMeta {
 
   // Public
 
-  function initialise(uint256 _stakeFraction, uint256 _claimDelay) public {
+  function initialise(uint256 _stakeFraction, uint256 _repFraction, uint256 _claimDelay) public {
     require(
       colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Architecture),
       "korporatio-not-root-architect"
     );
 
     stakeFraction = _stakeFraction;
+    repFraction = _repFraction;
     claimDelay = _claimDelay;
   }
 
@@ -130,7 +132,7 @@ contract Korporatio is ColonyExtensionMeta {
     uint256 colonyReputation = checkReputation(rootHash, rootSkillId, address(0x0), _colonyKey, _colonyValue, _colonyBranchMask, _colonySiblings);
     uint256 userReputation = checkReputation(rootHash, rootSkillId, msgSender(), _userKey, _userValue, _userBranchMask, _userSiblings);
 
-    uint256 requiredStake = wmul(colonyReputation, stakeFraction);
+    uint256 requiredStake = wmul(colonyReputation, repFraction);
     require(userReputation >= requiredStake, "korporatio-insufficient-rep");
 
     applications[++numApplications] = Application({
@@ -144,7 +146,7 @@ contract Korporatio is ColonyExtensionMeta {
     emit ApplicationCreated(numApplications, msgSender());
   }
 
-  function createFreeApplication() public notDeprecated {
+  function createApplication() public notDeprecated {
     require (
       colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root) ||
       colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Administration),
@@ -160,13 +162,14 @@ contract Korporatio is ColonyExtensionMeta {
     emit ApplicationCreated(numApplications, msgSender());
   }
 
-  function cancelApplication(uint256 _applicationId) public onlyApplicant(_applicationId) {
+  function cancelApplication(uint256 _applicationId) public {
+    require(msgSender() == applications[_applicationId].applicant, "korporatio-not-applicant");
     applications[_applicationId].cancelledAt = block.timestamp;
 
     emit ApplicationCancelled(_applicationId);
   }
 
-  function reclaimStake(uint256 _applicationId) public onlyApplicant(_applicationId) {
+  function reclaimStake(uint256 _applicationId) public {
     Application storage application = applications[_applicationId];
     require(application.applicant == msgSender(), "korporatio-not-applicant");
     require(application.cancelledAt + claimDelay <= block.timestamp, "korporatio-cannot-reclaim");
@@ -179,7 +182,7 @@ contract Korporatio is ColonyExtensionMeta {
     emit StakeReclaimed(_applicationId);
   }
 
-  function slashStake(uint256 _applicationId, bool _punish) public {
+  function deleteApplication(uint256 _applicationId, bool _punish) public {
     require(applications[_applicationId].stakeAmount > 0, "korporatio-cannot-slash");
 
     require(
@@ -191,14 +194,23 @@ contract Korporatio is ColonyExtensionMeta {
     uint256 stakeAmount = applications[_applicationId].stakeAmount;
     delete applications[_applicationId];
 
-    colony.transferStake(1, UINT256_MAX, address(this), applicant, 1, stakeAmount, address(0x0));
-    if (_punish) { colony.emitDomainReputationPenalty(1, UINT256_MAX, 1, applicant, -int256(stakeAmount)); }
+    if (_punish) {
+      colony.emitDomainReputationPenalty(1, UINT256_MAX, 1, applicant, -int256(stakeAmount));
+      colony.transferStake(1, UINT256_MAX, address(this), applicant, 1, stakeAmount, address(0x0));
+    } else {
+      colony.deobligateStake(applicant, 1, stakeAmount);
+    }
 
-    emit StakeSlashed(_applicationId);
+    emit ApplicationDeleted(_applicationId, _punish);
   }
 
-  function updateApplication(uint256 _applicationId, bytes32 _ipfsHash) public onlyApplicant(_applicationId) {
+  function updateApplication(uint256 _applicationId, bytes32 _ipfsHash) public {
     require(applications[_applicationId].cancelledAt == UINT256_MAX, "korporatio-stake-cancelled");
+    require(
+      msgSender() == applications[_applicationId].applicant ||
+      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      "korporatio-not-applicant-or-root"
+    );
 
     emit ApplicationUpdated(_applicationId, _ipfsHash);
   }

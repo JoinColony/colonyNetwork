@@ -45,6 +45,8 @@ contract("Korporatio", (accounts) => {
   let tokenLocking;
 
   let korporatio;
+  let createApplication;
+  let createFreeApplication;
   let version;
 
   let reputationTree;
@@ -62,6 +64,7 @@ contract("Korporatio", (accounts) => {
   const USER0 = accounts[0];
   const USER1 = accounts[1];
   const USER2 = accounts[2];
+  const USER3 = accounts[3];
   const MINER = accounts[5];
 
   before(async () => {
@@ -82,10 +85,13 @@ contract("Korporatio", (accounts) => {
     await colony.installExtension(KORPORATIO, version);
     const korporatioAddress = await colonyNetwork.getExtensionInstallation(KORPORATIO, colony.address);
     korporatio = await Korporatio.at(korporatioAddress);
+    createApplication = korporatio.methods["createApplication(bytes,bytes,uint256,bytes32[],bytes,bytes,uint256,bytes32[])"];
+    createFreeApplication = korporatio.methods["createApplication()"];
 
     await colony.setArchitectureRole(1, UINT256_MAX, USER0, 1, true);
     await colony.setArbitrationRole(1, UINT256_MAX, USER1, 1, true);
     await colony.setAdministrationRole(1, UINT256_MAX, USER1, 1, true);
+    await colony.setRootRole(USER2, true);
     await colony.setArbitrationRole(1, UINT256_MAX, korporatio.address, 1, true);
 
     await token.mint(USER0, WAD);
@@ -173,9 +179,7 @@ contract("Korporatio", (accounts) => {
 
     it("cannot create applications unless initialised", async () => {
       await checkErrorRevert(
-        korporatio.createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
-          from: USER0,
-        }),
+        createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "korporatio-not-initialised"
       );
     });
@@ -185,7 +189,7 @@ contract("Korporatio", (accounts) => {
     beforeEach(async () => {
       await colony.approveStake(korporatio.address, 1, WAD, { from: USER0 });
 
-      await korporatio.initialise(WAD.divn(100), SECONDS_PER_DAY, { from: USER0 });
+      await korporatio.initialise(WAD.divn(100), WAD.divn(100), SECONDS_PER_DAY, { from: USER0 });
     });
 
     it("can query for configuration params", async () => {
@@ -197,11 +201,11 @@ contract("Korporatio", (accounts) => {
     });
 
     it("cannot set configuration params if not root architect", async () => {
-      await checkErrorRevert(korporatio.initialise(WAD.divn(100), SECONDS_PER_DAY, { from: USER1 }), "korporatio-not-root-architect");
+      await checkErrorRevert(korporatio.initialise(WAD.divn(100), WAD.divn(100), SECONDS_PER_DAY, { from: USER1 }), "korporatio-not-root-architect");
     });
 
     it("can create an application", async () => {
-      await korporatio.createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
+      await createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
         from: USER0,
       });
 
@@ -216,7 +220,7 @@ contract("Korporatio", (accounts) => {
     });
 
     it("can create a free application if root or admin", async () => {
-      await korporatio.createFreeApplication({ from: USER1 });
+      await createFreeApplication({ from: USER1 });
 
       const applicationId = await korporatio.getNumApplications();
       const application = await korporatio.getApplication(applicationId);
@@ -225,14 +229,14 @@ contract("Korporatio", (accounts) => {
       expect(application.cancelledAt).to.eq.BN(UINT256_MAX);
 
       // Must have root or admin role
-      await checkErrorRevert(korporatio.createFreeApplication({ from: USER2 }), "korporatio-must-submit-stake");
+      await checkErrorRevert(createFreeApplication({ from: USER3 }), "korporatio-must-submit-stake");
     });
 
     it("cannot create an application with insufficient rep", async () => {
-      await korporatio.initialise(WAD, SECONDS_PER_DAY, { from: USER0 });
+      await korporatio.initialise(new BN(1), WAD, SECONDS_PER_DAY, { from: USER0 });
 
       await checkErrorRevert(
-        korporatio.createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
+        createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
           from: USER0,
         }),
         "korporatio-insufficient-rep"
@@ -243,17 +247,17 @@ contract("Korporatio", (accounts) => {
       await colony.deprecateExtension(KORPORATIO, true);
 
       await checkErrorRevert(
-        korporatio.createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
+        createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
           from: USER0,
         }),
         "colony-extension-deprecated"
       );
 
-      await checkErrorRevert(korporatio.createFreeApplication({ from: USER1 }), "colony-extension-deprecated");
+      await checkErrorRevert(createFreeApplication({ from: USER1 }), "colony-extension-deprecated");
     });
 
     it("can cancel an application", async () => {
-      await korporatio.createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
+      await createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
         from: USER0,
       });
 
@@ -270,7 +274,7 @@ contract("Korporatio", (accounts) => {
     });
 
     it("can reclaim a stake", async () => {
-      await korporatio.createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
+      await createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
         from: USER0,
       });
 
@@ -288,28 +292,34 @@ contract("Korporatio", (accounts) => {
       expect(obligation).to.be.zero;
     });
 
-    it("can slash a stake", async () => {
-      await korporatio.createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
+    it("can delete an application without punishing", async () => {
+      await createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
         from: USER0,
       });
 
       const applicationId = await korporatio.getNumApplications();
-      await korporatio.slashStake(applicationId, false, { from: USER1 });
+      await korporatio.deleteApplication(applicationId, false, { from: USER1 });
 
       const obligation = await colony.getObligation(USER0, korporatio.address, 1);
       expect(obligation).to.be.zero;
+
+      const lock = await tokenLocking.getUserLock(token.address, USER0);
+      expect(lock.balance).to.eq.BN(WAD);
     });
 
-    it("can slash a stake and punish", async () => {
-      await korporatio.createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
+    it("can delete an application and punish", async () => {
+      await createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
         from: USER0,
       });
 
       const applicationId = await korporatio.getNumApplications();
-      await korporatio.slashStake(applicationId, true, { from: USER1 });
+      await korporatio.deleteApplication(applicationId, true, { from: USER1 });
 
       const obligation = await colony.getObligation(USER0, korporatio.address, 1);
       expect(obligation).to.be.zero;
+
+      const lock = await tokenLocking.getUserLock(token.address, USER0);
+      expect(lock.balance).to.eq.BN(WAD.sub(WAD.divn(100).muln(3)));
 
       // Staker gets a reputation penalty
       const addr = await colonyNetwork.getReputationMiningCycle(false);
@@ -323,21 +333,21 @@ contract("Korporatio", (accounts) => {
     });
 
     it("cannot slash a nonexistent stake", async () => {
-      await checkErrorRevert(korporatio.slashStake(10, false, { from: USER1 }), "korporatio-cannot-slash");
+      await checkErrorRevert(korporatio.deleteApplication(10, false, { from: USER1 }), "korporatio-cannot-slash");
     });
 
     it("cannot slash if not an arbitration user", async () => {
-      await korporatio.createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
+      await createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
         from: USER0,
       });
 
       const applicationId = await korporatio.getNumApplications();
-      await checkErrorRevert(korporatio.slashStake(applicationId, false, { from: USER2 }), "korporatio-caller-not-arbitration");
+      await checkErrorRevert(korporatio.deleteApplication(applicationId, false, { from: USER2 }), "korporatio-caller-not-arbitration");
     });
 
     it("can reclaim a stake via arbitration if the extension is deleted", async () => {
       const korporatioAddress = korporatio.address;
-      await korporatio.createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
+      await createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings, {
         from: USER0,
       });
 
@@ -357,8 +367,8 @@ contract("Korporatio", (accounts) => {
       expect(new BN(lockPre.balance)).to.eq.BN(lockPost.balance);
     });
 
-    it("can update an application", async () => {
-      await korporatio.createFreeApplication({ from: USER0 });
+    it("can update an application as the applicant", async () => {
+      await createFreeApplication({ from: USER0 });
 
       const applicationId = await korporatio.getNumApplications();
       const ipfsHash = soliditySha3("IPFS Hash");
@@ -366,16 +376,26 @@ contract("Korporatio", (accounts) => {
       const tx = await korporatio.updateApplication(applicationId, ipfsHash, { from: USER0 });
       await expectEvent(tx, "ApplicationUpdated", [applicationId, ipfsHash]);
 
-      // Cannot update if not applicant
-      await checkErrorRevert(korporatio.updateApplication(applicationId, ipfsHash, { from: USER1 }), "korporatio-not-applicant");
+      // Cannot update if not applicant or root
+      await checkErrorRevert(korporatio.updateApplication(applicationId, ipfsHash, { from: USER1 }), "korporatio-not-applicant-or-root");
 
       // Cannot update once cancelled
       await korporatio.cancelApplication(applicationId, { from: USER0 });
       await checkErrorRevert(korporatio.updateApplication(applicationId, ipfsHash, { from: USER0 }), "korporatio-stake-cancelled");
     });
 
+    it("can update an application as a root user", async () => {
+      await createFreeApplication({ from: USER0 });
+
+      const applicationId = await korporatio.getNumApplications();
+      const ipfsHash = soliditySha3("IPFS Hash");
+
+      const tx = await korporatio.updateApplication(applicationId, ipfsHash, { from: USER2 });
+      await expectEvent(tx, "ApplicationUpdated", [applicationId, ipfsHash]);
+    });
+
     it("can submit an application", async () => {
-      await korporatio.createFreeApplication({ from: USER0 });
+      await createFreeApplication({ from: USER0 });
 
       const applicationId = await korporatio.getNumApplications();
 
@@ -398,7 +418,7 @@ contract("Korporatio", (accounts) => {
 
       await voting.initialise(WAD.divn(1000), 0, 0, WAD, SECONDS_PER_DAY, SECONDS_PER_DAY, SECONDS_PER_DAY, SECONDS_PER_DAY);
 
-      await korporatio.createFreeApplication({ from: USER0 });
+      await createFreeApplication({ from: USER0 });
       const applicationId = await korporatio.getNumApplications();
 
       const action = await encodeTxData(korporatio, "submitApplication", [applicationId]);
@@ -429,9 +449,7 @@ contract("Korporatio", (accounts) => {
     it("can submit a stake via metatransactions", async () => {
       await colony.approveStake(korporatio.address, 1, WAD, { from: USER0 });
 
-      const txData = await korporatio.contract.methods
-        .createApplication(domain1Key, domain1Value, domain1Mask, domain1Siblings, user0Key, user0Value, user0Mask, user0Siblings)
-        .encodeABI();
+      const txData = await korporatio.contract.methods["createApplication()"]().encodeABI();
       const { r, s, v } = await getMetaTransactionParameters(txData, USER0, korporatio.address);
       await korporatio.executeMetaTransaction(USER0, txData, r, s, v, { from: USER0 });
 
