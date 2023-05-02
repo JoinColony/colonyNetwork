@@ -40,7 +40,11 @@ contract("Cross-chain", (accounts) => {
   let bridgeMonitor;
   let foreignChainId;
 
+  let homeMetacolony;
+  let foreignMetacolony;
+
   let web3HomeProvider;
+  let web3ForeignProvider;
 
   let client;
 
@@ -126,16 +130,16 @@ contract("Cross-chain", (accounts) => {
     console.log("home colony network", homeColonyNetwork.address);
 
     const foreignMCAddress = await foreignColonyNetwork.getMetaColony();
-    const foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
+    foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
     const homeMCAddress = await homeColonyNetwork.getMetaColony();
-    const homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
+    homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
 
     let tx = await foreignMetacolony.setBridgeData(
       foreignBridge.address, // bridge address
       `0xdc8601b3000000000000000000000000${homeColonyNetwork.address.slice(
         2
         // eslint-disable-next-line max-len
-      )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000084`, // log before
+      )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000000a4`, // log before
       "0x00000000000000000000000000000000000000000000000000000000", // log after
       1000000, // gas
       100, // chainid
@@ -173,11 +177,12 @@ contract("Cross-chain", (accounts) => {
     const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
     for (let i = skillId; i <= latestSkillId; i = i.add(1)) {
       const p = getPromiseForNextBridgedTransaction();
-      tx = await foreignColonyNetwork.bridgeSkill(i);
+      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(i);
       await tx.wait();
       await p;
     }
 
+    console.log("adsf1");
     // Set up mining client
     client = new ReputationMinerTestWrapper({
       loader: contractLoader,
@@ -186,9 +191,12 @@ contract("Cross-chain", (accounts) => {
       useJsTree: true,
     });
 
+    console.log("adsf2");
     await client.initialise(homeColonyNetwork.address);
     web3HomeProvider = new web3.eth.providers.HttpProvider(ethersHomeSigner.provider.connection.url);
+    web3ForeignProvider = new web3.eth.providers.HttpProvider(ethersForeignSigner.provider.connection.url);
 
+    console.log("adsf3");
     await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
@@ -198,6 +206,19 @@ contract("Cross-chain", (accounts) => {
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
     await client.confirmNewHash();
+
+    console.log("asdf4");
+    // Bridge over pending reputation updates that have been emitted on the foreign chain
+    // const reputationLogCounter = await foreignColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColonyNetwork.address);
+
+    // console.log('asdf5')
+    // for (let i = 1; i <= reputationLogCounter; i+=1) {
+    //   const p = getPromiseForNextBridgedTransaction();
+    //   tx = await foreignColonyNetwork.bridgePendingReputationUpdate(i);
+    //   res = await tx.wait();
+    //   console.log(res);
+    //   await p;
+    // }
   });
 
   async function setupColony(colonyNetworkEthers) {
@@ -217,14 +238,30 @@ contract("Cross-chain", (accounts) => {
   }
 
   beforeEach(async () => {
+    const tx = await foreignBridge.setBridgeEnabled(true);
+    await tx.wait();
     // Set up a colony on the home chain. That may or may not be the truffle chain...
     homeColony = await setupColony(homeColonyNetwork);
 
     const p = getPromiseForNextBridgedTransaction();
     foreignColony = await setupColony(foreignColonyNetwork);
     await p;
+  });
 
-    bridgeMonitor.skipCount = 0;
+  afterEach(async () => {
+    let tx = await foreignBridge.setBridgeEnabled(true);
+    await tx.wait();
+    bridgeMonitor.reset();
+    // Bridge over skills that have been made that haven't been bridged yet for whatever reason in a test
+    const latestSkillId = await foreignColonyNetwork.getSkillCount();
+    const latestBridgedSkillId = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
+    // const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
+    for (let i = latestBridgedSkillId; i <= latestSkillId; i = i.add(1)) {
+      const p = getPromiseForNextBridgedTransaction();
+      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(i);
+      await tx.wait();
+      await p;
+    }
   });
 
   after(async () => {
@@ -287,7 +324,7 @@ contract("Cross-chain", (accounts) => {
       // console.log(txDataToBeSentToAMB);
 
       // See skills on home chain
-      const beforeCount = await homeColonyNetwork.getBridgeSkillCounts("0x0fd5c9ed");
+      const beforeCount = await homeColonyNetwork.getBridgedSkillCounts("0x0fd5c9ed");
 
       const p = getPromiseForNextBridgedTransaction();
 
@@ -302,7 +339,7 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       // Check reflected on home chain
-      const afterCount = await homeColonyNetwork.getBridgeSkillCounts("0x0fd5c9ed");
+      const afterCount = await homeColonyNetwork.getBridgedSkillCounts("0x0fd5c9ed");
       expect(beforeCount.add(1).toHexString()).to.equal(afterCount.toHexString());
     });
 
@@ -330,9 +367,9 @@ contract("Cross-chain", (accounts) => {
 
       // Need to clean up
       p = getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount.sub(1));
       await p;
-      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await tx.wait();
     });
 
@@ -351,20 +388,20 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       // Try to add
-      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-not-next-bridged-skill");
 
       // Bridge the next skill
       p = getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount.sub(1));
       await p;
 
       // Add the pending skill
-      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await tx.wait();
 
       // Check it was added
-      const homeSkillCount = await homeColonyNetwork.getBridgeSkillCounts(foreignChainId);
+      const homeSkillCount = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
       expect(homeSkillCount.toHexString()).to.equal(foreignSkillCount.toHexString());
 
       // And removed from pending
@@ -387,33 +424,51 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       // Try to add
-      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-not-next-bridged-skill");
 
       // Bridge the next skill
       p = getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount.sub(1));
       await p;
 
       // Add the pending skill
-      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await tx.wait();
 
       // Adding again doesn't work
-      tx = await homeColonyNetwork.addPendingSkillFromBridge(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-not-next-bridged-skill");
 
       // And bridging again doesn't work
       p = getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkill(foreignSkillCount);
+      await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount);
       await p;
 
       const pendingAddition = await homeColonyNetwork.getPendingSkillAddition(foreignChainId, foreignSkillCount);
       expect(pendingAddition.toHexString()).to.equal("0x00");
 
-      const homeSkillCount = await homeColonyNetwork.getBridgeSkillCounts(foreignChainId);
+      const homeSkillCount = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
       expect(homeSkillCount.toHexString()).to.equal(foreignSkillCount.toHexString());
     });
+
+    // it.only("if bridge isn't a contract, skill creation fails", async () => {
+    //   const bridgeData = await foreignColonyNetwork.getBridgeData(foreignBridge.address);
+    //   await foreignMetacolony.setBridgeData(
+    //     ADDRESS_ZERO,
+    //     bridgeData.updateLogBefore,
+    //     bridgeData.updateLogAfter,
+    //     bridgeData.gas,
+    //     bridgeData.chainId,
+    //     bridgeData.skillCreationBefore,
+    //     bridgeData.skillCreationAfter,
+    //     bridgeData.setReputationRootHashBefore,
+    //     bridgeData.setReputationRootHashAfter
+    //   );
+
+    //   tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, ethers.BigNumber.from(2).pow(256).sub(1), 1);
+    //   await tx.wait();
+    // });
   });
 
   describe("while earning reputation on another chain", async () => {
@@ -423,10 +478,12 @@ contract("Cross-chain", (accounts) => {
       //   "0x1471c2dc50d9155d80E4C88187806Df6B1a2e649",
       //   0x666666,
       //   0x88888888,
+      //   0x99999999,
       // ]);
       // console.log(t);
       // const txDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [homeColonyNetwork.address, t, 1000000]);
       // console.log(txDataToBeSentToAMB);
+      // process.exit(1)
 
       // const t = homeColonyNetwork.interface.encodeFunctionData("bridgeSetReputationRootHash", [
       //   "0xb8b89e7cf61d1d39d09e98c0ccbb489561e5e1173445a6b34e469f362ebdb221",
@@ -437,18 +494,21 @@ contract("Cross-chain", (accounts) => {
       // console.log(txDataToBeSentToAMB);
 
       // process.exit(1)
-
+      console.log("****asdf");
       let p = getPromiseForNextBridgedTransaction();
       // Emit reputation
       await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1337");
       // See that it's bridged to the inactive log
+      console.log("asdf");
       await p;
+      console.log("asdf");
       const logAddress = await homeColonyNetwork.getReputationMiningCycle(false);
       const reputationMiningCycleInactive = await new ethers.Contract(logAddress, IReputationMiningCycle.abi, ethersHomeSigner);
 
       const len = await reputationMiningCycleInactive.getReputationUpdateLogLength();
 
       const entry = await reputationMiningCycleInactive.getReputationUpdateLogEntry(len.sub(1));
+      console.log(entry);
 
       expect(entry.amount.toHexString()).to.equal("0x1337");
       expect(entry.user).to.equal(accounts[0]);
@@ -479,6 +539,7 @@ contract("Cross-chain", (accounts) => {
       p = getPromiseForNextBridgedTransaction();
       const tx = await homeColonyNetwork.bridgeCurrentRootHash(homeBridge.address);
       await tx.wait();
+      console.log("asdf");
       await p;
 
       // Check state bridged to host chain
@@ -489,6 +550,311 @@ contract("Cross-chain", (accounts) => {
 
       expect(foreignChainRootHash).to.equal(homeChainRootHash);
       expect(homeNLeaves.toHexString()).to.equal(foreignNLeaves.toHexString());
+    });
+
+    it("if bridge disabled, reputation emissions are stored to be reemitted later", async () => {
+      const tx = await foreignBridge.setBridgeEnabled(false);
+      await tx.wait();
+      const bridgedReputationUpdateCountBefore = await foreignColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColony.address);
+      await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1337");
+
+      // See it was stored for later
+      const bridgedReputationUpdateCountAfter = await foreignColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColony.address);
+      expect(bridgedReputationUpdateCountAfter.sub(bridgedReputationUpdateCountBefore).toNumber()).to.equal(1);
+    });
+
+    it("stored reputation emissions can be emitted later", async () => {
+      let tx = await foreignBridge.setBridgeEnabled(false);
+      await tx.wait();
+      await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1338");
+
+      const bridgedReputationUpdateCount = await foreignColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColony.address);
+
+      tx = await foreignBridge.setBridgeEnabled(true);
+      await tx.wait();
+      const p = getPromiseForNextBridgedTransaction();
+
+      tx = await foreignColonyNetwork.bridgePendingReputationUpdate(foreignColony.address, bridgedReputationUpdateCount);
+      await tx.wait();
+
+      await p;
+
+      // See that it's bridged to the inactive log
+      const logAddress = await homeColonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycleInactive = await new ethers.Contract(logAddress, IReputationMiningCycle.abi, ethersHomeSigner);
+
+      const len = await reputationMiningCycleInactive.getReputationUpdateLogLength();
+
+      const entry = await reputationMiningCycleInactive.getReputationUpdateLogEntry(len.sub(1));
+
+      expect(entry.amount.toHexString()).to.equal("0x1338");
+      expect(entry.user).to.equal(accounts[0]);
+      expect(entry.colony).to.equal(foreignColony.address);
+
+      const domain = await foreignColony.getDomain(1);
+
+      expect(entry.skillId.toHexString()).to.equal(domain.skillId.toHexString());
+    });
+
+    it("stored reputation emissions on the foreign chain can be bridged later, and are decayed if required", async () => {
+      let tx = await foreignBridge.setBridgeEnabled(false);
+      await tx.wait();
+      await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1338");
+
+      const bridgedReputationUpdateCount = await foreignColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColony.address);
+
+      tx = await foreignBridge.setBridgeEnabled(true);
+      await tx.wait();
+
+      await forwardTime(MINING_CYCLE_DURATION * 10, undefined, web3HomeProvider);
+      await forwardTime(MINING_CYCLE_DURATION * 10, undefined, web3ForeignProvider);
+
+      const p = getPromiseForNextBridgedTransaction();
+
+      tx = await foreignColonyNetwork.bridgePendingReputationUpdate(foreignColony.address, bridgedReputationUpdateCount);
+      await tx.wait();
+
+      await p;
+
+      // See that it's bridged to the inactive log
+      const logAddress = await homeColonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycleInactive = await new ethers.Contract(logAddress, IReputationMiningCycle.abi, ethersHomeSigner);
+
+      const len = await reputationMiningCycleInactive.getReputationUpdateLogLength();
+
+      const entry = await reputationMiningCycleInactive.getReputationUpdateLogEntry(len.sub(1));
+
+      expect(entry.amount.toHexString()).to.equal("0x1327"); // Decayed
+      expect(entry.user).to.equal(accounts[0]);
+      expect(entry.colony).to.equal(foreignColony.address);
+
+      const domain = await foreignColony.getDomain(1);
+
+      expect(entry.skillId.toHexString()).to.equal(domain.skillId.toHexString());
+    });
+
+    it("stored reputation emissions have to be emitted in order, but only per-colony", async () => {
+      const foreignColony2 = await setupColony(foreignColonyNetwork);
+
+      let tx = await foreignBridge.setBridgeEnabled(false);
+      await tx.wait();
+      await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1338");
+      await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1339");
+      await foreignColony2.emitDomainReputationReward(1, accounts[0], "0x1340");
+
+      tx = await foreignBridge.setBridgeEnabled(true);
+      await tx.wait();
+      const bridgedReputationUpdateCountColony1 = await foreignColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColony.address);
+
+      const logAddress = await homeColonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycleInactive = await new ethers.Contract(logAddress, IReputationMiningCycle.abi, ethersHomeSigner);
+      const logLengthBefore = await reputationMiningCycleInactive.getReputationUpdateLogLength();
+
+      // We cannot emit the second bridged
+      tx = await foreignColonyNetwork.bridgePendingReputationUpdate(foreignColony.address, bridgedReputationUpdateCountColony1, {
+        gasLimit: 1000000,
+      });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-not-next-pending-update");
+
+      let p = getPromiseForNextBridgedTransaction();
+      // We can emit the third (which was another colony)
+      const bridgedReputationUpdateCountColony2 = await foreignColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColony2.address);
+      tx = await foreignColonyNetwork.bridgePendingReputationUpdate(foreignColony2.address, bridgedReputationUpdateCountColony2);
+      await tx.wait();
+      await p;
+
+      p = getPromiseForNextBridgedTransaction();
+      // We can emit the first
+      tx = await foreignColonyNetwork.bridgePendingReputationUpdate(foreignColony.address, bridgedReputationUpdateCountColony1.sub(1));
+      tx.wait();
+      await p;
+
+      p = getPromiseForNextBridgedTransaction();
+      // And now we can emit the second
+      tx = await foreignColonyNetwork.bridgePendingReputationUpdate(foreignColony.address, bridgedReputationUpdateCountColony1);
+      tx.wait();
+      await p;
+
+      const logLengthAfter = await reputationMiningCycleInactive.getReputationUpdateLogLength();
+      expect(logLengthAfter.sub(logLengthBefore).toNumber()).to.equal(3);
+    });
+
+    it("if a bridged reputation emission isn't the next one, it's stored on the mining chain to be added to the log later", async () => {
+      const logAddress = await homeColonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycleInactive = await new ethers.Contract(logAddress, IReputationMiningCycle.abi, ethersHomeSigner);
+      const logLengthBefore = await reputationMiningCycleInactive.getReputationUpdateLogLength();
+
+      let p = getPromiseForNextBridgedTransaction();
+      const foreignColony2 = await setupColony(foreignColonyNetwork);
+      await p;
+
+      bridgeMonitor.skipCount = 1;
+
+      // Bridge skills
+
+      // This one is skipped
+      let tx = await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1338");
+      await tx.wait();
+
+      // These are bridged and added to the pending log
+      p = getPromiseForNextBridgedTransaction();
+      tx = await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1339");
+      await tx.wait();
+      await p;
+      p = getPromiseForNextBridgedTransaction();
+      tx = await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1340");
+      await tx.wait();
+      await p;
+
+      // This gets added to the log after being bridged, as it is another colony
+      p = getPromiseForNextBridgedTransaction();
+      tx = await foreignColony2.emitDomainReputationReward(1, accounts[0], "0x1341");
+      await tx.wait();
+      await p;
+
+      // The log entry for foreignColony2 has been added to the reputation mining cycle contract
+      const logLengthAfterBridging = await reputationMiningCycleInactive.getReputationUpdateLogLength();
+      expect(logLengthAfterBridging.sub(logLengthBefore).toNumber()).to.equal(1);
+
+      // The two log entries have been added to the pending log
+      let count = await homeColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColony.address);
+      let pending1 = await homeColonyNetwork.getPendingReputationUpdate(foreignChainId, foreignColony.address, count.add(2));
+      expect(pending1.amount.toHexString()).to.equal("0x1339");
+      expect(pending1.user).to.equal(accounts[0]);
+      expect(pending1.colony).to.equal(foreignColony.address);
+
+      let pending2 = await homeColonyNetwork.getPendingReputationUpdate(foreignChainId, foreignColony.address, count.add(3));
+      expect(pending2.amount.toHexString()).to.equal("0x1340");
+      expect(pending2.user).to.equal(accounts[0]);
+      expect(pending2.colony).to.equal(foreignColony.address);
+
+      // We can't emit those yet because we still haven't bridged the one that was skipped
+      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony.address, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-next-update-does-not-exist");
+
+      // If we bridge over the original one that was skipped, then we can emit the two pending ones
+      p = getPromiseForNextBridgedTransaction();
+      await bridgeMonitor.bridgeSkipped();
+      await p;
+      count = await homeColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColony.address);
+
+      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony.address);
+      await tx.wait();
+      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony.address);
+      await tx.wait();
+
+      // And now they're on the pending log
+      const logLengthAfterAdditionalBridging = await reputationMiningCycleInactive.getReputationUpdateLogLength();
+      expect(logLengthAfterAdditionalBridging.sub(logLengthAfterBridging).toNumber()).to.equal(3);
+
+      // And removed from the colony network
+
+      pending1 = await homeColonyNetwork.getPendingReputationUpdate(foreignChainId, foreignColony.address, count.add(2));
+      expect(pending1.amount.toHexString()).to.equal("0x00");
+      expect(pending1.user).to.equal(ADDRESS_ZERO);
+      expect(pending1.colony).to.equal(ADDRESS_ZERO);
+
+      pending2 = await homeColonyNetwork.getPendingReputationUpdate(foreignChainId, foreignColony.address, count.add(3));
+      expect(pending2.amount.toHexString()).to.equal("0x00");
+      expect(pending2.user).to.equal(ADDRESS_ZERO);
+      expect(pending2.colony).to.equal(ADDRESS_ZERO);
+    });
+
+    it(`if a bridged reputation emission isn't the next one, it's stored on the mining chain to be added to the log later
+      and decayed if required`, async () => {
+      let tx = await foreignBridge.setBridgeEnabled(false);
+      await tx.wait();
+      await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1338");
+
+      const bridgedReputationUpdateCount = await foreignColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColony.address);
+
+      tx = await foreignBridge.setBridgeEnabled(true);
+      await tx.wait();
+
+      let p = getPromiseForNextBridgedTransaction();
+      await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1339");
+      await p;
+
+      p = getPromiseForNextBridgedTransaction();
+      tx = await foreignColonyNetwork.bridgePendingReputationUpdate(foreignColony.address, bridgedReputationUpdateCount);
+      await tx.wait();
+      await p;
+
+      // TODO: This isn't the index / entry I was expecting, I think I'm missing something here
+      const pending1 = await homeColonyNetwork.getPendingReputationUpdate(foreignChainId, foreignColony.address, bridgedReputationUpdateCount.add(1));
+      expect(pending1.amount.toHexString()).to.equal("0x1339");
+      expect(pending1.user).to.equal(accounts[0]);
+      expect(pending1.colony).to.equal(foreignColony.address);
+
+      await forwardTime(MINING_CYCLE_DURATION * 10, undefined, web3HomeProvider);
+      await forwardTime(MINING_CYCLE_DURATION * 10, undefined, web3ForeignProvider);
+      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony.address);
+      await tx;
+
+      // See that it's bridged to the pending log, but decayed
+
+      const logAddress = await homeColonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycleInactive = await new ethers.Contract(logAddress, IReputationMiningCycle.abi, ethersHomeSigner);
+
+      const len = await reputationMiningCycleInactive.getReputationUpdateLogLength();
+
+      const entry = await reputationMiningCycleInactive.getReputationUpdateLogEntry(len.sub(1));
+
+      expect(entry.amount.toHexString()).to.equal("0x1328");
+      expect(entry.user).to.equal(accounts[0]);
+      expect(entry.colony).to.equal(foreignColony.address);
+
+      const domain = await foreignColony.getDomain(1);
+
+      expect(entry.skillId.toHexString()).to.equal(domain.skillId.toHexString());
+    });
+
+    it(`if a bridged reputation emission is for a skill that hasn't been bridged,
+         it's stored on the mining chain to be added to the log later`, async () => {
+      const logAddress = await homeColonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycleInactive = await new ethers.Contract(logAddress, IReputationMiningCycle.abi, ethersHomeSigner);
+
+      bridgeMonitor.skipCount = 1;
+      const foreignColony2 = await setupColony(foreignColonyNetwork);
+
+      // Bridge skills
+      let p = getPromiseForNextBridgedTransaction();
+      let tx = await foreignColony2.emitDomainReputationReward(1, accounts[0], "0x1338");
+      await tx.wait();
+      await p;
+
+      // A log entries have been added to the pending log
+      const count = await homeColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColony2.address);
+      let pending = await homeColonyNetwork.getPendingReputationUpdate(foreignChainId, foreignColony2.address, count.add(1));
+      expect(pending.amount.toHexString()).to.equal("0x1338");
+      expect(pending.user).to.equal(accounts[0]);
+      expect(pending.colony).to.equal(foreignColony2.address);
+
+      // We can't emit it yet, because the skill still hasn't been bridged
+      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony2.address, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-invalid-skill-id");
+
+      const logLength1 = await reputationMiningCycleInactive.getReputationUpdateLogLength();
+
+      // Bridge over the skill creation
+      p = getPromiseForNextBridgedTransaction();
+      await bridgeMonitor.bridgeSkipped();
+      await p;
+
+      // Now try to emit the pending reputation emission
+      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony2.address);
+      await tx.wait();
+
+      // And now it's on the mining cycle contract
+      const logLength2 = await reputationMiningCycleInactive.getReputationUpdateLogLength();
+      expect(logLength2.sub(logLength1).toNumber()).to.equal(1);
+
+      // And removed from the colony network
+
+      pending = await homeColonyNetwork.getPendingReputationUpdate(foreignChainId, foreignColony2.address, count.add(1));
+      expect(pending.amount.toHexString()).to.equal("0x00");
+      expect(pending.user).to.equal(ADDRESS_ZERO);
+      expect(pending.colony).to.equal(ADDRESS_ZERO);
     });
   });
 });

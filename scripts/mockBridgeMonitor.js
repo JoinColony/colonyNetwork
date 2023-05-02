@@ -21,9 +21,12 @@ class MockBridgeMonitor {
 
     this.skipCount = 0;
 
+    this.skipped = [];
+
     homeBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
       if (this.skipCount > 0) {
         this.skipCount -= 1;
+        this.skipped.push([foreignBridge, messageId, encodedData]);
         return;
       }
       const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
@@ -34,6 +37,7 @@ class MockBridgeMonitor {
     foreignBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
       if (this.skipCount > 0) {
         this.skipCount -= 1;
+        this.skipped.push([homeBridge, messageId, encodedData]);
         return;
       }
       const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
@@ -51,7 +55,7 @@ class MockBridgeMonitor {
         console.log(err);
       }
       console.log("seen on foreign bridge");
-      console.log("bridging transaction on home chain", tx);
+      console.log("bridging transaction on home chain", tx.hash);
     });
 
     console.log("Mock Bridge Monitor running");
@@ -60,6 +64,19 @@ class MockBridgeMonitor {
   }
 
   close() {} // eslint-disable-line class-methods-use-this
+
+  async bridgeSkipped() {
+    const [bridge, messageId, encodedData] = this.skipped.shift();
+    const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
+    const tx = await bridge.execute(target, data, gasLimit, messageId, sender);
+    await tx.wait();
+    console.log("bridged pending request");
+  }
+
+  reset() {
+    this.skipCount = 0;
+    this.skipped = [];
+  }
 }
 
 module.exports = MockBridgeMonitor;

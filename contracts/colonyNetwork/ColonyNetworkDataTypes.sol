@@ -191,4 +191,12 @@ interface ColonyNetworkDataTypes {
     bytes setReputationRootHashBefore;
     bytes setReputationRootHashAfter;
   }
+
+  struct PendingReputationUpdate {
+    address colony;
+    address user;
+    int256 amount;
+    uint skillId;
+    uint256 timestamp;
+  }
 }
