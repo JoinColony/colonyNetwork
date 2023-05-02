@@ -173,6 +173,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   function addGlobalSkill() public
   stoppable
   auth
+  onlyMiningChain
   returns (uint256)
   {
     return IColonyNetwork(colonyNetworkAddress).addSkill(0); // ignore-swc-107
