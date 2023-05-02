@@ -148,10 +148,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     // Initialise the domain tree with defaults by just incrementing the skillCount
     skillCount += 1;
-    // Bridge if necessary
-    if (!isMiningChain()) {
-      IColonyNetwork(address(this)).bridgeSkill(skillCount);
-    }
+    IColonyNetwork(address(this)).bridgeSkillIfNotMiningChain(skillCount);
     colonyCount += 1;
     colonies[colonyCount] = address(colony);
     _isColony[address(colony)] = true;

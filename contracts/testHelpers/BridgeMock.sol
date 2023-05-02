@@ -20,8 +20,10 @@ pragma solidity 0.8.23;
 
 contract BridgeMock {
   event UserRequestForSignature(bytes32 indexed messageId, bytes encodedData);
+  bool bridgeEnabled = true;
 
   function requireToPassMessage(address _target, bytes memory _data, uint256 _gasLimit) public {
+    require(bridgeEnabled, "bridge-not-working");
     emit UserRequestForSignature(
       keccak256(abi.encodePacked(_target, _data, block.timestamp)),
       abi.encode(_target, _data, _gasLimit, msg.sender)
@@ -63,4 +65,9 @@ contract BridgeMock {
 
     emit RelayedMessage(_sender, msg.sender, _messageId, success);
   }
+
+  function setBridgeEnabled(bool val) public {
+    bridgeEnabled = val;
+  }
+
 }

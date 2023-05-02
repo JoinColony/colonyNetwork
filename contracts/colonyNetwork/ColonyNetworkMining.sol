@@ -94,7 +94,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   // Well this is a weird hack to need
   function newAddressArray() pure internal returns (address[] memory) {}
-  function bridgeSetReputationRootHash(bytes32 newHash, uint256 newNLeaves) onlyNotMiningChain stoppable public {
+  function setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves) onlyNotMiningChain stoppable public {
     require(bridgeData[msgSender()].chainId != 0, "colony-network-not-known-bridge");
     reputationRootHash = newHash;
     reputationRootHashNLeaves = newNLeaves;
@@ -106,7 +106,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     require(bridgeData[bridgeAddress].chainId != 0, "colony-network-not-known-bridge");
     bytes memory payload = abi.encodePacked(
       bridgeData[bridgeAddress].setReputationRootHashBefore,
-      abi.encodeWithSignature("bridgeSetReputationRootHash(bytes32,uint256)", reputationRootHash, reputationRootHashNLeaves),
+      abi.encodeWithSignature("setReputationRootHashFromBridge(bytes32,uint256)", reputationRootHash, reputationRootHashNLeaves),
       bridgeData[bridgeAddress].setReputationRootHashAfter
     );
     (bool success, ) = bridgeAddress.call(payload);
@@ -310,14 +310,6 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   function getMiningStake(address _user) public onlyMiningChain view returns (MiningStake memory) {
     return miningStakes[_user];
-  }
-
-  function addBridgeForNetwork(address _bridgeAddress, uint256 _chainId) public always auth {
-    authorizedBridges[_bridgeAddress] = _chainId;
-  }
-
-  function getAuthorizedBridge(address _bridgeAddress) public view returns (uint256 networkId) {
-    return authorizedBridges[_bridgeAddress];
   }
 
   function burnUnneededRewards(uint256 _amount) public onlyMiningChain stoppable onlyReputationMiningCycle {

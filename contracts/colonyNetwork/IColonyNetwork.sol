@@ -509,11 +509,6 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return _delegator The address they are allowed to mine on behalf of
   function getMiningDelegator(address _delegate) external view returns (address _delegator);
 
-  /// @notice Called to get the corresponding chainId of the bridge at _bridgeAddress
-  /// @param _bridgeAddress The address of the bridge
-  /// @return chainId The chainId of the corresponding network
-  function getAuthorizedBridge(address _bridgeAddress) external view returns (uint256 chainId);
-
   /// @notice Called to set the details about bridge _bridgeAddress
   /// @param _bridgeAddress The address of the bridge
   /// @param updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
@@ -526,11 +521,6 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
   function setBridgeData(address _bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) external;
 
-  /// @notice Function called by bridge transactions to add a new skill
-  /// @param _parentSkillId The parent id of the new skill
-  /// @param _skillCount The number of the new skill being created
-  function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillCount) external;
-
   /// @notice Called to get the details about known bridge _bridgeAddress
   /// @param _bridgeAddress The address of the bridge
   /// @return bridge The bridge data
@@ -540,26 +530,41 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return bridge The address of the bridge to the mining chain, if set
   function getMiningBridgeAddress() external view returns (address bridge);
 
+  /// @notice Update the reputation on a foreign chain from the mining chain
+  /// @dev Should error if called by anyone other than the known bridge from the mining chain
+  /// @param newHash The new root hash
+  /// @param newNLeaves The new nLeaves in the root hash
+  function setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves) external;
+
+  /// @notice Initiate a cross-chain update of the current reputation state
+  /// @param bridgeAddress The bridge we're going over
+  function bridgeCurrentRootHash(address bridgeAddress) external;
+
+  /// @notice Called to re-send the bridging transaction for a skill to the
+  /// @param skillId The skillId we're bridging the creation of
+  function bridgeSkillIfNotMiningChain(uint256 skillId) external;
+
+  /// @notice Function called by bridge transactions to add a new skill
+  /// @param _parentSkillId The parent id of the new skill
+  /// @param _skillCount The number of the new skill being created
+  function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillCount) external;
+
+  /// @notice Called to add a bridged skill that wasn't next when it was bridged,
+  /// but now is
+  /// @param _bridgeAddress The address of the bridge we're bridging from
+  /// @param _skillId The skillId of the skill being bridged
+  function addBridgedPendingSkill(address _bridgeAddress, uint256 _skillId) external;
+
   /// @notice Called to get the information about a skill that has been bridged out of order
   /// @param _chainId The chainId we're bridging from
   /// @param _skillCount The skill count
   /// @return parentId The parent id of the skill being added
   function getPendingSkillAddition(uint256 _chainId, uint256 _skillCount) external view returns (uint256 parentId);
 
-  /// @notice Called to re-send the bridging transaction for a skill to the
-  /// @param skillId The skillId we're bridging the creation of
-  function bridgeSkill(uint256 skillId) external;
-
-  /// @notice Called to add a bridged skill that wasn't next when it was bridged,
-  /// but now is
-  /// @param _bridgeAddress The address of the bridge we're bridging from
-  /// @param _skillId The skillId of the skill being bridged
-  function addPendingSkillFromBridge(address _bridgeAddress, uint256 _skillId) external;
-
   /// @notice Get the (currently bridged) skill count of another chain
   /// @param _chainId The chainid of foreign chain
   /// @return skillCount The skillCount of the corresponding chain
-  function getBridgeSkillCounts(uint256 _chainId) external view returns (uint256 skillCount);
+  function getBridgedSkillCounts(uint256 _chainId) external view returns (uint256 skillCount);
 
   /// @notice Adds a reputation update entry to log.
   /// @dev Errors if it is called by anyone but a known bridge
@@ -567,15 +572,31 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _user The address of the user for the reputation update
   /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
   /// @param _skillId The skill for the reputation update
-  function appendReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId) external;
+  /// @param _updateNumber The counter used for ordering bridged updates
+  function appendReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId, uint256 _updateNumber) external;
 
-  /// @notice Update the reputation on a foreign chain from the mining chain
-  /// @dev Should error if called by anyone other than the known bridge from the mining chain
-  /// @param newHash The new root hash
-  /// @param newNLeaves The new nLeaves in the root hash
-  function bridgeSetReputationRootHash(bytes32 newHash, uint256 newNLeaves) external;
+  /// @notice Get the (currently bridged) reputation update count of a chain
+  /// @param _chainId The chainid of the chain
+  /// @param _colony The colony being queried
+  /// @return bridgedReputationCount The bridge reputation count of the corresponding chain
+  function getBridgedReputationUpdateCount(uint256 _chainId, address _colony) external view returns (uint256 bridgedReputationCount);
 
-  /// @notice Initiate a cross-chain update of the current reputation state
-  /// @param bridgeAddress The bridge we're going over
-  function bridgeCurrentRootHash(address bridgeAddress) external;
+  /// @notice Try to bridge a reputation update that (previously) failed
+  /// @param _colony The colony being queried
+  /// @param _updateNumber the emission index to bridge
+  function bridgePendingReputationUpdate(address _colony, uint256 _updateNumber) external;
+
+  /// @notice Get the details of a reputation update that was bridged but was not added to the log because it was
+  /// bridged out of order
+  /// @param _chainId The chainId the update was bridged from
+  /// @param _colony The colony being queried
+  /// @param _updateNumber the updatenumber being queries
+  /// @return update The update stored for that chain/colony/updateNumber
+  function getPendingReputationUpdate(uint256 _chainId, address _colony, uint256 _updateNumber) external view returns (PendingReputationUpdate memory update);
+
+  /// @notice Try to emit the next reputation update that was bridged but previously failed, if any
+  /// @param _chainId The chainId the update was bridged from
+  /// @param _colony The colony being queried
+  function addBridgedReputationUpdate(uint256 _chainId, address _colony) external;
+
 }

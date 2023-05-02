@@ -9,6 +9,32 @@ the Meta Colony, a special colony which controls the network.
   
 ## Interface Methods
 
+### ▸ `addBridgedPendingSkill(address _bridgeAddress, uint256 _skillId)`
+
+Called to add a bridged skill that wasn't next when it was bridged, but now is
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_bridgeAddress|address|The address of the bridge we're bridging from
+|_skillId|uint256|The skillId of the skill being bridged
+
+
+### ▸ `addBridgedReputationUpdate(uint256 _chainId, address _colony)`
+
+Try to emit the next reputation update that was bridged but previously failed, if any
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId the update was bridged from
+|_colony|address|The colony being queried
+
+
 ### ▸ `addColonyVersion(uint256 _version, address _resolver)`
 
 Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members. Allowed to be called by the Meta Colony only.
@@ -34,19 +60,6 @@ Add a new extension resolver to the Extensions repository.
 |---|---|---|
 |_extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |_resolver|address|The deployed resolver containing the extension contract logic
-
-
-### ▸ `addPendingSkillFromBridge(address _bridgeAddress, uint256 _skillId)`
-
-Called to add a bridged skill that wasn't next when it was bridged, but now is
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_bridgeAddress|address|The address of the bridge we're bridging from
-|_skillId|uint256|The skillId of the skill being bridged
 
 
 ### ▸ `addSkill(uint256 _parentSkillId):uint256 _skillId`
@@ -112,7 +125,7 @@ Adds a reputation update entry to log.
 |_skillId|uint256|The skill for the reputation update
 
 
-### ▸ `appendReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId)`
+### ▸ `appendReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId, uint256 _updateNumber)`
 
 Adds a reputation update entry to log.
 
@@ -126,6 +139,7 @@ Adds a reputation update entry to log.
 |_user|address|The address of the user for the reputation update
 |_amount|int|The amount of reputation change for the update, this can be a negative as well as a positive value
 |_skillId|uint|The skill for the reputation update
+|_updateNumber|uint256|The counter used for ordering bridged updates
 
 
 ### ▸ `bridgeCurrentRootHash(address bridgeAddress)`
@@ -140,21 +154,20 @@ Initiate a cross-chain update of the current reputation state
 |bridgeAddress|address|The bridge we're going over
 
 
-### ▸ `bridgeSetReputationRootHash(bytes32 newHash, uint256 newNLeaves)`
+### ▸ `bridgePendingReputationUpdate(address _colony, uint256 _updateNumber)`
 
-Update the reputation on a foreign chain from the mining chain
+Try to bridge a reputation update that (previously) failed
 
-*Note: Should error if called by anyone other than the known bridge from the mining chain*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|newHash|bytes32|The new root hash
-|newNLeaves|uint256|The new nLeaves in the root hash
+|_colony|address|The colony being queried
+|_updateNumber|uint256|the emission index to bridge
 
 
-### ▸ `bridgeSkill(uint256 skillId)`
+### ▸ `bridgeSkillIfNotMiningChain(uint256 skillId)`
 
 Called to re-send the bridging transaction for a skill to the
 
@@ -413,23 +426,6 @@ Set deprecation status for a skill
 |---|---|---|
 |_changed|bool|Whether the deprecated state was changed
 
-### ▸ `getAuthorizedBridge(address _bridgeAddress):uint256 chainId`
-
-Called to get the corresponding chainId of the bridge at _bridgeAddress
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_bridgeAddress|address|The address of the bridge
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|chainId|uint256|The chainId of the corresponding network
-
 ### ▸ `getBridgeData(address _bridgeAddress):Bridge bridge`
 
 Called to get the details about known bridge _bridgeAddress
@@ -447,7 +443,25 @@ Called to get the details about known bridge _bridgeAddress
 |---|---|---|
 |bridge|Bridge|The bridge data
 
-### ▸ `getBridgeSkillCounts(uint256 _chainId):uint256 skillCount`
+### ▸ `getBridgedReputationUpdateCount(uint256 _chainId, address _colony):uint256 bridgedReputationCount`
+
+Get the (currently bridged) reputation update count of a chain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainid of the chain
+|_colony|address|The colony being queried
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|bridgedReputationCount|uint256|The bridge reputation count of the corresponding chain
+
+### ▸ `getBridgedSkillCounts(uint256 _chainId):uint256 skillCount`
 
 Get the (currently bridged) skill count of another chain
 
@@ -704,6 +718,25 @@ Get a token's status in the payout whitelist
 |Name|Type|Description|
 |---|---|---|
 |_status|bool|Will be `true` if token is whitelisted
+
+### ▸ `getPendingReputationUpdate(uint256 _chainId, address _colony, uint256 _updateNumber):PendingReputationUpdate update`
+
+Get the details of a reputation update that was bridged but was not added to the log because it was bridged out of order
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId the update was bridged from
+|_colony|address|The colony being queried
+|_updateNumber|uint256|the updatenumber being queries
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|update|PendingReputationUpdate|The update stored for that chain/colony/updateNumber
 
 ### ▸ `getPendingSkillAddition(uint256 _chainId, uint256 _skillCount):uint256 parentId`
 
@@ -1144,6 +1177,20 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |_newHash|bytes32|The reputation root hash
 |_newNLeaves|uint256|The updated leaves count value
 |_stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
+
+
+### ▸ `setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves)`
+
+Update the reputation on a foreign chain from the mining chain
+
+*Note: Should error if called by anyone other than the known bridge from the mining chain*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|newHash|bytes32|The new root hash
+|newNLeaves|uint256|The new nLeaves in the root hash
 
 
 ### ▸ `setTokenLocking(address _tokenLockingAddress)`
