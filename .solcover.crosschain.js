@@ -20,8 +20,7 @@ config.providerOptions.network_id = chainId;
 config.providerOptions._chainId = chainId;
 config.providerOptions._chainIdRpc = chainId;
 
-config.istanbulFolder = `./coverage-cross-chain-${process.env.TRUFFLE_HOME ? "home" : "foreign"}`
-
+config.istanbulFolder = `./coverage-cross-chain-${JSON.parse(process.env.TRUFFLE_FOREIGN) ? "foreign" : "home"}`
 
 function provisionSafeContracts(){
   let output;
