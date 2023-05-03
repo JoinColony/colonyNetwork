@@ -90,8 +90,8 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
   mapping (uint256 => mapping (address => mapping (uint256 => uint256))) stakes;
   mapping (uint256 => mapping (address => bytes32)) voteSecrets;
 
-  mapping (bytes32 => uint256) expenditurePastVotes; // expenditure slot signature => voting power
-  mapping (bytes32 => uint256) expenditureMotionCounts; // expenditure struct signature => count
+  mapping (uint256 => uint256) expenditurePastVotes; // expenditureId => voting power
+  mapping (uint256 => uint256) expenditureMotionLocks; // expenditureId => active motionId
 
   mapping(address => uint256) metatransactionNonces;
 
@@ -302,11 +302,16 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
         getSig(motion.action) == SET_EXPENDITURE_PAYOUT
       ) && motion.altTarget == address(0x0)
     ) {
-      bytes32 structHash = hashExpenditureActionStruct(motion.action);
-      expenditureMotionCounts[structHash] += 1;
-      // Set to UINT256_MAX / 3 to avoid overflow (finalizedTimestamp + globalClaimDelay + claimDelay)
-      bytes memory claimDelayAction = createClaimDelayAction(motion.action, UINT256_MAX / 3);
-      require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
+      uint256 expenditureId = getExpenditureId(motion.action);
+
+      // If the expenditure is already locked, this motion is a no-op
+      if (expenditureMotionLocks[expenditureId] > 0) {
+        motion.finalized = true;
+      } else {
+        expenditureMotionLocks[expenditureId] = _motionId;
+        bytes memory claimDelayAction = createClaimDelayAction(motion.action, 365 days);
+        require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
+      }
     }
 
     emit MotionStaked(_motionId, msgSender(), _vote, amount);
@@ -477,22 +482,19 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
         getSig(motion.action) == SET_EXPENDITURE_PAYOUT
       ) && getTarget(motion.altTarget) == address(colony)
     ) {
-      bytes32 structHash = hashExpenditureActionStruct(motion.action);
-      expenditureMotionCounts[structHash] -= 1;
+      uint256 expenditureId = getExpenditureId(motion.action);
+      assert(expenditureMotionLocks[expenditureId] == _motionId);
+      delete expenditureMotionLocks[expenditureId];
 
-      // Release the claimDelay if this is the last active motion
-      if (expenditureMotionCounts[structHash] == 0) {
-        bytes memory claimDelayAction = createClaimDelayAction(motion.action, 0);
-        // No require this time, since we don't want stakes to be permanently locked
-        executeCall(_motionId, claimDelayAction);
-      }
+      bytes memory claimDelayAction = createClaimDelayAction(motion.action, 0);
+      // No require this time, since we don't want stakes to be permanently locked
+      executeCall(_motionId, claimDelayAction);
 
-      bytes32 actionHash = hashExpenditureAction(motion.action);
       uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
         motion.votes[YAY] : motion.stakes[YAY];
 
-      if (expenditurePastVotes[actionHash] < votePower) {
-        expenditurePastVotes[actionHash] = votePower;
+      if (expenditurePastVotes[expenditureId] < votePower) {
+        expenditurePastVotes[expenditureId] = votePower;
       } else {
         canExecute = false;
       }
@@ -604,12 +606,12 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     return stakes[_motionId][_staker][_vote];
   }
 
-  function getExpenditureMotionCount(bytes32 _structHash) public view returns (uint256 _count) {
-    return expenditureMotionCounts[_structHash];
+  function getExpenditureMotionLock(uint256 _expenditureId) public view returns (uint256 _motionId) {
+    return expenditureMotionLocks[_expenditureId];
   }
 
-  function getExpenditurePastVote(bytes32 _actionHash) public view returns (uint256 _vote) {
-    return expenditurePastVotes[_actionHash];
+  function getExpenditurePastVote(uint256 _expenditureId) public view returns (uint256 _vote) {
+    return expenditurePastVotes[_expenditureId];
   }
 
   function getMotionState(uint256 _motionId) public view returns (MotionState _motionState) {
@@ -825,53 +827,16 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     }
   }
 
-  function hashExpenditureAction(bytes memory action) internal returns (bytes32 hash) {
+  function getExpenditureId(bytes memory action) internal pure returns (uint256 expenditureId) {
     bytes4 sig = getSig(action);
     assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
-
-    uint256 valueLoc = (sig == SET_EXPENDITURE_STATE) ? 0xe4 : 0xc4;
-
-    // Hash all but the domain proof and action value, so actions for the
-    //   same storage slot return the same hash.
-    // Recall: mload(action) gives the length of the bytes array
-    // So skip past the three bytes32 (length + domain proof),
-    //   plus 4 bytes for the sig (0x64). Subtract the same from the end, less
-    //   the length bytes32 (0x44). And zero out the value.
-
-    assembly {
-      mstore(add(action, valueLoc), 0x0)
-      hash := keccak256(add(action, 0x64), sub(mload(action), 0x44))
-    }
-  }
-
-  function hashExpenditureActionStruct(bytes memory action) internal returns (bytes32 hash) {
-    bytes4 sig = getSig(action);
-    assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
-
-    uint256 expenditureId;
-    uint256 storageSlot; // This value is only used if (sig == SET_EXPENDITURE_STATE)
-    uint256 expenditureSlot;
 
     assembly {
       expenditureId := mload(add(action, 0x64))
-      storageSlot := mload(add(action, 0x84))
-    }
-
-    if (sig == SET_EXPENDITURE_STATE && storageSlot == 25) {
-      hash = keccak256(abi.encodePacked(expenditureId));
-    } else {
-      uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
-      assembly {
-        expenditureSlot := mload(add(action, expenditureSlotLoc))
-      }
-      hash = keccak256(abi.encodePacked(expenditureId, expenditureSlot));
     }
   }
 
-  function createClaimDelayAction(bytes memory action, uint256 value)
-    public
-    returns (bytes memory)
-  {
+  function createClaimDelayAction(bytes memory action, uint256 value) public pure returns (bytes memory) {
     // See https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
     //  for documentation on how the action `bytes` is encoded
     // In brief, the first byte32 is the length of the array. Then we have
@@ -888,63 +853,27 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     uint256 permissionDomainId;
     uint256 childSkillIndex;
     uint256 expenditureId;
-    uint256 storageSlot; // This value is only used if (sig == SET_EXPENDITURE_STATE)
-    uint256 expenditureSlot;
+    bytes memory claimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
 
     assembly {
       permissionDomainId := mload(add(action, 0x24))
       childSkillIndex := mload(add(action, 0x44))
       expenditureId := mload(add(action, 0x64))
-      storageSlot := mload(add(action, 0x84))
+
+      mstore(add(claimDelayAction, 0x20), functionSignature)
+      mstore(add(claimDelayAction, 0x24), permissionDomainId)
+      mstore(add(claimDelayAction, 0x44), childSkillIndex)
+      mstore(add(claimDelayAction, 0x64), expenditureId)
+      mstore(add(claimDelayAction, 0x84), 25)     // expenditure storage slot
+      mstore(add(claimDelayAction, 0xa4), 0xe0)   // mask location
+      mstore(add(claimDelayAction, 0xc4), 0x120)  // keys location
+      mstore(add(claimDelayAction, 0xe4), value)
+      mstore(add(claimDelayAction, 0x104), 1)     // mask length
+      mstore(add(claimDelayAction, 0x124), 1)     // offset
+      mstore(add(claimDelayAction, 0x144), 1)     // keys length
+      mstore(add(claimDelayAction, 0x164), 4)     // globalClaimDelay offset
     }
 
-    // If we are editing the main expenditure struct
-    if (sig == SET_EXPENDITURE_STATE && storageSlot == 25) {
-      bytes memory mainClaimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
-
-      assembly {
-        mstore(add(mainClaimDelayAction, 0x20), functionSignature)
-        mstore(add(mainClaimDelayAction, 0x24), permissionDomainId)
-        mstore(add(mainClaimDelayAction, 0x44), childSkillIndex)
-        mstore(add(mainClaimDelayAction, 0x64), expenditureId)
-        mstore(add(mainClaimDelayAction, 0x84), 25)     // expenditure storage slot
-        mstore(add(mainClaimDelayAction, 0xa4), 0xe0)   // mask location
-        mstore(add(mainClaimDelayAction, 0xc4), 0x120)  // keys location
-        mstore(add(mainClaimDelayAction, 0xe4), value)
-        mstore(add(mainClaimDelayAction, 0x104), 1)     // mask length
-        mstore(add(mainClaimDelayAction, 0x124), 1)     // offset
-        mstore(add(mainClaimDelayAction, 0x144), 1)     // keys length
-        mstore(add(mainClaimDelayAction, 0x164), 4)     // globalClaimDelay offset
-      }
-
-      return mainClaimDelayAction;
-
-    // If we are editing an expenditure slot
-    } else {
-      bytes memory slotClaimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
-      uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
-
-      assembly {
-        expenditureSlot := mload(add(action, expenditureSlotLoc))
-
-        mstore(add(slotClaimDelayAction, 0x20), functionSignature)
-        mstore(add(slotClaimDelayAction, 0x24), permissionDomainId)
-        mstore(add(slotClaimDelayAction, 0x44), childSkillIndex)
-        mstore(add(slotClaimDelayAction, 0x64), expenditureId)
-        mstore(add(slotClaimDelayAction, 0x84), 26)     // expenditureSlot storage slot
-        mstore(add(slotClaimDelayAction, 0xa4), 0xe0)   // mask location
-        mstore(add(slotClaimDelayAction, 0xc4), 0x140)  // keys location
-        mstore(add(slotClaimDelayAction, 0xe4), value)
-        mstore(add(slotClaimDelayAction, 0x104), 2)     // mask length
-        mstore(add(slotClaimDelayAction, 0x124), 0)     // mapping
-        mstore(add(slotClaimDelayAction, 0x144), 1)     // offset
-        mstore(add(slotClaimDelayAction, 0x164), 2)     // keys length
-        mstore(add(slotClaimDelayAction, 0x184), expenditureSlot)
-        mstore(add(slotClaimDelayAction, 0x1a4), 1)     // claimDelay offset
-      }
-
-      return slotClaimDelayAction;
-
-    }
+    return claimDelayAction;
   }
 }

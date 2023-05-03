@@ -137,33 +137,33 @@ Get the escalation period
 |---|---|---|
 |_period|uint256|The escalation period
 
-### ▸ `getExpenditureMotionCount(bytes32 _structHash):uint256 _count`
+### ▸ `getExpenditureMotionLock(uint256 _expenditureId):uint256 _motionId`
 
-Get the number of ongoing motions for a single expenditure / expenditure slot
+Get the motion which holds the lock on an expenditure
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_structHash|bytes32|The hash of the expenditureId or expenditureId*expenditureSlot
+|_expenditureId|uint256|The expenditureId
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_count|uint256|The number of ongoing motions
+|_motionId|uint256|The motion holding the lock
 
-### ▸ `getExpenditurePastVote(bytes32 _actionHash):uint256 _vote`
+### ▸ `getExpenditurePastVote(uint256 _expenditureId):uint256 _vote`
 
-Get the largest past vote on a single expenditure variable
+Get the largest past vote on an expenditure
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_actionHash|bytes32|The hash of the particular expenditure action
+|_expenditureId|uint256|The expenditureId
 
 **Return Parameters**
 

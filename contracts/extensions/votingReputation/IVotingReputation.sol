@@ -228,15 +228,15 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @return _stake The user's stake
   function getStake(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256 _stake);
 
-  /// @notice Get the number of ongoing motions for a single expenditure / expenditure slot
-  /// @param _structHash The hash of the expenditureId or expenditureId*expenditureSlot
-  /// @return _count The number of ongoing motions
-  function getExpenditureMotionCount(bytes32 _structHash) external view returns (uint256 _count);
+  /// @notice Get the motion which holds the lock on an expenditure
+  /// @param _expenditureId The expenditureId
+  /// @return _motionId The motion holding the lock
+  function getExpenditureMotionLock(uint256 _expenditureId) external view returns (uint256 _motionId);
 
-  /// @notice Get the largest past vote on a single expenditure variable
-  /// @param _actionHash The hash of the particular expenditure action
+  /// @notice Get the largest past vote on an expenditure
+  /// @param _expenditureId The expenditureId
   /// @return _vote The largest past vote on this variable
-  function getExpenditurePastVote(bytes32 _actionHash) external view returns (uint256 _vote);
+  function getExpenditurePastVote(uint256 _expenditureId) external view returns (uint256 _vote);
 
   /// @notice Get the current state of the motion
   /// @param _motionId The id of the motion
