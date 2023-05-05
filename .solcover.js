@@ -59,5 +59,5 @@ module.exports = {
     },
     onCompileComplete: provisionTokenContracts,
     istanbulFolder: "./coverage-contracts",
-    modifierWhitelist: ["always"],
+    modifierWhitelist: ["always", "onlyMiningChain", "onlyNotMiningChain"],
 }
