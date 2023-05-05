@@ -258,9 +258,8 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     require(bridge.chainId != 0, "colony-network-not-known-bridge");
 
     // Require that specified skill is next
+    // Note this also implicitly checks that the chainId prefix of the skill is correct
     require(networkSkillCounts[bridge.chainId] + 1 == _skillId, "colony-network-not-next-bridged-skill");
-
-    // TODO: Require skill from right bridge
 
     uint256 parentSkillId = pendingSkillAdditions[bridge.chainId][_skillId];
     require(parentSkillId != 0, "colony-network-no-such-bridged-skill");
