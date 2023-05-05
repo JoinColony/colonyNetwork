@@ -192,6 +192,10 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.setPayoutWhitelist(ADDRESS_ZERO, true), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.claimMiningReward(ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.startTokenAuction(ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.bridgeSkillIfNotMiningChain(1), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.appendReputationUpdateLogFromBridge(ADDRESS_ZERO, ADDRESS_ZERO, 0, 0, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.bridgePendingReputationUpdate(ADDRESS_ZERO, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.addBridgedReputationUpdate(0, ADDRESS_ZERO), "colony-in-recovery-mode");
 
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();

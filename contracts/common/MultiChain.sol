@@ -56,12 +56,12 @@ contract MultiChain {
   uint256 constant MINING_CHAIN_ID = 100;
 
   modifier onlyMiningChain() {
-    require(isMiningChain(), "colony-reputation-mining-only-valid-on-mining-chain");
+    require(isMiningChain(), "colony-only-valid-on-mining-chain");
     _;
   }
 
   modifier onlyNotMiningChain() {
-    require(!isMiningChain(), "colony-reputation-mining-only-valid-not-on-mining-chain");
+    require(!isMiningChain(), "colony-only-valid-not-on-mining-chain");
     _;
   }
 
