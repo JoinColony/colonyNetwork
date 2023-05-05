@@ -226,5 +226,19 @@ contract("Contract Storage", (accounts) => {
         await expectEvent(tx, "Burn(address indexed,uint256)", [tokenAuction.address, receivedTotal]);
       }
     });
+
+    it("Global skills can only be created on the mining chain", async () => {
+      if (chainId === XDAI || chainId === FORKED_XDAI) {
+        await metaColony.addGlobalSkill();
+      } else {
+        await checkErrorRevert(metaColony.addGlobalSkill(), "colony-only-valid-on-mining-chain");
+      }
+    });
+
+    it("Reputation mining cannot be initialised on non-mining chain", async () => {
+      if (chainId !== XDAI && chainId !== FORKED_XDAI) {
+        await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-only-valid-on-mining-chain");
+      }
+    });
   });
 });
