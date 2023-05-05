@@ -268,6 +268,64 @@ contract("Cross-chain", (accounts) => {
     await bridgeMonitor.close();
   });
 
+  describe("administrating cross-network bridges", async () => {
+    it("bridge data can be queried", async () => {
+      const bridgeData = await homeColonyNetwork.getBridgeData(homeBridge.address);
+
+      expect(bridgeData.gas.toNumber()).to.equal(1000000);
+      expect(ethers.BigNumber.from(bridgeData.chainId).toHexString()).to.equal(ethers.BigNumber.from(foreignChainId).toHexString());
+      expect(bridgeData.setReputationRootHashBefore.toLowerCase()).to.equal(
+        `0xdc8601b3000000000000000000000000${foreignColonyNetwork.address.slice(
+          2
+          // eslint-disable-next-line max-len
+        )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000044`.toLowerCase()
+      );
+      expect(bridgeData.setReputationRootHashAfter).to.equal(`0x00000000000000000000000000000000000000000000000000000000`);
+    });
+
+    it("mining bridge address is queryable", async () => {
+      let bridgeAddress = await homeColonyNetwork.getMiningBridgeAddress();
+      expect(bridgeAddress).to.equal(ADDRESS_ZERO);
+
+      bridgeAddress = await foreignColonyNetwork.getMiningBridgeAddress();
+      expect(bridgeAddress).to.equal(foreignBridge.address);
+    });
+
+    it("setBridgeData can only be called by the metacolony", async () => {
+      const tx = await foreignColonyNetwork.setBridgeData(ADDRESS_ZERO, "0x00", "0x00", 0, 1, "0x00", "0x00", "0x00", "0x00", { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-caller-must-be-meta-colony");
+    });
+
+    it("setBridgeData can only set the mining chain bridge on a not-mining chain", async () => {
+      const tx = await foreignMetacolony.setBridgeData(ADDRESS_ZERO, "0x00", "0x00", 0, 1, "0x00", "0x00", "0x00", "0x00", { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-can-only-set-mining-chain-bridge");
+    });
+
+    it("updating the bridge for a chain does not reset the bridged skill count", async () => {
+      const countBefore = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
+      const tx = await homeMetacolony.setBridgeData(
+        homeBridge.address, // bridge address
+        "0x", // log before
+        "0x", // log after
+        1000000, // gas
+        foreignChainId, // chainid
+        `0x`, // skill before
+        "0x", // skill after
+        `0xdc8601b3000000000000000000000000${foreignColonyNetwork.address.slice(
+          2
+          // eslint-disable-next-line max-len
+        )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000044`,
+        "0x00000000000000000000000000000000000000000000000000000000" // root hash after
+      );
+      await tx.wait();
+
+      const countAfter = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
+      expect(countAfter).to.not.equal(0);
+      console.log(countAfter);
+      expect(countAfter.sub(countBefore).toNumber()).to.equal(0);
+    });
+  });
+
   describe("when controlling a gnosis wallet on another chain", async () => {
     it("can send tokens out of the gnosis safe", async () => {
       // Create token contract on foreign chain
@@ -341,6 +399,22 @@ contract("Cross-chain", (accounts) => {
       // Check reflected on home chain
       const afterCount = await homeColonyNetwork.getBridgedSkillCounts("0x0fd5c9ed");
       expect(beforeCount.add(1).toHexString()).to.equal(afterCount.toHexString());
+    });
+
+    it("addSkillFromBridge cannot be called by a non-bridge address", async () => {
+      const tx = await homeColonyNetwork.addSkillFromBridge(0, 0, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-not-known-bridge");
+    });
+
+    it("addBridgedPendingSkill cannot be called referring to a bridge that doesn't exist", async () => {
+      const tx = await homeColonyNetwork.addBridgedPendingSkill(ADDRESS_ZERO, 1, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-not-known-bridge");
+    });
+
+    it("addBridgedPendingSkill doesn't create skills that haven't been bridged", async () => {
+      const homeSkillCount = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
+      const tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, homeSkillCount.add(1), { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-no-such-bridged-skill");
     });
 
     it("if a skill is bridged out-of-order, it's added to the pending mapping", async () => {
@@ -452,23 +526,21 @@ contract("Cross-chain", (accounts) => {
       expect(homeSkillCount.toHexString()).to.equal(foreignSkillCount.toHexString());
     });
 
-    // it.only("if bridge isn't a contract, skill creation fails", async () => {
-    //   const bridgeData = await foreignColonyNetwork.getBridgeData(foreignBridge.address);
-    //   await foreignMetacolony.setBridgeData(
-    //     ADDRESS_ZERO,
-    //     bridgeData.updateLogBefore,
-    //     bridgeData.updateLogAfter,
-    //     bridgeData.gas,
-    //     bridgeData.chainId,
-    //     bridgeData.skillCreationBefore,
-    //     bridgeData.skillCreationAfter,
-    //     bridgeData.setReputationRootHashBefore,
-    //     bridgeData.setReputationRootHashAfter
-    //   );
+    it("can't bridge a skill that doesn't exist", async () => {
+      const skillCount = await foreignColonyNetwork.getSkillCount();
+      const nonExistentSkillId = skillCount.add(10000000);
+      const tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(nonExistentSkillId, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-invalid-skill-id");
+    });
 
-    //   tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, ethers.BigNumber.from(2).pow(256).sub(1), 1);
-    //   await tx.wait();
-    // });
+    it("if bridge is broken, bridging skill transaction fails", async () => {
+      let tx = await foreignBridge.setBridgeEnabled(false);
+      await tx.wait();
+      const skillCount = await foreignColonyNetwork.getSkillCount();
+
+      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(skillCount, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-unable-to-bridge-skill-creation");
+    });
   });
 
   describe("while earning reputation on another chain", async () => {
@@ -701,6 +773,7 @@ contract("Cross-chain", (accounts) => {
       tx = await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1339");
       await tx.wait();
       await p;
+
       p = getPromiseForNextBridgedTransaction();
       tx = await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1340");
       await tx.wait();
@@ -855,6 +928,11 @@ contract("Cross-chain", (accounts) => {
       expect(pending.amount.toHexString()).to.equal("0x00");
       expect(pending.user).to.equal(ADDRESS_ZERO);
       expect(pending.colony).to.equal(ADDRESS_ZERO);
+    });
+
+    it("appendReputationUpdateLogFromBridge cannot be called by a non-bridge address", async () => {
+      const tx = await homeColonyNetwork.appendReputationUpdateLogFromBridge(ADDRESS_ZERO, ADDRESS_ZERO, 0, 0, 0, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-not-known-bridge");
     });
   });
 });
