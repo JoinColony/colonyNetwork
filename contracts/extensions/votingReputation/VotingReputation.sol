@@ -492,10 +492,9 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
 
       uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
         motion.votes[YAY] : motion.stakes[YAY];
-
       if (expenditurePastVotes[expenditureId] < votePower) {
         expenditurePastVotes[expenditureId] = votePower;
-      } else {
+      } else if (motion.domainId > 1) {
         canExecute = false;
       }
     }

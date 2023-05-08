@@ -828,44 +828,6 @@ contract("Voting Reputation", (accounts) => {
       await expectEvent(voting.claimReward(motionId3, 1, UINT256_MAX, USER0, YAY), "MotionRewardClaimed", [motionId3, USER0, YAY, REQUIRED_STAKE]);
     });
 
-    it("can properly manage repeat motions if voting on expenditure payout states", async () => {
-      await colony.makeExpenditure(1, UINT256_MAX, 1);
-      const expenditureId = await colony.getExpenditureCount();
-      await colony.finalizeExpenditure(expenditureId);
-
-      let action;
-      let payout;
-
-      // Set payout for expenditure slot 0, internal token, to WAD
-      action = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, WAD]);
-
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      motionId = await voting.getMotionCount();
-
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      await forwardTime(STAKE_PERIOD, this);
-      await voting.finalizeMotion(motionId);
-
-      payout = await colony.getExpenditureSlotPayout(expenditureId, 0, token.address);
-      expect(payout).to.eq.BN(WAD);
-
-      // Set payout for expenditure slot 0, internal token, back to 0
-      action = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, 0]);
-
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      motionId = await voting.getMotionCount();
-
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      await forwardTime(STAKE_PERIOD, this);
-      await voting.finalizeMotion(motionId);
-
-      // Motion doesn't execute because the same reputation is voting
-      payout = await colony.getExpenditureSlotPayout(expenditureId, 0, token.address);
-      expect(payout).to.eq.BN(WAD);
-    });
-
     it("cannot update the expenditure slot claimDelay if given an invalid action", async () => {
       // Create a poorly-formed action (no keys)
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, 1, 0, [], [], ethers.constants.HashZero]);
@@ -1414,51 +1376,6 @@ contract("Voting Reputation", (accounts) => {
       expect(logs[0].args.executed).to.be.false;
     });
 
-    it("cannot take an action if there is insufficient voting power (state change actions)", async () => {
-      // Set globalClaimDelay to WAD
-      await colony.makeExpenditure(1, UINT256_MAX, 1);
-      const expenditureId = await colony.getExpenditureCount();
-      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(4))], WAD32]);
-
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      const motionId1 = await voting.getMotionCount();
-
-      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId1, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-
-      await voting.submitVote(motionId1, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      await forwardTime(SUBMIT_PERIOD, this);
-
-      await voting.revealVote(motionId1, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      await forwardTime(REVEAL_PERIOD, this);
-      await forwardTime(STAKE_PERIOD, this);
-
-      let logs;
-      ({ logs } = await voting.finalizeMotion(motionId1));
-      expect(logs[0].args.executed).to.be.true;
-
-      // Create another motion for the same variable
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      const motionId2 = await voting.getMotionCount();
-
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
-
-      await voting.submitVote(motionId2, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      await forwardTime(SUBMIT_PERIOD, this);
-
-      await voting.revealVote(motionId2, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      await forwardTime(REVEAL_PERIOD, this);
-      await forwardTime(STAKE_PERIOD, this);
-
-      ({ logs } = await voting.finalizeMotion(motionId2));
-      expect(logs[0].args.executed).to.be.false;
-    });
-
     it("can set vote power correctly after a vote", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
@@ -1530,6 +1447,122 @@ contract("Voting Reputation", (accounts) => {
       await voting.finalizeMotion(motionId);
       const pastVote = await voting.getExpenditurePastVote(expenditureId);
       expect(pastVote).to.eq.BN(REQUIRED_STAKE);
+    });
+
+    it("cannot take an action if there is insufficient voting power, using stakes", async () => {
+      await colony.approveStake(voting.address, 2, REQUIRED_STAKE_DOMAIN_2.muln(2), { from: USER0 });
+
+      // Set globalClaimDelay to WAD in domain 2
+      await colony.makeExpenditure(1, 0, 2);
+      const expenditureId = await colony.getExpenditureCount();
+      const action = await encodeTxData(colony, "setExpenditureState", [1, 0, expenditureId, 25, [true], [bn2bytes32(new BN(4))], WAD32]);
+
+      await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
+      const motionId1 = await voting.getMotionCount();
+
+      const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
+      const user0Value2 = makeReputationValue(WAD.divn(3), 9);
+      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
+
+      await voting.stakeMotion(motionId1, 1, 0, YAY, REQUIRED_STAKE_DOMAIN_2, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await forwardTime(STAKE_PERIOD, this);
+
+      let logs;
+      ({ logs } = await voting.finalizeMotion(motionId1));
+      expect(logs[0].args.executed).to.be.true;
+
+      // Create another motion for the same variable
+      await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
+      const motionId2 = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId2, 1, 0, YAY, REQUIRED_STAKE_DOMAIN_2, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await forwardTime(STAKE_PERIOD, this);
+
+      ({ logs } = await voting.finalizeMotion(motionId2));
+      expect(logs[0].args.executed).to.be.false;
+    });
+
+    it("cannot take an action if there is insufficient voting power, using votes", async () => {
+      await colony.approveStake(voting.address, 2, REQUIRED_STAKE_DOMAIN_2.muln(2), { from: USER0 });
+      await colony.approveStake(voting.address, 2, REQUIRED_STAKE_DOMAIN_2.muln(2), { from: USER1 });
+
+      // Set globalClaimDelay to WAD in domain 2
+      await colony.makeExpenditure(1, 0, 2);
+      const expenditureId = await colony.getExpenditureCount();
+      const action = await encodeTxData(colony, "setExpenditureState", [1, 0, expenditureId, 25, [true], [bn2bytes32(new BN(4))], WAD32]);
+
+      await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
+      const motionId1 = await voting.getMotionCount();
+
+      const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
+      const user0Value2 = makeReputationValue(WAD.divn(3), 9);
+      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
+
+      const user1Key2 = makeReputationKey(colony.address, domain2.skillId, USER1);
+      const user1Value2 = makeReputationValue(WAD.divn(3).muln(2), 10);
+      const [user1Mask2, user1Siblings2] = await reputationTree.getProof(user1Key2);
+
+      await voting.stakeMotion(motionId1, 1, 0, YAY, REQUIRED_STAKE_DOMAIN_2, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await voting.stakeMotion(motionId1, 1, 0, NAY, REQUIRED_STAKE_DOMAIN_2, user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
+
+      await voting.submitVote(motionId1, soliditySha3(SALT, YAY), user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await voting.revealVote(motionId1, SALT, YAY, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(STAKE_PERIOD, this);
+
+      let logs;
+      ({ logs } = await voting.finalizeMotion(motionId1));
+      expect(logs[0].args.executed).to.be.true;
+
+      // Create another motion for the same variable
+      await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
+      const motionId2 = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId2, 1, 0, YAY, REQUIRED_STAKE_DOMAIN_2, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, 0, NAY, REQUIRED_STAKE_DOMAIN_2, user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
+
+      await voting.submitVote(motionId2, soliditySha3(SALT, YAY), user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await voting.revealVote(motionId2, SALT, YAY, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+
+      await forwardTime(REVEAL_PERIOD, this);
+      await forwardTime(STAKE_PERIOD, this);
+
+      ({ logs } = await voting.finalizeMotion(motionId2));
+      expect(logs[0].args.executed).to.be.false;
+    });
+
+    it("can ignore vote power if the motion is made in the root domain", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await forwardTime(STAKE_PERIOD, this);
+
+      await voting.finalizeMotion(motionId);
+      const pastVote = await voting.getExpenditurePastVote(expenditureId);
+      expect(pastVote).to.eq.BN(REQUIRED_STAKE);
+
+      // Create another motion for the same variable, in the root domain
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId2 = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await forwardTime(STAKE_PERIOD, this);
+
+      const { logs } = await voting.finalizeMotion(motionId2);
+      expect(logs[0].args.executed).to.be.true;
     });
 
     it("motions with the special NO_ACTION signature do not require (and cannot be) executed, and go straight to that state", async function () {
