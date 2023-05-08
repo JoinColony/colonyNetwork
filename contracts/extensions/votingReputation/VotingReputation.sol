@@ -40,6 +40,9 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
 
   bytes4 constant NO_ACTION = 0x12345678;
 
+  uint256 constant FINALIZED_TIMESTAMP_OFFSET = 3;
+  uint256 constant GLOBAL_CLAIM_DELAY_OFFSET = 4;
+
   bytes32 constant ROOT_ROLES = (
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Recovery) |
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
@@ -302,16 +305,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
         getSig(motion.action) == SET_EXPENDITURE_PAYOUT
       ) && motion.altTarget == address(0x0)
     ) {
-      uint256 expenditureId = getExpenditureId(motion.action);
-
-      // If the expenditure is already locked, this motion is a no-op
-      if (expenditureMotionLocks[expenditureId] > 0) {
-        motion.finalized = true;
-      } else {
-        expenditureMotionLocks[expenditureId] = _motionId;
-        bytes memory claimDelayAction = createClaimDelayAction(motion.action, 365 days);
-        require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
-      }
+      lockExpenditure(_motionId);
     }
 
     emit MotionStaked(_motionId, msgSender(), _vote, amount);
@@ -483,12 +477,19 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
       ) && getTarget(motion.altTarget) == address(colony)
     ) {
       uint256 expenditureId = getExpenditureId(motion.action);
+
       assert(expenditureMotionLocks[expenditureId] == _motionId);
       delete expenditureMotionLocks[expenditureId];
 
-      bytes memory claimDelayAction = createClaimDelayAction(motion.action, 0);
+      uint256 currentClaimDelay = colony.getExpenditure(expenditureId).globalClaimDelay;
+      bytes memory claimDelayAction = createExpenditureAction(motion.action, GLOBAL_CLAIM_DELAY_OFFSET, currentClaimDelay - 365 days);
       // No require this time, since we don't want stakes to be permanently locked
       executeCall(_motionId, claimDelayAction);
+
+      if (colony.getExpenditure(expenditureId).status == ColonyDataTypes.ExpenditureStatus.Finalized) {
+        bytes memory finalizedTimestampAction = createExpenditureAction(motion.action, FINALIZED_TIMESTAMP_OFFSET, block.timestamp);
+        executeCall(_motionId, finalizedTimestampAction);
+      }
 
       uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
         motion.votes[YAY] : motion.stakes[YAY];
@@ -807,6 +808,21 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
   }
 
+  function lockExpenditure(uint256 _motionId) internal {
+    Motion storage motion = motions[_motionId];
+    uint256 expenditureId = getExpenditureId(motion.action);
+
+    // If the expenditure is already locked, this motion is a no-op
+    if (expenditureMotionLocks[expenditureId] > 0) {
+      motion.finalized = true;
+    } else {
+      expenditureMotionLocks[expenditureId] = _motionId;
+      uint256 currentClaimDelay = colony.getExpenditure(expenditureId).globalClaimDelay;
+      bytes memory claimDelayAction = createExpenditureAction(motion.action, GLOBAL_CLAIM_DELAY_OFFSET, currentClaimDelay + 365 days);
+      require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
+    }
+  }
+
   function executeCall(uint256 motionId, bytes memory action) internal returns (bool success) {
     address to = getTarget(motions[motionId].altTarget);
 
@@ -835,7 +851,15 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     }
   }
 
-  function createClaimDelayAction(bytes memory action, uint256 value) public pure returns (bytes memory) {
+  function createExpenditureAction(
+    bytes memory action,
+    uint256 offset,
+    uint256 value
+  )
+    public
+    pure
+    returns (bytes memory)
+  {
     // See https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
     //  for documentation on how the action `bytes` is encoded
     // In brief, the first byte32 is the length of the array. Then we have
@@ -852,27 +876,27 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     uint256 permissionDomainId;
     uint256 childSkillIndex;
     uint256 expenditureId;
-    bytes memory claimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
+    bytes memory expenditureAction = new bytes(4 + 32 * 11); // 356 bytes
 
     assembly {
       permissionDomainId := mload(add(action, 0x24))
       childSkillIndex := mload(add(action, 0x44))
       expenditureId := mload(add(action, 0x64))
 
-      mstore(add(claimDelayAction, 0x20), functionSignature)
-      mstore(add(claimDelayAction, 0x24), permissionDomainId)
-      mstore(add(claimDelayAction, 0x44), childSkillIndex)
-      mstore(add(claimDelayAction, 0x64), expenditureId)
-      mstore(add(claimDelayAction, 0x84), 25)     // expenditure storage slot
-      mstore(add(claimDelayAction, 0xa4), 0xe0)   // mask location
-      mstore(add(claimDelayAction, 0xc4), 0x120)  // keys location
-      mstore(add(claimDelayAction, 0xe4), value)
-      mstore(add(claimDelayAction, 0x104), 1)     // mask length
-      mstore(add(claimDelayAction, 0x124), 1)     // offset
-      mstore(add(claimDelayAction, 0x144), 1)     // keys length
-      mstore(add(claimDelayAction, 0x164), 4)     // globalClaimDelay offset
+      mstore(add(expenditureAction, 0x20), functionSignature)
+      mstore(add(expenditureAction, 0x24), permissionDomainId)
+      mstore(add(expenditureAction, 0x44), childSkillIndex)
+      mstore(add(expenditureAction, 0x64), expenditureId)
+      mstore(add(expenditureAction, 0x84), 25)      // expenditure storage slot
+      mstore(add(expenditureAction, 0xa4), 0xe0)    // mask location
+      mstore(add(expenditureAction, 0xc4), 0x120)   // keys location
+      mstore(add(expenditureAction, 0xe4), value)
+      mstore(add(expenditureAction, 0x104), 1)      // mask length
+      mstore(add(expenditureAction, 0x124), 1)      // offset
+      mstore(add(expenditureAction, 0x144), 1)      // keys length
+      mstore(add(expenditureAction, 0x164), offset) // expenditure struct offset
     }
 
-    return claimDelayAction;
+    return expenditureAction;
   }
 }

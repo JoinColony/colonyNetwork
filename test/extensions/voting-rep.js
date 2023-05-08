@@ -23,6 +23,7 @@ const {
   bn2bytes32,
   expectEvent,
   getTokenArgs,
+  getBlockTime,
 } = require("../../helpers/test-helper");
 
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
@@ -698,6 +699,12 @@ contract("Voting Reputation", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       await colony.finalizeExpenditure(expenditureId);
 
+      // Set global claim delay to 1 day
+      await colony.setArbitrationRole(1, UINT256_MAX, USER0, 1, true);
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(4))], bn2bytes32(new BN(SECONDS_PER_DAY)), {
+        from: USER0,
+      });
+
       // Set payoutModifier to 1 for expenditure slot 0
       const action = await encodeTxData(colony, "setExpenditureState", [
         1,
@@ -719,7 +726,7 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditureMotionLock).to.be.zero;
 
       expenditure = await colony.getExpenditure(expenditureId);
-      expect(expenditure.globalClaimDelay).to.be.zero;
+      expect(expenditure.globalClaimDelay).to.eq.BN(SECONDS_PER_DAY);
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
@@ -727,7 +734,7 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditureMotionLock).to.eq.BN(motionId);
 
       expenditure = await colony.getExpenditure(expenditureId);
-      expect(expenditure.globalClaimDelay).to.eq.BN(YEAR);
+      expect(expenditure.globalClaimDelay).to.eq.BN(SECONDS_PER_DAY + YEAR);
 
       await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
 
@@ -738,7 +745,7 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditureMotionLock).to.be.zero;
 
       expenditure = await colony.getExpenditure(expenditureId);
-      expect(expenditure.globalClaimDelay).to.be.zero;
+      expect(expenditure.globalClaimDelay).to.eq.BN(SECONDS_PER_DAY);
     });
 
     it("can update the expenditure slot claimDelay if voting on expenditure payout states", async () => {
@@ -1374,6 +1381,46 @@ contract("Voting Reputation", (accounts) => {
 
       const { logs } = await voting.finalizeMotion(motionId);
       expect(logs[0].args.executed).to.be.false;
+    });
+
+    it("can update the finalized timestamp if expenditure is finalized", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+      await colony.finalizeExpenditure(expenditureId);
+
+      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      const tx = await voting.finalizeMotion(motionId);
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.finalizedTimestamp).to.eq.BN(blockTime);
+    });
+
+    it("cannot update the finalized timestamp if expenditure is not finalized", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      await voting.finalizeMotion(motionId);
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.finalizedTimestamp).to.be.zero;
     });
 
     it("can set vote power correctly after a vote", async () => {
@@ -2050,10 +2097,6 @@ contract("Voting Reputation", (accounts) => {
 
     it("can internally escalate a domain motion after a vote", async () => {
       await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
-    });
-
-    it("can internally escalate a domain motion after a vote", async () => {
-      await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER1 });
     });
 
     it("cannot internally escalate a domain motion if not in a 'closed' state", async () => {
