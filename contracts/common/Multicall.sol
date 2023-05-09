@@ -6,6 +6,9 @@ pragma experimental "ABIEncoderV2";
 import "./MetaTransactionMsgSender.sol";
 
 abstract contract Multicall is MetaTransactionMsgSender {
+
+    bytes4 constant multicallSig = bytes4(keccak256("multicall(bytes[])"));
+
     function multicall(bytes[] calldata data) public returns (bytes[] memory results) {
         // First off, is this a metatransaction?
         address sender = msgSender();
@@ -15,8 +18,11 @@ abstract contract Multicall is MetaTransactionMsgSender {
             affix = abi.encodePacked(METATRANSACTION_FLAG, sender);
         }
 
+
+
         results = new bytes[](data.length);
         for (uint256 i; i < data.length; i++) {
+            require(bytes4(data[i]) != multicallSig, "colony-multicall-cannot-multicall");
             (bool success, bytes memory result) = address(this).delegatecall(abi.encodePacked(data[i], affix));
 
             if (!success) {
