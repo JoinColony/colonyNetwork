@@ -52,6 +52,7 @@ contract("Voting Reputation", (accounts) => {
   let domain1;
   let domain2;
   let domain3;
+  let domain4;
   let metaColony;
   let colonyNetwork;
   let tokenLocking;
@@ -140,9 +141,11 @@ contract("Voting Reputation", (accounts) => {
     // 1 => { 2, 3 }
     await colony.addDomain(1, UINT256_MAX, 1);
     await colony.addDomain(1, UINT256_MAX, 1);
+    await colony.addDomain(1, UINT256_MAX, 1);
     domain1 = await colony.getDomain(1);
     domain2 = await colony.getDomain(2);
     domain3 = await colony.getDomain(3);
+    domain4 = await colony.getDomain(4);
 
     await colony.installExtension(VOTING_REPUTATION, version);
     const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
@@ -224,6 +227,16 @@ contract("Voting Reputation", (accounts) => {
     await reputationTree.insert(
       makeReputationKey(colony.address, domain3.skillId, USER1), // User1, domain 3
       makeReputationValue(WAD.muln(2), 12)
+    );
+
+    await reputationTree.insert(
+      makeReputationKey(colony.address, domain4.skillId), // Colony total, domain 4
+      makeReputationValue(0, 13)
+    );
+
+    await reputationTree.insert(
+      makeReputationKey(colony.address, domain4.skillId, USER1), // User1, domain 4
+      makeReputationValue(0, 14)
     );
 
     domain1Key = makeReputationKey(colony.address, domain1.skillId);
@@ -521,6 +534,19 @@ contract("Voting Reputation", (accounts) => {
 
       // But is in the root domain
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+    });
+
+    it("cannot create a motion if there is no reputation in the domain", async () => {
+      const key = makeReputationKey(colony.address, domain4.skillId);
+      const value = makeReputationValue(0, 13);
+      const [mask, siblings] = await reputationTree.getProof(key);
+
+      // Try to create motion in domain of action (4)
+      const action = await encodeTxData(colony, "makeTask", [1, 2, FAKE, 4, 0, 0]);
+      await checkErrorRevert(
+        voting.createMotion(4, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings),
+        "voting-rep-no-reputation-in-domain"
+      );
     });
   });
 
