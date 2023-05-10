@@ -541,6 +541,39 @@ contract("Cross-chain", (accounts) => {
       tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(skillCount, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-unable-to-bridge-skill-creation");
     });
+
+    it("colony root local skill structures end up the same on both chains", async () => {
+      const homeColonyRootLocalSkillId = await homeColony.getRootLocalSkill();
+      let homeColonyRootLocalSkill = await homeColonyNetwork.getSkill(homeColonyRootLocalSkillId);
+
+      const foreignColonyRootLocalSkillId = await foreignColony.getRootLocalSkill();
+      let foreignColonyRootLocalSkill = await foreignColonyNetwork.getSkill(foreignColonyRootLocalSkillId);
+
+      expect(homeColonyRootLocalSkill.nParents.toString()).to.equal(foreignColonyRootLocalSkill.nParents.toString());
+      expect(homeColonyRootLocalSkill.nChildren.toString()).to.equal(foreignColonyRootLocalSkill.nChildren.toString());
+
+      let tx = await homeColony.addLocalSkill();
+      await tx.wait();
+
+      const p = getPromiseForNextBridgedTransaction();
+      tx = await foreignColony.addLocalSkill();
+      await tx.wait();
+      await p;
+      homeColonyRootLocalSkill = await homeColonyNetwork.getSkill(homeColonyRootLocalSkillId);
+      foreignColonyRootLocalSkill = await foreignColonyNetwork.getSkill(foreignColonyRootLocalSkillId);
+
+      expect(homeColonyRootLocalSkill.nParents.toString()).to.equal(foreignColonyRootLocalSkill.nParents.toString());
+      expect(homeColonyRootLocalSkill.nChildren.toString()).to.equal(foreignColonyRootLocalSkill.nChildren.toString());
+
+      let zeroSkill = await foreignColonyNetwork.getSkill(ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)));
+      expect(zeroSkill.nChildren.toNumber()).to.equal(0);
+
+      zeroSkill = await homeColonyNetwork.getSkill(ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)));
+      expect(zeroSkill.nChildren.toNumber()).to.equal(0);
+
+      zeroSkill = await homeColonyNetwork.getSkill(0);
+      expect(zeroSkill.nChildren.toNumber()).to.equal(0);
+    });
   });
 
   describe("while earning reputation on another chain", async () => {
@@ -566,14 +599,12 @@ contract("Cross-chain", (accounts) => {
       // console.log(txDataToBeSentToAMB);
 
       // process.exit(1)
-      console.log("****asdf");
       let p = getPromiseForNextBridgedTransaction();
       // Emit reputation
       await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1337");
       // See that it's bridged to the inactive log
-      console.log("asdf");
       await p;
-      console.log("asdf");
+
       const logAddress = await homeColonyNetwork.getReputationMiningCycle(false);
       const reputationMiningCycleInactive = await new ethers.Contract(logAddress, IReputationMiningCycle.abi, ethersHomeSigner);
 
