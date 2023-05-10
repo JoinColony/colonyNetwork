@@ -23,8 +23,7 @@ import "./../common/Multicall.sol";
 import "./ColonyNetworkStorage.sol";
 
 contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
-
-  function addSkill(uint _parentSkillId) public stoppable
+function addSkill(uint _parentSkillId) public stoppable
   skillExists(_parentSkillId)
   allowedToAddSkill
   returns (uint256)
@@ -35,7 +34,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
     bridgeSkillIfNotMiningChain(skillCount);
 
-    emit SkillAdded(skillCount, _parentSkillId);
     return skillCount;
   }
 
@@ -54,11 +52,17 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       bridgeData[miningBridgeAddress].skillCreationAfter
     );
 
+    // This succeeds if not set, but we don't want to block e.g. domain creation if that's the situation we're in,
+    // and we can re-call this function to bridge later if necessary.
     (bool success, bytes memory returnData) = miningBridgeAddress.call(payload);
     require(success, "colony-network-unable-to-bridge-skill-creation");
   }
 
   function addSkillToChainTree(uint256 _parentSkillId, uint256 _skillId) private {
+    // This indicates a new root local skill bridged from another chain. We don't do anything to the tree
+    // in this scenario, other than incrementing
+    // (this mirrors the behaviour of not calling addSkill() in initialiseRootLocalSkill)
+    if (_parentSkillId != 0 && _parentSkillId << 128 == 0) { return; }
 
     Skill storage parentSkill = skills[_parentSkillId];
     require(!parentSkill.DEPRECATED_globalSkill, "colony-network-no-global-skills");
@@ -99,6 +103,8 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
       treeWalkingCounter += 1;
     }
+
+    emit SkillAdded(_skillId, _parentSkillId);
   }
 
   function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillId) public always onlyMiningChain() {
@@ -110,7 +116,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     if (networkSkillCounts[bridge.chainId] + 1 == _skillId){
       addSkillToChainTree(_parentSkillId, _skillId);
       networkSkillCounts[bridge.chainId] += 1;
-      emit SkillAdded(_skillId, _parentSkillId);
     } else if (networkSkillCounts[bridge.chainId] < _skillId){
       pendingSkillAdditions[bridge.chainId][_skillId] = _parentSkillId;
       // TODO: Event?
@@ -135,14 +140,11 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
     uint256 parentSkillId = pendingSkillAdditions[bridge.chainId][_skillId];
     require(parentSkillId != 0, "colony-network-no-such-bridged-skill");
-    if (parentSkillId > bridge.chainId << 128){
-      addSkillToChainTree(parentSkillId, _skillId);
-    }
+    addSkillToChainTree(parentSkillId, _skillId);
     networkSkillCounts[bridge.chainId] += 1;
 
     // Delete the pending addition
     delete pendingSkillAdditions[bridge.chainId][_skillId];
-    emit SkillAdded(_skillId, parentSkillId);
   }
 
   function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
