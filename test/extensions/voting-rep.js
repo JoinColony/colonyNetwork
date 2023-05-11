@@ -1649,68 +1649,135 @@ contract("Voting Reputation", (accounts) => {
       expect(motionState).to.eq.BN(FINALIZED);
     });
 
-    describe("via metatransactions", async () => {
-      let broadcaster;
+    it.only("can create a motion with a multicall action", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
 
-      beforeEach(async () => {
-        const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
-        const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
+      const action1 = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
+      const action2 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, WAD]);
+      const action3 = await encodeTxData(colony, "multicall", [[action1, action2]]);
+      // console.log(action1)
+      // console.log(action2)
+      // console.log(action3)
 
-        const loader = new TruffleLoader({
-          contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
-        });
+      const x = await voting.getMulticallSigs(action3);
+      console.log(x.toString());
 
-        // Old and new versions of ganache (which currently represents with or without coverage...)
-        // either do or don't have the hex prefix...
-        let privateKey = ganacheAccounts.private_keys[accounts[0].toLowerCase()];
-        if (privateKey.slice(0, 2) !== "0x") {
-          privateKey = `0x${privateKey}`;
-        }
+      // c9a2ce7c
+        // 0000000000000000000000000000000000000000000000000000000000000001
+        // ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+        // 0000000000000000000000000000000000000000000000000000000000000001
+        // 0000000000000000000000000000000000000000000000000000000000000019
+        // 00000000000000000000000000000000000000000000000000000000000000e0
+        // 0000000000000000000000000000000000000000000000000000000000000120
+        // 0000000000000000000000000000000000000000000000000de0b6b3a7640000
+        // 0000000000000000000000000000000000000000000000000000000000000001
+        // 0000000000000000000000000000000000000000000000000000000000000001
+        // 0000000000000000000000000000000000000000000000000000000000000001
+        // 0000000000000000000000000000000000000000000000000000000000000000
 
-        broadcaster = new MetatransactionBroadcaster({
-          privateKey,
-          loader,
-          provider,
-        });
-        await broadcaster.initialise(colonyNetwork.address);
+      // bae82ec9 0x20
+        // 0000000000000000000000000000000000000000000000000000000000000001 0x24
+        // ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff 0x44
+        // 0000000000000000000000000000000000000000000000000000000000000001
+        // 0000000000000000000000000000000000000000000000000000000000000000
+        // 000000000000000000000000d5e5ed7915386460e7b4634c51511f78397f6c56
+        // 0000000000000000000000000000000000000000000000000de0b6b3a7640000
+
+      // ac9650d8
+        // 0000000000000000000000000000000000000000000000000000000000000020
+        // 0000000000000000000000000000000000000000000000000000000000000002
+        // 0000000000000000000000000000000000000000000000000000000000000040 64
+        // 00000000000000000000000000000000000000000000000000000000000001e0 480
+
+        // 0000000000000000000000000000000000000000000000000000000000000164 356
+        // c9a2ce7c
+          // 0000000000000000000000000000000000000000000000000000000000000001
+          // ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+          // 0000000000000000000000000000000000000000000000000000000000000001
+          // 0000000000000000000000000000000000000000000000000000000000000019
+          // 00000000000000000000000000000000000000000000000000000000000000e0
+          // 0000000000000000000000000000000000000000000000000000000000000120
+          // 0000000000000000000000000000000000000000000000000de0b6b3a7640000
+          // 0000000000000000000000000000000000000000000000000000000000000001
+          // 0000000000000000000000000000000000000000000000000000000000000001
+          // 0000000000000000000000000000000000000000000000000000000000000001
+          // 0000000000000000000000000000000000000000000000000000000000000000
+          // 00000000000000000000000000000000000000000000000000000000
+
+        // 00000000000000000000000000000000000000000000000000000000000000c4 196
+        // bae82ec9
+          // 0000000000000000000000000000000000000000000000000000000000000001
+          // ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+          // 0000000000000000000000000000000000000000000000000000000000000001
+          // 0000000000000000000000000000000000000000000000000000000000000000
+          // 000000000000000000000000d5e5ed7915386460e7b4634c51511f78397f6c56
+          // 0000000000000000000000000000000000000000000000000de0b6b3a7640000
+          // 00000000000000000000000000000000000000000000000000000000
+    });
+  });
+
+  describe("via metatransactions", async () => {
+    let broadcaster;
+
+    beforeEach(async () => {
+      const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+      const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
+
+      const loader = new TruffleLoader({
+        contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
       });
 
-      it("transactions that try to execute an allowed method on Reputation Voting extension are accepted by the MTX broadcaster", async function () {
-        await colony.makeExpenditure(1, UINT256_MAX, 1);
-        const expenditureId = await colony.getExpenditureCount();
+      // Old and new versions of ganache (which currently represents with or without coverage...)
+      // either do or don't have the hex prefix...
+      let privateKey = ganacheAccounts.private_keys[accounts[0].toLowerCase()];
+      if (privateKey.slice(0, 2) !== "0x") {
+        privateKey = `0x${privateKey}`;
+      }
 
-        const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
-
-        await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-        motionId = await voting.getMotionCount();
-
-        await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-        await forwardTime(STAKE_PERIOD, this);
-
-        const txData = await voting.contract.methods.finalizeMotion(motionId).encodeABI();
-
-        const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
-        expect(valid).to.be.equal(true);
-        await broadcaster.close();
+      broadcaster = new MetatransactionBroadcaster({
+        privateKey,
+        loader,
+        provider,
       });
+      await broadcaster.initialise(colonyNetwork.address);
+    });
 
-      it("transactions that try to execute a forbidden method on Reputation Voting extension are rejected by the MTX broadcaster", async function () {
-        const action = await encodeTxData(colony, "makeArbitraryTransaction", [colony.address, "0x00"]);
+    it("transactions that try to execute an allowed method on Reputation Voting extension are accepted by the MTX broadcaster", async function () {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
 
-        await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-        motionId = await voting.getMotionCount();
+      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
 
-        await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
 
-        await forwardTime(STAKE_PERIOD, this);
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-        const txData = await voting.contract.methods.finalizeMotion(motionId.toString()).encodeABI();
+      await forwardTime(STAKE_PERIOD, this);
 
-        const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
-        expect(valid).to.be.equal(false);
-        await broadcaster.close();
-      });
+      const txData = await voting.contract.methods.finalizeMotion(motionId).encodeABI();
+
+      const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
+      expect(valid).to.be.equal(true);
+      await broadcaster.close();
+    });
+
+    it("transactions that try to execute a forbidden method on Reputation Voting extension are rejected by the MTX broadcaster", async function () {
+      const action = await encodeTxData(colony, "makeArbitraryTransaction", [colony.address, "0x00"]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      const txData = await voting.contract.methods.finalizeMotion(motionId.toString()).encodeABI();
+
+      const valid = await broadcaster.isColonyFamilyTransactionAllowed(voting.address, txData);
+      expect(valid).to.be.equal(false);
+      await broadcaster.close();
     });
   });
 

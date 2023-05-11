@@ -284,4 +284,10 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
     uint256 _vote
   )
     external;
+
+  /// @notice Get the sigs for a multicall
+  /// @param _action The actions as bytes
+  /// @return _sigs The number of underlying function calls
+  function getMulticallSigs(bytes memory _action) external returns (bytes4[] memory _sigs);
+
 }

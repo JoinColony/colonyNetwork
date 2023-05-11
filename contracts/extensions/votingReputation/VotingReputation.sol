@@ -38,8 +38,6 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
   uint256 constant SUBMIT_END = 1;
   uint256 constant REVEAL_END = 2;
 
-  bytes4 constant NO_ACTION = 0x12345678;
-
   uint256 constant FINALIZED_TIMESTAMP_OFFSET = 3;
   uint256 constant GLOBAL_CLAIM_DELAY_OFFSET = 4;
 
@@ -48,17 +46,18 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
   );
 
+  bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
+  bytes4 constant NO_ACTION = 0x12345678;
+  bytes4 constant OLD_MOVE_FUNDS = bytes4(keccak256(
+    "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"
+  ));
   bytes4 constant SET_EXPENDITURE_STATE = bytes4(keccak256(
     "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"
   ));
-
   bytes4 constant SET_EXPENDITURE_PAYOUT = bytes4(keccak256(
     "setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"
   ));
 
-  bytes4 constant OLD_MOVE_FUNDS_SIG = bytes4(keccak256(
-    "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"
-  ));
 
   // Initialization data
   ExtensionState state;
@@ -209,7 +208,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     address target = getTarget(_altTarget);
     bytes4 action = getSig(_action);
 
-    require(action != OLD_MOVE_FUNDS_SIG, "voting-rep-disallowed-function");
+    require(action != OLD_MOVE_FUNDS, "voting-rep-disallowed-function");
 
     uint256 skillId;
 
@@ -840,6 +839,28 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     assembly {
       sig := mload(add(action, 0x20))
     }
+  }
+
+  function getMulticallSigs(bytes memory action) external pure returns (bytes4[] memory sigs) {
+    uint256 numSigs;
+
+    assembly {
+      numSigs := mload(add(action, 0x44))
+    }
+
+    sigs = new bytes4[](numSigs);
+    uint256 currentLoc;
+    bytes4 currentSig;
+
+    for (uint256 i; i < sigs.length; i++) {
+      assembly {
+        currentLoc := mload(add(add(action, 0x64), mul(i, 0x20)))
+        currentSig := mload(add(add(action, 0x84), currentLoc))
+      }
+      sigs[i] = currentSig;
+    }
+
+    return sigs;
   }
 
   function getExpenditureId(bytes memory action) internal pure returns (uint256 expenditureId) {
