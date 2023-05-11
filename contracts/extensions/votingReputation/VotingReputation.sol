@@ -841,7 +841,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     }
   }
 
-  function getMulticallSigs(bytes memory action) external pure returns (bytes4[] memory sigs) {
+  function getMulticallSigs(bytes memory action) internal pure returns (bytes4[] memory sigs) {
     uint256 numSigs;
 
     assembly {
