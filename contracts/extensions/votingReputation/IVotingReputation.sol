@@ -244,8 +244,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   function getMotionState(uint256 _motionId) external view returns (MotionState _motionState);
 
   /// @notice Get the voter reward
-  /// NB This function will only return a meaningful value if in the reveal state.
-  /// Prior to the reveal state, getVoterRewardRange should be used.
+  /// @dev This function will only return an accurate value if in the reveal state.
   /// @param _motionId The id of the motion
   /// @param _voterRep The reputation the voter has in the domain
   /// @return _reward The voter reward

@@ -4,7 +4,7 @@ This extension allows any member of your colony to propose a Motion to take an A
 
 See [here](https://colony.gitbook.io/colony/extensions/governance) for more information.
 
-  
+
 ## Interface Methods
 
 ### ▸ `claimMisalignedReward(uint256 _motionId, uint256 _permissionDomainId, uint256 _childSkillIndex, address _staker, uint256 _vote)`
@@ -311,8 +311,9 @@ Get the user min stake fraction
 
 ### ▸ `getVoterReward(uint256 _motionId, uint256 _voterRep):uint256 _reward`
 
-Get the voter reward NB This function will only return a meaningful value if in the reveal state. Prior to the reveal state, getVoterRewardRange should be used.
+Get the voter reward
 
+*Note: This function will only return an accurate value if in the reveal state.*
 
 **Parameters**
 

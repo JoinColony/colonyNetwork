@@ -243,7 +243,6 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
 
     motionCount += 1;
     Motion storage motion = motions[motionCount];
-
     motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
 
     motion.rootHash = colonyNetwork.getReputationRootHash();
@@ -389,7 +388,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     motion.votes[_vote] += userRep;
 
     bytes32 voteSecret = voteSecrets[_motionId][msgSender()];
-    require(voteSecret == getVoteSecret(_salt, _vote), "voting-rep-secret-no-match");
+    require(voteSecret == keccak256(abi.encodePacked(_salt, _vote)), "voting-rep-secret-no-match");
     delete voteSecrets[_motionId][msgSender()];
 
     uint256 voterReward = getVoterReward(_motionId, userRep);
@@ -665,8 +664,8 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     }
   }
 
-  // If we decide that the motion is finalizable, we might actually want it to report as finalized if it's a no-action
-  // motion.
+  // If we decide that the motion is finalizable, we might actually want it to
+  //  report as finalized if it's a no-action motion.
   function finalizableOrFinalized(bytes memory action) internal pure returns (MotionState) {
     return getSig(action) == NO_ACTION ? MotionState.Finalized : MotionState.Finalizable;
   }
@@ -676,28 +675,6 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     uint256 fractionUserReputation = wdiv(_voterRep, motion.repSubmitted);
     uint256 totalStake = motion.stakes[YAY] + motion.stakes[NAY];
     return wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
-  }
-
-  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) public view returns (uint256 _rewardMin, uint256 _rewardMax) {
-    Motion storage motion = motions[_motionId];
-    // The minimum reward is when everyone has voted, with a total weight of motion.skillRep
-    uint256 minFractionUserReputation = wdiv(_voterRep, motion.skillRep);
-
-    // The maximum reward is when this user is the only other person who votes (if they haven't already),
-    // aside from those who have already done so
-    uint256 voteTotal = motion.repSubmitted;
-    // Has the user already voted?
-    if (voteSecrets[_motionId][_voterAddress] == bytes32(0)) {
-      // They have not, so add their rep
-      voteTotal += _voterRep;
-    }
-    uint256 maxFractionUserReputation = wdiv(_voterRep, voteTotal);
-
-    uint256 totalStake = motion.stakes[YAY] + motion.stakes[NAY];
-    return (
-      wmul(wmul(minFractionUserReputation, totalStake), voterRewardFraction),
-      wmul(wmul(maxFractionUserReputation, totalStake), voterRewardFraction)
-    );
   }
 
   function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256 _reward, uint256 _penalty) {
@@ -778,10 +755,6 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
 
   // Internal functions
 
-  function getVoteSecret(bytes32 _salt, uint256 _vote) internal pure returns (bytes32) {
-    return keccak256(abi.encodePacked(_salt, _vote));
-  }
-
   function getRequiredStake(uint256 _motionId) internal view returns (uint256) {
     return wmul(motions[_motionId].skillRep, totalStakeFraction);
   }
@@ -838,6 +811,23 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
   function getSig(bytes memory action) internal pure returns (bytes4 sig) {
     assembly {
       sig := mload(add(action, 0x20))
+    }
+
+    // If a multicall action, we essentially "reduce" over all the underlying functions,
+    //  returning the "most critical" function as the relevant function for the motion.
+    // The priorities are: NO_ACTION > OLD_MOVE_FUNDS > (SET_EXPENDITURE_STATE,  SET_EXPENDITURE_PAYOUT)
+    // If none of those functions are found, we return MULTICALL
+    if (sig == MULTICALL) {
+      bytes4[] memory sigs = getMulticallSigs(action);
+      for (uint256 i; i < sigs.length; i++) {
+        if (sigs[i] == NO_ACTION) {
+          sig = NO_ACTION;
+        } else if (sigs[i] == OLD_MOVE_FUNDS) {
+          if (sig != NO_ACTION) { sig = OLD_MOVE_FUNDS; }
+        } else if (sigs[i] == SET_EXPENDITURE_STATE || sigs[i] == SET_EXPENDITURE_PAYOUT) {
+          if (sig != NO_ACTION || sig != OLD_MOVE_FUNDS) { sig = SET_EXPENDITURE_STATE; }
+        }
+      }
     }
   }
 

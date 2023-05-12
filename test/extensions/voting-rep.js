@@ -942,27 +942,6 @@ contract("Voting Reputation", (accounts) => {
       expect(new BN(user1LockPost.balance).sub(new BN(user1LockPre.balance))).to.eq.BN(expectedReward1);
     });
 
-    it("tells users what their potential reward range is", async () => {
-      const USER0_REPUTATION = new BN(user0Value.slice(2, 66), 16);
-      const USER1_REPUTATION = new BN(user1Value.slice(2, 66), 16);
-
-      let { 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER0_REPUTATION, USER0);
-
-      expect(rewardMin).to.eq.BN(WAD.divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
-      expect(rewardMax).to.eq.BN(REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).div(WAD));
-
-      // They vote, expect no change
-      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      ({ 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER0_REPUTATION, USER0));
-      expect(rewardMin).to.eq.BN(WAD.divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
-      expect(rewardMax).to.eq.BN(REQUIRED_STAKE.muln(2).mul(VOTER_REWARD_FRACTION).div(WAD));
-
-      // User 1 has no range, as they are the last to vote
-      ({ 0: rewardMin, 1: rewardMax } = await voting.getVoterRewardRange(motionId, USER1_REPUTATION, USER1));
-      expect(rewardMin).to.eq.BN(WAD.muln(2).divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
-      expect(rewardMax).to.eq.BN(WAD.muln(2).divn(3).mul(REQUIRED_STAKE).muln(2).mul(VOTER_REWARD_FRACTION).div(WAD).div(WAD));
-    });
-
     it("can update votes, but just the last one counts", async () => {
       await voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
