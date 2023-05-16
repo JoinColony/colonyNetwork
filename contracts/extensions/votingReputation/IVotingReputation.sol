@@ -260,6 +260,11 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @return _rewardMax The voter reward range upper bound
   function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) external view returns (uint256 _rewardMin, uint256 _rewardMax);
 
+  /// @notice Extract the constituent actions of a multicall
+  /// @param action The bytes representing a multicall action
+  /// @return sigs The constituent actions in the multicall
+  function getMulticallActions(bytes memory action) external returns (bytes4[] memory sigs);
+
   /// @notice Get the staker reward
   /// @param _motionId The id of the motion
   /// @param _staker The staker's address

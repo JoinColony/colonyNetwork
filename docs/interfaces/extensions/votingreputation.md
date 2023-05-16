@@ -210,6 +210,23 @@ Get the current state of the motion
 |---|---|---|
 |_motionState|MotionState|The current motion state
 
+### ▸ `getMulticallActions(bytes memory action):bytes4[] sigs`
+
+Get the current state of the motion
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|action|bytes|The id of the motion
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|sigs|bytes4[]|The current motion state
+
 ### ▸ `getRevealPeriod():uint256 _period`
 
 Get the reveal period

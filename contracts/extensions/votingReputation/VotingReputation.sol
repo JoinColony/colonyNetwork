@@ -813,44 +813,52 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
       sig := mload(add(action, 0x20))
     }
 
-    // If a multicall action, we essentially "reduce" over all the underlying functions,
-    //  returning the "most critical" function as the relevant function for the motion.
-    // The priorities are: NO_ACTION > OLD_MOVE_FUNDS > (SET_EXPENDITURE_STATE,  SET_EXPENDITURE_PAYOUT)
-    // If none of those functions are found, we return MULTICALL
-    if (sig == MULTICALL) {
-      bytes4[] memory sigs = getMulticallSigs(action);
-      for (uint256 i; i < sigs.length; i++) {
-        if (sigs[i] == NO_ACTION) {
-          sig = NO_ACTION;
-        } else if (sigs[i] == OLD_MOVE_FUNDS) {
-          if (sig != NO_ACTION) { sig = OLD_MOVE_FUNDS; }
-        } else if (sigs[i] == SET_EXPENDITURE_STATE || sigs[i] == SET_EXPENDITURE_PAYOUT) {
-          if (sig != NO_ACTION || sig != OLD_MOVE_FUNDS) { sig = SET_EXPENDITURE_STATE; }
-        }
-      }
-    }
+    // if (sig == MULTICALL) {
+    //   bytes4 newSig;
+    //   bytes[] memory actions = getMulticallActions(action);
+    //   for (uint256 i; i < actions.length; i++) {
+    //     newSig = getSig(actions[i]);
+    //     if (newSig == NO_ACTION) {
+    //       sig = NO_ACTION;
+    //     } else if (newSig == OLD_MOVE_FUNDS) {
+    //       if (sig != NO_ACTION) { sig = OLD_MOVE_FUNDS; }
+    //     } else if (newSig == SET_EXPENDITURE_STATE || newSig == SET_EXPENDITURE_PAYOUT) {
+    //       if (sig != NO_ACTION || sig != OLD_MOVE_FUNDS) { sig = SET_EXPENDITURE_STATE; }
+    //     }
+    //   }
+    // }
   }
 
-  function getMulticallSigs(bytes memory action) internal pure returns (bytes4[] memory sigs) {
-    uint256 numSigs;
+  function getMulticallActions(bytes memory action) public pure returns (bytes[] memory actions){
+      return abi.decode(extractCalldata(action), (bytes[]));
+  }
 
-    assembly {
-      numSigs := mload(add(action, 0x44))
-    }
+  // From https://ethereum.stackexchange.com/questions/131283/how-do-i-decode-call-data-in-solidity
+  function extractCalldata(bytes memory calldataWithSelector) internal pure returns (bytes memory) {
+      bytes memory calldataWithoutSelector;
+      require(calldataWithSelector.length >= 4);
 
-    sigs = new bytes4[](numSigs);
-    uint256 currentLoc;
-    bytes4 currentSig;
-
-    for (uint256 i; i < sigs.length; i++) {
       assembly {
-        currentLoc := mload(add(add(action, 0x64), mul(i, 0x20)))
-        currentSig := mload(add(add(action, 0x84), currentLoc))
-      }
-      sigs[i] = currentSig;
-    }
+          let totalLength := mload(calldataWithSelector)
+          let targetLength := sub(totalLength, 4)
+          calldataWithoutSelector := mload(0x40)
 
-    return sigs;
+          // Set the length of callDataWithoutSelector (initial length - 4)
+          mstore(calldataWithoutSelector, targetLength)
+
+          // Mark the memory space taken for callDataWithoutSelector as allocated
+          mstore(0x40, add(calldataWithoutSelector, add(0x20, targetLength)))
+
+          // Process first 32 bytes (we only take the last 28 bytes)
+          mstore(add(calldataWithoutSelector, 0x20), shl(0x20, mload(add(calldataWithSelector, 0x20))))
+
+          // Process all other data by chunks of 32 bytes
+          for { let i := 0x1C } lt(i, targetLength) { i := add(i, 0x20) } {
+              mstore(add(add(calldataWithoutSelector, 0x20), i), mload(add(add(calldataWithSelector, 0x20), add(i, 0x04))))
+          }
+      }
+
+      return calldataWithoutSelector;
   }
 
   function getExpenditureId(bytes memory action) internal pure returns (uint256 expenditureId) {

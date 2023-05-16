@@ -1632,10 +1632,12 @@ contract("Voting Reputation", (accounts) => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
 
-      const action1 = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], ["0x0"], WAD32]);
+      const action1 = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
       const action2 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, WAD]);
       const action3 = await encodeTxData(colony, "multicall", [[action1, action2]]);
-      console.log(action3);
+
+      const x = await voting.getMulticallActions(action3);
+      console.log(x);
     });
   });
 
