@@ -123,7 +123,7 @@ module.exports = {
   },
   compilers: {
     solc: {
-      version: "0.8.19",
+      version: "0.8.20",
       docker: DISABLE_DOCKER,
       parser: "solcjs",
       settings: {
