@@ -450,4 +450,108 @@ contract("Colony", (accounts) => {
       await checkErrorRevert(colony.burnTokens(token.address, amount), "colony-not-enough-tokens");
     });
   });
+
+  describe("should allow the decay rate in a colony to be set", async () => {
+    it("non-root users cannot set decay rate", async () => {
+      await checkErrorRevert(colony.setReputationDecayRate(1, 1, { from: USER1 }), "ds-auth-unauthorized");
+    });
+
+    it("a colony that hasn't had the decay rate explicitly set returns the default decay rate", async () => {
+      const res = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+
+      // Get default decay rate from mining cycle
+      const activeReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
+      const activeReputationMiningCycle = await IReputationMiningCycle.at(activeReputationMiningCycleAddress);
+      const res2 = await activeReputationMiningCycle.getDecayConstant();
+
+      expect(res.numerator).to.eq.BN(res2.numerator);
+      expect(res.denominator).to.eq.BN(res2.denominator);
+    });
+
+    it("when a colony's decay rate is set, it only takes effect once a mining cycle is completed", async () => {
+      const res = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      await colony.setReputationDecayRate(1, 2, { from: USER0 });
+      let res2 = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+
+      expect(res.numerator).to.eq.BN(res2.numerator);
+      expect(res.denominator).to.eq.BN(res2.denominator);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+      res2 = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+
+      expect(res2.numerator).to.eq.BN(1);
+      expect(res2.denominator).to.eq.BN(2);
+    });
+
+    it("a colony's decay rate is set, it cannot be set to an invalid value", async () => {
+      await checkErrorRevert(colony.setReputationDecayRate(2, 1, { from: USER0 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setReputationDecayRate("1000000000000000000", "1000000000000000000", { from: USER0 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setReputationDecayRate(1, 0, { from: USER0 }), "ds-auth-unauthorized");
+    });
+
+    it("a colony can return to following the default decay rate", async () => {
+      await colony.setReputationDecayRate(1, 2, { from: USER0 });
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      let res = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      expect(res.numerator).to.eq.BN(1);
+      expect(res.denominator).to.eq.BN(2);
+
+      // Get default decay rate from mining cycle
+      const activeReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
+      const activeReputationMiningCycle = await IReputationMiningCycle.at(activeReputationMiningCycleAddress);
+      const defaultDecay = await activeReputationMiningCycle.getDecayConstant();
+
+      await colony.setReputationDecayRate(0, 0); // Special call to reset to follow default rate
+      res = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      // Check hasn't changed yet
+      expect(res.numerator).to.eq.BN(1);
+      expect(res.denominator).to.eq.BN(2);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+      res = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      expect(res.numerator).to.eq.BN(defaultDecay.numerator);
+      expect(res.denominator).to.eq.BN(defaultDecay.denominator);
+    });
+  });
+
+  describe("when setting the domain reputation scaling factor", async () => {
+    it("cannot set scale factor for a domain that does not exist", async () => {
+      await checkErrorRevert(colony.setDomainReputationScaling(UINT256_MAX, true, WAD.divn(2)), "colony-domain-does-not-exist");
+    });
+
+    it("cannot set scale factor to larger than 1", async () => {
+      await checkErrorRevert(colony.setDomainReputationScaling(1, true, WAD.muln(2)), "colony-invalid-scale-factor");
+    });
+
+    it("non-root users cannot set domain scale factor", async () => {
+      await checkErrorRevert(colony.setDomainReputationScaling(1, true, WAD.muln(2), { from: USER1 }), "ds-auth-unauthorized");
+    });
+
+    it("the domain reputation scaling factor can be removed", async () => {
+      await colony.setDomainReputationScaling(1, true, WAD.divn(2));
+
+      const domain = await colony.getDomain(1);
+      let skill = await colonyNetwork.getSkill(domain.skillId);
+      expect(skill.reputationScalingFactor).to.be.eq.BN(WAD.divn(2));
+      expect(skill.earnedReputationScaling).to.be.true;
+
+      await colony.setDomainReputationScaling(1, false, 0);
+
+      skill = await colonyNetwork.getSkill(domain.skillId);
+      expect(skill.reputationScalingFactor).to.be.eq.BN(0);
+      expect(skill.earnedReputationScaling).to.be.false;
+    });
+
+    it("setting domain reputation scaling to false with a nonzero scale factor fails", async () => {
+      await colony.setDomainReputationScaling(1, true, WAD.divn(2));
+
+      await checkErrorRevert(colony.setDomainReputationScaling(1, false, 1), "colony-invalid-configuration");
+    });
+
+    it("an event is emitted when reputation scaling is changed", async () => {
+      const tx = await colony.setDomainReputationScaling(1, true, WAD.divn(2));
+      await expectEvent(tx, "DomainReputationScalingSet(uint256,bool,uint256)", [1, true, WAD.divn(2)]);
+    });
+  });
 });

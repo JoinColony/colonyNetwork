@@ -198,6 +198,11 @@ interface ColonyNetworkDataTypes {
     bool globalSkill;
     // `true` for a global skill that is deprecated
     bool deprecated;
+    // `true` if global scaling is in effect
+    bool earnedReputationScaling;
+    // NB extra storage space available here for more booleans etc
+    // scaling in effect for reputation earned in this skill
+    uint256 reputationScalingFactor;
   }
 
   struct ENSRecord {

@@ -22,9 +22,10 @@ import "./../common/BasicMetaTransaction.sol";
 import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
 import "./../common/Multicall.sol";
+import "./../colony/ColonyDataTypes.sol";
 
 
-contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall {
+contract ColonyNetwork is ColonyDataTypes, BasicMetaTransaction, ColonyNetworkStorage, Multicall {
 
   function isColony(address _colony) public view returns (bool) {
     return _isColony[_colony];
