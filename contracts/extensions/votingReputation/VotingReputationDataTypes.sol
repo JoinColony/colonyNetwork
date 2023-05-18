@@ -20,7 +20,8 @@ import "./../../colony/ColonyDataTypes.sol";
 
 
 interface VotingReputationDataTypes {
-  // Constants
+  // Data structures
+
   enum ExtensionState { Deployed, Active, Deprecated }
 
   enum MotionState { Null, Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
