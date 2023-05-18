@@ -111,6 +111,10 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   uint256 rootLocalSkill; // Storage slot 36
   mapping (uint256 => bool) localSkills; // Storage slot 37
 
+  mapping(address => uint256) tokenReputationRates; // Storage slot 38
+  mapping(address => address) tokensWithReputationRatesLinkedList; // Storage Slot 39
+  uint256 nTokensWithReputationRates; // Storage Slot 40
+
   // Constants
 
   uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs
@@ -357,5 +361,33 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
               // call(g,     a,  v,     in,              insize,      out, outsize)
       success := call(gas(), to, value, add(data, 0x20), mload(data), 0, 0)
     }
+  }
+
+  function getTokenScaledReputation(int256 _amount, address _token) internal view returns (int256) {
+    uint256 scaleFactor = tokenReputationRates[token]; // NB This is a WAD
+    if (scaleFactor == 0) { return 0; }
+
+    // Check if too large for scaling
+    int256 amount;
+    int256 absAmount;
+    if (_amount == type(int256).min){
+      absAmount = type(int256).max; // Off by one, but best we can do - probably gets capped anyway
+    } else {
+      absAmount = _amount >= 0 ? _amount : -_amount;
+    }
+
+    int256 sgnAmount = _amount >= 0 ? int(1) : -1;
+
+    if (wdiv(uint256(uint128(type(int128).max)), scaleFactor) < uint256(absAmount)){
+      if (sgnAmount == 1){
+        return type(int128).max;
+      } else {
+        return type(int128).min;
+      }
+    } else {
+      amount = int256(wmul(scaleFactor, uint256(absAmount))) * sgnAmount;
+    }
+
+    return amount;
   }
 }
