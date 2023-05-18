@@ -59,6 +59,11 @@ contract ColonyDomains is ColonyStorage {
     // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
     rewardInverse = 2**256 - 1;
 
+    // Set the token weighting for the native token to 1
+    tokenReputationRates[token] = WAD;
+    tokensWithReputationRatesLinkedList[address(0x00)] = token;
+    nTokensWithReputationRates = 1;
+
     emit ColonyInitialised(msgSender(), _colonyNetworkAddress, _token);
   }
 
@@ -122,6 +127,15 @@ contract ColonyDomains is ColonyStorage {
 
   function getDomainCount() public view returns (uint256) {
     return domainCount;
+  }
+
+  function setDomainReputationScaling(uint256 _domainId, bool _enabled, uint256 _factor) public stoppable auth {
+    require(domainExists(_domainId), "colony-domain-does-not-exist");
+    require(_factor <= WAD, "colony-invalid-scale-factor");
+    require(_enabled || _factor == 0, "colony-invalid-configuration");
+
+    IColonyNetwork(colonyNetworkAddress).setDomainReputationScaling(_domainId, _enabled, _factor);
+    emit DomainReputationScalingSet(_domainId, _enabled, _factor);
   }
 
   // Internal

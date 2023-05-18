@@ -214,20 +214,22 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
     uint256 repPayout = wmul(initialPayout, payoutScalar);
     uint256 tokenPayout = min(initialPayout, repPayout);
-    uint256 tokenSurplus = initialPayout - tokenPayout;
+    // uint256 tokenSurplus = initialPayout - tokenPayout;
 
     // Deduct any surplus from the outstanding payouts (for payoutScalars < 1)
-    if (tokenSurplus > 0) {
-      fundingPot.payouts[_token] -= tokenSurplus;
+    if (initialPayout - tokenPayout > 0) {
+      fundingPot.payouts[_token] -= (initialPayout - tokenPayout);
     }
 
-    // Process reputation updates if internal token
-    if (_token == token && !isExtension(slot.recipient)) {
+    // Process reputation updates if relevant for token being paid out
+    if (tokenReputationRates[_token] > 0 && !isExtension(slot.recipient)) {
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-      colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), domains[expenditure.domainId].skillId);
+      int256 tokenScaledReputationAmount = getTokenScaledReputation(int256(repPayout), _token);
+
+      colonyNetworkContract.appendReputationUpdateLog(slot.recipient, tokenScaledReputationAmount, domains[expenditure.domainId].skillId);
       if (slot.skills.length > 0 && slot.skills[0] > 0) {
         // Currently we support at most one skill per Expenditure, but this will likely change in the future.
-        colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), slot.skills[0]);
+        colonyNetworkContract.appendReputationUpdateLog(slot.recipient, tokenScaledReputationAmount, slot.skills[0]);
       }
     }
 

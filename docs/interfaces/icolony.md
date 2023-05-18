@@ -739,6 +739,23 @@ Get the assigned `_token` payouts of pot with id `_potId`.
 |---|---|---|
 |payout|uint256|Funding pot payout amount
 
+### ▸ `getNextTokenWithReputationRate(address _token):address address`
+
+Call to get next token with a custom reputation rate in the linked list
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|The token we wish to query. Call 0x00 to get the first entry in the list
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|address|address|The address of the next token. If 0x00, queried token is either not in the list or is the last entry in the list.
+
 ### ▸ `getNonRewardPotsTotal(address _token):uint256 amount`
 
 Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
@@ -1000,6 +1017,23 @@ Get the current approval amount
 |Name|Type|Description|
 |---|---|---|
 |amount|uint256|The token approval amount
+
+### ▸ `getTokenReputationRate(address _token):uint256 rate`
+
+Call to get the reputation scaling applied to payouts made in a particular token
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|The token we wish to query
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|rate|uint256|The amount of scaling to applied as a WAD.
 
 ### ▸ `getTotalTokenApproval(address token):uint256 amount`
 
@@ -1446,6 +1480,20 @@ Update the default global claim delay for expenditures
 |_globalClaimDelay|uint256|The new default global claim delay
 
 
+### ▸ `setDomainReputationScaling(uint256 domainId, bool enabled, uint256 factor)`
+
+Call to set the reputation scaling applied to reputation earned in a domain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainId|uint256|The domain to set the value of scaling in
+|enabled|bool|bool Whether we're enabling or disabling reputation scaling for this domain If disabling, bool must be false
+|factor|uint256|The scale factor to apply, as a WAD
+
+
 ### ▸ `setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)`
 
 Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
@@ -1727,6 +1775,19 @@ Sets the skill on an existing payment. Secured function to authorised members.
 |_skillId|uint256|Id of the new skill to set
 
 
+### ▸ `setReputationDecayRate(uint256 _numerator, uint256 _denominator)`
+
+Call to set the rate at which reputation in this colony decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|_denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
+
+
 ### ▸ `setRewardInverse(uint256 _rewardInverse)`
 
 Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100.
@@ -1876,6 +1937,20 @@ Assigning worker role. Can only be set if there is no one currently assigned to 
 |---|---|---|
 |_id|uint256|Id of the task
 |_user|address|Address of the user we want to give a worker role to
+
+
+### ▸ `setTokenReputationRate(address _prevToken, address _token, uint256 _rate)`
+
+Call to set the reputation scaling applied to payouts made in a particular token
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_prevToken|address|The token before where the token being added (_rate > 0) or removed (_rate ==0) in the list of tokens that have reputation scaling applied
+|_token|address|The token we wish to apply scaling to
+|_rate|uint256|The amount of scaling to apply, as a WAD. Users will earn payout*_rate reputation.
 
 
 ### ▸ `setUserRoles(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bytes32 _roles)`

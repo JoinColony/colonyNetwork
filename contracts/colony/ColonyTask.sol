@@ -506,36 +506,40 @@ contract ColonyTask is ColonyStorage {
     uint8 roleId = uint8(taskRole);
     Role storage role = task.roles[roleId];
 
-    uint256 payout = task.payouts[roleId][token];
-    int256 reputation = getReputation(payout, role.rating, role.rateFail);
+    address tokenAddress = tokensWithReputationRatesLinkedList[address(0x00)];
+    while (tokenAddress != address(0x00)){
+      uint256 payout = task.payouts[roleId][tokenAddress];
+      int256 reputation = getReputation(payout, role.rating, role.rateFail, tokenAddress);
 
-    colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
-    if (taskRole == TaskRole.Worker) {
-      if (role.rateFail) {
-        // If the worker failed to rate, we do not penalise the reputation being earned for the skill in
-        // question, so recalculate it without the penalty.
-        reputation = getReputation(payout, role.rating, false);
-      }
-      int256 nSkills = 0;
-      for (uint256 i = 0; i < task.skills.length; i += 1) {
-        if (task.skills[i] > 0 ) {
-          nSkills += 1;
+      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
+      if (taskRole == TaskRole.Worker) {
+        if (role.rateFail) {
+          // If the worker failed to rate, we do not penalise the reputation being earned for the skill in
+          // question, so recalculate it without the penalty.
+          reputation = getReputation(payout, role.rating, false, tokenAddress);
+        }
+        int256 nSkills = 0;
+        for (uint256 i = 0; i < task.skills.length; i += 1) {
+          if (task.skills[i] > 0 ) {
+            nSkills += 1;
+          }
+        }
+
+        assert(nSkills > 0);
+
+        int256 reputationPerSkill = reputation / nSkills;
+
+        for (uint256 i = 0; i < task.skills.length; i += 1) {
+          if (task.skills[i] > 0) {
+            colonyNetworkContract.appendReputationUpdateLog(role.user, reputationPerSkill, task.skills[i]);
+          }
         }
       }
-
-      assert(nSkills > 0);
-
-      int256 reputationPerSkill = reputation / nSkills;
-
-      for (uint256 i = 0; i < task.skills.length; i += 1) {
-        if (task.skills[i] > 0) {
-          colonyNetworkContract.appendReputationUpdateLog(role.user, reputationPerSkill, task.skills[i]);
-        }
-      }
+      tokenAddress = tokensWithReputationRatesLinkedList[tokenAddress];
     }
   }
 
-  function getReputation(uint256 payout, TaskRatings rating, bool rateFail) internal pure returns (int256) {
+  function getReputation(uint256 payout, TaskRatings rating, bool rateFail, address tokenAddress) internal view returns (int256) {
     assert(rating != TaskRatings.None);
 
     bool negative = (rating == TaskRatings.Unsatisfactory);
@@ -546,7 +550,10 @@ contract ColonyTask is ColonyStorage {
     }
 
     // We may lose one atom of reputation here :sad:
-    return int256(reputation / 2) * (negative ? int256(-1) : int256(1));
+    return getTokenScaledReputation(
+      int256(reputation / 2) * (negative ? int256(-1) : int256(1)),
+      tokenAddress
+    );
   }
 
   function getReviewerAddresses(
