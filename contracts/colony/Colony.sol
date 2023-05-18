@@ -114,7 +114,8 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     // After doing all the local storage changes, then do all the external calls
     for (uint256 i = 0; i < _users.length; i++) {
       require(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])), "colony-bootstrap-token-transfer-failed");
-      IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
+      int256 tokenScaledReputationAmount = getTokenScaledReputation(_amounts[i], token);
+      IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], tokenScaledReputationAmount, domains[1].skillId);
     }
 
     emit ColonyBootstrapped(msgSender(), _users, _amounts);
@@ -346,6 +347,63 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
     sig = bytes4(keccak256("setBridgeData(address,uint256,uint256,bytes,bytes,bytes,bytes,bytes,bytes)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("setDomainReputationScaling(uint256,bool,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    // Set the default token weighting for the native token
+    tokenReputationRates[token] = WAD;
+    tokensWithReputationRatesLinkedList[address(0x00)] = token;
+    nTokensWithReputationRates = 1;
+  }
+
+  function setTokenReputationRate(address _prevToken, address _token, uint256 _rate) public stoppable {
+    require(uint256(uint160(_prevToken)) < uint256(uint160(_token)), "colony-invalid-token-ordering");
+    if (_rate == 0){
+      // Then we're removing from the list
+      require(nTokensWithReputationRates != 0, "colony-no-token-weightings-set");
+      require(tokensWithReputationRatesLinkedList[_prevToken] == _token, "colony-token-weighting-not-right-location");
+
+      nTokensWithReputationRates -= 1;
+      tokensWithReputationRatesLinkedList[_prevToken] = tokensWithReputationRatesLinkedList[_token];
+      tokensWithReputationRatesLinkedList[_token] = address(0x00);
+      tokenReputationRates[_token] = 0;
+    } else if (tokensWithReputationRatesLinkedList[_prevToken] == _token){
+      // Then we're updating
+      // We don't need to update the counter
+      // We don't need to update other pointers
+      // Just update the rate
+      tokenReputationRates[_token] = _rate;
+    } else {
+      // We're adding to the list.
+      require(
+        uint256(uint160(tokensWithReputationRatesLinkedList[_prevToken])) > uint256(uint160(_token)) || // In the right place in the middle of the list
+        tokensWithReputationRatesLinkedList[_prevToken] == address(0x00), // Or at the end of the list
+      "colony-invalid-token-ordering");
+
+      require(nTokensWithReputationRates < 10, "colony-max-tokens-already-set");
+
+      nTokensWithReputationRates += 1;
+      tokensWithReputationRatesLinkedList[_token] = tokensWithReputationRatesLinkedList[_prevToken];
+      tokensWithReputationRatesLinkedList[_prevToken] = _token;
+      tokenReputationRates[_token] = _rate;
+    }
+  }
+
+  function getTokenReputationRate(address _token) public view returns (uint256) {
+    return tokenReputationRates[_token];
+  }
+
+  function setReputationDecayRate(uint256 _numerator, uint256 _denominator) stoppable auth public {
+    IColonyNetwork(colonyNetworkAddress).setColonyReputationDecayRate(_numerator, _denominator);
+  }
+
+  function getNextTokenWithReputationRate(address _token) public view returns (address) {
+    return tokensWithReputationRatesLinkedList[_token];
+  }
+
+  function setReputationDecayRate(uint256 _numerator, uint256 _denominator) stoppable auth public {
+    IColonyNetwork(colonyNetworkAddress).setColonyReputationDecayRate(_numerator, _denominator);
   }
 
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
