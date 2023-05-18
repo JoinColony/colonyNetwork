@@ -23,7 +23,7 @@ const {
 } = require("../../helpers/constants");
 
 const { fundColonyWithTokens, makeTask, setupRandomColony } = require("../../helpers/test-data-generator");
-const { checkErrorRevert, expectEvent } = require("../../helpers/test-helper");
+const { checkErrorRevert, expectEvent, removeSubdomainLimit, restoreSubdomainLimit } = require("../../helpers/test-helper");
 const { executeSignedRoleAssignment } = require("../../helpers/task-review-signing");
 
 const { expect } = chai;
@@ -406,6 +406,112 @@ contract("ColonyPermissions", (accounts) => {
 
       expect(penultimateLog.amount).to.eq.BN(INT128_MAX);
       expect(lastLog.amount).to.eq.BN(INT128_MIN);
+    });
+
+    it("should be able to apply reputation earned scaling to 150 layers of domains", async () => {
+      await removeSubdomainLimit(colonyNetwork);
+      await colony.addDomain(1, UINT256_MAX, 1);
+      let domainCount = await colony.getDomainCount();
+      domainCount = domainCount.toNumber();
+
+      const limit = domainCount + 150;
+
+      // Limit currently appears to be 160
+      for (let i = domainCount - 2; i < limit - 2; i += 1) {
+        await colony.addDomain(1, i, i + 2);
+      }
+
+      await colony.emitDomainReputationReward(150, USER1, 10000000000000);
+
+      const repCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycle = await IReputationMiningCycle.at(repCycleAddress);
+      const nLogs = await reputationMiningCycle.getReputationUpdateLogLength();
+
+      let lastLog = await reputationMiningCycle.getReputationUpdateLogEntry(nLogs.subn(1));
+
+      expect(lastLog.amount).to.eq.BN(10000000000000);
+
+      // Set scaling for each domain to a non-zero value
+      for (let i = domainCount; i <= 150 + domainCount; i += 1) {
+        await colony.setDomainReputationScaling(i, true, WAD.muln(9).divn(10));
+      }
+
+      await colony.emitDomainReputationReward(150, USER1, 10000000000000);
+
+      lastLog = await reputationMiningCycle.getReputationUpdateLogEntry(nLogs);
+      expect(lastLog.amount).to.be.lt.BN(10000000000000);
+      await restoreSubdomainLimit(colonyNetwork);
+    });
+
+    it("reputation scaling applies as expected through the hierarchy", async () => {
+      await removeSubdomainLimit(colonyNetwork);
+      await colony.addDomain(1, UINT256_MAX, 1);
+      let domainCount = await colony.getDomainCount();
+      domainCount = domainCount.toNumber();
+
+      await colony.addDomain(1, domainCount - 2, domainCount);
+      await colony.addDomain(1, domainCount - 1, domainCount + 1);
+
+      // No scaling in root. Add scaling in the three we've just added
+      const domain1id = domainCount;
+      const domain2id = domainCount + 1;
+      const domain3id = domainCount + 2;
+
+      await colony.setDomainReputationScaling(domain1id, true, WAD.muln(9).divn(10));
+      await colony.setDomainReputationScaling(domain3id, true, WAD.divn(2));
+
+      const repCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycle = await IReputationMiningCycle.at(repCycleAddress);
+
+      // Should be 45%
+      await colony.emitDomainReputationReward(domain3id, USER1, 10000000000000);
+      let nLogs = await reputationMiningCycle.getReputationUpdateLogLength();
+      let lastLog = await reputationMiningCycle.getReputationUpdateLogEntry(nLogs.subn(1));
+      expect(lastLog.amount).to.equal((10000000000000 * 0.45).toString());
+
+      // Should be 90%
+      await colony.emitDomainReputationReward(domain2id, USER1, 10000000000000);
+      nLogs = await reputationMiningCycle.getReputationUpdateLogLength();
+      lastLog = await reputationMiningCycle.getReputationUpdateLogEntry(nLogs.subn(1));
+      expect(lastLog.amount).to.equal((10000000000000 * 0.9).toString());
+
+      // Should be 90%
+      await colony.emitDomainReputationReward(domain1id, USER1, 10000000000000);
+      nLogs = await reputationMiningCycle.getReputationUpdateLogLength();
+      lastLog = await reputationMiningCycle.getReputationUpdateLogEntry(nLogs.subn(1));
+      expect(lastLog.amount).to.equal((10000000000000 * 0.9).toString());
+
+      // Should be 100%
+      await colony.emitDomainReputationReward(1, USER1, 10000000000000);
+      nLogs = await reputationMiningCycle.getReputationUpdateLogLength();
+      lastLog = await reputationMiningCycle.getReputationUpdateLogEntry(nLogs.subn(1));
+      expect(lastLog.amount).to.equal((10000000000000).toString());
+      await restoreSubdomainLimit(colonyNetwork);
+    });
+
+    it("if a parent domain has a scale factor of 0, no reputation is emitted", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      let domainCount = await colony.getDomainCount();
+      domainCount = domainCount.toNumber();
+
+      await colony.emitDomainReputationReward(domainCount, USER1, 10000000000000);
+
+      const repCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycle = await IReputationMiningCycle.at(repCycleAddress);
+      const nLogs = await reputationMiningCycle.getReputationUpdateLogLength();
+
+      const lastLog = await reputationMiningCycle.getReputationUpdateLogEntry(nLogs.subn(1));
+
+      expect(lastLog.amount).to.eq.BN(10000000000000);
+
+      // Set root domain such that no reputation is earned
+      await colony.setDomainReputationScaling(1, true, 0);
+
+      await colony.emitDomainReputationReward(domainCount, USER1, 10000000000000);
+
+      // No additional reputation emitted
+      const nLogsAfter = await reputationMiningCycle.getReputationUpdateLogLength();
+      expect(nLogsAfter).to.be.eq.BN(nLogs);
     });
 
     it("should allow permissions to propagate to subdomains", async () => {

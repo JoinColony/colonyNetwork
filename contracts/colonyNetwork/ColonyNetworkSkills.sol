@@ -21,9 +21,10 @@ pragma experimental "ABIEncoderV2";
 import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./../common/Multicall.sol";
 import "./ColonyNetworkStorage.sol";
+import "./../colony/ColonyDataTypes.sol";
 
 
-contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
+contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, ColonyDataTypes {
 
   // Skills
 
@@ -86,6 +87,33 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     // stored under in the patricia/merkle tree. Colonies can still pay tokens out to it if they want,
     // it just won't earn reputation.
     if (_amount == 0 || _user == address(0x0)) { return; }
+
+    uint256 scaleFactor = getSkillReputationScaling(_skillId);
+    if (scaleFactor == 0){
+      // Similarly, if the amount is 0 because of scaling, we short circuit it
+      return;
+    }
+
+    // Check if too large for scaling
+    int256 amount;
+    int256 absAmount;
+    if (_amount == type(int256).min){
+      absAmount = type(int256).max; // Off by one, but best we can do - probably gets capped anyway
+    } else {
+      absAmount = _amount >= 0 ? _amount : -_amount;
+    }
+
+    int256 sgnAmount = _amount >= 0 ? int(1) : -1;
+
+    if (type(uint256).max / scaleFactor < uint256(absAmount)){
+      if (sgnAmount == 1){
+        amount = type(int128).max;
+      } else {
+        amount = type(int128).min;
+      }
+    } else {
+      amount = int256(wmul(scaleFactor, uint256(absAmount))) * sgnAmount;
+    }
 
     if (isMiningChain()) {
       appendReputationUpdateLogInternal(_user, _amount, _skillId, msgSender());
@@ -489,5 +517,40 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
   function isContract(address addr) internal returns (bool res) {
     assembly { res := gt(extcodesize(addr), 0) }
+  }
+
+  function setDomainReputationScaling(uint256 _domainId, bool _enabled, uint256 _factor) public calledByColony stoppable
+  {
+    require(_factor <= WAD, "colony-network-invalid-reputation-scale-factor");
+    Domain memory d = IColony(msgSender()).getDomain(_domainId);
+    uint256 skillId = d.skillId;
+    skills[skillId].earnedReputationScaling = _enabled;
+    skills[skillId].reputationScalingFactor = _factor;
+  }
+
+  function getSkillReputationScaling(uint256 _skillId) public view returns (uint256) {
+    uint256 factor;
+    Skill storage s = skills[_skillId];
+    if (s.earnedReputationScaling){
+      factor = s.reputationScalingFactor;
+    } else {
+      factor = WAD;
+    }
+
+    while (s.nParents > 0) {
+      s = skills[s.parents[0]];
+      // If reputation scaling is in effect for this skill, then take the value for this skill in to
+      // account. Otherwise, no effect and continue walking up the tree
+      if (s.earnedReputationScaling) {
+        if (s.reputationScalingFactor == 0){
+          // If scaling is in effect and is 0, we can short circuit - regardless of the rest of the tree
+          // the scaling factor will be 0
+          return 0;
+        } else {
+          factor = wmul(factor, s.reputationScalingFactor);
+        }
+      }
+    }
+    return factor;
   }
 }

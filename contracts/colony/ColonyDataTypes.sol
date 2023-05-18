@@ -349,6 +349,8 @@ interface ColonyDataTypes {
 
   event ArbitraryTransaction(address target, bytes data, bool success);
 
+  event DomainReputationScalingSet(uint256 domainId, bool enabled, uint256 factor);
+
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
     bytes32 reputationState;

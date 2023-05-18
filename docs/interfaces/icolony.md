@@ -1446,6 +1446,20 @@ Update the default global claim delay for expenditures
 |_globalClaimDelay|uint256|The new default global claim delay
 
 
+### ▸ `setDomainReputationScaling(uint256 domainId, bool enabled, uint256 factor)`
+
+Call to set the reputation scaling applied to reputation earned in a domain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainId|uint256|The domain to set the value of scaling in
+|enabled|bool|bool Whether we're enabling or disabling reputation scaling for this domain If disabling, bool must be false
+|factor|uint256|The scale factor to apply, as a WAD
+
+
 ### ▸ `setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)`
 
 Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.

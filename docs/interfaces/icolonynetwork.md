@@ -916,6 +916,24 @@ Get the number of skills in the network including both global and local skills.
 |---|---|---|
 |_count|uint256|The skill count
 
+### ▸ `getSkillReputationScaling(uint256 _skillId):uint256 scaleFactor`
+
+Get the reputation scaling applied to reputation earned in a skill.
+
+*Note: To look up the scaling in a domain, look up the skill corresponding to that domain*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill to get the value of scaling in
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|scaleFactor|uint256|Returns the scale factor applied to reputation earned in this skill, as a WAD.
+
 ### ▸ `getTokenLocking():address _lockingAddress`
 
 Get token locking contract address.
@@ -1080,6 +1098,21 @@ Called to set the details about bridge _bridgeAddress
 |_skillCreationAfter|bytes|The tx data after the dynamic part of the tx to brdige skill creation
 |_setReputationRootHashBefore|bytes|The tx data before the dynamic part of the tx to bridge a new reputation root hash
 |_setReputationRootHashAfter|bytes|The tx data after the dynamic part of the tx to bridge a new reputation root hash
+
+
+### ▸ `setDomainReputationScaling(uint256 _domainId, bool _enabled, uint256 _factor)`
+
+Call to set the reputation scaling applied to reputation earned in a domain.
+
+*Note: Only callable by a colony*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_domainId|uint256|The domain to set the value of scaling in
+|_enabled|bool|bool Whether we're enabling or disabling reputation scaling for this domain If disabling, bool must be false
+|_factor|uint256|The scale factor to apply, as a WAD
 
 
 ### ▸ `setFeeInverse(uint256 _feeInverse)`

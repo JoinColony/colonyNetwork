@@ -124,6 +124,15 @@ contract ColonyDomains is ColonyStorage {
     return domainCount;
   }
 
+  function setDomainReputationScaling(uint256 _domainId, bool _enabled, uint256 _factor) public auth {
+    require(domainExists(_domainId), "colony-domain-does-not-exist");
+    require(_factor <= WAD, "colony-invalid-scale-factor");
+    require(_enabled || _factor == 0, "colony-invalid-configuration");
+
+    IColonyNetwork(colonyNetworkAddress).setDomainReputationScaling(_domainId, _enabled, _factor);
+    emit DomainReputationScalingSet(_domainId, _enabled, _factor);
+  }
+
   // Internal
 
   function initialiseDomain(uint256 _skillId) internal {
