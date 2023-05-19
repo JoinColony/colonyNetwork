@@ -90,6 +90,24 @@ Finalized a motion, executing its action if appropriate
 |_motionId|uint256|The id of the motion to finalize
 
 
+### ▸ `getActionSummary(bytes memory _action, address _target):ActionSummary _summary`
+
+Return a summary of the multicall action
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_action|bytes|The id of the motion
+|_target|address|The address of the target
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_summary|ActionSummary|A summary of the multicall
+
 ### ▸ `getEscalationPeriod():uint256 _period`
 
 Get the escalation period
@@ -193,23 +211,6 @@ Get the current state of the motion
 |Name|Type|Description|
 |---|---|---|
 |_motionState|MotionState|The current motion state
-
-### ▸ `getMulticallActions(bytes memory action):bytes4[] sigs`
-
-Get the current state of the motion
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|action|bytes|The id of the motion
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|sigs|bytes4[]|The current motion state
 
 ### ▸ `getRevealPeriod():uint256 _period`
 

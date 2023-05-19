@@ -85,6 +85,7 @@
   "devDependencies": {
     "@codechecks/client": "^0.1.12",
     "@colony/eslint-config-colony": "9.0.2",
+    "@openzeppelin/contracts": "^4.9.0",
     "@solidity-parser/parser": "^0.14.2",
     "@umaprotocol/truffle-ledger-provider": "^1.0.5",
     "async-request": "^1.2.0",
@@ -118,7 +119,6 @@
     "node-hid": "^2.1.1",
     "nthline": "^1.0.2",
     "nyc": "^15.1.0",
-    "openzeppelin-solidity": "^4.6.0",
     "pre-commit": "^1.2.2",
     "prettier": "^2.7.1",
     "rimraf": "^3.0.2",

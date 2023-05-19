@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 pragma experimental ABIEncoderV2;
 
 import "./../../colonyNetwork/IColonyNetwork.sol";
@@ -96,6 +96,8 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
   mapping (uint256 => uint256) expenditureMotionLocks; // expenditureId => active motionId
 
   mapping(address => uint256) metatransactionNonces;
+
+  mapping (uint256 => ActionSummary) actionSummaries;
 
   function getMetatransactionNonce(address _userAddress) override public view returns (uint256 _nonce){
     // This offset is a result of fixing the storage layout, and having to prevent metatransactions being able to be replayed as a result
@@ -221,14 +223,95 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     return 1 - _vote;
   }
 
+  function isExpenditureSig(bytes4 sig) internal pure returns (bool) {
+    return sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT;
+  }
+
   function getSig(bytes memory action) internal pure returns (bytes4 sig) {
     assembly {
       sig := mload(add(action, 0x20))
     }
   }
 
-  function getMulticallActions(bytes memory action) public pure returns (bytes[] memory actions){
-      return abi.decode(extractCalldata(action), (bytes[]));
+  function getSig(uint256 motionId) internal view returns (bytes4) {
+    return (actionSummaries[motionId].sig != bytes4(0))
+      ? actionSummaries[motionId].sig
+      : getSig(motions[motionId].action);
+  }
+
+  function getExpenditureAction(bytes memory action) internal view returns (bytes memory) {
+    if (getSig(action) == MULTICALL) {
+     bytes[] memory actions = abi.decode(extractCalldata(action), (bytes[]));
+     for (uint256 i; i < actions.length; i++) {
+       if (isExpenditureSig(getSig(actions[i]))) {
+         return actions[i];
+       }
+     }
+    } else {
+      return action;
+    }
+  }
+
+  function getActionSummary(bytes memory action, address target) public view returns (ActionSummary memory) {
+    bytes[] memory actions;
+
+    if (getSig(action) == MULTICALL) {
+      actions = abi.decode(extractCalldata(action), (bytes[]));
+    } else {
+      actions = new bytes[](1); actions[0] = action;
+    }
+
+    ActionSummary memory summary;
+    bytes4 sig;
+    uint256 expenditureId;
+    uint256 domainSkillId;
+
+    for (uint256 i; i < actions.length; i++) {
+      sig = getSig(actions[i]);
+
+      if (sig == NO_ACTION || sig == OLD_MOVE_FUNDS) {
+        // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS, the entire multicall is such and we break
+        summary.sig = sig;
+        break;
+      } else if (isExpenditureSig(sig)) {
+        // If it is an expenditure action, we record the expenditure and domain ids,
+        //  and ensure they are consistent throughout the multicall
+        summary.sig = sig;
+        domainSkillId = getActionDomainSkillId(actions[i]);
+        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
+          summary.domainSkillId = type(uint256).max;
+          break;
+        } else {
+          summary.domainSkillId = domainSkillId;
+        }
+        expenditureId = getExpenditureId(actions[i]);
+        if (summary.expenditureId > 0 && summary.expenditureId != expenditureId) {
+          summary.expenditureId = type(uint256).max;
+          break;
+        } else {
+          summary.expenditureId = expenditureId;
+        }
+      } else {
+        // Otherwise we record the domain id and ensure it is consistent throughout the multicall
+        // If no expenditure signatures have been seen, we record the latest signature
+        if (ColonyRoles(target).getCapabilityRoles(sig) | ROOT_ROLES == ROOT_ROLES) {
+          domainSkillId = colony.getDomain(1).skillId;
+        } else {
+          domainSkillId = getActionDomainSkillId(actions[i]);
+        }
+        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
+          summary.domainSkillId = type(uint256).max;
+          break;
+        } else {
+          summary.domainSkillId = domainSkillId;
+        }
+        if (!isExpenditureSig(summary.sig)) {
+          summary.sig = sig;
+        }
+      }
+    }
+
+    return summary;
   }
 
   // From https://ethereum.stackexchange.com/questions/131283/how-do-i-decode-call-data-in-solidity
@@ -274,11 +357,24 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
   function getExpenditureId(bytes memory action) internal pure returns (uint256 expenditureId) {
     bytes4 sig = getSig(action);
-    assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
+    assert(isExpenditureSig(sig));
 
     assembly {
       expenditureId := mload(add(action, 0x64))
     }
+  }
+
+  function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
+    uint256 permissionDomainId;
+    uint256 childSkillIndex;
+
+    assembly {
+      permissionDomainId := mload(add(_action, 0x24))
+      childSkillIndex := mload(add(_action, 0x44))
+    }
+
+    uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
+    return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
   }
 
   function createExpenditureAction(
@@ -299,7 +395,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     // So: 0x[length][sig][args...]
 
     bytes4 sig = getSig(action);
-    assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
+    assert(isExpenditureSig(sig));
 
     bytes4 functionSignature = SET_EXPENDITURE_STATE;
 

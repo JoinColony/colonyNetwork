@@ -43,6 +43,12 @@ interface VotingReputationDataTypes {
     bytes action;
   }
 
+  struct ActionSummary {
+    bytes4 sig;
+    uint256 domainSkillId;
+    uint256 expenditureId;
+  }
+
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
   event MotionStaked(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);

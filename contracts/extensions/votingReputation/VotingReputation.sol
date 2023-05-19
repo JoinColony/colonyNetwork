@@ -87,38 +87,22 @@ contract VotingReputation is VotingReputationStorage {
     require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");
 
     address target = getTarget(_altTarget);
-    bytes4 action = getSig(_action);
+    uint256 domainSkillId = colony.getDomain(_domainId).skillId;
+    ActionSummary memory actionSummary = getActionSummary(_action, target);
 
-    require(action != OLD_MOVE_FUNDS, "voting-rep-disallowed-function");
+    require(actionSummary.sig != OLD_MOVE_FUNDS, "voting-rep-disallowed-function");
 
-    uint256 skillId;
-
-    if ( action == NO_ACTION ) {
-      // This special action indication 'no action' for simple decisions, but
-      // there's no such function signature, so colonies don't know about it, and there's
-      // no domain to extract from the 'action'
-      // We effectively assert the 'action' is taking place in the domain the simple decision
-      // is taking place in
+    if (actionSummary.sig == NO_ACTION) {
+      // For the special no-op action, we hold the vote the provided domain
       require(_childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");
-      skillId = colony.getDomain(_domainId).skillId;
-
-    } else if (ColonyRoles(target).getCapabilityRoles(action) | ROOT_ROLES == ROOT_ROLES) {
-
-      // A root or unpermissioned function
-      require(_domainId == 1 && _childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");
-      skillId = colony.getDomain(1).skillId;
-
+      actionSummary.domainSkillId = domainSkillId;
     } else {
-
-      // A domain permissioned function
-      skillId = colony.getDomain(_domainId).skillId;
-      uint256 actionDomainSkillId = getActionDomainSkillId(_action);
-
-      if (skillId != actionDomainSkillId) {
-        uint256 childSkillId = colonyNetwork.getChildSkillId(skillId, _childSkillIndex);
-        require(childSkillId == actionDomainSkillId, "voting-rep-invalid-domain-id");
-      } else {
+      // Otherwise, we validate the vote domain against the action
+      if (domainSkillId == actionSummary.domainSkillId) {
         require(_childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");
+      } else {
+        uint256 childSkillId = colonyNetwork.getChildSkillId(domainSkillId, _childSkillIndex);
+        require(childSkillId == actionSummary.domainSkillId, "voting-rep-invalid-domain-id");
       }
     }
 
@@ -128,12 +112,14 @@ contract VotingReputation is VotingReputationStorage {
 
     motion.rootHash = colonyNetwork.getReputationRootHash();
     motion.domainId = _domainId;
-    motion.skillId = skillId;
+    motion.skillId = domainSkillId;
 
-    motion.skillRep = checkReputation(motion.rootHash, skillId, address(0x0), _key, _value, _branchMask, _siblings);
+    motion.skillRep = checkReputation(motion.rootHash, domainSkillId, address(0x0), _key, _value, _branchMask, _siblings);
     require(motion.skillRep > 0, "voting-rep-no-reputation-in-domain");
     motion.altTarget = _altTarget;
     motion.action = _action;
+
+    actionSummaries[motionCount] = actionSummary;
 
     emit MotionCreated(motionCount, msgSender(), _domainId);
   }
@@ -271,26 +257,8 @@ contract VotingReputation is VotingReputationStorage {
       motion.votes[NAY] < motion.votes[YAY]
     );
 
-    if ((
-        getSig(motion.action) == SET_EXPENDITURE_STATE ||
-        getSig(motion.action) == SET_EXPENDITURE_PAYOUT
-      ) && getTarget(motion.altTarget) == address(colony)
-    ) {
-      uint256 expenditureId = getExpenditureId(motion.action);
-
-      assert(expenditureMotionLocks[expenditureId] == _motionId);
-      delete expenditureMotionLocks[expenditureId];
-
-      uint256 currentClaimDelay = colony.getExpenditure(expenditureId).globalClaimDelay;
-      bytes memory claimDelayAction = createExpenditureAction(motion.action, GLOBAL_CLAIM_DELAY_OFFSET, currentClaimDelay - 365 days);
-      // No require this time, since we don't want stakes to be permanently locked
-      executeCall(_motionId, claimDelayAction);
-
-      if (colony.getExpenditure(expenditureId).status == ColonyDataTypes.ExpenditureStatus.Finalized) {
-        bytes memory finalizedTimestampAction = createExpenditureAction(motion.action, FINALIZED_TIMESTAMP_OFFSET, block.timestamp);
-        executeCall(_motionId, finalizedTimestampAction);
-      }
-
+    if (isExpenditureSig(getSig(_motionId)) && getTarget(motion.altTarget) == address(colony)) {
+      uint256 expenditureId = unlockExpenditure(_motionId);
       uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
         motion.votes[YAY] : motion.stakes[YAY];
       if (expenditurePastVotes[expenditureId] < votePower) {
@@ -407,18 +375,26 @@ contract VotingReputation is VotingReputationStorage {
     );
   }
 
-  // Internal functions
+  // Internal
 
-  function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
-    uint256 permissionDomainId;
-    uint256 childSkillIndex;
+  function unlockExpenditure(uint256 _motionId) internal returns (uint256) {
+    Motion storage motion = motions[_motionId];
+    bytes memory action = getExpenditureAction(motion.action);
+    uint256 expenditureId = getExpenditureId(action);
 
-    assembly {
-      permissionDomainId := mload(add(_action, 0x24))
-      childSkillIndex := mload(add(_action, 0x44))
+    assert(expenditureMotionLocks[expenditureId] == _motionId);
+    delete expenditureMotionLocks[expenditureId];
+
+    uint256 currentClaimDelay = colony.getExpenditure(expenditureId).globalClaimDelay;
+    bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, currentClaimDelay - 365 days);
+    // No require this time, since we don't want stakes to be permanently locked
+    executeCall(_motionId, claimDelayAction);
+
+    if (colony.getExpenditure(expenditureId).status == ColonyDataTypes.ExpenditureStatus.Finalized) {
+      bytes memory finalizedTimestampAction = createExpenditureAction(action, FINALIZED_TIMESTAMP_OFFSET, block.timestamp);
+      executeCall(_motionId, finalizedTimestampAction);
     }
 
-    uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
-    return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
+    return expenditureId;
   }
 }

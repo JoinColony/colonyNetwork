@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 pragma experimental ABIEncoderV2;
 
 import "./../../colonyNetwork/IColonyNetwork.sol";
@@ -69,10 +69,9 @@ contract VotingReputationStaking is VotingReputationStorage {
     if (
       _vote == YAY &&
       !motion.escalated &&
-      motion.stakes[YAY] == requiredStake && (
-        getSig(motion.action) == SET_EXPENDITURE_STATE ||
-        getSig(motion.action) == SET_EXPENDITURE_PAYOUT
-      ) && motion.altTarget == address(0x0)
+      motion.stakes[YAY] == requiredStake &&
+      isExpenditureSig(getSig(_motionId)) &&
+      motion.altTarget == address(0x0)
     ) {
       lockExpenditure(_motionId);
     }
@@ -223,7 +222,8 @@ contract VotingReputationStaking is VotingReputationStorage {
 
   function lockExpenditure(uint256 _motionId) internal {
     Motion storage motion = motions[_motionId];
-    uint256 expenditureId = getExpenditureId(motion.action);
+    bytes memory action = getExpenditureAction(motion.action);
+    uint256 expenditureId = getExpenditureId(action);
 
     // If the expenditure is already locked, this motion is a no-op
     if (expenditureMotionLocks[expenditureId] > 0) {
@@ -231,7 +231,7 @@ contract VotingReputationStaking is VotingReputationStorage {
     } else {
       expenditureMotionLocks[expenditureId] = _motionId;
       uint256 currentClaimDelay = colony.getExpenditure(expenditureId).globalClaimDelay;
-      bytes memory claimDelayAction = createExpenditureAction(motion.action, GLOBAL_CLAIM_DELAY_OFFSET, currentClaimDelay + 365 days);
+      bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, currentClaimDelay + 365 days);
       require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
     }
   }
