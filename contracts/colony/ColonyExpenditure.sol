@@ -214,6 +214,7 @@ contract ColonyExpenditure is ColonyStorage {
     require(_slots.length == _payoutModifiers.length, "colony-expenditure-bad-slots");
 
     for (uint256 i; i < _slots.length; i++) {
+      require(_payoutModifiers[i] <= 0, "colony-expenditure-bad-payout-modifier");
       expenditureSlots[_id][_slots[i]].payoutModifier = _payoutModifiers[i];
 
       emit ExpenditurePayoutModifierSet(msgSender(), _id, _slots[i], _payoutModifiers[i]);
@@ -315,15 +316,14 @@ contract ColonyExpenditure is ColonyStorage {
 
       // Validate payout modifier
       if (offset == 2) {
-        require(
-          int256(uint256(_value)) <= MAX_PAYOUT_MODIFIER &&
-          int256(uint256(_value)) >= MIN_PAYOUT_MODIFIER,
-          "colony-expenditure-bad-payout-modifier"
-        );
+        if (!ColonyAuthority(address(authority)).hasUserRole(msgSender(), 1, uint8(ColonyDataTypes.ColonyRole.Root))){
+          require(int256(uint256(_value)) <= 0, "colony-expenditure-bad-payout-modifier");
+        }
+        require(int256(uint256(_value)) >= MIN_PAYOUT_MODIFIER, "colony-expenditure-bad-payout-modifier");
       }
 
     } else {
-      require(false, "colony-expenditure-bad-slot");
+      revert("colony-expenditure-bad-slot");
     }
 
     executeStateChange(keccak256(abi.encode(_id, _storageSlot)), _mask, _keys, _value);

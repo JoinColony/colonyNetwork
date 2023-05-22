@@ -1142,7 +1142,7 @@ exports.getRewardClaimSquareRootsAndProofs = async function getRewardClaimSquare
 };
 
 exports.bn2bytes32 = function bn2bytes32(x, size = 64) {
-  return `0x${x.toString(16, size)}`;
+  return `0x${x.toTwos(size * 4).toString(16, size)}`;
 };
 
 exports.rolesToBytes32 = function rolesToBytes32(roles) {

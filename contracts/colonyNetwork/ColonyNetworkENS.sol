@@ -151,6 +151,6 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     } else if (isXdai()) {
       return "joincolony.colonyxdai";
     }
-    require(false, "colony-network-unsupported-network");
+    revert("colony-network-unsupported-network");
   }
 }
