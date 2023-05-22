@@ -101,10 +101,10 @@ contract("EvaluatedExpenditure", (accounts) => {
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(expenditureSlot.payoutModifier).to.be.zero;
 
-      await evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [WAD], { from: USER0 });
+      await evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [WAD.muln(-1)], { from: USER0 });
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD);
+      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD.muln(-1));
     });
 
     it("cannot set the payout modifier with bad arguments", async () => {
@@ -123,7 +123,7 @@ contract("EvaluatedExpenditure", (accounts) => {
 
     it("can set the payout modifier via metatransaction", async () => {
       const txData = await evaluatedExpenditure.contract.methods
-        .setExpenditurePayoutModifiers(1, UINT256_MAX.toString(), expenditureId.toString(), [0], [WAD.toString()])
+        .setExpenditurePayoutModifiers(1, UINT256_MAX.toString(), expenditureId.toString(), [0], [WAD.muln(-1)])
         .encodeABI();
 
       const { r, s, v } = await getMetaTransactionParameters(txData, USER0, evaluatedExpenditure.address);
@@ -135,7 +135,7 @@ contract("EvaluatedExpenditure", (accounts) => {
       await evaluatedExpenditure.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD);
+      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD.muln(-1));
     });
   });
 });

@@ -82,7 +82,7 @@ Sets the payout modifiers in given expenditure slots, using the arbitration perm
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_id|uint256|Expenditure identifier
 |_slots|uint256[]|Array of slots to set payout modifiers
-|_payoutModifiers|int256[]|Values (between +/- WAD) to modify the payout & reputation bonus
+|_payoutModifiers|int256[]|Values (between -WAD and 0) to modify the payout & reputation bonus
 
 
 ### ▸ `uninstall()`
