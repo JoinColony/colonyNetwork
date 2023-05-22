@@ -209,7 +209,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     uint256 initialPayout = expenditureSlotPayouts[_id][_slot][_token];
     delete expenditureSlotPayouts[_id][_slot][_token];
 
-    int256 payoutModifier = imin(imax(slot.payoutModifier, MIN_PAYOUT_MODIFIER), MAX_PAYOUT_MODIFIER);
+    int256 payoutModifier = imax(slot.payoutModifier, MIN_PAYOUT_MODIFIER);
     uint256 payoutScalar = uint256(payoutModifier + int256(WAD));
 
     uint256 repPayout = wmul(initialPayout, payoutScalar);

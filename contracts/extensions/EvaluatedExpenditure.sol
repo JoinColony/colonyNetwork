@@ -82,7 +82,7 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
   /// @param _id Expenditure identifier
   /// @param _slots Array of slots to set payout modifiers
-  /// @param _payoutModifiers Values (between +/- WAD) to modify the payout & reputation bonus
+  /// @param _payoutModifiers Values (between -WAD and 0) to modify the payout & reputation bonus
   function setExpenditurePayoutModifiers(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
