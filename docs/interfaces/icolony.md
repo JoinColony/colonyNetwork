@@ -1775,6 +1775,19 @@ Sets the skill on an existing payment. Secured function to authorised members.
 |_skillId|uint256|Id of the new skill to set
 
 
+### ▸ `setReputationDecayRate(uint256 _numerator, uint256 _denominator)`
+
+Call to set the rate at which reputation in this colony decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|_denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
+
+
 ### ▸ `setRewardInverse(uint256 _rewardInverse)`
 
 Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100.

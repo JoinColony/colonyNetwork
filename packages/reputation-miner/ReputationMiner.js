@@ -248,8 +248,8 @@ class ReputationMiner {
     const repCycle = await this.getActiveRepCycle(blockNumber);
     // Update fractions
     const decayFraction = await repCycle.getDecayConstant({ blockTag: blockNumber });
-    this.decayNumerator = decayFraction.numerator;
-    this.decayDenominator = decayFraction.denominator;
+    this.defaultDecayNumerator = decayFraction.numerator;
+    this.defaultDecayDenominator = decayFraction.denominator;
 
     // Do updates
     this.nReputationsBeforeLatestLog = ethers.BigNumber.from(this.nReputations.toString());
@@ -362,8 +362,18 @@ class ReputationMiner {
       const key = await Object.keys(this.reputations)[updateNumber];
       const reputation = ethers.BigNumber.from(`0x${this.reputations[key].slice(2, 66)}`);
 
-      const numerator = ethers.BigNumber.from(this.decayNumerator);
-      const denominator = ethers.BigNumber.from(this.decayDenominator);
+      let numerator = ethers.BigNumber.from(this.defaultDecayNumerator);
+      let denominator = ethers.BigNumber.from(this.defaultDecayDenominator);
+
+      try {
+        const keyElements = ReputationMiner.breakKeyInToElements(key);
+        const [colonyAddress, ,] = keyElements;
+        const colonyDecay = await this.colonyNetwork.getColonyReputationDecayRate(colonyAddress, { blockTag: blockNumber });
+        numerator = colonyDecay.numerator;
+        denominator = colonyDecay.denominator;
+      } catch (err) {
+        // Update not deployed at that block number, use the default
+      }
 
       const newReputation = reputation.mul(numerator).div(denominator);
       const reputationChange = newReputation.sub(reputation);
