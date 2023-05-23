@@ -531,7 +531,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
     if (u[U_DECAY_TRANSITION] == 1) {
-      require(uint256(_disagreeStateReputationValue) == (uint256(_agreeStateReputationValue)*DECAY_NUMERATOR)/DECAY_DENOMINATOR, "colony-reputation-mining-decay-incorrect");
+      uint256 numerator;
+      uint256 denominator;
+
+      (numerator, denominator) = IColonyNetwork(colonyNetworkAddress).getColonyReputationDecayRate(logEntry.colony);
+      require(uint256(_disagreeStateReputationValue) == (uint256(_agreeStateReputationValue)*numerator)/denominator, "colony-reputation-mining-decay-incorrect");
     } else {
       if (logEntry.amount >= 0) {
         // Don't allow reputation to overflow

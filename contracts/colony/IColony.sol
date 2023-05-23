@@ -1134,9 +1134,4 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @return address The address of the next token. If 0x00, queried token is either not in the
   /// list or is the last entry in the list.
   function getNextTokenWithReputationRate(address _token) external view returns (address);
-
-  /// @notice Call to set the rate at which reputation in this colony decays
-  /// @param _numerator The numerator of the fraction reputation does down by every reputation cycle
-  /// @param _denominator The denominator of the fraction reputation does down by every reputation cycle
-  function setReputationDecayRate(uint256 _numerator, uint256 _denominator) external;
 }

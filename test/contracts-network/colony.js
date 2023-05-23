@@ -464,6 +464,18 @@ contract("Colony", (accounts) => {
       await checkErrorRevert(colony.setReputationDecayRate(1, 1, { from: USER1 }), "ds-auth-unauthorized");
     });
 
+    it("should emit an event when the decay rate is set", async () => {
+      const tx = await colony.setReputationDecayRate(1, 1, { from: USER0 });
+      const activeReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
+
+      await expectEvent(tx, "ColonyReputationDecayRateToChange(address,address,uint256,uint256)", [
+        colony.address,
+        activeReputationMiningCycleAddress,
+        1,
+        1,
+      ]);
+    });
+
     it("a colony that hasn't had the decay rate explicitly set returns the default decay rate", async () => {
       const res = await colonyNetwork.getColonyReputationDecayRate(colony.address);
 
@@ -492,9 +504,11 @@ contract("Colony", (accounts) => {
     });
 
     it("a colony's decay rate is set, it cannot be set to an invalid value", async () => {
-      await checkErrorRevert(colony.setReputationDecayRate(2, 1, { from: USER0 }), "ds-auth-unauthorized");
-      await checkErrorRevert(colony.setReputationDecayRate("1000000000000000000", "1000000000000000000", { from: USER0 }), "ds-auth-unauthorized");
-      await checkErrorRevert(colony.setReputationDecayRate(1, 0, { from: USER0 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setReputationDecayRate(2, 1, { from: USER0 }), "colony-network-decay-rate-over-1");
+      await checkErrorRevert(
+        colony.setReputationDecayRate("1000000000000000000", "1000000000000000000", { from: USER0 }),
+        "colony-network-decay-numerator-too-big"
+      );
     });
 
     it("a colony can return to following the default decay rate", async () => {

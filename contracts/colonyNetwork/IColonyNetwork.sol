@@ -566,4 +566,28 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _colony The colony being queried
   function addPendingReputationUpdate(uint256 _chainId, address _colony) external;
 
+  /// @notice Get the reputation scaling applied to reputation earned in a skill.
+  /// @dev To look up the scaling in a domain, look up the skill corresponding to that domain
+  /// @param _skillId The skill to get the value of scaling in
+  /// @return scaleFactor Returns the scale factor applied to reputation earned in this skill, as a WAD.
+  function getSkillReputationScaling(uint256 _skillId) external view returns (uint256 scaleFactor);
+
+  /// @notice Call to set the reputation scaling applied to reputation earned in a domain.
+  /// @dev Only callable by a colony
+  /// @param _domainId The domain to set the value of scaling in
+  /// @param _enabled bool Whether we're enabling or disabling reputation scaling for this domain
+  /// If disabling, bool must be false
+  /// @param _factor The scale factor to apply, as a WAD
+  function setDomainReputationScaling(uint256 _domainId, bool _enabled, uint256 _factor) external;
+
+  /// @notice Called by a colony to set the rate at which reputation in that colony decays
+  /// @param _numerator The numerator of the fraction reputation does down by every reputation cycle
+  /// @param _denominator The denominator of the fraction reputation does down by every reputation cycle
+  function setColonyReputationDecayRate(uint256 _numerator, uint256 _denominator) external;
+
+  /// @notice Called to get the rate at which reputation in a colony decays
+  /// @param _colony The address of the colony in question
+  /// @return numerator The numerator of the fraction reputation does down by every reputation cycle
+  /// @return denominator The denominator of the fraction reputation does down by every reputation cycle
+  function getColonyReputationDecayRate(address _colony) external view returns (uint256 numerator, uint256 denominator);
 }
