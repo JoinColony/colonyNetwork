@@ -355,6 +355,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     tokenReputationRates[token] = WAD;
     tokensWithReputationRatesLinkedList[address(0x00)] = token;
     nTokensWithReputationRates = 1;
+
+    sig = bytes4(keccak256("setReputationDecayRate(uint256,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function setTokenReputationRate(address _prevToken, address _token, uint256 _rate) public stoppable {
@@ -400,10 +403,6 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function getNextTokenWithReputationRate(address _token) public view returns (address) {
     return tokensWithReputationRatesLinkedList[_token];
-  }
-
-  function setReputationDecayRate(uint256 _numerator, uint256 _denominator) stoppable auth public {
-    IColonyNetwork(colonyNetworkAddress).setColonyReputationDecayRate(_numerator, _denominator);
   }
 
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){

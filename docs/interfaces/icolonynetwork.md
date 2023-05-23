@@ -525,6 +525,24 @@ Get the number of colonies in the network.
 |---|---|---|
 |_count|uint256|The colony count
 
+### ▸ `getColonyReputationDecayRate(address _colony):uint256 numerator, uint256 denominator`
+
+Called to get the rate at which reputation in a colony decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colony|address|The address of the colony in question
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
+
 ### ▸ `getColonyVersionResolver(uint256 _version):address _resolverAddress`
 
 Get the `Resolver` address for Colony contract version `_version`.
@@ -1098,6 +1116,19 @@ Called to set the details about bridge _bridgeAddress
 |_skillCreationAfter|bytes|The tx data after the dynamic part of the tx to brdige skill creation
 |_setReputationRootHashBefore|bytes|The tx data before the dynamic part of the tx to bridge a new reputation root hash
 |_setReputationRootHashAfter|bytes|The tx data after the dynamic part of the tx to bridge a new reputation root hash
+
+
+### ▸ `setColonyReputationDecayRate(uint256 _numerator, uint256 _denominator)`
+
+Called by a colony to set the rate at which reputation in that colony decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|_denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
 
 
 ### ▸ `setDomainReputationScaling(uint256 _domainId, bool _enabled, uint256 _factor)`

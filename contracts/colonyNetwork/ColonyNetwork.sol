@@ -839,6 +839,48 @@ contract ColonyNetwork is ColonyDataTypes, BasicMetaTransaction, ColonyNetworkSt
     return payoutWhitelist[_token];
   }
 
+  function setColonyReputationDecayRate(uint256 _numerator, uint256 _denominator) public calledByColony stoppable {
+    require(_numerator < 10**15, "colony-network-decay-numerator-too-big");
+    require(_numerator <= _denominator, "colony-network-decay-rate-over-1");
+
+    ColonyDecayRate storage decayRate = colonyDecayRates[msgSender()];
+
+    if (activeReputationMiningCycle != decayRate.afterMiningCycle) {
+      // Move the old-next values to current, as they are in effect
+      decayRate.currentNumerator = decayRate.nextNumerator;
+      decayRate.currentDenominator = decayRate.nextDenominator;
+
+      // Update afterMiningCycle
+      decayRate.afterMiningCycle = activeReputationMiningCycle;
+    }
+
+    // Whether we've updated the current decays rates or not, we update the next values
+    decayRate.nextNumerator = _numerator;
+    decayRate.nextDenominator = _denominator;
+
+    emit ColonyReputationDecayRateToChange(msgSender(), activeReputationMiningCycle, _numerator, _denominator);
+  }
+
+  function getColonyReputationDecayRate(address _colony) public view returns (uint256, uint256) {
+    uint256 numerator;
+    uint256 denominator;
+
+    if (activeReputationMiningCycle != colonyDecayRates[_colony].afterMiningCycle) {
+      // Then the values of interest is whatever's in nextNumerator/nextDenominator
+      numerator = colonyDecayRates[_colony].nextNumerator;
+      denominator = colonyDecayRates[_colony].nextDenominator;
+    } else {
+      numerator = colonyDecayRates[_colony].currentNumerator;
+      denominator = colonyDecayRates[_colony].currentDenominator;
+    }
+
+    if (denominator == 0) {
+      // Then we return the 'default' decay rate
+      (numerator, denominator) = IReputationMiningCycle(activeReputationMiningCycle).getDecayConstant();
+    }
+    return (numerator, denominator);
+  }
+
   function incrementMetatransactionNonce(address _user) override internal {
     // We need to protect the metatransaction nonce slots, otherwise those with recovery
     // permissions could replay metatransactions, which would be a disaster.

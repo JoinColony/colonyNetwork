@@ -133,6 +133,7 @@ contract ColonyAuthority is CommonAuthority {
     // Added in colony vxxx
     addRoleCapability(ROOT_ROLE, "setBridgeData(address,uint256,uint256,bytes,bytes,bytes,bytes,bytes,bytes)");
     addRoleCapability(ROOT_ROLE, "setDomainReputationScaling(uint256,bool,uint256)");
+    addRoleCapability(ROOT_ROLE, "setReputationDecayRate(uint256,uint256)");
 
   }
 

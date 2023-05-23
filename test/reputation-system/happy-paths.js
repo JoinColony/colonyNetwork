@@ -452,6 +452,46 @@ contract("Reputation Mining - happy paths", (accounts) => {
       );
     });
 
+    it("should calculate reputation decays correctly if the colony is using a custom decay rate", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+      await metaColony.setReputationDecayRate(1, 2);
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, new BN("10"));
+      await badClient.initialise(colonyNetwork.address);
+
+      const skillId = GLOBAL_SKILL_ID;
+      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, ethers.constants.AddressZero);
+      const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, MINER1);
+
+      await goodClient.insert(globalKey, INT128_MAX.subn(1), 0);
+      await goodClient.insert(userKey, INT128_MAX.subn(1), 0);
+      await badClient.insert(globalKey, INT128_MAX.subn(1), 0);
+      await badClient.insert(userKey, INT128_MAX.subn(1), 0);
+
+      const rootHash = await goodClient.getRootHash();
+      let repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+      await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
+      await repCycle.confirmNewHash(0, { from: MINER1 });
+
+      repCycle = await getActiveRepCycle(colonyNetwork);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
+      });
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+      await repCycle.confirmNewHash(1, { from: MINER1 });
+
+      const expectedResult = INT128_MAX.subn(1).muln(1).divn(2);
+      const decayKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, MINER1);
+      const decimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
+
+      expect(expectedResult.toString(16, 64), `Incorrect decay. Actual value is ${decimalValueDecay}`).to.equal(
+        goodClient.reputations[decayKey].slice(2, 66)
+      );
+    });
+
     it("should keep reputation updates that occur during one update window for the next window", async () => {
       // Creates an entry in the reputation log for the worker and manager
       await fundColonyWithTokens(metaColony, clnyToken);

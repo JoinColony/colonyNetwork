@@ -185,6 +185,14 @@ interface ColonyNetworkDataTypes {
   /// @param updateNumber The number of the reputation update bridged in that colony
   event ReputationUpdateStoredFromBridge(uint256 chainId, address colony, uint256 updateNumber);
 
+  /// @notice Event logged when a colony sets what its next decay rate is going to be
+  /// @param colony The colony changing its decay rate
+  /// @param fromCycleCompleted When this mining cycle is completed, the new rate will be in effect
+  /// @param numerator The new numerator of the decay rate
+  /// @param denominator The new denominator of the decay rate
+  event ColonyReputationDecayRateToChange(address colony, address fromCycleCompleted, uint256 numerator, uint256 denominator);
+
+
   struct Skill {
     // total number of parent skills
     uint128 nParents;
@@ -241,5 +249,13 @@ interface ColonyNetworkDataTypes {
     uint256 skillId;
     address colony;
     uint256 timestamp;
+  }
+
+  struct ColonyDecayRate {
+    uint256 currentNumerator;
+    uint256 currentDenominator;
+    uint256 nextNumerator;
+    uint256 nextDenominator;
+    address afterMiningCycle;
   }
 }
