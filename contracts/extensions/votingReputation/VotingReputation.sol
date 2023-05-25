@@ -249,6 +249,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     motion.skillId = skillId;
 
     motion.skillRep = checkReputation(motion.rootHash, skillId, address(0x0), _key, _value, _branchMask, _siblings);
+    require(motion.skillRep > 0, "voting-rep-no-reputation-in-domain");
     motion.altTarget = _altTarget;
     motion.action = _action;
 
