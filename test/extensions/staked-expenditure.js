@@ -456,6 +456,48 @@ contract("Staked Expenditure", (accounts) => {
       await colony.claimExpenditurePayout(expenditureId, 0, token.address);
     });
 
+    it("can release, but not claim, a staged payment", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, true, {
+        from: USER0,
+      });
+      const expenditureId = await colony.getExpenditureCount();
+      const expenditure = await colony.getExpenditure(expenditureId);
+      const domain1 = await colony.getDomain(1);
+
+      await colony.setExpenditureRecipients(expenditureId, [0, 1], [USER1, USER1], { from: USER0 });
+      await colony.setExpenditureClaimDelays(expenditureId, [0, 1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
+      await colony.setExpenditurePayouts(expenditureId, [0, 1], token.address, [WAD, WAD.muln(2)], { from: USER0 });
+
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD.muln(3),
+        token.address,
+        { from: USER0 }
+      );
+
+      await colony.finalizeExpenditure(expenditureId);
+
+      const slotBefore = await colony.getExpenditureSlot(expenditureId, 0);
+
+      await stakedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [], { from: USER0 });
+
+      const slotAfter = await colony.getExpenditureSlot(expenditureId, 0);
+
+      expect(slotBefore.claimDelay).to.equal(UINT128_MAX.toString());
+      expect(slotAfter.claimDelay).to.equal("0");
+
+      const slotPayout = await colony.getExpenditureSlotPayout(expenditureId, 0, token.address);
+      expect(slotPayout).to.eq.BN(WAD);
+    });
+
     it("cannot release a stage if not a staged payment", async () => {
       await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, false, {
         from: USER0,
