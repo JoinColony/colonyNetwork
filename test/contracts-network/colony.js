@@ -412,6 +412,15 @@ contract("Colony", (accounts) => {
     });
   });
 
+  describe("when executing a multicall transaction", () => {
+    it("a multicall transaction cannot call multicall", async function () {
+      const txData1 = await colony.contract.methods.setArchitectureRole(1, UINT256_MAX, USER1, 1, true).encodeABI();
+      const txData2 = await colony.contract.methods.multicall([txData1]).encodeABI();
+
+      await checkErrorRevert(colony.multicall([txData1, txData2]), "colony-multicall-cannot-multicall");
+    });
+  });
+
   describe("when burning tokens", async () => {
     beforeEach(async () => {
       await colony.mintTokens(WAD);
