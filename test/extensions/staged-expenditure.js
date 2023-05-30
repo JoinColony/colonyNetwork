@@ -5,9 +5,20 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, UINT128_MAX, WAD, ADDRESS_ZERO } = require("../../helpers/constants");
+const { UINT256_MAX, UINT128_MAX, WAD, ADDRESS_ZERO, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
 const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-data-generator");
-const { checkErrorRevert, web3GetCode, expectEvent, expectNoEvent } = require("../../helpers/test-helper");
+const {
+  checkErrorRevert,
+  web3GetCode,
+  expectEvent,
+  expectNoEvent,
+  makeReputationKey,
+  makeReputationValue,
+  getActiveRepCycle,
+  forwardTime,
+} = require("../../helpers/test-helper");
+
+const PatriciaTree = require("../../packages/reputation-miner/patricia");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -15,6 +26,7 @@ chai.use(bnChai(web3.utils.BN));
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const StagedExpenditure = artifacts.require("StagedExpenditure");
+const StakedExpenditure = artifacts.require("StakedExpenditure");
 
 const STAGED_EXPENDITURE = soliditySha3("StagedExpenditure");
 
@@ -27,6 +39,7 @@ contract("Staged Expenditure", (accounts) => {
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
+  const MINER = accounts[5];
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
@@ -89,7 +102,7 @@ contract("Staged Expenditure", (accounts) => {
   });
 
   describe("using the extension", async () => {
-    it("can create a staged payment", async () => {
+    it("can create a staged payment via permissions", async () => {
       await fundColonyWithTokens(colony, token, WAD.muln(10));
 
       await colony.makeExpenditure(1, UINT256_MAX, 1, { from: USER0 });
@@ -97,9 +110,7 @@ contract("Staged Expenditure", (accounts) => {
       const expenditure = await colony.getExpenditure(expenditureId);
       const domain1 = await colony.getDomain(1);
 
-      await stagedExpenditure.setExpenditureStaged(expenditureId, true, {
-        from: USER0,
-      });
+      await stagedExpenditure.setExpenditureStaged(expenditureId, true, { from: USER0 });
 
       await colony.setExpenditureRecipients(expenditureId, [0, 1], [USER1, USER1], { from: USER0 });
       await colony.setExpenditureClaimDelays(expenditureId, [0, 1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
@@ -136,6 +147,64 @@ contract("Staged Expenditure", (accounts) => {
       );
 
       await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 });
+      await colony.claimExpenditurePayout(expenditureId, 0, token.address);
+    });
+
+    it("can create a staged payment via a stake", async () => {
+      const STAKED_EXPENDITURE = soliditySha3("StakedExpenditure");
+      const extension = await StakedExpenditure.new();
+      const stakedExpenditureversion = await extension.version();
+
+      const reputationTree = new PatriciaTree();
+      const domain1 = await colony.getDomain(1);
+      reputationTree.insert(makeReputationKey(colony.address, domain1.skillId), makeReputationValue(WAD, 1));
+
+      const rootHash = await reputationTree.getRootHash();
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+      await repCycle.confirmNewHash(0, { from: MINER });
+
+      await colony.installExtension(STAKED_EXPENDITURE, stakedExpenditureversion);
+
+      const stakedExpenditureAddress = await colonyNetwork.getExtensionInstallation(STAKED_EXPENDITURE, colony.address);
+      const stakedExpenditure = await StakedExpenditure.at(stakedExpenditureAddress);
+      await colony.setAdministrationRole(1, UINT256_MAX, stakedExpenditure.address, 1, true);
+
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      const domain1Key = makeReputationKey(colony.address, domain1.skillId);
+      const domain1Value = makeReputationValue(WAD, 1);
+      const [domain1Mask, domain1Siblings] = reputationTree.getProof(domain1Key);
+
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+      const expenditure = await colony.getExpenditure(expenditureId);
+
+      await stagedExpenditure.setExpenditureStaged(expenditureId, true, { from: USER0 });
+
+      await colony.setExpenditureRecipients(expenditureId, [0, 1], [USER1, USER1], { from: USER0 });
+      await colony.setExpenditureClaimDelays(expenditureId, [0, 1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
+      await colony.setExpenditurePayouts(expenditureId, [0, 1], token.address, [WAD, WAD.muln(2)], { from: USER0 });
+
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD.muln(3),
+        token.address,
+        { from: USER0 }
+      );
+
+      await colony.finalizeExpenditure(expenditureId);
+
+      await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 });
+
       await colony.claimExpenditurePayout(expenditureId, 0, token.address);
     });
 
