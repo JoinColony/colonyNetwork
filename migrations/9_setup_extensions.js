@@ -15,6 +15,7 @@ const VotingReputation = artifacts.require("./VotingReputation");
 const VotingReputationMisalignedRecovery = artifacts.require("./VotingReputationMisalignedRecovery");
 const TokenSupplier = artifacts.require("./TokenSupplier");
 const Whitelist = artifacts.require("./Whitelist");
+const StagedExpenditure = artifacts.require("./StagedExpenditure");
 
 const Resolver = artifacts.require("./Resolver");
 const EtherRouter = artifacts.require("./EtherRouter");
@@ -53,4 +54,5 @@ module.exports = async function (deployer, network, accounts) {
   await addExtension(colonyNetwork, "TokenSupplier", "TokenSupplier", [TokenSupplier]);
   await addExtension(colonyNetwork, "IVotingReputation", "VotingReputation", [VotingReputation, VotingReputationMisalignedRecovery]);
   await addExtension(colonyNetwork, "Whitelist", "Whitelist", [Whitelist]);
+  await addExtension(colonyNetwork, "StagedExpenditure", "StagedExpenditure", [StagedExpenditure]);
 };
