@@ -118,8 +118,7 @@ contract VotingReputation is VotingReputationStorage {
     require(motion.skillRep > 0, "voting-rep-no-reputation-in-domain");
     motion.altTarget = _altTarget;
     motion.action = _action;
-
-    actionSummaries[motionCount] = actionSummary;
+    motion.sig = actionSummary.sig;
 
     emit MotionCreated(motionCount, msgSender(), _domainId);
   }
@@ -257,7 +256,7 @@ contract VotingReputation is VotingReputationStorage {
       motion.votes[NAY] < motion.votes[YAY]
     );
 
-    if (isExpenditureSig(getSig(_motionId)) && getTarget(motion.altTarget) == address(colony)) {
+    if (isExpenditureSig(motion.sig) && getTarget(motion.altTarget) == address(colony)) {
       uint256 expenditureId = unlockExpenditure(_motionId);
       uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
         motion.votes[YAY] : motion.stakes[YAY];
@@ -377,6 +376,82 @@ contract VotingReputation is VotingReputationStorage {
 
   // Internal
 
+function getActionSummary(bytes memory action, address target) public view returns (ActionSummary memory) {
+    bytes[] memory actions;
+
+    if (getSig(action) == MULTICALL) {
+      actions = abi.decode(extractCalldata(action), (bytes[]));
+    } else {
+      actions = new bytes[](1); actions[0] = action;
+    }
+
+    ActionSummary memory summary;
+    bytes4 sig;
+    uint256 expenditureId;
+    uint256 domainSkillId;
+
+    for (uint256 i; i < actions.length; i++) {
+      sig = getSig(actions[i]);
+
+      if (sig == NO_ACTION || sig == OLD_MOVE_FUNDS) {
+        // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS, the entire multicall is such and we break
+        summary.sig = sig;
+        break;
+      } else if (isExpenditureSig(sig)) {
+        // If it is an expenditure action, we record the expenditure and domain ids,
+        //  and ensure they are consistent throughout the multicall.
+        //  If not, we return UINT256_MAX which represents an invalid multicall
+        summary.sig = sig;
+        domainSkillId = getActionDomainSkillId(actions[i]);
+        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
+          summary.domainSkillId = type(uint256).max; // Invalid multicall, caller should error
+          break;
+        } else {
+          summary.domainSkillId = domainSkillId;
+        }
+        expenditureId = getExpenditureId(actions[i]);
+        if (summary.expenditureId > 0 && summary.expenditureId != expenditureId) {
+          summary.expenditureId = type(uint256).max; // Invalid multicall, caller should error
+          break;
+        } else {
+          summary.expenditureId = expenditureId;
+        }
+      } else {
+        // Otherwise we record the domain id and ensure it is consistent throughout the multicall
+        // If no expenditure signatures have been seen, we record the latest signature
+        if (ColonyRoles(target).getCapabilityRoles(sig) | ROOT_ROLES == ROOT_ROLES) {
+          domainSkillId = colony.getDomain(1).skillId;
+        } else {
+          domainSkillId = getActionDomainSkillId(actions[i]);
+        }
+        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
+          summary.domainSkillId = type(uint256).max; // Invalid multicall, caller should errorl
+          break;
+        } else {
+          summary.domainSkillId = domainSkillId;
+        }
+        if (!isExpenditureSig(summary.sig)) {
+          summary.sig = sig;
+        }
+      }
+    }
+
+    return summary;
+  }
+
+  function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
+    uint256 permissionDomainId;
+    uint256 childSkillIndex;
+
+    assembly {
+      permissionDomainId := mload(add(_action, 0x24))
+      childSkillIndex := mload(add(_action, 0x44))
+    }
+
+    uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
+    return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
+  }
+
   function unlockExpenditure(uint256 _motionId) internal returns (uint256) {
     Motion storage motion = motions[_motionId];
     bytes memory action = getExpenditureAction(motion.action);
@@ -385,15 +460,14 @@ contract VotingReputation is VotingReputationStorage {
     assert(expenditureMotionLocks[expenditureId] == _motionId);
     delete expenditureMotionLocks[expenditureId];
 
-    uint256 currentClaimDelay = colony.getExpenditure(expenditureId).globalClaimDelay;
-    bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, currentClaimDelay - 365 days);
+    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(expenditureId);
+    uint256 sinceFinalized = (expenditure.status == ColonyDataTypes.ExpenditureStatus.Finalized) ?
+      (block.timestamp - expenditure.finalizedTimestamp) :
+      0;
+
+    bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, expenditure.globalClaimDelay - LOCK_DELAY + sinceFinalized);
     // No require this time, since we don't want stakes to be permanently locked
     executeCall(_motionId, claimDelayAction);
-
-    if (colony.getExpenditure(expenditureId).status == ColonyDataTypes.ExpenditureStatus.Finalized) {
-      bytes memory finalizedTimestampAction = createExpenditureAction(action, FINALIZED_TIMESTAMP_OFFSET, block.timestamp);
-      executeCall(_motionId, finalizedTimestampAction);
-    }
 
     return expenditureId;
   }

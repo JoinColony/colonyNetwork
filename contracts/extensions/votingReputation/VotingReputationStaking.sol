@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
 import "./../../colonyNetwork/IColonyNetwork.sol";
@@ -70,7 +70,7 @@ contract VotingReputationStaking is VotingReputationStorage {
       _vote == YAY &&
       !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
-      isExpenditureSig(getSig(_motionId)) &&
+      isExpenditureSig(motion.sig) &&
       motion.altTarget == address(0x0)
     ) {
       lockExpenditure(_motionId);
@@ -226,13 +226,15 @@ contract VotingReputationStaking is VotingReputationStorage {
     uint256 expenditureId = getExpenditureId(action);
 
     // If the expenditure is already locked, this motion is a no-op
-    if (expenditureMotionLocks[expenditureId] > 0) {
-      motion.finalized = true;
-    } else {
+    if (expenditureMotionLocks[expenditureId] == 0) {
       expenditureMotionLocks[expenditureId] = _motionId;
       uint256 currentClaimDelay = colony.getExpenditure(expenditureId).globalClaimDelay;
-      bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, currentClaimDelay + 365 days);
+      bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, currentClaimDelay + LOCK_DELAY);
       require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
+    } else {
+      motion.finalized = true;
+
+      emit MotionFinalized(_motionId, motion.action, false);
     }
   }
 }

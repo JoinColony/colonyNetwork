@@ -274,19 +274,19 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @return _penalty The reputation penalty (if any)
   function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256 _reward, uint256 _penalty);
 
-  // /// @notice Claim the staker's reward from a motion that was created with v4 of the extension, and is
-  // /// now missing and cannot be interacted with via the normal claim function.
-  // /// @param _motionId The id of the motion
-  // /// @param _permissionDomainId The domain where the extension has the arbitration permission
-  // /// @param _childSkillIndex For the domain in which the motion is occurring
-  // /// @param _staker The staker whose reward is being claimed
-  // /// @param _vote The side being supported (0 = NAY, 1 = YAY)
-  // function claimMisalignedReward(
-  //   uint256 _motionId,
-  //   uint256 _permissionDomainId,
-  //   uint256 _childSkillIndex,
-  //   address _staker,
-  //   uint256 _vote
-  // )
-  //   external;
+  /// @notice Claim the staker's reward from a motion that was created with v4 of the extension, and is
+  /// now missing and cannot be interacted with via the normal claim function.
+  /// @param _motionId The id of the motion
+  /// @param _permissionDomainId The domain where the extension has the arbitration permission
+  /// @param _childSkillIndex For the domain in which the motion is occurring
+  /// @param _staker The staker whose reward is being claimed
+  /// @param _vote The side being supported (0 = NAY, 1 = YAY)
+  function claimMisalignedReward(
+    uint256 _motionId,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _staker,
+    uint256 _vote
+  )
+    external;
 }

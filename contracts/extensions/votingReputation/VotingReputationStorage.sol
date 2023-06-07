@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
 import "./../../colonyNetwork/IColonyNetwork.sol";
@@ -39,7 +39,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
   uint256 constant SUBMIT_END = 1;
   uint256 constant REVEAL_END = 2;
 
-  uint256 constant FINALIZED_TIMESTAMP_OFFSET = 3;
+  uint256 constant LOCK_DELAY = 10 * 365 days;
   uint256 constant GLOBAL_CLAIM_DELAY_OFFSET = 4;
 
   bytes32 constant ROOT_ROLES = (
@@ -92,12 +92,13 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
   mapping (uint256 => mapping (address => mapping (uint256 => uint256))) stakes;
   mapping (uint256 => mapping (address => bytes32)) voteSecrets;
 
-  mapping (uint256 => uint256) expenditurePastVotes; // expenditureId => voting power
-  mapping (uint256 => uint256) expenditureMotionLocks; // expenditureId => active motionId
+  mapping (bytes32 => uint256) expenditurePastVotes_DEPRECATED; // expenditure slot signature => voting power
+  mapping (bytes32 => uint256) expenditureMotionCounts_DEPRECATED; // expenditure struct signature => count
 
   mapping(address => uint256) metatransactionNonces;
 
-  mapping (uint256 => ActionSummary) actionSummaries;
+  mapping (uint256 => uint256) expenditurePastVotes; // expenditureId => voting power
+  mapping (uint256 => uint256) expenditureMotionLocks; // expenditureId => active motionId
 
   function getMetatransactionNonce(address _userAddress) override public view returns (uint256 _nonce){
     // This offset is a result of fixing the storage layout, and having to prevent metatransactions being able to be replayed as a result
@@ -124,7 +125,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
   }
 
   function version() public pure override returns (uint256 _version) {
-    return 9;
+    return 10;
   }
 
   function install(address _colony) public override {
@@ -233,10 +234,13 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     }
   }
 
-  function getSig(uint256 motionId) internal view returns (bytes4) {
-    return (actionSummaries[motionId].sig != bytes4(0))
-      ? actionSummaries[motionId].sig
-      : getSig(motions[motionId].action);
+  function getExpenditureId(bytes memory action) internal pure returns (uint256 expenditureId) {
+    bytes4 sig = getSig(action);
+    assert(isExpenditureSig(sig));
+
+    assembly {
+      expenditureId := mload(add(action, 0x64))
+    }
   }
 
   function getExpenditureAction(bytes memory action) internal view returns (bytes memory) {
@@ -252,72 +256,9 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     }
   }
 
-  function getActionSummary(bytes memory action, address target) public view returns (ActionSummary memory) {
-    bytes[] memory actions;
-
-    if (getSig(action) == MULTICALL) {
-      actions = abi.decode(extractCalldata(action), (bytes[]));
-    } else {
-      actions = new bytes[](1); actions[0] = action;
-    }
-
-    ActionSummary memory summary;
-    bytes4 sig;
-    uint256 expenditureId;
-    uint256 domainSkillId;
-
-    for (uint256 i; i < actions.length; i++) {
-      sig = getSig(actions[i]);
-
-      if (sig == NO_ACTION || sig == OLD_MOVE_FUNDS) {
-        // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS, the entire multicall is such and we break
-        summary.sig = sig;
-        break;
-      } else if (isExpenditureSig(sig)) {
-        // If it is an expenditure action, we record the expenditure and domain ids,
-        //  and ensure they are consistent throughout the multicall
-        summary.sig = sig;
-        domainSkillId = getActionDomainSkillId(actions[i]);
-        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
-          summary.domainSkillId = type(uint256).max;
-          break;
-        } else {
-          summary.domainSkillId = domainSkillId;
-        }
-        expenditureId = getExpenditureId(actions[i]);
-        if (summary.expenditureId > 0 && summary.expenditureId != expenditureId) {
-          summary.expenditureId = type(uint256).max;
-          break;
-        } else {
-          summary.expenditureId = expenditureId;
-        }
-      } else {
-        // Otherwise we record the domain id and ensure it is consistent throughout the multicall
-        // If no expenditure signatures have been seen, we record the latest signature
-        if (ColonyRoles(target).getCapabilityRoles(sig) | ROOT_ROLES == ROOT_ROLES) {
-          domainSkillId = colony.getDomain(1).skillId;
-        } else {
-          domainSkillId = getActionDomainSkillId(actions[i]);
-        }
-        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
-          summary.domainSkillId = type(uint256).max;
-          break;
-        } else {
-          summary.domainSkillId = domainSkillId;
-        }
-        if (!isExpenditureSig(summary.sig)) {
-          summary.sig = sig;
-        }
-      }
-    }
-
-    return summary;
-  }
-
   // From https://ethereum.stackexchange.com/questions/131283/how-do-i-decode-call-data-in-solidity
-  function extractCalldata(bytes memory calldataWithSelector) internal pure returns (bytes memory) {
-      bytes memory calldataWithoutSelector;
-      require(calldataWithSelector.length >= 4);
+  function extractCalldata(bytes memory calldataWithSelector) internal pure returns (bytes memory calldataWithoutSelector) {
+      require(calldataWithSelector.length >= 4, "voting-rep-invalid-calldata");
 
       assembly {
           let totalLength := mload(calldataWithSelector)
@@ -326,20 +267,15 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
           // Set the length of callDataWithoutSelector (initial length - 4)
           mstore(calldataWithoutSelector, targetLength)
-
           // Mark the memory space taken for callDataWithoutSelector as allocated
           mstore(0x40, add(calldataWithoutSelector, add(0x20, targetLength)))
-
           // Process first 32 bytes (we only take the last 28 bytes)
           mstore(add(calldataWithoutSelector, 0x20), shl(0x20, mload(add(calldataWithSelector, 0x20))))
-
           // Process all other data by chunks of 32 bytes
           for { let i := 0x1C } lt(i, targetLength) { i := add(i, 0x20) } {
               mstore(add(add(calldataWithoutSelector, 0x20), i), mload(add(add(calldataWithSelector, 0x20), add(i, 0x04))))
           }
       }
-
-      return calldataWithoutSelector;
   }
 
   function executeCall(uint256 motionId, bytes memory action) internal returns (bool success) {
@@ -353,28 +289,6 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
               // call(g,   a,  v, in,                insize,        out, outsize)
       success := call(gas(), to, 0, add(action, 0x20), mload(action), 0, 0)
     }
-  }
-
-  function getExpenditureId(bytes memory action) internal pure returns (uint256 expenditureId) {
-    bytes4 sig = getSig(action);
-    assert(isExpenditureSig(sig));
-
-    assembly {
-      expenditureId := mload(add(action, 0x64))
-    }
-  }
-
-  function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
-    uint256 permissionDomainId;
-    uint256 childSkillIndex;
-
-    assembly {
-      permissionDomainId := mload(add(_action, 0x24))
-      childSkillIndex := mload(add(_action, 0x44))
-    }
-
-    uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
-    return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
   }
 
   function createExpenditureAction(

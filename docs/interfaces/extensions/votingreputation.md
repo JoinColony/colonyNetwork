@@ -4,8 +4,24 @@ This extension allows any member of your colony to propose a Motion to take an A
 
 See [here](https://colony.gitbook.io/colony/extensions/governance) for more information.
 
-
+  
 ## Interface Methods
+
+### ▸ `claimMisalignedReward(uint256 _motionId, uint256 _permissionDomainId, uint256 _childSkillIndex, address _staker, uint256 _vote)`
+
+Claim the staker's reward from a motion that was created with v4 of the extension, and is now missing and cannot be interacted with via the normal claim function.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_motionId|uint256|The id of the motion
+|_permissionDomainId|uint256|The domain where the extension has the arbitration permission
+|_childSkillIndex|uint256|For the domain in which the motion is occurring
+|_staker|address|The staker whose reward is being claimed
+|_vote|uint256|The side being supported (0 = NAY, 1 = YAY)
+
 
 ### ▸ `claimReward(uint256 _motionId, uint256 _permissionDomainId, uint256 _childSkillIndex, address _staker, uint256 _vote)`
 
