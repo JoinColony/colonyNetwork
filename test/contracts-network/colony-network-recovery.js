@@ -21,7 +21,7 @@ const {
   getTokenArgs,
 } = require("../../helpers/test-helper");
 const {
-  setupFinalizedTask,
+  setupClaimedTask,
   giveUserCLNYTokensAndStake,
   fundColonyWithTokens,
   setupRandomColony,
@@ -393,7 +393,7 @@ contract("Colony Network Recovery", (accounts) => {
           await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
 
           await fundColonyWithTokens(metaColony, clny);
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+          await setupClaimedTask({ colonyNetwork, colony: metaColony });
 
           await client.saveCurrentState();
           const startingHash = await client.getRootHash();

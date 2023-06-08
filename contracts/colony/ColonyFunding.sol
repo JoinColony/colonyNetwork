@@ -136,6 +136,55 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     } else {
       fundingPot.payouts[_token] -= payout;
     }
+
+    if (!isExtension(task.roles[_role].user)) {
+      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+      Role storage role = task.roles[_role];
+
+      int256 reputation = getTaskReputation(payout, role.rating, role.rateFail, _token);
+
+      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
+      if (_role == uint8(TaskRole.Worker)) {
+        if (role.rateFail) {
+          // If the worker failed to rate, we do not penalise the reputation being earned for the skill in
+          // question, so recalculate it without the penalty.
+          reputation = getTaskReputation(payout, role.rating, false, _token);
+        }
+        int256 nSkills = 0;
+        for (uint256 i = 0; i < task.skills.length; i += 1) {
+          if (task.skills[i] > 0 ) {
+            nSkills += 1;
+          }
+        }
+
+        assert(nSkills > 0);
+
+        int256 reputationPerSkill = reputation / nSkills;
+
+        for (uint256 i = 0; i < task.skills.length; i += 1) {
+          if (task.skills[i] > 0) {
+            colonyNetworkContract.appendReputationUpdateLog(role.user, reputationPerSkill, task.skills[i]);
+          }
+        }
+      }
+    }
+  }
+
+  function getTaskReputation(uint256 payout, TaskRatings rating, bool rateFail, address tokenAddress) internal view returns (int256) {
+    assert(rating != TaskRatings.None);
+
+    bool negative = (rating == TaskRatings.Unsatisfactory);
+    uint256 reputation = payout * ((rating == TaskRatings.Excellent) ? 3 : 2);
+
+    if (rateFail) {
+      reputation = negative ? reputation + payout : reputation - payout;
+    }
+
+    // We may lose one atom of reputation here :sad:
+    return getTokenScaledReputation(
+      int256(reputation / 2) * (negative ? int256(-1) : int256(1)),
+      tokenAddress
+    );
   }
 
   /// @notice For owners to update payouts with one token and many slots
@@ -262,6 +311,23 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     Payment storage payment = payments[_id];
     FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
     assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
+
+    if (!isExtension(payment.recipient)) {
+
+      int256 tokenScaledReputationAmount = getTokenScaledReputation(int256(fundingPot.payouts[_token]), _token);
+
+      // Todo: Is this equality right?
+      if (tokenScaledReputationAmount > 0){
+        IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+
+        colonyNetworkContract.appendReputationUpdateLog(payment.recipient, tokenScaledReputationAmount, domains[payment.domainId].skillId);
+        if (payment.skills[0] > 0) {
+          // Currently we support at most one skill per Payment, similarly to Task model.
+          // This may change in future to allow multiple skills to be set on both Tasks and Payments
+          colonyNetworkContract.appendReputationUpdateLog(payment.recipient, tokenScaledReputationAmount, payment.skills[0]);
+        }
+      }
+    }
 
     processPayout(payment.fundingPotId, _token, fundingPot.payouts[_token], payment.recipient);
   }

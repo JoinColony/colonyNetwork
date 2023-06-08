@@ -79,29 +79,6 @@ contract ColonyPayment is ColonyStorage {
     Payment storage payment = payments[_id];
     payment.finalized = true;
 
-    if (!isExtension(payment.recipient)) {
-      FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
-
-      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-
-      address tokenAddress = tokensWithReputationRatesLinkedList[address(0x00)];
-
-      while (tokenAddress != address(0x00)){
-        if (fundingPot.payouts[tokenAddress] > 0){
-          // All payments in Colony's home token earn domain reputation and if skill was set, earn skill reputation
-          int256 tokenScaledReputationAmount = getTokenScaledReputation(int256(fundingPot.payouts[tokenAddress]), tokenAddress);
-
-          colonyNetworkContract.appendReputationUpdateLog(payment.recipient, tokenScaledReputationAmount, domains[payment.domainId].skillId);
-          if (payment.skills[0] > 0) {
-            // Currently we support at most one skill per Payment, similarly to Task model.
-            // This may change in future to allow multiple skills to be set on both Tasks and Payments
-            colonyNetworkContract.appendReputationUpdateLog(payment.recipient, tokenScaledReputationAmount, payment.skills[0]);
-          }
-        }
-        tokenAddress = tokensWithReputationRatesLinkedList[tokenAddress];
-      }
-    }
-
     emit PaymentFinalized(msgSender(), _id);
   }
 

@@ -517,7 +517,7 @@ contract("ColonyPermissions", (accounts) => {
     it("should take token-specific and domain scaling in to account when emitting reputation", async () => {
       await colony.setDomainReputationScaling(1, true, WAD.muln(9).divn(10));
 
-      await colony.setTokenReputationRate(ADDRESS_ZERO, token.address, WAD.divn(2));
+      await colony.setTokenReputationRate(token.address, WAD.divn(2));
 
       await colony.addPayment(1, UINT256_MAX, USER1, token.address, 10000000000000, 1, 0);
       const paymentId = await colony.getPaymentCount();
@@ -526,6 +526,7 @@ contract("ColonyPermissions", (accounts) => {
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 10000000000000, token.address);
 
       await colony.finalizePayment(1, UINT256_MAX, paymentId);
+      await colony.claimPayment(paymentId, token.address);
 
       const repCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const reputationMiningCycle = await IReputationMiningCycle.at(repCycleAddress);

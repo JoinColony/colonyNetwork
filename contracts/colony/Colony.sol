@@ -353,44 +353,13 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
     // Set the default token weighting for the native token
     tokenReputationRates[token] = WAD;
-    tokensWithReputationRatesLinkedList[address(0x00)] = token;
-    nTokensWithReputationRates = 1;
 
     sig = bytes4(keccak256("setReputationDecayRate(uint256,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
-  function setTokenReputationRate(address _prevToken, address _token, uint256 _rate) public stoppable {
-    require(uint256(uint160(_prevToken)) < uint256(uint160(_token)), "colony-invalid-token-ordering");
-    if (_rate == 0){
-      // Then we're removing from the list
-      require(nTokensWithReputationRates != 0, "colony-no-token-weightings-set");
-      require(tokensWithReputationRatesLinkedList[_prevToken] == _token, "colony-token-weighting-not-right-location");
-
-      nTokensWithReputationRates -= 1;
-      tokensWithReputationRatesLinkedList[_prevToken] = tokensWithReputationRatesLinkedList[_token];
-      tokensWithReputationRatesLinkedList[_token] = address(0x00);
-      tokenReputationRates[_token] = 0;
-    } else if (tokensWithReputationRatesLinkedList[_prevToken] == _token){
-      // Then we're updating
-      // We don't need to update the counter
-      // We don't need to update other pointers
-      // Just update the rate
+  function setTokenReputationRate(address _token, uint256 _rate) public stoppable {
       tokenReputationRates[_token] = _rate;
-    } else {
-      // We're adding to the list.
-      require(
-        uint256(uint160(tokensWithReputationRatesLinkedList[_prevToken])) > uint256(uint160(_token)) || // In the right place in the middle of the list
-        tokensWithReputationRatesLinkedList[_prevToken] == address(0x00), // Or at the end of the list
-      "colony-invalid-token-ordering");
-
-      require(nTokensWithReputationRates < 10, "colony-max-tokens-already-set");
-
-      nTokensWithReputationRates += 1;
-      tokensWithReputationRatesLinkedList[_token] = tokensWithReputationRatesLinkedList[_prevToken];
-      tokensWithReputationRatesLinkedList[_prevToken] = _token;
-      tokenReputationRates[_token] = _rate;
-    }
   }
 
   function getTokenReputationRate(address _token) public view returns (uint256) {
@@ -399,10 +368,6 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function setReputationDecayRate(uint256 _numerator, uint256 _denominator) stoppable auth public {
     IColonyNetwork(colonyNetworkAddress).setColonyReputationDecayRate(_numerator, _denominator);
-  }
-
-  function getNextTokenWithReputationRate(address _token) public view returns (address) {
-    return tokensWithReputationRatesLinkedList[_token];
   }
 
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){

@@ -253,6 +253,57 @@ exports.setupFinalizedTask = async function setupFinalizedTask({
   return taskId;
 };
 
+exports.setupClaimedTask = async function setupClaimedTask({
+  colonyNetwork,
+  colony,
+  token,
+  dueDate,
+  domainId,
+  skillId,
+  manager,
+  evaluator,
+  worker,
+  managerPayout,
+  evaluatorPayout,
+  workerPayout,
+  managerRating,
+  workerRating,
+}) {
+  const accounts = await web3GetAccounts();
+  manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
+  evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
+  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
+
+  const taskId = await exports.setupFinalizedTask({
+    colonyNetwork,
+    colony,
+    token,
+    dueDate,
+    domainId,
+    skillId,
+    manager,
+    evaluator,
+    worker,
+    managerPayout,
+    evaluatorPayout,
+    workerPayout,
+    managerRating,
+    workerRating,
+  });
+
+  let tokenAddress;
+  if (token === undefined) {
+    tokenAddress = await colony.getToken();
+  } else {
+    tokenAddress = token === ethers.constants.AddressZero ? ethers.constants.AddressZero : token.address;
+  }
+
+  await colony.claimTaskPayout(taskId, MANAGER_ROLE, tokenAddress);
+  await colony.claimTaskPayout(taskId, EVALUATOR_ROLE, tokenAddress);
+  await colony.claimTaskPayout(taskId, WORKER_ROLE, tokenAddress);
+  return taskId;
+};
+
 exports.giveUserCLNYTokens = async function giveUserCLNYTokens(colonyNetwork, userAddress, amount) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
