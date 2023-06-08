@@ -21,7 +21,7 @@ const {
   getRewardClaimSquareRootsAndProofs,
 } = require("../../helpers/test-helper");
 
-const { fundColonyWithTokens, setupFinalizedTask, giveUserCLNYTokensAndStake, setupRandomColony } = require("../../helpers/test-data-generator");
+const { fundColonyWithTokens, setupClaimedTask, giveUserCLNYTokensAndStake, setupRandomColony } = require("../../helpers/test-data-generator");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 
@@ -173,7 +173,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await metaColony.addGlobalSkill();
       const id = await colonyNetwork.getSkillCount();
-      await setupFinalizedTask({
+      await setupClaimedTask({
         colonyNetwork,
         colony,
         skillId: id,
@@ -243,7 +243,7 @@ contract("Colony Reward Payouts", (accounts) => {
       domain = await newColony.getDomain(1);
       const rootDomainSkill = domain.skillId;
 
-      const taskId = await setupFinalizedTask({
+      const taskId = await setupClaimedTask({
         colonyNetwork,
         colony: newColony,
         token: newToken,

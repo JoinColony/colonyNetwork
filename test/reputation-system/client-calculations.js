@@ -13,7 +13,7 @@ const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
-  setupFinalizedTask,
+  setupClaimedTask,
   fundColonyWithTokens,
 } = require("../../helpers/test-data-generator");
 
@@ -52,13 +52,13 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };
 
-async function customSetupFinalizedTask(args) {
+async function customSetupClaimedTask(args) {
   const newArgs = Object.assign(args, {
     skillId: GLOBAL_SKILL_ID,
     evaluatorPayout: 0,
     managerPayout: 0,
   });
-  return setupFinalizedTask(newArgs);
+  return setupClaimedTask(newArgs);
 }
 
 process.env.SOLIDITY_COVERAGE
@@ -98,7 +98,7 @@ process.env.SOLIDITY_COVERAGE
 
       describe("core functionality", () => {
         it("should correctly calculate increments and decrements in parent reputations", async () => {
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 100,
@@ -108,7 +108,7 @@ process.env.SOLIDITY_COVERAGE
           // Skills in 1 / 5 / 6
           // OTHER: (100 / 100 / 100)
 
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 100,
@@ -118,7 +118,7 @@ process.env.SOLIDITY_COVERAGE
           // WORKER: (100 / 100 / 100)
           // OTHER: (100 / 100 / 100)
 
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 900,
@@ -128,7 +128,7 @@ process.env.SOLIDITY_COVERAGE
           // WORKER: (100 / 100 / 100)
           // OTHER: (1000 / 1000 / 100)
 
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 1000,
@@ -138,7 +138,7 @@ process.env.SOLIDITY_COVERAGE
           // WORKER: (100 / 100 / 100)
           // OTHER: (2000 / 1000 / 100)
 
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 200,
@@ -173,7 +173,7 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("should correctly calculate decrements in child reputations", async () => {
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 100,
@@ -183,7 +183,7 @@ process.env.SOLIDITY_COVERAGE
           // Skills in 1 / 5 / 6
           // OTHER: (100 / 100 / 100)
 
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 100,
@@ -193,7 +193,7 @@ process.env.SOLIDITY_COVERAGE
           // WORKER: (100 / 100 / 100)
           // OTHER: (100 / 100 / 100)
 
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 900,
@@ -203,7 +203,7 @@ process.env.SOLIDITY_COVERAGE
           // WORKER: (100 / 100 / 100)
           // THER: (1000 / 1000 / 100)
 
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 200,
@@ -238,7 +238,7 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("should correctly calculate decrements in child reputations if the user loses all reputation", async () => {
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 100,
@@ -248,7 +248,7 @@ process.env.SOLIDITY_COVERAGE
           // Skills in 1 / 5 / 6
           // OTHER: (100 / 100 / 100)
 
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 100,
@@ -258,7 +258,7 @@ process.env.SOLIDITY_COVERAGE
           // WORKER: (100 / 100 / 100)
           // OTHER: (100 / 100 / 100)
 
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 900,
@@ -268,7 +268,7 @@ process.env.SOLIDITY_COVERAGE
           // WORKER: (100 / 100 / 100)
           // OTHER: (1000 / 1000 / 100)
 
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 500,
@@ -278,7 +278,7 @@ process.env.SOLIDITY_COVERAGE
           // WORKER: (100 / 100 / 100)
           // OTHER: (1500 / 1000 / 100)
 
-          await customSetupFinalizedTask({
+          await customSetupClaimedTask({
             colonyNetwork,
             colony: metaColony,
             workerPayout: 100000000,

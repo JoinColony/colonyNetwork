@@ -112,8 +112,6 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   mapping (uint256 => bool) localSkills; // Storage slot 37
 
   mapping(address => uint256) tokenReputationRates; // Storage slot 38
-  mapping(address => address) tokensWithReputationRatesLinkedList; // Storage Slot 39
-  uint256 nTokensWithReputationRates; // Storage Slot 40
 
   // Constants
 
@@ -364,7 +362,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   function getTokenScaledReputation(int256 _amount, address _token) internal view returns (int256) {
-    uint256 scaleFactor = tokenReputationRates[token]; // NB This is a WAD
+    uint256 scaleFactor = tokenReputationRates[_token]; // NB This is a WAD
     if (scaleFactor == 0) { return 0; }
 
     // Check if too large for scaling
