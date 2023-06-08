@@ -477,30 +477,30 @@ contract("Colony", (accounts) => {
     });
 
     it("a colony that hasn't had the decay rate explicitly set returns the default decay rate", async () => {
-      const res = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      const decayRate = await colonyNetwork.getColonyReputationDecayRate(colony.address);
 
       // Get default decay rate from mining cycle
       const activeReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
       const activeReputationMiningCycle = await IReputationMiningCycle.at(activeReputationMiningCycleAddress);
-      const res2 = await activeReputationMiningCycle.getDecayConstant();
+      const decayRate2 = await activeReputationMiningCycle.getDecayConstant();
 
-      expect(res.numerator).to.eq.BN(res2.numerator);
-      expect(res.denominator).to.eq.BN(res2.denominator);
+      expect(decayRate.numerator).to.eq.BN(decayRate2.numerator);
+      expect(decayRate.denominator).to.eq.BN(decayRate2.denominator);
     });
 
     it("when a colony's decay rate is set, it only takes effect once a mining cycle is completed", async () => {
-      const res = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      const decayRate = await colonyNetwork.getColonyReputationDecayRate(colony.address);
       await colony.setReputationDecayRate(1, 2, { from: USER0 });
-      let res2 = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      let decayRate2 = await colonyNetwork.getColonyReputationDecayRate(colony.address);
 
-      expect(res.numerator).to.eq.BN(res2.numerator);
-      expect(res.denominator).to.eq.BN(res2.denominator);
+      expect(decayRate.numerator).to.eq.BN(decayRate2.numerator);
+      expect(decayRate.denominator).to.eq.BN(decayRate2.denominator);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      res2 = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      decayRate2 = await colonyNetwork.getColonyReputationDecayRate(colony.address);
 
-      expect(res2.numerator).to.eq.BN(1);
-      expect(res2.denominator).to.eq.BN(2);
+      expect(decayRate2.numerator).to.eq.BN(1);
+      expect(decayRate2.denominator).to.eq.BN(2);
     });
 
     it("a colony's decay rate is set, it cannot be set to an invalid value", async () => {
@@ -515,9 +515,9 @@ contract("Colony", (accounts) => {
       await colony.setReputationDecayRate(1, 2, { from: USER0 });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      let res = await colonyNetwork.getColonyReputationDecayRate(colony.address);
-      expect(res.numerator).to.eq.BN(1);
-      expect(res.denominator).to.eq.BN(2);
+      let decayRate = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      expect(decayRate.numerator).to.eq.BN(1);
+      expect(decayRate.denominator).to.eq.BN(2);
 
       // Get default decay rate from mining cycle
       const activeReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
@@ -525,15 +525,15 @@ contract("Colony", (accounts) => {
       const defaultDecay = await activeReputationMiningCycle.getDecayConstant();
 
       await colony.setReputationDecayRate(0, 0); // Special call to reset to follow default rate
-      res = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      decayRate = await colonyNetwork.getColonyReputationDecayRate(colony.address);
       // Check hasn't changed yet
-      expect(res.numerator).to.eq.BN(1);
-      expect(res.denominator).to.eq.BN(2);
+      expect(decayRate.numerator).to.eq.BN(1);
+      expect(decayRate.denominator).to.eq.BN(2);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      res = await colonyNetwork.getColonyReputationDecayRate(colony.address);
-      expect(res.numerator).to.eq.BN(defaultDecay.numerator);
-      expect(res.denominator).to.eq.BN(defaultDecay.denominator);
+      decayRate = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      expect(decayRate.numerator).to.eq.BN(defaultDecay.numerator);
+      expect(decayRate.denominator).to.eq.BN(defaultDecay.denominator);
     });
   });
 

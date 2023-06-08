@@ -492,4 +492,34 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
   function isContract(address addr) internal returns (bool res) {
     assembly { res := gt(extcodesize(addr), 0) }
   }
+
+  function setDomainReputationScaling(uint256 _domainId, bool _enabled, uint256 _factor) public calledByColony stoppable
+  {
+    require(_factor <= WAD, "colony-network-invalid-reputation-scale-factor");
+    uint256 skillId = IColony(msgSender()).getDomain(_domainId).skillId;
+    skills[skillId].earnedReputationScaling = _enabled;
+    skills[skillId].reputationScalingFactor = _factor;
+  }
+
+  function getSkillReputationScaling(uint256 _skillId) public view returns (uint256) {
+    uint256 factor;
+    Skill storage s = skills[_skillId];
+    factor = s.earnedReputationScaling ? s.reputationScalingFactor : WAD;
+
+    while (s.nParents > 0) {
+      s = skills[s.parents[0]];
+      // If reputation scaling is in effect for this skill, then take the value for this skill in to
+      // account. Otherwise, no effect and continue walking up the tree
+      if (s.earnedReputationScaling) {
+        if (s.reputationScalingFactor == 0){
+          // If scaling is in effect and is 0, we can short circuit - regardless of the rest of the tree
+          // the scaling factor will be 0
+          return 0;
+        } else {
+          factor = wmul(factor, s.reputationScalingFactor);
+        }
+      }
+    }
+    return factor;
+  }
 }
