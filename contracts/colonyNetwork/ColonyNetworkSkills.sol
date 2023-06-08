@@ -523,8 +523,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, ColonyDataTypes
   function setDomainReputationScaling(uint256 _domainId, bool _enabled, uint256 _factor) public calledByColony stoppable
   {
     require(_factor <= WAD, "colony-network-invalid-reputation-scale-factor");
-    Domain memory d = IColony(msgSender()).getDomain(_domainId);
-    uint256 skillId = d.skillId;
+    uint256 skillId = IColony(msgSender()).getDomain(_domainId).skillId;
     skills[skillId].earnedReputationScaling = _enabled;
     skills[skillId].reputationScalingFactor = _factor;
   }
@@ -532,11 +531,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, ColonyDataTypes
   function getSkillReputationScaling(uint256 _skillId) public view returns (uint256) {
     uint256 factor;
     Skill storage s = skills[_skillId];
-    if (s.earnedReputationScaling){
-      factor = s.reputationScalingFactor;
-    } else {
-      factor = WAD;
-    }
+    factor = s.earnedReputationScaling ? s.reputationScalingFactor : WAD;
 
     while (s.nParents > 0) {
       s = skills[s.parents[0]];

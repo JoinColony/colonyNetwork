@@ -361,6 +361,9 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     }
   }
 
+
+  uint256 constant INT128_MAX_AS_UINT256 = uint256(uint128(type(int128).max));
+
   function getTokenScaledReputation(int256 _amount, address _token) internal view returns (int256) {
     uint256 scaleFactor = tokenReputationRates[_token]; // NB This is a WAD
     if (scaleFactor == 0) { return 0; }
@@ -376,12 +379,9 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
     int256 sgnAmount = _amount >= 0 ? int(1) : -1;
 
-    if (wdiv(uint256(uint128(type(int128).max)), scaleFactor) < uint256(absAmount)){
-      if (sgnAmount == 1){
-        return type(int128).max;
-      } else {
-        return type(int128).min;
-      }
+
+    if (wdiv(INT128_MAX_AS_UINT256, scaleFactor) < uint256(absAmount)){
+      return sgnAmount == 1 ? type(int128).max : type(int128).min;
     } else {
       amount = int256(wmul(scaleFactor, uint256(absAmount))) * sgnAmount;
     }

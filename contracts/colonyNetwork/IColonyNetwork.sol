@@ -580,7 +580,6 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _factor The scale factor to apply, as a WAD
   function setDomainReputationScaling(uint256 _domainId, bool _enabled, uint256 _factor) external;
 
-
   /// @notice Called by a colony to set the rate at which reputation in that colony decays
   /// @param _numerator The numerator of the fraction reputation does down by every reputation cycle
   /// @param _denominator The denominator of the fraction reputation does down by every reputation cycle
