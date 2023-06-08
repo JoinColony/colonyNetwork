@@ -739,23 +739,6 @@ Get the assigned `_token` payouts of pot with id `_potId`.
 |---|---|---|
 |payout|uint256|Funding pot payout amount
 
-### ▸ `getNextTokenWithReputationRate(address _token):address address`
-
-Call to get next token with a custom reputation rate in the linked list
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_token|address|The token we wish to query. Call 0x00 to get the first entry in the list
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|address|address|The address of the next token. If 0x00, queried token is either not in the list or is the last entry in the list.
-
 ### ▸ `getNonRewardPotsTotal(address _token):uint256 amount`
 
 Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
@@ -1926,7 +1909,7 @@ Assigning worker role. Can only be set if there is no one currently assigned to 
 |_user|address|Address of the user we want to give a worker role to
 
 
-### ▸ `setTokenReputationRate(address _prevToken, address _token, uint256 _rate)`
+### ▸ `setTokenReputationRate(address _token, uint256 _rate)`
 
 Call to set the reputation scaling applied to payouts made in a particular token
 
@@ -1935,7 +1918,6 @@ Call to set the reputation scaling applied to payouts made in a particular token
 
 |Name|Type|Description|
 |---|---|---|
-|_prevToken|address|The token before where the token being added (_rate > 0) or removed (_rate ==0) in the list of tokens that have reputation scaling applied
 |_token|address|The token we wish to apply scaling to
 |_rate|uint256|The amount of scaling to apply, as a WAD. Users will earn payout*_rate reputation.
 

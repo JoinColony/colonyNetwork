@@ -449,12 +449,6 @@ contract ColonyTask is ColonyStorage {
     Task storage task = tasks[_id];
     task.status = TaskStatus.Finalized;
 
-    for (uint8 roleId = 0; roleId <= 2; roleId++) {
-      if (!isExtension(task.roles[roleId].user)) {
-        updateReputation(TaskRole(roleId), task);
-      }
-    }
-
     emit TaskFinalized(msgSender(), _id);
   }
 
@@ -499,61 +493,6 @@ contract ColonyTask is ColonyStorage {
   function markTaskCompleted(uint256 _id) internal {
     tasks[_id].completionTimestamp = block.timestamp;
     emit TaskCompleted(msgSender(), _id);
-  }
-
-  function updateReputation(TaskRole taskRole, Task storage task) internal {
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    uint8 roleId = uint8(taskRole);
-    Role storage role = task.roles[roleId];
-
-    address tokenAddress = tokensWithReputationRatesLinkedList[address(0x00)];
-    while (tokenAddress != address(0x00)){
-      uint256 payout = task.payouts[roleId][tokenAddress];
-      int256 reputation = getReputation(payout, role.rating, role.rateFail, tokenAddress);
-
-      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
-      if (taskRole == TaskRole.Worker) {
-        if (role.rateFail) {
-          // If the worker failed to rate, we do not penalise the reputation being earned for the skill in
-          // question, so recalculate it without the penalty.
-          reputation = getReputation(payout, role.rating, false, tokenAddress);
-        }
-        int256 nSkills = 0;
-        for (uint256 i = 0; i < task.skills.length; i += 1) {
-          if (task.skills[i] > 0 ) {
-            nSkills += 1;
-          }
-        }
-
-        assert(nSkills > 0);
-
-        int256 reputationPerSkill = reputation / nSkills;
-
-        for (uint256 i = 0; i < task.skills.length; i += 1) {
-          if (task.skills[i] > 0) {
-            colonyNetworkContract.appendReputationUpdateLog(role.user, reputationPerSkill, task.skills[i]);
-          }
-        }
-      }
-      tokenAddress = tokensWithReputationRatesLinkedList[tokenAddress];
-    }
-  }
-
-  function getReputation(uint256 payout, TaskRatings rating, bool rateFail, address tokenAddress) internal view returns (int256) {
-    assert(rating != TaskRatings.None);
-
-    bool negative = (rating == TaskRatings.Unsatisfactory);
-    uint256 reputation = payout * ((rating == TaskRatings.Excellent) ? 3 : 2);
-
-    if (rateFail) {
-      reputation = negative ? reputation + payout : reputation - payout;
-    }
-
-    // We may lose one atom of reputation here :sad:
-    return getTokenScaledReputation(
-      int256(reputation / 2) * (negative ? int256(-1) : int256(1)),
-      tokenAddress
-    );
   }
 
   function getReviewerAddresses(

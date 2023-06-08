@@ -31,7 +31,7 @@ const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
-  setupFinalizedTask,
+  setupClaimedTask,
   fundColonyWithTokens,
 } = require("../../../helpers/test-data-generator");
 const ReputationMinerClient = require("../../../packages/reputation-miner/ReputationMinerClient");
@@ -74,7 +74,7 @@ process.env.SOLIDITY_COVERAGE
         await colonyNetwork.startNextCycle();
 
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-        await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken });
+        await setupClaimedTask({ colonyNetwork, colony: metaColony, token: clnyToken });
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
         const startingBlock = await currentBlock();
         startingBlockNumber = startingBlock.number;

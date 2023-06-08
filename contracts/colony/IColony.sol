@@ -1118,20 +1118,13 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   function setDomainReputationScaling(uint256 domainId, bool enabled, uint256 factor) external;
 
   /// @notice Call to set the reputation scaling applied to payouts made in a particular token
-  /// @param _prevToken The token before where the token being added (_rate > 0) or removed (_rate ==0) in
-  /// the list of tokens that have reputation scaling applied
   /// @param _token The token we wish to apply scaling to
   /// @param _rate The amount of scaling to apply, as a WAD. Users will earn payout*_rate reputation.
-  function setTokenReputationRate(address _prevToken, address _token, uint256 _rate) external;
+  function setTokenReputationRate(address _token, uint256 _rate) external;
 
   /// @notice Call to get the reputation scaling applied to payouts made in a particular token
   /// @param _token The token we wish to query
   /// @return rate The amount of scaling to applied as a WAD.
   function getTokenReputationRate(address _token) external view returns (uint256 rate);
 
-  /// @notice Call to get next token with a custom reputation rate in the linked list
-  /// @param _token The token we wish to query. Call 0x00 to get the first entry in the list
-  /// @return address The address of the next token. If 0x00, queried token is either not in the
-  /// list or is the last entry in the list.
-  function getNextTokenWithReputationRate(address _token) external view returns (address);
 }

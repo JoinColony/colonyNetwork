@@ -6,14 +6,14 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 
 const { TruffleLoader } = require("../../packages/package-utils");
-const { DEFAULT_STAKE, INITIAL_FUNDING } = require("../../helpers/constants");
+const { DEFAULT_STAKE, INITIAL_FUNDING, WORKER_ROLE } = require("../../helpers/constants");
 const { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter } = require("../../helpers/test-helper");
 const {
   fundColonyWithTokens,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
-  setupFinalizedTask,
+  setupClaimedTask,
 } = require("../../helpers/test-data-generator");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const ReputationMinerClient = require("../../packages/reputation-miner/ReputationMinerClient");
@@ -111,7 +111,7 @@ process.env.SOLIDITY_COVERAGE
           const startingBlock = await currentBlock();
           const startingBlockNumber = startingBlock.number;
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+          await setupClaimedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
 
@@ -187,7 +187,7 @@ process.env.SOLIDITY_COVERAGE
           const startingBlock = await currentBlock();
           const startingBlockNumber = startingBlock.number;
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+          await setupClaimedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
 
@@ -278,7 +278,7 @@ process.env.SOLIDITY_COVERAGE
 
         it("should correctly respond to a request for users that have a particular reputation in a colony", async () => {
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+          await setupClaimedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
@@ -299,8 +299,8 @@ process.env.SOLIDITY_COVERAGE
           expect(reputations.length).to.equal(2);
 
           // Let's check that once accounts[6] has more reputation again, it's listed first.
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: accounts[6], manager: accounts[6] });
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: accounts[6], manager: accounts[6] });
+          await setupClaimedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: accounts[6], manager: accounts[6] });
+          await setupClaimedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: accounts[6], manager: accounts[6] });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           rootHash = await reputationMiner.reputationTree.getRootHash();
@@ -328,7 +328,8 @@ process.env.SOLIDITY_COVERAGE
 
         it("should correctly respond to a request for all reputation a single user has in a colony", async () => {
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+          const taskId = await setupClaimedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+          await metaColony.claimTaskPayout(taskId, WORKER_ROLE, clnyToken.address);
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
@@ -343,7 +344,7 @@ process.env.SOLIDITY_COVERAGE
           expect(reputations.length).to.equal(3);
 
           // More people get reputation doesn't change anything
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: accounts[6], manager: accounts[6] });
+          await setupClaimedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: accounts[6], manager: accounts[6] });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           rootHash = await reputationMiner.reputationTree.getRootHash();
