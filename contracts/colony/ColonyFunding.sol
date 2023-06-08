@@ -258,16 +258,15 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     uint256 initialPayout = expenditureSlotPayouts[_id][_slot][_token];
     delete expenditureSlotPayouts[_id][_slot][_token];
 
-    int256 payoutModifier = imax(slot.payoutModifier, MIN_PAYOUT_MODIFIER);
-    uint256 payoutScalar = uint256(payoutModifier + int256(WAD));
+    uint256 payoutScalar = uint256(imax(slot.payoutModifier, MIN_PAYOUT_MODIFIER) + int256(WAD));
 
     uint256 repPayout = wmul(initialPayout, payoutScalar);
     uint256 tokenPayout = min(initialPayout, repPayout);
-    // uint256 tokenSurplus = initialPayout - tokenPayout;
+    uint256 tokenSurplus = initialPayout - tokenPayout;
 
     // Deduct any surplus from the outstanding payouts (for payoutScalars < 1)
-    if (initialPayout - tokenPayout > 0) {
-      fundingPot.payouts[_token] -= (initialPayout - tokenPayout);
+    if (tokenSurplus > 0) {
+      fundingPot.payouts[_token] -= tokenSurplus;
     }
 
     // Process reputation updates if relevant for token being paid out
