@@ -1,6 +1,7 @@
 /* globals artifacts */
 
 const { setupReputationMiningCycleResolver } = require("../helpers/upgradable-contracts");
+const { XDAI_CHAINID, FORKED_XDAI_CHAINID } = require("../helpers/constants");
 
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const ReputationMiningCycle = artifacts.require("./ReputationMiningCycle");
@@ -17,7 +18,7 @@ module.exports = async function (deployer) {
   const multichain = await MultiChain.new();
   const chainId = await multichain.getChainId();
 
-  if (chainId.toString() !== "265669100" && chainId.toString() !== "100") {
+  if (chainId.toNumber() !== FORKED_XDAI_CHAINID && chainId.toNumber() !== XDAI_CHAINID) {
     console.log("Not mining chain, skipping setting up mining cycle resolver");
     return;
   }
