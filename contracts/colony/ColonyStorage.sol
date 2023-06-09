@@ -19,6 +19,7 @@ pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
+import "./../common/ScaleReputation.sol";
 import "./../common/CommonStorage.sol";
 import "./../common/ERC20Extended.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
@@ -31,7 +32,7 @@ import "./ColonyDataTypes.sol";
 // ignore-file-swc-108
 
 
-contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage {
+contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage, ScaleReputation {
   uint256 constant COLONY_NETWORK_SLOT = 6;
   uint256 constant ROOT_LOCAL_SKILL_SLOT = 36;
 
@@ -359,33 +360,5 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
               // call(g,     a,  v,     in,              insize,      out, outsize)
       success := call(gas(), to, value, add(data, 0x20), mload(data), 0, 0)
     }
-  }
-
-
-  uint256 constant INT128_MAX_AS_UINT256 = uint256(uint128(type(int128).max));
-
-  function getTokenScaledReputation(int256 _amount, address _token) internal view returns (int256) {
-    uint256 scaleFactor = tokenReputationRates[_token]; // NB This is a WAD
-    if (scaleFactor == 0) { return 0; }
-
-    // Check if too large for scaling
-    int256 amount;
-    int256 absAmount;
-    if (_amount == type(int256).min){
-      absAmount = type(int256).max; // Off by one, but best we can do - probably gets capped anyway
-    } else {
-      absAmount = _amount >= 0 ? _amount : -_amount;
-    }
-
-    int256 sgnAmount = _amount >= 0 ? int(1) : -1;
-
-
-    if (wdiv(INT128_MAX_AS_UINT256, scaleFactor) < uint256(absAmount)){
-      return sgnAmount == 1 ? type(int128).max : type(int128).min;
-    } else {
-      amount = int256(wmul(scaleFactor, uint256(absAmount))) * sgnAmount;
-    }
-
-    return amount;
   }
 }
