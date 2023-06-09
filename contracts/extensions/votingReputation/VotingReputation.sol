@@ -120,6 +120,11 @@ contract VotingReputation is VotingReputationStorage {
     motion.action = _action;
     motion.sig = actionSummary.sig;
 
+    if (isExpenditureSig(actionSummary.sig)) {
+      bytes32 structHash = getExpenditureStructHash(getExpenditureAction(motion.action));
+      require(expenditureMotionCounts_DEPRECATED[structHash] == 0, "voting-rep-motion-locked");
+    }
+
     emit MotionCreated(motionCount, msgSender(), _domainId);
   }
 
@@ -256,14 +261,36 @@ contract VotingReputation is VotingReputationStorage {
       motion.votes[NAY] < motion.votes[YAY]
     );
 
-    if (isExpenditureSig(motion.sig) && getTarget(motion.altTarget) == address(colony)) {
-      uint256 expenditureId = unlockExpenditure(_motionId);
-      uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
-        motion.votes[YAY] : motion.stakes[YAY];
-      if (expenditurePastVotes[expenditureId] < votePower) {
-        expenditurePastVotes[expenditureId] = votePower;
-      } else if (motion.domainId > 1) {
-        canExecute = false;
+    if (motion.sig == bytes4(0)) { // Backwards compatibility for versions 9 and below
+      bytes memory action = getExpenditureAction(motion.action);
+      if (isExpenditureSig(getSig(action)) && getTarget(motion.altTarget) == address(colony)) {
+        uint256 expenditureId = unlockExpenditure(_motionId);
+        uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
+          motion.votes[YAY] : motion.stakes[YAY];
+
+        bytes32 actionHash;
+        assembly {
+          mstore(add(action, 0xe4), 0x0)
+          actionHash := keccak256(add(action, 0x64), sub(mload(action), 0x44))
+        }
+
+        if (expenditurePastVotes_DEPRECATED[actionHash] < votePower) {
+          expenditurePastVotes_DEPRECATED[actionHash] = votePower;
+        } else if (motion.domainId > 1) {
+          canExecute = false;
+        }
+      }
+    } else { // New functionality for versions 10 and above
+      if (isExpenditureSig(motion.sig) && getTarget(motion.altTarget) == address(colony)) {
+        uint256 expenditureId = unlockExpenditure(_motionId);
+        uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
+          motion.votes[YAY] : motion.stakes[YAY];
+
+        if (expenditurePastVotes[expenditureId] < votePower) {
+          expenditurePastVotes[expenditureId] = votePower;
+        } else if (motion.domainId > 1) {
+          canExecute = false;
+        }
       }
     }
 
@@ -335,6 +362,10 @@ contract VotingReputation is VotingReputationStorage {
 
   function getStake(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256 _stake) {
     return stakes[_motionId][_staker][_vote];
+  }
+
+  function getExpenditureMotionCount(bytes32 _structHash) public view returns (uint256 _count) {
+    return expenditureMotionCounts_DEPRECATED[_structHash];
   }
 
   function getExpenditureMotionLock(uint256 _expenditureId) public view returns (uint256 _motionId) {
@@ -457,18 +488,52 @@ function getActionSummary(bytes memory action, address target) public view retur
     bytes memory action = getExpenditureAction(motion.action);
     uint256 expenditureId = getExpenditureId(action);
 
-    assert(expenditureMotionLocks[expenditureId] == _motionId);
-    delete expenditureMotionLocks[expenditureId];
+    if (motion.sig == bytes4(0)) { // Backwards compatibility for versions 9 and below
+      bytes32 structHash = getExpenditureStructHash(action);
+      expenditureMotionCounts_DEPRECATED[structHash]--;
 
-    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(expenditureId);
-    uint256 sinceFinalized = (expenditure.status == ColonyDataTypes.ExpenditureStatus.Finalized) ?
-      (block.timestamp - expenditure.finalizedTimestamp) :
-      0;
+      // Release the claimDelay if this is the last active motion
+      if (expenditureMotionCounts_DEPRECATED[structHash] == 0) {
+      bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, 0);
+        // No require this time, since we don't want stakes to be permanently locked
+        executeCall(_motionId, claimDelayAction);
+      }
+    } else { // New functionality for versions 10 and above
+      assert(expenditureMotionLocks[expenditureId] == _motionId);
+      delete expenditureMotionLocks[expenditureId];
 
-    bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, expenditure.globalClaimDelay - LOCK_DELAY + sinceFinalized);
-    // No require this time, since we don't want stakes to be permanently locked
-    executeCall(_motionId, claimDelayAction);
+      ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(expenditureId);
+      uint256 sinceFinalized = (expenditure.status == ColonyDataTypes.ExpenditureStatus.Finalized) ?
+        (block.timestamp - expenditure.finalizedTimestamp) :
+        0;
+
+      bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, expenditure.globalClaimDelay - LOCK_DELAY + sinceFinalized);
+      // No require this time, since we don't want stakes to be permanently locked
+      executeCall(_motionId, claimDelayAction);
+    }
 
     return expenditureId;
+  }
+
+  function getExpenditureStructHash(bytes memory _action) internal view returns (bytes32 structHash) {
+    bytes4 sig = getSig(_action);
+    uint256 expenditureId;
+    uint256 storageSlot;
+    uint256 expenditureSlot; // This value is only used if storageSlot == 26
+
+    assembly {
+      expenditureId := mload(add(_action, 0x64))
+      storageSlot := mload(add(_action, 0x84))
+    }
+
+    if (sig == SET_EXPENDITURE_STATE && storageSlot == 25) {
+      structHash = keccak256(abi.encodePacked(expenditureId));
+    } else {
+      uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
+      assembly {
+        expenditureSlot := mload(add(_action, expenditureSlotLoc))
+      }
+      structHash = keccak256(abi.encodePacked(expenditureId, expenditureSlot));
+    }
   }
 }

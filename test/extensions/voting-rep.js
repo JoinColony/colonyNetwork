@@ -8,7 +8,6 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 const path = require("path");
 const { TruffleLoader } = require("../../packages/package-utils"); // eslint-disable-line import/no-unresolved
-const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 
 const {
   UINT256_MAX,
@@ -35,7 +34,9 @@ const {
 } = require("../../helpers/test-helper");
 
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
+const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 
+const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 const PatriciaTree = require("../../packages/reputation-miner/patricia");
 
 const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
@@ -43,15 +44,17 @@ const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disabl
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
-const EtherRouter = artifacts.require("EtherRouter");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const IVotingReputation = artifacts.require("IVotingReputation");
+const OneTxPayment = artifacts.require("OneTxPayment");
+const Resolver = artifacts.require("Resolver");
 const Token = artifacts.require("Token");
 const TokenLocking = artifacts.require("TokenLocking");
-const IVotingReputation = artifacts.require("IVotingReputation");
 const VotingReputation = artifacts.require("VotingReputation");
-const OneTxPayment = artifacts.require("OneTxPayment");
+const VotingReputationV9 = artifacts.require("VotingReputationV9");
 
 const VOTING_REPUTATION = soliditySha3("VotingReputation");
 
@@ -2648,6 +2651,114 @@ contract("Voting Reputation", (accounts) => {
 
       const state = await voting.getMotionState(motionId);
       expect(state).to.eq.BN(SUBMIT);
+    });
+  });
+
+  describe("upgrading the extension", async () => {
+    let motionId;
+
+    before(async () => {
+      const votingReputationV9Resolver = await Resolver.new();
+      const votingReputationV9 = await VotingReputationV9.new();
+      await setupEtherRouter("VotingReputationV9", { VotingReputationV9: votingReputationV9.address }, votingReputationV9Resolver);
+      await metaColony.addExtensionToNetwork(VOTING_REPUTATION, votingReputationV9Resolver.address);
+    });
+
+    it("can create a v9 motion, upgrade, and then finalize the motion", async () => {
+      await colony.uninstallExtension(VOTING_REPUTATION);
+      await colony.installExtension(VOTING_REPUTATION, 9);
+
+      const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
+      voting = await IVotingReputation.at(votingAddress);
+
+      expect(await voting.version()).to.eq.BN(9);
+
+      await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
+
+      await voting.initialise(
+        TOTAL_STAKE_FRACTION,
+        0, // No voter compensation
+        USER_MIN_STAKE_FRACTION,
+        MAX_VOTE_FRACTION,
+        STAKE_PERIOD,
+        SUBMIT_PERIOD,
+        REVEAL_PERIOD,
+        ESCALATION_PERIOD
+      );
+
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+      await colony.finalizeExpenditure(expenditureId);
+
+      // Set finalizedTimestamp to WAD
+      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      let expenditure;
+      expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.globalClaimDelay).to.eq.BN(UINT256_MAX.divn(3)); // V9 behavior
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      expect(await voting.version()).to.eq.BN(10);
+
+      await forwardTime(STAKE_PERIOD, this);
+      await voting.finalizeMotion(motionId);
+
+      expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.globalClaimDelay).to.be.zero; // V9 behavior still
+    });
+
+    it("cannot make a new motion if an existing motion exists using the old lock", async () => {
+      await colony.uninstallExtension(VOTING_REPUTATION);
+      await colony.installExtension(VOTING_REPUTATION, 9);
+
+      const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
+      voting = await IVotingReputation.at(votingAddress);
+
+      await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
+
+      await voting.initialise(
+        TOTAL_STAKE_FRACTION,
+        0, // No voter compensation
+        USER_MIN_STAKE_FRACTION,
+        MAX_VOTE_FRACTION,
+        STAKE_PERIOD,
+        SUBMIT_PERIOD,
+        REVEAL_PERIOD,
+        ESCALATION_PERIOD
+      );
+
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      // Set finalizedTimestamp to WAD
+      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
+      const structHash = soliditySha3(expenditureId);
+      expect(await voting.getExpenditureMotionCount(structHash)).to.be.zero;
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      expect(await voting.getExpenditureMotionCount(structHash)).to.eq.BN(1);
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+
+      await checkErrorRevert(
+        voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        "voting-rep-motion-locked"
+      );
+
+      await forwardTime(STAKE_PERIOD, this);
+      await voting.finalizeMotion(motionId);
+
+      // Once motion is finalized, a new motion can be created for that expenditure
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
     });
   });
 });

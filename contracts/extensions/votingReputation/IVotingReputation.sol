@@ -228,6 +228,11 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @return _stake The user's stake
   function getStake(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256 _stake);
 
+  /// @notice Get the count of active motions for an expenditure slot
+  /// @param _structHash Hash of an expenditure id and slot
+  /// @return _count Number of motions
+  function getExpenditureMotionCount(bytes32 _structHash) external view returns (uint256 _count);
+
   /// @notice Get the motion which holds the lock on an expenditure
   /// @param _expenditureId The expenditureId
   /// @return _motionId The motion holding the lock

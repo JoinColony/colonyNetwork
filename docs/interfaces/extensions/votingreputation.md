@@ -136,6 +136,23 @@ Get the escalation period
 |---|---|---|
 |_period|uint256|The escalation period
 
+### ▸ `getExpenditureMotionCount(bytes32 _structHash):uint256 _count`
+
+Get the count of active motions for an expenditure slot
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_structHash|bytes32|Hash of an expenditure id and slot
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_count|uint256|Number of motions
+
 ### ▸ `getExpenditureMotionLock(uint256 _expenditureId):uint256 _motionId`
 
 Get the motion which holds the lock on an expenditure
