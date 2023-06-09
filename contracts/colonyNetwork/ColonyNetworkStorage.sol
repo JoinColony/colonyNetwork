@@ -126,7 +126,6 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   mapping(uint256 => mapping( address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 48
 
   // Modifiers
-
   modifier calledByColony() {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");
     assert(msgSender() == msg.sender);
