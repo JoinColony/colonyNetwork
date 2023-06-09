@@ -114,7 +114,8 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     // After doing all the local storage changes, then do all the external calls
     for (uint256 i = 0; i < _users.length; i++) {
       require(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])), "colony-bootstrap-token-transfer-failed");
-      int256 tokenScaledReputationAmount = getTokenScaledReputation(_amounts[i], token);
+      uint256 scaleFactor = tokenReputationRates[token]; // NB This is a WAD
+      int256 tokenScaledReputationAmount = scaleReputation(_amounts[i], scaleFactor);
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], tokenScaledReputationAmount, domains[1].skillId);
     }
 
