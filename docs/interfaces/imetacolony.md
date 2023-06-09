@@ -87,8 +87,8 @@ Called to set the details about bridge _bridgeAddress
 |_gas|uint256|How much gas to use for a bridged transaction
 |_updateLogBefore|bytes|The tx data before the dynamic part of the tx to bridge to the update log
 |_updateLogAfter|bytes|The tx data after the dynamic part of the tx to bridge to the update log
-|_skillCreationBefore|bytes|The tx data before the dynamic part of the tx to brdige skill creation
-|_skillCreationAfter|bytes|The tx data after the dynamic part of the tx to brdige skill creation
+|_skillCreationBefore|bytes|The tx data before the dynamic part of the tx to bridge skill creation
+|_skillCreationAfter|bytes|The tx data after the dynamic part of the tx to bridge skill creation
 |_setReputationRootHashBefore|bytes|The tx data before the dynamic part of the tx to bridge a new reputation root hash
 |_setReputationRootHashAfter|bytes|The tx data after the dynamic part of the tx to bridge a new reputation root hash
 

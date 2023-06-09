@@ -71,8 +71,8 @@ interface IMetaColony is IColony {
   /// @param _gas How much gas to use for a bridged transaction
   /// @param _updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
   /// @param _updateLogAfter The tx data after the dynamic part of the tx to bridge to the update log
-  /// @param _skillCreationBefore The tx data before the dynamic part of the tx to brdige skill creation
-  /// @param _skillCreationAfter The tx data after the dynamic part of the tx to brdige skill creation
+  /// @param _skillCreationBefore The tx data before the dynamic part of the tx to bridge skill creation
+  /// @param _skillCreationAfter The tx data after the dynamic part of the tx to bridge skill creation
   /// @param _setReputationRootHashBefore The tx data before the dynamic part of the tx to bridge a new reputation root hash
   /// @param _setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
   function setBridgeData(
