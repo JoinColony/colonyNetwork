@@ -1062,7 +1062,7 @@ Used to track that a user is eligible to claim a reward
 |_amount|uint256|The amount of CLNY to be awarded
 
 
-### ▸ `setBridgeData(address _bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter)`
+### ▸ `setBridgeData(address _bridgeAddress, uint256 chainId, uint256 gas, bytes memory updateLogBefore, bytes memory updateLogAfter, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter)`
 
 Called to set the details about bridge _bridgeAddress
 
@@ -1072,10 +1072,10 @@ Called to set the details about bridge _bridgeAddress
 |Name|Type|Description|
 |---|---|---|
 |_bridgeAddress|address|The address of the bridge
+|chainId|uint256|The chainId of the corresponding network
+|gas|uint256|How much gas to use for a bridged transaction
 |updateLogBefore|bytes|The tx data before the dynamic part of the tx to bridge to the update log
 |updateLogAfter|bytes|The tx data after the dynamic part of the tx to bridge to the update log
-|gas|uint256|How much gas to use for a bridged transaction
-|chainId|uint256|The chainId of the corresponding network
 |skillCreationBefore|bytes|The tx data before the dynamic part of the tx to brdige skill creation
 |skillCreationAfter|bytes|The tx data after the dynamic part of the tx to brdige skill creation
 |setReputationRootHashBefore|bytes|The tx data before the dynamic part of the tx to bridge a new reputation root hash

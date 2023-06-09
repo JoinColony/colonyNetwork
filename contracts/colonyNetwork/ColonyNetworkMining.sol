@@ -102,14 +102,14 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     emit ReputationRootHashSet(newHash, newNLeaves, newAddressArray(), 0);
   }
 
-  function bridgeCurrentRootHash(address bridgeAddress) onlyMiningChain stoppable public {
-    require(bridgeData[bridgeAddress].chainId != 0, "colony-network-not-known-bridge");
+  function bridgeCurrentRootHash(address _bridgeAddress) onlyMiningChain stoppable public {
+    require(bridgeData[_bridgeAddress].chainId != 0, "colony-network-not-known-bridge");
     bytes memory payload = abi.encodePacked(
-      bridgeData[bridgeAddress].setReputationRootHashBefore,
+      bridgeData[_bridgeAddress].setReputationRootHashBefore,
       abi.encodeWithSignature("setReputationRootHashFromBridge(bytes32,uint256)", reputationRootHash, reputationRootHashNLeaves),
-      bridgeData[bridgeAddress].setReputationRootHashAfter
+      bridgeData[_bridgeAddress].setReputationRootHashAfter
     );
-    (bool success, ) = bridgeAddress.call(payload);
+    (bool success, ) = _bridgeAddress.call(payload);
     // TODO: Do we require success here?
     require(success, "colony-mining-bridge-call-failed");
   }

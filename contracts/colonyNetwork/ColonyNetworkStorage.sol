@@ -117,10 +117,10 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   // networkId -> skillCount -> parentSkillId
   mapping(uint256 => mapping(uint256 => uint256)) pendingSkillAdditions; // Storage slot 46
 
-  // networkId -> colonyAddress -> updateCount -> update
-  mapping(uint256 => mapping( address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 47
   // networkID -> colonyAddress -> updateCount
   mapping(uint256 => mapping( address => uint256)) reputationUpdateCount; // Storage slot 48
+  // networkId -> colonyAddress -> updateCount -> update
+  mapping(uint256 => mapping( address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 47
 
   modifier calledByColony() {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");

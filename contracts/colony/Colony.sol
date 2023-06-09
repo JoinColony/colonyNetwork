@@ -210,11 +210,11 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     IColonyNetwork(colonyNetworkAddress).addColonyVersion(_version, _resolver);
   }
 
-  function setBridgeData(address bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) external
+  function setBridgeData(address bridgeAddress, uint256 chainId, uint256 gas, bytes memory updateLogBefore, bytes memory updateLogAfter, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) external
   stoppable
   auth
   {
-    IColonyNetwork(colonyNetworkAddress).setBridgeData(bridgeAddress, updateLogBefore, updateLogAfter, gas, chainId, skillCreationBefore, skillCreationAfter, setReputationRootHashBefore, setReputationRootHashAfter);
+    IColonyNetwork(colonyNetworkAddress).setBridgeData(bridgeAddress, chainId, gas, updateLogBefore, updateLogAfter, skillCreationBefore, skillCreationAfter, setReputationRootHashBefore, setReputationRootHashAfter);
   }
 
   function addExtensionToNetwork(bytes32 _extensionId, address _resolver) public stoppable auth {
@@ -319,7 +319,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("setBridgeData(address,bytes,bytes,uint256,uint256,bytes,bytes,bytes,bytes)"));
+    sig = bytes4(keccak256("setBridgeData(address,uint256,uint256,bytes,bytes,bytes,bytes,bytes,bytes)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
