@@ -102,20 +102,20 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     emit ColonyVersionAdded(_version, _resolver);
   }
 
-  function setBridgeData(address bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) public
+  function setBridgeData(address bridgeAddress, uint256 chainId, uint256 gas, bytes memory updateLogBefore, bytes memory updateLogAfter, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) public
   always
   calledByMetaColony
   {
     if (!isMiningChain()) {
-      miningBridgeAddress = bridgeAddress;
       require(isMiningChainId(chainId), "colony-network-can-only-set-mining-chain-bridge");
+      miningBridgeAddress = bridgeAddress;
     }
     bridgeData[bridgeAddress] = Bridge(updateLogBefore, updateLogAfter, gas, chainId, skillCreationBefore, skillCreationAfter, setReputationRootHashBefore, setReputationRootHashAfter);
     if (networkSkillCounts[chainId] == 0) {
       // Initialise the skill count to match the foreign chain
       networkSkillCounts[chainId] = chainId << 128;
     }
-    // emit BridgeDataSet
+    emit BridgeDataSet(bridgeAddress);
   }
 
   function getBridgeData(address bridgeAddress) public view returns (Bridge memory) {
@@ -238,15 +238,15 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
 
   function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillId) public always onlyMiningChain() {
     // Require is a known bridge
-    Bridge storage bridge = bridgeData[msgSender()];
-    require(bridge.chainId != 0, "colony-network-not-known-bridge");
+    uint256 bridgeChainId = bridgeData[msgSender()].chainId;
+    require(bridgeChainId != 0, "colony-network-not-known-bridge");
 
     // Check skill count - if not next, then store for later.
-    if (networkSkillCounts[bridge.chainId] + 1 == _skillId){
+    if (networkSkillCounts[bridgeChainId] + 1 == _skillId){
       addSkillToChainTree(_parentSkillId, _skillId);
-      networkSkillCounts[bridge.chainId] += 1;
-    } else if (networkSkillCounts[bridge.chainId] < _skillId){
-      pendingSkillAdditions[bridge.chainId][_skillId] = _parentSkillId;
+      networkSkillCounts[bridgeChainId] += 1;
+    } else if (networkSkillCounts[bridgeChainId] < _skillId){
+      pendingSkillAdditions[bridgeChainId][_skillId] = _parentSkillId;
       // TODO: Event?
     }
   }
@@ -260,20 +260,20 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
   }
 
   function addBridgedPendingSkill(address _bridgeAddress, uint256 _skillId) public always onlyMiningChain() {
-    Bridge storage bridge = bridgeData[_bridgeAddress];
-    require(bridge.chainId != 0, "colony-network-not-known-bridge");
+    uint256 bridgeChainId = bridgeData[_bridgeAddress].chainId;
+    require(bridgeChainId != 0, "colony-network-not-known-bridge");
 
     // Require that specified skill is next
     // Note this also implicitly checks that the chainId prefix of the skill is correct
-    require(networkSkillCounts[bridge.chainId] + 1 == _skillId, "colony-network-not-next-bridged-skill");
+    require(networkSkillCounts[bridgeChainId] + 1 == _skillId, "colony-network-not-next-bridged-skill");
 
-    uint256 parentSkillId = pendingSkillAdditions[bridge.chainId][_skillId];
+    uint256 parentSkillId = pendingSkillAdditions[bridgeChainId][_skillId];
     require(parentSkillId != 0, "colony-network-no-such-bridged-skill");
     addSkillToChainTree(parentSkillId, _skillId);
-    networkSkillCounts[bridge.chainId] += 1;
+    networkSkillCounts[bridgeChainId] += 1;
 
     // Delete the pending addition
-    delete pendingSkillAdditions[bridge.chainId][_skillId];
+    delete pendingSkillAdditions[bridgeChainId][_skillId];
   }
 
   function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
@@ -314,19 +314,21 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     return skillCount;
   }
 
-  function appendReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId, uint256 _updateNumber) public onlyMiningChain stoppable
+  function appendReputationUpdateLogFromBridge(address _colony, address _user, int256 _amount, uint256 _skillId, uint256 _updateNumber) public onlyMiningChain stoppable
   {
     // Require is a known bridge
-    require(bridgeData[msgSender()].chainId != 0, "colony-network-not-known-bridge");
+    uint256 bridgeChainId = bridgeData[msgSender()].chainId;
 
-    require(bridgeData[msgSender()].chainId == _skillId >> 128, "colony-network-invalid-skill-id-for-bridge");
+    require(bridgeChainId != 0, "colony-network-not-known-bridge");
+
+    require(bridgeChainId == _skillId >> 128, "colony-network-invalid-skill-id-for-bridge");
 
     // if next expected update, add to log
     if (
-      reputationUpdateCount[bridgeData[msgSender()].chainId][_colony] + 1 == _updateNumber && // It's the next reputation update for this colony
+      reputationUpdateCount[bridgeChainId][_colony] + 1 == _updateNumber && // It's the next reputation update for this colony
       networkSkillCounts[_skillId >> 128] >= _skillId // Skill has been bridged
     ){
-      reputationUpdateCount[bridgeData[msgSender()].chainId][_colony] += 1;
+      reputationUpdateCount[bridgeChainId][_colony] += 1;
       uint128 nParents = skills[_skillId].nParents;
       // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
       uint128 nChildren = _amount < 0 ? skills[_skillId].nChildren : 0;
@@ -342,7 +344,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
 
     } else {
       // Not next update, store for later
-      pendingReputationUpdates[bridgeData[msgSender()].chainId][_colony][_updateNumber] = PendingReputationUpdate(_colony, _user, _amount, _skillId, block.timestamp);
+      pendingReputationUpdates[bridgeChainId][_colony][_updateNumber] = PendingReputationUpdate(_user, _amount, _skillId, _colony, block.timestamp);
     }
   }
 
@@ -370,13 +372,13 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
   }
 
   function addBridgedReputationUpdate(uint256 _chainId, address _colony) public stoppable onlyMiningChain {
-    uint256 nextUpdateNumber = reputationUpdateCount[_chainId][_colony] + 1;
-    // Bridged update must exist
-    require(pendingReputationUpdates[_chainId][_colony][nextUpdateNumber].colony != address(0x00), "colony-network-next-update-does-not-exist");
-    // It should be the next one
-    assert(pendingReputationUpdates[_chainId][_colony][nextUpdateNumber - 1].colony == address(0x00));
+    uint256 mostRecentUpdateNumber = reputationUpdateCount[_chainId][_colony];
+    PendingReputationUpdate storage pendingUpdate = pendingReputationUpdates[_chainId][_colony][mostRecentUpdateNumber + 1];
 
-    PendingReputationUpdate storage pendingUpdate = pendingReputationUpdates[_chainId][_colony][nextUpdateNumber];
+    // Bridged update must exist
+    require(pendingUpdate.colony != address(0x00), "colony-network-next-update-does-not-exist");
+    // It should be the next one
+    assert(pendingReputationUpdates[_chainId][_colony][mostRecentUpdateNumber].colony == address(0x00));
 
     // Skill creation must have been bridged
     require(networkSkillCounts[pendingUpdate.skillId >> 128] >= pendingUpdate.skillId, "colony-network-invalid-skill-id");
@@ -387,10 +389,10 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
 
     int256 updateAmount = decayReputation(pendingUpdate.amount, pendingUpdate.timestamp);
 
-    reputationUpdateCount[_chainId][_colony] +=1;
+    reputationUpdateCount[_chainId][_colony] += 1;
     address user = pendingUpdate.user;
     uint256 skillId = pendingUpdate.skillId;
-    delete pendingReputationUpdates[_chainId][_colony][nextUpdateNumber];
+    delete pendingReputationUpdates[_chainId][_colony][mostRecentUpdateNumber + 1];
 
     IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(
       user,
@@ -453,7 +455,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
       (bool success, ) = miningBridgeAddress.call(payload);
       if (!success || !isContract(miningBridgeAddress)) {
         // Store to resend later
-        pendingReputationUpdates[getChainId()][msgSender()][reputationUpdateCount[getChainId()][msgSender()]] = PendingReputationUpdate(msgSender(), _user, _amount, _skillId, block.timestamp);
+        pendingReputationUpdates[getChainId()][msgSender()][reputationUpdateCount[getChainId()][msgSender()]] = PendingReputationUpdate(_user, _amount, _skillId, msgSender(), block.timestamp);
       }
       // TODO: How do we emit events here?
     }
