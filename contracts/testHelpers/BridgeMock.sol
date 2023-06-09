@@ -53,16 +53,6 @@ contract BridgeMock {
         }
       }
 
-    // bool success;
-    // assembly {
-    //           // call contract at address a with input mem[in…(in+insize))
-    //           //   providing g gas and v wei and output area mem[out…(out+outsize))
-    //           //   returning 0 on error (eg. out of gas) and 1 on success
-
-    //           // call(g,         a,       v, in,              insize,      out, outsize)
-    //   success := call(_gasLimit, _target, 0, add(_data, 0x20), mload(_data), 0, 0)
-    // }
-
     emit RelayedMessage(_sender, msg.sender, _messageId, success);
   }
 

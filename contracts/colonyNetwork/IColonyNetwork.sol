@@ -511,15 +511,15 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
 
   /// @notice Called to set the details about bridge _bridgeAddress
   /// @param _bridgeAddress The address of the bridge
+  /// @param chainId The chainId of the corresponding network
+  /// @param gas How much gas to use for a bridged transaction
   /// @param updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
   /// @param updateLogAfter The tx data after the dynamic part of the tx to bridge to the update log
-  /// @param gas How much gas to use for a bridged transaction
-  /// @param chainId The chainId of the corresponding network
   /// @param skillCreationBefore The tx data before the dynamic part of the tx to brdige skill creation
   /// @param skillCreationAfter The tx data after the dynamic part of the tx to brdige skill creation
   /// @param setReputationRootHashBefore The tx data before the dynamic part of the tx to bridge a new reputation root hash
   /// @param setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
-  function setBridgeData(address _bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) external;
+  function setBridgeData(address _bridgeAddress, uint256 chainId, uint256 gas, bytes memory updateLogBefore, bytes memory updateLogAfter,  bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) external;
 
   /// @notice Called to get the details about known bridge _bridgeAddress
   /// @param _bridgeAddress The address of the bridge
