@@ -95,20 +95,20 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     emit ColonyVersionAdded(_version, _resolver);
   }
 
-  function setBridgeData(address bridgeAddress, bytes memory updateLogBefore, bytes memory updateLogAfter, uint256 gas, uint256 chainId, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) public
+  function setBridgeData(address bridgeAddress, uint256 chainId, uint256 gas, bytes memory updateLogBefore, bytes memory updateLogAfter, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) public
   always
   calledByMetaColony
   {
     if (!isMiningChain()) {
-      miningBridgeAddress = bridgeAddress;
       require(isMiningChainId(chainId), "colony-network-can-only-set-mining-chain-bridge");
+      miningBridgeAddress = bridgeAddress;
     }
     bridgeData[bridgeAddress] = Bridge(updateLogBefore, updateLogAfter, gas, chainId, skillCreationBefore, skillCreationAfter, setReputationRootHashBefore, setReputationRootHashAfter);
     if (networkSkillCounts[chainId] == 0) {
       // Initialise the skill count to match the foreign chain
       networkSkillCounts[chainId] = chainId << 128;
     }
-    // emit BridgeDataSet
+    emit BridgeDataSet(bridgeAddress);
   }
 
   function getBridgeData(address bridgeAddress) public view returns (Bridge memory) {

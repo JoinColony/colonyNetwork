@@ -50,7 +50,7 @@ contract MultiChain {
   }
 
   function isMiningChainId(uint256 chainId) internal view returns (bool) {
-    return (chainId == 100 || chainId == 265669100);
+    return (chainId == MINING_CHAIN_ID || chainId == 265669100);
   }
 
   uint256 constant MINING_CHAIN_ID = 100;

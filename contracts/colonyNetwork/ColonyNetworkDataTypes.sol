@@ -147,6 +147,10 @@ interface ColonyNetworkDataTypes {
   /// @param tokenAuthorityAddress The address of the token authority deployed
   event TokenAuthorityDeployed(address tokenAuthorityAddress);
 
+  /// @notice Event logged when the colony network has data about a bridge contract set.
+  /// @param bridgeAddress The address of the bridge contract that will be interacted with
+  event BridgeDataSet(address bridgeAddress);
+
   struct Skill {
     // total number of parent skills
     uint128 nParents;
@@ -193,10 +197,10 @@ interface ColonyNetworkDataTypes {
   }
 
   struct PendingReputationUpdate {
-    address colony;
     address user;
     int256 amount;
     uint skillId;
+    address colony;
     uint256 timestamp;
   }
 }

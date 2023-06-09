@@ -53,6 +53,8 @@ contract("Cross-chain", (accounts) => {
   const TRUFFLE_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
   const OTHER_RPC_PORT = 8546;
 
+  const MINER_ADDRESS = accounts[5];
+
   const HOME_PORT = process.env.TRUFFLE_FOREIGN === "true" ? OTHER_RPC_PORT : TRUFFLE_PORT;
   const FOREIGN_PORT = process.env.TRUFFLE_FOREIGN === "true" ? TRUFFLE_PORT : OTHER_RPC_PORT;
 
@@ -134,40 +136,64 @@ contract("Cross-chain", (accounts) => {
     const homeMCAddress = await homeColonyNetwork.getMetaColony();
     homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
 
+    // The code here demonstrates how to generate the bridge data for a bridge. We work out the transaction (with dummy data), and then
+    // the transaction that would call that on the AMB, before snipping out the AMB call. The non-dummy data is worked out on-chain before
+    // being sandwiched by the before and after bytes.
+    const appendReputationUpdateLogFromBridgeTx = homeColonyNetwork.interface.encodeFunctionData("appendReputationUpdateLogFromBridge", [
+      "0x1111111111111111111111111111111111111111",
+      "0x2222222222222222222222222222222222222222",
+      0x666666,
+      0x88888888,
+      0x99999999,
+    ]);
+    const appendReputationUpdateLogFromBridgeTxDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [
+      homeColonyNetwork.address,
+      appendReputationUpdateLogFromBridgeTx,
+      1000000,
+    ]);
+
+    const addSkillFromBridgeTx = homeColonyNetwork.interface.encodeFunctionData("addSkillFromBridge", [0x666666, 0x88888888]);
+    const addSkillFromBridgeTxDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [
+      homeColonyNetwork.address,
+      addSkillFromBridgeTx,
+      1000000,
+    ]);
+
     let tx = await foreignMetacolony.setBridgeData(
       foreignBridge.address, // bridge address
-      `0xdc8601b3000000000000000000000000${homeColonyNetwork.address.slice(
-        2
-        // eslint-disable-next-line max-len
-      )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000000a4`, // log before
-      "0x00000000000000000000000000000000000000000000000000000000", // log after
-      1000000, // gas
       100, // chainid
-      `0xdc8601b3000000000000000000000000${homeColonyNetwork.address.slice(
-        2
-        // )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000044`, // skill before
-        // eslint-disable-next-line max-len
-      )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000001e84800000000000000000000000000000000000000000000000000000000000000044`, // skill before //eslint-disable-line max-len
-      "0x00000000000000000000000000000000000000000000000000000000", // skill after
+      1000000, // gas
+      appendReputationUpdateLogFromBridgeTxDataToBeSentToAMB.slice(0, 266), // log before
+      `0x${appendReputationUpdateLogFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // log after
+      addSkillFromBridgeTxDataToBeSentToAMB.slice(0, 266), // skill before
+      `0x${addSkillFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // skill after
       "0x", // root hash before
       "0x" // root hash after
     );
 
     await tx.wait();
 
+    const setReputationRootHashFromBridgeTx = homeColonyNetwork.interface.encodeFunctionData("setReputationRootHashFromBridge", [
+      "0xb8b89e7cf61d1d39d09e98c0ccbb489561e5e1173445a6b34e469f362ebdb221",
+      "0xb8b89e7cf61d1d39d09e98c0ccbb489561e5e1173445a6b34e469f362ebdb221",
+    ]);
+    const setReputationRootHashFromBridgeTxDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [
+      foreignColonyNetwork.address,
+      setReputationRootHashFromBridgeTx,
+      1000000,
+    ]);
+    console.log(setReputationRootHashFromBridgeTxDataToBeSentToAMB);
+
     tx = await homeMetacolony.setBridgeData(
       homeBridge.address, // bridge address
+      foreignChainId, // chainid
+      1000000, // gas
       "0x", // log before
       "0x", // log after
-      1000000, // gas
-      foreignChainId, // chainid
       `0x`, // skill before
       "0x", // skill after
-      `0xdc8601b3000000000000000000000000${foreignColonyNetwork.address.slice(
-        2
-        // eslint-disable-next-line max-len
-      )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000044`,
-      "0x00000000000000000000000000000000000000000000000000000000" // root hash after
+      setReputationRootHashFromBridgeTxDataToBeSentToAMB.slice(0, 266), // root hash before
+      `0x${setReputationRootHashFromBridgeTxDataToBeSentToAMB.slice(-56)}` // root hash after
     );
     await tx.wait();
 
@@ -182,21 +208,18 @@ contract("Cross-chain", (accounts) => {
       await p;
     }
 
-    console.log("adsf1");
     // Set up mining client
     client = new ReputationMinerTestWrapper({
       loader: contractLoader,
-      minerAddress: accounts[5],
+      minerAddress: MINER_ADDRESS,
       realProviderPort: HOME_PORT,
       useJsTree: true,
     });
 
-    console.log("adsf2");
     await client.initialise(homeColonyNetwork.address);
     web3HomeProvider = new web3.eth.providers.HttpProvider(ethersHomeSigner.provider.connection.url);
     web3ForeignProvider = new web3.eth.providers.HttpProvider(ethersForeignSigner.provider.connection.url);
 
-    console.log("adsf3");
     await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
@@ -206,19 +229,6 @@ contract("Cross-chain", (accounts) => {
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
     await client.confirmNewHash();
-
-    console.log("asdf4");
-    // Bridge over pending reputation updates that have been emitted on the foreign chain
-    // const reputationLogCounter = await foreignColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColonyNetwork.address);
-
-    // console.log('asdf5')
-    // for (let i = 1; i <= reputationLogCounter; i+=1) {
-    //   const p = getPromiseForNextBridgedTransaction();
-    //   tx = await foreignColonyNetwork.bridgePendingReputationUpdate(i);
-    //   res = await tx.wait();
-    //   console.log(res);
-    //   await p;
-    // }
   });
 
   async function setupColony(colonyNetworkEthers) {
@@ -292,12 +302,12 @@ contract("Cross-chain", (accounts) => {
     });
 
     it("setBridgeData can only be called by the metacolony", async () => {
-      const tx = await foreignColonyNetwork.setBridgeData(ADDRESS_ZERO, "0x00", "0x00", 0, 1, "0x00", "0x00", "0x00", "0x00", { gasLimit: 1000000 });
+      const tx = await foreignColonyNetwork.setBridgeData(ADDRESS_ZERO, 1, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-caller-must-be-meta-colony");
     });
 
     it("setBridgeData can only set the mining chain bridge on a not-mining chain", async () => {
-      const tx = await foreignMetacolony.setBridgeData(ADDRESS_ZERO, "0x00", "0x00", 0, 1, "0x00", "0x00", "0x00", "0x00", { gasLimit: 1000000 });
+      const tx = await foreignMetacolony.setBridgeData(ADDRESS_ZERO, 1, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-can-only-set-mining-chain-bridge");
     });
 
@@ -305,10 +315,10 @@ contract("Cross-chain", (accounts) => {
       const countBefore = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
       const tx = await homeMetacolony.setBridgeData(
         homeBridge.address, // bridge address
+        foreignChainId, // chainid
+        1000000, // gas
         "0x", // log before
         "0x", // log after
-        1000000, // gas
-        foreignChainId, // chainid
         `0x`, // skill before
         "0x", // skill after
         `0xdc8601b3000000000000000000000000${foreignColonyNetwork.address.slice(
@@ -376,11 +386,6 @@ contract("Cross-chain", (accounts) => {
 
   describe("when adding skills on another chain", async () => {
     it("can create a skill on another chain and it's reflected on the home chain", async () => {
-      // const t = homeColonyNetwork.interface.encodeFunctionData("addSkillFromBridge", [0x666666, 0x88888888]);
-      // console.log(t);
-      // const txDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [homeColonyNetwork.address, t, 1000000]);
-      // console.log(txDataToBeSentToAMB);
-
       // See skills on home chain
       const beforeCount = await homeColonyNetwork.getBridgedSkillCounts("0x0fd5c9ed");
 
@@ -578,27 +583,6 @@ contract("Cross-chain", (accounts) => {
 
   describe("while earning reputation on another chain", async () => {
     it("reputation awards are ultimately reflected", async () => {
-      // const t = homeColonyNetwork.interface.encodeFunctionData("appendReputationUpdateLogFromBridge", [
-      //   "0x1471c2dc50d9155d80E4C88187806Df6B1a2e649",
-      //   "0x1471c2dc50d9155d80E4C88187806Df6B1a2e649",
-      //   0x666666,
-      //   0x88888888,
-      //   0x99999999,
-      // ]);
-      // console.log(t);
-      // const txDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [homeColonyNetwork.address, t, 1000000]);
-      // console.log(txDataToBeSentToAMB);
-      // process.exit(1)
-
-      // const t = homeColonyNetwork.interface.encodeFunctionData("bridgeSetReputationRootHash", [
-      //   "0xb8b89e7cf61d1d39d09e98c0ccbb489561e5e1173445a6b34e469f362ebdb221",
-      //   "0xb8b89e7cf61d1d39d09e98c0ccbb489561e5e1173445a6b34e469f362ebdb221"
-      // ]);
-      // console.log(t);
-      // const txDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [foreignColonyNetwork.address, t, 1000000]);
-      // console.log(txDataToBeSentToAMB);
-
-      // process.exit(1)
       let p = getPromiseForNextBridgedTransaction();
       // Emit reputation
       await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1337");
