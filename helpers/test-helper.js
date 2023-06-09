@@ -6,7 +6,17 @@ const BN = require("bn.js");
 const { ethers } = require("ethers");
 const { BigNumber } = require("bignumber.js");
 
-const { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("./constants");
+const {
+  UINT256_MAX,
+  MIN_STAKE,
+  MINING_CYCLE_DURATION,
+  DEFAULT_STAKE,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  XDAI_CHAINID,
+  FORKED_XDAI_CHAINID,
+  MAINNET_CHAINID,
+  FORKED_MAINNET_CHAINID,
+} = require("./constants");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -1227,12 +1237,12 @@ exports.upgradeColonyTo = async function (colony, _version) {
 
 exports.isMainnet = async function isMainnet() {
   const chainId = await exports.web3GetChainId();
-  return chainId === 1 || chainId === 2656691;
+  return chainId === MAINNET_CHAINID || chainId === FORKED_MAINNET_CHAINID;
 };
 
 exports.isXdai = async function isXdai() {
   const chainId = await exports.web3GetChainId();
-  return chainId === 100 || chainId === 265669100;
+  return chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID;
 };
 
 class TestAdapter {

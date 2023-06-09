@@ -3,6 +3,8 @@ const log = console.log;
 const { execSync } = require("child_process");
 const ethers  = require("ethers");
 
+const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
+
 const existingCompileComplete = config.onCompileComplete;
 
 let chainId;
@@ -11,9 +13,9 @@ let chainId;
 // TODO: Actually query nodes, don't hard-code here, or work out how to get environment
 // variables in package.json to work here as I want.
 if (JSON.parse(process.env.TRUFFLE_FOREIGN)){
-  chainId = 265669101;
+  chainId = FORKED_XDAI_CHAINID + 1;
 } else {
-  chainId = 265669100;
+  chainId = FORKED_XDAI_CHAINID;
 }
 
 config.providerOptions.network_id = chainId;
