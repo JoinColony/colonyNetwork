@@ -21,12 +21,13 @@ pragma experimental "ABIEncoderV2";
 import "./../common/ERC20Extended.sol";
 import "./../common/EtherRouter.sol";
 import "./../common/MultiChain.sol";
+import "./../common/ScaleReputation.sol";
 import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyNetworkStorage.sol";
 
 
-contract ColonyNetworkMining is ColonyNetworkStorage {
+contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain, ScaleReputation {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {
@@ -220,7 +221,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
       stakers,
       minerWeights,
       metaColony,
-      totalMinerRewardPerCycle,
+      // totalMinerRewardPerCycle,
+      uint256(scaleReputation(int256(totalMinerRewardPerCycle), WAD - skills[reputationMiningSkillId].reputationScalingFactorComplement)),
       reputationMiningSkillId
     );
   }
@@ -288,7 +290,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     require(ERC20Extended(clnyToken).transfer(metaColony, _amount), "colony-network-transfer-failed");
   }
 
-  function setReputationMiningCycleReward(uint256 _amount) public onlyMiningChain stoppable calledByMetaColony {
+  function setReputationMiningCycleReward(uint256 _amount) public stoppable calledByMetaColony {
+    require(_amount < uint256(type(int256).max), "colony-network-too-large-reward");
     totalMinerRewardPerCycle = _amount;
 
     emit ReputationMiningRewardSet(_amount);
@@ -296,6 +299,12 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   function getReputationMiningCycleReward() public onlyMiningChain view returns (uint256) {
     return totalMinerRewardPerCycle;
+  }
+
+  function setReputationMiningCycleRewardReputationScaling(uint256 _factor) public calledByMetaColony stoppable
+  {
+    require(_factor <= WAD, "colony-network-invalid-reputation-scale-factor");
+    skills[reputationMiningSkillId].reputationScalingFactorComplement = WAD - _factor;
   }
 
   uint256 constant UINT192_MAX = 2**192 - 1; // Used for updating the stake timestamp

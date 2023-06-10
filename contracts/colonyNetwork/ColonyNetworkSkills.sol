@@ -524,26 +524,25 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, ColonyDataTypes
   {
     require(_factor <= WAD, "colony-network-invalid-reputation-scale-factor");
     uint256 skillId = IColony(msgSender()).getDomain(_domainId).skillId;
-    skills[skillId].earnedReputationScaling = _enabled;
-    skills[skillId].reputationScalingFactor = _factor;
+    skills[skillId].reputationScalingFactorComplement = WAD - _factor;
   }
 
   function getSkillReputationScaling(uint256 _skillId) public view returns (uint256) {
     uint256 factor;
     Skill storage s = skills[_skillId];
-    factor = s.earnedReputationScaling ? s.reputationScalingFactor : WAD;
+    factor = WAD - s.reputationScalingFactorComplement;
 
     while (s.nParents > 0) {
       s = skills[s.parents[0]];
       // If reputation scaling is in effect for this skill, then take the value for this skill in to
       // account. Otherwise, no effect and continue walking up the tree
-      if (s.earnedReputationScaling) {
-        if (s.reputationScalingFactor == 0){
-          // If scaling is in effect and is 0, we can short circuit - regardless of the rest of the tree
+      if (s.reputationScalingFactorComplement > 0) {
+        if (s.reputationScalingFactorComplement == 1){
+          // If scaling is in effect and is 0 (because factor = 1 - complement), we can short circuit - regardless of the rest of the tree
           // the scaling factor will be 0
           return 0;
         } else {
-          factor = wmul(factor, s.reputationScalingFactor);
+          factor = wmul(factor, WAD - s.reputationScalingFactorComplement);
         }
       }
     }
