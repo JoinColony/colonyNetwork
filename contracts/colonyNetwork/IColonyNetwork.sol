@@ -590,4 +590,9 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return numerator The numerator of the fraction reputation does down by every reputation cycle
   /// @return denominator The denominator of the fraction reputation does down by every reputation cycle
   function getColonyReputationDecayRate(address _colony) external view returns (uint256 numerator, uint256 denominator);
+
+  /// @notice Called to set the total per-cycle reputation scaling factor for the tokens paid out
+  /// @dev Calls the corresponding function on the ColonyNetwork.
+  /// @param _factor The scale factor to apply to reputation mining rewards
+  function setReputationMiningCycleRewardReputationScaling(uint256 _factor) external;
 }
