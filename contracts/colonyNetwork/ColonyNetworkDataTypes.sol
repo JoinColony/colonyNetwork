@@ -206,6 +206,8 @@ interface ColonyNetworkDataTypes {
     bool globalSkill;
     // `true` for a global skill that is deprecated
     bool deprecated;
+    // This is the complement of the reputaiton scaling factor. So the scaling factor is WAD-reputationScalingFactorComplement
+    uint256 reputationScalingFactorComplement;
   }
 
   struct ENSRecord {

@@ -1229,6 +1229,19 @@ Called to set the total per-cycle reputation reward, which will be split between
 |_amount|uint256|The CLNY awarded per mining cycle to the miners
 
 
+### ▸ `setReputationMiningCycleRewardReputationScaling(uint256 _factor)`
+
+Called to set the total per-cycle reputation scaling factor for the tokens paid out
+
+*Note: Calls the corresponding function on the ColonyNetwork.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_factor|uint256|The scale factor to apply to reputation mining rewards
+
+
 ### ▸ `setReputationRootHash(bytes32 _newHash, uint256 _newNLeaves, address[] memory _stakers)`
 
 Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.

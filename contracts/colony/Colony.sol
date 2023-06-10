@@ -210,6 +210,14 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     IColonyNetwork(colonyNetworkAddress).setReputationMiningCycleReward(_amount);
   }
 
+  function setReputationMiningCycle(uint256 _amount) public
+  stoppable
+  auth
+  {
+    IColonyNetwork(colonyNetworkAddress).setReputationMiningCycleReward(_amount);
+  }
+
+
   function addNetworkColonyVersion(uint256 _version, address _resolver) public
   stoppable
   auth
@@ -357,6 +365,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
     sig = bytes4(keccak256("setReputationDecayRate(uint256,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("setReputationMiningCycleRewardReputationScaling(uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function setTokenReputationRate(address _token, uint256 _rate) public stoppable {
@@ -446,4 +457,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     return tokenApprovalTotals[_token];
   }
 
+  function setReputationMiningCycleRewardReputationScaling(uint256 _factor) public stoppable auth {
+    require(_factor <= WAD, "colony-invalid-scale-factor");
+    IColonyNetwork(colonyNetworkAddress).setReputationMiningCycleRewardReputationScaling(_factor);
+    emit MiningReputationScalingSet(_factor);
+  }
 }

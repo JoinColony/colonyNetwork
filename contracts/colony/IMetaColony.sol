@@ -58,6 +58,11 @@ interface IMetaColony is IColony {
   /// @param _amount The CLNY awarded per mining cycle to the miners
   function setReputationMiningCycleReward(uint256 _amount) external;
 
+  /// @notice Called to set the total per-cycle reputation scaling factor for the tokens paid out
+  /// @dev Calls the corresponding function on the ColonyNetwork.
+  /// @param _factor The scale factor to apply to reputation mining rewards
+  function setReputationMiningCycleRewardReputationScaling(uint256 _factor) external;
+
   /// @notice Add a new extension/version to the Extensions repository.
   /// @dev Calls `IColonyNetwork.addExtensionToNetwork`.
   /// @dev The extension version is queried from the resolver itself.

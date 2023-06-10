@@ -555,14 +555,12 @@ contract("Colony", (accounts) => {
 
       const domain = await colony.getDomain(1);
       let skill = await colonyNetwork.getSkill(domain.skillId);
-      expect(skill.reputationScalingFactor).to.be.eq.BN(WAD.divn(2));
-      expect(skill.earnedReputationScaling).to.be.true;
+      expect(skill.reputationScalingFactorComplement).to.be.eq.BN(WAD.divn(2));
 
       await colony.setDomainReputationScaling(1, false, 0);
 
       skill = await colonyNetwork.getSkill(domain.skillId);
-      expect(skill.reputationScalingFactor).to.be.eq.BN(0);
-      expect(skill.earnedReputationScaling).to.be.false;
+      expect(skill.reputationScalingFactorComplement).to.be.eq.BN(WAD);
     });
 
     it("setting domain reputation scaling to false with a nonzero scale factor fails", async () => {
