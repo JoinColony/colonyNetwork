@@ -278,7 +278,12 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     );
   }
 
-  function getPendingReputationUpdate(uint256 _chainId, address _colony, uint256 _updateNumber) public view onlyMiningChain returns (PendingReputationUpdate memory) {
+  function getPendingReputationUpdate(uint256 _chainId, address _colony, uint256 _updateNumber)
+    public
+    view
+    onlyMiningChain
+    returns (PendingReputationUpdate memory)
+  {
     return pendingReputationUpdates[_chainId][_colony][_updateNumber];
   }
 

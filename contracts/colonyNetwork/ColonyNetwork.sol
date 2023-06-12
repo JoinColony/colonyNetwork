@@ -95,20 +95,42 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     emit ColonyVersionAdded(_version, _resolver);
   }
 
-  function setBridgeData(address bridgeAddress, uint256 chainId, uint256 gas, bytes memory updateLogBefore, bytes memory updateLogAfter, bytes memory skillCreationBefore, bytes memory skillCreationAfter, bytes memory setReputationRootHashBefore, bytes memory setReputationRootHashAfter) public
-  always
-  calledByMetaColony
+  function setBridgeData(
+    address _bridgeAddress,
+    uint256 _chainId,
+    uint256 _gas,
+    bytes memory _updateLogBefore,
+    bytes memory _updateLogAfter,
+    bytes memory _skillCreationBefore,
+    bytes memory _skillCreationAfter,
+    bytes memory _setReputationRootHashBefore,
+    bytes memory _setReputationRootHashAfter
+  )
+    public
+    always
+    calledByMetaColony
   {
     if (!isMiningChain()) {
-      require(isMiningChainId(chainId), "colony-network-can-only-set-mining-chain-bridge");
-      miningBridgeAddress = bridgeAddress;
+      require(isMiningChainId(_chainId), "colony-network-can-only-set-mining-chain-bridge");
+      miningBridgeAddress = _bridgeAddress;
     }
-    bridgeData[bridgeAddress] = Bridge(updateLogBefore, updateLogAfter, gas, chainId, skillCreationBefore, skillCreationAfter, setReputationRootHashBefore, setReputationRootHashAfter);
-    if (networkSkillCounts[chainId] == 0) {
+
+    bridgeData[_bridgeAddress] = Bridge(
+      _chainId,
+      _gas,
+      _updateLogBefore,
+      _updateLogAfter,
+      _skillCreationBefore,
+      _skillCreationAfter,
+      _setReputationRootHashBefore,
+      _setReputationRootHashAfter
+    );
+
+    if (networkSkillCounts[_chainId] == 0) {
       // Initialise the skill count to match the foreign chain
-      networkSkillCounts[chainId] = chainId << 128;
+      networkSkillCounts[_chainId] = _chainId << 128;
     }
-    emit BridgeDataSet(bridgeAddress);
+    emit BridgeDataSet(_bridgeAddress);
   }
 
   function getBridgeData(address bridgeAddress) public view returns (Bridge memory) {
