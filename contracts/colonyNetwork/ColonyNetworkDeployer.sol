@@ -143,15 +143,15 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(colonyAuthority);
-
     colonyAuthority.setOwner(address(etherRouter));
+
+    colonyCount += 1;
+    colonies[colonyCount] = address(colony);
+    _isColony[address(colony)] = true;
 
     // Initialise the domain tree with defaults by just incrementing the skillCount
     skillCount += 1;
     IColonyNetwork(address(this)).bridgeSkillIfNotMiningChain(skillCount);
-    colonyCount += 1;
-    colonies[colonyCount] = address(colony);
-    _isColony[address(colony)] = true;
 
     colony.initialiseColony(address(this), _tokenAddress);
 
