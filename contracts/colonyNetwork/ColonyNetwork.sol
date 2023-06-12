@@ -128,7 +128,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
 
     if (networkSkillCounts[_chainId] == 0) {
       // Initialise the skill count to match the foreign chain
-      networkSkillCounts[_chainId] = _chainId << 128;
+      networkSkillCounts[_chainId] = toRootSkillId(_chainId);
     }
     emit BridgeDataSet(_bridgeAddress);
   }
@@ -148,7 +148,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     currentColonyVersion = _version;
 
     if (!isMiningChain()){
-      skillCount = getChainId() << 128;
+      skillCount = toRootSkillId(getChainId());
     }
 
     emit ColonyNetworkInitialised(_resolver);
@@ -198,4 +198,11 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     protectSlot(slot);
     metatransactionNonces[_user] += 1;
   }
+
+  function toRootSkillId(uint256 _chainId) internal pure returns (uint256) {
+    return _chainId << 128;
+  }
+
+
+
 }
