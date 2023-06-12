@@ -173,7 +173,7 @@ interface ColonyNetworkDataTypes {
 
   struct ReputationLogEntry {
     address user;
-    int amount;
+    int256 amount;
     uint256 skillId;
     address colony;
     uint128 nUpdates;
@@ -186,10 +186,10 @@ interface ColonyNetworkDataTypes {
   }
 
   struct Bridge {
+    uint256 chainId;
+    uint256 gas;
     bytes updateLogBefore;
     bytes updateLogAfter;
-    uint256 gas;
-    uint256 chainId;
     bytes skillCreationBefore;
     bytes skillCreationAfter;
     bytes setReputationRootHashBefore;
@@ -199,7 +199,7 @@ interface ColonyNetworkDataTypes {
   struct PendingReputationUpdate {
     address user;
     int256 amount;
-    uint skillId;
+    uint256 skillId;
     address colony;
     uint256 timestamp;
   }
