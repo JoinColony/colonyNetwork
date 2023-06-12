@@ -165,7 +165,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   uint256 constant UINT32_MAX = 4294967295;
   uint256 constant MAX_MINERS = 12;
 
-  function calculateMinerWeight(uint256 timeStaked, uint256 submissonIndex) onlyMiningChain public view returns (uint256) {
+  function calculateMinerWeight(uint256 timeStaked, uint256 submissonIndex) public pure returns (uint256) {
     if (submissonIndex >= MAX_MINERS) {
       return 0;
     }
