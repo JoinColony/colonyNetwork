@@ -31,20 +31,19 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     require(_parentSkillId > 0, "colony-network-invalid-parent-skill");
     skillCount += 1;
     addSkillToChainTree(_parentSkillId, skillCount);
-
     bridgeSkillIfNotMiningChain(skillCount);
-
     return skillCount;
   }
 
   function bridgeSkillIfNotMiningChain(uint256 _skillId) public stoppable skillExists(_skillId) {
     // If we're the mining chain, we don't need to bridge
-    if (isMiningChain()){ return; }
-    // Send bridge transaction
+    if (isMiningChain()) { return; }
+
     // Build the transaction we're going to send to the bridge to register the
     // creation of this skill on the home chain
-
-    uint256 parentSkillId = skills[_skillId].parents.length == 0 ? (getChainId() << 128) : skills[_skillId].parents[0];
+    uint256 parentSkillId = skills[_skillId].parents.length == 0
+      ? (toRootSkillId(getChainId()))
+      : skills[_skillId].parents[0];
 
     bytes memory payload = abi.encodePacked(
       bridgeData[miningBridgeAddress].skillCreationBefore,
@@ -52,16 +51,17 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       bridgeData[miningBridgeAddress].skillCreationAfter
     );
 
+    // Send bridge transaction
     // This succeeds if not set, but we don't want to block e.g. domain creation if that's the situation we're in,
     // and we can re-call this function to bridge later if necessary.
-    (bool success, bytes memory returnData) = miningBridgeAddress.call(payload);
+    (bool success, ) = miningBridgeAddress.call(payload);
     require(success, "colony-network-unable-to-bridge-skill-creation");
   }
 
   function addSkillToChainTree(uint256 _parentSkillId, uint256 _skillId) private {
-    // This indicates a new root local skill bridged from another chain. We don't do anything to the tree
-    // in this scenario, other than incrementing
-    // (this mirrors the behaviour of not calling addSkill() in initialiseRootLocalSkill)
+    // This indicates a new root local skill bridged from another chain, i.e. 0x{chainId}{0}
+    // We don't do anything to the tree in this scenario, other than incrementing
+    //  (this mirrors the behaviour of not calling addSkill() in initialiseRootLocalSkill)
     if (_parentSkillId != 0 && _parentSkillId << 128 == 0) { return; }
 
     Skill storage parentSkill = skills[_parentSkillId];
@@ -190,32 +190,18 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
   function appendReputationUpdateLogFromBridge(address _colony, address _user, int256 _amount, uint256 _skillId, uint256 _updateNumber) public onlyMiningChain stoppable
   {
-    // Require is a known bridge
+    // Require a known bridge
     uint256 bridgeChainId = bridgeData[msgSender()].chainId;
-
     require(bridgeChainId != 0, "colony-network-not-known-bridge");
+    require(bridgeChainId == toChainId(_skillId), "colony-network-invalid-skill-id-for-bridge");
 
-    require(bridgeChainId == _skillId >> 128, "colony-network-invalid-skill-id-for-bridge");
-
-    // if next expected update, add to log
+    // If next expected update, add to log
     if (
       reputationUpdateCount[bridgeChainId][_colony] + 1 == _updateNumber && // It's the next reputation update for this colony
-      networkSkillCounts[_skillId >> 128] >= _skillId // Skill has been bridged
+      networkSkillCounts[toChainId(_skillId)] >= _skillId // Skill has been bridged
     ){
       reputationUpdateCount[bridgeChainId][_colony] += 1;
-      uint128 nParents = skills[_skillId].nParents;
-      // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
-      uint128 nChildren = _amount < 0 ? skills[_skillId].nChildren : 0;
-
-      IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(
-        _user,
-        _amount,
-        _skillId,
-        _colony,
-        nParents,
-        nChildren
-      );
-
+      appendReputationUpdateLogInternal(_user, _amount, _skillId, _colony);
     } else {
       // Not next update, store for later
       pendingReputationUpdates[bridgeChainId][_colony][_updateNumber] = PendingReputationUpdate(_user, _amount, _skillId, _colony, block.timestamp);
@@ -223,19 +209,25 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
   }
 
   function bridgePendingReputationUpdate(address _colony, uint256 _updateNumber) public stoppable onlyNotMiningChain {
-    // Must be next update
-    require(pendingReputationUpdates[getChainId()][_colony][_updateNumber - 1].colony == address(0x00), "colony-network-not-next-pending-update");
-    require(pendingReputationUpdates[getChainId()][_colony][_updateNumber].colony != address(0x00), "colony-network-update-does-not-exist");
-    PendingReputationUpdate storage pendingUpdate = pendingReputationUpdates[getChainId()][_colony][_updateNumber];
-
     require(miningBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
+    require(pendingReputationUpdates[getChainId()][_colony][_updateNumber - 1].colony == address(0x00), "colony-network-not-next-pending-update");
+
+    PendingReputationUpdate storage pendingUpdate = pendingReputationUpdates[getChainId()][_colony][_updateNumber];
+    require(pendingUpdate.colony != address(0x00), "colony-network-update-does-not-exist");
 
     int256 updateAmount = decayReputation(pendingUpdate.amount, pendingUpdate.timestamp);
 
     // Build the transaction we're going to send to the bridge
     bytes memory payload = abi.encodePacked(
       bridgeData[miningBridgeAddress].updateLogBefore,
-      abi.encodeWithSignature("appendReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)", pendingUpdate.colony, pendingUpdate.user, updateAmount, pendingUpdate.skillId, _updateNumber),
+      abi.encodeWithSignature(
+        "appendReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
+        pendingUpdate.colony,
+        pendingUpdate.user,
+        updateAmount,
+        pendingUpdate.skillId,
+        _updateNumber
+      ),
       bridgeData[miningBridgeAddress].updateLogAfter
     );
 
@@ -247,35 +239,22 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
   function addBridgedReputationUpdate(uint256 _chainId, address _colony) public stoppable onlyMiningChain {
     uint256 mostRecentUpdateNumber = reputationUpdateCount[_chainId][_colony];
-    PendingReputationUpdate storage pendingUpdate = pendingReputationUpdates[_chainId][_colony][mostRecentUpdateNumber + 1];
-
-    // Bridged update must exist
-    require(pendingUpdate.colony != address(0x00), "colony-network-next-update-does-not-exist");
-    // It should be the next one
     assert(pendingReputationUpdates[_chainId][_colony][mostRecentUpdateNumber].colony == address(0x00));
 
+    PendingReputationUpdate storage pendingUpdate = pendingReputationUpdates[_chainId][_colony][mostRecentUpdateNumber + 1];
+    require(pendingUpdate.colony != address(0x00), "colony-network-next-update-does-not-exist");
+
     // Skill creation must have been bridged
-    require(networkSkillCounts[pendingUpdate.skillId >> 128] >= pendingUpdate.skillId, "colony-network-invalid-skill-id");
-
-    uint128 nParents = skills[pendingUpdate.skillId].nParents;
-    // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
-    uint128 nChildren = pendingUpdate.amount < 0 ? skills[pendingUpdate.skillId].nChildren : 0;
-
-    int256 updateAmount = decayReputation(pendingUpdate.amount, pendingUpdate.timestamp);
+    require(networkSkillCounts[toChainId(pendingUpdate.skillId)] >= pendingUpdate.skillId, "colony-network-invalid-skill-id");
 
     reputationUpdateCount[_chainId][_colony] += 1;
     address user = pendingUpdate.user;
     uint256 skillId = pendingUpdate.skillId;
+    int256 updateAmount = decayReputation(pendingUpdate.amount, pendingUpdate.timestamp);
+
     delete pendingReputationUpdates[_chainId][_colony][mostRecentUpdateNumber + 1];
 
-    IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(
-      user,
-      updateAmount,
-      skillId,
-      _colony,
-      nParents,
-      nChildren
-    );
+    appendReputationUpdateLogInternal(user, updateAmount, skillId, _colony);
   }
 
   function getPendingReputationUpdate(uint256 _chainId, address _colony, uint256 _updateNumber)
@@ -305,18 +284,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     }
 
     if (isMiningChain()) {
-      uint128 nParents = skills[_skillId].nParents;
-      // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
-      uint128 nChildren = _amount < 0 ? skills[_skillId].nChildren : 0;
-
-      IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(
-        _user,
-        _amount,
-        _skillId,
-        msgSender(),
-        nParents,
-        nChildren
-      );
+      appendReputationUpdateLogInternal(_user, _amount, _skillId, msgSender());
     } else {
       // Send transaction to bridge.
       // Call appendReputationUpdateLogFromBridge on metacolony on xdai
@@ -324,20 +292,54 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       require(miningBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
 
       reputationUpdateCount[getChainId()][msgSender()] += 1;
-      // require(bridgeData[bridgeAddress].chainId == MINING_CHAIN_ID, "colony-network-foreign-bridge-not-set-correctly");
       // Build the transaction we're going to send to the bridge
       bytes memory payload = abi.encodePacked(
         bridgeData[miningBridgeAddress].updateLogBefore,
-        abi.encodeWithSignature("appendReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)", msgSender(), _user, _amount, _skillId, reputationUpdateCount[getChainId()][msgSender()]),
+        abi.encodeWithSignature(
+          "appendReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
+          msgSender(),
+          _user,
+          _amount,
+          _skillId,
+          reputationUpdateCount[getChainId()][msgSender()]
+        ),
         bridgeData[miningBridgeAddress].updateLogAfter
       );
+
       (bool success, ) = miningBridgeAddress.call(payload);
       if (!success || !isContract(miningBridgeAddress)) {
         // Store to resend later
-        pendingReputationUpdates[getChainId()][msgSender()][reputationUpdateCount[getChainId()][msgSender()]] = PendingReputationUpdate(_user, _amount, _skillId, msgSender(), block.timestamp);
+        PendingReputationUpdate memory pendingReputationUpdate = PendingReputationUpdate(_user, _amount, _skillId, msgSender(), block.timestamp);
+        pendingReputationUpdates[getChainId()][msgSender()][reputationUpdateCount[getChainId()][msgSender()]] = pendingReputationUpdate;
       }
       // TODO: How do we emit events here?
     }
+  }
+
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view {
+    // solhint-disable-line no-empty-blocks
+  }
+
+  function getFeeInverse() public view returns (uint256 _feeInverse) {
+    return feeInverse;
+  }
+
+  function setFeeInverse(uint256 _feeInverse) public stoppable calledByMetaColony {
+    require(_feeInverse > 0, "colony-network-fee-inverse-cannot-be-zero");
+    feeInverse = _feeInverse;
+
+    emit NetworkFeeInverseSet(_feeInverse);
+  }
+
+
+  function setPayoutWhitelist(address _token, bool _status) public stoppable calledByMetaColony {
+    payoutWhitelist[_token] = _status;
+
+    emit TokenWhitelisted(_token, _status);
+  }
+
+  function getPayoutWhitelist(address _token) public view returns (bool) {
+    return payoutWhitelist[_token];
   }
 
   function ascendSkillTree(uint _skillId, uint _parentSkillNumber) internal view returns (uint256) {
@@ -355,12 +357,24 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     }
   }
 
-  function isContract(address addr) internal returns (bool) {
-    uint256 size;
-    assembly { size := extcodesize(addr) }
-    return size > 0;
+  function toRootSkillId(uint256 _chainId) internal pure returns (uint256) {
+    return _chainId << 128;
   }
 
+  function toChainId(uint256 _skillId) internal pure returns (uint256) {
+    return _skillId >> 128;
+  }
+
+  function appendReputationUpdateLogInternal(address _user, int256 _amount, uint256 _skillId, address _colony) internal {
+    uint128 nParents = skills[_skillId].nParents;
+      // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
+    uint128 nChildren = (_amount < 0) ? skills[_skillId].nChildren : 0;
+    IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(_user, _amount, _skillId, _colony, nParents, nChildren);
+  }
+
+  function isContract(address addr) internal returns (bool res) {
+    assembly { res := gt(extcodesize(addr), 0) }
+  }
 
   // Mining cycle decay constants
   // Note that these values and the mining window size (defined in ReputationMiningCycleCommon)
@@ -389,5 +403,4 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     }
     return _reputation;
   }
-
 }
