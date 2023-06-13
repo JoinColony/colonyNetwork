@@ -122,6 +122,8 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   // networkId -> colonyAddress -> updateCount -> update
   mapping(uint256 => mapping( address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 47
 
+  // Modifiers
+
   modifier calledByColony() {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");
     assert(msgSender() == msg.sender);
@@ -148,5 +150,11 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
     require(skillCount >= skillId, "colony-invalid-skill-id");
     require(isMiningChain() || (skillId >> 128) == getChainId() , "colony-invalid-skill-id");
     _;
+  }
+
+  // Internal functions
+
+  function toRootSkillId(uint256 _chainId) internal pure returns (uint256) {
+    return _chainId << 128;
   }
 }
