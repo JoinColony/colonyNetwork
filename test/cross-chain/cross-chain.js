@@ -122,10 +122,14 @@ contract("Cross-chain", (accounts) => {
     // Set up a colony on the home chain. That may or may not be the truffle chain...
     const colonyNetworkEthers = await new ethers.Contract(etherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
 
-    const foreignMCAddress = await foreignColonyNetwork.getMetaColony();
-    foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
-    const homeMCAddress = await homeColonyNetwork.getMetaColony();
-    homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
+    console.log("Foreign colony network", foreignColonyNetwork.address);
+    console.log("Home colony network", homeColonyNetwork.address);
+
+    const foreignMetaColonyAddress = await foreignColonyNetwork.getMetaColony();
+    const homeMetaColonyAddress = await homeColonyNetwork.getMetaColony();
+
+    foreignMetacolony = new ethers.Contract(foreignMetaColonyAddress, IMetaColony.abi, ethersForeignSigner);
+    homeMetacolony = new ethers.Contract(homeMetaColonyAddress, IMetaColony.abi, ethersHomeSigner);
 
     // The code here demonstrates how to generate the bridge data for a bridge. We work out the transaction (with dummy data), and then
     // the transaction that would call that on the AMB, before snipping out the AMB call. The non-dummy data is worked out on-chain before
