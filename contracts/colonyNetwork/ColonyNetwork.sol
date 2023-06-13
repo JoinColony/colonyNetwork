@@ -95,53 +95,10 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     emit ColonyVersionAdded(_version, _resolver);
   }
 
-  function setBridgeData(
-    address _bridgeAddress,
-    uint256 _chainId,
-    uint256 _gas,
-    bytes memory _updateLogBefore,
-    bytes memory _updateLogAfter,
-    bytes memory _skillCreationBefore,
-    bytes memory _skillCreationAfter,
-    bytes memory _setReputationRootHashBefore,
-    bytes memory _setReputationRootHashAfter
-  )
-    public
-    always
-    calledByMetaColony
+  function initialise(address _resolver, uint256 _version) public
+  stoppable
+  auth
   {
-    if (!isMiningChain()) {
-      require(isMiningChainId(_chainId), "colony-network-can-only-set-mining-chain-bridge");
-      miningBridgeAddress = _bridgeAddress;
-    }
-
-    bridgeData[_bridgeAddress] = Bridge(
-      _chainId,
-      _gas,
-      _updateLogBefore,
-      _updateLogAfter,
-      _skillCreationBefore,
-      _skillCreationAfter,
-      _setReputationRootHashBefore,
-      _setReputationRootHashAfter
-    );
-
-    if (networkSkillCounts[_chainId] == 0) {
-      // Initialise the skill count to match the foreign chain
-      networkSkillCounts[_chainId] = toRootSkillId(_chainId);
-    }
-    emit BridgeDataSet(_bridgeAddress);
-  }
-
-  function getBridgeData(address bridgeAddress) public view returns (Bridge memory) {
-    return bridgeData[bridgeAddress];
-  }
-
-  function getMiningBridgeAddress() public view returns (address) {
-    return miningBridgeAddress;
-  }
-
-  function initialise(address _resolver, uint256 _version) public stoppable auth {
     require(currentColonyVersion == 0, "colony-network-already-initialised");
     require(_version > 0, "colony-network-invalid-version");
     colonyVersionResolver[_version] = _resolver;
@@ -158,8 +115,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     return colonies[_id];
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public view {
-    // solhint-disable-line no-empty-blocks
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view { // solhint-disable-line no-empty-blocks
   }
 
   function getFeeInverse() public view returns (uint256 _feeInverse) {
@@ -198,11 +154,4 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     protectSlot(slot);
     metatransactionNonces[_user] += 1;
   }
-
-  function toRootSkillId(uint256 _chainId) internal pure returns (uint256) {
-    return _chainId << 128;
-  }
-
-
-
 }
