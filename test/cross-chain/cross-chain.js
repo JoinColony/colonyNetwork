@@ -203,7 +203,7 @@ contract("Cross-chain", (accounts) => {
     const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
     for (let i = skillId; i <= latestSkillId; i = i.add(1)) {
       const p = getPromiseForNextBridgedTransaction();
-      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(i);
+      tx = await foreignColonyNetwork.bridgeSkill(i);
       await tx.wait();
       await p;
     }
@@ -268,7 +268,7 @@ contract("Cross-chain", (accounts) => {
     // const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
     for (let i = latestBridgedSkillId; i <= latestSkillId; i = i.add(1)) {
       const p = getPromiseForNextBridgedTransaction();
-      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(i);
+      tx = await foreignColonyNetwork.bridgeSkill(i);
       await tx.wait();
       await p;
     }
@@ -411,14 +411,14 @@ contract("Cross-chain", (accounts) => {
       await checkErrorRevertEthers(tx.wait(), "colony-network-not-known-bridge");
     });
 
-    it("addBridgedPendingSkill cannot be called referring to a bridge that doesn't exist", async () => {
-      const tx = await homeColonyNetwork.addBridgedPendingSkill(ADDRESS_ZERO, 1, { gasLimit: 1000000 });
+    it("addPendingSkill cannot be called referring to a bridge that doesn't exist", async () => {
+      const tx = await homeColonyNetwork.addPendingSkill(ADDRESS_ZERO, 1, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-not-known-bridge");
     });
 
-    it("addBridgedPendingSkill doesn't create skills that haven't been bridged", async () => {
+    it("addPendingSkill doesn't create skills that haven't been bridged", async () => {
       const homeSkillCount = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
-      const tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, homeSkillCount.add(1), { gasLimit: 1000000 });
+      const tx = await homeColonyNetwork.addPendingSkill(homeBridge.address, homeSkillCount.add(1), { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-no-such-bridged-skill");
     });
 
@@ -446,9 +446,9 @@ contract("Cross-chain", (accounts) => {
 
       // Need to clean up
       p = getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount.sub(1));
+      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
       await p;
-      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await tx.wait();
     });
 
@@ -467,16 +467,16 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       // Try to add
-      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-not-next-bridged-skill");
 
       // Bridge the next skill
       p = getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount.sub(1));
+      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
       await p;
 
       // Add the pending skill
-      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await tx.wait();
 
       // Check it was added
@@ -503,25 +503,25 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       // Try to add
-      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-not-next-bridged-skill");
 
       // Bridge the next skill
       p = getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount.sub(1));
+      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
       await p;
 
       // Add the pending skill
-      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await tx.wait();
 
       // Adding again doesn't work
-      tx = await homeColonyNetwork.addBridgedPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-not-next-bridged-skill");
 
       // And bridging again doesn't work
       p = getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount);
+      await foreignColonyNetwork.bridgeSkill(foreignSkillCount);
       await p;
 
       const pendingAddition = await homeColonyNetwork.getPendingSkillAddition(foreignChainId, foreignSkillCount);
@@ -534,7 +534,7 @@ contract("Cross-chain", (accounts) => {
     it("can't bridge a skill that doesn't exist", async () => {
       const skillCount = await foreignColonyNetwork.getSkillCount();
       const nonExistentSkillId = skillCount.add(10000000);
-      const tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(nonExistentSkillId, { gasLimit: 1000000 });
+      const tx = await foreignColonyNetwork.bridgeSkill(nonExistentSkillId, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-invalid-skill-id");
     });
 
@@ -543,7 +543,7 @@ contract("Cross-chain", (accounts) => {
       await tx.wait();
       const skillCount = await foreignColonyNetwork.getSkillCount();
 
-      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(skillCount, { gasLimit: 1000000 });
+      tx = await foreignColonyNetwork.bridgeSkill(skillCount, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-unable-to-bridge-skill-creation");
     });
 
@@ -817,7 +817,7 @@ contract("Cross-chain", (accounts) => {
       expect(pending2.colony).to.equal(foreignColony.address);
 
       // We can't emit those yet because we still haven't bridged the one that was skipped
-      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony.address, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addPendingReputationUpdate(foreignChainId, foreignColony.address, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-next-update-does-not-exist");
 
       // If we bridge over the original one that was skipped, then we can emit the two pending ones
@@ -826,9 +826,9 @@ contract("Cross-chain", (accounts) => {
       await p;
       count = await homeColonyNetwork.getBridgedReputationUpdateCount(foreignChainId, foreignColony.address);
 
-      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony.address);
+      tx = await homeColonyNetwork.addPendingReputationUpdate(foreignChainId, foreignColony.address);
       await tx.wait();
-      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony.address);
+      tx = await homeColonyNetwork.addPendingReputationUpdate(foreignChainId, foreignColony.address);
       await tx.wait();
 
       // And now they're on the pending log
@@ -876,7 +876,7 @@ contract("Cross-chain", (accounts) => {
 
       await forwardTime(MINING_CYCLE_DURATION * 10, undefined, web3HomeProvider);
       await forwardTime(MINING_CYCLE_DURATION * 10, undefined, web3ForeignProvider);
-      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony.address);
+      tx = await homeColonyNetwork.addPendingReputationUpdate(foreignChainId, foreignColony.address);
       await tx;
 
       // See that it's bridged to the pending log, but decayed
@@ -919,7 +919,7 @@ contract("Cross-chain", (accounts) => {
       expect(pending.colony).to.equal(foreignColony2.address);
 
       // We can't emit it yet, because the skill still hasn't been bridged
-      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony2.address, { gasLimit: 1000000 });
+      tx = await homeColonyNetwork.addPendingReputationUpdate(foreignChainId, foreignColony2.address, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-invalid-skill-id");
 
       const logLength1 = await reputationMiningCycleInactive.getReputationUpdateLogLength();
@@ -930,7 +930,7 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       // Now try to emit the pending reputation emission
-      tx = await homeColonyNetwork.addBridgedReputationUpdate(foreignChainId, foreignColony2.address);
+      tx = await homeColonyNetwork.addPendingReputationUpdate(foreignChainId, foreignColony2.address);
       await tx.wait();
 
       // And now it's on the mining cycle contract
