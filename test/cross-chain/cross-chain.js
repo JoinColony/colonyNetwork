@@ -112,29 +112,26 @@ contract("Cross-chain", (accounts) => {
     // we see it in our tests that's the coverage chain, which builds the contract artifacts
     // in to a different location. If we see another chain id, we assume it's non-coverage
     // truffle and look for the build artifacts in the normal place.
-    if (process.env.SOLIDITY_COVERAGE && process.env.TRUFFLE_FOREIGN === "false") {
+    if (process.env.SOLIDITY_COVERAGE) {
       etherRouterInfo = JSON.parse(fs.readFileSync("./build-coverage/contracts/EtherRouter.json"));
     } else {
       etherRouterInfo = JSON.parse(fs.readFileSync("./build/contracts/EtherRouter.json"));
     }
+
     const homeEtherRouterAddress = etherRouterInfo.networks[homeNetworkId.toString()].address;
-    homeColonyNetwork = await new ethers.Contract(homeEtherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
-
-    if (process.env.SOLIDITY_COVERAGE && process.env.TRUFFLE_FOREIGN === "true") {
-      etherRouterInfo = JSON.parse(fs.readFileSync("./build-coverage/contracts/EtherRouter.json"));
-    } else {
-      etherRouterInfo = JSON.parse(fs.readFileSync("./build/contracts/EtherRouter.json"));
-    }
     const foreignEtherRouterAddress = etherRouterInfo.networks[foreignNetworkId.toString()].address;
-    foreignColonyNetwork = await new ethers.Contract(foreignEtherRouterAddress, IColonyNetwork.abi, ethersForeignSigner);
 
-    console.log("foreign colony network", foreignColonyNetwork.address);
-    console.log("home colony network", homeColonyNetwork.address);
+    homeColonyNetwork = new ethers.Contract(homeEtherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
+    foreignColonyNetwork = new ethers.Contract(foreignEtherRouterAddress, IColonyNetwork.abi, ethersForeignSigner);
 
-    const foreignMCAddress = await foreignColonyNetwork.getMetaColony();
-    foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
-    const homeMCAddress = await homeColonyNetwork.getMetaColony();
-    homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
+    console.log("Foreign colony network", foreignColonyNetwork.address);
+    console.log("Home colony network", homeColonyNetwork.address);
+
+    const foreignMetaColonyAddress = await foreignColonyNetwork.getMetaColony();
+    const homeMetaColonyAddress = await homeColonyNetwork.getMetaColony();
+
+    foreignMetacolony = new ethers.Contract(foreignMetaColonyAddress, IMetaColony.abi, ethersForeignSigner);
+    homeMetacolony = new ethers.Contract(homeMetaColonyAddress, IMetaColony.abi, ethersHomeSigner);
 
     // The code here demonstrates how to generate the bridge data for a bridge. We work out the transaction (with dummy data), and then
     // the transaction that would call that on the AMB, before snipping out the AMB call. The non-dummy data is worked out on-chain before
