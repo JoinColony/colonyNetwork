@@ -9,32 +9,6 @@ the Meta Colony, a special colony which controls the network.
   
 ## Interface Methods
 
-### ▸ `addBridgedPendingSkill(address _bridgeAddress, uint256 _skillId)`
-
-Called to add a bridged skill that wasn't next when it was bridged, but now is
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_bridgeAddress|address|The address of the bridge we're bridging from
-|_skillId|uint256|The skillId of the skill being bridged
-
-
-### ▸ `addBridgedReputationUpdate(uint256 _chainId, address _colony)`
-
-Try to emit the next reputation update that was bridged but previously failed, if any
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_chainId|uint256|The chainId the update was bridged from
-|_colony|address|The colony being queried
-
-
 ### ▸ `addColonyVersion(uint256 _version, address _resolver)`
 
 Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members. Allowed to be called by the Meta Colony only.
@@ -60,6 +34,49 @@ Add a new extension resolver to the Extensions repository.
 |---|---|---|
 |_extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |_resolver|address|The deployed resolver containing the extension contract logic
+
+
+### ▸ `addPendingReputationUpdate(uint256 _chainId, address _colony)`
+
+Try to emit the next reputation update that was bridged but previously failed, if any
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId the update was bridged from
+|_colony|address|The colony being queried
+
+
+### ▸ `addPendingSkill(address _bridgeAddress, uint256 _skillId)`
+
+Called to add a bridged skill that wasn't next when it was bridged, but now is
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_bridgeAddress|address|The address of the bridge we're bridging from
+|_skillId|uint256|The skillId of the skill being bridged
+
+
+### ▸ `addReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId, uint256 _updateNumber)`
+
+Adds a reputation update entry to log.
+
+*Note: Errors if it is called by anyone but a known bridge*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colony|address|The colony the reputation is being awarded in
+|_user|address|The address of the user for the reputation update
+|_amount|int|The amount of reputation change for the update, this can be a negative as well as a positive value
+|_skillId|uint|The skill for the reputation update
+|_updateNumber|uint256|The counter used for ordering bridged updates
 
 
 ### ▸ `addSkill(uint256 _parentSkillId):uint256 _skillId`
@@ -112,7 +129,7 @@ Returns the address the supplied node resolves do, if we are the resolver.
 
 ### ▸ `appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId)`
 
-Adds a reputation update entry to log.
+Adds a reputation update entry to the log.
 
 *Note: Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or.*
 
@@ -123,23 +140,6 @@ Adds a reputation update entry to log.
 |_user|address|The address of the user for the reputation update
 |_amount|int256|The amount of reputation change for the update, this can be a negative as well as a positive value
 |_skillId|uint256|The skill for the reputation update
-
-
-### ▸ `appendReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId, uint256 _updateNumber)`
-
-Adds a reputation update entry to log.
-
-*Note: Errors if it is called by anyone but a known bridge*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony the reputation is being awarded in
-|_user|address|The address of the user for the reputation update
-|_amount|int|The amount of reputation change for the update, this can be a negative as well as a positive value
-|_skillId|uint|The skill for the reputation update
-|_updateNumber|uint256|The counter used for ordering bridged updates
 
 
 ### ▸ `bridgeCurrentRootHash(address bridgeAddress)`
@@ -167,7 +167,22 @@ Try to bridge a reputation update that (previously) failed
 |_updateNumber|uint256|the emission index to bridge
 
 
-### ▸ `bridgeSkillIfNotMiningChain(uint256 skillId)`
+### ▸ `bridgeReputationUpdateLog(address _user, int256 _amount, uint256 _skillId)`
+
+Bridges a reputation update entry.
+
+*Note: Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|The address of the user for the reputation update
+|_amount|int256|The amount of reputation change for the update, this can be a negative as well as a positive value
+|_skillId|uint256|The skill for the reputation update
+
+
+### ▸ `bridgeSkill(uint256 skillId)`
 
 Called to re-send the bridging transaction for a skill to the
 

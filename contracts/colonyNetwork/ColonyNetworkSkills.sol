@@ -36,7 +36,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
   {
     skillCount += 1;
     addSkillToChainTree(_parentSkillId, skillCount);
-    bridgeSkillIfNotMiningChain(skillCount);
+    bridgeSkill(skillCount);
     return skillCount;
   }
 
@@ -63,8 +63,27 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     returns (uint256)
   {
     skillCount += 1;
-    bridgeSkillIfNotMiningChain(skillCount);
+    bridgeSkill(skillCount);
     return skillCount;
+  }
+
+  function appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId)
+    public
+    stoppable
+    calledByColony
+    skillExists(_skillId)
+  {
+    // We short-circut amount == 0 as it has no effect to save gas, and we ignore Address Zero because it will
+    // mess up the tracking of the total amount of reputation in a colony, as that's the key that it's
+    // stored under in the patricia/merkle tree. Colonies can still pay tokens out to it if they want,
+    // it just won't earn reputation.
+    if (_amount == 0 || _user == address(0x0)) { return; }
+
+    if (isMiningChain()) {
+      appendReputationUpdateLogInternal(_user, _amount, _skillId, msgSender());
+    } else {
+      bridgeReputationUpdateLog(_user, _amount, _skillId);
+    }
   }
 
   // Bridging (sending)
@@ -107,7 +126,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     emit BridgeDataSet(_bridgeAddress);
   }
 
-  function bridgeSkillIfNotMiningChain(uint256 _skillId) public stoppable skillExists(_skillId) {
+  function bridgeSkill(uint256 _skillId) public stoppable skillExists(_skillId) {
     // If we're the mining chain, we don't need to bridge
     if (isMiningChain()) { return; }
 
@@ -130,6 +149,40 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     require(success, "colony-network-unable-to-bridge-skill-creation");
   }
 
+  function bridgeReputationUpdateLog(address _user, int256 _amount, uint256 _skillId)
+    public
+    stoppable
+    calledByColony
+    onlyNotMiningChain
+    skillExists(_skillId)
+  {
+    // TODO: Maybe force to be set on deployment?
+    require(miningBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
+
+    reputationUpdateCount[getChainId()][msgSender()] += 1;
+    // Build the transaction we're going to send to the bridge
+    bytes memory payload = abi.encodePacked(
+      bridgeData[miningBridgeAddress].updateLogBefore,
+      abi.encodeWithSignature(
+        "addReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
+        msgSender(),
+        _user,
+        _amount,
+        _skillId,
+        reputationUpdateCount[getChainId()][msgSender()]
+      ),
+      bridgeData[miningBridgeAddress].updateLogAfter
+    );
+
+    (bool success, ) = miningBridgeAddress.call(payload);
+    if (!success || !isContract(miningBridgeAddress)) {
+      // Store to resend later
+      PendingReputationUpdate memory pendingReputationUpdate = PendingReputationUpdate(_user, _amount, _skillId, msgSender(), block.timestamp);
+      pendingReputationUpdates[getChainId()][msgSender()][reputationUpdateCount[getChainId()][msgSender()]] = pendingReputationUpdate;
+    }
+    // TODO: How do we emit events here?
+  }
+
   function bridgePendingReputationUpdate(address _colony, uint256 _updateNumber) public stoppable onlyNotMiningChain {
     require(miningBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
     require(pendingReputationUpdates[getChainId()][_colony][_updateNumber - 1].colony == address(0x00), "colony-network-not-next-pending-update");
@@ -143,7 +196,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     bytes memory payload = abi.encodePacked(
       bridgeData[miningBridgeAddress].updateLogBefore,
       abi.encodeWithSignature(
-        "appendReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
+        "addReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
         pendingUpdate.colony,
         pendingUpdate.user,
         updateAmount,
@@ -159,53 +212,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     require(success, "colony-network-bridging-tx-unsuccessful");
   }
 
-  function appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId)
-    public
-    stoppable
-    calledByColony
-    skillExists(_skillId)
-  {
-    if (_amount == 0 || _user == address(0x0)) {
-      // We short-circut amount=0 as it has no effect to save gas, and we ignore Address Zero because it will
-      // mess up the tracking of the total amount of reputation in a colony, as that's the key that it's
-      // stored under in the patricia/merkle tree. Colonies can still pay tokens out to it if they want,
-      // it just won't earn reputation.
-      return;
-    }
-
-    if (isMiningChain()) {
-      appendReputationUpdateLogInternal(_user, _amount, _skillId, msgSender());
-    } else {
-      // Send transaction to bridge.
-      // Call appendReputationUpdateLogFromBridge on metacolony on xdai
-      // TODO: Maybe force to be set on deployment?
-      require(miningBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
-
-      reputationUpdateCount[getChainId()][msgSender()] += 1;
-      // Build the transaction we're going to send to the bridge
-      bytes memory payload = abi.encodePacked(
-        bridgeData[miningBridgeAddress].updateLogBefore,
-        abi.encodeWithSignature(
-          "appendReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
-          msgSender(),
-          _user,
-          _amount,
-          _skillId,
-          reputationUpdateCount[getChainId()][msgSender()]
-        ),
-        bridgeData[miningBridgeAddress].updateLogAfter
-      );
-
-      (bool success, ) = miningBridgeAddress.call(payload);
-      if (!success || !isContract(miningBridgeAddress)) {
-        // Store to resend later
-        PendingReputationUpdate memory pendingReputationUpdate = PendingReputationUpdate(_user, _amount, _skillId, msgSender(), block.timestamp);
-        pendingReputationUpdates[getChainId()][msgSender()][reputationUpdateCount[getChainId()][msgSender()]] = pendingReputationUpdate;
-      }
-      // TODO: How do we emit events here?
-    }
-  }
-
   // Bridging (receiving)
 
   function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillId)
@@ -216,6 +222,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     // Require a known bridge
     uint256 bridgeChainId = bridgeData[msgSender()].chainId;
     require(bridgeChainId != 0, "colony-network-not-known-bridge");
+    require(bridgeChainId == toChainId(_skillId), "colony-network-invalid-skill-id-for-bridge");
 
     // Check skill count - if not next, then store for later.
     if (networkSkillCounts[bridgeChainId] + 1 == _skillId){
@@ -227,7 +234,36 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     }
   }
 
-  function addBridgedPendingSkill(address _bridgeAddress, uint256 _skillId)
+  function addReputationUpdateLogFromBridge(
+    address _colony,
+    address _user,
+    int256 _amount,
+    uint256 _skillId,
+    uint256 _updateNumber
+  )
+    public
+    stoppable
+    onlyMiningChain
+  {
+    // Require a known bridge
+    uint256 bridgeChainId = bridgeData[msgSender()].chainId;
+    require(bridgeChainId != 0, "colony-network-not-known-bridge");
+    require(bridgeChainId == toChainId(_skillId), "colony-network-invalid-skill-id-for-bridge");
+
+    // If next expected update, add to log
+    if (
+      reputationUpdateCount[bridgeChainId][_colony] + 1 == _updateNumber && // It's the next reputation update for this colony
+      networkSkillCounts[toChainId(_skillId)] >= _skillId // Skill has been bridged
+    ){
+      reputationUpdateCount[bridgeChainId][_colony] += 1;
+      appendReputationUpdateLogInternal(_user, _amount, _skillId, _colony);
+    } else {
+      // Not next update, store for later
+      pendingReputationUpdates[bridgeChainId][_colony][_updateNumber] = PendingReputationUpdate(_user, _amount, _skillId, _colony, block.timestamp);
+    }
+  }
+
+  function addPendingSkill(address _bridgeAddress, uint256 _skillId)
     public
     always
     onlyMiningChain
@@ -248,36 +284,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     delete pendingSkillAdditions[bridgeChainId][_skillId];
   }
 
-  function appendReputationUpdateLogFromBridge(
-    address _colony,
-    address _user,
-    int256 _amount,
-    uint256 _skillId,
-    uint256 _updateNumber
-  )
-    public
-    onlyMiningChain
-    stoppable
-  {
-    // Require a known bridge
-    uint256 bridgeChainId = bridgeData[msgSender()].chainId;
-    require(bridgeChainId != 0, "colony-network-not-known-bridge");
-    require(bridgeChainId == toChainId(_skillId), "colony-network-invalid-skill-id-for-bridge");
-
-    // If next expected update, add to log
-    if (
-      reputationUpdateCount[bridgeChainId][_colony] + 1 == _updateNumber && // It's the next reputation update for this colony
-      networkSkillCounts[toChainId(_skillId)] >= _skillId // Skill has been bridged
-    ){
-      reputationUpdateCount[bridgeChainId][_colony] += 1;
-      appendReputationUpdateLogInternal(_user, _amount, _skillId, _colony);
-    } else {
-      // Not next update, store for later
-      pendingReputationUpdates[bridgeChainId][_colony][_updateNumber] = PendingReputationUpdate(_user, _amount, _skillId, _colony, block.timestamp);
-    }
-  }
-
-  function addBridgedReputationUpdate(uint256 _chainId, address _colony) public stoppable onlyMiningChain {
+  function addPendingReputationUpdate(uint256 _chainId, address _colony) public stoppable onlyMiningChain {
     uint256 mostRecentUpdateNumber = reputationUpdateCount[_chainId][_colony];
     assert(pendingReputationUpdates[_chainId][_colony][mostRecentUpdateNumber].colony == address(0x00));
 
@@ -430,10 +437,10 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
   // Note that these values and the mining window size (defined in ReputationMiningCycleCommon)
   // need to be consistent with each other, but are not checked, in order for the decay
   // rate to be as-expected.
-
   int256 constant DECAY_NUMERATOR =    999679150010889; // 1-hr mining cycle
   int256 constant DECAY_DENOMINATOR = 1000000000000000;
   uint256 constant DECAY_PERIOD = 1 hours;
+
   function decayReputation(int256 _reputation, uint256 _since) internal view returns (int256 decayedReputation) {
     uint256 decayEpochs = (block.timestamp - _since) / DECAY_PERIOD;
     int256 adjustedNumerator = DECAY_NUMERATOR;
