@@ -114,12 +114,19 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return _rootLocalSkillId The root local skill
   function initialiseRootLocalSkill() external returns (uint256 _rootLocalSkillId);
 
-  /// @notice Adds a reputation update entry to log.
+  /// @notice Adds a reputation update entry to the log.
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or.
   /// @param _user The address of the user for the reputation update
   /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
   /// @param _skillId The skill for the reputation update
   function appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId) external;
+
+  /// @notice Bridges a reputation update entry.
+  /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or.
+  /// @param _user The address of the user for the reputation update
+  /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
+  /// @param _skillId The skill for the reputation update
+  function bridgeReputationUpdateLog(address _user, int256 _amount, uint256 _skillId) external;
 
   /// @notice Get the number of skills in the network including both global and local skills.
   /// @return _count The skill count
@@ -552,7 +559,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
 
   /// @notice Called to re-send the bridging transaction for a skill to the
   /// @param skillId The skillId we're bridging the creation of
-  function bridgeSkillIfNotMiningChain(uint256 skillId) external;
+  function bridgeSkill(uint256 skillId) external;
 
   /// @notice Function called by bridge transactions to add a new skill
   /// @param _parentSkillId The parent id of the new skill
@@ -563,7 +570,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// but now is
   /// @param _bridgeAddress The address of the bridge we're bridging from
   /// @param _skillId The skillId of the skill being bridged
-  function addBridgedPendingSkill(address _bridgeAddress, uint256 _skillId) external;
+  function addPendingSkill(address _bridgeAddress, uint256 _skillId) external;
 
   /// @notice Called to get the information about a skill that has been bridged out of order
   /// @param _chainId The chainId we're bridging from
@@ -583,7 +590,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
   /// @param _skillId The skill for the reputation update
   /// @param _updateNumber The counter used for ordering bridged updates
-  function appendReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId, uint256 _updateNumber) external;
+  function addReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId, uint256 _updateNumber) external;
 
   /// @notice Get the (currently bridged) reputation update count of a chain
   /// @param _chainId The chainid of the chain
@@ -607,6 +614,6 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @notice Try to emit the next reputation update that was bridged but previously failed, if any
   /// @param _chainId The chainId the update was bridged from
   /// @param _colony The colony being queried
-  function addBridgedReputationUpdate(uint256 _chainId, address _colony) external;
+  function addPendingReputationUpdate(uint256 _chainId, address _colony) external;
 
 }
