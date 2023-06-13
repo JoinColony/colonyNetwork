@@ -498,12 +498,13 @@ contract("Colony Network", (accounts) => {
   describe("when managing ENS names", () => {
     const orbitDBAddress = "QmPFtHi3cmfZerxtH9ySLdzpg1yFhocYDZgEZywdUXHxFU/my-db-name";
     let ensRegistry;
-
     let suffix;
 
     before(async () => {
       if (await isXdai()) {
         suffix = "colonyxdai";
+      } else {
+        suffix = "eth";
       }
     });
 
