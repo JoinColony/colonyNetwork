@@ -493,32 +493,20 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     assembly { res := gt(extcodesize(addr), 0) }
   }
 
-  function setDomainReputationScaling(uint256 _domainId, bool _enabled, uint256 _factor) public calledByColony stoppable
-  {
+  function setSkillReputationScaling(uint256 _skillId, uint256 _factor) public calledByColony stoppable {
     require(_factor <= WAD, "colony-network-invalid-reputation-scale-factor");
-    uint256 skillId = IColony(msgSender()).getDomain(_domainId).skillId;
-    skills[skillId].reputationScalingFactorComplement = WAD - _factor;
+    skills[_skillId].reputationScalingFactorComplement = WAD - _factor;
   }
 
   function getSkillReputationScaling(uint256 _skillId) public view returns (uint256) {
-    uint256 factor;
-    Skill storage s = skills[_skillId];
-    factor = WAD - s.reputationScalingFactorComplement;
+    Skill storage skill = skills[_skillId];
+    uint256 factor = WAD - skill.reputationScalingFactorComplement;
 
-    while (s.nParents > 0) {
-      s = skills[s.parents[0]];
-      // If reputation scaling is in effect for this skill, then take the value for this skill in to
-      // account. Otherwise, no effect and continue walking up the tree
-      if (s.reputationScalingFactorComplement > 0) {
-        if (s.reputationScalingFactorComplement == 1){
-          // If scaling is in effect and is 0 (because factor = 1 - complement), we can short circuit - regardless of the rest of the tree
-          // the scaling factor will be 0
-          return 0;
-        } else {
-          factor = wmul(factor, WAD - s.reputationScalingFactorComplement);
-        }
-      }
+    while (skill.nParents > 0 && factor > 0) {
+      skill = skills[skill.parents[0]];
+      factor = wmul(factor, WAD - skill.reputationScalingFactorComplement);
     }
+
     return factor;
   }
 }

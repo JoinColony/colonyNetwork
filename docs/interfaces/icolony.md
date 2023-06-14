@@ -1463,7 +1463,7 @@ Update the default global claim delay for expenditures
 |_globalClaimDelay|uint256|The new default global claim delay
 
 
-### ▸ `setDomainReputationScaling(uint256 domainId, bool enabled, uint256 factor)`
+### ▸ `setDomainReputationScaling(uint256 domainId, uint256 factor)`
 
 Call to set the reputation scaling applied to reputation earned in a domain
 
@@ -1473,7 +1473,6 @@ Call to set the reputation scaling applied to reputation earned in a domain
 |Name|Type|Description|
 |---|---|---|
 |domainId|uint256|The domain to set the value of scaling in
-|enabled|bool|bool Whether we're enabling or disabling reputation scaling for this domain If disabling, bool must be false
 |factor|uint256|The scale factor to apply, as a WAD
 
 

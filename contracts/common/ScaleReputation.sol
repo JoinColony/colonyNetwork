@@ -20,35 +20,26 @@ import "../../lib/dappsys/math.sol";
 
 contract ScaleReputation is DSMath {
   // Note that scaleFactor should be a WAD.
-  function scaleReputation(int256 reputationAmount, uint256 scaleFactor) internal pure returns (int256) {
-    if (reputationAmount == 0 || scaleFactor == 0) {
-      return 0;
-    }
+  function scaleReputation(int256 reputationAmount, uint256 scaleFactor)
+    internal
+    pure
+    returns (int256 scaledReputation)
+  {
+    if (reputationAmount == 0 || scaleFactor == 0) { return 0; }
 
-    int256 scaledReputation;
-    int256 absAmount;
-
-    if (reputationAmount == type(int256).min){
-      absAmount = type(int256).max; // Off by one, but best we can do - probably gets capped anyway
-    } else {
-      absAmount = reputationAmount >= 0 ? reputationAmount : -reputationAmount;
-    }
-
-    int256 sgnAmount = reputationAmount >= 0 ? int(1) : -1;
+    int256 sgnAmount = (reputationAmount >= 0) ? int256(1) : -1;
+    int256 absAmount = (reputationAmount == type(int256).min)
+      ? type(int256).max // Off by one, but best we can do - probably gets capped anyway
+      : (reputationAmount >= 0) ? reputationAmount : -reputationAmount;
 
     // Guard against overflows during calculation with wmul
-    if (type(uint256).max / scaleFactor < uint256(absAmount)){
-      if (sgnAmount == 1){
-        scaledReputation = type(int128).max;
-      } else {
-        scaledReputation = type(int128).min;
-      }
+    if (type(uint256).max / scaleFactor < uint256(absAmount)) {
+      scaledReputation = (sgnAmount == 1) ? type(int128).max : type(int128).min;
     } else {
       scaledReputation = int256(wmul(scaleFactor, uint256(absAmount))) * sgnAmount;
       // Cap inside the range of int128, as we do for all reputations
       scaledReputation = imax(type(int128).min, scaledReputation);
       scaledReputation = imin(type(int128).max, scaledReputation);
     }
-    return scaledReputation;
   }
 }

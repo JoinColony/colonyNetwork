@@ -1112,10 +1112,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
 
   /// @notice Call to set the reputation scaling applied to reputation earned in a domain
   /// @param domainId The domain to set the value of scaling in
-  /// @param enabled bool Whether we're enabling or disabling reputation scaling for this domain
-  /// If disabling, bool must be false
   /// @param factor The scale factor to apply, as a WAD
-  function setDomainReputationScaling(uint256 domainId, bool enabled, uint256 factor) external;
+  function setDomainReputationScaling(uint256 domainId, uint256 factor) external;
 
   /// @notice Call to set the reputation scaling applied to payouts made in a particular token
   /// @param _token The token we wish to apply scaling to
