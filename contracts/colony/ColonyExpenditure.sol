@@ -175,7 +175,6 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureOnlyOwner(_id)
   {
     require(_slots.length == _skillIds.length, "colony-expenditure-bad-slots");
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
 
     for (uint256 i; i < _slots.length; i++) {
       require(isValidGlobalOrLocalSkill(_skillIds[i]), "colony-not-valid-global-or-local-skill");
@@ -316,10 +315,11 @@ contract ColonyExpenditure is ColonyStorage {
 
       // Validate payout modifier
       if (offset == 2) {
-        if (!ColonyAuthority(address(authority)).hasUserRole(msgSender(), 1, uint8(ColonyDataTypes.ColonyRole.Root))){
-          require(int256(uint256(_value)) <= 0, "colony-expenditure-bad-payout-modifier");
-        }
-        require(int256(uint256(_value)) >= MIN_PAYOUT_MODIFIER, "colony-expenditure-bad-payout-modifier");
+        require(
+          (int256(uint256(_value)) <= 0 || IColony(address(this)).hasUserRole(msgSender(), 1, ColonyRole.Root)) &&
+          int256(uint256(_value)) >= MIN_PAYOUT_MODIFIER,
+          "colony-expenditure-bad-payout-modifier"
+        );
       }
 
     } else {
@@ -361,11 +361,11 @@ contract ColonyExpenditure is ColonyStorage {
     internal
   {
     for (uint256 i; i < _tokens.length; i++) {
-      (bool success, bytes memory returndata) = address(this).delegatecall(
+      (bool success, bytes memory returndata) = address(this).delegatecall( // solhint-disable-line avoid-low-level-calls
         abi.encodeWithSignature("setExpenditurePayouts(uint256,uint256[],address,uint256[])", _id, _slots[i], _tokens[i], _values[i])
       );
       if (!success) {
-        if (returndata.length == 0) revert();
+        if (returndata.length == 0) revert("colony-expenditure-null-return");
         assembly {
           revert(add(32, returndata), mload(returndata))
         }

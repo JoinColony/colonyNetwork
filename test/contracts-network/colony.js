@@ -539,38 +539,38 @@ contract("Colony", (accounts) => {
 
   describe("when setting the domain reputation scaling factor", async () => {
     it("cannot set scale factor for a domain that does not exist", async () => {
-      await checkErrorRevert(colony.setDomainReputationScaling(UINT256_MAX, true, WAD.divn(2)), "colony-domain-does-not-exist");
+      await checkErrorRevert(colony.setDomainReputationScaling(UINT256_MAX, WAD.divn(2)), "colony-domain-does-not-exist");
     });
 
     it("cannot set scale factor to larger than 1", async () => {
-      await checkErrorRevert(colony.setDomainReputationScaling(1, true, WAD.muln(2)), "colony-invalid-scale-factor");
+      await checkErrorRevert(colony.setDomainReputationScaling(1, WAD.muln(2)), "colony-invalid-scale-factor");
     });
 
     it("non-root users cannot set domain scale factor", async () => {
-      await checkErrorRevert(colony.setDomainReputationScaling(1, true, WAD.muln(2), { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setDomainReputationScaling(1, WAD.muln(2), { from: USER1 }), "ds-auth-unauthorized");
     });
 
     it("the domain reputation scaling factor can be removed", async () => {
-      await colony.setDomainReputationScaling(1, true, WAD.divn(2));
+      await colony.setDomainReputationScaling(1, WAD.divn(2));
 
       const domain = await colony.getDomain(1);
       let skill = await colonyNetwork.getSkill(domain.skillId);
       expect(skill.reputationScalingFactorComplement).to.be.eq.BN(WAD.divn(2));
 
-      await colony.setDomainReputationScaling(1, false, 0);
+      await colony.setDomainReputationScaling(1, 0);
 
       skill = await colonyNetwork.getSkill(domain.skillId);
       expect(skill.reputationScalingFactorComplement).to.be.eq.BN(WAD);
     });
 
     it("setting domain reputation scaling to false with a nonzero scale factor fails", async () => {
-      await colony.setDomainReputationScaling(1, true, WAD.divn(2));
+      await colony.setDomainReputationScaling(1, WAD.divn(2));
 
-      await checkErrorRevert(colony.setDomainReputationScaling(1, false, 1), "colony-invalid-configuration");
+      await checkErrorRevert(colony.setDomainReputationScaling(1, 1), "colony-invalid-configuration");
     });
 
     it("an event is emitted when reputation scaling is changed", async () => {
-      const tx = await colony.setDomainReputationScaling(1, true, WAD.divn(2));
+      const tx = await colony.setDomainReputationScaling(1, WAD.divn(2));
       await expectEvent(tx, "DomainReputationScalingSet(uint256,bool,uint256)", [1, true, WAD.divn(2)]);
     });
   });

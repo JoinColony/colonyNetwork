@@ -10,9 +10,9 @@ chai.use(bnChai(web3.utils.BN));
 
 const ScaleReputationTest = artifacts.require("ScaleReputationTest");
 
-let scaleReputationTest;
-
 contract("ScaleReputation", () => {
+  let scaleReputationTest;
+
   before(async () => {
     scaleReputationTest = await ScaleReputationTest.new();
   });

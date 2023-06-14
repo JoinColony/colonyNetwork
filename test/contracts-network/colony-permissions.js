@@ -433,7 +433,7 @@ contract("ColonyPermissions", (accounts) => {
 
       // Set scaling for each domain to a non-zero value
       for (let i = domainCount; i <= 150 + domainCount; i += 1) {
-        await colony.setDomainReputationScaling(i, true, WAD.muln(9).divn(10));
+        await colony.setDomainReputationScaling(i, WAD.muln(9).divn(10));
       }
 
       await colony.emitDomainReputationReward(150, USER1, 10000000000000);
@@ -457,8 +457,8 @@ contract("ColonyPermissions", (accounts) => {
       const domain2id = domainCount + 1;
       const domain3id = domainCount + 2;
 
-      await colony.setDomainReputationScaling(domain1id, true, WAD.muln(9).divn(10));
-      await colony.setDomainReputationScaling(domain3id, true, WAD.divn(2));
+      await colony.setDomainReputationScaling(domain1id, WAD.muln(9).divn(10));
+      await colony.setDomainReputationScaling(domain3id, WAD.divn(2));
 
       const repCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const reputationMiningCycle = await IReputationMiningCycle.at(repCycleAddress);
@@ -505,7 +505,7 @@ contract("ColonyPermissions", (accounts) => {
       expect(lastLog.amount).to.eq.BN(10000000000000);
 
       // Set root domain such that no reputation is earned
-      await colony.setDomainReputationScaling(1, true, 0);
+      await colony.setDomainReputationScaling(1, 0);
 
       await colony.emitDomainReputationReward(domainCount, USER1, 10000000000000);
 
@@ -515,7 +515,7 @@ contract("ColonyPermissions", (accounts) => {
     });
 
     it("should take token-specific and domain scaling in to account when emitting reputation", async () => {
-      await colony.setDomainReputationScaling(1, true, WAD.muln(9).divn(10));
+      await colony.setDomainReputationScaling(1, WAD.muln(9).divn(10));
 
       await colony.setTokenReputationRate(token.address, WAD.divn(2));
 
