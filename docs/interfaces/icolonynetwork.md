@@ -1131,21 +1131,6 @@ Called by a colony to set the rate at which reputation in that colony decays
 |_denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
 
 
-### ▸ `setDomainReputationScaling(uint256 _domainId, bool _enabled, uint256 _factor)`
-
-Call to set the reputation scaling applied to reputation earned in a domain.
-
-*Note: Only callable by a colony*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_domainId|uint256|The domain to set the value of scaling in
-|_enabled|bool|bool Whether we're enabling or disabling reputation scaling for this domain If disabling, bool must be false
-|_factor|uint256|The scale factor to apply, as a WAD
-
-
 ### ▸ `setFeeInverse(uint256 _feeInverse)`
 
 Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as `_feeInverse`.
@@ -1256,6 +1241,7 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |_stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 
 
+<<<<<<< HEAD
 ### ▸ `setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves)`
 
 Update the reputation on a foreign chain from the mining chain
@@ -1270,6 +1256,23 @@ Update the reputation on a foreign chain from the mining chain
 |newNLeaves|uint256|The new nLeaves in the root hash
 
 
+||||||| parent of 1272c2fe (Reviewer refactor)
+=======
+### ▸ `setSkillReputationScaling(uint256 _skillId, uint256 _factor)`
+
+Call to set the reputation scaling applied to reputation earned in a skill
+
+*Note: Only callable by a colony*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill to set the value of scaling in
+|_factor|uint256|The scale factor to apply, as a WAD
+
+
+>>>>>>> 1272c2fe (Reviewer refactor)
 ### ▸ `setTokenLocking(address _tokenLockingAddress)`
 
 Sets the token locking address. This is only set once, and can't be changed afterwards.

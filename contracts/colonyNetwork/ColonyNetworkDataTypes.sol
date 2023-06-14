@@ -192,6 +192,9 @@ interface ColonyNetworkDataTypes {
   /// @param denominator The new denominator of the decay rate
   event ColonyReputationDecayRateToChange(address colony, address fromCycleCompleted, uint256 numerator, uint256 denominator);
 
+  /// @notice Event logged when the reputation scaling factor for miners is set
+  /// @param factor The factor (from 0 to WAD) governing how reputation awards for miners is scaled
+  event MiningReputationScalingSet(uint256 factor);
 
   struct Skill {
     // total number of parent skills
