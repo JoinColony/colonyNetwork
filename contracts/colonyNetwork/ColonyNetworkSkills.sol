@@ -88,33 +88,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, ColonyDataTypes
     // it just won't earn reputation.
     if (_amount == 0 || _user == address(0x0)) { return; }
 
-    uint256 scaleFactor = getSkillReputationScaling(_skillId);
-    if (scaleFactor == 0){
-      // Similarly, if the amount is 0 because of scaling, we short circuit it
-      return;
-    }
-
-    // Check if too large for scaling
-    int256 amount;
-    int256 absAmount;
-    if (_amount == type(int256).min){
-      absAmount = type(int256).max; // Off by one, but best we can do - probably gets capped anyway
-    } else {
-      absAmount = _amount >= 0 ? _amount : -_amount;
-    }
-
-    int256 sgnAmount = _amount >= 0 ? int(1) : -1;
-
-    if (type(uint256).max / scaleFactor < uint256(absAmount)){
-      if (sgnAmount == 1){
-        amount = type(int128).max;
-      } else {
-        amount = type(int128).min;
-      }
-    } else {
-      amount = int256(wmul(scaleFactor, uint256(absAmount))) * sgnAmount;
-    }
-
     if (isMiningChain()) {
       appendReputationUpdateLogInternal(_user, _amount, _skillId, msgSender());
     } else {

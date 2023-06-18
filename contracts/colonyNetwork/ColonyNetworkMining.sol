@@ -216,7 +216,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain, ScaleReputatio
       ITokenLocking(tokenLocking).depositFor(clnyToken, wmul(totalMinerRewardPerCycle, minerWeights[i]), stakers[i]);
     }
 
-    uint256 scaleFactor = WAD - skills[reputationMiningSkillId].reputationScalingFactorComplement;
+    uint256 scaleFactor = IMetaColony(metaColony).getSkillReputationScaling(reputationMiningSkillId);
     uint256 scaledReward = uint256(scaleReputation(int256(totalMinerRewardPerCycle), scaleFactor));
 
     // This gives them reputation in the next update cycle.
@@ -303,12 +303,6 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain, ScaleReputatio
     return totalMinerRewardPerCycle;
   }
 
-  function setReputationMiningCycleRewardReputationScaling(uint256 _factor) public calledByMetaColony stoppable {
-    require(_factor <= WAD, "colony-network-invalid-reputation-scale-factor");
-    skills[reputationMiningSkillId].reputationScalingFactorComplement = WAD - _factor;
-
-    emit MiningReputationScalingSet(_factor);
-  }
 
   uint256 constant UINT192_MAX = 2**192 - 1; // Used for updating the stake timestamp
 

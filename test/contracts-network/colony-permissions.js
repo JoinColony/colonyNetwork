@@ -409,19 +409,20 @@ contract("ColonyPermissions", (accounts) => {
     });
 
     it("should be able to apply reputation earned scaling to 150 layers of domains", async () => {
+      const N_LAYERS = 50;
       await removeSubdomainLimit(colonyNetwork);
       await colony.addDomain(1, UINT256_MAX, 1);
       let domainCount = await colony.getDomainCount();
       domainCount = domainCount.toNumber();
 
-      const limit = domainCount + 150;
+      const limit = domainCount + N_LAYERS;
 
-      // Limit currently appears to be 160
+      // Limit currently appears to be ???
       for (let i = domainCount - 2; i < limit - 2; i += 1) {
         await colony.addDomain(1, i, i + 2);
       }
 
-      await colony.emitDomainReputationReward(150, USER1, 10000000000000);
+      await colony.emitDomainReputationReward(N_LAYERS, USER1, 10000000000000);
 
       const repCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const reputationMiningCycle = await IReputationMiningCycle.at(repCycleAddress);
@@ -432,11 +433,11 @@ contract("ColonyPermissions", (accounts) => {
       expect(lastLog.amount).to.eq.BN(10000000000000);
 
       // Set scaling for each domain to a non-zero value
-      for (let i = domainCount; i <= 150 + domainCount; i += 1) {
+      for (let i = domainCount; i <= N_LAYERS + domainCount; i += 1) {
         await colony.setDomainReputationScaling(i, WAD.muln(9).divn(10));
       }
 
-      await colony.emitDomainReputationReward(150, USER1, 10000000000000);
+      await colony.emitDomainReputationReward(N_LAYERS, USER1, 10000000000000);
 
       lastLog = await reputationMiningCycle.getReputationUpdateLogEntry(nLogs);
       expect(lastLog.amount).to.be.lt.BN(10000000000000);

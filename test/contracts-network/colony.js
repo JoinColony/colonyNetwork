@@ -552,15 +552,15 @@ contract("Colony", (accounts) => {
 
     it("the domain reputation scaling factor can be removed", async () => {
       await colony.setDomainReputationScaling(1, WAD.divn(2));
-
       const domain = await colony.getDomain(1);
-      let skill = await colonyNetwork.getSkill(domain.skillId);
-      expect(skill.reputationScalingFactorComplement).to.be.eq.BN(WAD.divn(2));
 
-      await colony.setDomainReputationScaling(1, 0);
+      let scaleFactor = await colony.getSkillReputationScaling(domain.skillId);
+      expect(scaleFactor).to.be.eq.BN(WAD.divn(2));
 
-      skill = await colonyNetwork.getSkill(domain.skillId);
-      expect(skill.reputationScalingFactorComplement).to.be.eq.BN(WAD);
+      await colony.setDomainReputationScaling(1, WAD);
+
+      scaleFactor = await colony.getSkillReputationScaling(domain.skillId);
+      expect(scaleFactor).to.be.eq.BN(WAD);
     });
 
     it("an event is emitted when reputation scaling is changed", async () => {

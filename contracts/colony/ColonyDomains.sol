@@ -129,7 +129,9 @@ contract ColonyDomains is ColonyStorage {
 
   function setDomainReputationScaling(uint256 _domainId, uint256 _factor) public stoppable auth {
     require(domainExists(_domainId), "colony-domain-does-not-exist");
-    IColonyNetwork(colonyNetworkAddress).setSkillReputationScaling(domains[_domainId].skillId, _factor);
+    require(_factor <= WAD, "colony-network-invalid-reputation-scale-factor");
+
+    skillReputationRateComplements[domains[_domainId].skillId] = WAD - _factor;
 
     emit DomainReputationScalingSet(_domainId, _factor);
   }
