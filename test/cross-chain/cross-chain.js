@@ -112,40 +112,43 @@ contract("Cross-chain", (accounts) => {
     // we see it in our tests that's the coverage chain, which builds the contract artifacts
     // in to a different location. If we see another chain id, we assume it's non-coverage
     // truffle and look for the build artifacts in the normal place.
-    if (process.env.SOLIDITY_COVERAGE) {
+    if (process.env.SOLIDITY_COVERAGE && process.env.TRUFFLE_FOREIGN === "false") {
       etherRouterInfo = JSON.parse(fs.readFileSync("./build-coverage/contracts/EtherRouter.json"));
     } else {
       etherRouterInfo = JSON.parse(fs.readFileSync("./build/contracts/EtherRouter.json"));
     }
-
     const homeEtherRouterAddress = etherRouterInfo.networks[homeNetworkId.toString()].address;
+    homeColonyNetwork = await new ethers.Contract(homeEtherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
+
+    if (process.env.SOLIDITY_COVERAGE && process.env.TRUFFLE_FOREIGN === "true") {
+      etherRouterInfo = JSON.parse(fs.readFileSync("./build-coverage/contracts/EtherRouter.json"));
+    } else {
+      etherRouterInfo = JSON.parse(fs.readFileSync("./build/contracts/EtherRouter.json"));
+    }
     const foreignEtherRouterAddress = etherRouterInfo.networks[foreignNetworkId.toString()].address;
+    foreignColonyNetwork = await new ethers.Contract(foreignEtherRouterAddress, IColonyNetwork.abi, ethersForeignSigner);
 
-    homeColonyNetwork = new ethers.Contract(homeEtherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
-    foreignColonyNetwork = new ethers.Contract(foreignEtherRouterAddress, IColonyNetwork.abi, ethersForeignSigner);
+    console.log("foreign colony network", foreignColonyNetwork.address);
+    console.log("home colony network", homeColonyNetwork.address);
 
-    console.log("Foreign colony network", foreignColonyNetwork.address);
-    console.log("Home colony network", homeColonyNetwork.address);
-
-    const foreignMetaColonyAddress = await foreignColonyNetwork.getMetaColony();
-    const homeMetaColonyAddress = await homeColonyNetwork.getMetaColony();
-
-    foreignMetacolony = new ethers.Contract(foreignMetaColonyAddress, IMetaColony.abi, ethersForeignSigner);
-    homeMetacolony = new ethers.Contract(homeMetaColonyAddress, IMetaColony.abi, ethersHomeSigner);
+    const foreignMCAddress = await foreignColonyNetwork.getMetaColony();
+    foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
+    const homeMCAddress = await homeColonyNetwork.getMetaColony();
+    homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
 
     // The code here demonstrates how to generate the bridge data for a bridge. We work out the transaction (with dummy data), and then
     // the transaction that would call that on the AMB, before snipping out the AMB call. The non-dummy data is worked out on-chain before
     // being sandwiched by the before and after bytes.
-    const appendReputationUpdateLogFromBridgeTx = homeColonyNetwork.interface.encodeFunctionData("appendReputationUpdateLogFromBridge", [
+    const addReputationUpdateLogFromBridgeTx = homeColonyNetwork.interface.encodeFunctionData("addReputationUpdateLogFromBridge", [
       "0x1111111111111111111111111111111111111111",
       "0x2222222222222222222222222222222222222222",
       0x666666,
       0x88888888,
       0x99999999,
     ]);
-    const appendReputationUpdateLogFromBridgeTxDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [
+    const addReputationUpdateLogFromBridgeTxDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [
       homeColonyNetwork.address,
-      appendReputationUpdateLogFromBridgeTx,
+      addReputationUpdateLogFromBridgeTx,
       1000000,
     ]);
 
@@ -160,8 +163,8 @@ contract("Cross-chain", (accounts) => {
       foreignBridge.address, // bridge address
       100, // chainid
       1000000, // gas
-      appendReputationUpdateLogFromBridgeTxDataToBeSentToAMB.slice(0, 266), // log before
-      `0x${appendReputationUpdateLogFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // log after
+      addReputationUpdateLogFromBridgeTxDataToBeSentToAMB.slice(0, 266), // log before
+      `0x${addReputationUpdateLogFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // log after
       addSkillFromBridgeTxDataToBeSentToAMB.slice(0, 266), // skill before
       `0x${addSkillFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // skill after
       "0x", // root hash before
@@ -942,8 +945,8 @@ contract("Cross-chain", (accounts) => {
       expect(pending.colony).to.equal(ADDRESS_ZERO);
     });
 
-    it("appendReputationUpdateLogFromBridge cannot be called by a non-bridge address", async () => {
-      const tx = await homeColonyNetwork.appendReputationUpdateLogFromBridge(ADDRESS_ZERO, ADDRESS_ZERO, 0, 0, 0, { gasLimit: 1000000 });
+    it("addReputationUpdateLogFromBridge cannot be called by a non-bridge address", async () => {
+      const tx = await homeColonyNetwork.addReputationUpdateLogFromBridge(ADDRESS_ZERO, ADDRESS_ZERO, 0, 0, 0, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-not-known-bridge");
     });
   });
