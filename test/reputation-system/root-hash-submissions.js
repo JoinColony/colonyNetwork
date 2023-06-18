@@ -346,6 +346,9 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       const reputationUpdateLogLength = await inactiveRepCycle.getReputationUpdateLogLength();
       expect(reputationUpdateLogLength).to.eq.BN(2);
+
+      // Reset scaling factor
+      await metaColony.setReputationMiningCycleRewardReputationScaling(WAD);
     });
 
     it("should only allow 12 entries to back a single hash in each cycle", async () => {
