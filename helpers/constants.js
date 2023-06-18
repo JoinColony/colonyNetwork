@@ -75,8 +75,8 @@ const GLOBAL_SKILL_ID = new BN("4"); // Not a root global skill ID or anything, 
 
 const XDAI_CHAINID = 100;
 const FORKED_XDAI_CHAINID = 265669100;
-const MAINNET_CHAINID = 100;
-const FORKED_MAINNET_CHAINID = 265669100;
+const MAINNET_CHAINID = 1;
+const FORKED_MAINNET_CHAINID = 2656691;
 
 module.exports = {
   UINT256_MAX,
