@@ -28,9 +28,13 @@ contract ScaleReputation is DSMath {
     if (reputationAmount == 0 || scaleFactor == 0) { return 0; }
 
     int256 sgnAmount = (reputationAmount >= 0) ? int256(1) : -1;
-    int256 absAmount = (reputationAmount == type(int256).min)
-      ? type(int256).max // Off by one, but best we can do - probably gets capped anyway
-      : (reputationAmount >= 0) ? reputationAmount : -reputationAmount;
+    int256 absAmount;
+
+    if (reputationAmount == type(int256).min){
+      absAmount = type(int256).max; // Off by one, but best we can do - probably gets capped anyway
+    } else {
+      absAmount = reputationAmount >= 0 ? reputationAmount : -reputationAmount;
+    }
 
     // Guard against overflows during calculation with wmul
     if (type(uint256).max / scaleFactor < uint256(absAmount)) {
