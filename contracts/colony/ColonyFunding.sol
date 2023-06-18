@@ -138,12 +138,11 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
 
     if (!isExtension(task.roles[_role].user)) {
-      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       Role storage role = task.roles[_role];
 
       int256 reputation = getTaskReputation(payout, role.rating, role.rateFail, _token);
 
-      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
+      emitReputation(role.user, reputation, domains[task.domainId].skillId);
       if (_role == uint8(TaskRole.Worker)) {
         if (role.rateFail) {
           // If the worker failed to rate, we do not penalise the reputation being earned for the skill in
@@ -163,7 +162,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
         for (uint256 i = 0; i < task.skills.length; i += 1) {
           if (task.skills[i] > 0) {
-            colonyNetworkContract.appendReputationUpdateLog(role.user, reputationPerSkill, task.skills[i]);
+            emitReputation(role.user, reputationPerSkill, task.skills[i]);
           }
         }
       }
@@ -270,13 +269,12 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
     // Process reputation updates if relevant for token being paid out
     if (tokenReputationRates[_token] > 0 && !isExtension(slot.recipient)) {
-      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       int256 tokenScaledReputationAmount = scaleReputation(int256(repPayout), tokenReputationRates[_token]);
 
-      colonyNetworkContract.appendReputationUpdateLog(slot.recipient, tokenScaledReputationAmount, domains[expenditure.domainId].skillId);
+      emitReputation(slot.recipient, tokenScaledReputationAmount, domains[expenditure.domainId].skillId);
       if (slot.skills.length > 0 && slot.skills[0] > 0) {
         // Currently we support at most one skill per Expenditure, but this will likely change in the future.
-        colonyNetworkContract.appendReputationUpdateLog(slot.recipient, tokenScaledReputationAmount, slot.skills[0]);
+        emitReputation(slot.recipient, tokenScaledReputationAmount, slot.skills[0]);
       }
     }
 
@@ -317,13 +315,11 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
       // Todo: Is this equality right?
       if (tokenScaledReputationAmount > 0){
-        IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-
-        colonyNetworkContract.appendReputationUpdateLog(payment.recipient, tokenScaledReputationAmount, domains[payment.domainId].skillId);
+        emitReputation(payment.recipient, tokenScaledReputationAmount, domains[payment.domainId].skillId);
         if (payment.skills[0] > 0) {
           // Currently we support at most one skill per Payment, similarly to Task model.
           // This may change in future to allow multiple skills to be set on both Tasks and Payments
-          colonyNetworkContract.appendReputationUpdateLog(payment.recipient, tokenScaledReputationAmount, payment.skills[0]);
+          emitReputation(payment.recipient, tokenScaledReputationAmount, payment.skills[0]);
         }
       }
     }
