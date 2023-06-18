@@ -48,7 +48,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   {
     require(_amount > 0, "colony-reward-must-be-positive");
     require(domainExists(_domainId), "colony-domain-does-not-exist");
-    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
+    emitReputation(_user, _amount, domains[_domainId].skillId);
 
     emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
@@ -57,7 +57,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   public stoppable auth validGlobalOrLocalSkill(_skillId)
   {
     require(_amount > 0, "colony-reward-must-be-positive");
-    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
+    emitReputation(_user, _amount, _skillId);
 
     emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
   }
@@ -71,7 +71,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
-    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
+    emitReputation(_user, _amount, domains[_domainId].skillId);
 
     emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
@@ -80,7 +80,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   public stoppable auth validGlobalOrLocalSkill(_skillId)
   {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
-    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
+    emitReputation(_user, _amount, _skillId);
 
     emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
   }
@@ -116,7 +116,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
       require(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])), "colony-bootstrap-token-transfer-failed");
       uint256 scaleFactor = tokenReputationRates[token]; // NB This is a WAD
       int256 tokenScaledReputationAmount = scaleReputation(_amounts[i], scaleFactor);
-      IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], tokenScaledReputationAmount, domains[1].skillId);
+      emitReputation(_users[i], tokenScaledReputationAmount, domains[1].skillId);
     }
 
     emit ColonyBootstrapped(msgSender(), _users, _amounts);
@@ -456,6 +456,15 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   }
 
   function setReputationMiningCycleRewardReputationScaling(uint256 _factor) public stoppable auth {
-    IColonyNetwork(colonyNetworkAddress).setReputationMiningCycleRewardReputationScaling(_factor);
+    require(_factor <= WAD, "colony-invalid-reputation-scale-factor");
+    uint256 reputationMiningSkillId = IColonyNetwork(colonyNetworkAddress).getReputationMiningSkillId();
+    skillReputationRateComplements[reputationMiningSkillId] = WAD - _factor;
+
+    emit MiningReputationScalingSet(_factor);
+  }
+
+  function setSkillReputationScaling(uint256 _skillId, uint256 _factor) public auth stoppable {
+    require(_factor <= WAD, "colony-invalid-reputation-scale-factor");
+    skillReputationRateComplements[_skillId] = WAD - _factor;
   }
 }

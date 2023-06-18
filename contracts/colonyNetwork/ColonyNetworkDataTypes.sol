@@ -192,10 +192,6 @@ interface ColonyNetworkDataTypes {
   /// @param denominator The new denominator of the decay rate
   event ColonyReputationDecayRateToChange(address colony, address fromCycleCompleted, uint256 numerator, uint256 denominator);
 
-  /// @notice Event logged when the reputation scaling factor for miners is set
-  /// @param factor The factor (from 0 to WAD) governing how reputation awards for miners is scaled
-  event MiningReputationScalingSet(uint256 factor);
-
   struct Skill {
     // total number of parent skills
     uint128 nParents;
@@ -209,8 +205,6 @@ interface ColonyNetworkDataTypes {
     bool globalSkill;
     // `true` for a global skill that is deprecated
     bool deprecated;
-    // This is the complement of the reputaiton scaling factor. So the scaling factor is WAD-reputationScalingFactorComplement
-    uint256 reputationScalingFactorComplement;
   }
 
   struct ENSRecord {

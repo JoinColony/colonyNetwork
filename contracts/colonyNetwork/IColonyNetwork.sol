@@ -463,6 +463,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return _delegator The address they are allowed to mine on behalf of
   function getMiningDelegator(address _delegate) external view returns (address _delegator);
 
+<<<<<<< HEAD
   /// @notice Called to set the details about bridge _bridgeAddress
   /// @param _bridgeAddress The address of the bridge
   /// @param _chainId The chainId of the corresponding network
@@ -578,6 +579,18 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _factor The scale factor to apply, as a WAD
   function setSkillReputationScaling(uint256 _skillId, uint256 _factor) external;
 
+  /// @notice Get the reputation scaling applied to reputation earned in a skill.
+  /// @dev To look up the scaling in a domain, look up the skill corresponding to that domain
+  /// @param _skillId The skill to get the value of scaling in
+  /// @return scaleFactor Returns the scale factor applied to reputation earned in this skill, as a WAD.
+  function getSkillReputationScaling(uint256 _skillId) external view returns (uint256 scaleFactor);
+
+  /// @notice Call to set the reputation scaling applied to reputation earned in a skill
+  /// @dev Only callable by a colony
+  /// @param _skillId The skill to set the value of scaling in
+  /// @param _factor The scale factor to apply, as a WAD
+  function setSkillReputationScaling(uint256 _skillId, uint256 _factor) external;
+
   /// @notice Called by a colony to set the rate at which reputation in that colony decays
   /// @param _numerator The numerator of the fraction reputation does down by every reputation cycle
   /// @param _denominator The denominator of the fraction reputation does down by every reputation cycle
@@ -588,9 +601,4 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return numerator The numerator of the fraction reputation does down by every reputation cycle
   /// @return denominator The denominator of the fraction reputation does down by every reputation cycle
   function getColonyReputationDecayRate(address _colony) external view returns (uint256 numerator, uint256 denominator);
-
-  /// @notice Called to set the total per-cycle reputation scaling factor for the tokens paid out
-  /// @dev Calls the corresponding function on the ColonyNetwork.
-  /// @param _factor The scale factor to apply to reputation mining rewards
-  function setReputationMiningCycleRewardReputationScaling(uint256 _factor) external;
 }

@@ -934,24 +934,6 @@ Get the number of skills in the network including both global and local skills.
 |---|---|---|
 |_count|uint256|The skill count
 
-### ▸ `getSkillReputationScaling(uint256 _skillId):uint256 scaleFactor`
-
-Get the reputation scaling applied to reputation earned in a skill.
-
-*Note: To look up the scaling in a domain, look up the skill corresponding to that domain*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_skillId|uint256|The skill to get the value of scaling in
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|scaleFactor|uint256|Returns the scale factor applied to reputation earned in this skill, as a WAD.
-
 ### ▸ `getTokenLocking():address _lockingAddress`
 
 Get token locking contract address.
@@ -1214,19 +1196,6 @@ Called to set the total per-cycle reputation reward, which will be split between
 |_amount|uint256|The CLNY awarded per mining cycle to the miners
 
 
-### ▸ `setReputationMiningCycleRewardReputationScaling(uint256 _factor)`
-
-Called to set the total per-cycle reputation scaling factor for the tokens paid out
-
-*Note: Calls the corresponding function on the ColonyNetwork.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_factor|uint256|The scale factor to apply to reputation mining rewards
-
-
 ### ▸ `setReputationRootHash(bytes32 _newHash, uint256 _newNLeaves, address[] memory _stakers)`
 
 Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
@@ -1241,6 +1210,7 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |_stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 ### ▸ `setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves)`
 
@@ -1273,6 +1243,23 @@ Call to set the reputation scaling applied to reputation earned in a skill
 
 
 >>>>>>> 1272c2fe (Reviewer refactor)
+||||||| parent of be83bc81 (Store skill scaling on colony)
+### ▸ `setSkillReputationScaling(uint256 _skillId, uint256 _factor)`
+
+Call to set the reputation scaling applied to reputation earned in a skill
+
+*Note: Only callable by a colony*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill to set the value of scaling in
+|_factor|uint256|The scale factor to apply, as a WAD
+
+
+=======
+>>>>>>> be83bc81 (Store skill scaling on colony)
 ### ▸ `setTokenLocking(address _tokenLockingAddress)`
 
 Sets the token locking address. This is only set once, and can't be changed afterwards.

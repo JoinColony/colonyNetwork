@@ -845,6 +845,24 @@ Get the root local skill id
 |---|---|---|
 |rootLocalSkill|uint256|The root local skill id
 
+### ▸ `getSkillReputationScaling(uint256 _skillId):uint256 scaleFactor`
+
+Get the reputation scaling applied to reputation earned in a skill in this colony.
+
+*Note: To look up the scaling in a domain, look up the skill corresponding to that domain*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill to get the value of scaling in
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|scaleFactor|uint256|Returns the scale factor applied to reputation earned in this skill, as a WAD.
+
 ### ▸ `getTask(uint256 _id):bytes32 specificationHash, bytes32 deliverableHash, TaskStatus status, uint256 dueDate, uint256 fundingPotId, uint256 completionTimestamp, uint256 domainId, uint256[] skillIds`
 
 Get a task with id `_id`
@@ -1780,6 +1798,19 @@ Set new colony root role. Can be called by root role only.
 |---|---|---|
 |_user|address|User we want to give an root role to
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
+
+
+### ▸ `setSkillReputationScaling(uint256 _skillId, uint256 _factor)`
+
+Call to set the reputation scaling applied to reputation earned in a skill in this colony
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill to set the value of scaling in
+|_factor|uint256|The scale factor to apply, as a WAD
 
 
 ### ▸ `setTaskBrief(uint256 _id, bytes32 _specificationHash)`

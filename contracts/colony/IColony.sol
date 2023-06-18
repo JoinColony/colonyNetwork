@@ -1125,4 +1125,15 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @return rate The amount of scaling to applied as a WAD.
   function getTokenReputationRate(address _token) external view returns (uint256 rate);
 
+  /// @notice Get the reputation scaling applied to reputation earned in a skill in this colony.
+  /// @dev To look up the scaling in a domain, look up the skill corresponding to that domain
+  /// @param _skillId The skill to get the value of scaling in
+  /// @return scaleFactor Returns the scale factor applied to reputation earned in this skill, as a WAD.
+  function getSkillReputationScaling(uint256 _skillId) external view returns (uint256 scaleFactor);
+
+  /// @notice Call to set the reputation scaling applied to reputation earned in a skill in this colony
+  /// @param _skillId The skill to set the value of scaling in
+  /// @param _factor The scale factor to apply, as a WAD
+  function setSkillReputationScaling(uint256 _skillId, uint256 _factor) external;
+
 }
