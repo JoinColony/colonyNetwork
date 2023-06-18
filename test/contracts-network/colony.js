@@ -543,7 +543,7 @@ contract("Colony", (accounts) => {
     });
 
     it("cannot set scale factor to larger than 1", async () => {
-      await checkErrorRevert(colony.setDomainReputationScaling(1, WAD.muln(2)), "colony-invalid-scale-factor");
+      await checkErrorRevert(colony.setDomainReputationScaling(1, WAD.muln(2)), "colony-network-invalid-reputation-scale-factor");
     });
 
     it("non-root users cannot set domain scale factor", async () => {
@@ -563,15 +563,9 @@ contract("Colony", (accounts) => {
       expect(skill.reputationScalingFactorComplement).to.be.eq.BN(WAD);
     });
 
-    it("setting domain reputation scaling to false with a nonzero scale factor fails", async () => {
-      await colony.setDomainReputationScaling(1, WAD.divn(2));
-
-      await checkErrorRevert(colony.setDomainReputationScaling(1, 1), "colony-invalid-configuration");
-    });
-
     it("an event is emitted when reputation scaling is changed", async () => {
       const tx = await colony.setDomainReputationScaling(1, WAD.divn(2));
-      await expectEvent(tx, "DomainReputationScalingSet(uint256,bool,uint256)", [1, true, WAD.divn(2)]);
+      await expectEvent(tx, "DomainReputationScalingSet(uint256,uint256)", [1, WAD.divn(2)]);
     });
   });
 
