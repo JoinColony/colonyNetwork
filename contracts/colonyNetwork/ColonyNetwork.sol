@@ -59,6 +59,18 @@ contract ColonyNetwork is ColonyDataTypes, BasicMetaTransaction, ColonyNetworkSt
     skill = skills[_skillId];
   }
 
+  function getAllSkillParents(uint256 _skillId) public view returns (uint256[] memory){
+    Skill storage skill = skills[_skillId];
+    uint[] memory allParents = new uint256[](skill.nParents);
+    uint256 count;
+    for (uint256 count = 0; count < allParents.length; count += 1) {
+      allParents[count] = skill.parents[0];
+      skill = skills[skill.parents[0]];
+    }
+
+    return allParents;
+  }
+
   function getReputationRootHash() public view returns (bytes32) {
     return reputationRootHash;
   }
