@@ -463,7 +463,6 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return _delegator The address they are allowed to mine on behalf of
   function getMiningDelegator(address _delegate) external view returns (address _delegator);
 
-<<<<<<< HEAD
   /// @notice Called to set the details about bridge _bridgeAddress
   /// @param _bridgeAddress The address of the bridge
   /// @param _chainId The chainId of the corresponding network
@@ -601,4 +600,10 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return numerator The numerator of the fraction reputation does down by every reputation cycle
   /// @return denominator The denominator of the fraction reputation does down by every reputation cycle
   function getColonyReputationDecayRate(address _colony) external view returns (uint256 numerator, uint256 denominator);
+
+  /// @notice Called to get an array containing all parent skill ids of a skill
+  /// @param _skillId The skill id being queried
+  /// @return parents An array containing the ids of all parent skills
+  function getAllSkillParents(uint256 _skillId) external view returns (uint256[] memory parents);
+
 }
