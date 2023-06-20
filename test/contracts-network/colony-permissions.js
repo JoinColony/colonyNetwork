@@ -409,7 +409,7 @@ contract("ColonyPermissions", (accounts) => {
     });
 
     it("should be able to apply reputation earned scaling to 150 layers of domains", async () => {
-      const N_LAYERS = 50;
+      const N_LAYERS = 150;
       await removeSubdomainLimit(colonyNetwork);
       await colony.addDomain(1, UINT256_MAX, 1);
       let domainCount = await colony.getDomainCount();
@@ -417,7 +417,7 @@ contract("ColonyPermissions", (accounts) => {
 
       const limit = domainCount + N_LAYERS;
 
-      // Limit currently appears to be ???
+      // Limit currently appears to be about 160
       for (let i = domainCount - 2; i < limit - 2; i += 1) {
         await colony.addDomain(1, i, i + 2);
       }

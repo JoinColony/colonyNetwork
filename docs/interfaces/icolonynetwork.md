@@ -425,6 +425,23 @@ Set deprecation status for a skill
 |---|---|---|
 |_changed|bool|Whether the deprecated state was changed
 
+### ▸ `getAllSkillParents(uint256 _skillId):uint256[] parents`
+
+Called to get an array containing all parent skill ids of a skill
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill id being queried
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|parents|uint256[]|An array containing the ids of all parent skills
+
 ### ▸ `getBridgeData(address _bridgeAddress):Bridge bridge`
 
 Called to get the details about known bridge _bridgeAddress
@@ -934,6 +951,42 @@ Get the number of skills in the network including both global and local skills.
 |---|---|---|
 |_count|uint256|The skill count
 
+### ▸ `getSkillReputationScaling(uint256 _skillId):uint256 scaleFactor`
+
+Get the reputation scaling applied to reputation earned in a skill.
+
+*Note: To look up the scaling in a domain, look up the skill corresponding to that domain*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill to get the value of scaling in
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|scaleFactor|uint256|Returns the scale factor applied to reputation earned in this skill, as a WAD.
+
+### ▸ `getSkillReputationScaling(uint256 _skillId):uint256 scaleFactor`
+
+Get the reputation scaling applied to reputation earned in a skill.
+
+*Note: To look up the scaling in a domain, look up the skill corresponding to that domain*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill to get the value of scaling in
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|scaleFactor|uint256|Returns the scale factor applied to reputation earned in this skill, as a WAD.
+
 ### ▸ `getTokenLocking():address _lockingAddress`
 
 Get token locking contract address.
@@ -1210,8 +1263,6 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |_stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 ### ▸ `setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves)`
 
 Update the reputation on a foreign chain from the mining chain
@@ -1226,8 +1277,6 @@ Update the reputation on a foreign chain from the mining chain
 |newNLeaves|uint256|The new nLeaves in the root hash
 
 
-||||||| parent of 1272c2fe (Reviewer refactor)
-=======
 ### ▸ `setSkillReputationScaling(uint256 _skillId, uint256 _factor)`
 
 Call to set the reputation scaling applied to reputation earned in a skill
@@ -1242,8 +1291,6 @@ Call to set the reputation scaling applied to reputation earned in a skill
 |_factor|uint256|The scale factor to apply, as a WAD
 
 
->>>>>>> 1272c2fe (Reviewer refactor)
-||||||| parent of be83bc81 (Store skill scaling on colony)
 ### ▸ `setSkillReputationScaling(uint256 _skillId, uint256 _factor)`
 
 Call to set the reputation scaling applied to reputation earned in a skill
@@ -1258,8 +1305,6 @@ Call to set the reputation scaling applied to reputation earned in a skill
 |_factor|uint256|The scale factor to apply, as a WAD
 
 
-=======
->>>>>>> be83bc81 (Store skill scaling on colony)
 ### ▸ `setTokenLocking(address _tokenLockingAddress)`
 
 Sets the token locking address. This is only set once, and can't be changed afterwards.

@@ -366,13 +366,14 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   function getSkillReputationScaling(uint256 _skillId) public view returns (uint256) {
-    Skill memory skill = IColonyNetwork(colonyNetworkAddress).getSkill(_skillId);
     uint256 factor = WAD - skillReputationRateComplements[_skillId];
 
-    while (skill.nParents > 0 && factor > 0) {
-      uint256 skillId = skill.parents[0];
-      skill = IColonyNetwork(colonyNetworkAddress).getSkill(skillId);
-      factor = wmul(factor, WAD - skillReputationRateComplements[skillId]);
+    uint256[] memory allParents = IColonyNetwork(colonyNetworkAddress).getAllSkillParents(_skillId);
+    uint256 count;
+
+    while (count < allParents.length && factor > 0) {
+      factor = wmul(factor, WAD - skillReputationRateComplements[allParents[count]]);
+      count +=1;
     }
 
     return factor;
