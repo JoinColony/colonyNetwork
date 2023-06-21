@@ -151,7 +151,11 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     // Initialise the domain tree with defaults by just incrementing the skillCount
     skillCount += 1;
-    IColonyNetwork(address(this)).bridgeSkill(skillCount);
+
+    // If we're not mining chain, then bridge the skill
+    if (!isMiningChain()) {
+      IColonyNetwork(address(this)).bridgeSkill(skillCount);
+    }
 
     colony.initialiseColony(address(this), _tokenAddress);
 
