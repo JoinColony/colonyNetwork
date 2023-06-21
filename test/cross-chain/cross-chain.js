@@ -538,13 +538,30 @@ contract("Cross-chain", (accounts) => {
       await checkErrorRevertEthers(tx.wait(), "colony-invalid-skill-id");
     });
 
-    it("if bridge is broken, bridging skill transaction fails", async () => {
+    it("if bridge is broken, bridging skill transaction doesn't revert (allowing e.g. domains to be created)", async () => {
       let tx = await foreignBridge.setBridgeEnabled(false);
       await tx.wait();
       const skillCount = await foreignColonyNetwork.getSkillCount();
 
       tx = await foreignColonyNetwork.bridgeSkill(skillCount, { gasLimit: 1000000 });
-      await checkErrorRevertEthers(tx.wait(), "colony-network-unable-to-bridge-skill-creation");
+      let receipt = await tx.wait();
+      expect(receipt.status).to.equal(1);
+
+      tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, ethers.BigNumber.from(2).pow(256).sub(1), 1);
+      receipt = await tx.wait();
+
+      let events = receipt.logs.map(function (log) {
+        try {
+          return foreignColonyNetwork.interface.parseLog(log);
+        } catch (e) {
+          // Return nothing
+        }
+        return null;
+      });
+      events = events.filter((x) => x != null && x.eventFragment.name === "SkillCreationStored");
+      expect(events.length).to.equal(1);
+      const event = events[0];
+      expect(event.args[0].toString()).to.equal(skillCount.add(1).toString());
     });
 
     it("colony root local skill structures end up the same on both chains", async () => {
