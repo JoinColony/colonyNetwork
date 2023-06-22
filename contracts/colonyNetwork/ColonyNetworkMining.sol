@@ -321,7 +321,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     address clnyToken = IMetaColony(metaColony).getToken();
     ITokenLocking(tokenLocking).withdraw(clnyToken, _amount, true);
     // We send tokens to the metacolony
-    // require(ERC20Extended(clnyToken).transfer(metaColony, _amount), "colony-network-transfer-failed");
+    require(ERC20Extended(clnyToken).transfer(metaColony, _amount), "colony-network-transfer-failed");
   }
 
   function setReputationMiningCycleReward(uint256 _amount) public onlyMiningChain stoppable calledByMetaColony {
