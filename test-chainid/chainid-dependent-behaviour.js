@@ -15,7 +15,6 @@ const {
   forwardTime,
   getActiveRepCycle,
   advanceMiningCycleNoContest,
-  getValidEntryNumber,
   checkErrorRevert,
   expectEvent,
   expectNoEvent,
@@ -23,26 +22,19 @@ const {
   isMainnet,
   isXdai,
 } = require("../helpers/test-helper");
-const {
-  MINING_CYCLE_DURATION,
-  MIN_STAKE,
-  CHALLENGE_RESPONSE_WINDOW_DURATION,
-  WAD,
-  ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
-} = require("../helpers/constants");
+const { MINING_CYCLE_DURATION, MIN_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION, WAD, DEFAULT_STAKE } = require("../helpers/constants");
 
 const { expect } = chai;
 const ENSRegistry = artifacts.require("ENSRegistry");
 const MultiChain = artifacts.require("MultiChain");
 const DutchAuction = artifacts.require("DutchAuction");
+const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 
 chai.use(bnChai(web3.utils.BN));
 
 const GOERLI = 5;
 const FORKED_GOERLI = 2656695;
-const XDAI = 100;
-const FORKED_XDAI = 265669100;
 
 contract("Contract Storage", (accounts) => {
   const MINER1 = accounts[5];
@@ -65,12 +57,14 @@ contract("Contract Storage", (accounts) => {
     ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
     const ensRegistry = await ENSRegistry.new();
     await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
-    // await giveUserCLNYTokensAndStake(this, colonyNetwork, MINER1, DEFAULT_STAKE);
-    // await giveUserCLNYTokensAndStake(this, colonyNetwork, MINER2, DEFAULT_STAKE);
-    // await giveUserCLNYTokensAndStake(this, colonyNetwork, MINER3, DEFAULT_STAKE);
+    if (await isXdai()) {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
 
-    // await colonyNetwork.initialiseReputationMining();
-    // await colonyNetwork.startNextCycle();
+      await colonyNetwork.initialiseReputationMining();
+      await colonyNetwork.startNextCycle();
+    }
   });
 
   describe("Should behave differently based on the network deployed to", () => {
@@ -90,70 +84,27 @@ contract("Contract Storage", (accounts) => {
       }
     });
 
-    it.skip("Reputation mining rewards should come from different places depending on network", async () => {
-      // TODO: Replace with 'should not be able to mine on non-home networks'
-      await clnyToken.mint(colonyNetwork.address, 100, { from: accounts[11] });
-      // Advance two cycles to clear active and inactive state.
-      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+    it("Can only stake tokens for mining (and therefore can only mine) on the mining chain", async () => {
+      await giveUserCLNYTokens(colonyNetwork, MINER1, DEFAULT_STAKE);
+      const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+      const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+      await clnyToken.approve(tokenLocking.address, DEFAULT_STAKE, { from: MINER1 });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, DEFAULT_STAKE, true, { from: MINER1 });
+      const tx = colonyNetwork.stakeForMining(DEFAULT_STAKE, { from: MINER1 });
 
-      await metaColony.setReputationMiningCycleReward(100);
-      await forwardTime(MINING_CYCLE_DURATION / 2, this);
-
-      const MINER1HASH = "0x01";
-      const MINER2HASH = "0x02";
-      const MINER3HASH = "0x03";
-
-      const entryNumber1 = await getValidEntryNumber(colonyNetwork, MINER1, MINER1HASH);
-      const entryNumber2 = await getValidEntryNumber(colonyNetwork, MINER2, MINER2HASH);
-      const entryNumber3 = await getValidEntryNumber(colonyNetwork, MINER3, MINER3HASH);
-      const repCycle = await getActiveRepCycle(colonyNetwork);
-
-      await repCycle.submitRootHash(MINER1HASH, 10, "0x00", entryNumber1, { from: MINER1 });
-      await repCycle.submitRootHash(MINER2HASH, 10, "0x00", entryNumber2, { from: MINER2 });
-      await repCycle.submitRootHash(MINER3HASH, 10, "0x00", entryNumber3, { from: MINER3 });
-
-      const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
-      expect(nUniqueSubmittedHashes).to.eq.BN(3);
-
-      const rewardSize = await repCycle.getDisputeRewardSize();
-
-      await forwardTime(MINING_CYCLE_DURATION / 2 + CHALLENGE_RESPONSE_WINDOW_DURATION * 2 + 1, this);
-
-      await repCycle.invalidateHash(0, 0, { from: MINER1 });
-      await repCycle.invalidateHash(0, 3, { from: MINER1 });
-
-      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION - ALL_ENTRIES_ALLOWED_END_OF_WINDOW + 1, this);
-      const networkBalanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
-      const tx = await repCycle.confirmNewHash(1, { from: MINER1 });
-
-      if (chainId === XDAI || chainId === FORKED_XDAI) {
-        // tokens should be paid from the network balance
-        const networkBalanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
-        expect(networkBalanceBefore.sub(networkBalanceAfter)).to.eq.BN(100);
+      if (await isXdai()) {
+        await tx;
       } else {
-        // tokens should be newly minted, so balance of network doesn't change.
-        const networkBalanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
-        expect(networkBalanceBefore).to.eq.BN(networkBalanceAfter);
-      }
-
-      // Two people are getting MIN_STAKE slashed, from which two rewards are paid out.
-      // We expect the remaineder to be burned
-      const expectedBurned = MIN_STAKE.muln(2).sub(rewardSize.muln(2));
-      // Unneeded rewards should be dealt with differently as well.
-
-      if (chainId === XDAI || chainId === FORKED_XDAI) {
-        // tokens should be transferred to metacolony
-        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, expectedBurned]);
-      } else {
-        // tokens should be burned.
-        await expectEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, expectedBurned]);
+        await checkErrorRevert(tx, "colony-only-valid-on-mining-chain");
       }
     });
 
-    it.skip("should not make 0-value transfers to 'burn' unneeded rewards on xdai", async function () {
-      // TODO: Work out what this test should be now
-      await giveUserCLNYTokensAndStake(this, colonyNetwork, MINER1, MIN_STAKE);
+    it("should not make 0-value transfers to 'burn' unneeded mining rewards on xdai", async function () {
+      if (!(await isXdai())) {
+        // We don't mine anywhere else, so skip
+        this.skip();
+      }
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, MIN_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
@@ -216,7 +167,7 @@ contract("Contract Storage", (accounts) => {
       const balanceAfter = await clnyToken.balanceOf(tokenAuction.address);
       expect(balanceAfter).to.be.zero;
       const supplyAfter = await clnyToken.totalSupply();
-      if (chainId === XDAI || chainId === FORKED_XDAI) {
+      if (await isXdai()) {
         // tokens should be transferred to metacolony
         expect(supplyBefore).to.eq.BN(supplyAfter);
         await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [tokenAuction.address, metaColony.address, receivedTotal]);
@@ -228,7 +179,7 @@ contract("Contract Storage", (accounts) => {
     });
 
     it("Global skills can only be created on the mining chain", async () => {
-      if (chainId === XDAI || chainId === FORKED_XDAI) {
+      if (await isXdai()) {
         await metaColony.addGlobalSkill();
       } else {
         await checkErrorRevert(metaColony.addGlobalSkill(), "colony-only-valid-on-mining-chain");
@@ -236,7 +187,7 @@ contract("Contract Storage", (accounts) => {
     });
 
     it("Reputation mining cannot be initialised on non-mining chain", async () => {
-      if (chainId !== XDAI && chainId !== FORKED_XDAI) {
+      if (!(await isXdai())) {
         await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-only-valid-on-mining-chain");
       }
     });
