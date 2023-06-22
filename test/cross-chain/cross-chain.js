@@ -182,7 +182,6 @@ contract("Cross-chain", (accounts) => {
       setReputationRootHashFromBridgeTx,
       1000000,
     ]);
-    console.log(setReputationRootHashFromBridgeTxDataToBeSentToAMB);
 
     tx = await homeMetacolony.setBridgeData(
       homeBridge.address, // bridge address
@@ -331,7 +330,6 @@ contract("Cross-chain", (accounts) => {
 
       const countAfter = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
       expect(countAfter).to.not.equal(0);
-      console.log(countAfter);
       expect(countAfter.sub(countBefore).toNumber()).to.equal(0);
     });
   });
@@ -345,7 +343,6 @@ contract("Cross-chain", (accounts) => {
       await fToken.deployTransaction.wait();
       await fToken.unlock();
       // Send some to safe
-      // console.log(fToken);
       await fToken["mint(address,uint256)"](gnosisSafe.address, 100);
 
       // We want the safe to execute this transaction...
@@ -612,7 +609,6 @@ contract("Cross-chain", (accounts) => {
       const len = await reputationMiningCycleInactive.getReputationUpdateLogLength();
 
       const entry = await reputationMiningCycleInactive.getReputationUpdateLogEntry(len.sub(1));
-      console.log(entry);
 
       expect(entry.amount.toHexString()).to.equal("0x1337");
       expect(entry.user).to.equal(accounts[0]);
@@ -643,7 +639,6 @@ contract("Cross-chain", (accounts) => {
       p = getPromiseForNextBridgedTransaction();
       const tx = await homeColonyNetwork.bridgeCurrentRootHash(homeBridge.address);
       await tx.wait();
-      console.log("asdf");
       await p;
 
       // Check state bridged to host chain
@@ -885,7 +880,6 @@ contract("Cross-chain", (accounts) => {
       await tx.wait();
       await p;
 
-      // TODO: This isn't the index / entry I was expecting, I think I'm missing something here
       const pending1 = await homeColonyNetwork.getPendingReputationUpdate(foreignChainId, foreignColony.address, bridgedReputationUpdateCount.add(1));
       expect(pending1.amount.toHexString()).to.equal("0x1339");
       expect(pending1.user).to.equal(accounts[0]);
