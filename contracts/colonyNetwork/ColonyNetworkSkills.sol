@@ -375,7 +375,8 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
   function addSkillToChainTree(uint256 _parentSkillId, uint256 _skillId) private {
     // This indicates a new root local skill bridged from another chain, i.e. 0x{chainId}{0}
-    // We don't do anything to the tree in this scenario, other than incrementing
+    // We don't do anything to the tree in this scenario, other than incrementing the skill count,
+    // which should be/is done where this function is called.
     //  (this mirrors the behaviour of not calling addSkill() in initialiseRootLocalSkill)
     if (_parentSkillId != 0 && _parentSkillId << 128 == 0) { return; }
 
