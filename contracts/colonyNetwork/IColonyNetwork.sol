@@ -596,6 +596,9 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _chainId The chainid of the chain
   /// @param _colony The colony being queried
   /// @return bridgedReputationCount The bridge reputation count of the corresponding chain
+  /// @dev  On the non-mining chain, this tracks the number of reputation updates that have either been bridged, or attempted to
+  /// be bridged (and failed, and are now pending bridging). On the mining chain, it tracks how many have been successfully bridged
+  /// and added to the log.
   function getBridgedReputationUpdateCount(uint256 _chainId, address _colony) external view returns (uint256 bridgedReputationCount);
 
   /// @notice Try to bridge a reputation update that (previously) failed

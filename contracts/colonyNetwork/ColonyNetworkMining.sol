@@ -110,7 +110,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
       bridgeData[_bridgeAddress].setReputationRootHashAfter
     );
     (bool success, ) = _bridgeAddress.call(payload);
-    // TODO: Do we require success here?
+    // We require success so estimation calls can tell us if bridging is going to work
     require(success, "colony-mining-bridge-call-failed");
   }
 
