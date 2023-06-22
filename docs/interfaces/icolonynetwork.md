@@ -462,6 +462,7 @@ Called to get the details about known bridge _bridgeAddress
 
 Get the (currently bridged) reputation update count of a chain
 
+*Note:  On the non-mining chain, this tracks the number of reputation updates that have either been bridged, or attempted to be bridged (and failed, and are now pending bridging). On the mining chain, it tracks how many have been successfully bridged and added to the log.*
 
 **Parameters**
 
