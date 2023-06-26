@@ -1,7 +1,7 @@
 /* globals artifacts */
 
 const assert = require("assert");
-const { UINT256_MAX } = require("../helpers/constants");
+const { UINT256_MAX, FORKED_XDAI_CHAINID, XDAI_CHAINID } = require("../helpers/constants");
 
 const Token = artifacts.require("./Token");
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
@@ -50,7 +50,7 @@ module.exports = async function (deployer, network, accounts) {
   const multichain = await MultiChain.new();
   const chainId = await multichain.getChainId();
 
-  if (chainId.toString() === "265669100" || chainId.toString() === "100") {
+  if (chainId.toNumber() === FORKED_XDAI_CHAINID || chainId.toNumber() === XDAI_CHAINID) {
     // These commands add MAIN_ACCOUNT as a reputation miner.
     // This is necessary because the first miner must have staked before the mining cycle begins.
     await clnyToken.mint(MAIN_ACCOUNT, DEFAULT_STAKE, { from: TOKEN_OWNER });
@@ -113,7 +113,7 @@ module.exports = async function (deployer, network, accounts) {
   await resolver4.register("version()", v4responder.address);
   await metaColony.addNetworkColonyVersion(4, resolver4.address);
 
-  if (chainId.toString() === "265669100" || chainId.toString() === "100") {
+  if (chainId.toNumber() === FORKED_XDAI_CHAINID || chainId.toNumber() === XDAI_CHAINID) {
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
     const skillCount = await colonyNetwork.getSkillCount();
