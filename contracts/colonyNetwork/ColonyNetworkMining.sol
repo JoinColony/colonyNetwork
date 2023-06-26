@@ -109,6 +109,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
       abi.encodeWithSignature("setReputationRootHashFromBridge(bytes32,uint256)", reputationRootHash, reputationRootHashNLeaves),
       bridgeData[_bridgeAddress].setReputationRootHashAfter
     );
+
+    // slither-disable-next-line unchecked-lowlevel
     (bool success, ) = _bridgeAddress.call(payload);
     // We require success so estimation calls can tell us if bridging is going to work
     require(success, "colony-mining-bridge-call-failed");

@@ -151,6 +151,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     // Send bridge transaction
     // This succeeds if not set, but we don't want to block e.g. domain creation if that's the situation we're in,
     // and we can re-call this function to bridge later if necessary.
+    // slither-disable-next-line unchecked-lowlevel
     (bool success, ) = miningBridgeAddress.call(payload);
     if (!success) {
 
@@ -183,6 +184,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
     delete pendingReputationUpdates[getChainId()][_colony][_updateNumber];
 
+    // slither-disable-next-line unchecked-lowlevel
     (bool success, ) = miningBridgeAddress.call(payload);
     if (!success || !isContract(miningBridgeAddress)) {
       revert("colony-network-bridging-tx-unsuccessful");
@@ -443,6 +445,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       bridgeData[miningBridgeAddress].updateLogAfter
     );
 
+    // slither-disable-next-line unchecked-lowlevel
     (bool success, ) = miningBridgeAddress.call(payload);
     if (!success || !isContract(miningBridgeAddress)) {
       // Store to resend later
