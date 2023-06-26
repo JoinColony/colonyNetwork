@@ -131,6 +131,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       // Initialise the skill count to match the foreign chain
       networkSkillCounts[_chainId] = toRootSkillId(_chainId);
     }
+
     emit BridgeDataSet(_bridgeAddress);
   }
 
@@ -152,6 +153,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     // and we can re-call this function to bridge later if necessary.
     (bool success, ) = miningBridgeAddress.call(payload);
     if (!success) {
+
       emit SkillCreationStored(_skillId);
     }
   }
@@ -186,8 +188,10 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       // Store to resend later
       PendingReputationUpdate memory pendingReputationUpdate = PendingReputationUpdate(_user, _amount, _skillId, msgSender(), block.timestamp);
       pendingReputationUpdates[getChainId()][colonyAddress][reputationUpdateCount[getChainId()][colonyAddress]] = pendingReputationUpdate;
+
       emit ReputationUpdateStored(colonyAddress, reputationUpdateCount[getChainId()][colonyAddress]);
     } else {
+
       emit ReputationUpdateSentToBridge(colonyAddress, reputationUpdateCount[getChainId()][colonyAddress]);
     }
   }
@@ -244,9 +248,11 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     if (networkSkillCounts[bridgeChainId] + 1 == _skillId){
       addSkillToChainTree(_parentSkillId, _skillId);
       networkSkillCounts[bridgeChainId] += 1;
+
       emit SkillAddedFromBridge(_skillId);
     } else if (networkSkillCounts[bridgeChainId] < _skillId){
       pendingSkillAdditions[bridgeChainId][_skillId] = _parentSkillId;
+
       emit SkillStoredFromBridge(_skillId);
     }
   }
@@ -277,6 +283,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     } else {
       // Not next update, store for later
       pendingReputationUpdates[bridgeChainId][_colony][_updateNumber] = PendingReputationUpdate(_user, _amount, _skillId, _colony, block.timestamp);
+
       emit ReputationUpdateStoredFromBridge(bridgeChainId, _colony, _updateNumber);
     }
   }
@@ -443,10 +450,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
         return ascendSkillTree(_newSkillId, _newParentSkillNumber);
       }
     }
-  }
-
-  function toChainId(uint256 _skillId) internal pure returns (uint256) {
-    return _skillId >> 128;
   }
 
   function appendReputationUpdateLogInternal(address _user, int256 _amount, uint256 _skillId, address _colony) internal {
