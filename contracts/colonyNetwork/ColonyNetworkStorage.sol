@@ -118,7 +118,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   mapping(uint256 => mapping(uint256 => uint256)) pendingSkillAdditions; // Storage slot 46
 
   // A mapping that stores the latest reputation update received from a colony on a particular chain
-  // networkID -> colonyAddress -> updateCount
+  // networkId -> colonyAddress -> updateCount
   mapping(uint256 => mapping( address => uint256)) reputationUpdateCount; // Storage slot 47
 
   // A mapping that stores reputation updates that haven't been added to the log yet, either because they've been
@@ -152,7 +152,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
 
   modifier skillExists(uint256 skillId) {
     require(skillCount >= skillId, "colony-invalid-skill-id");
-    require(isMiningChain() || (skillId >> 128) == getChainId() , "colony-invalid-skill-id");
+    require(isMiningChain() || toChainId(skillId) == getChainId() , "colony-invalid-skill-id");
     _;
   }
 
@@ -161,4 +161,9 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   function toRootSkillId(uint256 _chainId) internal pure returns (uint256) {
     return _chainId << 128;
   }
+
+  function toChainId(uint256 _skillId) internal pure returns (uint256) {
+    return _skillId >> 128;
+  }
+
 }
