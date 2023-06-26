@@ -158,44 +158,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     }
   }
 
-  function bridgeReputationUpdateLog(address _user, int256 _amount, uint256 _skillId)
-    public
-    stoppable
-    calledByColony
-    onlyNotMiningChain
-    skillExists(_skillId)
-  {
-    // TODO: Maybe force to be set on deployment?
-    require(miningBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
-    address colonyAddress = msgSender();
-    reputationUpdateCount[getChainId()][colonyAddress] += 1;
-    // Build the transaction we're going to send to the bridge
-    bytes memory payload = abi.encodePacked(
-      bridgeData[miningBridgeAddress].updateLogBefore,
-      abi.encodeWithSignature(
-        "addReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
-        colonyAddress,
-        _user,
-        _amount,
-        _skillId,
-        reputationUpdateCount[getChainId()][colonyAddress]
-      ),
-      bridgeData[miningBridgeAddress].updateLogAfter
-    );
-
-    (bool success, ) = miningBridgeAddress.call(payload);
-    if (!success || !isContract(miningBridgeAddress)) {
-      // Store to resend later
-      PendingReputationUpdate memory pendingReputationUpdate = PendingReputationUpdate(_user, _amount, _skillId, msgSender(), block.timestamp);
-      pendingReputationUpdates[getChainId()][colonyAddress][reputationUpdateCount[getChainId()][colonyAddress]] = pendingReputationUpdate;
-
-      emit ReputationUpdateStored(colonyAddress, reputationUpdateCount[getChainId()][colonyAddress]);
-    } else {
-
-      emit ReputationUpdateSentToBridge(colonyAddress, reputationUpdateCount[getChainId()][colonyAddress]);
-    }
-  }
-
   function bridgePendingReputationUpdate(address _colony, uint256 _updateNumber) public stoppable onlyNotMiningChain {
     require(miningBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
     require(pendingReputationUpdates[getChainId()][_colony][_updateNumber - 1].colony == address(0x00), "colony-network-not-next-pending-update");
@@ -222,8 +184,9 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     delete pendingReputationUpdates[getChainId()][_colony][_updateNumber];
 
     (bool success, ) = miningBridgeAddress.call(payload);
-    require(success, "colony-network-bridging-tx-unsuccessful");
-
+    if (!success || !isContract(miningBridgeAddress)) {
+      revert("colony-network-bridging-tx-unsuccessful");
+    }
     emit ReputationUpdateSentToBridge(_colony, _updateNumber);
   }
 
@@ -458,6 +421,41 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     uint128 nChildren = (_amount < 0) ? skills[_skillId].nChildren : 0;
     IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(_user, _amount, _skillId, _colony, nParents, nChildren);
   }
+
+  function bridgeReputationUpdateLog(address _user, int256 _amount, uint256 _skillId)
+    internal
+  {
+    // TODO: Maybe force to be set on deployment?
+    require(miningBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
+    address colonyAddress = msgSender();
+    reputationUpdateCount[getChainId()][colonyAddress] += 1;
+    // Build the transaction we're going to send to the bridge
+    bytes memory payload = abi.encodePacked(
+      bridgeData[miningBridgeAddress].updateLogBefore,
+      abi.encodeWithSignature(
+        "addReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
+        colonyAddress,
+        _user,
+        _amount,
+        _skillId,
+        reputationUpdateCount[getChainId()][colonyAddress]
+      ),
+      bridgeData[miningBridgeAddress].updateLogAfter
+    );
+
+    (bool success, ) = miningBridgeAddress.call(payload);
+    if (!success || !isContract(miningBridgeAddress)) {
+      // Store to resend later
+      PendingReputationUpdate memory pendingReputationUpdate = PendingReputationUpdate(_user, _amount, _skillId, msgSender(), block.timestamp);
+      pendingReputationUpdates[getChainId()][colonyAddress][reputationUpdateCount[getChainId()][colonyAddress]] = pendingReputationUpdate;
+
+      emit ReputationUpdateStored(colonyAddress, reputationUpdateCount[getChainId()][colonyAddress]);
+    } else {
+
+      emit ReputationUpdateSentToBridge(colonyAddress, reputationUpdateCount[getChainId()][colonyAddress]);
+    }
+  }
+
 
   // Mining cycle decay constants
   // Note that these values and the mining window size (defined in ReputationMiningCycleCommon)

@@ -167,21 +167,6 @@ Try to bridge a reputation update that (previously) failed
 |_updateNumber|uint256|the emission index to bridge
 
 
-### ▸ `bridgeReputationUpdateLog(address _user, int256 _amount, uint256 _skillId)`
-
-Bridges a reputation update entry.
-
-*Note: Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_user|address|The address of the user for the reputation update
-|_amount|int256|The amount of reputation change for the update, this can be a negative as well as a positive value
-|_skillId|uint256|The skill for the reputation update
-
-
 ### ▸ `bridgeSkill(uint256 skillId)`
 
 Called to re-send the bridging transaction for a skill to the

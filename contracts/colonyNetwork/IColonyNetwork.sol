@@ -121,13 +121,6 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _skillId The skill for the reputation update
   function appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId) external;
 
-  /// @notice Bridges a reputation update entry.
-  /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or.
-  /// @param _user The address of the user for the reputation update
-  /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
-  /// @param _skillId The skill for the reputation update
-  function bridgeReputationUpdateLog(address _user, int256 _amount, uint256 _skillId) external;
-
   /// @notice Get the number of skills in the network including both global and local skills.
   /// @return _count The skill count
   function getSkillCount() external view returns (uint256 _count);
