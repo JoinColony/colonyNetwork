@@ -460,7 +460,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     }
   }
 
-
   // Mining cycle decay constants
   // Note that these values and the mining window size (defined in ReputationMiningCycleCommon)
   // need to be consistent with each other, but are not checked, in order for the decay
