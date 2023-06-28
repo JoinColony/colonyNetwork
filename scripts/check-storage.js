@@ -40,6 +40,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/extensions/StagedExpenditure.sol",
       "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol",
       "contracts/extensions/votingReputation/VotingReputationStorage.sol",
+      "contracts/extensions/votingReputation/VotingReputationV9.sol",
       "contracts/extensions/Whitelist.sol",
       "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
       "contracts/patriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
