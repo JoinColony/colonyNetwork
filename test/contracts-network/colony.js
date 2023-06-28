@@ -468,7 +468,8 @@ contract("Colony", (accounts) => {
       const tx = await colony.setReputationDecayRate(1, 1, { from: USER0 });
       const activeReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
 
-      await expectEvent(tx, "ColonyReputationDecayRateToChange(address,address,uint256,uint256)", [
+      await expectEvent(tx, "ColonyReputationDecayRateToChange(uint256,address,address,uint256,uint256)", [
+        0,
         colony.address,
         activeReputationMiningCycleAddress,
         1,
@@ -477,7 +478,7 @@ contract("Colony", (accounts) => {
     });
 
     it("a colony that hasn't had the decay rate explicitly set returns the default decay rate", async () => {
-      const decayRate = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      const decayRate = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
 
       // Get default decay rate from mining cycle
       const activeReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
@@ -489,15 +490,15 @@ contract("Colony", (accounts) => {
     });
 
     it("when a colony's decay rate is set, it only takes effect once a mining cycle is completed", async () => {
-      const decayRate = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      const decayRate = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
       await colony.setReputationDecayRate(1, 2, { from: USER0 });
-      let decayRate2 = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      let decayRate2 = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
 
       expect(decayRate.numerator).to.eq.BN(decayRate2.numerator);
       expect(decayRate.denominator).to.eq.BN(decayRate2.denominator);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      decayRate2 = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      decayRate2 = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
 
       expect(decayRate2.numerator).to.eq.BN(1);
       expect(decayRate2.denominator).to.eq.BN(2);
@@ -515,7 +516,7 @@ contract("Colony", (accounts) => {
       await colony.setReputationDecayRate(1, 2, { from: USER0 });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      let decayRate = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      let decayRate = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
       expect(decayRate.numerator).to.eq.BN(1);
       expect(decayRate.denominator).to.eq.BN(2);
 
@@ -525,13 +526,13 @@ contract("Colony", (accounts) => {
       const defaultDecay = await activeReputationMiningCycle.getDecayConstant();
 
       await colony.setReputationDecayRate(0, 0); // Special call to reset to follow default rate
-      decayRate = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      decayRate = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
       // Check hasn't changed yet
       expect(decayRate.numerator).to.eq.BN(1);
       expect(decayRate.denominator).to.eq.BN(2);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      decayRate = await colonyNetwork.getColonyReputationDecayRate(colony.address);
+      decayRate = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
       expect(decayRate.numerator).to.eq.BN(defaultDecay.numerator);
       expect(decayRate.denominator).to.eq.BN(defaultDecay.denominator);
     });

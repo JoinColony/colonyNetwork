@@ -473,6 +473,8 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _skillCreationAfter The tx data after the dynamic part of the tx to brdige skill creation
   /// @param _setReputationRootHashBefore The tx data before the dynamic part of the tx to bridge a new reputation root hash
   /// @param _setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
+  /// @param _setColonyDecayRateBefore The tx data before the dynamic part of the tx to set a colony's reputation decay rate
+  /// @param _setColonyDecayRateAfter The tx data after the dynamic part of the tx to set a colony's reputation decay rate
   function setBridgeData(
     address _bridgeAddress,
     uint256 _chainId,
@@ -482,7 +484,9 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
     bytes memory _skillCreationBefore,
     bytes memory _skillCreationAfter,
     bytes memory _setReputationRootHashBefore,
-    bytes memory _setReputationRootHashAfter
+    bytes memory _setReputationRootHashAfter,
+    bytes memory _setColonyDecayRateBefore,
+    bytes memory _setColonyDecayRateAfter
   ) external;
 
   /// @notice Called to get the details about known bridge _bridgeAddress
@@ -571,11 +575,19 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _denominator The denominator of the fraction reputation does down by every reputation cycle
   function setColonyReputationDecayRate(uint256 _numerator, uint256 _denominator) external;
 
+  /// @notice Called by a bridge to set the rate at which reputation in a colony on the chain corresponding
+  /// to that bridge decays
+  /// @param _colony The colony on the chain in question
+  /// @param _numerator The numerator of the fraction reputation does down by every reputation cycle
+  /// @param _denominator The denominator of the fraction reputation does down by every reputation cycle
+  function setColonyReputationDecayRateFromBridge(address _colony, uint256 _numerator, uint256 _denominator) external;
+
   /// @notice Called to get the rate at which reputation in a colony decays
+  /// @param _chainId The chainId the colony is deployed on
   /// @param _colony The address of the colony in question
   /// @return numerator The numerator of the fraction reputation does down by every reputation cycle
   /// @return denominator The denominator of the fraction reputation does down by every reputation cycle
-  function getColonyReputationDecayRate(address _colony) external view returns (uint256 numerator, uint256 denominator);
+  function getColonyReputationDecayRate(uint256 _chainId, address _colony) external view returns (uint256 numerator, uint256 denominator);
 
   /// @notice Called to get an array containing all parent skill ids of a skill
   /// @param _skillId The skill id being queried

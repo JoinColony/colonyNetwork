@@ -106,7 +106,9 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, ColonyDataTypes
     bytes memory _skillCreationBefore,
     bytes memory _skillCreationAfter,
     bytes memory _setReputationRootHashBefore,
-    bytes memory _setReputationRootHashAfter
+    bytes memory _setReputationRootHashAfter,
+    bytes memory _setColonyDecayRateBefore,
+    bytes memory _setColonyDecayRateAfter
   )
     public
     always
@@ -126,7 +128,9 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, ColonyDataTypes
       _skillCreationBefore,
       _skillCreationAfter,
       _setReputationRootHashBefore,
-      _setReputationRootHashAfter
+      _setReputationRootHashAfter,
+      _setColonyDecayRateBefore,
+      _setColonyDecayRateAfter
     );
 
     if (networkSkillCounts[_chainId] == 0) {

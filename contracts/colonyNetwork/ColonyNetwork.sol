@@ -168,11 +168,44 @@ contract ColonyNetwork is ColonyDataTypes, BasicMetaTransaction, ColonyNetworkSt
     return payoutWhitelist[_token];
   }
 
-  function setColonyReputationDecayRate(uint256 _numerator, uint256 _denominator) public calledByColony stoppable {
+  function setColonyReputationDecayRate(uint256 _numerator, uint256 _denominator) public stoppable calledByColony {
     require(_numerator < 10**15, "colony-network-decay-numerator-too-big");
     require(_numerator <= _denominator, "colony-network-decay-rate-over-1");
 
-    ColonyDecayRate storage decayRate = colonyDecayRates[msgSender()];
+    if (isMiningChain()){
+      setColonyReputationDecayRateInternal(0, msgSender(), _numerator, _denominator);
+    } else {
+      bridgeColonyDecayRate(_numerator, _denominator);
+    }
+  }
+
+  function bridgeColonyDecayRate(uint256 _numerator, uint256 _denominator) internal {
+    // Build the transaction we're going to send to the bridge to register the
+    // creation of this skill on the home chain
+
+    bytes memory payload = abi.encodePacked(
+      bridgeData[miningBridgeAddress].setColonyDecayRateBefore,
+      abi.encodeWithSignature("setColonyReputationDecayRateFromBridge(address,uint256,uint256)", msgSender(), _numerator, _denominator),
+      bridgeData[miningBridgeAddress].setColonyDecayRateAfter
+    );
+
+    // Send bridge transaction
+    // slither-disable-next-line unchecked-lowlevel
+    (bool success, ) = miningBridgeAddress.call(payload);
+    require(success, "colony-network-bridging-transaction-failed");
+  }
+
+  function setColonyReputationDecayRateFromBridge(address _colony, uint256 _numerator, uint256 _denominator) public always
+    onlyMiningChain
+ {
+    uint256 bridgeChainId = bridgeData[msgSender()].chainId;
+    require(bridgeChainId != 0, "colony-network-not-known-bridge");
+
+    setColonyReputationDecayRateInternal(bridgeChainId, _colony, _numerator, _denominator);
+  }
+
+  function setColonyReputationDecayRateInternal(uint256 _chainId, address _colony, uint256 _numerator, uint256 _denominator) internal {
+    ColonyDecayRate storage decayRate = colonyDecayRates[_chainId][_colony];
 
     if (activeReputationMiningCycle != decayRate.afterMiningCycle) {
       // Move the old-next values to current, as they are in effect
@@ -187,20 +220,25 @@ contract ColonyNetwork is ColonyDataTypes, BasicMetaTransaction, ColonyNetworkSt
     decayRate.nextNumerator = _numerator;
     decayRate.nextDenominator = _denominator;
 
-    emit ColonyReputationDecayRateToChange(msgSender(), activeReputationMiningCycle, _numerator, _denominator);
+    emit ColonyReputationDecayRateToChange(_chainId, _colony, activeReputationMiningCycle, _numerator, _denominator);
   }
 
-  function getColonyReputationDecayRate(address _colony) public view returns (uint256, uint256) {
+  function getColonyReputationDecayRate(uint256 _chainId, address _colony) public view returns (uint256, uint256) {
     uint256 numerator;
     uint256 denominator;
 
-    if (activeReputationMiningCycle != colonyDecayRates[_colony].afterMiningCycle) {
+    uint256 chainId = _chainId;
+    if (isMiningChainId(_chainId)){
+      chainId = 0;
+    }
+
+    if (activeReputationMiningCycle != colonyDecayRates[chainId][_colony].afterMiningCycle) {
       // Then the values of interest is whatever's in nextNumerator/nextDenominator
-      numerator = colonyDecayRates[_colony].nextNumerator;
-      denominator = colonyDecayRates[_colony].nextDenominator;
+      numerator = colonyDecayRates[chainId][_colony].nextNumerator;
+      denominator = colonyDecayRates[chainId][_colony].nextDenominator;
     } else {
-      numerator = colonyDecayRates[_colony].currentNumerator;
-      denominator = colonyDecayRates[_colony].currentDenominator;
+      numerator = colonyDecayRates[chainId][_colony].currentNumerator;
+      denominator = colonyDecayRates[chainId][_colony].currentDenominator;
     }
 
     if (denominator == 0) {

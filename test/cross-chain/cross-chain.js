@@ -19,7 +19,7 @@ const IColony = artifacts.require("IColony");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const setupBridging = require("../../scripts/setup-bridging-contracts");
 
-const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE } = require("../../helpers/constants");
+const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE, DECAY_RATE } = require("../../helpers/constants");
 const { forwardTime, checkErrorRevertEthers } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
@@ -65,6 +65,7 @@ contract("Cross-chain", (accounts) => {
 
   const ethersForeignSigner = new ethers.providers.JsonRpcProvider(foreignRpcUrl).getSigner();
   const ethersHomeSigner = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner();
+  const ethersHomeMinerSigner = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner(accounts[5]);
 
   async function setForeignBridgeData(foreignBridgeAddress) {
     // The code here demonstrates how to generate the bridge data for a bridge. We work out the transaction (with dummy data), and then
@@ -90,6 +91,17 @@ contract("Cross-chain", (accounts) => {
       1000000,
     ]);
 
+    const setColonyDecayRateFromBridgeTx = homeColonyNetwork.interface.encodeFunctionData("setColonyReputationDecayRateFromBridge", [
+      "0x1111111111111111111111111111111111111111",
+      1337,
+      1338,
+    ]);
+    const setColonyDecayRateFromBridgeTxDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [
+      homeColonyNetwork.address,
+      setColonyDecayRateFromBridgeTx,
+      1000000,
+    ]);
+
     const tx = await foreignMetacolony.setBridgeData(
       foreignBridgeAddress, // bridge address
       100, // chainid
@@ -99,7 +111,9 @@ contract("Cross-chain", (accounts) => {
       addSkillFromBridgeTxDataToBeSentToAMB.slice(0, 266), // skill before
       `0x${addSkillFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // skill after
       "0x", // root hash before
-      "0x" // root hash after
+      "0x", // root hash after
+      setColonyDecayRateFromBridgeTxDataToBeSentToAMB.slice(0, 266), // colony decay rate before
+      `0x${setColonyDecayRateFromBridgeTxDataToBeSentToAMB.slice(-56)}` // colony decay rate after
     );
 
     await tx.wait();
@@ -178,7 +192,9 @@ contract("Cross-chain", (accounts) => {
       `0x`, // skill before
       "0x", // skill after
       setReputationRootHashFromBridgeTxDataToBeSentToAMB.slice(0, 266), // root hash before
-      `0x${setReputationRootHashFromBridgeTxDataToBeSentToAMB.slice(-56)}` // root hash after
+      `0x${setReputationRootHashFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // root hash after
+      `0x`, // colony decay rate before
+      "0x" // colony decay rate after
     );
     await tx.wait();
 
@@ -288,7 +304,9 @@ contract("Cross-chain", (accounts) => {
     });
 
     it("setBridgeData on Network can only be called by the metacolony", async () => {
-      const tx = await foreignColonyNetwork.setBridgeData(ADDRESS_ZERO, 1, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", { gasLimit: 1000000 });
+      const tx = await foreignColonyNetwork.setBridgeData(ADDRESS_ZERO, 1, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", {
+        gasLimit: 1000000,
+      });
       await checkErrorRevertEthers(tx.wait(), "colony-caller-must-be-meta-colony");
     });
 
@@ -297,7 +315,9 @@ contract("Cross-chain", (accounts) => {
 
       const foreignMetacolony2 = await new ethers.Contract(foreignMetacolony.address, IColonyNetwork.abi, ethersForeignSigner2);
 
-      let tx = await foreignMetacolony2.setBridgeData(ADDRESS_ZERO, 1, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", { gasLimit: 1000000 });
+      let tx = await foreignMetacolony2.setBridgeData(ADDRESS_ZERO, 1, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", {
+        gasLimit: 1000000,
+      });
       await checkErrorRevertEthers(tx.wait(), "ds-auth-unauthorized");
 
       // Add root permissions
@@ -311,7 +331,9 @@ contract("Cross-chain", (accounts) => {
       await tx.wait();
 
       // Can now call
-      tx = await foreignMetacolony2.setBridgeData(ADDRESS_ZERO, 100, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", { gasLimit: 1000000 });
+      tx = await foreignMetacolony2.setBridgeData(ADDRESS_ZERO, 100, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", {
+        gasLimit: 1000000,
+      });
       await tx.wait();
 
       // Reset permissions
@@ -320,7 +342,9 @@ contract("Cross-chain", (accounts) => {
     });
 
     it("setBridgeData can only set the mining chain bridge on a not-mining chain", async () => {
-      const tx = await foreignMetacolony.setBridgeData(ADDRESS_ZERO, 1, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", { gasLimit: 1000000 });
+      const tx = await foreignMetacolony.setBridgeData(ADDRESS_ZERO, 1, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", {
+        gasLimit: 1000000,
+      });
       await checkErrorRevertEthers(tx.wait(), "colony-network-can-only-set-mining-chain-bridge");
     });
 
@@ -345,7 +369,9 @@ contract("Cross-chain", (accounts) => {
           2
           // eslint-disable-next-line max-len
         )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000044`,
-        "0x00000000000000000000000000000000000000000000000000000000" // root hash after
+        "0x00000000000000000000000000000000000000000000000000000000", // root hash after,
+        "0x", // colony decay before
+        "0x" // colony decay after
       );
       await tx.wait();
 
@@ -1043,6 +1069,38 @@ contract("Cross-chain", (accounts) => {
 
       tx = await foreignColonyNetwork.bridgePendingReputationUpdate(foreignColony.address, bridgedReputationUpdateCount, { gasLimit: 1000000 });
       await tx.wait();
+    });
+  });
+
+  describe("when setting colony reputation decay rates on other chains", async () => {
+    it("colony reputation decay rates are reflected on the home chain", async () => {
+      // set colony decay rate
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      let tx = await foreignColony.setReputationDecayRate(122223, 12222345);
+      await tx.wait();
+      await p;
+
+      // Not yet reflected on the home chain
+      let rate = await homeColonyNetwork.getColonyReputationDecayRate(foreignChainId, foreignColony.address);
+      expect(rate.numerator.toString()).to.eq.BN(DECAY_RATE.NUMERATOR);
+      expect(rate.denominator.toString()).to.eq.BN(DECAY_RATE.DENOMINATOR);
+
+      // But after the next mining cycle is complete, it is reflected.
+      // Would be good if this worked. But it doesn't
+      // await advanceMiningCycleNoContest({ colonyNetwork: homeColonyNetwork, test: this });
+
+      await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
+      const repCycleAddress = await homeColonyNetwork.getReputationMiningCycle(true);
+
+      const repCycle = await new ethers.Contract(repCycleAddress, IReputationMiningCycle.abi, ethersHomeMinerSigner);
+      tx = await repCycle.submitRootHash(ethers.utils.hexZeroPad("0x00", 32), 0, ethers.utils.hexZeroPad("0x00", 32), 1);
+      await tx.wait();
+      tx = await repCycle.confirmNewHash(0);
+      await tx.wait();
+
+      rate = await homeColonyNetwork.getColonyReputationDecayRate(foreignChainId, foreignColony.address);
+      expect(rate.numerator.toNumber()).to.equal(122223);
+      expect(rate.denominator.toNumber()).to.equal(12222345);
     });
   });
 });

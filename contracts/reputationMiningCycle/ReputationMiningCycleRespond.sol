@@ -534,7 +534,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       uint256 numerator;
       uint256 denominator;
 
-      (numerator, denominator) = IColonyNetwork(colonyNetworkAddress).getColonyReputationDecayRate(logEntry.colony);
+      // logEntry.skillId >> 128 gives us the chain Id. It's 0 if it's on the mining chain, but that's expected by
+      // the function.
+      (numerator, denominator) = IColonyNetwork(colonyNetworkAddress).getColonyReputationDecayRate(logEntry.skillId >> 128, logEntry.colony);
       require(uint256(_disagreeStateReputationValue) == (uint256(_agreeStateReputationValue)*numerator)/denominator, "colony-reputation-mining-decay-incorrect");
     } else {
       if (logEntry.amount >= 0) {

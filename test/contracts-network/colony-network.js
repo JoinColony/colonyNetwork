@@ -495,6 +495,12 @@ contract("Colony Network", (accounts) => {
     });
   });
 
+  describe("decay rate functions", () => {
+    it("should NOT be able call setColonyReputationDecayRate if not a colony", async () => {
+      await checkErrorRevert(colonyNetwork.setColonyReputationDecayRate(1, 1), "colony-caller-must-be-colony");
+    });
+  });
+
   describe("when managing ENS names", () => {
     const orbitDBAddress = "QmPFtHi3cmfZerxtH9ySLdzpg1yFhocYDZgEZywdUXHxFU/my-db-name";
     let ensRegistry;
