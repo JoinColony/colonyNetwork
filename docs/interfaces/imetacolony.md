@@ -73,7 +73,7 @@ Mints CLNY in the Meta Colony and transfers them to the colony network. Only all
 |_wad|uint256|Amount to mint and transfer to the colony network
 
 
-### ▸ `setBridgeData(address _bridgeAddress, uint256 _chainId, uint256 _gas, bytes memory _updateLogBefore, bytes memory _updateLogAfter, bytes memory _skillCreationBefore, bytes memory _skillCreationAfter, bytes memory _setReputationRootHashBefore, bytes memory _setReputationRootHashAfter)`
+### ▸ `setBridgeData(address _bridgeAddress, uint256 _chainId, uint256 _gas, bytes memory _updateLogBefore, bytes memory _updateLogAfter, bytes memory _skillCreationBefore, bytes memory _skillCreationAfter, bytes memory _setReputationRootHashBefore, bytes memory _setReputationRootHashAfter, bytes memory _setColonyDecayRateBefore, bytes memory _setColonyDecayRateAfter)`
 
 Called to set the details about bridge _bridgeAddress
 
@@ -91,6 +91,8 @@ Called to set the details about bridge _bridgeAddress
 |_skillCreationAfter|bytes|The tx data after the dynamic part of the tx to bridge skill creation
 |_setReputationRootHashBefore|bytes|The tx data before the dynamic part of the tx to bridge a new reputation root hash
 |_setReputationRootHashAfter|bytes|The tx data after the dynamic part of the tx to bridge a new reputation root hash
+|_setColonyDecayRateBefore|bytes|The tx data before the dynamic part of the tx to set a colony's reputation decay rate
+|_setColonyDecayRateAfter|bytes|The tx data after the dynamic part of the tx to set a colony's reputation decay rate
 
 
 ### ▸ `setNetworkFeeInverse(uint256 _feeInverse)`

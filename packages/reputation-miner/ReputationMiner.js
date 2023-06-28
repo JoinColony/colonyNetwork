@@ -367,8 +367,9 @@ class ReputationMiner {
 
       try {
         const keyElements = ReputationMiner.breakKeyInToElements(key);
-        const [colonyAddress, ,] = keyElements;
-        const colonyDecay = await this.colonyNetwork.getColonyReputationDecayRate(colonyAddress, { blockTag: blockNumber });
+        const [colonyAddress, skillId,] = keyElements;
+        const chainId = ethers.BigNumber.from(skillId).div(ethers.BigNumber.from(2).pow(128));
+        const colonyDecay = await this.colonyNetwork.getColonyReputationDecayRate(chainId, colonyAddress, { blockTag: blockNumber });
         numerator = colonyDecay.numerator;
         denominator = colonyDecay.denominator;
       } catch (err) {

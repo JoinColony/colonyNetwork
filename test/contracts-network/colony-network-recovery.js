@@ -196,6 +196,7 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.bridgePendingReputationUpdate(ADDRESS_ZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.addReputationUpdateLogFromBridge(ADDRESS_ZERO, ADDRESS_ZERO, 0, 0, 0), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.addPendingReputationUpdate(0, ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setColonyReputationDecayRate(1, 1), "colony-in-recovery-mode");
 
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();

@@ -542,7 +542,7 @@ Get the number of colonies in the network.
 |---|---|---|
 |_count|uint256|The colony count
 
-### ▸ `getColonyReputationDecayRate(address _colony):uint256 numerator, uint256 denominator`
+### ▸ `getColonyReputationDecayRate(uint256 _chainId, address _colony):uint256 numerator, uint256 denominator`
 
 Called to get the rate at which reputation in a colony decays
 
@@ -551,6 +551,7 @@ Called to get the rate at which reputation in a colony decays
 
 |Name|Type|Description|
 |---|---|---|
+|_chainId|uint256|The chainId the colony is deployed on
 |_colony|address|The address of the colony in question
 
 **Return Parameters**
@@ -1097,7 +1098,7 @@ Used to track that a user is eligible to claim a reward
 |_amount|uint256|The amount of CLNY to be awarded
 
 
-### ▸ `setBridgeData(address _bridgeAddress, uint256 _chainId, uint256 _gas, bytes memory _updateLogBefore, bytes memory _updateLogAfter, bytes memory _skillCreationBefore, bytes memory _skillCreationAfter, bytes memory _setReputationRootHashBefore, bytes memory _setReputationRootHashAfter)`
+### ▸ `setBridgeData(address _bridgeAddress, uint256 _chainId, uint256 _gas, bytes memory _updateLogBefore, bytes memory _updateLogAfter, bytes memory _skillCreationBefore, bytes memory _skillCreationAfter, bytes memory _setReputationRootHashBefore, bytes memory _setReputationRootHashAfter, bytes memory _setColonyDecayRateBefore, bytes memory _setColonyDecayRateAfter)`
 
 Called to set the details about bridge _bridgeAddress
 
@@ -1115,6 +1116,8 @@ Called to set the details about bridge _bridgeAddress
 |_skillCreationAfter|bytes|The tx data after the dynamic part of the tx to brdige skill creation
 |_setReputationRootHashBefore|bytes|The tx data before the dynamic part of the tx to bridge a new reputation root hash
 |_setReputationRootHashAfter|bytes|The tx data after the dynamic part of the tx to bridge a new reputation root hash
+|_setColonyDecayRateBefore|bytes|The tx data before the dynamic part of the tx to set a colony's reputation decay rate
+|_setColonyDecayRateAfter|bytes|The tx data after the dynamic part of the tx to set a colony's reputation decay rate
 
 
 ### ▸ `setColonyReputationDecayRate(uint256 _numerator, uint256 _denominator)`
@@ -1126,6 +1129,20 @@ Called by a colony to set the rate at which reputation in that colony decays
 
 |Name|Type|Description|
 |---|---|---|
+|_numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|_denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
+
+
+### ▸ `setColonyReputationDecayRateFromBridge(address _colony, uint256 _numerator, uint256 _denominator)`
+
+Called by a bridge to set the rate at which reputation in a colony on the chain corresponding to that bridge decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colony|address|The colony on the chain in question
 |_numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
 |_denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
 

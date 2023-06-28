@@ -226,7 +226,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     bytes memory _skillCreationBefore,
     bytes memory _skillCreationAfter,
     bytes memory _setReputationRootHashBefore,
-    bytes memory _setReputationRootHashAfter
+    bytes memory _setReputationRootHashAfter,
+    bytes memory _setColonyDecayRateBefore,
+    bytes memory _setColonyDecayRateAfter
   )
     external
     stoppable
@@ -241,7 +243,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
       _skillCreationBefore,
       _skillCreationAfter,
       _setReputationRootHashBefore,
-      _setReputationRootHashAfter
+      _setReputationRootHashAfter,
+      _setColonyDecayRateBefore,
+      _setColonyDecayRateAfter
     );
   }
 
@@ -346,7 +350,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("setBridgeData(address,uint256,uint256,bytes,bytes,bytes,bytes,bytes,bytes)"));
+    sig = bytes4(keccak256("setBridgeData(address,uint256,uint256,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
     sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
