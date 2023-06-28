@@ -80,6 +80,8 @@ interface IMetaColony is IColony {
   /// @param _skillCreationAfter The tx data after the dynamic part of the tx to brdige skill creation
   /// @param _setReputationRootHashBefore The tx data before the dynamic part of the tx to bridge a new reputation root hash
   /// @param _setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
+  /// @param _setColonyDecayRateBefore The tx data before the dynamic part of the tx to set a colony's reputation decay rate
+  /// @param _setColonyDecayRateAfter The tx data after the dynamic part of the tx to set a colony's reputation decay rate
   function setBridgeData(
     address _bridgeAddress,
     uint256 _chainId,
@@ -89,6 +91,8 @@ interface IMetaColony is IColony {
     bytes memory _skillCreationBefore,
     bytes memory _skillCreationAfter,
     bytes memory _setReputationRootHashBefore,
-    bytes memory _setReputationRootHashAfter
+    bytes memory _setReputationRootHashAfter,
+    bytes memory _setColonyDecayRateBefore,
+    bytes memory _setColonyDecayRateAfter
   ) external;
 }

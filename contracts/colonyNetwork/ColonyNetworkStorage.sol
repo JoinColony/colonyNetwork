@@ -125,7 +125,9 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   // networkId -> colonyAddress -> updateCount -> update
   mapping(uint256 => mapping( address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 48
 
-  mapping(address => ColonyDecayRate) colonyDecayRates; // Storage slot 49
+  // networkId -> colonyAddress -> reputation decay rate
+  // Note that a network Id of 0 here indicates the mining chain
+  mapping(uint256 => mapping(address => ColonyDecayRate)) colonyDecayRates; // Storage slot 49
 
   // Modifiers
 

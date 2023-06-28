@@ -244,6 +244,7 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.finalizeRewardPayout(1), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.executeTaskChange([], [], [], [], 0, HASHZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setTaskManagerRole(0, ADDRESS_ZERO, 0, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.setReputationDecayRate(1, 1), "colony-in-recovery-mode");
     });
 
     it("recovery functions should be permissioned", async () => {
