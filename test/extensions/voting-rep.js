@@ -1922,6 +1922,24 @@ contract("Voting Reputation", (accounts) => {
       expect(await colony.getExpenditureSlotPayout(expenditureId, 0, token.address)).to.eq.BN(WAD);
       expect(await colony.getExpenditureSlotPayout(expenditureId, 1, token.address)).to.eq.BN(WAD);
     });
+
+    it("invalid multicall actions cannot have motions created", async () => {
+      const setExpenditurePayoutSig = "setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)";
+
+      await colony.makeExpenditure(1, 0, 2);
+      const expenditureId1 = await colony.getExpenditureCount();
+      await colony.makeExpenditure(1, 0, 2);
+      const expenditureId2 = await colony.getExpenditureCount();
+
+      const action2 = await encodeTxData(colony, setExpenditurePayoutSig, [1, 0, expenditureId2, 0, token.address, WAD]);
+      const action1 = await encodeTxData(colony, setExpenditurePayoutSig, [1, 0, expenditureId1, 1, token.address, WAD]);
+      const multicall = await encodeTxData(colony, "multicall", [[action1, action2]]);
+
+      await checkErrorRevert(
+        voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, multicall, domain2Key, domain2Value, domain2Mask, domain2Siblings),
+        "voting-rep-invalid-multicall"
+      );
+    });
   });
 
   describe("via metatransactions", async () => {

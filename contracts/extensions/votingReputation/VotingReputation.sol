@@ -91,6 +91,11 @@ contract VotingReputation is VotingReputationStorage {
     ActionSummary memory actionSummary = getActionSummary(_action, target);
 
     require(actionSummary.sig != OLD_MOVE_FUNDS, "voting-rep-disallowed-function");
+    require(
+      actionSummary.domainSkillId != type(uint256).max &&
+      actionSummary.expenditureId != type(uint256).max,
+      "voting-rep-invalid-multicall"
+    );
 
     if (actionSummary.sig == NO_ACTION) {
       // For the special no-op action, we hold the vote the provided domain
