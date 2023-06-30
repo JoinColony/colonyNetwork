@@ -57,6 +57,7 @@ contract PatriciaTreeProofs {
     } else {
       uint lowestBitSet = branchMask.lowestBitSet();
       (k, e.label) = k.splitAt(255 - lowestBitSet);
+      // slither-disable-next-line unused-return
       (, e.label) = e.label.chopFirstBit();
     }
     return (e.edgeHash(), edgeHashes);

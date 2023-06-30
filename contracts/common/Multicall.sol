@@ -23,6 +23,10 @@ abstract contract Multicall is MetaTransactionMsgSender {
         results = new bytes[](data.length);
         for (uint256 i; i < data.length; i++) {
             require(bytes4(data[i]) != multicallSig, "colony-multicall-cannot-multicall");
+            // Slither is technically right here, but only one is (fully) under the user's control, and I
+            // don't think this type of pattern is exploitable here, anyway (because we're not hashing the
+            // result and using it to verify something).
+            // slither-disable-next-line encode-packed-collision
             (bool success, bytes memory result) = address(this).delegatecall(abi.encodePacked(data[i], affix));
 
             if (!success) {
