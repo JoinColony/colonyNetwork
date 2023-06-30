@@ -24,6 +24,13 @@ class MockBridgeMonitor {
 
     this.skipped = [];
 
+    this.getPromiseForNextBridgedTransaction = (_count = 1) => {
+      return new Promise((resolve) => {
+        this.bridgingPromiseCount = _count;
+        this.resolveBridgingPromise = resolve;
+      });
+    };
+
     homeBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
       if (this.skipCount > 0) {
         this.skipCount -= 1;
@@ -31,11 +38,17 @@ class MockBridgeMonitor {
         return;
       }
       const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
-      await foreignBridge.execute(target, data, gasLimit, messageId, sender);
+      const tx = await foreignBridge.execute(target, data, gasLimit, messageId, sender);
+      await tx.wait();
       console.log("seen on home bridge");
+      this.bridgingPromiseCount -= 1;
+      if (this.bridgingPromiseCount === 0) {
+        this.resolveBridgingPromise();
+      }
     });
 
     foreignBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
+      console.log("seeen UserRequestForSignature with messageId", messageId);
       if (this.skipCount > 0) {
         this.skipCount -= 1;
         this.skipped.push([homeBridge, messageId, encodedData]);
@@ -57,6 +70,10 @@ class MockBridgeMonitor {
       }
       console.log("seen on foreign bridge");
       console.log("bridging transaction on home chain", tx.hash);
+      this.bridgingPromiseCount -= 1;
+      if (this.bridgingPromiseCount === 0) {
+        this.resolveBridgingPromise();
+      }
     });
 
     console.log("Mock Bridge Monitor running");
@@ -72,6 +89,11 @@ class MockBridgeMonitor {
     const tx = await bridge.execute(target, data, gasLimit, messageId, sender);
     await tx.wait();
     console.log("bridged pending request");
+    this.bridgingPromiseCount -= 1;
+
+    if (this.bridgingPromiseCount === 0) {
+      this.resolveBridgingPromise();
+    }
   }
 
   reset() {
