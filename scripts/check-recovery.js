@@ -91,6 +91,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/TransferTest.sol",
       "contracts/testHelpers/RequireExecuteCall.sol",
       "contracts/testHelpers/VotingReputationMisaligned.sol",
+      "contracts/testHelpers/VotingReputationV9.sol",
       "contracts/testHelpers/ZodiacBridgeModuleMock.sol",
       "contracts/tokenLocking/ITokenLocking.sol",
       "contracts/tokenLocking/TokenLocking.sol",
