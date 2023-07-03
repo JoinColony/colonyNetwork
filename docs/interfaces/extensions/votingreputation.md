@@ -360,7 +360,7 @@ Get the voter reward fraction
 
 ### ▸ `getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress):uint256 _rewardMin, uint256 _rewardMax`
 
-Get the range of potential rewards for a voter on a specific motion, intended to be used when the motion is in the reveal state. Once a motion is in the reveal state the reward is known, and getVoterRewardRange should be used.
+Get the range of potential rewards for a voter on a specific motion, intended to be used when the motion is in the reveal state. Once a motion is in the reveal state and the reward is known, getVoterReward should be used.
 
 
 **Parameters**
