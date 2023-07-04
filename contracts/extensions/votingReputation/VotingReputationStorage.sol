@@ -100,6 +100,8 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
   mapping (uint256 => uint256) expenditurePastVotes; // expenditureId => voting power
   mapping (uint256 => uint256) expenditureMotionLocks; // expenditureId => active motionId
 
+  uint256 motionCountV10; // Motion count during the v9 -> v10 upgrade
+
   function getMetatransactionNonce(address _userAddress) override public view returns (uint256 _nonce){
     // This offset is a result of fixing the storage layout, and having to prevent metatransactions being able to be replayed as a result
     // of the nonce resetting. The broadcaster has made ~3000 transactions in total at time of commit, so we definitely won't have a single
@@ -138,7 +140,8 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
   }
 
   function finishUpgrade() public override auth {
-  } // solhint-disable-line no-empty-blocks
+    motionCountV10 = motionCount;
+  }
 
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
@@ -175,10 +178,10 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
         return MotionState.Staking;
       // If not, did the YAY side stake?
       } else if (motion.stakes[YAY] == requiredStake) {
-        return finalizableOrFinalized(motion.action);
+        return finalizableOrFinalized(_motionId);
       // If not, was there a prior vote we can fall back on?
       } else if (motion.votes[NAY] + motion.votes[YAY] > 0) {
-        return finalizableOrFinalized(motion.action);
+        return finalizableOrFinalized(_motionId);
       // Otherwise, the motion failed
       } else {
         return MotionState.Failed;
@@ -197,17 +200,24 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
       ) {
         return MotionState.Closed;
       } else {
-        return finalizableOrFinalized(motion.action);
+        return finalizableOrFinalized(_motionId);
       }
     }
   }
 
   // If we decide that the motion is finalizable, we might actually want it to
   //  report as finalized if it's a no-action motion.
-  function finalizableOrFinalized(bytes memory action) internal pure returns (MotionState) {
-    bytes4 sig;
-    assembly { sig := mload(add(action, 0x20)) }
-    return sig == NO_ACTION ? MotionState.Finalized : MotionState.Finalizable;
+  function finalizableOrFinalized(uint256 _motionId) internal view returns (MotionState) {
+    Motion storage motion = motions[_motionId];
+    if (motion.sig == NO_ACTION || getSig(motion.action) == NO_ACTION) {
+      return MotionState.Finalized;
+    } else if (motion.sig == bytes4(0x0) && getSig(motion.action) == MULTICALL) {
+      // (Inefficiently) handle the potential case of a v9 motion
+      ActionSummary memory actionSummary = getActionSummary(motion.action, getTarget(motion.altTarget));
+      return actionSummary.sig == NO_ACTION ? MotionState.Finalized : MotionState.Finalizable;
+    } else {
+      return MotionState.Finalizable;
+    }
   }
 
   // Internal functions
@@ -234,6 +244,87 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     }
   }
 
+function getActionSummary(bytes memory action, address target) public view returns (ActionSummary memory) {
+    bytes[] memory actions;
+
+    if (getSig(action) == MULTICALL) {
+      actions = abi.decode(extractCalldata(action), (bytes[]));
+    } else {
+      actions = new bytes[](1); actions[0] = action;
+    }
+
+    ActionSummary memory summary;
+    bytes4 sig;
+    uint256 expenditureId;
+    uint256 domainSkillId;
+
+    for (uint256 i; i < actions.length; i++) {
+      sig = getSig(actions[i]);
+
+      if (sig == NO_ACTION || sig == OLD_MOVE_FUNDS) {
+        // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS, the entire multicall is such and we break
+        return ActionSummary({ sig: sig, domainSkillId: 0, expenditureId: 0 });
+
+      } else if (isExpenditureSig(sig)) {
+        // If it is an expenditure action, we record the expenditure and domain ids,
+        //  and ensure they are consistent throughout the multicall.
+        //  If not, we return UINT256_MAX which represents an invalid multicall
+        summary.sig = sig;
+        domainSkillId = getActionDomainSkillId(actions[i]);
+        expenditureId = getExpenditureId(actions[i]);
+
+        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
+          // Invalid multicall, caller should error
+          return ActionSummary({ sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0 });
+        } else {
+          summary.domainSkillId = domainSkillId;
+        }
+
+        if (summary.expenditureId > 0 && summary.expenditureId != expenditureId) {
+          // Invalid multicall, caller should error
+          return ActionSummary({ sig: bytes4(0x0), domainSkillId: 0, expenditureId: type(uint256).max });
+        } else {
+          summary.expenditureId = expenditureId;
+        }
+
+      } else {
+        // Otherwise we record the domain id and ensure it is consistent throughout the multicall
+        // If no expenditure signatures have been seen, we record the latest signature
+        if (ColonyRoles(target).getCapabilityRoles(sig) | ROOT_ROLES == ROOT_ROLES) {
+          domainSkillId = colony.getDomain(1).skillId;
+        } else {
+          domainSkillId = getActionDomainSkillId(actions[i]);
+        }
+
+        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
+          // Invalid multicall, caller should error
+          return ActionSummary({ sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0 });
+        } else {
+          summary.domainSkillId = domainSkillId;
+        }
+
+        if (!isExpenditureSig(summary.sig)) {
+          summary.sig = sig;
+        }
+      }
+    }
+
+    return summary;
+  }
+
+  function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
+    uint256 permissionDomainId;
+    uint256 childSkillIndex;
+
+    assembly {
+      permissionDomainId := mload(add(_action, 0x24))
+      childSkillIndex := mload(add(_action, 0x44))
+    }
+
+    uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
+    return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
+  }
+
   function getExpenditureId(bytes memory action) internal pure returns (uint256 expenditureId) {
     bytes4 sig = getSig(action);
     assert(isExpenditureSig(sig));
@@ -245,12 +336,13 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
   function getExpenditureAction(bytes memory action) internal view returns (bytes memory) {
     if (getSig(action) == MULTICALL) {
-     bytes[] memory actions = abi.decode(extractCalldata(action), (bytes[]));
-     for (uint256 i; i < actions.length; i++) {
-       if (isExpenditureSig(getSig(actions[i]))) {
-         return actions[i];
-       }
-     }
+      bytes[] memory actions = abi.decode(extractCalldata(action), (bytes[]));
+      for (uint256 i; i < actions.length; i++) {
+        if (isExpenditureSig(getSig(actions[i]))) {
+          return actions[i];
+        }
+      }
+      revert("voting-rep-invalid-action");
     } else {
       return action;
     }

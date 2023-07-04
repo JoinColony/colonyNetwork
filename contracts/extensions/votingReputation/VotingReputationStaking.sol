@@ -42,6 +42,7 @@ contract VotingReputationStaking is VotingReputationStorage {
     public
   {
     Motion storage motion = motions[_motionId];
+
     require(_vote <= 1, "voting-rep-bad-vote");
     require(getMotionState(_motionId) == MotionState.Staking, "voting-rep-motion-not-staking");
 
@@ -70,9 +71,12 @@ contract VotingReputationStaking is VotingReputationStorage {
       _vote == YAY &&
       !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
-      isExpenditureSig(motion.sig) &&
-      motion.altTarget == address(0x0)
+      motion.altTarget == address(0x0) &&
+      ((_motionId > motionCountV10)
+        ? isExpenditureSig(motion.sig)
+        : isExpenditureSig(getActionSummary(motion.action, getTarget(motion.altTarget)).sig))
     ) {
+      require(_motionId > motionCountV10, "voting-rep-invalid-motion");
       lockExpenditure(_motionId);
     }
 

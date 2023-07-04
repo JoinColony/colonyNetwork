@@ -1940,6 +1940,20 @@ contract("Voting Reputation", (accounts) => {
         "voting-rep-invalid-multicall"
       );
     });
+
+    it("multicall actions involving NO_ACTION cannot be finalizable", async () => {
+      const multicall = await encodeTxData(colony, "multicall", [["0x12345678"]]); // NO_ACTION inside the multicall
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      const motionState = await voting.getMotionState(motionId);
+      expect(motionState).to.eq.BN(FINALIZED);
+    });
   });
 
   describe("via metatransactions", async () => {
@@ -2777,6 +2791,43 @@ contract("Voting Reputation", (accounts) => {
 
       // Once motion is finalized, a new motion can be created for that expenditure
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+    });
+
+    it("cannot stake an expenditure-based motion created before the upgrade", async () => {
+      await colony.uninstallExtension(VOTING_REPUTATION);
+      await colony.installExtension(VOTING_REPUTATION, 9);
+
+      const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
+      voting = await IVotingReputation.at(votingAddress);
+
+      await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
+
+      await voting.initialise(
+        TOTAL_STAKE_FRACTION,
+        0, // No voter compensation
+        USER_MIN_STAKE_FRACTION,
+        MAX_VOTE_FRACTION,
+        STAKE_PERIOD,
+        SUBMIT_PERIOD,
+        REVEAL_PERIOD,
+        ESCALATION_PERIOD
+      );
+
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      // Set finalizedTimestamp to WAD
+      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+
+      await checkErrorRevert(
+        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-invalid-motion"
+      );
     });
   });
 });

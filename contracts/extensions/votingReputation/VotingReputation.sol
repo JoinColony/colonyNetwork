@@ -266,9 +266,10 @@ contract VotingReputation is VotingReputationStorage {
       motion.votes[NAY] < motion.votes[YAY]
     );
 
-    if (motion.sig == bytes4(0)) { // Backwards compatibility for versions 9 and below
-      bytes memory action = getExpenditureAction(motion.action);
-      if (isExpenditureSig(getSig(action)) && getTarget(motion.altTarget) == address(colony)) {
+    if (_motionId <= motionCountV10) { // Backwards compatibility for versions 9 and below
+      ActionSummary memory actionSummary = getActionSummary(motion.action, getTarget(motion.altTarget));
+      if (isExpenditureSig(actionSummary.sig) && getTarget(motion.altTarget) == address(colony)) {
+        bytes memory action = getExpenditureAction(motion.action);
         uint256 expenditureId = unlockExpenditure(_motionId);
         uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
           motion.votes[YAY] : motion.stakes[YAY];
@@ -412,88 +413,12 @@ contract VotingReputation is VotingReputationStorage {
 
   // Internal
 
-function getActionSummary(bytes memory action, address target) public view returns (ActionSummary memory) {
-    bytes[] memory actions;
-
-    if (getSig(action) == MULTICALL) {
-      actions = abi.decode(extractCalldata(action), (bytes[]));
-    } else {
-      actions = new bytes[](1); actions[0] = action;
-    }
-
-    ActionSummary memory summary;
-    bytes4 sig;
-    uint256 expenditureId;
-    uint256 domainSkillId;
-
-    for (uint256 i; i < actions.length; i++) {
-      sig = getSig(actions[i]);
-
-      if (sig == NO_ACTION || sig == OLD_MOVE_FUNDS) {
-        // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS, the entire multicall is such and we break
-        summary.sig = sig;
-        break;
-      } else if (isExpenditureSig(sig)) {
-        // If it is an expenditure action, we record the expenditure and domain ids,
-        //  and ensure they are consistent throughout the multicall.
-        //  If not, we return UINT256_MAX which represents an invalid multicall
-        summary.sig = sig;
-        domainSkillId = getActionDomainSkillId(actions[i]);
-        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
-          summary.domainSkillId = type(uint256).max; // Invalid multicall, caller should error
-          break;
-        } else {
-          summary.domainSkillId = domainSkillId;
-        }
-        expenditureId = getExpenditureId(actions[i]);
-        if (summary.expenditureId > 0 && summary.expenditureId != expenditureId) {
-          summary.expenditureId = type(uint256).max; // Invalid multicall, caller should error
-          break;
-        } else {
-          summary.expenditureId = expenditureId;
-        }
-      } else {
-        // Otherwise we record the domain id and ensure it is consistent throughout the multicall
-        // If no expenditure signatures have been seen, we record the latest signature
-        if (ColonyRoles(target).getCapabilityRoles(sig) | ROOT_ROLES == ROOT_ROLES) {
-          domainSkillId = colony.getDomain(1).skillId;
-        } else {
-          domainSkillId = getActionDomainSkillId(actions[i]);
-        }
-        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
-          summary.domainSkillId = type(uint256).max; // Invalid multicall, caller should errorl
-          break;
-        } else {
-          summary.domainSkillId = domainSkillId;
-        }
-        if (!isExpenditureSig(summary.sig)) {
-          summary.sig = sig;
-        }
-      }
-    }
-
-    return summary;
-  }
-
-  function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
-    uint256 permissionDomainId;
-    uint256 childSkillIndex;
-
-    assembly {
-      permissionDomainId := mload(add(_action, 0x24))
-      childSkillIndex := mload(add(_action, 0x44))
-    }
-
-    uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
-    return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
-  }
-
   function unlockExpenditure(uint256 _motionId) internal returns (uint256) {
     Motion storage motion = motions[_motionId];
     bytes memory action = getExpenditureAction(motion.action);
     uint256 expenditureId = getExpenditureId(action);
 
-    if (motion.sig == bytes4(0)) { // Backwards compatibility for versions 9 and below
+    if (_motionId <= motionCountV10) { // Backwards compatibility for versions 9 and below
       bytes32 structHash = getExpenditureStructHash(action);
       expenditureMotionCounts_DEPRECATED[structHash]--;
 
