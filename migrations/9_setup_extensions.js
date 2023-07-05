@@ -6,17 +6,18 @@ const { setupEtherRouter } = require("../helpers/upgradable-contracts");
 
 const CoinMachine = artifacts.require("./CoinMachine");
 const EvaluatedExpenditure = artifacts.require("./EvaluatedExpenditure");
-const StakedExpenditure = artifacts.require("./StakedExpenditure");
 const FundingQueue = artifacts.require("./FundingQueue");
+const MultisigPermissions = artifacts.require("./MultisigPermissions");
 const OneTxPayment = artifacts.require("./OneTxPayment");
 const ReputationBootstrapper = artifacts.require("./ReputationBootstrapper");
+const StagedExpenditure = artifacts.require("./StagedExpenditure");
+const StakedExpenditure = artifacts.require("./StakedExpenditure");
 const StreamingPayments = artifacts.require("./StreamingPayments");
 const VotingReputation = artifacts.require("./VotingReputation");
 const VotingReputationStaking = artifacts.require("./VotingReputationStaking");
 const VotingReputationMisalignedRecovery = artifacts.require("./VotingReputationMisalignedRecovery");
 const TokenSupplier = artifacts.require("./TokenSupplier");
 const Whitelist = artifacts.require("./Whitelist");
-const StagedExpenditure = artifacts.require("./StagedExpenditure");
 
 const Resolver = artifacts.require("./Resolver");
 const EtherRouter = artifacts.require("./EtherRouter");
@@ -48,8 +49,10 @@ module.exports = async function (deployer, network, accounts) {
   await addExtension(colonyNetwork, "CoinMachine", "CoinMachine", [CoinMachine]);
   await addExtension(colonyNetwork, "EvaluatedExpenditure", "EvaluatedExpenditure", [EvaluatedExpenditure]);
   await addExtension(colonyNetwork, "FundingQueue", "FundingQueue", [FundingQueue]);
+  await addExtension(colonyNetwork, "MultisigPermissions", "MultisigPermissions", [MultisigPermissions]);
   await addExtension(colonyNetwork, "OneTxPayment", "OneTxPayment", [OneTxPayment]);
   await addExtension(colonyNetwork, "ReputationBootstrapper", "ReputationBootstrapper", [ReputationBootstrapper]);
+  await addExtension(colonyNetwork, "StagedExpenditure", "StagedExpenditure", [StagedExpenditure]);
   await addExtension(colonyNetwork, "StakedExpenditure", "StakedExpenditure", [StakedExpenditure]);
   await addExtension(colonyNetwork, "StreamingPayments", "StreamingPayments", [StreamingPayments]);
   await addExtension(colonyNetwork, "TokenSupplier", "TokenSupplier", [TokenSupplier]);
@@ -59,5 +62,4 @@ module.exports = async function (deployer, network, accounts) {
     VotingReputationMisalignedRecovery,
   ]);
   await addExtension(colonyNetwork, "Whitelist", "Whitelist", [Whitelist]);
-  await addExtension(colonyNetwork, "StagedExpenditure", "StagedExpenditure", [StagedExpenditure]);
 };
