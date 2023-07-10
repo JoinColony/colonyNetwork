@@ -52,6 +52,14 @@ contract VotingReputationStaking is VotingReputationStorage {
 
     uint256 stakerTotalAmount = stakes[_motionId][msgSender()][_vote] + amount;
 
+    // For v9 expenditure motions, only allow counterstaking
+    if (
+      _motionId <= motionCountV10 &&
+      isExpenditureSig(getActionSummary(motion.action, getTarget(motion.altTarget)).sig)
+    ) {
+      require(motion.stakes[YAY] == requiredStake && _vote == NAY, "voting-rep-invalid-stake");
+    }
+
     require(
       stakerTotalAmount <= checkReputation(motion.rootHash, motion.skillId, msgSender(), _key, _value, _branchMask, _siblings),
       "voting-rep-insufficient-rep"
@@ -72,11 +80,8 @@ contract VotingReputationStaking is VotingReputationStorage {
       !motion.escalated &&
       motion.stakes[YAY] == requiredStake &&
       motion.altTarget == address(0x0) &&
-      ((_motionId > motionCountV10)
-        ? isExpenditureSig(motion.sig)
-        : isExpenditureSig(getActionSummary(motion.action, getTarget(motion.altTarget)).sig))
+      isExpenditureSig(motion.sig)
     ) {
-      require(_motionId > motionCountV10, "voting-rep-invalid-motion");
       lockExpenditure(_motionId);
     }
 

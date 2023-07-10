@@ -211,10 +211,16 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     Motion storage motion = motions[_motionId];
     if (motion.sig == NO_ACTION || getSig(motion.action) == NO_ACTION) {
       return MotionState.Finalized;
-    } else if (motion.sig == bytes4(0x0) && getSig(motion.action) == MULTICALL) {
-      // (Inefficiently) handle the potential case of a v9 motion
+    } else if (_motionId <= motionCountV10 && getSig(motion.action) == MULTICALL) {
+      // (Inefficiently) handle the potential case of a v9 motion:
+      //  Return `Finalized` if either NO_ACTION or OLD_MOVE_FUNDS or invalid multicall
       ActionSummary memory actionSummary = getActionSummary(motion.action, getTarget(motion.altTarget));
-      return actionSummary.sig == NO_ACTION ? MotionState.Finalized : MotionState.Finalizable;
+      return (
+        actionSummary.sig == NO_ACTION ||
+        actionSummary.sig == OLD_MOVE_FUNDS ||
+        actionSummary.domainSkillId == type(uint256).max ||
+        actionSummary.expenditureId == type(uint256).max
+      ) ? MotionState.Finalized : MotionState.Finalizable;
     } else {
       return MotionState.Finalizable;
     }
