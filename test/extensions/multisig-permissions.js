@@ -5,11 +5,20 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD, ROOT_ROLE, ARBITRATION_ROLE, ARCHITECTURE_ROLE, FUNDING_ROLE } = require("../../helpers/constants");
+const {
+  UINT256_MAX,
+  WAD,
+  ROOT_ROLE,
+  ARBITRATION_ROLE,
+  ARCHITECTURE_ROLE,
+  FUNDING_ROLE,
+  ADMINISTRATION_ROLE,
+  INITIAL_FUNDING,
+} = require("../../helpers/constants");
 
-const { checkErrorRevert, web3GetCode, encodeTxData, expectEvent, forwardTime } = require("../../helpers/test-helper");
+const { checkErrorRevert, web3GetCode, encodeTxData, expectEvent, forwardTime, rolesToBytes32 } = require("../../helpers/test-helper");
 
-const { setupRandomColony } = require("../../helpers/test-data-generator");
+const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -17,8 +26,10 @@ chai.use(bnChai(web3.utils.BN));
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const MultisigPermissions = artifacts.require("MultisigPermissions");
+const OneTxPayment = artifacts.require("OneTxPayment");
 
 const MULTISIG_PERMISSIONS = soliditySha3("MultisigPermissions");
+const ONE_TX_PAYMENT = soliditySha3("OneTxPayment");
 
 contract("Multisig Permissions", (accounts) => {
   let colony;
@@ -38,7 +49,7 @@ contract("Multisig Permissions", (accounts) => {
   const USER6 = accounts[6];
 
   const giveUserMultisigRoot = async function (contract, address) {
-    return contract.setUserRoles(1, UINT256_MAX, address, 1, ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ROOT_ROLE).toHexString(), 32));
+    return contract.setUserRoles(1, UINT256_MAX, address, 1, rolesToBytes32([ROOT_ROLE]));
   };
 
   before(async () => {
@@ -68,13 +79,7 @@ contract("Multisig Permissions", (accounts) => {
     await colony.setArbitrationRole(1, UINT256_MAX, multisigPermissions.address, 1, true);
     await colony.setAdministrationRole(1, UINT256_MAX, multisigPermissions.address, 1, true);
 
-    await await multisigPermissions.setUserRoles(
-      1,
-      UINT256_MAX,
-      USER1,
-      1,
-      ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ROOT_ROLE).toHexString(), 32)
-    );
+    await multisigPermissions.setUserRoles(1, UINT256_MAX, USER1, 1, rolesToBytes32([ROOT_ROLE]));
     await giveUserMultisigRoot(multisigPermissions, USER0);
     await giveUserMultisigRoot(multisigPermissions, USER1);
   });
@@ -195,30 +200,12 @@ contract("Multisig Permissions", (accounts) => {
     });
 
     it("can't propose an action requiring the same permissions for multiple actions, but in different domains, even via multicall", async () => {
-      await multisigPermissions.setUserRoles(
-        1,
-        UINT256_MAX,
-        USER2,
-        1,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ARCHITECTURE_ROLE).toHexString(), 32)
-      );
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ARCHITECTURE_ROLE]));
 
       // Action to award core funding in subdomain 1
-      const action1 = await encodeTxData(colony, "setUserRoles", [
-        1,
-        0,
-        USER2,
-        2,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(FUNDING_ROLE).toHexString(), 32),
-      ]);
+      const action1 = await encodeTxData(colony, "setUserRoles", [1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE])]);
       // Action to award core funding in subdomain 1
-      const action2 = await encodeTxData(colony, "setUserRoles", [
-        1,
-        1,
-        USER2,
-        3,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(FUNDING_ROLE).toHexString(), 32),
-      ]);
+      const action2 = await encodeTxData(colony, "setUserRoles", [1, 1, USER2, 3, rolesToBytes32([FUNDING_ROLE])]);
 
       const action = await encodeTxData(colony, "multicall", [[action1, action2]]);
 
@@ -285,13 +272,7 @@ contract("Multisig Permissions", (accounts) => {
       let userRoles = await colony.getUserRoles(USER2, 1);
       expect(userRoles).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
 
-      const action = await encodeTxData(colony, "setUserRoles", [
-        1,
-        UINT256_MAX,
-        USER2,
-        1,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ROOT_ROLE).toHexString(), 32),
-      ]);
+      const action = await encodeTxData(colony, "setUserRoles", [1, UINT256_MAX, USER2, 1, rolesToBytes32([ROOT_ROLE])]);
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
 
       const motionId = await multisigPermissions.getMotionCount();
@@ -307,13 +288,7 @@ contract("Multisig Permissions", (accounts) => {
       let userRoles = await multisigPermissions.getUserRoles(USER2, 1);
       expect(userRoles).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
 
-      await multisigPermissions.setUserRoles(
-        1,
-        UINT256_MAX,
-        USER2,
-        1,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ROOT_ROLE).toHexString(), 32)
-      );
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ROOT_ROLE]));
 
       userRoles = await multisigPermissions.getUserRoles(USER2, 1);
       expect(userRoles).to.equal("0x0000000000000000000000000000000000000000000000000000000000000002");
@@ -321,44 +296,25 @@ contract("Multisig Permissions", (accounts) => {
 
     it("core architecture can award multisig funding only in subdomains", async () => {
       // Give user 2 core architecture
-      await colony.setUserRoles(1, UINT256_MAX, USER2, 1, ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ARCHITECTURE_ROLE).toHexString(), 32));
+      await colony.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ARCHITECTURE_ROLE]));
 
       // Try to award multisig FUNDING in root domain
       await checkErrorRevert(
-        multisigPermissions.setUserRoles(
-          1,
-          UINT256_MAX,
-          USER2,
-          1,
-          ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(FUNDING_ROLE).toHexString(), 32),
-          { from: USER2 }
-        ),
+        multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([FUNDING_ROLE]), { from: USER2 }),
         "multisig-caller-not-correct-permissions"
       );
 
       // Try to award multisig FUNDING in a child domain
-      await multisigPermissions.setUserRoles(1, 0, USER2, 2, ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(FUNDING_ROLE).toHexString(), 32), {
+      await multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE]), {
         from: USER2,
       });
     });
 
     it("multisig architecture can award core funding only in subdomains", async () => {
-      await multisigPermissions.setUserRoles(
-        1,
-        UINT256_MAX,
-        USER2,
-        1,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ARCHITECTURE_ROLE).toHexString(), 32)
-      );
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ARCHITECTURE_ROLE]));
 
       // Try to create a motion to award core funding in root
-      let action = await encodeTxData(colony, "setUserRoles", [
-        1,
-        UINT256_MAX,
-        USER2,
-        1,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(FUNDING_ROLE).toHexString(), 32),
-      ]);
+      let action = await encodeTxData(colony, "setUserRoles", [1, UINT256_MAX, USER2, 1, rolesToBytes32([FUNDING_ROLE])]);
 
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action], { from: USER2 }),
@@ -366,72 +322,35 @@ contract("Multisig Permissions", (accounts) => {
       );
 
       // Can create motions to award core funding in subdomain
-      action = await encodeTxData(colony, "setUserRoles", [
-        1,
-        0,
-        USER2,
-        2,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(FUNDING_ROLE).toHexString(), 32),
-      ]);
+      action = await encodeTxData(colony, "setUserRoles", [1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE])]);
       await multisigPermissions.createMotion(1, 0, [colony.address], [action], { from: USER2 });
     });
 
     it(`multisig architecture can create motions to award multisig funding only in subdomains,
         and cannot award those permissions directly`, async () => {
-      await multisigPermissions.setUserRoles(
-        1,
-        UINT256_MAX,
-        USER2,
-        1,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ARCHITECTURE_ROLE).toHexString(), 32)
-      );
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ARCHITECTURE_ROLE]));
 
       await checkErrorRevert(
-        multisigPermissions.setUserRoles(1, 0, USER2, 2, ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(FUNDING_ROLE).toHexString(), 32), {
+        multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE]), {
           from: USER2,
         }),
         "multisig-caller-not-correct-permissions"
       );
 
-      const action = await encodeTxData(multisigPermissions, "setUserRoles", [
-        1,
-        0,
-        USER2,
-        2,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(FUNDING_ROLE).toHexString(), 32),
-      ]);
+      const action = await encodeTxData(multisigPermissions, "setUserRoles", [1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE])]);
 
       await multisigPermissions.createMotion(1, 0, [multisigPermissions.address], [action], { from: USER2 });
     });
 
     it(`multisig root can create motions to award multisig root and cannot award those permissions directly`, async () => {
-      await multisigPermissions.setUserRoles(
-        1,
-        UINT256_MAX,
-        USER2,
-        1,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ROOT_ROLE).toHexString(), 32)
-      );
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ROOT_ROLE]));
 
       await checkErrorRevert(
-        multisigPermissions.setUserRoles(
-          1,
-          UINT256_MAX,
-          USER2,
-          1,
-          ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ROOT_ROLE).toHexString(), 32),
-          { from: USER2 }
-        ),
+        multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ROOT_ROLE]), { from: USER2 }),
         "multisig-caller-not-correct-permissions"
       );
 
-      const action = await encodeTxData(colony, "setUserRoles", [
-        1,
-        UINT256_MAX,
-        USER2,
-        1,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ROOT_ROLE).toHexString(), 32),
-      ]);
+      const action = await encodeTxData(colony, "setUserRoles", [1, UINT256_MAX, USER2, 1, rolesToBytes32([ROOT_ROLE])]);
 
       await multisigPermissions.createMotion(1, UINT256_MAX, [multisigPermissions.address], [action], { from: USER2 });
     });
@@ -496,15 +415,9 @@ contract("Multisig Permissions", (accounts) => {
 
       // Not right permissions
 
-      await multisigPermissions.setUserRoles(
-        1,
-        UINT256_MAX,
-        USER2,
-        1,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ARBITRATION_ROLE).toHexString(), 32)
-      );
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ARBITRATION_ROLE]));
       await checkErrorRevert(multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER2 }), "colony-multisig-no-permissions");
-      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, ethers.utils.hexZeroPad(ethers.BigNumber.from(0).toHexString(), 32));
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([]));
     });
 
     it("if you don't show the right permissions, you cannot approve", async () => {
@@ -654,9 +567,78 @@ contract("Multisig Permissions", (accounts) => {
       expect(userApproval).to.equal(false);
     });
 
-    it.skip("can approve if you have permissions in a parent domain, but you don't count for calculating the threshold", async () => {
+    it("can approve if you have permissions in a parent domain, but you don't count for calculating the threshold", async () => {
       const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
-      await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
+      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [colony.address], [action]), "colony-multisig-no-permissions");
+
+      // Give user0 root and admin in root domain
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER0, 1, rolesToBytes32([ROOT_ROLE, ADMINISTRATION_ROLE]));
+
+      // Give users 1,2,3 admin in the subdomain
+      await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([ADMINISTRATION_ROLE]));
+      await multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([ADMINISTRATION_ROLE]));
+      await multisigPermissions.setUserRoles(1, 0, USER3, 2, rolesToBytes32([ADMINISTRATION_ROLE]));
+
+      const domain = await colony.getDomain(2);
+
+      // That should make the threshold 2. If the admin holder in root was counted, the threshold would be three
+      const counts = await multisigPermissions.getDomainSkillRoleCounts(domain.skillId, ADMINISTRATION_ROLE);
+      expect(counts).to.eq.BN(3);
+
+      const threshold = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ADMINISTRATION_ROLE);
+      expect(threshold).to.eq.BN(2);
+    });
+
+    it("approvals on multiple permissions are tracked separately", async () => {
+      const extension = await OneTxPayment.new();
+      const oneTxPaymentVersion = await extension.version();
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const d1 = await colony.getDomain(1);
+      const d2 = await colony.getDomain(2);
+
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, d1.fundingPotId, d2.fundingPotId, WAD, token.address);
+
+      await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
+      const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
+      const oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
+
+      // Give extensions funding and administration rights
+      await colony.setUserRoles(1, UINT256_MAX, multisigPermissions.address, 1, rolesToBytes32([ROOT_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE]));
+      await colony.setUserRoles(1, UINT256_MAX, oneTxPayment.address, 1, rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]));
+
+      // Make a motion that requires two permissions
+      const action = await encodeTxData(
+        oneTxPayment,
+        "makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)",
+        [1, 0, 1, 0, [USER0], [token.address], [100], 2, 0]
+      );
+      // await oneTxPayment.makePaymentFundedFromDomain(2, UINT256_MAX, 1, 0, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID);
+
+      // If we don't have any permissions, can't create
+      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [oneTxPayment.address], [action]), "colony-multisig-no-permissions");
+
+      // Give one permission
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER0, 1, rolesToBytes32([ROOT_ROLE, ADMINISTRATION_ROLE]));
+      // Now can create
+      await multisigPermissions.createMotion(1, 0, [oneTxPayment.address], [action]);
+
+      // One meets threshold, still can't execute
+      const motionId = await multisigPermissions.getMotionCount();
+      await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-permissions-not-enough-approvals");
+
+      // Give user funding, specifically in the domain
+      await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([FUNDING_ROLE]));
+
+      // Have them approve
+      await multisigPermissions.changeApproval(motionId, 2, UINT256_MAX, true, { from: USER1 });
+
+      const balanceBefore = await token.balanceOf(USER0);
+
+      // Now both permissions meet the threshold, can execute.
+      await multisigPermissions.execute(motionId);
+      const balanceAfter = await token.balanceOf(USER0);
+
+      expect(balanceAfter.sub(balanceBefore)).to.eq.BN(98); // Accounts for network fee
     });
   });
 
