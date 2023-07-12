@@ -53,7 +53,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
   event ApprovalChanged(address agent, uint256 motionId, ColonyRole role, bool approval);
 
   bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
-  bytes4 constant SETUSERROLES = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
+  bytes4 constant SET_USER_ROLES = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
   bytes32 constant ROOT_ROLES = (
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Recovery) |
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
@@ -67,7 +67,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
   IColonyNetwork colonyNetwork;
 
   uint256 globalThreshold;
-  mapping(address=>mapping(uint256=>bytes32)) internal userDomainRoles;
+  mapping(address => mapping(uint256 => bytes32)) internal userDomainRoles;
 
   uint256 motionCount;
   mapping (uint256 => Motion) motions;
@@ -115,11 +115,8 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
   }
 
   function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32) {
-    if (_sig == SETUSERROLES) {
-      return (
-        bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Architecture) |
-        bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
-      );
+    if (_sig == SET_USER_ROLES) {
+      return ONLY_ROOT_ROLE_MASK | ONLY_ARCHITECTURE_ROLE_MASK;
     }
     return bytes32(0);
   }
@@ -140,6 +137,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
   function initialise(uint256 _globalThreshold) public {
     require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "multisig-permissions-not-core-root");
     globalThreshold = _globalThreshold;
+
     emit ExtensionInitialised();
   }
 
@@ -159,7 +157,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     uint256 domainSkillId;
     bytes32 permissions;
 
-    for (uint256 i = 0; i < motions[motionCount].data.length; i += 1) {
+    for (uint256 i = 0; i < motion.data.length; i += 1) {
       uint256 actionDomainSkillId;
       bytes32 actionRequiredPermissions;
 
@@ -183,7 +181,8 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     require(userActingInDomainWithSkillId == motion.domainSkillId, "colony-multisig-not-same-domain");
 
     // Check they have the permissions
-    require((userPermissions & motion.requiredPermissions) > 0, "colony-multisig-no-permissions");
+    require((userPermissions & motion.requiredPermissions) != bytes32(0), "colony-multisig-no-permissions");
+
     emit MotionCreated(msgSender(), motionCount);
 
     // TODO: do this per-permission
@@ -231,6 +230,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
           } else {
             motionRoleApprovalCount[_motionId][ColonyRole(roleIndex)] -= 1;
           }
+
           emit ApprovalChanged(msgSender(), _motionId, ColonyRole(roleIndex), _approved);
         }
 
@@ -254,7 +254,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
 
     // Are we approved? Update the timestamp appropriately
     if (anyBelowThreshold){
-       motion.overallApprovalTimestamp = 0;
+       delete motion.overallApprovalTimestamp;
     } else if (newlyApproved){
       motion.overallApprovalTimestamp = block.timestamp;
     }
@@ -410,7 +410,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
         }
 
         emit MultisigRoleSet(msgSender(), _user, _domainId, roleId, setTo);
-
       }
       roles >>= 1;
       rolesChanged >>= 1;
@@ -471,7 +470,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
 
         // A special case for setUserRoles, which can be called by root (everywhere) and
         // by architecture (if being used in a child domain of where you have the permission)
-        if (sig == SETUSERROLES) {
+        if (sig == SET_USER_ROLES) {
           if (domainSkillId == colony.getDomain(1).skillId) {
             permissionMask = ONLY_ROOT_ROLE_MASK;
           } else {
