@@ -32,6 +32,14 @@ contract("Multisig Permissions", (accounts) => {
   const USER0 = accounts[0];
   const USER1 = accounts[1];
   const USER2 = accounts[2];
+  const USER3 = accounts[3];
+  const USER4 = accounts[4];
+  const USER5 = accounts[5];
+  const USER6 = accounts[6];
+
+  const giveUserMultisigRoot = async function (contract, address) {
+    return contract.setUserRoles(1, UINT256_MAX, address, 1, ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ROOT_ROLE).toHexString(), 32));
+  };
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
@@ -54,26 +62,21 @@ contract("Multisig Permissions", (accounts) => {
     const multisigPermissionsAddress = await colonyNetwork.getExtensionInstallation(MULTISIG_PERMISSIONS, colony.address);
     multisigPermissions = await MultisigPermissions.at(multisigPermissionsAddress);
 
-    await multisigPermissions.initialise(2);
+    await multisigPermissions.initialise(0);
 
     await colony.setRootRole(multisigPermissions.address, true);
     await colony.setArbitrationRole(1, UINT256_MAX, multisigPermissions.address, 1, true);
     await colony.setAdministrationRole(1, UINT256_MAX, multisigPermissions.address, 1, true);
 
-    await multisigPermissions.setUserRoles(
-      1,
-      UINT256_MAX,
-      USER0,
-      1,
-      ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ROOT_ROLE).toHexString(), 32)
-    );
-    await multisigPermissions.setUserRoles(
+    await await multisigPermissions.setUserRoles(
       1,
       UINT256_MAX,
       USER1,
       1,
       ethers.utils.hexZeroPad(ethers.BigNumber.from(2).pow(ROOT_ROLE).toHexString(), 32)
     );
+    await giveUserMultisigRoot(multisigPermissions, USER0);
+    await giveUserMultisigRoot(multisigPermissions, USER1);
   });
 
   describe("managing the extension", async () => {
@@ -142,7 +145,11 @@ contract("Multisig Permissions", (accounts) => {
     });
 
     it("can query for initialisation values", async () => {
-      const threshold = await multisigPermissions.getThreshold();
+      let threshold = await multisigPermissions.getGlobalThreshold();
+      expect(threshold).to.eq.BN(0);
+
+      await multisigPermissions.initialise(2);
+      threshold = await multisigPermissions.getGlobalThreshold();
       expect(threshold).to.eq.BN(2);
     });
 
@@ -161,7 +168,7 @@ contract("Multisig Permissions", (accounts) => {
 
       const motionId = await multisigPermissions.getMotionCount();
       const motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.overallDomainSkillId).to.eq.BN(domain1.skillId);
+      expect(motion.domainSkillId).to.eq.BN(domain1.skillId);
     });
 
     it("cannot propose a motion requiring root permissions if you do not have root multisig permissions", async () => {
@@ -233,7 +240,7 @@ contract("Multisig Permissions", (accounts) => {
 
       const motionId = await multisigPermissions.getMotionCount();
       const motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.overallDomainSkillId).to.eq.BN(domain1.skillId);
+      expect(motion.domainSkillId).to.eq.BN(domain1.skillId);
 
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action], { from: USER2 }),
@@ -252,31 +259,23 @@ contract("Multisig Permissions", (accounts) => {
       );
     });
 
-    it("cannot create a motion before initialisation", async () => {
-      multisigPermissions = await MultisigPermissions.new();
-      await multisigPermissions.install(colony.address);
-
-      await checkErrorRevert(
-        multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], ["0x00000000"]),
-        "multisig-permissions-not-initialised"
-      );
-    });
-
     it("when you propose a motion, you implicitly approve it", async () => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
 
       const motionId = await multisigPermissions.getMotionCount();
-      let motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.approvalCount).to.eq.BN(1);
-      let userApproval = await multisigPermissions.getUserApproval(motionId, USER0);
+      // let motion = await multisigPermissions.getMotion(motionId);
+      let rootApprovalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
+      expect(rootApprovalCount).to.eq.BN(1);
+      let userApproval = await multisigPermissions.getUserApproval(motionId, USER0, ROOT_ROLE);
       expect(userApproval).to.equal(true);
 
       // And can remove the approval
       await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false);
-      motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.approvalCount).to.eq.BN(0);
-      userApproval = await multisigPermissions.getUserApproval(motionId, USER0);
+      // motion = await multisigPermissions.getMotion(motionId);
+      rootApprovalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
+      expect(rootApprovalCount).to.eq.BN(0);
+      userApproval = await multisigPermissions.getUserApproval(motionId, USER0, ROOT_ROLE);
       expect(userApproval).to.equal(false);
     });
   });
@@ -436,6 +435,54 @@ contract("Multisig Permissions", (accounts) => {
 
       await multisigPermissions.createMotion(1, UINT256_MAX, [multisigPermissions.address], [action], { from: USER2 });
     });
+
+    it("The domain skill threshold for execution changes as expected", async () => {
+      await multisigPermissions.initialise(2);
+      // By default, it's the global threshold
+      const domain = await colony.getDomain(1);
+
+      let res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      expect(res).to.eq.BN(2);
+
+      // Update global threshold
+      await multisigPermissions.initialise(3);
+      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      expect(res).to.eq.BN(3);
+
+      // If we set it to something specific for the domain
+      await multisigPermissions.setDomainSkillThreshold(domain.skillId, 2);
+      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      expect(res).to.eq.BN(2);
+
+      // Changing the global threshold has no effect
+      await multisigPermissions.initialise(1);
+      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      expect(res).to.eq.BN(2);
+
+      // Add users with the relevant permission
+      await giveUserMultisigRoot(multisigPermissions, USER2);
+      await giveUserMultisigRoot(multisigPermissions, USER3);
+      await giveUserMultisigRoot(multisigPermissions, USER4);
+      await giveUserMultisigRoot(multisigPermissions, USER5);
+      await giveUserMultisigRoot(multisigPermissions, USER6);
+
+      // No effect
+      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      expect(res).to.eq.BN(2);
+
+      // Set default to be relative
+      await multisigPermissions.initialise(0);
+
+      // Still no change
+      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      expect(res).to.eq.BN(2);
+
+      // Remove the domain-specific threshold, drops to nUsersWithSpecificPermissions / 2 + 1
+      await multisigPermissions.setDomainSkillThreshold(domain.skillId, 0);
+
+      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      expect(res).to.eq.BN(4);
+    });
   });
 
   describe("Approving motions", async () => {
@@ -477,18 +524,19 @@ contract("Multisig Permissions", (accounts) => {
 
       // Approve
       await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
-      let motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.approvalCount).to.eq.BN(2);
-      let userApproval = await multisigPermissions.getUserApproval(motionId, USER1);
+      let approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(2);
+
+      let userApproval = await multisigPermissions.getUserApproval(motionId, USER1, ROOT_ROLE);
       expect(userApproval).to.equal(true);
 
       // Could call if we wanted
       await multisigPermissions.execute.estimateGas(motionId);
       // Unapprove
       await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false, { from: USER1 });
-      motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.approvalCount).to.eq.BN(1);
-      userApproval = await multisigPermissions.getUserApproval(motionId, USER1);
+      approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(1);
+      userApproval = await multisigPermissions.getUserApproval(motionId, USER1, ROOT_ROLE);
       expect(userApproval).to.equal(false);
 
       // Can't call
@@ -496,7 +544,8 @@ contract("Multisig Permissions", (accounts) => {
     });
 
     it("overallApprovalTimestamp updates as expected as moving above/below approval limit", async () => {
-      await multisigPermissions.initialise(1);
+      const domain = await colony.getDomain(1);
+      await multisigPermissions.setDomainSkillThreshold(domain.skillId, 1);
 
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
@@ -521,7 +570,8 @@ contract("Multisig Permissions", (accounts) => {
     });
 
     it("overallApprovalTimestamp updates as best we can do when threshold is changed", async () => {
-      await multisigPermissions.initialise(1);
+      const domain = await colony.getDomain(1);
+      await multisigPermissions.setDomainSkillThreshold(domain.skillId, 1);
 
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
@@ -533,7 +583,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(firstTimestamp).to.be.gt.BN(0);
 
       // Change threshold
-      await multisigPermissions.initialise(2);
+      await multisigPermissions.setDomainSkillThreshold(domain.skillId, 2);
       await forwardTime(100, this);
 
       await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
@@ -542,6 +592,9 @@ contract("Multisig Permissions", (accounts) => {
     });
 
     it("can withdraw approvals even if you don't have permissions to approve any more", async () => {
+      const domain = await colony.getDomain(1);
+      await multisigPermissions.setDomainSkillThreshold(domain.skillId, 2);
+
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
 
@@ -549,20 +602,20 @@ contract("Multisig Permissions", (accounts) => {
 
       // Approve
       await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
-      let motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.approvalCount).to.eq.BN(2);
+      let approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(2);
 
       // Remove permissions
       await multisigPermissions.setUserRoles(1, UINT256_MAX, USER1, 1, ethers.utils.hexZeroPad(0, 32));
 
-      let userApproval = await multisigPermissions.getUserApproval(motionId, USER1);
+      let userApproval = await multisigPermissions.getUserApproval(motionId, USER1, ROOT_ROLE);
       expect(userApproval).to.equal(true);
 
       // Unapprove
       await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false, { from: USER1 });
-      motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.approvalCount).to.eq.BN(1);
-      userApproval = await multisigPermissions.getUserApproval(motionId, USER1);
+      approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(1);
+      userApproval = await multisigPermissions.getUserApproval(motionId, USER1, ROOT_ROLE);
       expect(userApproval).to.equal(false);
 
       // Can't call
@@ -578,27 +631,32 @@ contract("Multisig Permissions", (accounts) => {
       // Approve again
       await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true);
       // But no effect
-      let motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.approvalCount).to.eq.BN(1);
+      let approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(1);
 
       // Another user approves
       await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
-      motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.approvalCount).to.eq.BN(2);
+      approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(2);
 
       // Unapprove
       await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false);
-      motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.approvalCount).to.eq.BN(1);
-      let userApproval = await multisigPermissions.getUserApproval(motionId, USER0);
+      approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(1);
+      let userApproval = await multisigPermissions.getUserApproval(motionId, USER0, ROOT_ROLE);
       expect(userApproval).to.equal(false);
 
       // Unapprove again
       await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false);
-      motion = await multisigPermissions.getMotion(motionId);
-      expect(motion.approvalCount).to.eq.BN(1);
-      userApproval = await multisigPermissions.getUserApproval(motionId, USER0);
+      approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(1);
+      userApproval = await multisigPermissions.getUserApproval(motionId, USER0, ROOT_ROLE);
       expect(userApproval).to.equal(false);
+    });
+
+    it.skip("can approve if you have permissions in a parent domain, but you don't count for calculating the threshold", async () => {
+      const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
+      await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
     });
   });
 
