@@ -258,7 +258,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(userApproval).to.equal(true);
 
       // And can remove the approval
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false);
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, false);
       // motion = await multisigPermissions.getMotion(motionId);
       rootApprovalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(rootApprovalCount).to.eq.BN(0);
@@ -276,7 +276,7 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
 
       const motionId = await multisigPermissions.getMotionCount();
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER1 });
 
       await multisigPermissions.execute(motionId);
 
@@ -411,12 +411,12 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
 
       // No permissions
-      await checkErrorRevert(multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER2 }), "colony-multisig-no-permissions");
+      await checkErrorRevert(multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER2 }), "colony-multisig-no-permissions");
 
       // Not right permissions
 
       await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ARBITRATION_ROLE]));
-      await checkErrorRevert(multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER2 }), "colony-multisig-no-permissions");
+      await checkErrorRevert(multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER2 }), "colony-multisig-no-permissions");
       await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([]));
     });
 
@@ -425,7 +425,7 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
       const motionId = await multisigPermissions.getMotionCount();
       // Not right permissions
-      await checkErrorRevert(multisigPermissions.changeApproval(motionId, 1, 0, true), "colony-multisig-not-same-domain");
+      await checkErrorRevert(multisigPermissions.changeApproval(1, 0, motionId, true), "colony-multisig-not-same-domain");
     });
 
     it("can withdraw approvals", async () => {
@@ -436,7 +436,7 @@ contract("Multisig Permissions", (accounts) => {
       await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-permissions-not-enough-approvals");
 
       // Approve
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER1 });
       let approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(approvalCount).to.eq.BN(2);
 
@@ -446,7 +446,7 @@ contract("Multisig Permissions", (accounts) => {
       // Could call if we wanted
       await multisigPermissions.execute.estimateGas(motionId);
       // Unapprove
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, false, { from: USER1 });
       approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(approvalCount).to.eq.BN(1);
       userApproval = await multisigPermissions.getUserApproval(motionId, USER1, ROOT_ROLE);
@@ -469,15 +469,15 @@ contract("Multisig Permissions", (accounts) => {
       const firstTimestamp = motion.overallApprovalTimestamp;
       expect(firstTimestamp).to.be.gt.BN(0);
 
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER1 });
       motion = await multisigPermissions.getMotion(motionId);
       expect(firstTimestamp).to.eq.BN(motion.overallApprovalTimestamp);
 
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, false, { from: USER1 });
       motion = await multisigPermissions.getMotion(motionId);
       expect(firstTimestamp).to.eq.BN(motion.overallApprovalTimestamp);
 
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false);
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, false);
       motion = await multisigPermissions.getMotion(motionId);
       expect(motion.overallApprovalTimestamp).to.eq.BN(0);
     });
@@ -499,7 +499,7 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.setDomainSkillThreshold(domain.skillId, 2);
       await forwardTime(100, this);
 
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER1 });
       motion = await multisigPermissions.getMotion(motionId);
       expect(firstTimestamp).to.be.lt.BN(motion.overallApprovalTimestamp);
     });
@@ -514,7 +514,7 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
 
       // Approve
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER1 });
       let approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(approvalCount).to.eq.BN(2);
 
@@ -525,7 +525,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(userApproval).to.equal(true);
 
       // Unapprove
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, false, { from: USER1 });
       approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(approvalCount).to.eq.BN(1);
       userApproval = await multisigPermissions.getUserApproval(motionId, USER1, ROOT_ROLE);
@@ -542,25 +542,25 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
 
       // Approve again
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true);
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true);
       // But no effect
       let approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(approvalCount).to.eq.BN(1);
 
       // Another user approves
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER1 });
       approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(approvalCount).to.eq.BN(2);
 
       // Unapprove
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false);
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, false);
       approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(approvalCount).to.eq.BN(1);
       let userApproval = await multisigPermissions.getUserApproval(motionId, USER0, ROOT_ROLE);
       expect(userApproval).to.equal(false);
 
       // Unapprove again
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, false);
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, false);
       approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(approvalCount).to.eq.BN(1);
       userApproval = await multisigPermissions.getUserApproval(motionId, USER0, ROOT_ROLE);
@@ -630,7 +630,7 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([FUNDING_ROLE]));
 
       // Have them approve
-      await multisigPermissions.changeApproval(motionId, 2, UINT256_MAX, true, { from: USER1 });
+      await multisigPermissions.changeApproval(2, UINT256_MAX, motionId, true, { from: USER1 });
 
       const balanceBefore = await token.balanceOf(USER0);
 
@@ -650,9 +650,9 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
       await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-permissions-not-enough-approvals");
 
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true);
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true);
       await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-permissions-not-enough-approvals");
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER1 });
 
       const amountBefore = await token.totalSupply();
 
@@ -667,7 +667,7 @@ contract("Multisig Permissions", (accounts) => {
       const action = "0x12345678";
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
       const motionId = await multisigPermissions.getMotionCount();
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER1 });
       await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-failed-not-one-week");
 
       await forwardTime(7 * 3600 * 24, this);
@@ -681,7 +681,7 @@ contract("Multisig Permissions", (accounts) => {
 
       const motionId = await multisigPermissions.getMotionCount();
 
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER1 });
 
       const amountBefore = await token.totalSupply();
 
@@ -698,7 +698,7 @@ contract("Multisig Permissions", (accounts) => {
 
       const motionId = await multisigPermissions.getMotionCount();
 
-      await multisigPermissions.changeApproval(motionId, 1, UINT256_MAX, true, { from: USER1 });
+      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER1 });
 
       await multisigPermissions.execute(motionId, { from: USER2 });
       await checkErrorRevert(multisigPermissions.execute(motionId, { from: USER2 }), "multisig-motion-already-executed");

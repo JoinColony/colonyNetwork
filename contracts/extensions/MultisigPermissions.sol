@@ -80,7 +80,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
   // Domain Skill Id => Role => Usercount
   mapping(uint256 => mapping(uint8 => uint256)) domainSkillRoleCounts;
 
-  // DomainId => fixed threshold
+  // Domain Skill Id => fixed threshold
   mapping(uint256 => uint256) domainSkillThreshold;
 
   // Overrides
@@ -186,10 +186,10 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     emit MotionCreated(msgSender(), motionCount);
 
     // TODO: do this per-permission
-    changeApproval(motionCount, _permissionDomainId, _childSkillIndex, true);
+    changeApproval(_permissionDomainId, _childSkillIndex, motionCount, true);
   }
 
-  function changeApproval(uint256 _motionId, uint256 _permissionDomainId, uint256 _childSkillIndex, bool _approved) public notExecuted(_motionId) {
+  function changeApproval(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _motionId, bool _approved) public notExecuted(_motionId) {
     // Get permissions in _permissionDomainId for user
     bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
 
@@ -533,17 +533,4 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
 
       return calldataWithoutSelector;
   }
-
-  // Brian Kernighan algorithm
-  function countSetBits(bytes32 input) public pure returns (uint8) {
-    uint256 x = uint256(input);
-    uint8 count;
-    while (x != 0) {
-        x &= x - 1;
-        count++;
-    }
-    return count;
-  }
-
-
 }
