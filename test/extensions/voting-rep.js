@@ -1804,14 +1804,21 @@ contract("Voting Reputation", (accounts) => {
       expect(summary.domainSkillId).to.eq.BN(domain1.skillId);
 
       // Different domain actions (error, implemented as UINT256_MAX)
+      // Root (1) & domain (2) actions
       multicall = await encodeTxData(colony, "multicall", [[action3, action5]]);
       summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
       expect(summary.domainSkillId).to.eq.BN(UINT256_MAX);
 
+      // Expenditure (3) and domain (2) actions
       multicall = await encodeTxData(colony, "multicall", [[action1, action5]]);
       summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
       expect(summary.domainSkillId).to.eq.BN(UINT256_MAX);
+      // Same case, but reverse the multicall order
+      multicall = await encodeTxData(colony, "multicall", [[action5, action1]]);
+      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      expect(summary.domainSkillId).to.eq.BN(UINT256_MAX);
 
+      // Two different expenditures in (3)
       multicall = await encodeTxData(colony, "multicall", [[action1, action11]]);
       summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
       expect(summary.expenditureId).to.eq.BN(UINT256_MAX);
@@ -2803,7 +2810,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
     });
 
-    it("cannot stake an expenditure-based motion created before the upgrade", async () => {
+    it("cannot stake an expenditure-based motion created before the upgrade, unless it is a counterstake", async () => {
       await colony.uninstallExtension(VOTING_REPUTATION);
       await colony.installExtension(VOTING_REPUTATION, 9);
 
@@ -2829,13 +2836,21 @@ contract("Voting Reputation", (accounts) => {
       // Set finalizedTimestamp to WAD
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId2 = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 1, WAD.muln(3), { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await colony.upgradeExtension(VOTING_REPUTATION, 10);
 
-      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+      // Can counter-stake the first motion
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
+      // Cannot stake the second motion
       await checkErrorRevert(
-        voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "voting-rep-invalid-stake"
       );
     });
