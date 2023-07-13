@@ -267,9 +267,9 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
 
   /// @notice Return a summary of the multicall action
   /// @param _action The id of the motion
-  /// @param _target The address of the target
+  /// @param _altTarget The address of the altTarget, or 0x0 if none exists
   /// @return _summary A summary of the multicall
-  function getActionSummary(bytes memory _action, address _target) external view returns (ActionSummary memory _summary);
+  function getActionSummary(bytes memory _action, address _altTarget) external view returns (ActionSummary memory _summary);
 
   /// @notice Get the staker reward
   /// @param _motionId The id of the motion

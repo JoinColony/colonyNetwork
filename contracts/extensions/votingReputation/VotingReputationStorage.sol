@@ -214,7 +214,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     } else if (_motionId <= motionCountV10 && getSig(motion.action) == MULTICALL) {
       // (Inefficiently) handle the potential case of a v9 motion:
       //  Return `Finalized` if either NO_ACTION or OLD_MOVE_FUNDS or invalid multicall
-      ActionSummary memory actionSummary = getActionSummary(motion.action, getTarget(motion.altTarget));
+      ActionSummary memory actionSummary = getActionSummary(motion.action, motion.altTarget);
       return (
         actionSummary.sig == NO_ACTION ||
         actionSummary.sig == OLD_MOVE_FUNDS ||
@@ -250,13 +250,14 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     }
   }
 
-function getActionSummary(bytes memory action, address target) public view returns (ActionSummary memory) {
+  function getActionSummary(bytes memory _action, address _altTarget) public view returns (ActionSummary memory) {
+    address target = getTarget(_altTarget);
     bytes[] memory actions;
 
-    if (getSig(action) == MULTICALL) {
-      actions = abi.decode(extractCalldata(action), (bytes[]));
+    if (getSig(_action) == MULTICALL) {
+      actions = abi.decode(extractCalldata(_action), (bytes[]));
     } else {
-      actions = new bytes[](1); actions[0] = action;
+      actions = new bytes[](1); actions[0] = _action;
     }
 
     ActionSummary memory summary;
@@ -296,7 +297,12 @@ function getActionSummary(bytes memory action, address target) public view retur
       } else {
         // Otherwise we record the domain id and ensure it is consistent throughout the multicall
         // If no expenditure signatures have been seen, we record the latest signature
-        if (ColonyRoles(target).getCapabilityRoles(sig) | ROOT_ROLES == ROOT_ROLES) {
+        bytes32 capabilityRoles;
+        try ColonyRoles(target).getCapabilityRoles(sig) returns (bytes32 res) {
+          capabilityRoles = res;
+        } catch {}
+
+        if (capabilityRoles | ROOT_ROLES == ROOT_ROLES) {
           domainSkillId = colony.getDomain(1).skillId;
         } else {
           domainSkillId = getActionDomainSkillId(actions[i]);

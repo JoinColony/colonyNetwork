@@ -106,7 +106,7 @@ Finalized a motion, executing its action if appropriate
 |_motionId|uint256|The id of the motion to finalize
 
 
-### ▸ `getActionSummary(bytes memory _action, address _target):ActionSummary _summary`
+### ▸ `getActionSummary(bytes memory _action, address _altTarget):ActionSummary _summary`
 
 Return a summary of the multicall action
 
@@ -116,7 +116,7 @@ Return a summary of the multicall action
 |Name|Type|Description|
 |---|---|---|
 |_action|bytes|The id of the motion
-|_target|address|The address of the target
+|_altTarget|address|The address of the altTarget, or 0x0 if none exists
 
 **Return Parameters**
 
