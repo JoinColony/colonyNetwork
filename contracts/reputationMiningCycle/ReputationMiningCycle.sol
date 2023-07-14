@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental "ABIEncoderV2";
 
 import "./../../lib/dappsys/math.sol";
@@ -104,7 +104,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     // Prevent this being called multiple times
     require(colonyNetworkAddress == address(0x0), "colony-reputation-mining-cycle-already-initialised");
 
-    colonyNetworkAddress = msg.sender;
+    colonyNetworkAddress = payable(msg.sender);
     tokenLockingAddress = _tokenLockingAddress;
     clnyTokenAddress = _clnyTokenAddress;
   }
@@ -221,7 +221,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     );
 
     // Burn tokens that have been slashed, but will not be awarded to others as rewards.
-    IColonyNetwork(colonyNetworkAddress).burnUnneededRewards(sub(stakeLost, rewardsPaidOut));
+    IColonyNetwork(colonyNetworkAddress).burnUnneededRewards(stakeLost - rewardsPaidOut);
 
     DisputedEntry storage winningDisputeEntry = disputeRounds[_roundNumber][0];
     Submission storage submission = reputationHashSubmissions[winningDisputeEntry.firstSubmitter];
@@ -288,11 +288,11 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       require(disputeRounds[_round][opponentIdx].challengeStepCompleted >= disputeRounds[_round][_idx].challengeStepCompleted, "colony-reputation-mining-less-challenge-rounds-completed");
 
       // Require that it has failed a challenge (i.e. failed to respond in time)
-      require(add(disputeRounds[_round][_idx].lastResponseTimestamp, CHALLENGE_RESPONSE_WINDOW_DURATION) <= block.timestamp, "colony-reputation-mining-not-timed-out"); // Timeout is twenty minutes here.
+      require((disputeRounds[_round][_idx].lastResponseTimestamp + CHALLENGE_RESPONSE_WINDOW_DURATION) <= block.timestamp, "colony-reputation-mining-not-timed-out"); // Timeout is twenty minutes here.
 
       // The submission can be invalidated - now check the person invalidating is allowed to
       require(
-        responsePossible(DisputeStages.InvalidateHash, add(disputeRounds[_round][_idx].lastResponseTimestamp, CHALLENGE_RESPONSE_WINDOW_DURATION)),
+        responsePossible(DisputeStages.InvalidateHash, (disputeRounds[_round][_idx].lastResponseTimestamp + CHALLENGE_RESPONSE_WINDOW_DURATION)),
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 
@@ -546,15 +546,18 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
   function startMemberOfPair(uint256 _roundNumber, uint256 _index) internal {
     Submission storage submission = reputationHashSubmissions[disputeRounds[_roundNumber][_index].firstSubmitter];
+
     disputeRounds[_roundNumber][_index].lastResponseTimestamp = block.timestamp;
-    disputeRounds[_roundNumber][_index].upperBound = submission.jrhNLeaves - 1;
     disputeRounds[_roundNumber][_index].lowerBound = 0;
     disputeRounds[_roundNumber][_index].targetHashDuringSearch = submission.jrh;
+
     if (submission.jrhNLeaves != 0) {
+      disputeRounds[_roundNumber][_index].upperBound = submission.jrhNLeaves - 1;
       // If this submission has confirmed their JRH, we give ourselves credit for it in the next round - it's possible
       // that a submission got a bye without confirming a JRH, which will not have this starting '1'.
       disputeRounds[_roundNumber][_index].challengeStepCompleted = 1;
     } else {
+      disputeRounds[_roundNumber][_index].upperBound = type(uint256).max;
       disputeRounds[_roundNumber][_index].challengeStepCompleted = 0;
     }
   }

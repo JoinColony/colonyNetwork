@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 
 import "./ColonyNetworkStorage.sol";
 import "./../common/MultiChain.sol";
@@ -126,7 +126,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   event AuctionClaim(address indexed _recipient, uint256 _sentAmount);
   event AuctionFinalized(uint256 _finalPrice);
 
-  constructor(address _clnyToken, address _token, address _metaColonyAddress) public {
+  constructor(address _clnyToken, address _token, address _metaColonyAddress) {
     require(_metaColonyAddress != address(0x0), "colony-auction-metacolony-cannot-be-zero");
 
     colonyNetwork = msgSender();
@@ -140,7 +140,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   }
 
   function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+    metatransactionNonces[user] += 1;
   }
 
   function start() public
@@ -165,15 +165,16 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     // Total amount to end the auction at the current price
     uint totalToEndAuctionAtCurrentPrice;
     // For low quantity auctions, there are cases where q * p < 1e18 once price has decreased sufficiently
+    // slither-disable-next-line incorrect-equality
     if (quantity < TOKEN_MULTIPLIER && price() == minPrice) {
       totalToEndAuctionAtCurrentPrice = 1;
     } else {
-      totalToEndAuctionAtCurrentPrice = mul(quantity, price()) / TOKEN_MULTIPLIER;
+      totalToEndAuctionAtCurrentPrice = quantity * price() / TOKEN_MULTIPLIER;
     }
 
     uint _remainingToEndAuction = 0;
     if (totalToEndAuctionAtCurrentPrice > receivedTotal) {
-      _remainingToEndAuction = sub(totalToEndAuctionAtCurrentPrice, receivedTotal);
+      _remainingToEndAuction = totalToEndAuctionAtCurrentPrice - receivedTotal;
     }
 
     return _remainingToEndAuction;
@@ -185,14 +186,17 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   auctionStartedAndOpen
   returns (uint256)
   {
-    uint duration = sub(block.timestamp, startTime);
+    uint duration = block.timestamp - startTime;
     uint daysOpen = duration / 86400;
     if (daysOpen > 36) {
       return minPrice;
     }
+    // This isn't a weak pseudo rng, this is a legitimate use of modulo on a timestamp to work out what
+    // fraction of a day has passed (in addition to a whole number of days)
+    //slither-disable-next-line weak-prng
     uint r = duration % 86400;
 
-    uint x = mul(10**sub(36, daysOpen), sub(864000, mul(9,r))) / 864000;
+    uint x = 10**(36 - daysOpen) * (864000 - 9 * r) / 864000;
     uint p = x < minPrice ? minPrice : x;
     return p;
   }
@@ -221,12 +225,12 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
       bidCount += 1;
     }
 
-    bids[msgSender()] = add(bids[msgSender()], amount);
-    receivedTotal = add(receivedTotal, amount);
+    bids[msgSender()] = bids[msgSender()] + amount;
+    receivedTotal = receivedTotal + amount;
 
     require(clnyToken.transferFrom(msgSender(), address(this), amount), "colony-auction-bid-transfer-failed");
 
-    emit AuctionBid(msgSender(), amount, sub(_remainingToEndAuction, amount));
+    emit AuctionBid(msgSender(), amount, _remainingToEndAuction - amount);
   }
 
   // Finalize the auction and set the final Token price
@@ -234,7 +238,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   auctionClosed
   auctionNotFinalized
   {
-    finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity;
+    finalPrice = (receivedTotal * TOKEN_MULTIPLIER) / quantity;
     finalPrice = finalPrice <= minPrice ? minPrice : finalPrice;
     assert(finalPrice != 0);
 
@@ -259,13 +263,13 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     require(amount > 0, "colony-auction-zero-bid-total");
 
     uint tokens;
-    if (mul(amount, quantity) < receivedTotal) {
-      tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
+    if (amount * quantity < receivedTotal) {
+      tokens = (amount * TOKEN_MULTIPLIER) / finalPrice;
     } else {
       // To avoid inaccuracies we substitute finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity
       // in the above claim calculation tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
       // deriving the calculation below instead, which avoids using finaPrice altogether.
-      tokens = mul(amount, quantity) / receivedTotal;
+      tokens = (amount * quantity) / receivedTotal;
     }
 
     claimCount += 1;
@@ -274,9 +278,10 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     bids[recipient] = 0;
     uint beforeClaimBalance = token.balanceOf(recipient);
     assert(token.transfer(recipient, tokens));
-    // slither-disable-next-line incorrect-equality
-    assert(token.balanceOf(recipient) == add(beforeClaimBalance, tokens));
+    // slither-disable-start incorrect-equality
+    assert(token.balanceOf(recipient) == beforeClaimBalance + tokens);
     assert(bids[recipient] == 0);
+    // slither-disable-end incorrect-equality
 
     emit AuctionClaim(recipient, tokens);
     return true;

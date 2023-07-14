@@ -17,7 +17,7 @@
 
 // Modified to inherit BasicMetaTransaction and use msgSender() where appropriate
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 
 import "./../../lib/dappsys/erc20.sol";
 import "./../../lib/dappsys/math.sol";
@@ -53,12 +53,12 @@ abstract contract DSTokenBaseMeta is ERC20, DSMath, BasicMetaTransaction {
     {
         if (src != msgSender()) {
             require(_approvals[src][msgSender()] >= wad, "ds-token-insufficient-approval");
-            _approvals[src][msgSender()] = sub(_approvals[src][msgSender()], wad);
+            _approvals[src][msgSender()] -= wad;
         }
 
         require(_balances[src] >= wad, "ds-token-insufficient-balance");
-        _balances[src] = sub(_balances[src], wad);
-        _balances[dst] = add(_balances[dst], wad);
+        _balances[src] -= wad;
+        _balances[dst] += wad;
 
         emit Transfer(src, dst, wad);
 

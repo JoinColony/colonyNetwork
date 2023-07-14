@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental ABIEncoderV2;
 
 import "./../../colonyNetwork/IColonyNetwork.sol";
@@ -120,7 +120,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
   }
 
   function version() public pure override returns (uint256 _version) {
-    return 8;
+    return 9;
   }
 
   function install(address _colony) public override {
@@ -182,7 +182,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
   }
 
   function uninstall() public override auth {
-    selfdestruct(address(uint160(address(colony))));
+    selfdestruct(payable(address(colony)));
   }
 
   // Public functions (interface)
@@ -243,14 +243,13 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     Motion storage motion = motions[motionCount];
 
     motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
-    motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-    motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
     motion.rootHash = colonyNetwork.getReputationRootHash();
     motion.domainId = _domainId;
     motion.skillId = skillId;
 
     motion.skillRep = checkReputation(motion.rootHash, skillId, address(0x0), _key, _value, _branchMask, _siblings);
+    require(motion.skillRep > 0, "voting-rep-no-reputation-in-domain");
     motion.altTarget = _altTarget;
     motion.action = _action;
 
@@ -275,10 +274,10 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     require(getMotionState(_motionId) == MotionState.Staking, "voting-rep-motion-not-staking");
 
     uint256 requiredStake = getRequiredStake(_motionId);
-    uint256 amount = min(_amount, sub(requiredStake, motion.stakes[_vote]));
+    uint256 amount = min(_amount, requiredStake - motion.stakes[_vote]);
     require(amount > 0, "voting-rep-bad-amount");
 
-    uint256 stakerTotalAmount = add(stakes[_motionId][msgSender()][_vote], amount);
+    uint256 stakerTotalAmount = stakes[_motionId][msgSender()][_vote] + amount;
 
     require(
       stakerTotalAmount <= checkReputation(motion.rootHash, motion.skillId, msgSender(), _key, _value, _branchMask, _siblings),
@@ -286,12 +285,12 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     );
     require(
       stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction) ||
-      add(motion.stakes[_vote], amount) == requiredStake, // To prevent a residual stake from being un-stakable
+      (motion.stakes[_vote] + amount) == requiredStake, // To prevent a residual stake from being un-stakable
       "voting-rep-insufficient-stake"
     );
 
     // Update the stake
-    motion.stakes[_vote] = add(motion.stakes[_vote], amount);
+    motion.stakes[_vote] += amount;
     stakes[_motionId][msgSender()][_vote] = stakerTotalAmount;
 
     // Increment counter & extend claim delay if staking for an expenditure state change
@@ -304,7 +303,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
       ) && motion.altTarget == address(0x0)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
-      expenditureMotionCounts[structHash] = add(expenditureMotionCounts[structHash], 1);
+      expenditureMotionCounts[structHash] += 1;
       // Set to UINT256_MAX / 3 to avoid overflow (finalizedTimestamp + globalClaimDelay + claimDelay)
       bytes memory claimDelayAction = createClaimDelayAction(motion.action, UINT256_MAX / 3);
       require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
@@ -326,8 +325,6 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
       (_vote == YAY && motion.stakes[YAY] == requiredStake)
     ) {
       motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
-      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
       // New stake supersedes prior votes
       delete motion.votes;
@@ -360,7 +357,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
 
     // Count reputation if first submission
     if (voteSecrets[_motionId][msgSender()] == bytes32(0)) {
-      motion.repSubmitted = add(motion.repSubmitted, userRep);
+      motion.repSubmitted += userRep;
     }
 
     voteSecrets[_motionId][msgSender()] = _voteSecret;
@@ -391,19 +388,19 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     require(_vote <= 1, "voting-rep-bad-vote");
 
     uint256 userRep = checkReputation(motion.rootHash, motion.skillId, msgSender(), _key, _value, _branchMask, _siblings);
-    motion.votes[_vote] = add(motion.votes[_vote], userRep);
+    motion.votes[_vote] += userRep;
 
     bytes32 voteSecret = voteSecrets[_motionId][msgSender()];
     require(voteSecret == getVoteSecret(_salt, _vote), "voting-rep-secret-no-match");
     delete voteSecrets[_motionId][msgSender()];
 
     uint256 voterReward = getVoterReward(_motionId, userRep);
-    motion.paidVoterComp = add(motion.paidVoterComp, voterReward);
+    motion.paidVoterComp += voterReward;
 
     emit MotionVoteRevealed(_motionId, msgSender(), _vote);
 
     // See if reputation revealed matches reputation submitted
-    if (add(motion.votes[NAY], motion.votes[YAY]) == motion.repSubmitted) {
+    if ((motion.votes[NAY] + motion.votes[YAY]) == motion.repSubmitted) {
       motion.events[REVEAL_END] = uint64(block.timestamp);
 
       emit MotionEventSet(_motionId, REVEAL_END);
@@ -436,16 +433,19 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     motion.skillRep = checkReputation(motion.rootHash, motion.skillId, address(0x0), _key, _value, _branchMask, _siblings);
 
     uint256 loser = (motion.votes[NAY] < motion.votes[YAY]) ? NAY : YAY;
-    motion.stakes[loser] = sub(motion.stakes[loser], motion.paidVoterComp);
-    motion.pastVoterComp[loser] = add(motion.pastVoterComp[loser], motion.paidVoterComp);
+    motion.stakes[loser] -= motion.paidVoterComp;
+    motion.pastVoterComp[loser] += motion.paidVoterComp;
     delete motion.paidVoterComp;
 
     uint256 requiredStake = getRequiredStake(_motionId);
-    motion.events[STAKE_END] = (motion.stakes[NAY] < requiredStake || motion.stakes[YAY] < requiredStake) ?
-      uint64(block.timestamp + stakePeriod) : uint64(block.timestamp);
 
-    motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-    motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
+    if (motion.stakes[NAY] < requiredStake || motion.stakes[YAY] < requiredStake) {
+      motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
+    } else {
+      motion.events[STAKE_END] = uint64(block.timestamp);
+      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
+    }
 
     motion.escalated = true;
 
@@ -462,7 +462,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
 
     assert(
       motion.stakes[YAY] == getRequiredStake(_motionId) ||
-      add(motion.votes[NAY], motion.votes[YAY]) > 0
+      (motion.votes[NAY] + motion.votes[YAY]) > 0
     );
 
     motion.finalized = true;
@@ -478,7 +478,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
       ) && getTarget(motion.altTarget) == address(colony)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
-      expenditureMotionCounts[structHash] = sub(expenditureMotionCounts[structHash], 1);
+      expenditureMotionCounts[structHash] -= 1;
 
       // Release the claimDelay if this is the last active motion
       if (expenditureMotionCounts[structHash] == 0) {
@@ -488,7 +488,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
       }
 
       bytes32 actionHash = hashExpenditureAction(motion.action);
-      uint256 votePower = (add(motion.votes[NAY], motion.votes[YAY]) > 0) ?
+      uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
         motion.votes[YAY] : motion.stakes[YAY];
 
       if (expenditurePastVotes[actionHash] < votePower) {
@@ -639,7 +639,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
       } else if (motion.stakes[YAY] == requiredStake) {
         return finalizableOrFinalized(motion.action);
       // If not, was there a prior vote we can fall back on?
-      } else if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
+      } else if (motion.votes[NAY] + motion.votes[YAY] > 0) {
         return finalizableOrFinalized(motion.action);
       // Otherwise, the motion failed
       } else {
@@ -673,7 +673,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
   function getVoterReward(uint256 _motionId, uint256 _voterRep) public view returns (uint256 _reward) {
     Motion storage motion = motions[_motionId];
     uint256 fractionUserReputation = wdiv(_voterRep, motion.repSubmitted);
-    uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
+    uint256 totalStake = motion.stakes[YAY] + motion.stakes[NAY];
     return wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
   }
 
@@ -688,11 +688,11 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     // Has the user already voted?
     if (voteSecrets[_motionId][_voterAddress] == bytes32(0)) {
       // They have not, so add their rep
-      voteTotal = add(voteTotal, _voterRep);
+      voteTotal += _voterRep;
     }
     uint256 maxFractionUserReputation = wdiv(_voterRep, voteTotal);
 
-    uint256 totalStake = add(motion.stakes[YAY], motion.stakes[NAY]);
+    uint256 totalStake = motion.stakes[YAY] + motion.stakes[NAY];
     return (
       wmul(wmul(minFractionUserReputation, totalStake), voterRewardFraction),
       wmul(wmul(maxFractionUserReputation, totalStake), voterRewardFraction)
@@ -702,7 +702,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
   function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256 _reward, uint256 _penalty) {
     Motion storage motion = motions[_motionId];
 
-    uint256 totalSideStake = add(motion.stakes[_vote], motion.pastVoterComp[_vote]);
+    uint256 totalSideStake = motion.stakes[_vote] + motion.pastVoterComp[_vote];
     if (totalSideStake == 0) { return (0, 0); }
 
     uint256 stakeFraction = wdiv(stakes[_motionId][_staker][_vote], totalSideStake);
@@ -713,7 +713,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
     uint256 repPenalty;
 
     // Went to a vote, use vote to determine reward or penalty
-    if (add(motion.votes[NAY], motion.votes[YAY]) > 0) {
+    if ((motion.votes[NAY] + motion.votes[YAY]) > 0) {
 
       uint256 loserStake;
       uint256 winnerStake;
@@ -725,17 +725,17 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
         winnerStake = motion.stakes[NAY];
       }
 
-      loserStake = sub(loserStake, motion.paidVoterComp);
-      uint256 totalVotes = add(motion.votes[NAY], motion.votes[YAY]);
+      loserStake -= motion.paidVoterComp;
+      uint256 totalVotes = motion.votes[NAY] + motion.votes[YAY];
       uint256 winFraction = wdiv(motion.votes[_vote], totalVotes);
       uint256 winShare = wmul(winFraction, 2 * WAD); // On a scale of 0-2 WAD
 
       if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
         // 50% gets 0% of loser's stake, 100% gets 100% of loser's stake, linear in between
-        stakerReward = wmul(stakeFraction, add(winnerStake, wmul(loserStake, winShare - WAD)));
+        stakerReward = wmul(stakeFraction, (winnerStake + wmul(loserStake, winShare - WAD)));
       } else {
         stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));
-        repPenalty = sub(realStake, stakerReward);
+        repPenalty = realStake - stakerReward;
       }
 
     // Determine rewards based on stakes alone
@@ -751,7 +751,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
 
         uint256 loserStake = motion.stakes[flip(_vote)];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
-        stakerReward = wmul(stakeFraction, add(requiredStake, totalPenalty));
+        stakerReward = wmul(stakeFraction, (requiredStake + totalPenalty));
 
       // Opponent's side fully staked, pay 10% penalty
       } else if (
@@ -761,8 +761,8 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
 
         uint256 loserStake = motion.stakes[_vote];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
-        stakerReward = wmul(stakeFraction, sub(loserStake, totalPenalty));
-        repPenalty = sub(realStake, stakerReward);
+        stakerReward = wmul(stakeFraction, loserStake - totalPenalty);
+        repPenalty = realStake - stakerReward;
 
       // Neither side fully staked (or no votes were revealed), no reward or penalty
       } else {
@@ -790,7 +790,7 @@ contract VotingReputation is ColonyExtension, BasicMetaTransaction, VotingReputa
   }
 
   function flip(uint256 _vote) internal pure returns (uint256) {
-    return sub(1, _vote);
+    return 1 - _vote;
   }
 
   function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {

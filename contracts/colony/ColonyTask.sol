@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -59,7 +59,7 @@ contract ColonyTask is ColonyStorage {
     uint taskCompletionTime = tasks[_id].completionTimestamp;
 
     // Check we are within 5 days of the work submission time
-    require(sub(block.timestamp, taskCompletionTime) <= RATING_COMMIT_TIMEOUT, "colony-task-rating-secret-submit-period-closed");
+    require(block.timestamp - taskCompletionTime <= RATING_COMMIT_TIMEOUT, "colony-task-rating-secret-submit-period-closed");
     _;
   }
 
@@ -71,11 +71,11 @@ contract ColonyTask is ColonyStorage {
     // Otherwise start the reveal period after the commit period has expired
     // In both cases, keep reveal period open for 5 days
     if (ratingSecrets.count == 2) {
-      require(sub(block.timestamp, ratingSecrets.timestamp) <= RATING_REVEAL_TIMEOUT, "colony-task-rating-secret-reveal-period-closed");
+      require(block.timestamp - ratingSecrets.timestamp <= RATING_REVEAL_TIMEOUT, "colony-task-rating-secret-reveal-period-closed");
     } else if (ratingSecrets.count < 2) {
       uint taskCompletionTime = tasks[_id].completionTimestamp;
-      require(sub(block.timestamp, taskCompletionTime) > RATING_COMMIT_TIMEOUT, "colony-task-rating-secret-reveal-period-not-open");
-      require(sub(block.timestamp, taskCompletionTime) <= add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT), "colony-task-rating-secret-reveal-period-closed");
+      require(block.timestamp - taskCompletionTime > RATING_COMMIT_TIMEOUT, "colony-task-rating-secret-reveal-period-not-open");
+      require(block.timestamp - taskCompletionTime <= RATING_COMMIT_TIMEOUT + RATING_REVEAL_TIMEOUT, "colony-task-rating-secret-reveal-period-closed");
     }
     _;
   }
@@ -329,11 +329,11 @@ contract ColonyTask is ColonyStorage {
   }
 
   function removeTaskEvaluatorRole(uint256 _id) public stoppable self {
-    setTaskRoleUser(_id, TaskRole.Evaluator, address(0x0));
+    setTaskRoleUser(_id, TaskRole.Evaluator, payable(address(0x0)));
   }
 
   function removeTaskWorkerRole(uint256 _id) public stoppable self {
-    setTaskRoleUser(_id, TaskRole.Worker, address(0x0));
+    setTaskRoleUser(_id, TaskRole.Worker, payable(address(0x0)));
   }
 
   function setTaskSkill(uint256 _id, uint256 _skillId) public
@@ -539,10 +539,10 @@ contract ColonyTask is ColonyStorage {
     assert(rating != TaskRatings.None);
 
     bool negative = (rating == TaskRatings.Unsatisfactory);
-    uint256 reputation = mul(payout, (rating == TaskRatings.Excellent) ? 3 : 2);
+    uint256 reputation = payout * ((rating == TaskRatings.Excellent) ? 3 : 2);
 
     if (rateFail) {
-      reputation = negative ? add(reputation, payout) : sub(reputation, payout);
+      reputation = negative ? reputation + payout : reputation - payout;
     }
 
     // We may lose one atom of reputation here :sad:
@@ -602,7 +602,7 @@ contract ColonyTask is ColonyStorage {
     // More than 10 days from completion have passed
     return (
       tasks[_id].completionTimestamp > 0 && // If this is zero, the task isn't complete yet!
-      sub(block.timestamp, tasks[_id].completionTimestamp) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT)
+      block.timestamp - tasks[_id].completionTimestamp > RATING_COMMIT_TIMEOUT + RATING_REVEAL_TIMEOUT
     );
   }
 

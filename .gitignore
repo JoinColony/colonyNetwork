@@ -13,6 +13,7 @@ coverage-contracts
 coverage-merged
 coverage-reputation
 coverage-chainid-*
+coverage-cross-chain-*
 coverage.json
 .nyc_output
 coverage-miner

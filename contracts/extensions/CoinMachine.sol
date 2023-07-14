@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/erc20.sol";
@@ -96,7 +96,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public override pure returns (uint256 _version) {
-    return 7;
+    return 8;
   }
 
   /// @notice Configures the extension
@@ -135,7 +135,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       }
     }
 
-    selfdestruct(address(uint160(address(colony))));
+    selfdestruct(payable(address(colony)));
   }
 
   /// @notice Must be called before any sales can be made
@@ -226,15 +226,15 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       return;
     }
 
-    activeIntake = add(activeIntake, totalCost);
-    activeSold = add(activeSold, numTokens);
+    activeIntake += totalCost;
+    activeSold += numTokens;
 
     assert(activeSold <= maxPerPeriod);
 
     // Do userLimitFraction bookkeeping (only if needed)
     if (userLimitFraction < WAD) {
-      soldTotal = add(soldTotal, numTokens);
-      soldUser[msgSender()] = add(soldUser[msgSender()], numTokens);
+      soldTotal += numTokens;
+      soldUser[msgSender()] += numTokens;
     }
 
     // Check if we've sold out
@@ -388,7 +388,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @notice Get the number of remaining tokens for sale this period
   /// @return _remaining Tokens remaining
   function getSellableTokens() public view returns (uint256 _remaining) {
-    return sub(maxPerPeriod, ((activePeriod >= getCurrentPeriod()) ? activeSold : 0));
+    return (maxPerPeriod - ((activePeriod >= getCurrentPeriod()) ? activeSold : 0));
   }
 
   /// @notice Get the maximum amount of tokens a user can purchase in total
@@ -398,7 +398,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     return
       (userLimitFraction == WAD || whitelist == address(0x0)) ?
       UINT256_MAX :
-      sub(wmul(add(getTokenBalance(), soldTotal), userLimitFraction), soldUser[_user])
+      wmul(getTokenBalance() + soldTotal, userLimitFraction) - soldUser[_user]
     ;
   }
 

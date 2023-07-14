@@ -1,4 +1,4 @@
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental "ABIEncoderV2";
 
 import {Bits} from "./Bits.sol";
@@ -45,7 +45,8 @@ library Data {
     if (pos == 0) {
       prefix.data = bytes32(0);
     } else {
-      prefix.data = bytes32(uint(self.data) & ~uint(1) << 255 - pos); // ignore-swc-101
+      // prefix.data = bytes32(uint(self.data) & ~uint(1) << 255 - pos); // ignore-swc-101
+      prefix.data = self.data & ~bytes32((uint(1) << (256 - pos)) - 1);
     }
     suffix.length = self.length - pos;
     suffix.data = self.data << pos;

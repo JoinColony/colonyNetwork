@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental ABIEncoderV2;
 
 import "./../common/BasicMetaTransaction.sol";
@@ -72,7 +72,7 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public override pure returns (uint256 _version) {
-    return 4;
+    return 5;
   }
 
   /// @notice Configures the extension
@@ -93,7 +93,7 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
-    selfdestruct(address(uint160(address(colony))));
+    selfdestruct(payable(address(colony)));
   }
 
   /// @notice Initialise the extension, must be called before any tokens can be issued
@@ -131,8 +131,8 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
       isRoot() || (
         isRootFunding() &&
         block.timestamp - lastRateUpdate >= 4 weeks &&
-        _tokenIssuanceRate <= add(tokenIssuanceRate, tokenIssuanceRate / 10) &&
-        _tokenIssuanceRate >= sub(tokenIssuanceRate, tokenIssuanceRate / 10)
+        _tokenIssuanceRate <= tokenIssuanceRate + tokenIssuanceRate / 10 &&
+        _tokenIssuanceRate >= tokenIssuanceRate - tokenIssuanceRate / 10
       ), "token-supplier-caller-not-authorized"
     );
 
@@ -151,11 +151,11 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
     uint256 tokenSupply = ERC20Extended(token).totalSupply();
 
     uint256 newSupply = min(
-      (tokenSupplyCeiling > tokenSupply) ? sub(tokenSupplyCeiling, tokenSupply) : 0,
+      (tokenSupplyCeiling > tokenSupply) ? (tokenSupplyCeiling - tokenSupply) : 0,
       wmul(tokenIssuanceRate, wdiv((block.timestamp - lastIssue), ISSUANCE_PERIOD))
     );
 
-    assert(newSupply == 0 || add(tokenSupply, newSupply) <= tokenSupplyCeiling);
+    assert(newSupply == 0 || (tokenSupply + newSupply) <= tokenSupplyCeiling);
 
     // Don't update lastIssue if we aren't actually issuing tokens
     if (newSupply > 0) {

@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental ABIEncoderV2;
 
 import "./../common/ERC20Extended.sol";
@@ -120,7 +120,7 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     assembly {
       amount := mload(add(_action, 0x24))
     }
-    fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
+    fundingPots[1].balance[_to] -= amount;
     require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
   }
 
@@ -129,7 +129,7 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     assembly {
       amount := mload(add(_action, 0x44))
     }
-    fundingPots[1].balance[_to] = sub(fundingPots[1].balance[_to], amount);
+    fundingPots[1].balance[_to] -= amount;
     require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
   }
 
@@ -155,10 +155,10 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     if (recordedApproval > actualApproval && !_postApproval){
       // They've spend some tokens out of root. Adjust balances accordingly
       // If we are post approval, then they have not spent tokens
-      fundingPots[1].balance[_token] = add(sub(fundingPots[1].balance[_token], recordedApproval), actualApproval);
+      fundingPots[1].balance[_token] = (fundingPots[1].balance[_token] - recordedApproval) + actualApproval;
     }
 
-    tokenApprovalTotals[_token] = add(sub(tokenApprovalTotals[_token], recordedApproval), actualApproval);
+    tokenApprovalTotals[_token] = (tokenApprovalTotals[_token] - recordedApproval) + actualApproval;
     require(fundingPots[1].balance[_token] >= tokenApprovalTotals[_token], "colony-approval-exceeds-balance");
 
     tokenApprovals[_token][_spender] = actualApproval;

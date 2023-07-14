@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -316,8 +316,8 @@ contract ColonyExpenditure is ColonyStorage {
       // Validate payout modifier
       if (offset == 2) {
         require(
-          int256(_value) <= MAX_PAYOUT_MODIFIER &&
-          int256(_value) >= MIN_PAYOUT_MODIFIER,
+          int256(uint256(_value)) <= MAX_PAYOUT_MODIFIER &&
+          int256(uint256(_value)) >= MIN_PAYOUT_MODIFIER,
           "colony-expenditure-bad-payout-modifier"
         );
       }
@@ -400,7 +400,7 @@ contract ColonyExpenditure is ColonyStorage {
       if (_mask[i] == ARRAY) {
         require(uint256(_keys[i]) <= MAX_ARRAY, "colony-expenditure-large-offset");
 
-        slot = bytes32(add(uint256(_keys[i]), uint256(slot)));
+        slot = bytes32(uint256(_keys[i]) + uint256(slot));
         // If we are indexing in to an array, and this was the last entry
         //  in keys, then we have arrived at the storage slot that we want
         //  to set, and so do not hash the slot (which would take us to the

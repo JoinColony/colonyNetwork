@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental "ABIEncoderV2";
 
 import "./../../lib/dappsys/math.sol";
@@ -46,7 +46,7 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
 
   modifier notObligated(address _token, uint256 _amount) {
     require(
-      sub(userLocks[_token][msgSender()].balance, _amount) >= totalObligations[msgSender()][_token],
+      userLocks[_token][msgSender()].balance - _amount >= totalObligations[msgSender()][_token],
       "colony-token-locking-excess-obligation"
     );
     _;
@@ -59,7 +59,7 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
   }
 
   function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user] = add(metatransactionNonces[user], 1);
+    metatransactionNonces[user] += 1;
   }
 
   function setColonyNetwork(address _colonyNetwork) public auth {
@@ -92,7 +92,7 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
     require(_lockId <= totalLockCount[_token], "colony-token-invalid-lockid");
 
     // These checks should happen in this order, as the second is stricter than the first
-    uint256 lockCountDelta = sub(_lockId, userLocks[_token][_user].lockCount);
+    uint256 lockCountDelta = _lockId - userLocks[_token][_user].lockCount;
     require(lockCountDelta != 0, "colony-token-locking-already-unlocked");
     require(lockCountDelta == 1, "colony-token-locking-has-previous-active-locks");
 
@@ -113,11 +113,11 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
 
   function deposit(address _token, uint256 _amount, bool _force) public tokenNotLocked(_token, _force) {
     Lock storage lock = userLocks[_token][msgSender()];
-    lock.balance = add(lock.balance, _amount);
+    lock.balance += _amount;
 
     // Handle the pendingBalance, if any (idempotent operation)
     if (_force) {
-      lock.balance = add(lock.balance, lock.pendingBalance);
+      lock.balance += lock.pendingBalance;
       delete lock.pendingBalance;
     }
 
@@ -140,7 +140,7 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
   tokenNotLocked(_token, _force)
   {
     Lock storage userLock = userLocks[_token][msgSender()];
-    userLock.balance = sub(userLock.balance, _amount);
+    userLock.balance -= _amount;
 
     makeConditionalDeposit(_token, _amount, _recipient);
 
@@ -157,7 +157,7 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
   tokenNotLocked(_token, _force)
   {
     Lock storage lock = userLocks[_token][msgSender()];
-    lock.balance = sub(lock.balance, _amount);
+    lock.balance -= _amount;
 
     require(ERC20Extended(_token).transfer(msgSender(), _amount), "colony-token-locking-transfer-failed");
 
@@ -165,15 +165,15 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
   }
 
   function approveStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
-    approvals[_user][_token][msgSender()] = add(approvals[_user][_token][msgSender()], _amount);
+    approvals[_user][_token][msgSender()] += _amount;
 
     emit UserTokenApproved(_token, _user, msgSender(), _amount);
   }
 
   function obligateStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
-    approvals[_user][_token][msgSender()] = sub(approvals[_user][_token][msgSender()], _amount);
-    obligations[_user][_token][msgSender()] = add(obligations[_user][_token][msgSender()], _amount);
-    totalObligations[_user][_token] = add(totalObligations[_user][_token], _amount);
+    approvals[_user][_token][msgSender()] -= _amount;
+    obligations[_user][_token][msgSender()] += _amount;
+    totalObligations[_user][_token] += _amount;
 
     require(userLocks[_token][_user].balance >= totalObligations[_user][_token], "colony-token-locking-insufficient-deposit");
 
@@ -181,19 +181,19 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
   }
 
   function deobligateStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
-    obligations[_user][_token][msgSender()] = sub(obligations[_user][_token][msgSender()], _amount);
-    totalObligations[_user][_token] = sub(totalObligations[_user][_token], _amount);
+    obligations[_user][_token][msgSender()] -= _amount;
+    totalObligations[_user][_token] -= _amount;
 
     emit UserTokenDeobligated(_token, _user, msgSender(), _amount);
   }
 
   function transferStake(address _user, uint256 _amount, address _token, address _recipient) public calledByColonyOrNetwork() {
-    obligations[_user][_token][msgSender()] = sub(obligations[_user][_token][msgSender()], _amount);
-    totalObligations[_user][_token] = sub(totalObligations[_user][_token], _amount);
+    obligations[_user][_token][msgSender()] -= _amount;
+    totalObligations[_user][_token] -= _amount;
 
     // Transfer the the tokens
     Lock storage userLock = userLocks[_token][_user];
-    userLock.balance = sub(userLock.balance, _amount);
+    userLock.balance -= _amount;
 
     makeConditionalDeposit(_token, _amount, _recipient);
 
@@ -230,16 +230,16 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
   function makeConditionalDeposit(address _token, uint256 _amount, address _user) internal {
     Lock storage userLock = userLocks[_token][_user];
     if (isTokenUnlocked(_token, _user)) {
-      userLock.balance = add(userLock.balance, _amount);
+      userLock.balance += _amount;
     } else {
       // If the transfer fails (for any reason), add tokens to pendingBalance
       // slither-disable-next-line unchecked-transfer
       try ERC20Extended(_token).transfer(_user, _amount) returns (bool success) {
         if (!success) {
-          userLock.pendingBalance = add(userLock.pendingBalance, _amount);
+          userLock.pendingBalance += _amount;
         }
       } catch {
-        userLock.pendingBalance = add(userLock.pendingBalance, _amount);
+        userLock.pendingBalance += _amount;
       }
     }
   }

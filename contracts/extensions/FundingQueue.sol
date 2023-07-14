@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental ABIEncoderV2;
 
 import "./../colony/ColonyDataTypes.sol";
@@ -95,7 +95,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public override pure returns (uint256 _version) {
-    return 4;
+    return 5;
   }
 
   /// @notice Configures the extension
@@ -122,7 +122,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
-    selfdestruct(address(uint160(address(colony))));
+    selfdestruct(payable(address(colony)));
   }
 
   // Public
@@ -268,11 +268,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
     // Update the user's reputation backing
     uint256 prevBacking = supporters[_id][msgSender()];
-    if (_backing >= prevBacking) {
-      proposal.totalSupport = add(proposal.totalSupport, sub(_backing, prevBacking));
-    } else {
-      proposal.totalSupport = sub(proposal.totalSupport, sub(prevBacking, _backing));
-    }
+    proposal.totalSupport = (proposal.totalSupport - prevBacking) + _backing;
     supporters[_id][msgSender()] = _backing;
 
     // Remove the proposal from its current position, if exists
@@ -311,20 +307,18 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     require(queue[HEAD] == _id, "funding-queue-proposal-not-head");
 
     uint256 fundingToTransfer = calculateFundingToTransfer(_id);
-    uint256 remainingRequested = sub(proposal.totalRequested, proposal.totalPaid);
+    uint256 remainingRequested = proposal.totalRequested - proposal.totalPaid;
     uint256 actualFundingToTransfer = min(fundingToTransfer, remainingRequested);
 
     // Infer update time based on actualFundingToTransfer / fundingToTransfer
     //  This is done so, if completed, the timestamp reflects the approximate completion
-    uint256 updateTime = add(
-      proposal.lastUpdated,
+    uint256 updateTime = proposal.lastUpdated +
       wmul(
-        sub(block.timestamp, proposal.lastUpdated),
+        block.timestamp - proposal.lastUpdated,
         wdiv(actualFundingToTransfer, max(fundingToTransfer, 1)) // Avoid divide-by-zero
-      )
-    );
+      );
 
-    proposal.totalPaid = add(proposal.totalPaid, actualFundingToTransfer);
+    proposal.totalPaid += actualFundingToTransfer;
     proposal.lastUpdated = updateTime;
 
     assert(proposal.totalPaid <= proposal.totalRequested);
@@ -433,7 +427,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     uint256 unitsElapsed = (block.timestamp - proposal.lastUpdated) / 10; // 10 second intervals
 
     uint256 newBalance = wmul(balance, wpow(decayRate, unitsElapsed));
-    uint256 fundingToTransfer = sub(balance, newBalance);
+    uint256 fundingToTransfer = balance - newBalance;
 
     return fundingToTransfer;
   }
@@ -451,10 +445,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     uint256 lowerBin = backingPercent / (10 ** 17);
     uint256 lowerPct = (backingPercent - (lowerBin * 10 ** 17)) * 10;
 
-    return add(
-      wmul(getDecayRateFromBin(lowerBin), sub(WAD, lowerPct)),
-      wmul(getDecayRateFromBin(lowerBin + 1), lowerPct)
-    );
+    return wmul(getDecayRateFromBin(lowerBin), WAD - lowerPct) + wmul(getDecayRateFromBin(lowerBin + 1), lowerPct);
   }
 
   function getDecayRateFromBin(uint256 bin) internal pure returns (uint256) {

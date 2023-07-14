@@ -1,8 +1,12 @@
 [submodule "lib/dappsys"]
 	path = lib/dappsys
 	url = https://github.com/JoinColony/dappsys-monolithic.git
-  branch = maint/no-round-wad
+  branch = maint/solidity8
 [submodule "lib/colonyToken"]
 	path = lib/colonyToken
 	url = https://github.com/JoinColony/colonyToken.git
   branch = master
+[submodule "lib/safe-contracts"]
+	path = lib/safe-contracts
+	url = https://github.com/safe-global/safe-contracts
+	ignore = dirty

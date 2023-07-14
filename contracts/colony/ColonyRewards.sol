@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental "ABIEncoderV2";
 
 import "./../tokenLocking/ITokenLocking.sol";
@@ -39,11 +39,11 @@ contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   {
     ITokenLocking tokenLocking = ITokenLocking(tokenLockingAddress);
     uint256 totalLockCount = tokenLocking.lockToken(token);
-    uint256 thisPayoutAmount = sub(fundingPots[0].balance[_token], pendingRewardPayments[_token]);
+    uint256 thisPayoutAmount = fundingPots[0].balance[_token] - pendingRewardPayments[_token];
     require(thisPayoutAmount > 0, "colony-reward-payout-no-rewards");
-    pendingRewardPayments[_token] = add(pendingRewardPayments[_token], thisPayoutAmount);
+    pendingRewardPayments[_token] = pendingRewardPayments[_token] + thisPayoutAmount;
 
-    uint256 totalTokens = sub(ERC20Extended(token).totalSupply(), ERC20Extended(token).balanceOf(address(this)));
+    uint256 totalTokens = ERC20Extended(token).totalSupply() - ERC20Extended(token).balanceOf(address(this));
     require(totalTokens > 0, "colony-reward-payout-invalid-total-tokens");
 
     bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
@@ -99,14 +99,11 @@ contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, msgSender(), _payoutId);
 
     uint fee = calculateNetworkFeeForPayout(reward);
-    uint remainder = sub(reward, fee);
+    uint remainder = reward - fee;
 
-    fundingPots[0].balance[tokenAddress] = sub(fundingPots[0].balance[tokenAddress], reward);
-    pendingRewardPayments[rewardPayoutCycles[_payoutId].tokenAddress] = sub(
-      pendingRewardPayments[rewardPayoutCycles[_payoutId].tokenAddress],
-      reward
-    );
-    rewardPayoutCycles[_payoutId].amountRemaining = sub(rewardPayoutCycles[_payoutId].amountRemaining, reward);
+    fundingPots[0].balance[tokenAddress] -= reward;
+    pendingRewardPayments[rewardPayoutCycles[_payoutId].tokenAddress] -= reward;
+    rewardPayoutCycles[_payoutId].amountRemaining -= reward;
 
     assert(ERC20Extended(tokenAddress).transfer(msgSender(), remainder));
     assert(ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee));
@@ -121,7 +118,7 @@ contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     require(block.timestamp - payout.blockTimestamp > 60 days, "colony-reward-payout-active");
 
     rewardPayoutCycles[_payoutId].finalized = true;
-    pendingRewardPayments[payout.tokenAddress] = sub(pendingRewardPayments[payout.tokenAddress], payout.amountRemaining);
+    pendingRewardPayments[payout.tokenAddress] -= payout.amountRemaining;
 
     emit RewardPayoutCycleEnded(msgSender(), _payoutId);
   }
@@ -190,18 +187,18 @@ contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     // squareRoots[5] - square root of denominator
     // squareRoots[6] - square root of payout.amount
 
-    require(mul(squareRoots[0], squareRoots[0]) <= userReputation, "colony-reward-payout-invalid-parameter-user-reputation");
-    require(mul(squareRoots[1], squareRoots[1]) <= userTokens, "colony-reward-payout-invalid-parameter-user-token");
-    require(mul(squareRoots[2], squareRoots[2]) >= payout.colonyWideReputation, "colony-reward-payout-invalid-parameter-total-reputation");
-    require(mul(squareRoots[3], squareRoots[3]) >= payout.totalTokens, "colony-reward-payout-invalid-parameter-total-tokens");
-    require(mul(squareRoots[6], squareRoots[6]) <= payout.amount, "colony-reward-payout-invalid-parameter-amount");
-    uint256 numerator = mul(squareRoots[0], squareRoots[1]);
-    uint256 denominator = mul(squareRoots[2], squareRoots[3]);
+    require(squareRoots[0] * squareRoots[0] <= userReputation, "colony-reward-payout-invalid-parameter-user-reputation");
+    require(squareRoots[1] * squareRoots[1] <= userTokens, "colony-reward-payout-invalid-parameter-user-token");
+    require(squareRoots[2] * squareRoots[2] >= payout.colonyWideReputation, "colony-reward-payout-invalid-parameter-total-reputation");
+    require(squareRoots[3] * squareRoots[3] >= payout.totalTokens, "colony-reward-payout-invalid-parameter-total-tokens");
+    require(squareRoots[6] * squareRoots[6] <= payout.amount, "colony-reward-payout-invalid-parameter-amount");
+    uint256 numerator = squareRoots[0] * squareRoots[1];
+    uint256 denominator = squareRoots[2] * squareRoots[3];
 
-    require(mul(squareRoots[4], squareRoots[4]) <= numerator, "colony-reward-payout-invalid-parameter-numerator");
-    require(mul(squareRoots[5], squareRoots[5]) >= denominator, "colony-reward-payout-invalid-parameter-denominator");
+    require(squareRoots[4] * squareRoots[4] <= numerator, "colony-reward-payout-invalid-parameter-numerator");
+    require(squareRoots[5] * squareRoots[5] >= denominator, "colony-reward-payout-invalid-parameter-denominator");
 
-    uint256 reward = (mul(squareRoots[4], squareRoots[6]) / squareRoots[5]) ** 2;
+    uint256 reward = (squareRoots[4] * squareRoots[6] / squareRoots[5]) ** 2;
 
     return (payout.tokenAddress, reward);
   }

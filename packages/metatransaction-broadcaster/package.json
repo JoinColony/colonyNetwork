@@ -14,7 +14,7 @@
     "express": "^4.18.1",
     "express-queue": "^0.0.13",
     "sqlite": "^4.1.2",
-    "sqlite3": "^5.0.11",
+    "sqlite3": "^5.1.5",
     "yargs": "^17.5.1"
   }
 }

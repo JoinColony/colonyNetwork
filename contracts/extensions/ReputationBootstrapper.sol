@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/erc20.sol";
@@ -73,7 +73,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 1;
+    return 2;
   }
 
   /// @notice Configures the extension
@@ -103,7 +103,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     uint256 balance = ERC20(token).balanceOf(address(this));
     require(ERC20(token).transfer(address(colony), balance), "reputation-bootstrapper-transfer-failed");
 
-    selfdestruct(address(uint160(address(colony))));
+    selfdestruct(payable(address(colony)));
   }
 
   // Public

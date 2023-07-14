@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental "ABIEncoderV2";
 
 import "./../colonyNetwork/IColonyNetwork.sol";
@@ -41,11 +41,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     // Check the binary search result has been confirmed
     Submission storage submission = reputationHashSubmissions[disputeRounds[_round][_idx].firstSubmitter];
     require(
+      disputeRounds[_round][_idx].challengeStepCompleted >= 2 &&
       2**(disputeRounds[_round][_idx].challengeStepCompleted-2)>submission.jrhNLeaves,
       "colony-reputation-mining-binary-search-result-not-confirmed"
     );
     // Check that we have not already responded to the challenge
     require(
+      disputeRounds[_round][_idx].challengeStepCompleted >= 3 &&
       2**(disputeRounds[_round][_idx].challengeStepCompleted-3)<=submission.jrhNLeaves,
       "colony-reputation-mining-challenge-already-responded"
     );
@@ -369,8 +371,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     address expectedAddress;
     (expectedSkillId, expectedAddress) = getExpectedSkillIdAndAddress(u, logEntry);
 
-    require(expectedAddress == address(uint256(b32[B_REPUTATION_KEY_USER])), "colony-reputation-mining-user-address-mismatch");
-    require(logEntry.colony == address(uint256(b32[B_REPUTATION_KEY_COLONY])), "colony-reputation-mining-colony-address-mismatch");
+    require(expectedAddress == address(uint160(uint256(b32[B_REPUTATION_KEY_USER]))), "colony-reputation-mining-user-address-mismatch");
+    require(logEntry.colony == address(uint160(uint256(b32[B_REPUTATION_KEY_COLONY]))), "colony-reputation-mining-colony-address-mismatch");
     require(expectedSkillId == uint256(b32[B_REPUTATION_KEY_SKILLID]), "colony-reputation-mining-skill-id-mismatch");
 
     require(
@@ -598,7 +600,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
   // e.g. for log entry with 6 updates, the relative update number range is [0 .. 5] (inclusive)
   function getRelativeUpdateNumber(uint256[26] memory u, ReputationLogEntry memory logEntry) internal view returns (uint256) {
     uint256 nLeaves = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNLeaves();
-    uint256 updateNumber = sub(sub(disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound, 1), nLeaves);
+    uint256 updateNumber = (disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1) - nLeaves;
 
     // Check that the supplied log entry corresponds to this update number
     require(updateNumber >= logEntry.nPreviousUpdates, "colony-reputation-mining-update-number-part-of-previous-log-entry-updates");

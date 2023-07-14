@@ -43,6 +43,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
       "contracts/patriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
       "contracts/reputationMiningCycle/ReputationMiningCycleStorage.sol",
+      "contracts/testHelpers/ERC721Mock.sol",
       "contracts/testHelpers/ToggleableToken.sol",
       "contracts/testHelpers/TestExtensions.sol",
       "contracts/testHelpers/GasGuzzler.sol",

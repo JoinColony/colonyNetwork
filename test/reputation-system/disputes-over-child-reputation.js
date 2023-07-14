@@ -55,7 +55,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
   await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
 
-  // Initialise global skills tree: 3, local skills tree 1 -> 4 -> 5
+  // Initialise global skills tree: 3, domain skills tree 1 -> 4 -> 5
   //                                                      \-> 2
   await metaColony.addDomain(1, UINT256_MAX, 1);
   await metaColony.addDomain(1, 1, 2);

@@ -7,7 +7,6 @@ CURRENT_BRANCH=`git branch --show-current`
 git checkout $LATEST_RELEASE
 
 # Compile release
-
 npm ci --force && npx truffle compile
 rm -rf build-$LATEST_RELEASE || true
 mv build build-$LATEST_RELEASE
@@ -95,18 +94,18 @@ compare_bytecodes_check_version() {
 
 check_and_dependencies() {
 	local BASE_CONTRACT_NAME=`basename $1 .sol`
-	compare_bytecodes_check_version $BASE_CONTRACT_NAME $1
+	local FILE_WITH_VERSION=$2
+	compare_bytecodes_check_version $BASE_CONTRACT_NAME $FILE_WITH_VERSION
 	# Anything that relies on that file
 	for extensionFile in $(grep -ilr "^contract.* is .*$BASE_CONTRACT_NAME[, {]" ./contracts/extensions/)
 	do
-		compare_bytecodes_check_version $extensionFile $extensionFile
-		check_and_dependencies $extensionFile
+		check_and_dependencies $extensionFile $extensionFile
 	done
 }
 
 # Are there changes in the colony contract that need colony version bumped?
 # Get the names of the colony contracts that changed
-for file in $(git diff --cached --name-only $LATEST_RELEASE | grep -E 'contracts/colony/')
+for file in contracts/colony/*
 do
 	CONTRACT_NAME=`basename $file .sol`
 	LAST_RELEASE_BYTECODE=$(relevant_bytecode ./build-$LATEST_RELEASE/contracts/$CONTRACT_NAME.json)
@@ -129,19 +128,16 @@ do
 done
 
 # Now the same for the extensions
-for file in $(git diff --cached --name-only $LATEST_RELEASE | grep -E 'contracts/extensions/')
+for file in contracts/extensions/*
 do
-	if [ $file = "contracts/extensions/votingReputation/VotingReputationDataTypes.sol" ]; then
-		compare_bytecodes_check_version contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol contracts/extensions/votingReputation/VotingReputation.sol
+	# Skip directories
+	if [ ! -d "$file" ]; then
+		if [ $file = "contracts/extensions/votingReputation/VotingReputation*.sol" ]; then
+			check_and_dependencies $file contracts/extensions/votingReputation/VotingReputation.sol
+		else
+			check_and_dependencies $file $file
+		fi
 	fi
-
-	if [ $file = "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol" ]; then
-		compare_bytecodes_check_version $file contracts/extensions/votingReputation/VotingReputation.sol
-		continue
-	fi
-
-	check_and_dependencies $file
-
 done
 
 exit $STATUS

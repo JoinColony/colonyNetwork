@@ -2,7 +2,7 @@
 
 const path = require("path");
 const { soliditySha3 } = require("web3-utils");
-const { TruffleLoader } = require("../packages/package-utils");
+const { ethers } = require("ethers");
 
 const {
   UINT256_MAX,
@@ -23,6 +23,7 @@ const {
   DEFAULT_STAKE,
   INITIAL_FUNDING,
   GLOBAL_SKILL_ID,
+  MINING_CYCLE_DURATION,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
 } = require("../helpers/constants");
 
@@ -32,7 +33,9 @@ const {
   forwardTime,
   bnSqrt,
   makeReputationKey,
+  makeReputationValue,
   getActiveRepCycle,
+  encodeTxData,
   advanceMiningCycleNoContest,
   submitAndForwardTimeToDispute,
   accommodateChallengeAndInvalidateHash,
@@ -41,6 +44,8 @@ const {
 const { giveUserCLNYTokensAndStake, fundColonyWithTokens, makeTask, setupRandomColony } = require("../helpers/test-data-generator");
 const { executeSignedTaskChange, executeSignedRoleAssignment } = require("../helpers/task-review-signing");
 
+const { TruffleLoader } = require("../packages/package-utils");
+const PatriciaTree = require("../packages/reputation-miner/patricia");
 const ReputationMinerTestWrapper = require("../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const MaliciousReputationMinerExtraRep = require("../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 
@@ -52,6 +57,8 @@ const EtherRouter = artifacts.require("EtherRouter");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const OneTxPayment = artifacts.require("OneTxPayment");
 const ReputationBootstrapper = artifacts.require("ReputationBootstrapper");
+const VotingReputation = artifacts.require("VotingReputation");
+const IVotingReputation = artifacts.require("IVotingReputation");
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
@@ -65,6 +72,7 @@ contract("All", function (accounts) {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
+  const MINER = accounts[5];
 
   let colony;
   let token;
@@ -79,18 +87,21 @@ contract("All", function (accounts) {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
 
-    ({ colony, token } = await setupRandomColony(colonyNetwork));
-
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
 
     await IColony.defaults({ gasPrice });
+  });
+
+  beforeEach(async function () {
+    ({ colony, token } = await setupRandomColony(colonyNetwork));
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
     await otherToken.unlock();
 
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+    await fundColonyWithTokens(colony, otherToken, INITIAL_FUNDING);
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
@@ -115,7 +126,8 @@ contract("All", function (accounts) {
       await colony.setAdministrationRole(1, UINT256_MAX, EVALUATOR, 1, true);
     });
 
-    it("when working with a Task", async function () {
+    // Deprecated functionality
+    it.skip("when working with a Task", async function () {
       const taskId = await makeTask({ colony });
 
       // setTaskSkill
@@ -217,14 +229,44 @@ contract("All", function (accounts) {
       await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
       await colony.finalizePayment(1, UINT256_MAX, paymentId);
       await colony.claimPayment(paymentId, token.address);
+    });
 
-      // 1 transaction payment
+    it("when working with a OneTxPayment", async function () {
       const oneTxExtension = await OneTxPayment.new();
       await oneTxExtension.install(colony.address);
       await colony.setAdministrationRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
       await colony.setFundingRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
 
+      // 1 tx payment to one recipient, native token
+      await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER], [token.address], [10], 1, 0);
+
+      // 1 tx payment to one recipient, other token
+      await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER], [otherToken.address], [10], 1, 0);
+
+      // 1 tx payment to one recipient, with skill
       await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER], [token.address], [10], 1, GLOBAL_SKILL_ID);
+
+      const firstToken = token.address < otherToken.address ? token.address : otherToken.address;
+      const secondToken = token.address < otherToken.address ? otherToken.address : token.address;
+
+      // 1 tx payment to one recipient, two tokens
+      await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER, WORKER], [firstToken, secondToken], [10, 10], 1, 0);
+
+      // 1 tx payment to two recipients, one token
+      await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER, MANAGER], [firstToken, firstToken], [10, 10], 1, 0);
+
+      // 1 transaction payment to two recipients, two tokens
+      await oneTxExtension.makePayment(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        [WORKER, WORKER, MANAGER, MANAGER],
+        [firstToken, secondToken, firstToken, secondToken],
+        [10, 10, 10, 10],
+        1,
+        0
+      );
     });
 
     it("when working with staking", async function () {
@@ -428,6 +470,120 @@ contract("All", function (accounts) {
       await forwardTime(SECONDS_PER_DAY * 90, this);
 
       await reputationBootstrapper.claimGrant(false, 1, { from: WORKER });
+    });
+  });
+
+  describe("Gas costs for motions", function () {
+    let voting;
+
+    let domain1Key;
+    let domain1Value;
+    let domain1Mask;
+    let domain1Siblings;
+
+    let managerKey;
+    let managerValue;
+    let managerMask;
+    let managerSiblings;
+
+    let workerKey;
+    let workerValue;
+    let workerMask;
+    let workerSiblings;
+
+    beforeEach(async function () {
+      const domain1 = await colony.getDomain(1);
+      domain1Key = makeReputationKey(colony.address, domain1.skillId);
+      domain1Value = makeReputationValue(WAD.muln(3), 1);
+      managerKey = makeReputationKey(colony.address, domain1.skillId, MANAGER);
+      managerValue = makeReputationValue(WAD, 2);
+      workerKey = makeReputationKey(colony.address, domain1.skillId, WORKER);
+      workerValue = makeReputationValue(WAD.muln(2), 5);
+
+      const reputationTree = new PatriciaTree();
+      await reputationTree.insert(domain1Key, domain1Value);
+      await reputationTree.insert(managerKey, managerValue);
+      await reputationTree.insert(workerKey, workerValue);
+
+      [domain1Mask, domain1Siblings] = await reputationTree.getProof(domain1Key);
+      [managerMask, managerSiblings] = await reputationTree.getProof(managerKey);
+      [workerMask, workerSiblings] = await reputationTree.getProof(workerKey);
+
+      const rootHash = await reputationTree.getRootHash();
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash(rootHash, 0, "0x00", 10, { from: MINER });
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+      await repCycle.confirmNewHash(0, { from: MINER });
+
+      const VOTING_REPUTATION = soliditySha3("VotingReputation");
+      const extension = await VotingReputation.new();
+      const version = await extension.version();
+      await colony.installExtension(VOTING_REPUTATION, version);
+      const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
+      voting = await IVotingReputation.at(votingAddress);
+
+      await voting.initialise(
+        WAD.divn(1000),
+        WAD.divn(10),
+        WAD.divn(10),
+        WAD.divn(10).muln(8),
+        SECONDS_PER_DAY * 3,
+        SECONDS_PER_DAY * 2,
+        SECONDS_PER_DAY * 2,
+        SECONDS_PER_DAY
+      );
+
+      await colony.setRootRole(voting.address, true);
+      await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
+      await colony.setAdministrationRole(1, UINT256_MAX, voting.address, 1, true);
+
+      await token.mint(MANAGER, WAD);
+      await token.mint(WORKER, WAD);
+      await token.approve(tokenLocking.address, WAD, { from: MANAGER });
+      await token.approve(tokenLocking.address, WAD, { from: WORKER });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, WAD, true, { from: MANAGER });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, WAD, true, { from: WORKER });
+      await colony.approveStake(voting.address, 1, WAD, { from: MANAGER });
+      await colony.approveStake(voting.address, 1, WAD, { from: WORKER });
+    });
+
+    it("making a motion with no dispute", async function () {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await voting.createMotion(1, UINT256_MAX, ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      const stake = WAD.muln(3).divn(1000);
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, 1, stake, managerKey, managerValue, managerMask, managerSiblings, { from: MANAGER });
+
+      await forwardTime(SECONDS_PER_DAY * 3, this);
+
+      await voting.finalizeMotion(motionId);
+      await voting.claimReward(motionId, 1, UINT256_MAX, MANAGER, 1);
+    });
+
+    it("making a motion with votes", async function () {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await voting.createMotion(1, UINT256_MAX, ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      const stake = WAD.muln(3).divn(1000);
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, 1, stake, managerKey, managerValue, managerMask, managerSiblings, { from: MANAGER });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, 0, stake, workerKey, workerValue, workerMask, workerSiblings, { from: WORKER });
+
+      const salt = soliditySha3("salt");
+      await voting.submitVote(motionId, soliditySha3(salt, 1), managerKey, managerValue, managerMask, managerSiblings, { from: MANAGER });
+      await voting.submitVote(motionId, soliditySha3(salt, 0), workerKey, workerValue, workerMask, workerSiblings, { from: WORKER });
+
+      await voting.revealVote(motionId, salt, 1, managerKey, managerValue, managerMask, managerSiblings, { from: MANAGER });
+      await voting.revealVote(motionId, salt, 0, workerKey, workerValue, workerMask, workerSiblings, { from: WORKER });
+
+      await forwardTime(SECONDS_PER_DAY, this);
+
+      await voting.finalizeMotion(motionId);
+
+      await voting.claimReward(motionId, 1, UINT256_MAX, MANAGER, 1);
+      await voting.claimReward(motionId, 1, UINT256_MAX, WORKER, 0);
     });
   });
 });

@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyExtensionMeta.sol";
@@ -87,7 +87,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public override pure returns (uint256 _version) {
-    return 1;
+    return 2;
   }
 
   /// @notice Configures the extension
@@ -109,7 +109,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
-    selfdestruct(address(uint160(address(colony))));
+    selfdestruct(payable(address(colony)));
   }
 
   /// @notice Creates a new streaming payment
@@ -188,9 +188,9 @@ contract StreamingPayments is ColonyExtensionMeta {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
 
       uint256 amountEntitledFromStart = getAmountEntitledFromStart(_id, _tokens[i]);
-      uint256 amountSinceLastClaim = sub(amountEntitledFromStart, paymentToken.pseudoAmountClaimedFromStart);
+      uint256 amountSinceLastClaim = amountEntitledFromStart - paymentToken.pseudoAmountClaimedFromStart;
       amountsToClaim[i] = getAmountClaimable(domainFundingPotId, _tokens[i], amountSinceLastClaim);
-      paymentToken.pseudoAmountClaimedFromStart = add(paymentToken.pseudoAmountClaimedFromStart, amountsToClaim[i]);
+      paymentToken.pseudoAmountClaimedFromStart = paymentToken.pseudoAmountClaimedFromStart + amountsToClaim[i];
       anythingToClaim = anythingToClaim || amountsToClaim[i] > 0;
     }
 
@@ -402,7 +402,8 @@ contract StreamingPayments is ColonyExtensionMeta {
       return 0;
     }
 
-    uint256 durationToClaim = sub(min(block.timestamp, streamingPayment.endTime), streamingPayment.startTime);
+    uint256 durationToClaim = min(block.timestamp, streamingPayment.endTime) - streamingPayment.startTime;
+    // slither-disable-next-line incorrect-equality
     if (durationToClaim == 0) {
       return 0;
     }

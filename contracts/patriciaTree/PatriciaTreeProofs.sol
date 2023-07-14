@@ -1,4 +1,4 @@
-pragma solidity 0.7.3;
+pragma solidity 0.8.20;
 pragma experimental "ABIEncoderV2";
 
 import {Data} from "./Data.sol";
@@ -57,6 +57,7 @@ contract PatriciaTreeProofs {
     } else {
       uint lowestBitSet = branchMask.lowestBitSet();
       (k, e.label) = k.splitAt(255 - lowestBitSet);
+      // slither-disable-next-line unused-return
       (, e.label) = e.label.chopFirstBit();
     }
     return (e.edgeHash(), edgeHashes);
