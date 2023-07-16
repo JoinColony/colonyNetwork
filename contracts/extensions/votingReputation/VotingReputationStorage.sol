@@ -281,14 +281,14 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
         expenditureId = getExpenditureId(actions[i]);
 
         if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
-          // Invalid multicall, caller should error
+          // Invalid multicall, caller should handle appropriately
           return ActionSummary({ sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0 });
         } else {
           summary.domainSkillId = domainSkillId;
         }
 
         if (summary.expenditureId > 0 && summary.expenditureId != expenditureId) {
-          // Invalid multicall, caller should error
+          // Invalid multicall, caller should handle appropriately
           return ActionSummary({ sig: bytes4(0x0), domainSkillId: 0, expenditureId: type(uint256).max });
         } else {
           summary.expenditureId = expenditureId;
@@ -297,19 +297,15 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
       } else {
         // Otherwise we record the domain id and ensure it is consistent throughout the multicall
         // If no expenditure signatures have been seen, we record the latest signature
-        bytes32 capabilityRoles;
-        try ColonyRoles(target).getCapabilityRoles(sig) returns (bytes32 res) {
-          capabilityRoles = res;
-        } catch {}
-
-        if (capabilityRoles | ROOT_ROLES == ROOT_ROLES) {
+        // TODO: explicitly check `isExtension` for target, currently this simply errors
+        if (ColonyRoles(target).getCapabilityRoles(sig) | ROOT_ROLES == ROOT_ROLES) {
           domainSkillId = colony.getDomain(1).skillId;
         } else {
           domainSkillId = getActionDomainSkillId(actions[i]);
         }
 
         if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
-          // Invalid multicall, caller should error
+          // Invalid multicall, caller should handle appropriately
           return ActionSummary({ sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0 });
         } else {
           summary.domainSkillId = domainSkillId;

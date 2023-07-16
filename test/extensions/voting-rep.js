@@ -1796,12 +1796,9 @@ contract("Voting Reputation", (accounts) => {
       expect(summary.expenditureId).to.be.zero;
       expect(summary.domainSkillId).to.eq.BN(domain1.skillId);
 
-      // To an alternative target
+      // To an alternative target without `getCapabilityRoles` fails
       multicall = await encodeTxData(colony, "multicall", [[action12, action13]]);
-      summary = await voting.getActionSummary(multicall, tokenLocking.address);
-      expect(summary.sig).to.equal(soliditySha3("obligateStake(address,uint256,address)").slice(0, 10));
-      expect(summary.expenditureId).to.be.zero;
-      expect(summary.domainSkillId).to.eq.BN(domain1.skillId);
+      await checkErrorRevert(voting.getActionSummary(multicall, tokenLocking.address));
 
       // Different domain actions (error, implemented as UINT256_MAX)
       // Root (1) & domain (2) actions
