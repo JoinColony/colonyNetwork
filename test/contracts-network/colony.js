@@ -572,47 +572,45 @@ contract("Colony", (accounts) => {
 
   describe("when setting the token reputation scaling factor", async () => {
     it("can read the reputation rate for a token", async () => {
-      const rate = await colony.getTokenReputationRate(token.address);
+      const rate = await colony.getTokenReputationScaling(token.address);
       expect(rate).to.eq.BN(WAD);
     });
 
     it("can set the reputation rate for more than ten tokens", async () => {
-      let i = ethers.BigNumber.from(1);
-      while (i < 11) {
-        await colony.setTokenReputationRate(ethers.utils.hexZeroPad(i.toHexString(), 20), WAD.subn(i.toNumber()));
-        i = i.add(1);
+      for (let i = 1; i <= 11; i += 1) {
+        await colony.setTokenReputationScaling(ethers.utils.hexZeroPad(ethers.BigNumber.from(i).toHexString(), 20), WAD.subn(i));
       }
     });
 
     it("can remove tokens that award reputation", async () => {
       let i = ethers.BigNumber.from(1);
       while (i < 10) {
-        await colony.setTokenReputationRate(ethers.utils.hexZeroPad(i.toHexString(), 20), WAD.subn(i.toNumber()));
+        await colony.setTokenReputationScaling(ethers.utils.hexZeroPad(i.toHexString(), 20), WAD.subn(i.toNumber()));
         i = i.add(1);
       }
 
-      let res = await colony.getTokenReputationRate(ethers.utils.hexZeroPad("0x02", 20));
+      let res = await colony.getTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20));
       expect(res).to.eq.BN(WAD.subn(2));
 
-      await colony.setTokenReputationRate(ethers.utils.hexZeroPad("0x02", 20), 0);
+      await colony.setTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20), 0);
 
-      res = await colony.getTokenReputationRate(ethers.utils.hexZeroPad("0x02", 20));
+      res = await colony.getTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20));
       expect(res).to.eq.BN(0);
     });
 
     it("can update the weight of tokens on the list", async () => {
       let i = ethers.BigNumber.from(1);
       while (i < 10) {
-        await colony.setTokenReputationRate(ethers.utils.hexZeroPad(i.toHexString(), 20), WAD.subn(i.toNumber()));
+        await colony.setTokenReputationScaling(ethers.utils.hexZeroPad(i.toHexString(), 20), WAD.subn(i.toNumber()));
         i = i.add(1);
       }
 
-      let res = await colony.getTokenReputationRate(ethers.utils.hexZeroPad("0x02", 20));
+      let res = await colony.getTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20));
       expect(res).to.be.eq.BN(WAD.subn(2));
 
-      await colony.setTokenReputationRate(ethers.utils.hexZeroPad("0x02", 20), 100);
+      await colony.setTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20), 100);
 
-      res = await colony.getTokenReputationRate(ethers.utils.hexZeroPad("0x02", 20));
+      res = await colony.getTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20));
       expect(res).to.be.eq.BN(100);
     });
   });

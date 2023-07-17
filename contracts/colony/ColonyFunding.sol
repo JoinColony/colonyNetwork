@@ -179,7 +179,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
       reputation = negative ? reputation + payout : reputation - payout;
     }
 
-    uint256 scaleFactor = tokenReputationRates[tokenAddress]; // NB This is a WAD
+    uint256 scaleFactor = tokenReputationScalings[tokenAddress]; // NB This is a WAD
     // We may lose one atom of reputation here :sad:
 
     return scaleReputation(int256(reputation / 2) * (negative ? int256(-1) : int256(1)), scaleFactor);
@@ -268,8 +268,8 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
 
     // Process reputation updates if relevant for token being paid out
-    if (tokenReputationRates[_token] > 0 && !isExtension(slot.recipient)) {
-      int256 tokenScaledReputationAmount = scaleReputation(int256(repPayout), tokenReputationRates[_token]);
+    if (tokenReputationScalings[_token] > 0 && !isExtension(slot.recipient)) {
+      int256 tokenScaledReputationAmount = scaleReputation(int256(repPayout), tokenReputationScalings[_token]);
 
       emitReputation(slot.recipient, tokenScaledReputationAmount, domains[expenditure.domainId].skillId);
       if (slot.skills.length > 0 && slot.skills[0] > 0) {
@@ -310,7 +310,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
     if (!isExtension(payment.recipient)) {
 
-      uint256 scaleFactor = tokenReputationRates[_token]; // NB This is a WAD
+      uint256 scaleFactor = tokenReputationScalings[_token]; // NB This is a WAD
       int256 tokenScaledReputationAmount = scaleReputation(int256(fundingPot.payouts[_token]), scaleFactor);
 
       // Todo: Is this equality right?

@@ -60,7 +60,7 @@ contract ColonyDomains is ColonyStorage {
     rewardInverse = 2**256 - 1;
 
     // Set the token weighting for the native token to 1
-    tokenReputationRates[token] = WAD;
+    tokenReputationScalings[token] = WAD;
 
     emit ColonyInitialised(msgSender(), _colonyNetworkAddress, _token);
   }

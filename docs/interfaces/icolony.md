@@ -845,7 +845,7 @@ Get the root local skill id
 |---|---|---|
 |rootLocalSkill|uint256|The root local skill id
 
-### ▸ `getSkillReputationScaling(uint256 _skillId):uint256 scaleFactor`
+### ▸ `getSkillReputationScaling(uint256 skillId):uint256 scaleFactor`
 
 Get the reputation scaling applied to reputation earned in a skill in this colony.
 
@@ -855,7 +855,7 @@ Get the reputation scaling applied to reputation earned in a skill in this colon
 
 |Name|Type|Description|
 |---|---|---|
-|_skillId|uint256|The skill to get the value of scaling in
+|skillId|uint256|The skill to get the value of scaling in
 
 **Return Parameters**
 
@@ -1019,7 +1019,7 @@ Get the current approval amount
 |---|---|---|
 |amount|uint256|The token approval amount
 
-### ▸ `getTokenReputationRate(address _token):uint256 rate`
+### ▸ `getTokenReputationScaling(address token):uint256 scaleFactor`
 
 Call to get the reputation scaling applied to payouts made in a particular token
 
@@ -1028,13 +1028,13 @@ Call to get the reputation scaling applied to payouts made in a particular token
 
 |Name|Type|Description|
 |---|---|---|
-|_token|address|The token we wish to query
+|token|address|The token we wish to query
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|rate|uint256|The amount of scaling to applied as a WAD.
+|scaleFactor|uint256|The amount of scaling to applied as a WAD.
 
 ### ▸ `getTotalTokenApproval(address token):uint256 amount`
 
@@ -1481,7 +1481,7 @@ Update the default global claim delay for expenditures
 |_globalClaimDelay|uint256|The new default global claim delay
 
 
-### ▸ `setDomainReputationScaling(uint256 domainId, uint256 factor)`
+### ▸ `setDomainReputationScaling(uint256 domainId, uint256 scaleFactor)`
 
 Call to set the reputation scaling applied to reputation earned in a domain
 
@@ -1491,7 +1491,7 @@ Call to set the reputation scaling applied to reputation earned in a domain
 |Name|Type|Description|
 |---|---|---|
 |domainId|uint256|The domain to set the value of scaling in
-|factor|uint256|The scale factor to apply, as a WAD
+|scaleFactor|uint256|The scale factor to apply, as a WAD
 
 
 ### ▸ `setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)`
@@ -1775,7 +1775,7 @@ Sets the skill on an existing payment. Secured function to authorised members.
 |_skillId|uint256|Id of the new skill to set
 
 
-### ▸ `setReputationDecayRate(uint256 _numerator, uint256 _denominator)`
+### ▸ `setReputationDecayRate(uint256 numerator, uint256 denominator)`
 
 Call to set the rate at which reputation in this colony decays
 
@@ -1784,8 +1784,8 @@ Call to set the rate at which reputation in this colony decays
 
 |Name|Type|Description|
 |---|---|---|
-|_numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
-|_denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
+|numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
 
 
 ### ▸ `setRewardInverse(uint256 _rewardInverse)`
@@ -1939,7 +1939,7 @@ Assigning worker role. Can only be set if there is no one currently assigned to 
 |_user|address|Address of the user we want to give a worker role to
 
 
-### ▸ `setTokenReputationRate(address _token, uint256 _rate)`
+### ▸ `setTokenReputationScaling(address token, uint256 scaleFactor)`
 
 Call to set the reputation scaling applied to payouts made in a particular token
 
@@ -1948,8 +1948,8 @@ Call to set the reputation scaling applied to payouts made in a particular token
 
 |Name|Type|Description|
 |---|---|---|
-|_token|address|The token we wish to apply scaling to
-|_rate|uint256|The amount of scaling to apply, as a WAD. Users will earn payout*_rate reputation.
+|token|address|The token we wish to apply scaling to
+|scaleFactor|uint256|The amount of scaling to apply, as a WAD. Users will earn payout*scaleFactor reputation.
 
 
 ### ▸ `setUserRoles(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bytes32 _roles)`

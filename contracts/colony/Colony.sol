@@ -114,7 +114,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     // After doing all the local storage changes, then do all the external calls
     for (uint256 i = 0; i < _users.length; i++) {
       require(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])), "colony-bootstrap-token-transfer-failed");
-      uint256 scaleFactor = tokenReputationRates[token]; // NB This is a WAD
+      uint256 scaleFactor = tokenReputationScalings[token]; // NB This is a WAD
       int256 tokenScaledReputationAmount = scaleReputation(_amounts[i], scaleFactor);
       emitReputation(_users[i], tokenScaledReputationAmount, domains[1].skillId);
     }
@@ -363,7 +363,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
     // Set the default token weighting for the native token
-    tokenReputationRates[token] = WAD;
+    tokenReputationScalings[token] = WAD;
 
     sig = bytes4(keccak256("setReputationDecayRate(uint256,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
@@ -372,12 +372,12 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
-  function setTokenReputationRate(address _token, uint256 _rate) public stoppable {
-      tokenReputationRates[_token] = _rate;
+  function setTokenReputationScaling(address _token, uint256 _scaling) public stoppable {
+      tokenReputationScalings[_token] = _scaling;
   }
 
-  function getTokenReputationRate(address _token) public view returns (uint256) {
-    return tokenReputationRates[_token];
+  function getTokenReputationScaling(address _token) public view returns (uint256) {
+    return tokenReputationScalings[_token];
   }
 
   function setReputationDecayRate(uint256 _numerator, uint256 _denominator) stoppable auth public {
