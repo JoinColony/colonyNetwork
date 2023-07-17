@@ -39,22 +39,16 @@ contract("ScaleReputation", () => {
     });
 
     it("deal with calculations that would arithmetically overflow", async () => {
-      const scaled = await scaleReputationTest.scaleReputationPublic(INT256_MAX.subn(10), WAD.subn(1));
+      let scaled = await scaleReputationTest.scaleReputationPublic(INT256_MAX.subn(10), WAD.subn(1));
       expect(scaled).to.eq.BN(INT128_MAX);
-    });
-
-    it("deal with calculations that would arithmetically underflow", async () => {
-      const scaled = await scaleReputationTest.scaleReputationPublic(INT256_MIN.addn(10), WAD.subn(1));
+      scaled = await scaleReputationTest.scaleReputationPublic(INT256_MIN.addn(10), WAD.subn(1));
       expect(scaled).to.eq.BN(INT128_MIN);
     });
 
     it("deal with calculations that exceed our reputation cap during calculation, but not once calculation is complete", async () => {
-      const scaled = await scaleReputationTest.scaleReputationPublic(INT128_MIN.addn(10), WAD.subn(1));
+      let scaled = await scaleReputationTest.scaleReputationPublic(INT128_MIN.addn(10), WAD.subn(1));
       expect(scaled).to.be.gt.BN(INT128_MIN);
-    });
-
-    it("deal with calculations that exceed our reputation cap during calculation, but not once calculation is complete", async () => {
-      const scaled = await scaleReputationTest.scaleReputationPublic(INT128_MAX.subn(10), WAD.subn(1));
+      scaled = await scaleReputationTest.scaleReputationPublic(INT128_MAX.subn(10), WAD.subn(1));
       expect(scaled).to.be.lt.BN(INT128_MAX);
     });
   });

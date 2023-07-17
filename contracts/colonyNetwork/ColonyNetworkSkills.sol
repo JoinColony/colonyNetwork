@@ -283,6 +283,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, ColonyDataTypes
 
   function addPendingReputationUpdate(uint256 _chainId, address _colony) public stoppable onlyMiningChain {
     uint256 mostRecentUpdateNumber = reputationUpdateCount[_chainId][_colony];
+    // If there is still a previous update, something has cone very wrong
     assert(pendingReputationUpdates[_chainId][_colony][mostRecentUpdateNumber].colony == address(0x00));
 
     PendingReputationUpdate storage pendingUpdate = pendingReputationUpdates[_chainId][_colony][mostRecentUpdateNumber + 1];
@@ -454,7 +455,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, ColonyDataTypes
     (bool success, ) = miningBridgeAddress.call(payload);
     if (!success || !isContract(miningBridgeAddress)) {
       // Store to resend later
-      PendingReputationUpdate memory pendingReputationUpdate = PendingReputationUpdate(_user, _amount, _skillId, msgSender(), block.timestamp);
+      PendingReputationUpdate memory pendingReputationUpdate = PendingReputationUpdate(_user, _amount, _skillId, colonyAddress, block.timestamp);
       pendingReputationUpdates[getChainId()][colonyAddress][reputationUpdateCount[getChainId()][colonyAddress]] = pendingReputationUpdate;
 
       emit ReputationUpdateStored(colonyAddress, reputationUpdateCount[getChainId()][colonyAddress]);

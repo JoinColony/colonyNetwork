@@ -518,7 +518,7 @@ contract("ColonyPermissions", (accounts) => {
     it("should take token-specific and domain scaling in to account when emitting reputation", async () => {
       await colony.setDomainReputationScaling(1, WAD.muln(9).divn(10));
 
-      await colony.setTokenReputationRate(token.address, WAD.divn(2));
+      await colony.setTokenReputationScaling(token.address, WAD.divn(2));
 
       await colony.addPayment(1, UINT256_MAX, USER1, token.address, 10000000000000, 1, 0);
       const paymentId = await colony.getPaymentCount();
