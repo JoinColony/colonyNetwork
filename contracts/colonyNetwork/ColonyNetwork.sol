@@ -25,7 +25,7 @@ import "./ColonyNetworkStorage.sol";
 import "./../common/Multicall.sol";
 
 
-contract ColonyNetwork is ColonyDataTypes, BasicMetaTransaction, ColonyNetworkStorage, Multicall, ScaleReputation {
+contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall, ScaleReputation {
 
   function isColony(address _colony) public view returns (bool) {
     return _isColony[_colony];
@@ -62,7 +62,6 @@ contract ColonyNetwork is ColonyDataTypes, BasicMetaTransaction, ColonyNetworkSt
   function getAllSkillParents(uint256 _skillId) public view returns (uint256[] memory){
     Skill storage skill = skills[_skillId];
     uint[] memory allParents = new uint256[](skill.nParents);
-    uint256 count;
     for (uint256 count = 0; count < allParents.length; count += 1) {
       allParents[count] = skill.parents[0];
       skill = skills[skill.parents[0]];
@@ -180,7 +179,7 @@ contract ColonyNetwork is ColonyDataTypes, BasicMetaTransaction, ColonyNetworkSt
 
   function bridgeColonyDecayRate(uint256 _numerator, uint256 _denominator) internal {
     // Build the transaction we're going to send to the bridge to register the
-    // creation of this skill on the home chain
+    // new colony decay rate on the home chain
 
     bytes memory payload = abi.encodePacked(
       bridgeData[miningBridgeAddress].setColonyDecayRateBefore,

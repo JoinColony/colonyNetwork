@@ -1112,22 +1112,27 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
 
   /// @notice Call to set the reputation scaling applied to reputation earned in a domain
   /// @param domainId The domain to set the value of scaling in
-  /// @param factor The scale factor to apply, as a WAD
-  function setDomainReputationScaling(uint256 domainId, uint256 factor) external;
+  /// @param scaleFactor The scale factor to apply, as a WAD
+  function setDomainReputationScaling(uint256 domainId, uint256 scaleFactor) external;
 
   /// @notice Call to set the reputation scaling applied to payouts made in a particular token
-  /// @param _token The token we wish to apply scaling to
-  /// @param _rate The amount of scaling to apply, as a WAD. Users will earn payout*_rate reputation.
-  function setTokenReputationRate(address _token, uint256 _rate) external;
+  /// @param token The token we wish to apply scaling to
+  /// @param scaleFactor The amount of scaling to apply, as a WAD. Users will earn payout*scaleFactor reputation.
+  function setTokenReputationScaling(address token, uint256 scaleFactor) external;
+
+  /// @notice Call to set the rate at which reputation in this colony decays
+  /// @param numerator The numerator of the fraction reputation does down by every reputation cycle
+  /// @param denominator The denominator of the fraction reputation does down by every reputation cycle
+  function setReputationDecayRate(uint256 numerator, uint256 denominator) external;
 
   /// @notice Call to get the reputation scaling applied to payouts made in a particular token
-  /// @param _token The token we wish to query
-  /// @return rate The amount of scaling to applied as a WAD.
-  function getTokenReputationRate(address _token) external view returns (uint256 rate);
+  /// @param token The token we wish to query
+  /// @return scaleFactor The amount of scaling to applied as a WAD.
+  function getTokenReputationScaling(address token) external view returns (uint256 scaleFactor);
 
   /// @notice Get the reputation scaling applied to reputation earned in a skill in this colony.
   /// @dev To look up the scaling in a domain, look up the skill corresponding to that domain
-  /// @param _skillId The skill to get the value of scaling in
+  /// @param skillId The skill to get the value of scaling in
   /// @return scaleFactor Returns the scale factor applied to reputation earned in this skill, as a WAD.
-  function getSkillReputationScaling(uint256 _skillId) external view returns (uint256 scaleFactor);
+  function getSkillReputationScaling(uint256 skillId) external view returns (uint256 scaleFactor);
 }

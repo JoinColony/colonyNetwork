@@ -985,7 +985,7 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
       await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
-      await colony.setTokenReputationRate(token.address, WAD.divn(2));
+      await colony.setTokenReputationScaling(token.address, WAD.divn(2));
 
       const expenditure = await colony.getExpenditure(expenditureId);
       await colony.moveFundsBetweenPots(
@@ -1017,7 +1017,7 @@ contract("Colony Expenditure", (accounts) => {
       expect(domainEntry.amount).to.eq.BN(WAD.divn(2));
 
       // Reset scaling for future tests
-      await colony.setTokenReputationRate(token.address, WAD);
+      await colony.setTokenReputationScaling(token.address, WAD);
     });
 
     it("should delay claims by claimDelay", async () => {

@@ -112,7 +112,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   uint256 rootLocalSkill; // Storage slot 36
   mapping (uint256 => bool) localSkills; // Storage slot 37
 
-  mapping(address => uint256) tokenReputationRates; // Storage slot 38
+  mapping(address => uint256) tokenReputationScalings; // Storage slot 38
 
   // This mapping stores the complement of the reputation scaling factor. So the scaling factor is WAD-reputationScalingFactorComplement
   mapping(uint256 => uint256) skillReputationRateComplements; // Storage slot 39
