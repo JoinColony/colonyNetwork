@@ -1800,19 +1800,6 @@ Set new colony root role. Can be called by root role only.
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
-### ▸ `setSkillReputationScaling(uint256 _skillId, uint256 _factor)`
-
-Call to set the reputation scaling applied to reputation earned in a skill in this colony
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_skillId|uint256|The skill to set the value of scaling in
-|_factor|uint256|The scale factor to apply, as a WAD
-
-
 ### ▸ `setTaskBrief(uint256 _id, bytes32 _specificationHash)`
 
 Set the hash for the task brief, aka task work specification, which identifies the task brief content in ddb. Allowed before a task is finalized.
