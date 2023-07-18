@@ -462,9 +462,4 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
     emit MiningReputationScalingSet(_factor);
   }
-
-  function setSkillReputationScaling(uint256 _skillId, uint256 _factor) public auth stoppable {
-    require(_factor <= WAD, "colony-invalid-reputation-scale-factor");
-    skillReputationRateComplements[_skillId] = WAD - _factor;
-  }
 }

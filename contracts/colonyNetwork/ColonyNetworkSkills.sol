@@ -491,21 +491,4 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, ColonyDataTypes
   function isContract(address addr) internal returns (bool res) {
     assembly { res := gt(extcodesize(addr), 0) }
   }
-
-  function setSkillReputationScaling(uint256 _skillId, uint256 _factor) public calledByColony stoppable {
-    require(_factor <= WAD, "colony-network-invalid-reputation-scale-factor");
-    skills[_skillId].reputationScalingFactorComplement = WAD - _factor;
-  }
-
-  function getSkillReputationScaling(uint256 _skillId) public view returns (uint256) {
-    Skill storage skill = skills[_skillId];
-    uint256 factor = WAD - skill.reputationScalingFactorComplement;
-
-    while (skill.nParents > 0 && factor > 0) {
-      skill = skills[skill.parents[0]];
-      factor = wmul(factor, WAD - skill.reputationScalingFactorComplement);
-    }
-
-    return factor;
-  }
 }

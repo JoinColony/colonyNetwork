@@ -951,42 +951,6 @@ Get the number of skills in the network including both global and local skills.
 |---|---|---|
 |_count|uint256|The skill count
 
-### ▸ `getSkillReputationScaling(uint256 _skillId):uint256 scaleFactor`
-
-Get the reputation scaling applied to reputation earned in a skill.
-
-*Note: To look up the scaling in a domain, look up the skill corresponding to that domain*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_skillId|uint256|The skill to get the value of scaling in
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|scaleFactor|uint256|Returns the scale factor applied to reputation earned in this skill, as a WAD.
-
-### ▸ `getSkillReputationScaling(uint256 _skillId):uint256 scaleFactor`
-
-Get the reputation scaling applied to reputation earned in a skill.
-
-*Note: To look up the scaling in a domain, look up the skill corresponding to that domain*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_skillId|uint256|The skill to get the value of scaling in
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|scaleFactor|uint256|Returns the scale factor applied to reputation earned in this skill, as a WAD.
-
 ### ▸ `getTokenLocking():address _lockingAddress`
 
 Get token locking contract address.
@@ -1275,34 +1239,6 @@ Update the reputation on a foreign chain from the mining chain
 |---|---|---|
 |newHash|bytes32|The new root hash
 |newNLeaves|uint256|The new nLeaves in the root hash
-
-
-### ▸ `setSkillReputationScaling(uint256 _skillId, uint256 _factor)`
-
-Call to set the reputation scaling applied to reputation earned in a skill
-
-*Note: Only callable by a colony*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_skillId|uint256|The skill to set the value of scaling in
-|_factor|uint256|The scale factor to apply, as a WAD
-
-
-### ▸ `setSkillReputationScaling(uint256 _skillId, uint256 _factor)`
-
-Call to set the reputation scaling applied to reputation earned in a skill
-
-*Note: Only callable by a colony*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_skillId|uint256|The skill to set the value of scaling in
-|_factor|uint256|The scale factor to apply, as a WAD
 
 
 ### ▸ `setTokenLocking(address _tokenLockingAddress)`
