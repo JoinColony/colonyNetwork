@@ -18,7 +18,7 @@ You will need:
 The Colony Network contracts are written in [Solidity](https://soliditylang.org/) and are built, tested and deployed using the [Truffle Suite](https://trufflesuite.com/). With the above dependencies in place you can just follow the instructions below and the Colony Network build scripts will sort out everything else for you.
 
 :::tip
-If you're a Dapp developer looking to integrate with colony, we recommend using [The Colony SDK](https://app.gitbook.com/o/-MTaEZ\_7xhxpButTDDNj/s/slSiNQHJDrgYgciBacVr/) as an entry point as it is the fastest way to start building with Colony. There you'll find analogous instructions better suited to building applications on top of the colonyNetwork. We also have created some [examples](https://github.com/JoinColony/colonySDK/tree/main/examples) that you can try out [live in your browser](https://joincolony.github.io/colonySDK/)!
+If you're a Dapp developer looking to integrate with Colony, we recommend using [The Colony SDK](https://docs.colony.io/colonysdk/) as an entry point as it is the fastest way to start building with Colony. There you'll find analogous instructions better suited to building applications on top of the colonyNetwork. We also have created some [examples](https://github.com/JoinColony/colonyJS/tree/main/packages/sdk/examples) that you can try out [live in your browser](https://joincolony.github.io/colonyJS/)!
 :::
 
 ## Cloning the repository and preparing the dependencies
