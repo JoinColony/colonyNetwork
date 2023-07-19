@@ -194,12 +194,10 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall,
   }
 
   function setColonyReputationDecayRateFromBridge(address _colony, uint256 _numerator, uint256 _denominator) public always
+    knownBridge(msgSender())
     onlyMiningChain
  {
-    uint256 bridgeChainId = bridgeData[msgSender()].chainId;
-    require(bridgeChainId != 0, "colony-network-not-known-bridge");
-
-    setColonyReputationDecayRateInternal(bridgeChainId, _colony, _numerator, _denominator);
+    setColonyReputationDecayRateInternal(bridgeData[msgSender()].chainId, _colony, _numerator, _denominator);
   }
 
   function setColonyReputationDecayRateInternal(uint256 _chainId, address _colony, uint256 _numerator, uint256 _denominator) internal {

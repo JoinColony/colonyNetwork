@@ -86,16 +86,14 @@ contract ColonyNetworkMining is ColonyNetworkStorage, ScaleReputation {
 
   // Well this is a weird hack to need
   function newAddressArray() pure internal returns (address[] memory) {}
-  function setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves) onlyNotMiningChain stoppable public {
-    require(bridgeData[msgSender()].chainId != 0, "colony-network-not-known-bridge");
+  function setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves) onlyNotMiningChain stoppable knownBridge(msgSender()) public {
     reputationRootHash = newHash;
     reputationRootHashNLeaves = newNLeaves;
 
     emit ReputationRootHashSet(newHash, newNLeaves, newAddressArray(), 0);
   }
 
-  function bridgeCurrentRootHash(address _bridgeAddress) onlyMiningChain stoppable public {
-    require(bridgeData[_bridgeAddress].chainId != 0, "colony-network-not-known-bridge");
+  function bridgeCurrentRootHash(address _bridgeAddress) onlyMiningChain stoppable knownBridge(_bridgeAddress) public {
     bytes memory payload = abi.encodePacked(
       bridgeData[_bridgeAddress].setReputationRootHashBefore,
       abi.encodeWithSignature("setReputationRootHashFromBridge(bytes32,uint256)", reputationRootHash, reputationRootHashNLeaves),

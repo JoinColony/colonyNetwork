@@ -166,6 +166,11 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
     _;
   }
 
+  modifier knownBridge(address _bridgeAddress) {
+    require(bridgeData[_bridgeAddress].chainId != 0, "colony-network-not-known-bridge");
+    _;
+  }
+
   // Internal functions
 
   function toRootSkillId(uint256 _chainId) internal pure returns (uint256) {
