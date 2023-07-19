@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
 import "./../common/ERC20Extended.sol";
@@ -29,7 +29,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 13; }
+  function version() public pure returns (uint256 colonyVersion) { return 14; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;

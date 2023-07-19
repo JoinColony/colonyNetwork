@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/erc20.sol";
@@ -73,7 +73,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   /// @notice Returns the version of the extension
   function version() public override pure returns (uint256) {
-    return 2;
+    return 3;
   }
 
   /// @notice Configures the extension

@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20; // ignore-swc-103
+pragma solidity 0.8.21; // ignore-swc-103
 
 import "./../../lib/dappsys/erc20.sol";
 
