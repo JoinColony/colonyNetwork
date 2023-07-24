@@ -42,9 +42,8 @@ The current colonyNetwork release is [`flwss`](https://github.com/JoinColony/col
 
 * Ownership and permissions (through roles)
 * Reputation
-* Funding Pots and payments
+* Funding Pots and Expenditures
 * Domains and Skills
-* Tasks and work ratings
 
 The Colony Network is maintained and improved by the [Meta Colony](tldr/metacolony.md) (which is, itself, a colony on the network with special permissions).
 

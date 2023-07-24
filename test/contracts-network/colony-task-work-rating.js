@@ -26,7 +26,7 @@ chai.use(bnChai(web3.utils.BN));
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 
-contract("Colony Task Work Rating", (accounts) => {
+contract.skip("Colony Task Work Rating", (accounts) => {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];

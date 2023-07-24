@@ -15,7 +15,6 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
-const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 const Resolver = artifacts.require("Resolver");
 const ContractEditing = artifacts.require("ContractEditing");
 const ColonyDomains = artifacts.require("ColonyDomains");
@@ -1034,15 +1033,6 @@ exports.restoreSubdomainLimit = async function restoreSubdomainLimit(colonyNetwo
   const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
   const resolver = await Resolver.at(resolverAddress);
   await resolver.register("addDomain(uint256,uint256,uint256)", originalSubdomains.address);
-};
-
-exports.addTaskSkillEditingFunctions = async function addTaskSkillEditingFunctions(colonyNetwork) {
-  const taskSkillEditing = await TaskSkillEditing.new();
-  const latestVersion = await colonyNetwork.getCurrentColonyVersion();
-  const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
-  const resolver = await Resolver.at(resolverAddress);
-  await resolver.register("addTaskSkill(uint256,uint256)", taskSkillEditing.address);
-  await resolver.register("removeTaskSkill(uint256,uint256)", taskSkillEditing.address);
 };
 
 exports.getChildSkillIndex = async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId, _childDomainId) {

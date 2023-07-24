@@ -67,7 +67,7 @@ function correctAuthModifier(functionDef) {
 walkSync("./contracts/").forEach((contractName) => {
   // Only contracts using domain-level permissions need to be checked, i.e. those that implement
   // functions in IColony.sol
-  // Basically only Colony.sol, ColonyFunding.sol, ColonyTask.sol, ColonyExpenditure.sol (?)
+  // Basically only Colony.sol, ColonyFunding.sol, ColonyExpenditure.sol (?)
   if (
     [
       "contracts/colony/ColonyAuthority.sol",
