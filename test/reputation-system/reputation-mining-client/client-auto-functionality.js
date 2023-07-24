@@ -369,18 +369,21 @@ process.env.SOLIDITY_COVERAGE
           }
           await stopMining();
 
-          const submissionIndex1 = reputationMinerClient.submissionIndex;
-          const submissionIndex2 = reputationMinerClient2.submissionIndex;
+          const miner1TxCountBefore = await web3.eth.getTransactionCount(MINER1);
+          const miner3TxCountBefore = await web3.eth.getTransactionCount(MINER3);
           reputationMinerClient.lockedForBlockProcessing = false;
           reputationMinerClient2.lockedForBlockProcessing = false;
+          let miner1TxCountAfter = await web3.eth.getTransactionCount(MINER1);
+          let miner3TxCountAfter = await web3.eth.getTransactionCount(MINER3);
 
-          await mineBlock();
-          while (reputationMinerClient.submissionIndex === submissionIndex1 || reputationMinerClient2.submissionIndex === submissionIndex2) {
+          while (miner1TxCountAfter === miner1TxCountBefore || miner3TxCountAfter === miner3TxCountBefore) {
             await sleep(1000);
+            miner1TxCountAfter = await web3.eth.getTransactionCount(MINER1);
+            miner3TxCountAfter = await web3.eth.getTransactionCount(MINER3);
+            await mineBlock();
           }
 
           await startMining();
-          await mineBlock();
 
           await receive12Submissions;
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
