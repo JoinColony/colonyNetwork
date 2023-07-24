@@ -18,7 +18,7 @@ This bug bounty program extends to all contracts within the [colonyNetwork Githu
 Bounties for potential bugs include, but are not limited to:
 
 * Reputation Mining vulnerabilities
-* Task, Domain, and Skill workflow exploits
+* Expenditure, Domain, and Skill workflow exploits
 * Attacks during a network upgrade
 * Authority and permissions
 

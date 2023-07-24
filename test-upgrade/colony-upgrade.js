@@ -1,7 +1,7 @@
 /* globals artifacts */
 const { currentBlockTime, getColonyEditable } = require("../helpers/test-helper");
 const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
-const { ROOT_ROLE, SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } = require("../helpers/constants");
+const { ROOT_ROLE, SPECIFICATION_HASH_UPDATED } = require("../helpers/constants");
 const { makeTask, setupRandomColony } = require("../helpers/test-data-generator");
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -11,10 +11,8 @@ const Resolver = artifacts.require("Resolver");
 const ColonyDomains = artifacts.require("ColonyDomains");
 const ColonyExpenditure = artifacts.require("ColonyExpenditure");
 const ColonyFunding = artifacts.require("ColonyFunding");
-const ColonyPayment = artifacts.require("ColonyPayment");
 const ColonyRewards = artifacts.require("ColonyRewards");
 const ColonyRoles = artifacts.require("ColonyRoles");
-const ColonyTask = artifacts.require("ColonyTask");
 const ContractRecovery = artifacts.require("ContractRecovery");
 const ColonyArbitraryTransaction = artifacts.require("ColonyArbitraryTransaction");
 const UpdatedColony = artifacts.require("UpdatedColony");
@@ -44,10 +42,8 @@ contract("Colony contract upgrade", (accounts) => {
     const colonyDomains = await ColonyDomains.new();
     const colonyExpenditure = await ColonyExpenditure.new();
     const colonyFunding = await ColonyFunding.new();
-    const colonyPayment = await ColonyPayment.new();
     const colonyRoles = await ColonyRoles.new();
     const colonyRewards = await ColonyRewards.new();
-    const colonyTask = await ColonyTask.new();
     const contractRecovery = await ContractRecovery.new();
     const colonyArbitraryTransaction = await ColonyArbitraryTransaction.new();
 
@@ -64,10 +60,8 @@ contract("Colony contract upgrade", (accounts) => {
       colonyDomains,
       colonyExpenditure,
       colonyFunding,
-      colonyPayment,
       colonyRewards,
       colonyRoles,
-      colonyTask,
       contractRecovery,
       colonyArbitraryTransaction,
       resolver,
@@ -101,22 +95,8 @@ contract("Colony contract upgrade", (accounts) => {
     });
 
     it("should return correct total number of tasks", async function () {
-      const updatedTaskCount = await updatedColony.getTaskCount();
-      assert.equal(2, updatedTaskCount.toNumber());
-    });
-
-    it("should return correct tasks after Task struct is extended", async function () {
-      const task1 = await updatedColony.getTask(1);
-      assert.equal(task1.specificationHash, SPECIFICATION_HASH);
-      assert.equal(task1.status.toNumber(), 0);
-      assert.equal(task1.dueDate.toNumber(), dueDate);
-      assert.equal(task1.domainId.toNumber(), 1);
-
-      const task2 = await updatedColony.getTask(2);
-      assert.equal(task2.specificationHash, SPECIFICATION_HASH_UPDATED);
-      assert.equal(task2.status.toNumber(), 0);
-      assert.equal(task2.dueDate.toNumber(), dueDate + 1);
-      assert.equal(task2.domainId.toNumber(), 1);
+      const updatedExpenditureCount = await updatedColony.getExpenditureCount();
+      assert.equal(2, updatedExpenditureCount.toNumber());
     });
 
     it("should return correct permissions", async function () {

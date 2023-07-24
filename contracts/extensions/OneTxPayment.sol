@@ -145,64 +145,35 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       "one-tx-payment-not-authorized"
     );
 
-    if (_workers.length == 1) {
-      uint256 paymentId = colony.addPayment(
-        1,
-        _childSkillIndex,
-        _workers[0],
-        _tokens[0],
-        0,
-        _domainId,
-        _skillId
-      );
-      uint256 fundingPotId = colony.getPayment(paymentId).fundingPotId;
+    uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
+    uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
-      colony.moveFundsBetweenPots(
-        1,
-        UINT256_MAX,
-        _childSkillIndex,
-        1,
-        fundingPotId,
-        _amounts[0],
-        _tokens[0]
-      );
-      colony.setPaymentPayout(1, _childSkillIndex, paymentId, _tokens[0], _amounts[0]);
+    prepareFunding(_childSkillIndex, fundingPotId, _tokens, _amounts);
 
-      colony.finalizePayment(1, _childSkillIndex, paymentId);
-      colony.claimPayment(paymentId, _tokens[0]);
+    uint256 idx;
+    uint256 slot;
 
-      emit OneTxPaymentMade(msgSender(), paymentId, _workers.length);
-    } else {
-      uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
-      uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
+    for (idx = 0; idx < _workers.length; idx++) {
+      // If a new worker, start a new slot
+      if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
+        require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
 
-      prepareFunding(_childSkillIndex, fundingPotId, _tokens, _amounts);
+        slot++;
+        colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
 
-      uint256 idx;
-      uint256 slot;
-
-      for (idx = 0; idx < _workers.length; idx++) {
-        // If a new worker, start a new slot
-        if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
-          require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
-
-          slot++;
-          colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
-
-          if (_skillId != 0) {
-            colony.setExpenditureSkill(expenditureId, slot, _skillId);
-          }
-        } else {
-          require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
+        if (_skillId != 0) {
+          colony.setExpenditureSkill(expenditureId, slot, _skillId);
         }
-
-        colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
+      } else {
+        require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
       }
 
-      finalizeAndClaim(expenditureId, _workers, _tokens);
-
-      emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
+      colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
     }
+
+    finalizeAndClaim(expenditureId, _workers, _tokens);
+
+    emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
   }
 
   /// @notice Completes a colony payment in a single transaction
@@ -252,76 +223,47 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       "one-tx-payment-not-authorized"
     );
 
-    if (_workers.length == 1) {
-      uint256 paymentId = colony.addPayment(
-        _permissionDomainId,
-        _childSkillIndex,
-        _workers[0],
-        _tokens[0],
-        _amounts[0],
-        _domainId,
-        _skillId
-      );
-      uint256 fundingPotId = colony.getPayment(paymentId).fundingPotId;
-      uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
+    uint256 expenditureId = colony.makeExpenditure(
+      _permissionDomainId,
+      _childSkillIndex,
+      _domainId
+    );
+    uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
+    uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
 
-      // We use a separate function to get around the local variable limit :(
-      moveFundsWithinDomain(
-        _permissionDomainId,
-        _childSkillIndex,
-        domainPotId,
-        fundingPotId,
-        _amounts[0],
-        _tokens[0]
-      );
+    prepareFundingWithinDomain(
+      _permissionDomainId,
+      _childSkillIndex,
+      domainPotId,
+      fundingPotId,
+      _tokens,
+      _amounts
+    );
 
-      colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
-      colony.claimPayment(paymentId, _tokens[0]);
+    uint256 idx;
+    uint256 slot;
 
-      emit OneTxPaymentMade(msgSender(), paymentId, _workers.length);
-    } else {
-      uint256 expenditureId = colony.makeExpenditure(
-        _permissionDomainId,
-        _childSkillIndex,
-        _domainId
-      );
-      uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
-      uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
+    for (idx = 0; idx < _workers.length; idx++) {
+      // If a new worker, start a new slot
+      if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
+        require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
 
-      prepareFundingWithinDomain(
-        _permissionDomainId,
-        _childSkillIndex,
-        domainPotId,
-        fundingPotId,
-        _tokens,
-        _amounts
-      );
+        slot++;
+        colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
 
-      uint256 idx;
-      uint256 slot;
-
-      for (idx = 0; idx < _workers.length; idx++) {
-        // If a new worker, start a new slot
-        if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
-          require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
-
-          slot++;
-          colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
-
-          if (_skillId != 0) {
-            colony.setExpenditureSkill(expenditureId, slot, _skillId);
-          }
-        } else {
-          require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
+        if (_skillId != 0) {
+          colony.setExpenditureSkill(expenditureId, slot, _skillId);
         }
-
-        colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
+      } else {
+        require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
       }
 
-      finalizeAndClaim(expenditureId, _workers, _tokens);
-
-      emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
+      colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
     }
+
+    finalizeAndClaim(expenditureId, _workers, _tokens);
+
+    emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
   }
 
   function calculateUniqueAmounts(

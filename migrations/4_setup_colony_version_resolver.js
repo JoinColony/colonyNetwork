@@ -8,8 +8,6 @@ const ColonyExpenditure = artifacts.require("./ColonyExpenditure");
 const ColonyFunding = artifacts.require("./ColonyFunding");
 const ColonyRewards = artifacts.require("./ColonyRewards");
 const ColonyRoles = artifacts.require("./ColonyRoles");
-const ColonyTask = artifacts.require("./ColonyTask");
-const ColonyPayment = artifacts.require("./ColonyPayment");
 const ContractRecovery = artifacts.require("./ContractRecovery");
 const ColonyArbitraryTransaction = artifacts.require("./ColonyArbitraryTransaction");
 const EtherRouter = artifacts.require("./EtherRouter");
@@ -23,10 +21,8 @@ module.exports = async function (deployer) {
   const colonyDomains = await ColonyDomains.new();
   const colonyExpenditure = await ColonyExpenditure.new();
   const colonyFunding = await ColonyFunding.new();
-  const colonyPayment = await ColonyPayment.new();
   const colonyRewards = await ColonyRewards.new();
   const colonyRoles = await ColonyRoles.new();
-  const colonyTask = await ColonyTask.new();
   const colonyArbitraryTransaction = await ColonyArbitraryTransaction.new();
   const contractRecovery = await ContractRecovery.deployed();
   const version = await colony.version();
@@ -41,10 +37,8 @@ module.exports = async function (deployer) {
     colonyDomains,
     colonyExpenditure,
     colonyFunding,
-    colonyPayment,
     colonyRewards,
     colonyRoles,
-    colonyTask,
     contractRecovery,
     colonyArbitraryTransaction,
     resolver,

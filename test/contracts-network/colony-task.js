@@ -43,7 +43,6 @@ const {
   expectAllEvents,
   forwardTime,
   currentBlockTime,
-  addTaskSkillEditingFunctions,
   web3GetStorageAt,
 } = require("../../helpers/test-helper");
 
@@ -66,12 +65,11 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
-const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TestExtension0 = artifacts.require("TestExtension0");
 const Resolver = artifacts.require("Resolver");
 
-contract("ColonyTask", (accounts) => {
+contract.skip("ColonyTask", (accounts) => {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
@@ -2085,36 +2083,6 @@ contract("ColonyTask", (accounts) => {
       // But the balance should have the fee deducted
       const balance = await token.balanceOf(otherExtensionAddress);
       expect(balance).to.be.lt.BN(WORKER_PAYOUT);
-    });
-  });
-
-  describe("when a task has multiple skills", () => {
-    before(async () => {
-      // Introduce our ability to add and remove skills from tasks, just for these tests until
-      // more than one skill per task is supported.
-      await addTaskSkillEditingFunctions(colonyNetwork);
-    });
-
-    it("should allow a task with 42 skills to finalise", async () => {
-      // 60 was an overestimate, it seems - I can't go much higher than this.
-      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      const taskSkillEditingColony = await TaskSkillEditing.at(colony.address);
-      for (let i = 0; i < 42; i += 1) {
-        await taskSkillEditingColony.addTaskSkill(taskId, GLOBAL_SKILL_ID);
-      }
-      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [MANAGER, taskId]);
-    });
-
-    it("an empty element shouldn't affect finalization of the task", async () => {
-      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      const taskSkillEditingColony = await TaskSkillEditing.at(colony.address);
-      await taskSkillEditingColony.addTaskSkill(taskId, 3);
-      await taskSkillEditingColony.addTaskSkill(taskId, 3);
-      await taskSkillEditingColony.addTaskSkill(taskId, 3);
-      await taskSkillEditingColony.removeTaskSkill(taskId, 2);
-      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [MANAGER, taskId]);
     });
   });
 });

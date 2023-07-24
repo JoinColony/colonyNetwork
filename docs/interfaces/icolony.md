@@ -50,29 +50,6 @@ Add a new local skill for the colony. Secured function to authorised members.
 
 
 
-### ▸ `addPayment(uint256 _permissionDomainId, uint256 _childSkillIndex, address _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId):uint256 paymentId`
-
-Add a new payment in the colony. Secured function to authorised members.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
-|_recipient|address|Address of the payment recipient
-|_token|address|Address of the token, `0x0` value indicates Ether
-|_amount|uint256|Payout amount
-|_domainId|uint256|The domain where the payment belongs
-|_skillId|uint256|The skill associated with the payment
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|paymentId|uint256|Identifier of the newly created payment
-
 ### ▸ `annotateTransaction(bytes32 _txHash, string memory _metadata)`
 
 Emit a metadata string for a transaction
@@ -151,19 +128,6 @@ Cancels the expenditure and prevents further editing. Can only be called by expe
 |_id|uint256|Expenditure identifier
 
 
-### ▸ `cancelTask(uint256 _id)`
-
-Cancel a task at any point before it is finalized. Secured function to authorised members. Any funds assigned to its funding pot can be moved back to the domain via `IColony.moveFundsBetweenPots`.
-
-*Note: Set the `task.status` property to `1`.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-
-
 ### ▸ `claimColonyFunds(address _token)`
 
 Move any funds received by the colony in `_token` denomination to the top-level domain pot, siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
@@ -190,19 +154,6 @@ Claim the payout for an expenditure slot. Here the network receives a fee from e
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
-### ▸ `claimPayment(uint256 _id, address _token)`
-
-Claim the payout in `_token` denomination for payment `_id`. Here the network receives its fee from each payout. Same as for tasks, ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Payment identifier
-|_token|address|Address of the token, `0x0` value indicates Ether
-
-
 ### ▸ `claimRewardPayout(uint256 _payoutId, uint256[[object Object]] memory _squareRoots, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)`
 
 Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation which will be proven via Merkle proof inside this function. Can only be called if payout is active, i.e if 60 days have not passed from its creation. Can only be called if next in queue.
@@ -218,32 +169,6 @@ Claim the reward payout at `_payoutId`. User needs to provide their reputation a
 |value|bytes|Reputation value
 |branchMask|uint256|The branchmask of the proof
 |siblings|bytes32[]|The siblings of the proof
-
-
-### ▸ `claimTaskPayout(uint256 _id, uint8 _role, address _token)`
-
-Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`. Allowed only after task is finalized. Here the network receives its fee from each payout. Ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_role|uint8|Id of the role, as defined in TaskRole enum
-|_token|address|Address of the token, `0x0` value indicates Ether
-
-
-### ▸ `completeTask(uint256 _id)`
-
-Mark a task as complete after the due date has passed. This allows the task to be rated and finalized (and funds recovered) even in the presence of a worker who has disappeared. Note that if the due date was not set, then this function will throw.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
 
 
 ### ▸ `deobligateStake(address _user, uint256 _domainId, uint256 _amount)`
@@ -398,41 +323,6 @@ Emit a positive skill reputation update. Available only to Root role holders
 |_amount|int256|The (positive) amount of reputation to gain
 
 
-### ▸ `executeTaskChange(uint8[] memory _sigV, bytes32[] memory _sigR, bytes32[] memory _sigS, uint8[] memory _mode, uint256 _value, bytes memory _data)`
-
-Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker) using the detached signatures for these users.
-
-*Note: The Colony functions which require approval and the task roles to review these are set in `IColony.initialiseColony` at colony creation. Upon successful execution the `taskChangeNonces` entry for the task is incremented.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_sigV|uint8[]|recovery id
-|_sigR|bytes32[]|r output of the ECDSA signature of the transaction
-|_sigS|bytes32[]|s output of the ECDSA signature of the transaction
-|_mode|uint8[]|How the signature was generated - 0 for Geth-style (usual), 1 for Trezor-style (only Trezor does this)
-|_value|uint256|The transaction value, i.e. number of wei to be sent when the transaction is executed Currently we only accept 0 value transactions but this is kept as a future option
-|_data|bytes|The transaction data
-
-
-### ▸ `executeTaskRoleAssignment(uint8[] memory _sigV, bytes32[] memory _sigR, bytes32[] memory _sigS, uint8[] memory _mode, uint256 _value, bytes memory _data)`
-
-Executes a task role update transaction `_data` which is approved and signed by two of addresses. depending of which function we are calling. Allowed functions are `setTaskManagerRole`, `setTaskEvaluatorRole` and `setTaskWorkerRole`. Upon successful execution the `taskChangeNonces` entry for the task is incremented.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_sigV|uint8[]|recovery id
-|_sigR|bytes32[]|r output of the ECDSA signature of the transaction
-|_sigS|bytes32[]|s output of the ECDSA signature of the transaction
-|_mode|uint8[]|How the signature was generated - 0 for Geth-style (usual), 1 for Trezor-style (only Trezor does this)
-|_value|uint256|The transaction value, i.e. number of wei to be sent when the transaction is executed Currently we only accept 0 value transactions but this is kept as a future option
-|_data|bytes|The transaction data
-
-
 ### ▸ `finalizeExpenditure(uint256 _id)`
 
 Finalizes the expenditure and allows for funds to be claimed. Can only be called by expenditure owner.
@@ -443,20 +333,6 @@ Finalizes the expenditure and allows for funds to be claimed. Can only be called
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256|Expenditure identifier
-
-
-### ▸ `finalizePayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id)`
-
-Finalizes the payment and logs the reputation log updates. Allowed to be called once after payment is fully funded. Secured function to authorised members.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
-|_id|uint256|Payment identifier
 
 
 ### ▸ `finalizeRewardPayout(uint256 _payoutId)`
@@ -471,19 +347,6 @@ Finalises the reward payout. Allows creation of next reward payouts for token th
 |_payoutId|uint256|Id of the reward payout
 
 
-### ▸ `finalizeTask(uint256 _id)`
-
-Called after task work rating is complete which closes the task and logs the respective reputation log updates. Allowed to be called once per task. Secured function to authorised members.
-
-*Note: Set the `task.finalized` property to true*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-
-
 ### ▸ `finishUpgrade()`
 
 A function to be called after an upgrade has been done from v2 to v3.
@@ -491,24 +354,6 @@ A function to be called after an upgrade has been done from v2 to v3.
 *Note: Can only be called by the colony itself, and only expected to be called as part of the `upgrade()` call. Required to be external so it can be an external call.*
 
 
-
-### ▸ `generateSecret(bytes32 _salt, uint256 _value):bytes32 secret`
-
-Helper function used to generage consistently the rating secret using salt value `_salt` and value to hide `_value`
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_salt|bytes32|Salt value
-|_value|uint256|Value to hide
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|secret|bytes32|`keccak256` hash of joint _salt and _value
 
 ### ▸ `getApproval(address _user, address _obligator, uint256 _domainId):uint256 approval`
 
@@ -687,7 +532,7 @@ Get the non-mapping properties of a pot by id.
 
 |Name|Type|Description|
 |---|---|---|
-|associatedType|FundingPotAssociatedType|The FundingPotAssociatedType value of the current funding pot, e.g. Domain, Task, Payout
+|associatedType|FundingPotAssociatedType|The FundingPotAssociatedType value of the current funding pot, e.g. Domain, Expenditure
 |associatedTypeId|uint256|Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
 |payoutsWeCannotMake|uint256|Number of payouts that cannot be completed with the current funding
 
@@ -775,35 +620,6 @@ View an obligation of tokens.
 |---|---|---|
 |obligation|uint256|The amount that is currently obligated
 
-### ▸ `getPayment(uint256 _id):Payment payment`
-
-Returns an exiting payment.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Payment identifier
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|payment|Payment|The Payment data structure
-
-### ▸ `getPaymentCount():uint256 count`
-
-Get the number of payments in the colony.
-
-
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|count|uint256|The payment count
-
 ### ▸ `getRewardInverse():uint256 rewardInverse`
 
 Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), return 100.
@@ -844,132 +660,6 @@ Get the root local skill id
 |Name|Type|Description|
 |---|---|---|
 |rootLocalSkill|uint256|The root local skill id
-
-### ▸ `getTask(uint256 _id):bytes32 specificationHash, bytes32 deliverableHash, TaskStatus status, uint256 dueDate, uint256 fundingPotId, uint256 completionTimestamp, uint256 domainId, uint256[] skillIds`
-
-Get a task with id `_id`
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|specificationHash|bytes32|Task brief hash
-|deliverableHash|bytes32|Task deliverable hash
-|status|TaskStatus|TaskStatus property. 0 - Active. 1 - Cancelled. 2 - Finalized
-|dueDate|uint256|Due date
-|fundingPotId|uint256|Id of funding pot for task
-|completionTimestamp|uint256|Task completion timestamp
-|domainId|uint256|Task domain id, default is root colony domain with id 1
-|skillIds|uint256[]|Array of global skill ids assigned to task
-
-### ▸ `getTaskChangeNonce(uint256 _id):uint256 nonce`
-
-Starts from 0 and is incremented on every co-reviewed task change via `executeTaskChange` call.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|nonce|uint256|The current task change nonce value
-
-### ▸ `getTaskCount():uint256 count`
-
-Get the number of tasks in the colony.
-
-
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|count|uint256|The task count
-
-### ▸ `getTaskPayout(uint256 _id, uint8 _role, address _token):uint256 amount`
-
-Get payout amount in `_token` denomination for role `_role` in task `_id`.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_role|uint8|Id of the role, as defined in TaskRole enum
-|_token|address|Address of the token, `0x0` value indicates Ether
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|amount|uint256|Payout amount
-
-### ▸ `getTaskRole(uint256 _id, uint8 _role):Role role`
-
-Get the `Role` properties back for role `_role` in task `_id`.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_role|uint8|Id of the role, as defined in TaskRole enum
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|role|Role|The Role
-
-### ▸ `getTaskWorkRatingSecret(uint256 _id, uint8 _role):bytes32 secret`
-
-Get the rating secret submitted for role `_role` in task `_id`
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_role|uint8|Id of the role, as defined in TaskRole enum
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|secret|bytes32|Rating secret `bytes32` value
-
-### ▸ `getTaskWorkRatingSecretsInfo(uint256 _id):uint256 nSecrets, uint256 lastSubmittedAt`
-
-Get the `ColonyStorage.RatingSecrets` information for task `_id`.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|nSecrets|uint256|Number of secrets
-|lastSubmittedAt|uint256|Timestamp of the last submitted rating secret
 
 ### ▸ `getToken():address tokenAddress`
 
@@ -1209,23 +899,6 @@ Executes a single arbitrary transaction
 |---|---|---|
 |success|bool|Boolean indicating whether the transactions succeeded
 
-### ▸ `makeTask(uint256 _permissionDomainId, uint256 _childSkillIndex, bytes32 _specificationHash, uint256 _domainId, uint256 _skillId, uint256 _dueDate)`
-
-Make a new task in the colony. Secured function to authorised members.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
-|_specificationHash|bytes32|Database identifier where the task specification is stored
-|_domainId|uint256|The domain where the task belongs
-|_skillId|uint256|The skill associated with the task, can set to `0` for no-op
-|_dueDate|uint256|The due date of the task, can set to `0` for no-op
-
-
 ### ▸ `mintTokens(uint256 _wad)`
 
 Mint `_wad` amount of colony tokens. Secured function to authorised members.
@@ -1329,46 +1002,6 @@ Register colony's ENS label.
 |orbitdb|string|The path of the orbitDB database associated with the colony name
 
 
-### ▸ `removeTaskEvaluatorRole(uint256 _id)`
-
-Removing evaluator role. Agreed between manager and currently assigned evaluator.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-
-
-### ▸ `removeTaskWorkerRole(uint256 _id)`
-
-Removing worker role. Agreed between manager and currently assigned worker.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-
-
-### ▸ `revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt)`
-
-Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_id` and task role with id `_role`. Allowed within 5 days period starting which whichever is first from either both rating secrets being submitted (via `IColony.submitTaskWorkRating`) or the 5 day rating period expiring.
-
-*Note: Compares the `keccak256(_salt, _rating)` output with the previously submitted rating secret and if they match, sets the task role properties `rated` to `true` and `rating` to `_rating`.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_role|uint8|Id of the role, as defined in TaskRole enum
-|_rating|uint8|0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50)
-|_salt|bytes32|Salt value used to generate the rating secret
-
-
 ### ▸ `setAdministrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`
 
 Set new colony admin role. Can be called by root role or architecture role.
@@ -1383,23 +1016,6 @@ Set new colony admin role. Can be called by root role or architecture role.
 |_user|address|User we want to give an admin role to
 |_domainId|uint256|Domain in which we are giving user the role
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
-
-
-### ▸ `setAllTaskPayouts(uint256 _id, address _token, uint256 _managerAmount, uint256 _evaluatorAmount, uint256 _workerAmount)`
-
-Set `_token` payout for all roles in task `_id` to the respective amounts.
-
-*Note: Can only call if evaluator and worker are unassigned or manager, otherwise need signature.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_token|address|Address of the token, `0x0` value indicates Ether
-|_managerAmount|uint256|Payout amount for manager
-|_evaluatorAmount|uint256|Payout amount for evaluator
-|_workerAmount|uint256|Payout amount for worker
 
 
 ### ▸ `setArbitrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`
@@ -1681,52 +1297,6 @@ Set new colony funding role. Can be called by root role or architecture role.
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
-### ▸ `setPaymentPayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _token, uint256 _amount)`
-
-Sets the payout for a given token on an existing payment. Secured function to authorised members.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
-|_id|uint256|Payment identifier
-|_token|address|Address of the token, `0x0` value indicates Ether
-|_amount|uint256|Payout amount
-
-
-### ▸ `setPaymentRecipient(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _recipient)`
-
-Sets the recipient on an existing payment. Secured function to authorised members.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
-|_id|uint256|Payment identifier
-|_recipient|address|Address of the payment recipient
-
-
-### ▸ `setPaymentSkill(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _skillId)`
-
-Sets the skill on an existing payment. Secured function to authorised members.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
-|_id|uint256|Payment identifier
-|_skillId|uint256|Id of the new skill to set
-
-
 ### ▸ `setRewardInverse(uint256 _rewardInverse)`
 
 Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100.
@@ -1750,132 +1320,6 @@ Set new colony root role. Can be called by root role only.
 |---|---|---|
 |_user|address|User we want to give an root role to
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
-
-
-### ▸ `setTaskBrief(uint256 _id, bytes32 _specificationHash)`
-
-Set the hash for the task brief, aka task work specification, which identifies the task brief content in ddb. Allowed before a task is finalized.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_specificationHash|bytes32|Unique hash of the task brief in ddb
-
-
-### ▸ `setTaskDueDate(uint256 _id, uint256 _dueDate)`
-
-Set the due date on task `_id`. Allowed before a task is finalized.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_dueDate|uint256|Due date as seconds since unix epoch
-
-
-### ▸ `setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount)`
-
-Set `_token` payout for evaluator in task `_id` to `_amount`.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_token|address|Address of the token, `0x0` value indicates Ether
-|_amount|uint256|Payout amount
-
-
-### ▸ `setTaskEvaluatorRole(uint256 _id, address _user)`
-
-Assigning evaluator role. Can only be set if there is no one currently assigned to be an evaluator. Manager of the task and user we want to assign role to both need to agree. Managers can assign themselves to this role, if there is no one currently assigned to it.
-
-*Note: This function can only be called through `executeTaskRoleAssignment`.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_user|address|Address of the user we want to give a evaluator role to
-
-
-### ▸ `setTaskManagerPayout(uint256 _id, address _token, uint256 _amount)`
-
-Set `_token` payout for manager in task `_id` to `_amount`.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_token|address|Address of the token, `0x0` value indicates Ether
-|_amount|uint256|Payout amount
-
-
-### ▸ `setTaskManagerRole(uint256 _id, address _user, uint256 _permissionDomainId, uint256 _childSkillIndex)`
-
-Assigning manager role. Current manager and user we want to assign role to both need to agree. User we want to set here also needs to be an admin. Note that the domain proof data comes at the end here to not interfere with the assembly argument unpacking.
-
-*Note: This function can only be called through `executeTaskRoleAssignment`.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_user|address|Address of the user we want to give a manager role to
-|_permissionDomainId|uint256|The domain ID in which _user has the Administration permission
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
-
-
-### ▸ `setTaskSkill(uint256 _id, uint256 _skillId)`
-
-Set the skill for task `_id`.
-
-*Note: Currently we only allow one skill per task although we have provisioned for an array of skills in `Task` struct. Allowed before a task is finalized.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_skillId|uint256|Id of the skill which has to be a global skill
-
-
-### ▸ `setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount)`
-
-Set `_token` payout for worker in task `_id` to `_amount`.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_token|address|Address of the token, `0x0` value indicates Ether
-|_amount|uint256|Payout amount
-
-
-### ▸ `setTaskWorkerRole(uint256 _id, address _user)`
-
-Assigning worker role. Can only be set if there is no one currently assigned to be a worker. Manager of the task and user we want to assign role to both need to agree.
-
-*Note: This function can only be called through `executeTaskRoleAssignment`.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_user|address|Address of the user we want to give a worker role to
 
 
 ### ▸ `setUserRoles(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bytes32 _roles)`
@@ -1908,49 +1352,6 @@ Add a new payment in the colony. Can only be called by users with root permissio
 |value|bytes|Reputation value
 |branchMask|uint256|The branchmask of the proof
 |siblings|bytes32[]|The siblings of the proof
-
-
-### ▸ `submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash)`
-
-Submit the task deliverable, i.e. the output of the work performed for task `_id`. Submission is allowed only to the assigned worker before the task due date. Submissions cannot be overwritten.
-
-*Note: Set the `task.deliverableHash` and `task.completionTimestamp` properties.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_deliverableHash|bytes32|Unique hash of the task deliverable content in ddb
-
-
-### ▸ `submitTaskDeliverableAndRating(uint256 _id, bytes32 _deliverableHash, bytes32 _ratingSecret)`
-
-Submit the task deliverable for Worker and rating for Manager.
-
-*Note: Internally call `submitTaskDeliverable` and `submitTaskWorkRating` in sequence.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_deliverableHash|bytes32|Unique hash of the task deliverable content in ddb
-|_ratingSecret|bytes32|Rating secret for manager
-
-
-### ▸ `submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret)`
-
-Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role`. Allowed within 5 days period starting which whichever is first from either the deliverable being submitted or the dueDate been reached. Allowed only for evaluator to rate worker and for worker to rate manager performance. Once submitted ratings can not be changed or overwritten.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the task
-|_role|uint8|Id of the role, as defined in TaskRole enum
-|_ratingSecret|bytes32|`keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50). Can be generated via `IColony.generateSecret` helper function.
 
 
 ### ▸ `transferExpenditure(uint256 _id, address _newOwner)`
