@@ -47,18 +47,18 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   address token; // Storage slot 7
   uint256 rewardInverse; // Storage slot 8
 
-  uint256 taskCount; // Storage slot 9
+  uint256 DEPRECATED_taskCount; // Storage slot 9
   uint256 fundingPotCount; // Storage slot 10
   uint256 domainCount; // Storage slot 11
 
   // Mapping function signature to 2 task roles whose approval is needed to execute
-  mapping(bytes4 => TaskRole[2]) reviewers; // Storage slot 12
+  mapping(bytes4 => uint8[2]) DEPRECATED_reviewers; // Storage slot 12
 
   // Role assignment functions require special type of sign-off.
   // This keeps track of which functions are related to role assignment
-  mapping(bytes4 => bool) roleAssignmentSigs; // Storage slot 13
+  mapping(bytes4 => bool) DEPRECATED_roleAssignmentSigs; // Storage slot 13
 
-  mapping(uint256 => Task) tasks; // Storage slot 14
+  mapping(uint256 => bytes32[10]) DEPRECATED_tasks; // Storage slot 14
 
   // FundingPots can be tied to tasks or domains, so giving them their own mapping.
   // FundingPot 1 can be thought of as the pot belonging to the colony itself that hasn't been assigned
@@ -76,15 +76,15 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   // This is decremented whenever a payout occurs and the colony loses control of the funds.
   mapping(address => uint256) nonRewardPotsTotal; // Storage slot 18
 
-  mapping(uint256 => RatingSecrets) public taskWorkRatings; // Storage slot 19
+  mapping(uint256 => bytes32[3]) public DEPRECATED_taskWorkRatings; // Storage slot 19
 
   mapping(uint256 => Domain) public domains; // Storage slot 20
 
   // Mapping task id to current "active" nonce for executing task changes
-  mapping(uint256 => uint256) taskChangeNonces; // Storage slot 21
+  mapping(uint256 => uint256) DEPRECATED_taskChangeNonces; // Storage slot 21
 
   uint256 paymentCount; // Storage slot 22
-  mapping(uint256 => Payment) payments; // Storage slot 23
+  mapping(uint256 => bytes32[4]) DEPRECATED_payments; // Storage slot 23
 
   uint256 expenditureCount; // Storage slot 24
   mapping(uint256 => Expenditure) expenditures; // Storage slot 25
@@ -136,43 +136,6 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
-  modifier paymentFunded(uint256 _id) {
-    FundingPot storage fundingPot = fundingPots[payments[_id].fundingPotId];
-    require(fundingPot.payoutsWeCannotMake == 0, "colony-payment-not-funded");
-    _;
-  }
-
-  modifier paymentNotFinalized(uint256 _id) {
-    require(!payments[_id].finalized, "colony-payment-finalized");
-    _;
-  }
-
-  modifier paymentFinalized(uint256 _id) {
-    require(payments[_id].finalized, "colony-payment-not-finalized");
-    _;
-  }
-
-  modifier confirmTaskRoleIdentity(uint256 _id, TaskRole _role) {
-    Role storage role = tasks[_id].roles[uint8(_role)];
-    require(msgSender() == role.user, "colony-task-role-identity-mismatch");
-    _;
-  }
-
-  modifier taskExists(uint256 _id) {
-    require(_id > 0 && _id <= taskCount, "colony-task-does-not-exist");
-    _;
-  }
-
-  modifier taskNotFinalized(uint256 _id) {
-    require(tasks[_id].status != TaskStatus.Finalized, "colony-task-already-finalized");
-    _;
-  }
-
-  modifier taskFinalized(uint256 _id) {
-    require(tasks[_id].status == TaskStatus.Finalized, "colony-task-not-finalized");
-    _;
-  }
-
   modifier validExpenditure(uint256 _id) {
     require(expenditureExists(_id), "colony-expenditure-does-not-exist");
     _;
@@ -213,52 +176,12 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
-  modifier taskComplete(uint256 _id) {
-    require(tasks[_id].completionTimestamp > 0, "colony-task-not-complete");
-    _;
-  }
-
-  modifier taskNotComplete(uint256 _id) {
-    require(tasks[_id].completionTimestamp == 0, "colony-task-complete");
-    _;
-  }
-
   modifier validFundingTransfer(uint256 _fromPot, uint256 _toPot) {
     // Prevent moving funds from between the same pot, which otherwise would cause the pot balance to increment by _amount.
     require(_fromPot != _toPot, "colony-funding-cannot-move-funds-between-the-same-pot");
 
     // Prevent people moving funds from the pot designated to paying out token holders
     require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
-    _;
-  }
-
-  modifier isInBootstrapPhase() {
-    require(
-      taskCount == 0 && expenditureCount == 0 && paymentCount == 0,
-      "colony-not-in-bootstrap-mode"
-    );
-    _;
-  }
-
-  // Note that these require messages currently cannot propogate up because of the `executeTaskRoleAssignment` logic
-  modifier isAdmin(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    address _user
-  ) {
-    require(
-      ColonyAuthority(address(authority)).hasUserRole(
-        _user,
-        _permissionDomainId,
-        uint8(ColonyRole.Administration)
-      ),
-      "colony-not-admin"
-    );
-    require(
-      validateDomainInheritance(_permissionDomainId, _childSkillIndex, tasks[_id].domainId),
-      "ds-auth-invalid-domain-inheritance"
-    );
     _;
   }
 

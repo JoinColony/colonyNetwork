@@ -35,22 +35,6 @@ contract ColonyDomains is ColonyStorage {
     token = _token;
     tokenLockingAddress = IColonyNetwork(colonyNetworkAddress).getTokenLocking();
 
-    // Initialise the task update reviewers
-    setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
-    // We are setting a manager to both reviewers, but it will require just one signature from manager
-    setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Manager);
-    setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Evaluator);
-    setFunctionReviewers(bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("removeTaskEvaluatorRole(uint256)")), TaskRole.Manager, TaskRole.Evaluator);
-    setFunctionReviewers(bytes4(keccak256("removeTaskWorkerRole(uint256)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("cancelTask(uint256)")), TaskRole.Manager, TaskRole.Worker);
-
-    setRoleAssignmentFunction(bytes4(keccak256("setTaskManagerRole(uint256,address,uint256,uint256)")));
-    setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));
-    setRoleAssignmentFunction(bytes4(keccak256("setTaskWorkerRole(uint256,address)")));
-
     // Initialise the local skill and domain trees
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     uint256 rootDomainSkill = colonyNetwork.getSkillCount();
@@ -151,17 +135,5 @@ contract ColonyDomains is ColonyStorage {
 
     emit DomainAdded(msgSender(), domainCount);
     emit FundingPotAdded(fundingPotCount);
-  }
-
-  function setFunctionReviewers(
-    bytes4 _sig,
-    TaskRole _firstReviewer,
-    TaskRole _secondReviewer
-  ) private {
-    reviewers[_sig] = [_firstReviewer, _secondReviewer];
-  }
-
-  function setRoleAssignmentFunction(bytes4 _sig) private {
-    roleAssignmentSigs[_sig] = true;
   }
 }

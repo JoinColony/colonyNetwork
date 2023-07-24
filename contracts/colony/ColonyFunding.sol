@@ -110,56 +110,6 @@ contract ColonyFunding is
     return nonRewardPotsTotal[_token];
   }
 
-  function setTaskManagerPayout(
-    uint256 _id,
-    address _token,
-    uint256 _amount
-  ) public stoppable self {
-    setTaskPayout(_id, TaskRole.Manager, _token, _amount);
-    emit TaskPayoutSet(_id, TaskRole.Manager, _token, _amount);
-  }
-
-  function setTaskEvaluatorPayout(
-    uint256 _id,
-    address _token,
-    uint256 _amount
-  ) public stoppable self {
-    setTaskPayout(_id, TaskRole.Evaluator, _token, _amount);
-    emit TaskPayoutSet(_id, TaskRole.Evaluator, _token, _amount);
-  }
-
-  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
-    setTaskPayout(_id, TaskRole.Worker, _token, _amount);
-    emit TaskPayoutSet(_id, TaskRole.Worker, _token, _amount);
-  }
-
-  // To get all payouts for a task iterate over roles.length
-  function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256) {
-    Task storage task = tasks[_id];
-    bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
-    return unsatisfactory ? 0 : task.payouts[_role][_token];
-  }
-
-  function claimTaskPayout(
-    uint256 _id,
-    uint8 _role,
-    address _token
-  ) public stoppable taskFinalized(_id) {
-    Task storage task = tasks[_id];
-    FundingPot storage fundingPot = fundingPots[task.fundingPotId];
-    assert(task.roles[_role].user != address(0x0));
-
-    uint payout = task.payouts[_role][_token];
-    task.payouts[_role][_token] = 0;
-
-    bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
-    if (!unsatisfactory) {
-      processPayout(task.fundingPotId, _token, payout, task.roles[_role].user);
-    } else {
-      fundingPot.payouts[_token] -= payout;
-    }
-  }
-
   /// @notice For owners to update payouts with one token and many slots
   function setExpenditurePayouts(
     uint256 _id,
@@ -276,39 +226,6 @@ contract ColonyFunding is
     emit PayoutClaimed(msgSender(), _id, _slot, _token, payoutMinusFee);
   }
 
-  function setPaymentPayout(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    address _token,
-    uint256 _amount
-  )
-    public
-    stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
-    validPayoutAmount(_amount)
-    paymentNotFinalized(_id)
-  {
-    Payment storage payment = payments[_id];
-    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
-    assert(fundingPot.associatedType == FundingPotAssociatedType.Payment);
-
-    uint currentTotalAmount = fundingPot.payouts[_token];
-    fundingPot.payouts[_token] = _amount;
-
-    updatePayoutsWeCannotMakeAfterBudgetChange(payment.fundingPotId, _token, currentTotalAmount);
-
-    emit PaymentPayoutSet(msgSender(), _id, _token, _amount);
-  }
-
-  function claimPayment(uint256 _id, address _token) public stoppable paymentFinalized(_id) {
-    Payment storage payment = payments[_id];
-    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
-    assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
-
-    processPayout(payment.fundingPotId, _token, fundingPot.payouts[_token], payment.recipient);
-  }
-
   // View
 
   function getFundingPotCount() public view returns (uint256 count) {
@@ -344,10 +261,6 @@ contract ColonyFunding is
 
     if (fundingPot.associatedType == FundingPotAssociatedType.Domain) {
       domainId = fundingPot.associatedTypeId;
-    } else if (fundingPot.associatedType == FundingPotAssociatedType.Task) {
-      domainId = tasks[fundingPot.associatedTypeId].domainId;
-    } else if (fundingPot.associatedType == FundingPotAssociatedType.Payment) {
-      domainId = payments[fundingPot.associatedTypeId].domainId;
     } else if (fundingPot.associatedType == FundingPotAssociatedType.Expenditure) {
       domainId = expenditures[fundingPot.associatedTypeId].domainId;
     } else {
@@ -384,16 +297,9 @@ contract ColonyFunding is
       );
     }
 
-    // If this pot is associated with a Task or Expenditure, prevent money
+    // If this pot is associated with an Expenditure, prevent money
     // being taken from the pot if the remaining balance is less than
     // the amount needed for payouts, unless the task was cancelled.
-    if (fromPot.associatedType == FundingPotAssociatedType.Task) {
-      require(
-        tasks[fromPot.associatedTypeId].status == TaskStatus.Cancelled ||
-          fromPot.balance[_token] >= fromPot.payouts[_token],
-        "colony-funding-task-bad-state"
-      );
-    }
     if (fromPot.associatedType == FundingPotAssociatedType.Expenditure) {
       require(
         expenditures[fromPot.associatedTypeId].status == ExpenditureStatus.Cancelled ||
@@ -402,20 +308,12 @@ contract ColonyFunding is
       );
     }
 
-    if (
-      fromPot.associatedType == FundingPotAssociatedType.Expenditure ||
-      fromPot.associatedType == FundingPotAssociatedType.Payment ||
-      fromPot.associatedType == FundingPotAssociatedType.Task
-    ) {
+    if (fromPot.associatedType == FundingPotAssociatedType.Expenditure) {
       uint256 fromPotPreviousAmount = fromPot.balance[_token] + _amount;
       updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
     }
 
-    if (
-      toPot.associatedType == FundingPotAssociatedType.Expenditure ||
-      toPot.associatedType == FundingPotAssociatedType.Payment ||
-      toPot.associatedType == FundingPotAssociatedType.Task
-    ) {
+    if (toPot.associatedType == FundingPotAssociatedType.Expenditure) {
       uint256 toPotPreviousAmount = toPot.balance[_token] - _amount;
       updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
     }
@@ -504,31 +402,12 @@ contract ColonyFunding is
     );
   }
 
-  function setTaskPayout(
-    uint256 _id,
-    TaskRole _role,
-    address _token,
-    uint256 _amount
-  ) private taskExists(_id) taskNotComplete(_id) validPayoutAmount(_amount) {
-    Task storage task = tasks[_id];
-    FundingPot storage fundingPot = fundingPots[task.fundingPotId];
-    assert(fundingPot.associatedType == FundingPotAssociatedType.Task);
-
-    uint currentTotalAmount = fundingPot.payouts[_token];
-    uint currentTaskRolePayout = task.payouts[uint8(_role)][_token];
-    task.payouts[uint8(_role)][_token] = _amount;
-
-    fundingPot.payouts[_token] = (currentTotalAmount - currentTaskRolePayout) + _amount;
-
-    updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);
-  }
-
   function processPayout(
     uint256 _fundingPotId,
     address _token,
     uint256 _payout,
     address payable _user
-  ) private returns (uint256 payoutToUser) {
+  ) private {
     refundDomain(_fundingPotId, _token);
 
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);

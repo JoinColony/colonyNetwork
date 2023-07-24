@@ -110,10 +110,8 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     emit ColonyMetadataDelta(msgSender(), _metadataDelta);
   }
 
-  function bootstrapColony(
-    address[] memory _users,
-    int[] memory _amounts
-  ) public stoppable auth isInBootstrapPhase {
+  function bootstrapColony(address[] memory _users, int[] memory _amounts) public stoppable auth {
+    require(expenditureCount == 0, "colony-not-in-bootstrap-mode");
     require(_users.length == _amounts.length, "colony-bootstrap-bad-inputs");
 
     for (uint256 i = 0; i < _users.length; i++) {

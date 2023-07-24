@@ -220,17 +220,6 @@ contract("All", function (accounts) {
       await colony.finalizeTask(taskId);
     });
 
-    it("when working with a Payment", async function () {
-      // 4 transactions payment
-      await colony.addPayment(1, UINT256_MAX, WORKER, token.address, WAD, 1, 0);
-      const paymentId = await colony.getPaymentCount();
-      const payment = await colony.getPayment(paymentId);
-
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
-      await colony.finalizePayment(1, UINT256_MAX, paymentId);
-      await colony.claimPayment(paymentId, token.address);
-    });
-
     it("when working with a OneTxPayment", async function () {
       const oneTxExtension = await OneTxPayment.new();
       await oneTxExtension.install(colony.address);
