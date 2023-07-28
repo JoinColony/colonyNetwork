@@ -1,4 +1,4 @@
-pragma solidity 0.8.20;
+pragma solidity 0.8.21;
 
 contract Version3 {
   function version() pure external returns (uint256) {

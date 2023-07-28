@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.21;
 
 interface ColonyNetworkDataTypes {
   /// @notice Event logged when the colony network is intialised. This is only ever emitted once in a network's lifetime

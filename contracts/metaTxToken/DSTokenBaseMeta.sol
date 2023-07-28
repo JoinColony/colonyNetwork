@@ -17,7 +17,7 @@
 
 // Modified to inherit BasicMetaTransaction and use msgSender() where appropriate
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.21;
 
 import "./../../lib/dappsys/erc20.sol";
 import "./../../lib/dappsys/math.sol";
