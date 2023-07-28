@@ -442,10 +442,10 @@ class ReputationMinerClient {
           const canSubmit = await this._miner.submissionPossible(entryIndex);
           if (canSubmit) {
             this._adapter.log("⏰ Looks like it's time to submit an entry to the current cycle");
-            this.submissionIndex += 1;
             const gasPrice = await updateGasEstimate("average", this.chainId, this._adapter);
             await this._miner.setGasPrice(gasPrice);
             await this.submitEntry(entryIndex);
+            this.submissionIndex += 1;
             this.endDoBlockChecks();
             return;
           }
