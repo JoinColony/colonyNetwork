@@ -2710,13 +2710,12 @@ contract("Voting Reputation", (accounts) => {
       await metaColony.addExtensionToNetwork(VOTING_REPUTATION, votingReputationV9Resolver.address);
     });
 
-    it("can create a v9 motion, upgrade, and then finalize the motion", async () => {
+    beforeEach(async () => {
       await colony.uninstallExtension(VOTING_REPUTATION);
       await colony.installExtension(VOTING_REPUTATION, 9);
 
       const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
       voting = await IVotingReputation.at(votingAddress);
-
       expect(await voting.version()).to.eq.BN(9);
 
       await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
@@ -2731,7 +2730,9 @@ contract("Voting Reputation", (accounts) => {
         REVEAL_PERIOD,
         ESCALATION_PERIOD
       );
+    });
 
+    it("can create a v9 motion, upgrade, and then finalize the motion", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
       await colony.finalizeExpenditure(expenditureId);
@@ -2760,25 +2761,6 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot make a new motion if an existing motion exists using the old lock", async () => {
-      await colony.uninstallExtension(VOTING_REPUTATION);
-      await colony.installExtension(VOTING_REPUTATION, 9);
-
-      const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
-      voting = await IVotingReputation.at(votingAddress);
-
-      await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
-
-      await voting.initialise(
-        TOTAL_STAKE_FRACTION,
-        0, // No voter compensation
-        USER_MIN_STAKE_FRACTION,
-        MAX_VOTE_FRACTION,
-        STAKE_PERIOD,
-        SUBMIT_PERIOD,
-        REVEAL_PERIOD,
-        ESCALATION_PERIOD
-      );
-
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
 
@@ -2808,25 +2790,6 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot stake an expenditure-based motion created before the upgrade, unless it is a counterstake", async () => {
-      await colony.uninstallExtension(VOTING_REPUTATION);
-      await colony.installExtension(VOTING_REPUTATION, 9);
-
-      const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
-      voting = await IVotingReputation.at(votingAddress);
-
-      await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
-
-      await voting.initialise(
-        TOTAL_STAKE_FRACTION,
-        0, // No voter compensation
-        USER_MIN_STAKE_FRACTION,
-        MAX_VOTE_FRACTION,
-        STAKE_PERIOD,
-        SUBMIT_PERIOD,
-        REVEAL_PERIOD,
-        ESCALATION_PERIOD
-      );
-
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
 
@@ -2853,25 +2816,6 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can create a v9 NO_ACTION motion, upgrade, and then finalize the motion", async () => {
-      await colony.uninstallExtension(VOTING_REPUTATION);
-      await colony.installExtension(VOTING_REPUTATION, 9);
-
-      const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
-      voting = await IVotingReputation.at(votingAddress);
-
-      await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
-
-      await voting.initialise(
-        TOTAL_STAKE_FRACTION,
-        0, // No voter compensation
-        USER_MIN_STAKE_FRACTION,
-        MAX_VOTE_FRACTION,
-        STAKE_PERIOD,
-        SUBMIT_PERIOD,
-        REVEAL_PERIOD,
-        ESCALATION_PERIOD
-      );
-
       const action = "0x12345678";
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
@@ -2889,25 +2833,6 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot let an invalid motion be finalized", async () => {
-      await colony.uninstallExtension(VOTING_REPUTATION);
-      await colony.installExtension(VOTING_REPUTATION, 9);
-
-      const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
-      voting = await IVotingReputation.at(votingAddress);
-
-      await colony.setArbitrationRole(1, UINT256_MAX, voting.address, 1, true);
-
-      await voting.initialise(
-        TOTAL_STAKE_FRACTION,
-        0, // No voter compensation
-        USER_MIN_STAKE_FRACTION,
-        MAX_VOTE_FRACTION,
-        STAKE_PERIOD,
-        SUBMIT_PERIOD,
-        REVEAL_PERIOD,
-        ESCALATION_PERIOD
-      );
-
       const action1 = await encodeTxData(colony, "addDomain", [1, 0, 2]);
       const action2 = await encodeTxData(colony, "deprecateDomain", [1, UINT256_MAX, 1, false]);
       const multicall = await encodeTxData(colony, "multicall", [[action1, action2]]);

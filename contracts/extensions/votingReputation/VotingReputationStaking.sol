@@ -18,10 +18,6 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../../colonyNetwork/IColonyNetwork.sol";
-import "./../../colony/ColonyRoles.sol";
-import "./../../common/ERC20Extended.sol";
-import "./../../tokenLocking/ITokenLocking.sol";
 import "./VotingReputationStorage.sol";
 
 contract VotingReputationStaking is VotingReputationStorage {
@@ -78,6 +74,7 @@ contract VotingReputationStaking is VotingReputationStorage {
     stakes[_motionId][msgSender()][_vote] = stakerTotalAmount;
 
     // Increment counter & extend claim delay if staking for an expenditure state change
+    // Note: if the expenditure is already locked, this is a no-op and motion is automatically finalized
     if (
       _vote == YAY &&
       !motion.escalated &&

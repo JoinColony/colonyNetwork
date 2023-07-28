@@ -138,7 +138,7 @@ Get the escalation period
 
 ### ▸ `getExpenditureMotionCount(bytes32 _structHash):uint256 _count`
 
-Get the count of active motions for an expenditure slot
+DEPRECATED Get the count of active motions for an expenditure slot
 
 
 **Parameters**
@@ -174,6 +174,7 @@ Get the motion which holds the lock on an expenditure
 
 Get the largest past vote on an expenditure
 
+*Note: The previous version of this function which took an actionHash has been deprecated*
 
 **Parameters**
 
@@ -348,7 +349,7 @@ Get the user min stake fraction
 
 Get the voter reward
 
-*Note: This function will only return an accurate value if in the reveal state.*
+*Note: This function will only return an accurate value if in the reveal state. Otherwise, use getVoterRewardRange*
 
 **Parameters**
 

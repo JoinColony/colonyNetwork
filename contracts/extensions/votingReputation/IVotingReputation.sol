@@ -228,7 +228,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @return _stake The user's stake
   function getStake(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256 _stake);
 
-  /// @notice Get the count of active motions for an expenditure slot
+  /// @notice DEPRECATED Get the count of active motions for an expenditure slot
   /// @param _structHash Hash of an expenditure id and slot
   /// @return _count Number of motions
   function getExpenditureMotionCount(bytes32 _structHash) external view returns (uint256 _count);
@@ -239,6 +239,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   function getExpenditureMotionLock(uint256 _expenditureId) external view returns (uint256 _motionId);
 
   /// @notice Get the largest past vote on an expenditure
+  /// @dev The previous version of this function which took an actionHash has been deprecated
   /// @param _expenditureId The expenditureId
   /// @return _vote The largest past vote on this variable
   function getExpenditurePastVote(uint256 _expenditureId) external view returns (uint256 _vote);
@@ -249,7 +250,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   function getMotionState(uint256 _motionId) external view returns (MotionState _motionState);
 
   /// @notice Get the voter reward
-  /// @dev This function will only return an accurate value if in the reveal state.
+  /// @dev This function will only return an accurate value if in the reveal state. Otherwise, use getVoterRewardRange
   /// @param _motionId The id of the motion
   /// @param _voterRep The reputation the voter has in the domain
   /// @return _reward The voter reward

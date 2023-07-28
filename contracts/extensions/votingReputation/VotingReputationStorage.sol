@@ -21,7 +21,6 @@ pragma experimental ABIEncoderV2;
 import "./../../colonyNetwork/IColonyNetwork.sol";
 import "./../../colony/ColonyRoles.sol";
 import "./../../common/BasicMetaTransaction.sol";
-import "./../../common/ERC20Extended.sol";
 import "./../../tokenLocking/ITokenLocking.sol";
 import "./../ColonyExtension.sol";
 import "./VotingReputationDataTypes.sol";
@@ -261,12 +260,11 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     }
 
     ActionSummary memory summary;
-    bytes4 sig;
-    uint256 expenditureId;
-    uint256 domainSkillId;
 
     for (uint256 i; i < actions.length; i++) {
-      sig = getSig(actions[i]);
+      bytes4 sig = getSig(actions[i]);
+      uint256 expenditureId;
+      uint256 domainSkillId;
 
       if (sig == NO_ACTION || sig == OLD_MOVE_FUNDS) {
         // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS, the entire multicall is such and we break
