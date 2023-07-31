@@ -1,8 +1,8 @@
 /* globals artifacts */
-const { currentBlockTime, getColonyEditable } = require("../helpers/test-helper");
+const { getColonyEditable } = require("../helpers/test-helper");
 const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
-const { ROOT_ROLE, SPECIFICATION_HASH_UPDATED } = require("../helpers/constants");
-const { makeTask, setupRandomColony } = require("../helpers/test-data-generator");
+const { ROOT_ROLE } = require("../helpers/constants");
+const { makeExpenditure, setupRandomColony } = require("../helpers/test-data-generator");
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -29,8 +29,6 @@ contract("Colony contract upgrade", (accounts) => {
   let updatedColony;
   let updatedColonyVersion;
 
-  let dueDate;
-
   before(async function () {
     const etherRouterColonyNetwork = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouterColonyNetwork.address);
@@ -47,9 +45,8 @@ contract("Colony contract upgrade", (accounts) => {
     const contractRecovery = await ContractRecovery.new();
     const colonyArbitraryTransaction = await ColonyArbitraryTransaction.new();
 
-    dueDate = await currentBlockTime();
-    await makeTask({ colony, dueDate });
-    await makeTask({ colony, dueDate: dueDate + 1, hash: SPECIFICATION_HASH_UPDATED });
+    await makeExpenditure({ colony });
+    await makeExpenditure({ colony });
 
     // Setup new Colony contract version on the Network
     const updatedColonyContract = await UpdatedColony.new();
