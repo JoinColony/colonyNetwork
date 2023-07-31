@@ -385,7 +385,6 @@ contract ColonyFunding is
 
     for (uint256 i; i < _slots.length; i++) {
       require(_amounts[i] <= MAX_PAYOUT, "colony-payout-too-large");
-
       uint256 currentPayout = expenditureSlotPayouts[_id][_slots[i]][_token];
 
       expenditureSlotPayouts[_id][_slots[i]][_token] = _amounts[i];
@@ -393,13 +392,9 @@ contract ColonyFunding is
 
       emit ExpenditurePayoutSet(msgSender(), _id, _slots[i], _token, _amounts[i]);
     }
-    fundingPot.payouts[_token] = runningTotal;
 
-    updatePayoutsWeCannotMakeAfterBudgetChange(
-      expenditures[_id].fundingPotId,
-      _token,
-      previousTotal
-    );
+    fundingPot.payouts[_token] = runningTotal;
+    updatePayoutsWeCannotMakeAfterBudgetChange(expenditures[_id].fundingPotId, _token, previousTotal);
   }
 
   function processPayout(

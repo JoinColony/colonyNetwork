@@ -4,20 +4,9 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
-const {
-  IPFS_HASH,
-  UINT256_MAX,
-  MANAGER_RATING,
-  WORKER_RATING,
-  RATING_1_SALT,
-  RATING_2_SALT,
-  RATING_1_SECRET,
-  RATING_2_SECRET,
-  WAD,
-  ADDRESS_ZERO,
-} = require("../../helpers/constants");
+const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO } = require("../../helpers/constants");
 const { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } = require("../../helpers/test-helper");
-const { makeTask, setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
+const { setupRandomColony, getMetaTransactionParameters, makeExpenditure } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -72,14 +61,9 @@ contract("Colony", (accounts) => {
       expect(owner).to.be.equal(ethers.constants.AddressZero);
     });
 
-    it("should return zero task count", async () => {
-      const taskCount = await colony.getTaskCount();
-      expect(taskCount).to.be.zero;
-    });
-
-    it("should return zero for taskChangeNonce", async () => {
-      const taskChangeNonce = await colony.getTaskChangeNonce(1);
-      expect(taskChangeNonce).to.be.zero;
+    it("should return zero expenditure count", async () => {
+      const expenditureCount = await colony.getExpenditureCount();
+      expect(expenditureCount).to.be.zero;
     });
 
     it("should emit correct Mint event when minting tokens", async () => {
@@ -112,13 +96,6 @@ contract("Colony", (accounts) => {
       await checkErrorRevert(colony.initialiseColony(colonyNetwork.address, token.address), "colony-already-initialised-network");
     });
 
-    it("should correctly generate a rating secret", async () => {
-      const ratingSecret1 = await colony.generateSecret(RATING_1_SALT, MANAGER_RATING);
-      const ratingSecret2 = await colony.generateSecret(RATING_2_SALT, WORKER_RATING);
-      expect(ratingSecret1).to.eq.BN(RATING_1_SECRET);
-      expect(ratingSecret2).to.eq.BN(RATING_2_SECRET);
-    });
-
     it("should initialise the root domain", async () => {
       // There should be one domain (the root domain)
       const domainCount = await colony.getDomainCount();
@@ -135,11 +112,11 @@ contract("Colony", (accounts) => {
     });
 
     it("should let funding pot information be read", async () => {
-      const taskId = await makeTask({ colony });
-      const taskInfo = await colony.getTask(taskId);
-      let potInfo = await colony.getFundingPot(taskInfo.fundingPotId);
-      expect(potInfo.associatedType).to.eq.BN(2);
-      expect(potInfo.associatedTypeId).to.eq.BN(taskId);
+      const expenditureId = await makeExpenditure({ colony });
+      const expenditure = await colony.getExpenditure(expenditureId);
+      let potInfo = await colony.getFundingPot(expenditure.fundingPotId);
+      expect(potInfo.associatedType).to.eq.BN(4);
+      expect(potInfo.associatedTypeId).to.eq.BN(expenditureId);
       expect(potInfo.payoutsWeCannotMake).to.be.zero;
 
       // Read pot info about a pot in a domain
