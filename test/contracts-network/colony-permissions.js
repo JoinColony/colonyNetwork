@@ -1,4 +1,5 @@
 /* global artifacts */
+const BN = require("bn.js");
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const ethers = require("ethers");
@@ -16,15 +17,14 @@ const {
   FUNDING_ROLE,
   ADMINISTRATION_ROLE,
   INITIAL_FUNDING,
-  SPECIFICATION_HASH,
   GLOBAL_SKILL_ID,
   ADDRESS_ZERO,
   HASHZERO,
+  SECONDS_PER_DAY,
 } = require("../../helpers/constants");
 
-const { fundColonyWithTokens, makeTask, setupRandomColony } = require("../../helpers/test-data-generator");
-const { checkErrorRevert, expectEvent } = require("../../helpers/test-helper");
-const { executeSignedRoleAssignment } = require("../../helpers/task-review-signing");
+const { fundColonyWithTokens, makeExpenditure, setupRandomColony } = require("../../helpers/test-data-generator");
+const { checkErrorRevert, expectEvent, bn2bytes32 } = require("../../helpers/test-helper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -124,7 +124,7 @@ contract("ColonyPermissions", (accounts) => {
       // Founder can move funds from domain 1 to domain 2.
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address);
 
-      // User1 can only move funds from domain 2 into domain 2 task.
+      // User1 can only move funds from domain 2 into domain 2 expenditure.
       await colony.setFundingRole(1, 0, USER1, 2, true);
       hasRole = await colony.hasUserRole(USER1, 2, FUNDING_ROLE);
       expect(hasRole).to.be.true;
@@ -145,8 +145,8 @@ contract("ColonyPermissions", (accounts) => {
         "ds-auth-unauthorized",
       );
 
-      const taskId = await makeTask({ colonyNetwork, colony, domainId: 2 });
-      const task = await colony.getTask(taskId);
+      const expenditureId = await makeExpenditure({ colonyNetwork, colony, domainId: 2 });
+      const expenditure = await colony.getExpenditure(expenditureId);
       await colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
         2,
         UINT256_MAX,
@@ -154,14 +154,14 @@ contract("ColonyPermissions", (accounts) => {
         UINT256_MAX,
         UINT256_MAX,
         domain2.fundingPotId,
-        task.fundingPotId,
+        expenditure.fundingPotId,
         WAD,
         token.address,
         { from: USER1 },
       );
     });
 
-    it("should allow users with administration permission manipulate expenditures in their domains only", async () => {
+    it("should allow users with administration permission create expenditures in their domains only", async () => {
       // Founder can create expenditures in domain 1, 2, 3.
       await colony.makeExpenditure(1, UINT256_MAX, 1, { from: FOUNDER });
       await colony.makeExpenditure(1, 0, 2, { from: FOUNDER });
@@ -176,70 +176,26 @@ contract("ColonyPermissions", (accounts) => {
       await colony.makeExpenditure(2, UINT256_MAX, 2, { from: USER1 });
     });
 
-    it("should allow users with administration permission manipulate tasks/payments in their domains only", async () => {
-      // Founder can create tasks in domain 1, 2, 3.
-      await colony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, 0, 0, { from: FOUNDER });
-      await colony.makeTask(1, 0, SPECIFICATION_HASH, 2, 0, 0, { from: FOUNDER });
-      await colony.makeTask(1, 1, SPECIFICATION_HASH, 3, 0, 0, { from: FOUNDER });
+    it("should allow users with arbitration permission manipulate expenditures in their domains only", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1, { from: FOUNDER });
+      const expenditureId1 = await colony.getExpenditureCount();
+      await colony.makeExpenditure(1, 0, 2, { from: FOUNDER });
+      const expenditureId2 = await colony.getExpenditureCount();
 
-      // User1 can only create tasks in domain 2.
-      await colony.setAdministrationRole(1, 0, USER1, 2, true);
-      hasRole = await colony.hasUserRole(USER1, 2, ADMINISTRATION_ROLE);
+      await colony.setArbitrationRole(1, 0, USER1, 2, true);
+      hasRole = await colony.hasUserRole(USER1, 2, ARBITRATION_ROLE);
       expect(hasRole).to.be.true;
 
-      await checkErrorRevert(colony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, 0, 0, { from: USER1 }), "ds-auth-unauthorized");
-
-      const { logs } = await colony.makeTask(2, UINT256_MAX, SPECIFICATION_HASH, 2, 0, 0, { from: USER1 });
-      const { taskId } = logs.filter((log) => log.event === "TaskAdded")[0].args;
-
-      // User1 can transfer manager role to User2 only if User2 also has administration privileges.
-      hasRole = await colony.hasUserRole(USER2, 2, ADMINISTRATION_ROLE);
-      expect(hasRole).to.be.false;
+      // Set globalClaimDelay
+      const EXPENDITURES_SLOT = 25;
+      const ARRAY = true;
+      const day32 = bn2bytes32(new BN(SECONDS_PER_DAY));
 
       await checkErrorRevert(
-        executeSignedRoleAssignment({
-          colony,
-          taskId,
-          functionName: "setTaskManagerRole",
-          signers: [USER1, USER2],
-          sigTypes: [0, 0],
-          args: [taskId, USER2, 2, UINT256_MAX],
-        }),
-        "colony-task-role-assignment-execution-failed",
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId1, EXPENDITURES_SLOT, [ARRAY], [bn2bytes32(new BN(4))], day32, { from: USER1 }),
+        "ds-auth-unauthorized"
       );
-
-      await colony.setAdministrationRole(1, 0, USER2, 2, true);
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskManagerRole",
-        signers: [USER1, USER2],
-        sigTypes: [0, 0],
-        args: [taskId, USER2, 2, UINT256_MAX],
-      });
-
-      // And then User2 can transfer over to Founder (permission in parent domain)
-      // But not with a bad proof!
-      await checkErrorRevert(
-        executeSignedRoleAssignment({
-          colony,
-          taskId,
-          functionName: "setTaskManagerRole",
-          signers: [USER2, FOUNDER],
-          sigTypes: [0, 0],
-          args: [taskId, FOUNDER, 1, 1],
-        }),
-        "colony-task-role-assignment-execution-failed",
-      );
-
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskManagerRole",
-        signers: [USER2, FOUNDER],
-        sigTypes: [0, 0],
-        args: [taskId, FOUNDER, 1, 0],
-      });
+      await colony.setExpenditureState(2, UINT256_MAX, expenditureId2, EXPENDITURES_SLOT, [ARRAY], [bn2bytes32(new BN(4))], day32, { from: USER1 });
     });
 
     it("should allow users with architecture permission manipulate the structure of their subdomains only", async () => {
@@ -528,18 +484,18 @@ contract("ColonyPermissions", (accounts) => {
     });
 
     it("should not allow operations on nonexistent domains", async () => {
-      // Can make a task in an existing domain
-      await colony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, 0, 0);
+      // Can make a expenditure in an existing domain
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
 
       // But can't give a bad permission domain
-      await checkErrorRevert(colony.makeTask(10, 0, SPECIFICATION_HASH, 1, 0, 0), "ds-auth-permission-domain-does-not-exist");
+      await checkErrorRevert(colony.makeExpenditure(10, 0, 1), "ds-auth-permission-domain-does-not-exist");
 
       // Nor a bad child domain
-      await checkErrorRevert(colony.makeTask(1, 0, SPECIFICATION_HASH, 10, 0, 0), "ds-auth-child-domain-does-not-exist");
+      await checkErrorRevert(colony.makeExpenditure(1, 0, 10), "ds-auth-child-domain-does-not-exist");
     });
 
     it("should not allow users to pass a too-large child skill index", async () => {
-      await checkErrorRevert(colony.makeTask(1, 100, SPECIFICATION_HASH, 2, 0, 0), "colony-network-out-of-range-child-skill-index");
+      await checkErrorRevert(colony.makeExpenditure(1, 100, 2), "colony-network-out-of-range-child-skill-index");
     });
 
     it("should be able to get all user roles", async () => {

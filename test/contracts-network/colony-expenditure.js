@@ -369,8 +369,7 @@ contract("Colony Expenditure", (accounts) => {
       expect(payout).to.eq.BN(20);
 
       const expenditure = await colony.getExpenditure(expenditureId);
-      const fundingPotId = await expenditure.fundingPotId;
-      const fundingPotPayout = await colony.getFundingPotPayout(fundingPotId, token.address);
+      const fundingPotPayout = await colony.getFundingPotPayout(expenditure.fundingPotId, token.address);
       expect(fundingPotPayout).to.eq.BN(30);
     });
 

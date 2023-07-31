@@ -8,16 +8,6 @@ const {
   UINT256_MAX,
   CURR_VERSION,
   WAD,
-  MANAGER_ROLE,
-  WORKER_ROLE,
-  MANAGER_RATING,
-  WORKER_RATING,
-  RATING_1_SALT,
-  RATING_2_SALT,
-  RATING_1_SECRET,
-  RATING_2_SECRET,
-  SPECIFICATION_HASH,
-  DELIVERABLE_HASH,
   SECONDS_PER_HOUR,
   SECONDS_PER_DAY,
   DEFAULT_STAKE,
@@ -29,7 +19,6 @@ const {
 
 const {
   getTokenArgs,
-  currentBlockTime,
   forwardTime,
   bnSqrt,
   makeReputationKey,
@@ -41,8 +30,7 @@ const {
   accommodateChallengeAndInvalidateHash,
 } = require("../helpers/test-helper");
 
-const { giveUserCLNYTokensAndStake, fundColonyWithTokens, makeTask, setupRandomColony } = require("../helpers/test-data-generator");
-const { executeSignedTaskChange, executeSignedRoleAssignment } = require("../helpers/task-review-signing");
+const { giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } = require("../helpers/test-data-generator");
 
 const { TruffleLoader } = require("../packages/package-utils");
 const PatriciaTree = require("../packages/reputation-miner/patricia");
@@ -124,100 +112,6 @@ contract("All", function (accounts) {
       await colony.mintTokens(200);
       await colony.claimColonyFunds(token.address);
       await colony.setAdministrationRole(1, UINT256_MAX, EVALUATOR, 1, true);
-    });
-
-    // Deprecated functionality
-    it.skip("when working with a Task", async function () {
-      const taskId = await makeTask({ colony });
-
-      // setTaskSkill
-      await executeSignedTaskChange({
-        colony,
-        functionName: "setTaskSkill",
-        taskId,
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, GLOBAL_SKILL_ID],
-      });
-
-      // setTaskBrief
-      await executeSignedTaskChange({
-        colony,
-        functionName: "setTaskBrief",
-        taskId,
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, SPECIFICATION_HASH],
-      });
-
-      // setTaskDueDate
-      let dueDate = await currentBlockTime();
-      dueDate += SECONDS_PER_DAY * 5;
-
-      await executeSignedTaskChange({
-        colony,
-        functionName: "setTaskDueDate",
-        taskId,
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, dueDate],
-      });
-
-      // moveFundsBetweenPots
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 2, 190, token.address);
-
-      // setTaskManagerPayout
-      await executeSignedTaskChange({
-        colony,
-        functionName: "setTaskManagerPayout",
-        taskId,
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, token.address, 50],
-      });
-
-      // setTaskEvaluatorPayout
-      await executeSignedTaskChange({
-        colony,
-        functionName: "setTaskEvaluatorPayout",
-        taskId,
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, token.address, 40],
-      });
-
-      // setTaskWorkerPayout
-      await executeSignedTaskChange({
-        colony,
-        functionName: "setTaskWorkerPayout",
-        taskId,
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, token.address, 100],
-      });
-
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskWorkerRole",
-        signers: [MANAGER, WORKER],
-        sigTypes: [0, 0],
-        args: [taskId, WORKER],
-      });
-
-      // submitTaskDeliverable
-      await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER, gasPrice });
-
-      // submitTaskWorkRating
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR, gasPrice });
-      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
-
-      // revealTaskWorkRating
-      await colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR, gasPrice });
-      await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
-
-      // finalizeTask
-      await colony.finalizeTask(taskId);
     });
 
     it("when working with a OneTxPayment", async function () {

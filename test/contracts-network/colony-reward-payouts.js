@@ -8,7 +8,7 @@ const bnChai = require("bn-chai");
 const path = require("path");
 
 const { TruffleLoader } = require("../../packages/package-utils");
-const { UINT256_MAX, INT128_MAX, WAD, MANAGER_ROLE, INITIAL_FUNDING, DEFAULT_STAKE, SECONDS_PER_DAY } = require("../../helpers/constants");
+const { UINT256_MAX, INT128_MAX, WAD, INITIAL_FUNDING, DEFAULT_STAKE, SECONDS_PER_DAY } = require("../../helpers/constants");
 
 const {
   getTokenArgs,
@@ -21,7 +21,7 @@ const {
   getRewardClaimSquareRootsAndProofs,
 } = require("../../helpers/test-helper");
 
-const { fundColonyWithTokens, setupFinalizedTask, giveUserCLNYTokensAndStake, setupRandomColony } = require("../../helpers/test-data-generator");
+const { fundColonyWithTokens, giveUserCLNYTokensAndStake, setupRandomColony, setupClaimedExpenditure } = require("../../helpers/test-data-generator");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 
@@ -30,7 +30,6 @@ chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
-const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
@@ -168,21 +167,14 @@ contract("Colony Reward Payouts", (accounts) => {
     it("should not be able to create reward payout if skill id is not from root domain", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
-      const metaColonyAddress = await colonyNetwork.getMetaColony();
-      const metaColony = await IMetaColony.at(metaColonyAddress);
-
-      await metaColony.addGlobalSkill();
-      const id = await colonyNetwork.getSkillCount();
-      await setupFinalizedTask({
-        colonyNetwork,
-        colony,
-        skillId: id,
-      });
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await setupClaimedExpenditure({ colonyNetwork, colony, domainId: 2 });
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
-      const colonyWideReputationKey = makeReputationKey(colony.address, id);
+      const domain = await colony.getDomain(2);
+      const colonyWideReputationKey = makeReputationKey(colony.address, domain.skillId);
       const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       const newColonyWideReputationProof = [key, value, branchMask, siblings];
 
@@ -243,14 +235,7 @@ contract("Colony Reward Payouts", (accounts) => {
       domain = await newColony.getDomain(1);
       const rootDomainSkill = domain.skillId;
 
-      const taskId = await setupFinalizedTask({
-        colonyNetwork,
-        colony: newColony,
-        token: newToken,
-        domainId: domainCount,
-      });
-
-      await newColony.claimTaskPayout(taskId, MANAGER_ROLE, newToken.address);
+      await setupClaimedExpenditure({ colonyNetwork, colony: newColony, token: newToken, domainId: domainCount });
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });

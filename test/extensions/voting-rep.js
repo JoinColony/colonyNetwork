@@ -405,7 +405,7 @@ contract("Voting Reputation", (accounts) => {
 
     it("can create a domain motion in the root domain", async () => {
       // Create motion in domain of action (1)
-      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      const action = await encodeTxData(colony, "makeExpenditure", [1, UINT256_MAX, 1]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
 
       const motionId = await voting.getMotionCount();
@@ -415,7 +415,7 @@ contract("Voting Reputation", (accounts) => {
 
     it("cannot create a domain motion in the root domain with an invalid reputation proof", async () => {
       // Create motion in domain of action (1)
-      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      const action = await encodeTxData(colony, "makeExpenditure", [1, UINT256_MAX, 1]);
       await checkErrorRevert(
         voting.createMotion(1, 0, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
         "voting-rep-invalid-domain-id",
@@ -428,7 +428,7 @@ contract("Voting Reputation", (accounts) => {
       const [mask, siblings] = await reputationTree.getProof(key);
 
       // Create motion in domain of action (2)
-      const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
+      const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
       await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings);
 
       const motionId = await voting.getMotionCount();
@@ -438,7 +438,7 @@ contract("Voting Reputation", (accounts) => {
 
     it("can externally escalate a domain motion", async () => {
       // Create motion in parent domain (1) of action (2)
-      const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
+      const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
       await voting.createMotion(1, 0, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
 
       const motionId = await voting.getMotionCount();
@@ -480,7 +480,7 @@ contract("Voting Reputation", (accounts) => {
       const [mask, siblings] = await reputationTree.getProof(key);
 
       // Action in domain 1, motion in domain 2
-      const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
+      const action = await encodeTxData(colony, "makeExpenditure", [1, UINT256_MAX, 1]);
 
       await checkErrorRevert(voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
     });
@@ -509,7 +509,7 @@ contract("Voting Reputation", (accounts) => {
       const [mask, siblings] = await reputationTree.getProof(key);
 
       // Provide proof for (3) instead of (2)
-      const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
+      const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
       await checkErrorRevert(voting.createMotion(1, 1, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-invalid-domain-id");
     });
 
@@ -549,7 +549,7 @@ contract("Voting Reputation", (accounts) => {
       const [mask, siblings] = await reputationTree.getProof(key);
 
       // Try to create motion in domain of action (4)
-      const action = await encodeTxData(colony, "makeTask", [1, 2, FAKE, 4, 0, 0]);
+      const action = await encodeTxData(colony, "makeExpenditure", [1, 2, 4]);
       await checkErrorRevert(
         voting.createMotion(4, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings),
         "voting-rep-no-reputation-in-domain",
@@ -1258,15 +1258,15 @@ contract("Voting Reputation", (accounts) => {
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await forwardTime(STAKE_PERIOD, this);
-      const tasksBefore = await colony.getTaskCount();
+      const balanceBefore = await token.balanceOf(colony.address);
 
       await forwardTime(FAIL_EXECUTION_TIMEOUT_PERIOD, this);
 
       const { logs } = await voting.finalizeMotion(motionId);
       expect(logs[0].args.executed).to.be.false;
 
-      const tasksAfter = await colony.getTaskCount();
-      expect(tasksAfter).to.eq.BN(tasksBefore);
+      const balanceAfter = await token.balanceOf(colony.address);
+      expect(balanceAfter).to.eq.BN(balanceBefore);
       await colony.setRootRole(voting.address, true);
     });
 
@@ -2467,7 +2467,7 @@ contract("Voting Reputation", (accounts) => {
       const user1Value2 = makeReputationValue(WAD.divn(3).muln(2), 10);
       const [user1Mask2, user1Siblings2] = await reputationTree.getProof(user1Key2);
 
-      const action = await encodeTxData(colony, "makeTask", [1, 0, FAKE, 2, 0, 0]);
+      const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
       await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
       motionId = await voting.getMotionCount();
 
@@ -2748,7 +2748,7 @@ contract("Voting Reputation", (accounts) => {
       const user1Value3 = makeReputationValue(WAD.muln(2), 12);
       const [user1Mask3, user1Siblings3] = await reputationTree.getProof(user1Key3);
 
-      const action = await encodeTxData(colony, "makeTask", [1, 1, FAKE, 3, 0, 0]);
+      const action = await encodeTxData(colony, "makeExpenditure", [1, 1, 3]);
       await voting.createMotion(3, UINT256_MAX, ADDRESS_ZERO, action, domain3Key, domain3Value, domain3Mask, domain3Siblings);
       motionId = await voting.getMotionCount();
 

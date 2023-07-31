@@ -4,21 +4,10 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
-const {
-  UINT256_MAX,
-  WAD,
-  MANAGER_ROLE,
-  EVALUATOR_ROLE,
-  WORKER_ROLE,
-  MANAGER_PAYOUT,
-  EVALUATOR_PAYOUT,
-  WORKER_PAYOUT,
-  INITIAL_FUNDING,
-} = require("../../helpers/constants");
+const { UINT256_MAX, WAD, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING } = require("../../helpers/constants");
 
-const { fundColonyWithTokens, setupFinalizedTask, setupRandomColony, makeTask } = require("../../helpers/test-data-generator");
+const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFinalizedExpenditure } = require("../../helpers/test-data-generator");
 const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit } = require("../../helpers/test-helper");
-const { executeSignedTaskChange, executeSignedRoleAssignment } = require("../../helpers/task-review-signing");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -85,9 +74,9 @@ contract("Colony Funding", (accounts) => {
 
     it("should let tokens be moved between funding pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
-      const taskId = await makeTask({ colony });
-      const task = await colony.getTask(taskId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 51, otherToken.address);
+      const expenditureId = await makeExpenditure({ colony });
+      const expenditure = await colony.getExpenditure(expenditureId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, expenditure.fundingPotId, 51, otherToken.address);
       const colonyPotBalance = await colony.getFundingPotBalance(1, otherToken.address);
       const colonyTokenBalance = await otherToken.balanceOf(colony.address);
       const pot2Balance = await colony.getFundingPotBalance(2, otherToken.address);
@@ -127,12 +116,12 @@ contract("Colony Funding", (accounts) => {
 
     it("should not let tokens be moved from the pot for payouts to token holders", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
-      const taskId = await makeTask({ colony });
-      const task = await colony.getTask(taskId);
+      const expenditureId = await makeExpenditure({ colony });
+      const expenditure = await colony.getExpenditure(expenditureId);
 
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 0, task.fundingPotId, 1, otherToken.address),
-        "colony-funding-cannot-move-funds-from-rewards-pot",
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 0, expenditure.fundingPotId, 1, otherToken.address),
+        "colony-funding-cannot-move-funds-from-rewards-pot"
       );
       const colonyPotBalance = await colony.getFundingPotBalance(1, otherToken.address);
       const colonyRewardPotBalance = await colony.getFundingPotBalance(0, otherToken.address);
@@ -146,13 +135,13 @@ contract("Colony Funding", (accounts) => {
 
     it("should not let tokens be moved by non-admins", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
-      const taskId = await makeTask({ colony });
-      const task = await colony.getTask(taskId);
+      const expenditureId = await makeExpenditure({ colony });
+      const expenditure = await colony.getExpenditure(expenditureId);
 
       const moveFundsBetweenPots = colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"];
       await checkErrorRevert(
-        moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 51, otherToken.address, { from: WORKER }),
-        "ds-auth-unauthorized",
+        moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, expenditure.fundingPotId, 51, otherToken.address, { from: WORKER }),
+        "ds-auth-unauthorized"
       );
 
       const colonyPotBalance = await colony.getFundingPotBalance(1, otherToken.address);
@@ -203,246 +192,134 @@ contract("Colony Funding", (accounts) => {
       // NB Also that since we can no longer reduce the pot to below the budget,
       // scenarios 7, 9, 13 should revert.
       await fundColonyWithTokens(colony, otherToken, 100);
-      const taskId = await makeTask({ colony });
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskWorkerRole",
-        signers: [MANAGER, WORKER],
-        sigTypes: [0, 0],
-        args: [taskId, WORKER],
-      });
+      const expenditureId = await makeExpenditure({ colony });
+      const expenditure = await colony.getExpenditure(expenditureId);
+      await colony.setExpenditureRecipients(expenditureId, [0, 1], [MANAGER, WORKER]);
 
       // FundingPot 0, Payout 0
       // FundingPot was equal to payout, transition to pot being equal by changing payout (18)
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 0],
-      });
-      const task = await colony.getTask(taskId);
-      let fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [0]);
+      let fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 0, Payout 0
       // FundingPot was equal to payout, transition to pot being equal by changing pot (17)
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 0, otherToken.address);
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, expenditure.fundingPotId, 0, otherToken.address);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 0, Payout 0
       // FundingPot was equal to payout, transition to pot being lower by increasing payout (8)
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 40],
-      });
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [40]);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // FundingPot Balance: 0, Payout: 40
       // FundingPot was below payout, transition to being equal by increasing pot (1)
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 40, otherToken.address);
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, expenditure.fundingPotId, 40, otherToken.address);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot Balance: 40, Payout 40
       // FundingPot was equal to payout, transition to being above by increasing pot (5)
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 40, otherToken.address);
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, expenditure.fundingPotId, 40, otherToken.address);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot Balance: 80, Payout 40
       // FundingPot was above payout, transition to being equal by increasing payout (12)
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 80],
-      });
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [80]);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 80, Payout 80
       // FundingPot was equal to payout, transition to being above by decreasing payout (6)
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 40],
-      });
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [40]);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 80, Payout 40
       // FundingPot was above payout, transition to being equal by decreasing pot (11)
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 40, otherToken.address);
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 40, otherToken.address);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 40, Payout 40
       // FundingPot was equal to payout, transition to pot being below payout by changing pot (7)
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 20, otherToken.address),
-        "colony-funding-task-bad-state",
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 20, otherToken.address),
+        "colony-funding-expenditure-bad-state"
       );
 
       // Remove 20 from pot
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 20],
-      });
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 20, otherToken.address);
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 40],
-      });
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [20]);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 20, otherToken.address);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [40]);
 
       // FundingPot 20, Payout 40
       // FundingPot was below payout, change to being above by changing pot (3)
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 60, otherToken.address);
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, expenditure.fundingPotId, 60, otherToken.address);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 80, Payout 40
       // FundingPot was above payout, change to being below by changing pot (9)
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 60, otherToken.address),
-        "colony-funding-task-bad-state",
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 60, otherToken.address),
+        "colony-funding-expenditure-bad-state"
       );
 
       // Remove 60 from pot
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 20],
-      });
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 60, otherToken.address);
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 40],
-      });
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [20]);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 60, otherToken.address);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [40]);
 
       // FundingPot 20, Payout 40
       // FundingPot was below payout, change to being above by changing payout (4)
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 10],
-      });
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [10]);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 20, Payout 10
       // FundingPot was above, change to being above by changing payout (16)
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 5],
-      });
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [5]);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 20, Payout 5
       // FundingPot was above, change to being above by changing pot (15)
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 10, otherToken.address);
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 10, otherToken.address);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 10, Payout 5
       // FundingPot was above payout, change to being below by changing payout (10)
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 40],
-      });
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [40]);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // FundingPot 10, Payout 40
       // FundingPot was below payout, change to being below by changing payout (14)
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 30],
-      });
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [30]);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // FundingPot 10, Payout 30
       // FundingPot was below payout, change to being below by changing pot (13)
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 5, otherToken.address),
-        "colony-funding-task-bad-state",
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 5, otherToken.address),
+        "colony-funding-expenditure-bad-state"
       );
 
       // Remove 5 from pot
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 5],
-      });
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 5, otherToken.address);
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 30],
-      });
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [5]);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 5, otherToken.address);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [30]);
 
       // FundingPot 5, Payout 30
       // FundingPot was below payout, change to being equal by changing payout (2)
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, otherToken.address, 5],
-      });
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [5]);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 5, Payout 5
@@ -460,8 +337,8 @@ contract("Colony Funding", (accounts) => {
     });
 
     it("should return correct number of funding pots", async () => {
-      const taskCountBefore = await colony.getTaskCount();
-      expect(taskCountBefore).to.be.zero;
+      const expenditureCountBefore = await colony.getExpenditureCount();
+      expect(expenditureCountBefore).to.be.zero;
       const potCountBefore = await colony.getFundingPotCount();
       // Expect there to be a single funding pot for the root Domain created.
       // Note that the reward pot with id 0 is NOT included in the Colony Funding funding pots count
@@ -472,11 +349,11 @@ contract("Colony Funding", (accounts) => {
       expect(potCountAfterAddingDomain).to.eq.BN(2);
 
       for (let i = 0; i < 5; i += 1) {
-        await makeTask({ colony });
+        await makeExpenditure({ colony });
       }
 
-      const taskCountAfter = await colony.getTaskCount();
-      expect(taskCountAfter).to.be.eq.BN(5);
+      const expenditureCountAfter = await colony.getExpenditureCount();
+      expect(expenditureCountAfter).to.be.eq.BN(5);
       const potCountAfter = await colony.getFundingPotCount();
       expect(potCountAfter).to.eq.BN(7);
     });
@@ -495,14 +372,14 @@ contract("Colony Funding", (accounts) => {
       expect(colonyPotBalance).to.eq.BN(99);
     });
 
-    it("should not allow funds to be removed from a task with payouts to go", async () => {
+    it("should not allow funds to be removed from a expenditure with payouts to go", async () => {
       await fundColonyWithTokens(colony, otherToken, INITIAL_FUNDING);
-      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token: otherToken });
-      const task = await colony.getTask(taskId);
+      const expenditureId = await setupFinalizedExpenditure({ colonyNetwork, colony, token: otherToken });
+      const expenditure = await colony.getExpenditure(expenditureId);
 
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 40, otherToken.address),
-        "colony-funding-task-bad-state",
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 40, otherToken.address),
+        "colony-funding-expenditure-bad-state"
       );
 
       const colonyPotBalance = await colony.getFundingPotBalance(2, otherToken.address);
@@ -511,43 +388,19 @@ contract("Colony Funding", (accounts) => {
 
     it("should automatically return surplus funds to the domain", async () => {
       await fundColonyWithTokens(colony, otherToken, WAD.muln(500));
-      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token: otherToken });
-
-      const task = await colony.getTask(taskId);
+      const expenditureId = await setupFinalizedExpenditure({ colonyNetwork, colony, token: otherToken });
+      const expenditure = await colony.getExpenditure(expenditureId);
 
       // Add an extra WAD of funding
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, WAD, otherToken.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, expenditure.fundingPotId, WAD, otherToken.address);
 
-      await colony.claimTaskPayout(taskId, MANAGER_ROLE, otherToken.address);
-      await colony.claimTaskPayout(taskId, WORKER_ROLE, otherToken.address);
-      await colony.claimTaskPayout(taskId, EVALUATOR_ROLE, otherToken.address);
+      await colony.claimExpenditurePayout(expenditureId, 0, otherToken.address);
+      await colony.claimExpenditurePayout(expenditureId, 1, otherToken.address);
+      await colony.claimExpenditurePayout(expenditureId, 2, otherToken.address);
 
       // WAD is gone
-      const taskPotBalance = await colony.getFundingPotBalance(task.fundingPotId, otherToken.address);
-      expect(taskPotBalance).to.be.zero;
-    });
-
-    it("should not allow user to claim payout if rating is 1", async () => {
-      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupFinalizedTask({
-        colonyNetwork,
-        colony,
-        token,
-        workerRating: 1,
-      });
-
-      await colony.claimTaskPayout(taskId, MANAGER_ROLE, token.address);
-      await colony.claimTaskPayout(taskId, EVALUATOR_ROLE, token.address);
-      await colony.claimTaskPayout(taskId, WORKER_ROLE, token.address);
-
-      const task = await colony.getTask(taskId);
-      const remainingPotBalance = await colony.getFundingPotBalance(task.fundingPotId, token.address);
-      expect(remainingPotBalance).to.eq.BN(WORKER_PAYOUT);
-
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, remainingPotBalance, token.address);
-
-      const potBalance = await colony.getFundingPotBalance(task.fundingPotId, token.address);
-      expect(potBalance).to.be.zero;
+      const expenditurePotBalance = await colony.getFundingPotBalance(expenditure.fundingPotId, otherToken.address);
+      expect(expenditurePotBalance).to.be.zero;
     });
 
     it("should correctly send whitelisted tokens to the Metacolony", async () => {
@@ -555,17 +408,17 @@ contract("Colony Funding", (accounts) => {
 
       await metaColony.setNetworkFeeInverse(1); // 100% to fees
 
-      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token });
+      const expenditureId = await setupFinalizedExpenditure({ colonyNetwork, colony, token });
 
       const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
-      await colony.claimTaskPayout(taskId, MANAGER_ROLE, token.address);
+      await colony.claimExpenditurePayout(expenditureId, 0, token.address);
       const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
       expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(MANAGER_PAYOUT);
 
       await metaColony.setPayoutWhitelist(token.address, true);
 
       const metaColonyBalanceBefore = await token.balanceOf(metaColony.address);
-      await colony.claimTaskPayout(taskId, WORKER_ROLE, token.address);
+      await colony.claimExpenditurePayout(expenditureId, 2, token.address);
       const metaColonyBalanceAfter = await token.balanceOf(metaColony.address);
       expect(metaColonyBalanceAfter.sub(metaColonyBalanceBefore)).to.eq.BN(WORKER_PAYOUT);
     });
@@ -592,9 +445,9 @@ contract("Colony Funding", (accounts) => {
     it("should let ether be moved between funding pots", async () => {
       await colony.send(100);
       await colony.claimColonyFunds(ethers.constants.AddressZero);
-      const taskId = await makeTask({ colony });
-      const task = await colony.getTask(taskId);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 51, ethers.constants.AddressZero);
+      const expenditureId = await makeExpenditure({ colony });
+      const expenditure = await colony.getExpenditure(expenditureId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, expenditure.fundingPotId, 51, ethers.constants.AddressZero);
       const colonyPotBalance = await colony.getFundingPotBalance(1, ethers.constants.AddressZero);
       const colonyEtherBalance = await web3GetBalance(colony.address);
       const pot2Balance = await colony.getFundingPotBalance(2, ethers.constants.AddressZero);
@@ -625,68 +478,46 @@ contract("Colony Funding", (accounts) => {
     it("should correctly track if we are able to make ether payouts", async () => {
       await colony.send(100);
       await colony.claimColonyFunds(ethers.constants.AddressZero);
-      const taskId = await makeTask({ colony });
-      const task = await colony.getTask(taskId);
+      const expenditureId = await makeExpenditure({ colony });
+      const expenditure = await colony.getExpenditure(expenditureId);
 
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskWorkerRole",
-        signers: [MANAGER, WORKER],
-        sigTypes: [0, 0],
-        args: [taskId, WORKER],
-      });
+      await colony.setExpenditureRecipients(expenditureId, [0, 1], [MANAGER, WORKER]);
 
       // Set manager payout above pot value 40 > 0
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, ethers.constants.AddressZero, 40],
-      });
-
-      let fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.setExpenditurePayouts(expenditureId, [0], ethers.constants.AddressZero, [40]);
+      let fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // Fund the pot equal to manager payout 40 = 40
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 40, ethers.constants.AddressZero);
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, expenditure.fundingPotId, 40, ethers.constants.AddressZero);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // Cannot bring pot balance below current payout
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 30, ethers.constants.AddressZero),
-        "colony-funding-task-bad-state",
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 30, ethers.constants.AddressZero),
+        "colony-funding-expenditure-bad-state"
       );
 
       // Set manager payout above pot value 50 > 40
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskManagerPayout",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, ethers.constants.AddressZero, 50],
-      });
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.setExpenditurePayouts(expenditureId, [0], ethers.constants.AddressZero, [50]);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // Fund the pot equal to manager payout, plus 10, 50 < 60
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 20, ethers.constants.AddressZero);
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, expenditure.fundingPotId, 20, ethers.constants.AddressZero);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // Cannot bring pot balance below current payout
       await checkErrorRevert(
-        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 30, ethers.constants.AddressZero),
-        "colony-funding-task-bad-state",
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 30, ethers.constants.AddressZero),
+        "colony-funding-expenditure-bad-state"
       );
 
       // Can remove surplus 50 = 50
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 10, ethers.constants.AddressZero);
-      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 10, ethers.constants.AddressZero);
+      fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
     });
 
