@@ -249,14 +249,21 @@ contract("Cross-chain", (accounts) => {
   }
 
   beforeEach(async () => {
-    const tx = await foreignBridge.setBridgeEnabled(true);
+    let tx = await foreignBridge.setBridgeEnabled(true);
     await tx.wait();
     // Set up a colony on the home chain. That may or may not be the truffle chain...
     homeColony = await setupColony(homeColonyNetwork);
-
     const p = bridgeMonitor.getPromiseForNextBridgedTransaction(2);
     foreignColony = await setupColony(foreignColonyNetwork);
     await p;
+
+    // It's possible these were bridged out of order, so check, and if so, bridge the second skill
+    const bridgedSkillCount = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
+    const skillCount = await foreignColonyNetwork.getSkillCount();
+    if (!bridgedSkillCount.eq(skillCount)) {
+      tx = await homeColonyNetwork.addPendingSkill(homeBridge.address, skillCount, { gasLimit: 1000000 });
+      await tx.wait();
+    }
   });
 
   afterEach(async () => {
@@ -779,7 +786,13 @@ contract("Cross-chain", (accounts) => {
       let p = bridgeMonitor.getPromiseForNextBridgedTransaction(2);
       const foreignColony2 = await setupColony(foreignColonyNetwork);
       await p;
-
+      // It's possible these were bridged out of order, so check, and if so, bridge the second skill
+      const bridgedSkillCount = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
+      const skillCount = await foreignColonyNetwork.getSkillCount();
+      if (!bridgedSkillCount.eq(skillCount)) {
+        const tx = await homeColonyNetwork.addPendingSkill(homeBridge.address, skillCount, { gasLimit: 1000000 });
+        await tx.wait();
+      }
       let tx = await foreignBridge.setBridgeEnabled(false);
       await tx.wait();
       tx = await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1338");
@@ -834,6 +847,14 @@ contract("Cross-chain", (accounts) => {
       let p = bridgeMonitor.getPromiseForNextBridgedTransaction(2);
       const foreignColony2 = await setupColony(foreignColonyNetwork);
       await p;
+
+      // It's possible these were bridged out of order, so check, and if so, bridge the second skill
+      const bridgedSkillCount = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
+      const skillCount = await foreignColonyNetwork.getSkillCount();
+      if (!bridgedSkillCount.eq(skillCount)) {
+        const tx = await homeColonyNetwork.addPendingSkill(homeBridge.address, skillCount, { gasLimit: 1000000 });
+        await tx.wait();
+      }
 
       bridgeMonitor.skipCount = 1;
 
