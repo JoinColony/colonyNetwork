@@ -416,20 +416,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     }
   }
 
-  function setUserRole(address who, uint256 where, uint8 role, bool enabled) internal {
-    bytes32 lastRoles = userDomainRoles[who][where];
-    bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
-    if (enabled) {
-      userDomainRoles[who][where] = lastRoles | shifted;
-    } else {
-      userDomainRoles[who][where] = lastRoles & BITNOT(shifted);
-    }
-  }
-
-  function BITNOT(bytes32 input) internal pure returns (bytes32 output) {
-    return (input ^ bytes32(uint(int(-1))));
-  }
-
   function getSig(bytes memory motion) internal pure returns (bytes4 sig) {
     assembly {
       sig := mload(add(motion, 0x20))
@@ -533,4 +519,23 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
 
       return calldataWithoutSelector;
   }
+
+  // We've cribbed these from DomainRoles, but we don't want to inherit DomainRoles as it would require calling
+  // setUserRole with an external call in order to not revert, as the inheritable version is `auth`ed. The alternative
+  // would be to deploy an Authority with the extension, but that's not a bridge we want to cross.
+  function setUserRole(address who, uint256 where, uint8 role, bool enabled) internal {
+    bytes32 lastRoles = userDomainRoles[who][where];
+    bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
+    if (enabled) {
+      userDomainRoles[who][where] = lastRoles | shifted;
+    } else {
+      userDomainRoles[who][where] = lastRoles & BITNOT(shifted);
+    }
+  }
+
+  function BITNOT(bytes32 input) internal pure returns (bytes32 output) {
+    return (input ^ bytes32(uint(int(-1))));
+  }
+
+
 }
