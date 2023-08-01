@@ -149,8 +149,8 @@ contract("Contract Storage", (accounts) => {
       console.log("miningCycleStateHash:", miningCycleStateHash);
       console.log("tokenLockingStateHash:", tokenLockingStateHash);
 
-      expect(colonyNetworkStateHash).to.equal("0x3f09cbe7e74f60aeb2ae46e2053f88d72d189918cf13699b921b5e7200554616");
-      expect(colonyStateHash).to.equal("0x2422c452c5ed0d5d1a630a19529042e1e7b4479fc0988083b3423369ee8cc144");
+      expect(colonyNetworkStateHash).to.equal("0x256624227aedfc341f2031389c40ac331ef07de5e08a7828046aa47505884794");
+      expect(colonyStateHash).to.equal("0x7558ce9137f11fc2c16f913cebcc605d1afcf3a4f9cc16823cbab050cac0ad46");
       expect(metaColonyStateHash).to.equal("0x60b0189dea488416bdeed0de728d7659775d697219137827d84c83e97210e7e9");
       expect(miningCycleStateHash).to.equal("0xc9c36a48e266c74abc34de1ef3e522c9925d22941c41a307819c4460635bd260");
       expect(tokenLockingStateHash).to.equal("0x3dc9cdaf6f43272b4d4485689bcd4f42e3e5d46de02ce2b3b5b33bde51cde7ee");
