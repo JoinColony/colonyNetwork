@@ -82,8 +82,9 @@ class MockBridgeMonitor {
 
   close() {} // eslint-disable-line class-methods-use-this
 
-  async bridgeSkipped() {
-    const [bridge, messageId, encodedData] = this.skipped.shift();
+  async bridgeSkipped(id = 0) {
+    // remove the id'th element from the array
+    const [bridge, messageId, encodedData] = this.skipped.splice(id, 1)[0];
     const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
     const tx = await bridge.execute(target, data, gasLimit, messageId, sender);
     await tx.wait();
