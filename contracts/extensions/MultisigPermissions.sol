@@ -72,8 +72,8 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
   uint256 motionCount;
   mapping (uint256 => Motion) motions;
 
-  // Motion Id => User => Permission => Have they approved
-  mapping(uint256 => mapping(address => mapping(ColonyRole => bool))) motionApprovals;
+  // Motion Id => User => approvals
+  mapping(uint256 => mapping(address => bytes32)) motionApprovals;
   // Motion Id => Permission => Approval Count
   mapping(uint256 => mapping(ColonyRole => uint256)) motionRoleApprovalCount;
 
@@ -207,9 +207,9 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
         }
 
         // Update appropriately
-        if (motionApprovals[_motionId][msgSender()][ColonyRole(roleIndex)] != _approved){
-          motionApprovals[_motionId][msgSender()][ColonyRole(roleIndex)] = _approved;
+        if (getUserApproval(_motionId, msgSender(), ColonyRole(roleIndex)) != _approved){
           // Then they changed their approval
+          setUserApproval(_motionId, msgSender(), ColonyRole(roleIndex), _approved);
           if (_approved) {
             // They are now approving it
             motionRoleApprovalCount[_motionId][ColonyRole(roleIndex)] += 1;
@@ -296,8 +296,9 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     return motionRoleApprovalCount[_motionId][_role];
   }
 
-  function getUserApproval(uint256 _motionId, address _user, ColonyRole _role) public view returns (bool){
-    return motionApprovals[_motionId][_user][_role];
+  function getUserApproval(uint256 _motionId, address _user, ColonyRole _permission) public view returns (bool) {
+    bytes32 approvals = motionApprovals[_motionId][_user];
+    return (approvals >> uint8(_permission)) & bytes32(uint256(1)) == bytes32(uint256(1));
   }
 
   function getDomainSkillRoleCounts(uint256 _domainSkillId, uint8 role) public view returns (uint256) {
@@ -518,6 +519,16 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
       // Get permissions in _permissionDomainId for user
       bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
       require(userPermissions & motions[_motionId].requiredPermissions > 0, "colony-multisig-no-permissions");
+  }
+
+  function setUserApproval(uint256 _motionId, address _user, ColonyRole _permission, bool _approved) internal {
+    bytes32 approvals = motionApprovals[_motionId][_user];
+    if (_approved) {
+      approvals = approvals | bytes32(uint256(2) ** uint256(_permission));
+    } else {
+      approvals = approvals & BITNOT(bytes32(uint256(uint256(2) ** uint256(_permission))));
+    }
+    motionApprovals[_motionId][_user] = approvals;    
   }
 
   // We've cribbed these from DomainRoles, but we don't want to inherit DomainRoles as it would require calling
