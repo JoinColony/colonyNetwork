@@ -114,7 +114,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     deprecated = _deprecated;
   }
 
-  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32) {
+  function getCapabilityRoles(bytes4 _sig) public pure override returns (bytes32) {
     if (_sig == SET_USER_ROLES) {
       return ONLY_ROOT_ROLE_MASK | ONLY_ARCHITECTURE_ROLE_MASK;
     }
@@ -134,8 +134,12 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     _;
   }
 
-  function initialise(uint256 _globalThreshold) public {
+  modifier onlyCoreRoot() {
     require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "multisig-permissions-not-core-root");
+    _;
+  }
+
+  function initialise(uint256 _globalThreshold) public onlyCoreRoot {
     globalThreshold = _globalThreshold;
 
     emit ExtensionInitialised();
@@ -154,9 +158,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     motion.targets = _targets;
     motion.data = _data;
 
-    uint256 domainSkillId;
-    bytes32 permissions;
-
     for (uint256 i = 0; i < motion.data.length; i += 1) {
       uint256 actionDomainSkillId;
       bytes32 actionRequiredPermissions;
@@ -171,17 +172,8 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
       }
     }
 
-    // Get permissions in _permissionDomainId for user
-    bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
-    // Work out which domain they're using their permissions in, via child skill index
-    uint256 permissionSkillId = colony.getDomain(_permissionDomainId).skillId;
-    uint256 userActingInDomainWithSkillId = colonyNetwork.getChildSkillId(permissionSkillId, _childSkillIndex);
-
-    // Check it's same as the domain being acted on by _motionId
-    require(userActingInDomainWithSkillId == motion.domainSkillId, "colony-multisig-not-same-domain");
-
-    // Check they have the permissions
-    require((userPermissions & motion.requiredPermissions) != bytes32(0), "colony-multisig-no-permissions");
+    validateMotionDomain((_permissionDomainId), _childSkillIndex, motionCount);
+    validateUserPermissions(_permissionDomainId, motionCount);
 
     emit MotionCreated(msgSender(), motionCount);
 
@@ -190,27 +182,21 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
   }
 
   function changeApproval(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _motionId, bool _approved) public notExecuted(_motionId) {
-    // Get permissions in _permissionDomainId for user
-    bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
-
-    // Work out which domain they're using their permissions in, via child skill index
-    uint256 permissionSkillId = colony.getDomain(_permissionDomainId).skillId;
-    uint256 userActingInDomainWithSkillId = colonyNetwork.getChildSkillId(permissionSkillId, _childSkillIndex);
-
-    // Check it's same as the domain being acted on by _motionId
-    Motion storage motion = motions[_motionId];
-    require(userActingInDomainWithSkillId == motion.domainSkillId, "colony-multisig-not-same-domain");
+    validateMotionDomain(_permissionDomainId, _childSkillIndex, _motionId);
 
     // If they're trying to approve, needs some overlap of permissions
     if (_approved){
-      require(userPermissions & motion.requiredPermissions > 0, "colony-multisig-no-permissions");
+      validateUserPermissions(_permissionDomainId, _motionId);
     }
 
     uint8 roleIndex = 0;
     bool newlyApproved = false;
     bool anyBelowThreshold = false;
+    Motion storage motion = motions[_motionId];
+    bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
+
     while (uint256(motion.requiredPermissions) >= (1 << roleIndex)){
-      if ((motion.requiredPermissions & bytes32(1<<roleIndex)) > 0){
+      if ((motion.requiredPermissions & bytes32(1 << roleIndex)) > 0){
         // Then the motion requires this permission. Let's check it
 
         // The user either needs to have the permission, or are removing an approval
@@ -267,7 +253,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     bytes32 motionPermissions = motion.requiredPermissions;
     uint8 roleIndex = 0;
     while (motionPermissions > 0){
-      if (uint256(motionPermissions)%2 == 1){
+      if (uint256(motionPermissions) % 2 == 1){
         uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, ColonyRole(roleIndex));
         require(motionRoleApprovalCount[_motionId][ColonyRole(roleIndex)] >= threshold, "colony-multisig-permissions-not-enough-approvals");
       }
@@ -322,8 +308,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     return domainSkillThreshold[_domainSkillId];
   }
 
-  function setDomainSkillThreshold(uint256 _domainSkillId, uint256 _threshold) public returns (uint256) {
-    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "multisig-permissions-not-core-root");
+  function setDomainSkillThreshold(uint256 _domainSkillId, uint256 _threshold) public onlyCoreRoot returns (uint256) {
     domainSkillThreshold[_domainSkillId] = _threshold;
   }
 
@@ -364,7 +349,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     address _user,
     uint256 _domainId,
     bytes32 _roles
-  ) public //authDomain(_permissionDomainId, _childSkillIndex, _domainId) archSubdomain(_permissionDomainId, _domainId)
+  ) public
   {
     // Validate the permissions proof
     uint256 colonyDomainCount = colony.getDomainCount();
@@ -518,6 +503,21 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
       }
 
       return calldataWithoutSelector;
+  }
+
+  function validateMotionDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _motionId) internal view {
+      // Work out which domain they're using their permissions in, via child skill index
+      uint256 permissionSkillId = colony.getDomain(_permissionDomainId).skillId;
+      uint256 userActingInDomainWithSkillId = colonyNetwork.getChildSkillId(permissionSkillId, _childSkillIndex);
+      // Check it's same as the domain being acted on by _motionId
+      // slither-disable-next-line incorrect-equality
+      require(userActingInDomainWithSkillId == motions[_motionId].domainSkillId, "colony-multisig-not-same-domain");
+  }
+
+  function validateUserPermissions(uint256 _permissionDomainId, uint256 _motionId) internal view {
+      // Get permissions in _permissionDomainId for user
+      bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
+      require(userPermissions & motions[_motionId].requiredPermissions > 0, "colony-multisig-no-permissions");
   }
 
   // We've cribbed these from DomainRoles, but we don't want to inherit DomainRoles as it would require calling
