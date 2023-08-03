@@ -2789,6 +2789,67 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
     });
 
+    it.only("cannot make a new motion if an existing motion exists using the old lock", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      // Set finalizedTimestamp to WAD
+      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
+      const structHash = soliditySha3(expenditureId);
+      expect(await voting.getExpenditureMotionCount(structHash)).to.be.zero;
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      expect(await voting.getExpenditureMotionCount(structHash)).to.eq.BN(1);
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      // Change a slot's payout
+      const action2 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, 1]);
+
+      await checkErrorRevert(
+        voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings),
+        "voting-rep-motion-locked"
+      );
+
+      await forwardTime(STAKE_PERIOD, this);
+      await voting.finalizeMotion(motionId);
+
+      // Once motion is finalized, a new motion can be created for that expenditure
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+    });
+
+    it.only("after upgrade and completion of motion, delays are reset roughly as expected even for slot-specific motions", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      // Change a slot's payout
+      const action = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, 1]);
+      const structHash = soliditySha3(expenditureId, 0);
+      expect(await voting.getExpenditureMotionCount(structHash)).to.be.zero;
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      expect(await voting.getExpenditureMotionCount(structHash)).to.eq.BN(1);
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      // Set finalizedTimestamp to WAD
+
+      await forwardTime(STAKE_PERIOD, this);
+      await voting.finalizeMotion(motionId);
+
+      // Examine delays
+      const slot = await colony.getExpenditureSlot(motionId, 0);
+      expect(slot.claimDelay).to.eq.BN(0);
+    });
+
     it("cannot stake an expenditure-based motion created before the upgrade, unless it is a counterstake", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
