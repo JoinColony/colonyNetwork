@@ -464,7 +464,8 @@ contract("Cross-chain", (accounts) => {
 
       // Need to clean up
       p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      tx = await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      await tx.wait();
       await p;
       tx = await homeColonyNetwork.addPendingSkill(homeBridge.address, foreignSkillCount, { gasLimit: 1000000 });
       await tx.wait();
@@ -490,7 +491,8 @@ contract("Cross-chain", (accounts) => {
 
       // Bridge the next skill
       p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      tx = await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      await tx.wait();
       await p;
 
       // Add the pending skill
@@ -526,7 +528,8 @@ contract("Cross-chain", (accounts) => {
 
       // Bridge the next skill
       p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      tx = await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      await tx.wait();
       await p;
 
       // Add the pending skill
@@ -539,7 +542,8 @@ contract("Cross-chain", (accounts) => {
 
       // And bridging again doesn't work
       p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      await foreignColonyNetwork.bridgeSkill(foreignSkillCount);
+      tx = await foreignColonyNetwork.bridgeSkill(foreignSkillCount);
+      await tx.wait();
       await p;
 
       const pendingAddition = await homeColonyNetwork.getPendingSkillAddition(foreignChainId, foreignSkillCount);
