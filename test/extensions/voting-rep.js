@@ -2701,8 +2701,6 @@ contract("Voting Reputation", (accounts) => {
   });
 
   describe("upgrading the extension", async () => {
-    let motionId;
-
     before(async () => {
       const votingReputationV9Resolver = await Resolver.new();
       const votingReputationV9 = await VotingReputationV9.new();
@@ -2741,7 +2739,7 @@ contract("Voting Reputation", (accounts) => {
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      motionId = await voting.getMotionCount();
+      const motionId = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -2760,7 +2758,7 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditure.globalClaimDelay).to.be.zero; // V9 behavior still
     });
 
-    it("cannot make a new motion if an existing motion exists using the old lock", async () => {
+    it("cannot make a new expenditure motion if an existing expenditure motion exists using the old lock", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
 
@@ -2770,6 +2768,7 @@ contract("Voting Reputation", (accounts) => {
       expect(await voting.getExpenditureMotionCount(structHash)).to.be.zero;
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -2789,7 +2788,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
     });
 
-    it.only("cannot make a new motion if an existing motion exists using the old lock", async () => {
+    it("cannot make a new slot motion if an existing expenditure motion exists using the old lock", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
 
@@ -2799,7 +2798,7 @@ contract("Voting Reputation", (accounts) => {
       expect(await voting.getExpenditureMotionCount(structHash)).to.be.zero;
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      motionId = await voting.getMotionCount();
+      const motionId = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
 
@@ -2822,7 +2821,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings);
     });
 
-    it.only("after upgrade and completion of motion, delays are reset roughly as expected even for slot-specific motions", async () => {
+    it("after upgrade and completion of motion, delays are reset roughly as expected even for slot-specific motions", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
 
@@ -2832,7 +2831,7 @@ contract("Voting Reputation", (accounts) => {
       expect(await voting.getExpenditureMotionCount(structHash)).to.be.zero;
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      motionId = await voting.getMotionCount();
+      const motionId = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
 
@@ -2857,17 +2856,17 @@ contract("Voting Reputation", (accounts) => {
       // Set finalizedTimestamp to WAD
       const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      motionId = await voting.getMotionCount();
+      const motionId1 = await voting.getMotionCount();
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 1, WAD.muln(3), { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       await colony.upgradeExtension(VOTING_REPUTATION, 10);
 
       // Can counter-stake the first motion
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId1, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
       // Cannot stake the second motion
       await checkErrorRevert(
@@ -2879,7 +2878,7 @@ contract("Voting Reputation", (accounts) => {
     it("can create a v9 NO_ACTION motion, upgrade, and then finalize the motion", async () => {
       const action = "0x12345678";
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      motionId = await voting.getMotionCount();
+      const motionId = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -2899,7 +2898,7 @@ contract("Voting Reputation", (accounts) => {
       const multicall = await encodeTxData(colony, "multicall", [[action1, action2]]);
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      motionId = await voting.getMotionCount();
+      const motionId = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });

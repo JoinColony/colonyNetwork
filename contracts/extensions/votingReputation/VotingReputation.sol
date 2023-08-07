@@ -123,8 +123,14 @@ contract VotingReputation is VotingReputationStorage {
 
     // If an expenditure motion, make sure no v9 motions are holding a lock
     if (isExpenditureSig(actionSummary.sig)) {
-      bytes32 structHash = getExpenditureStructHash(getExpenditureAction(motion.action));
-      require(expenditureMotionCounts_DEPRECATED[structHash] == 0, "voting-rep-motion-locked");
+      bytes32 structHash1 = getExpenditureStructHash(getExpenditureAction(motion.action));
+      require(expenditureMotionCounts_DEPRECATED[structHash1] == 0, "voting-rep-motion-locked");
+      // Check the main expenditure as well, in case the action is a slot action
+      uint256 expenditureId = getExpenditureId(getExpenditureAction(motion.action));
+      bytes32 structHash2 = keccak256(abi.encodePacked(expenditureId));
+      require(expenditureMotionCounts_DEPRECATED[structHash2] == 0, "voting-rep-motion-locked");
+      // There may be existing v9 slot motions, we can't really check that...
+      //  On the plus side, new motions can't be slot motions so there's no possibility of interference
     }
 
     emit MotionCreated(motionCount, msgSender(), _domainId);
@@ -425,7 +431,8 @@ contract VotingReputation is VotingReputationStorage {
         (block.timestamp - expenditure.finalizedTimestamp) :
         0;
 
-      bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, expenditure.globalClaimDelay - LOCK_DELAY + sinceFinalized);
+      uint256 claimDelay = expenditure.globalClaimDelay - LOCK_DELAY + sinceFinalized;
+      bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, claimDelay);
       // No require this time, since we don't want stakes to be permanently locked
       executeCall(_motionId, claimDelayAction);
     } else { // Backwards compatibility for versions 9 and below
@@ -434,7 +441,7 @@ contract VotingReputation is VotingReputationStorage {
 
       // Release the claimDelay if this is the last active motion
       if (expenditureMotionCounts_DEPRECATED[structHash] == 0) {
-        bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, 0);
+        bytes memory claimDelayAction = createClaimDelayAction(action, 0);
         // No require this time, since we don't want stakes to be permanently locked
         executeCall(_motionId, claimDelayAction);
       }

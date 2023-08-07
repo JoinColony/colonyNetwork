@@ -139,7 +139,9 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
   }
 
   function finishUpgrade() public override auth {
-    motionCountV10 = motionCount;
+    if (motionCountV10 == 0) {
+      motionCountV10 = motionCount;
+    }
   }
 
   function deprecate(bool _deprecated) public override auth {
@@ -350,6 +352,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
       }
       revert("voting-rep-invalid-action");
     } else {
+      require(isExpenditureSig(getSig(action)), "voting-rep-invalid-action");
       return action;
     }
   }
@@ -436,5 +439,86 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     }
 
     return expenditureAction;
+  }
+
+  // Kept for backwards-compatibility with v9
+  function createClaimDelayAction(bytes memory action, uint256 value)
+    public
+    returns (bytes memory)
+  {
+    // See https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
+    //  for documentation on how the action `bytes` is encoded
+    // In brief, the first byte32 is the length of the array. Then we have
+    //   4 bytes of function signature, following by an arbitrary number of
+    //   additional byte32 arguments. 32 in hex is 0x20, so every increment
+    //   of 0x20 represents advancing one byte, 4 is the function signature.
+    // So: 0x[length][sig][args...]
+
+    bytes4 sig = getSig(action);
+    assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
+
+    bytes4 functionSignature = SET_EXPENDITURE_STATE;
+
+    uint256 permissionDomainId;
+    uint256 childSkillIndex;
+    uint256 expenditureId;
+    uint256 storageSlot; // This value is only used if (sig == SET_EXPENDITURE_STATE)
+    uint256 expenditureSlot;
+
+    assembly {
+      permissionDomainId := mload(add(action, 0x24))
+      childSkillIndex := mload(add(action, 0x44))
+      expenditureId := mload(add(action, 0x64))
+      storageSlot := mload(add(action, 0x84))
+    }
+
+    // If we are editing the main expenditure struct
+    if (sig == SET_EXPENDITURE_STATE && storageSlot == 25) {
+      bytes memory mainClaimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
+
+      assembly {
+        mstore(add(mainClaimDelayAction, 0x20), functionSignature)
+        mstore(add(mainClaimDelayAction, 0x24), permissionDomainId)
+        mstore(add(mainClaimDelayAction, 0x44), childSkillIndex)
+        mstore(add(mainClaimDelayAction, 0x64), expenditureId)
+        mstore(add(mainClaimDelayAction, 0x84), 25)     // expenditure storage slot
+        mstore(add(mainClaimDelayAction, 0xa4), 0xe0)   // mask location
+        mstore(add(mainClaimDelayAction, 0xc4), 0x120)  // keys location
+        mstore(add(mainClaimDelayAction, 0xe4), value)
+        mstore(add(mainClaimDelayAction, 0x104), 1)     // mask length
+        mstore(add(mainClaimDelayAction, 0x124), 1)     // offset
+        mstore(add(mainClaimDelayAction, 0x144), 1)     // keys length
+        mstore(add(mainClaimDelayAction, 0x164), 4)     // globalClaimDelay offset
+      }
+
+      return mainClaimDelayAction;
+
+    // If we are editing an expenditure slot
+    } else {
+      bytes memory slotClaimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
+      uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
+
+      assembly {
+        expenditureSlot := mload(add(action, expenditureSlotLoc))
+
+        mstore(add(slotClaimDelayAction, 0x20), functionSignature)
+        mstore(add(slotClaimDelayAction, 0x24), permissionDomainId)
+        mstore(add(slotClaimDelayAction, 0x44), childSkillIndex)
+        mstore(add(slotClaimDelayAction, 0x64), expenditureId)
+        mstore(add(slotClaimDelayAction, 0x84), 26)     // expenditureSlot storage slot
+        mstore(add(slotClaimDelayAction, 0xa4), 0xe0)   // mask location
+        mstore(add(slotClaimDelayAction, 0xc4), 0x140)  // keys location
+        mstore(add(slotClaimDelayAction, 0xe4), value)
+        mstore(add(slotClaimDelayAction, 0x104), 2)     // mask length
+        mstore(add(slotClaimDelayAction, 0x124), 0)     // mapping
+        mstore(add(slotClaimDelayAction, 0x144), 1)     // offset
+        mstore(add(slotClaimDelayAction, 0x164), 2)     // keys length
+        mstore(add(slotClaimDelayAction, 0x184), expenditureSlot)
+        mstore(add(slotClaimDelayAction, 0x1a4), 1)     // claimDelay offset
+      }
+
+      return slotClaimDelayAction;
+
+    }
   }
 }
