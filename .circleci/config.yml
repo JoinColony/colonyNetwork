@@ -69,6 +69,8 @@ jobs:
       - run:
           name: "Running reputation system unit tests"
           command: npm run test:reputation
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Running storage consistency smoke tests"
           command: npm run test:contracts:smoke
@@ -144,6 +146,8 @@ jobs:
       - run:
           name: "Running network contracts unit tests"
           command: npm run test:contracts
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Check contract sizes"
           command: npx truffle run contract-size --checkMaxSize
@@ -153,12 +157,16 @@ jobs:
       - run:
           name: "Running extension contracts unit tests"
           command: npm run test:contracts:extensions
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Cleanup ganache leftovers"
           command: npm run clean:ganache
       - run:
           name: "Running upgrade tests"
           command: npm run test:contracts:upgrade:parity && npm run test:contracts:upgrade:ganache
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Running gas cost tests"
           command: npm run test:contracts:gasCosts && npx codechecks
@@ -186,7 +194,7 @@ jobs:
           name: "Running core contract unit tests with coverage"
           command: npm run test:contracts:coverage
           environment:
-            NODE_OPTIONS: --max_old_space_size=4096
+            NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
           root: ./
           paths:
@@ -204,7 +212,7 @@ jobs:
           name: "Running upgrade tests with coverage"
           command: npm run test:contracts:upgrade:coverage
           environment:
-            NODE_OPTIONS: --max_old_space_size=4096
+            NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
           root: ./
           paths:
@@ -222,7 +230,7 @@ jobs:
           name: "Running extension contract unit tests with coverage"
           command: npm run test:contracts:extensions:coverage
           environment:
-            NODE_OPTIONS: --max_old_space_size=4096
+            NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
           root: ./
           paths:
@@ -240,7 +248,7 @@ jobs:
           name: "Running reputation tests with coverage"
           command: npm run test:reputation:coverage
           environment:
-            NODE_OPTIONS: --max_old_space_size=4096
+            NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
           root: ./
           paths:
@@ -258,22 +266,22 @@ jobs:
           name: "Running chainid tests with coverage for mainnet"
           command: CHAIN_ID=1 npm run test:contracts:chainid:coverage
           environment:
-            NODE_OPTIONS: --max_old_space_size=4096
+            NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Running chainid tests with coverage for goerli"
           command: CHAIN_ID=5 npm run test:contracts:chainid:coverage
           environment:
-            NODE_OPTIONS: --max_old_space_size=4096
+            NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Running chainid tests with coverage for xDai"
           command: CHAIN_ID=100 npm run test:contracts:chainid:coverage
           environment:
-            NODE_OPTIONS: --max_old_space_size=4096
+            NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Running chainid tests with coverage for an unsupported network"
           command: CHAIN_ID=777 npm run test:contracts:chainid:coverage
           environment:
-            NODE_OPTIONS: --max_old_space_size=4096
+            NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
           root: ./
           paths:
@@ -294,7 +302,7 @@ jobs:
           name: "Running coverage tests for home-side of bridge"
           command: npm run test:contracts:bridging:1:coverage
           environment:
-            NODE_OPTIONS: --max_old_space_size=4096
+            NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Reset chains"
           command: |
@@ -305,7 +313,7 @@ jobs:
           name: "Running coverage tests for foreign-side of bridge"
           command: npm run test:contracts:bridging:2:coverage
           environment:
-            NODE_OPTIONS: --max_old_space_size=4096
+            NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
           root: ./
           paths:
@@ -356,6 +364,8 @@ jobs:
       - run:
           name: "Running end-to-end tests"
           command: npm run test:contracts:e2e
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
 
 workflows:
   version: 2
