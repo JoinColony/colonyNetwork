@@ -159,6 +159,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   // Internal functions
 
   function toRootSkillId(uint256 _chainId) internal pure returns (uint256) {
+    require(_chainId <= type(uint128).max, "colony-chain-id-too-large");
     return _chainId << 128;
   }
 
