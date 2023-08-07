@@ -50,7 +50,7 @@ interface ColonyNetworkDataTypes {
   /// @param metaColony Address of the MetaColony instance (i.e. EtherRouter)
   /// @param token Address of the associated CLNY token
   /// @param rootSkillId Id of the root skill of the global skills tree, normally this is 2
-  /// Note that the speciat mining skill is created at rootSkillId + 1, so normally this is 3
+  /// Note that the special mining skill is created at rootSkillId + 1, so normally this is 3
   /// Skill id 1 is normally the local skill associate with meta colony domain 1
   event MetaColonyCreated(address metaColony, address token, uint256 rootSkillId);
 
