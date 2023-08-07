@@ -111,6 +111,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     always
     calledByMetaColony
   {
+    require(_chainId <= type(uint128).max, "colony-network-chainid-too-large");
     if (!isMiningChain()) {
       require(isMiningChainId(_chainId), "colony-network-can-only-set-mining-chain-bridge");
       miningBridgeAddress = _bridgeAddress;
