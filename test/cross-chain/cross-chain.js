@@ -324,6 +324,13 @@ contract("Cross-chain", (accounts) => {
       await checkErrorRevertEthers(tx.wait(), "colony-network-can-only-set-mining-chain-bridge");
     });
 
+    it("setBridgeData can only set information for bridges where assumptions we've made about chainid are not broken", async () => {
+      const tx = await foreignMetacolony.setBridgeData(ADDRESS_ZERO, UINT256_MAX_ETHERS, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", {
+        gasLimit: 1000000,
+      });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-chainid-too-large");
+    });
+
     it("updating the bridge for a chain does not reset the bridged skill count", async () => {
       const countBefore = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
       const tx = await homeMetacolony.setBridgeData(
