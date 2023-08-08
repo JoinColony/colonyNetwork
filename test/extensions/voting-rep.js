@@ -2911,5 +2911,81 @@ contract("Voting Reputation", (accounts) => {
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
     });
+
+    it("a valid multicall motion that doesn't touch expenditures can be finalized post upgrade", async () => {
+      await colony.setArchitectureRole(1, UINT256_MAX, voting.address, 1, true);
+
+      const action1 = await encodeTxData(colony, "addDomain", [1, UINT256_MAX, 1]);
+      const action2 = await encodeTxData(colony, "addDomain", [1, UINT256_MAX, 1]);
+      const multicall = await encodeTxData(colony, "multicall", [[action1, action2]]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZBLE);
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZBLE);
+
+      await voting.finalizeMotion(motionId);
+
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
+    });
+
+    it.only("a multicall motion that affects one expenditure and is valid post-upgrade should be able to finalized", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      const action1 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, 1]);
+      const action2 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 1, token.address, 1]);
+      const multicall = await encodeTxData(colony, "multicall", [[action1, action2]]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZBLE);
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZBLE);
+
+      await voting.finalizeMotion(motionId);
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
+    });
+
+    it("cannot let an motion that becomes invalid because it touches multiple expenditures be finalized", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+
+      const action1 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, 1]);
+      const action2 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId + 1, 1, token.address, 1]);
+      const multicall = await encodeTxData(colony, "multicall", [[action1, action2]]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZBLE);
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
+    });
   });
 });
