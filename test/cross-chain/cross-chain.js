@@ -356,9 +356,22 @@ contract("Cross-chain", (accounts) => {
     });
 
     it("setBridgeData can only set information for bridges where assumptions we've made about chainid are not broken", async () => {
-      const tx = await foreignMetacolony.setBridgeData(ADDRESS_ZERO, UINT256_MAX_ETHERS, 0, "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", {
-        gasLimit: 1000000,
-      });
+      const tx = await foreignMetacolony.setBridgeData(
+        ADDRESS_ZERO,
+        UINT256_MAX_ETHERS,
+        0,
+        "0x00",
+        "0x00",
+        "0x00",
+        "0x00",
+        "0x00",
+        "0x00",
+        "0x00",
+        "0x00",
+        {
+          gasLimit: 1000000,
+        }
+      );
       await checkErrorRevertEthers(tx.wait(), "colony-network-chainid-too-large");
     });
 

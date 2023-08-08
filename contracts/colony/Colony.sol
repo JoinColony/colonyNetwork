@@ -461,8 +461,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function setReputationMiningCycleRewardReputationScaling(uint256 _factor) public stoppable auth {
     require(_factor <= WAD, "colony-invalid-reputation-scale-factor");
+    require(IColonyNetwork(colonyNetworkAddress).getMetaColony() == address(this), "colony-only-on-metacolony");
     uint256 reputationMiningSkillId = IColonyNetwork(colonyNetworkAddress).getReputationMiningSkillId();
-    skillReputationRateComplements[reputationMiningSkillId] = WAD - _factor;
+    skillReputationScalingComplements[reputationMiningSkillId] = WAD - _factor;
 
     emit MiningReputationScalingSet(_factor);
   }

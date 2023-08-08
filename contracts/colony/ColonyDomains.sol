@@ -131,7 +131,7 @@ contract ColonyDomains is ColonyStorage {
     require(domainExists(_domainId), "colony-domain-does-not-exist");
     require(_factor <= WAD, "colony-network-invalid-reputation-scale-factor");
 
-    skillReputationRateComplements[domains[_domainId].skillId] = WAD - _factor;
+    skillReputationScalingComplements[domains[_domainId].skillId] = WAD - _factor;
 
     emit DomainReputationScalingSet(_domainId, _factor);
   }

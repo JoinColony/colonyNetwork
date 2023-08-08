@@ -11,6 +11,7 @@ const {
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
   giveUserCLNYTokens,
+  setupColony,
 } = require("../../helpers/test-data-generator");
 
 const {
@@ -47,6 +48,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const ITokenLocking = artifacts.require("ITokenLocking");
+const IMetaColony = artifacts.require("IMetaColony");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
@@ -282,6 +284,21 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       const reputationUpdateLogLength = await inactiveRepCycle.getReputationUpdateLogLength();
       expect(reputationUpdateLogLength).to.eq.BN(2);
+    });
+
+    it("only root in metacolony can set reputation mining cycle reward", async () => {
+      await checkErrorRevert(metaColony.setReputationMiningCycleRewardReputationScaling(WAD, { from: MINER1 }), "ds-auth-unauthorized");
+      const colony = await setupColony(colonyNetwork, clnyToken.address);
+      const colonyAsMetacolony = await IMetaColony.at(colony.address);
+      await checkErrorRevert(
+        colonyAsMetacolony.setReputationMiningCycleRewardReputationScaling(WAD, { from: accounts[0] }),
+        "colony-only-on-metacolony"
+      );
+
+      await metaColony.setReputationMiningCycleRewardReputationScaling(WAD.divn(2));
+      const miningSkillId = await colonyNetwork.getReputationMiningSkillId();
+      const factor = await metaColony.getSkillReputationScaling(miningSkillId);
+      expect(factor).to.eq.BN(WAD.divn(2));
     });
 
     it("should respect reputation scaling for mining rewards", async () => {

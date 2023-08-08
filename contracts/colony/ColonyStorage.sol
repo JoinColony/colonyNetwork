@@ -115,7 +115,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   mapping(address => uint256) tokenReputationScalings; // Storage slot 38
 
   // This mapping stores the complement of the reputation scaling factor. So the scaling factor is WAD-reputationScalingFactorComplement
-  mapping(uint256 => uint256) skillReputationRateComplements; // Storage slot 39
+  mapping(uint256 => uint256) skillReputationScalingComplements; // Storage slot 39
 
   // Constants
 
@@ -366,13 +366,13 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   function getSkillReputationScaling(uint256 _skillId) public view returns (uint256) {
-    uint256 factor = WAD - skillReputationRateComplements[_skillId];
+    uint256 factor = WAD - skillReputationScalingComplements[_skillId];
 
     uint256[] memory allParents = IColonyNetwork(colonyNetworkAddress).getAllSkillParents(_skillId);
     uint256 count;
 
     while (count < allParents.length && factor > 0) {
-      factor = wmul(factor, WAD - skillReputationRateComplements[allParents[count]]);
+      factor = wmul(factor, WAD - skillReputationScalingComplements[allParents[count]]);
       count +=1;
     }
 
