@@ -24,7 +24,7 @@ import "./ColonyNetworkStorage.sol";
 import "./../colony/ColonyDataTypes.sol";
 
 
-contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, ColonyDataTypes {
+contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
   // Skills
 
