@@ -119,7 +119,7 @@ contract("Cross-chain", (accounts) => {
     } catch (err) {
       console.log(err);
 
-      process.exit();
+      process.exit(1);
     }
     // Add bridge to the foreign colony network
     const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
