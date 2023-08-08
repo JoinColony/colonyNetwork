@@ -134,6 +134,7 @@ process.env.SOLIDITY_COVERAGE
 
           let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}`;
           let res = await request(url);
+
           expect(res.statusCode).to.equal(200);
 
           let oracleProofObject = JSON.parse(res.body);
