@@ -96,6 +96,16 @@ class MockBridgeMonitor {
     }
   }
 
+  async waitUntilSkipped() {
+    return new Promise((resolve) => {
+      setInterval(() => {
+        if (this.skipCount === 0) {
+          resolve();
+        }
+      }, 1000);
+    });
+  }
+
   reset() {
     this.skipCount = 0;
     this.skipped = [];
