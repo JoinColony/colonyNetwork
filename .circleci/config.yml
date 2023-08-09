@@ -68,7 +68,18 @@ jobs:
             sudo apt-get install lsof
       - run:
           name: "Running reputation system unit tests"
-          command: npm run test:reputation
+          command: npm run test:reputation:1
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - run:
+          name: "Reset chains"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+            npm run stop:blockchain:client && rm -rf ganache-chain-db*
+      - run:
+          name: "Running reputation system unit tests"
+          command: npm run test:reputation:2
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - run:
@@ -85,7 +96,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Download parity"
-          command: wget https://releases.parity.io/ethereum/v2.3.8/x86_64-unknown-linux-gnu/parity
+          command: wget https://releases.parity.io/ethereum/v2.7.2/x86_64-unknown-linux-gnu/parity
       - run:
           name: "Setup parity"
           command: |
@@ -308,7 +319,7 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install lsof
-            npm run stop:blockchain:client
+            npm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
           name: "Running coverage tests for foreign-side of bridge"
           command: npm run test:contracts:bridging:2:coverage
@@ -326,7 +337,7 @@ jobs:
       - <<: *step_restore_cache
       - run:
           name: "Install packages"
-          command: | 
+          command: |
             sudo npm install -g npm@8.5.5
             npm ci
       - attach_workspace:
