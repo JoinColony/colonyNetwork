@@ -445,6 +445,9 @@ contract("Cross-chain", (accounts) => {
       // Create a skill on the foreign chain
       let tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, UINT256_MAX_ETHERS, 1);
       await tx.wait();
+
+      await bridgeMonitor.waitUntilSkipped();
+
       const foreignDomain = await foreignColony.getDomain(1);
 
       let p = bridgeMonitor.getPromiseForNextBridgedTransaction();
@@ -476,6 +479,7 @@ contract("Cross-chain", (accounts) => {
       // Create a skill on the foreign chain
       let tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, UINT256_MAX_ETHERS, 1);
       await tx.wait();
+      await bridgeMonitor.waitUntilSkipped();
 
       let p = bridgeMonitor.getPromiseForNextBridgedTransaction();
       // Create another skill on the foreign chain
@@ -513,6 +517,7 @@ contract("Cross-chain", (accounts) => {
       // Create a skill on the foreign chain
       let tx = await foreignColony["addDomain(uint256,uint256,uint256)"](1, UINT256_MAX_ETHERS, 1);
       await tx.wait();
+      await bridgeMonitor.waitUntilSkipped();
 
       let p = bridgeMonitor.getPromiseForNextBridgedTransaction();
       // Create another skill on the foreign chain
@@ -827,6 +832,7 @@ contract("Cross-chain", (accounts) => {
       // This one is skipped
       let tx = await foreignColony.emitDomainReputationReward(1, accounts[0], "0x1338");
       await tx.wait();
+      await bridgeMonitor.waitUntilSkipped();
 
       // These are bridged and added to the pending log
       p = bridgeMonitor.getPromiseForNextBridgedTransaction();
@@ -949,6 +955,7 @@ contract("Cross-chain", (accounts) => {
 
       bridgeMonitor.skipCount = 2;
       const foreignColony2 = await setupColony(foreignColonyNetwork);
+      await bridgeMonitor.waitUntilSkipped();
 
       // Bridge skills
       let p = bridgeMonitor.getPromiseForNextBridgedTransaction();
