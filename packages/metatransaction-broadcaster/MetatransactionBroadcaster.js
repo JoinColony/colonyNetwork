@@ -295,20 +295,32 @@ class MetatransactionBroadcaster {
   }
 
   async isValidSetAuthorityTransaction(tx, userAddress) {
+    let logs = [];
     // Get the most recent metatx this user sent on colonyNetwork
-    let logs = await this.provider.getLogs({
-      address: this.colonyNetwork.address,
-      topics: [ethers.utils.id("MetaTransactionExecuted(address,address,bytes)")],
-      fromBlock: 0,
-    });
-    const data = logs
-      .map((l) => {
-        return {
-          log: l,
-          event: this.colonyNetwork.interface.parseLog(l),
-        };
-      })
-      .filter((x) => ethers.utils.getAddress(x.event.args.userAddress) === ethers.utils.getAddress(userAddress));
+    const stepSize = 10000;
+    let toBlock = await this.provider.getBlockNumber();
+    let fromBlock = toBlock - stepSize;
+    let data = [];
+    while (data.length === 0) {
+      logs = await this.provider.getLogs({
+        address: this.colonyNetwork.address,
+        topics: [ethers.utils.id("MetaTransactionExecuted(address,address,bytes)")],
+        fromBlock,
+        toBlock,
+      });
+
+      data = logs
+        .map((l) => {
+          return {
+            log: l,
+            event: this.colonyNetwork.interface.parseLog(l),
+          };
+        })
+        .filter((x) => ethers.utils.getAddress(x.event.args.userAddress) === ethers.utils.getAddress(userAddress));
+
+      fromBlock -= stepSize;
+      toBlock -= stepSize;
+    }
     // Get the TokenAuthorityDeployed event
     const receipt = await this.provider.getTransactionReceipt(data[data.length - 1].log.transactionHash);
     logs = receipt.logs.map((l) => this.colonyNetwork.interface.parseLog(l)).filter((e) => e.name === "TokenAuthorityDeployed");
