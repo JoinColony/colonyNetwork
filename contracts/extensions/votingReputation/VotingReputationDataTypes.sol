@@ -40,8 +40,8 @@ interface VotingReputationDataTypes {
     bool escalated;
     bool finalized;
     address altTarget;
-    bytes action;
     bytes4 sig;
+    bytes action;
   }
 
   struct ActionSummary {

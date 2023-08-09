@@ -441,7 +441,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     return expenditureAction;
   }
 
-  // Kept for backwards-compatibility with v9
+  // Kept for backwards-compatibility with v9, since a slot may have been locked
   function createClaimDelayAction(bytes memory action, uint256 value)
     public
     returns (bytes memory)
@@ -457,48 +457,31 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     bytes4 sig = getSig(action);
     assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
 
-    bytes4 functionSignature = SET_EXPENDITURE_STATE;
-
-    uint256 permissionDomainId;
-    uint256 childSkillIndex;
-    uint256 expenditureId;
     uint256 storageSlot; // This value is only used if (sig == SET_EXPENDITURE_STATE)
-    uint256 expenditureSlot;
-
     assembly {
-      permissionDomainId := mload(add(action, 0x24))
-      childSkillIndex := mload(add(action, 0x44))
-      expenditureId := mload(add(action, 0x64))
       storageSlot := mload(add(action, 0x84))
     }
 
     // If we are editing the main expenditure struct
     if (sig == SET_EXPENDITURE_STATE && storageSlot == 25) {
-      bytes memory mainClaimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
 
-      assembly {
-        mstore(add(mainClaimDelayAction, 0x20), functionSignature)
-        mstore(add(mainClaimDelayAction, 0x24), permissionDomainId)
-        mstore(add(mainClaimDelayAction, 0x44), childSkillIndex)
-        mstore(add(mainClaimDelayAction, 0x64), expenditureId)
-        mstore(add(mainClaimDelayAction, 0x84), 25)     // expenditure storage slot
-        mstore(add(mainClaimDelayAction, 0xa4), 0xe0)   // mask location
-        mstore(add(mainClaimDelayAction, 0xc4), 0x120)  // keys location
-        mstore(add(mainClaimDelayAction, 0xe4), value)
-        mstore(add(mainClaimDelayAction, 0x104), 1)     // mask length
-        mstore(add(mainClaimDelayAction, 0x124), 1)     // offset
-        mstore(add(mainClaimDelayAction, 0x144), 1)     // keys length
-        mstore(add(mainClaimDelayAction, 0x164), 4)     // globalClaimDelay offset
-      }
-
-      return mainClaimDelayAction;
+      return createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, value);
 
     // If we are editing an expenditure slot
     } else {
       bytes memory slotClaimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
+      bytes4 functionSignature = SET_EXPENDITURE_STATE;
       uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
 
+      uint256 permissionDomainId;
+      uint256 childSkillIndex;
+      uint256 expenditureId;
+      uint256 expenditureSlot;
+
       assembly {
+        permissionDomainId := mload(add(action, 0x24))
+        childSkillIndex := mload(add(action, 0x44))
+        expenditureId := mload(add(action, 0x64))
         expenditureSlot := mload(add(action, expenditureSlotLoc))
 
         mstore(add(slotClaimDelayAction, 0x20), functionSignature)

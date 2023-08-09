@@ -437,7 +437,10 @@ contract VotingReputation is VotingReputationStorage {
       executeCall(_motionId, claimDelayAction);
     } else { // Backwards compatibility for versions 9 and below
       bytes32 structHash = getExpenditureStructHash(action);
-      expenditureMotionCounts_DEPRECATED[structHash]--;
+      // If v9 multicall, won't have incremented the lock
+      if (expenditureMotionCounts_DEPRECATED[structHash] > 0) {
+        expenditureMotionCounts_DEPRECATED[structHash]--;
+      }
 
       // Release the claimDelay if this is the last active motion
       if (expenditureMotionCounts_DEPRECATED[structHash] == 0) {

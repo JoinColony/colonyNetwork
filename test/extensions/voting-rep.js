@@ -2938,7 +2938,7 @@ contract("Voting Reputation", (accounts) => {
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
     });
 
-    it.only("a multicall motion that affects one expenditure and is valid post-upgrade should be able to finalized", async () => {
+    it("a multicall motion that affects one expenditure and is valid post-upgrade should be able to finalized", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
 
@@ -2986,6 +2986,33 @@ contract("Voting Reputation", (accounts) => {
       await colony.upgradeExtension(VOTING_REPUTATION, 10);
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
+    });
+
+    it("can create a v9 motion and upgrade without changing the storage layout", async () => {
+      const action = await encodeTxData(colony, "addDomain", [1, UINT256_MAX, 1]);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      expect(await voting.version()).to.eq.BN(10);
+
+      const motion = await voting.getMotion(motionId);
+      expect(motion.action).to.equal(action);
+    });
+
+    it("can create a v9 motion with an alt target and upgrade without changing the storage layout", async () => {
+      const oneTxPayment = await OneTxPayment.new();
+      await oneTxPayment.install(colony.address);
+
+      const action = await encodeTxData(oneTxPayment, "makePayment", [1, UINT256_MAX, 1, UINT256_MAX, [USER0], [token.address], [WAD], 1, 0]);
+      await voting.createMotion(1, UINT256_MAX, oneTxPayment.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      expect(await voting.version()).to.eq.BN(10);
+
+      const motion = await voting.getMotion(motionId);
+      expect(motion.altTarget).to.equal(oneTxPayment.address);
     });
   });
 });
