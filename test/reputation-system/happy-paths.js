@@ -25,7 +25,7 @@ const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
-  setupFinalizedTask,
+  setupClaimedExpenditure,
   fundColonyWithTokens,
 } = require("../../helpers/test-data-generator");
 
@@ -212,7 +212,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
-        await setupFinalizedTask( // eslint-disable-line prettier/prettier
+        await setupClaimedExpenditure( // eslint-disable-line prettier/prettier
           {
             colonyNetwork,
             colony: metaColony,
@@ -238,7 +238,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
-        await setupFinalizedTask( // eslint-disable-line prettier/prettier
+        await setupClaimedExpenditure( // eslint-disable-line prettier/prettier
           {
             colonyNetwork,
             colony: metaColony,
@@ -296,14 +296,14 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       // Create reputation
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER1 });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER2 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: MINER1 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: MINER2 });
 
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 29, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       // Send rep to 0
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         managerPayout: 1000000000000,
@@ -330,13 +330,13 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER1 });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER2 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: MINER1 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: MINER2 });
 
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 31, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         worker: accounts[4],
@@ -364,8 +364,8 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(2));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER1 });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER2 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: MINER1 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: MINER2 });
 
       const bigPayout = new BN("10").pow(new BN("38"));
 
@@ -388,7 +388,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       const rootHash = await goodClient.getRootHash();
       await fundColonyWithTokens(metaColony, clnyToken, bigPayout.muln(4));
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         worker: MINER1,
@@ -455,7 +455,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
     it("should keep reputation updates that occur during one update window for the next window", async () => {
       // Creates an entry in the reputation log for the worker and manager
       await fundColonyWithTokens(metaColony, clnyToken);
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
       let addr = await colonyNetwork.getReputationMiningCycle(false);
       let inactiveReputationMiningCycle = await IReputationMiningCycle.at(addr);
@@ -481,11 +481,11 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
     it("should insert reputation updates from the log", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -572,10 +572,10 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
       // Earn some reputation for manager and worker in first task, then do badly in second task and lose some of it
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 8,
@@ -587,7 +587,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
         workerRating: 3,
       });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 6,
@@ -732,7 +732,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await fundColonyWithTokens(metaColony, clnyToken);
 
       // Do the task
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 8,
@@ -807,9 +807,9 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, domainId: 8 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, domainId: 8 });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 

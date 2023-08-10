@@ -9,7 +9,7 @@ const request = require("async-request");
 const { TruffleLoader } = require("../../packages/package-utils");
 const { DEFAULT_STAKE, INITIAL_FUNDING, UINT256_MAX } = require("../../helpers/constants");
 const { forwardTime, currentBlock, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter } = require("../../helpers/test-helper");
-const { giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } = require("../../helpers/test-data-generator");
+const { giveUserCLNYTokensAndStake, setupClaimedExpenditure, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const ReputationMinerClient = require("../../packages/reputation-miner/ReputationMinerClient");
 
@@ -86,7 +86,7 @@ process.env.SOLIDITY_COVERAGE
         // Make multiple reputation cycles, with different numbers tasks and blocks in them.
         await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
         for (let i = 0; i < 5; i += 1) {
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+          await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
         }
 
         await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
@@ -101,7 +101,7 @@ process.env.SOLIDITY_COVERAGE
 
         await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
         for (let i = 0; i < 5; i += 1) {
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+          await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
         }
 
         await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
@@ -134,7 +134,7 @@ process.env.SOLIDITY_COVERAGE
 
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
           for (let i = 0; i < 5; i += 1) {
-            await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+            await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
           }
           await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, accounts[2], -100, { from: accounts[0] });
 
@@ -236,7 +236,7 @@ process.env.SOLIDITY_COVERAGE
           await client.initialise(colonyNetwork.address, 1);
 
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
+          await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, token: clnyToken, worker: MINER1, manager: accounts[6] });
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });

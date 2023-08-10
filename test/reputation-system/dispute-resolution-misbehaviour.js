@@ -27,7 +27,7 @@ const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
-  setupFinalizedTask,
+  setupClaimedExpenditure,
   fundColonyWithTokens,
 } = require("../../helpers/test-data-generator");
 
@@ -316,7 +316,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(n));
       for (let i = 0; i < n; i += 1) {
         await giveUserCLNYTokensAndStake(colonyNetwork, accountsForTest[i], DEFAULT_STAKE);
-        // await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: accountsForTest[i] });
+        // await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: accountsForTest[i] });
         await metaColony.addPayment(1, UINT256_MAX, accountsForTest[i], clnyToken.address, 40, 1, 0);
         const paymentId = await metaColony.getPaymentCount();
         const payment = await metaColony.getPayment(paymentId);
@@ -534,9 +534,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         token: clnyToken,
@@ -555,7 +555,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       let powerTwoEntries = false;
       while (!powerTwoEntries) {
-        await setupFinalizedTask( // eslint-disable-line prettier/prettier
+        await setupClaimedExpenditure( // eslint-disable-line prettier/prettier
           {
             colonyNetwork,
             colony: metaColony,
@@ -933,7 +933,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -989,7 +989,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await fundColonyWithTokens(metaColony, clnyToken, new BN("1000000000000").muln(4).add(new BN(5000000000000)).add(new BN(1000000000)));
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -1001,7 +1001,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         worker: MINER2,
       });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -1054,9 +1054,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
     it("should correctly require the proof of the reputation under dispute before and after the change in question", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -1250,8 +1250,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
 
         await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(2));
-        await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-        await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+        await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+        await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
         const repCycle = await getActiveRepCycle(colonyNetwork);
