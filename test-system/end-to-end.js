@@ -22,7 +22,7 @@ const {
   fundColonyWithTokens,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
-  setupFinalizedTask,
+  setupClaimedExpenditure,
 } = require("../helpers/test-data-generator");
 
 const { DEFAULT_STAKE, INITIAL_FUNDING } = require("../helpers/constants");
@@ -169,7 +169,7 @@ contract("End to end Colony network and Reputation mining testing", function (ac
     });
 
     it("can create a range of tasks accross colonies", async function () {
-      const colonyTaskPositiveReputation = [
+      const colonyExpenditurePositiveReputation = [
         {
           // Index in the colonies[] array (note that this excludes the meta colony)
           colonyIdx: 100,
@@ -225,7 +225,7 @@ contract("End to end Colony network and Reputation mining testing", function (ac
       // Do the negative updates explicitely after the positive so they are guaranteed to appear later in the miner updates
       // Because of the async PromiseAll which triggers and completes task creation in a non-order specific
       // way we have to ensure reputation is deducted correctly
-      const colonyTaskNegativeReputation = [
+      const colonyExpenditureNegativeReputation = [
         {
           colonyIdx: 100,
           domainId: 1,
@@ -245,13 +245,13 @@ contract("End to end Colony network and Reputation mining testing", function (ac
       ];
 
       await Promise.all(
-        colonyTaskPositiveReputation.map(async (taskProp) => {
+        colonyExpenditurePositiveReputation.map(async (taskProp) => {
           const { colony } = colonies[taskProp.colonyIdx];
 
           await colony.setAdministrationRole(1, 0, MANAGER, 1, true);
           await colony.setFundingRole(1, 0, MANAGER, 1, true);
 
-          await setupFinalizedTask({
+          await setupClaimedExpenditure({
             colonyNetwork,
             colony,
             domainId: taskProp.domainId,
@@ -268,10 +268,10 @@ contract("End to end Colony network and Reputation mining testing", function (ac
       );
 
       await Promise.all(
-        colonyTaskNegativeReputation.map(async (taskProp) => {
+        colonyExpenditureNegativeReputation.map(async (taskProp) => {
           const { colony } = colonies[taskProp.colonyIdx];
 
-          await setupFinalizedTask({
+          await setupClaimedExpenditure({
             colonyNetwork,
             colony,
             domainId: taskProp.domainId,
