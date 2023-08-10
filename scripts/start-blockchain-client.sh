@@ -10,6 +10,8 @@ DBPATH=${DBPATH:-./ganache-chain-db/}
 # Get the choice of client: ganache is default
 if [ "$1" == "parity" ]; then
   bc_client=$1
+elif [ "$1" == "hardhat" ]; then
+  bc_client=$1
 else
   bc_client="ganache"
 fi
@@ -45,6 +47,10 @@ start_ganache() {
     --account="0xfe6066af949ec3c2c88ac10f47907c6d4e200c37b28b5af49e7d0ffd5c301c5c, 100000000000000000000" >/dev/null 2>&1
 }
 
+start_hardhat() {
+  npx hardhat node >/dev/null 2>&1
+}
+
 start_parity() {
   mapfile -t addresses < <( parity --keys-path ./keys account list --chain ./parity-genesis.json)
   if [ ${#addresses[@]} -eq 0 ]; then
@@ -66,6 +72,8 @@ else
   echo "Starting our own $bc_client client instance at port $bc_client_port"
   if [ "$bc_client" == "parity" ]; then
     start_parity
+  elif [ "$bc_client" == "hardhat" ]; then
+    start_hardhat
   else
     start_ganache
   fi
