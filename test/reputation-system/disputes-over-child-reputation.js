@@ -19,7 +19,7 @@ const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
-  setupFinalizedTask,
+  setupClaimedExpenditure,
   fundColonyWithTokens,
 } = require("../../helpers/test-data-generator");
 
@@ -107,13 +107,13 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
   describe("should correctly resolve a dispute over origin skill", () => {
     it("if one person claims an origin skill doesn't exist but the other does (and proves such)", async () => {
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 3,
@@ -125,8 +125,8 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
         worker: MINER2,
       });
 
-      // Task two payouts are less so that the reputation should be nonzero afterwards
-      await setupFinalizedTask({
+      // Expenditure two payouts are less so that the reputation should be nonzero afterwards
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -174,13 +174,13 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if one person claims a user's child skill doesn't exist but the other does (and proves such)", async () => {
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 3,
@@ -192,8 +192,8 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
         worker: MINER2,
       });
 
-      // Task two payouts are less so that the reputation should bee nonzero afterwards
-      await setupFinalizedTask({
+      // Expenditure two payouts are less so that the reputation should bee nonzero afterwards
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -242,13 +242,13 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if the dispute involves a child skill that doesn't exist, should resolve correctly", async () => {
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -260,8 +260,8 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
         worker: MINER2,
       });
 
-      // Task two payouts are less so that the reputation should be nonzero afterwards
-      await setupFinalizedTask({
+      // Expenditure two payouts are less so that the reputation should be nonzero afterwards
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -310,11 +310,11 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("should not accept an invalid proof that an origin skill doesn't exist", async () => {
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 3,
@@ -381,13 +381,13 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("should not accept an invalid proof that a child skill doesn't exist", async () => {
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -399,8 +399,8 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
         worker: MINER2,
       });
 
-      // Task two payouts are less so that the reputation should bee nonzero afterwards
-      await setupFinalizedTask({
+      // Expenditure two payouts are less so that the reputation should bee nonzero afterwards
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -471,14 +471,14 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER4, DEFAULT_STAKE);
 
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         skillId: 5,
@@ -492,8 +492,8 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
 
-      // Task two payouts are less so that the reputation should bee nonzero afterwards
-      await setupFinalizedTask({
+      // Expenditure two payouts are less so that the reputation should bee nonzero afterwards
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         skillId: 4,
@@ -569,10 +569,10 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if origin skill reputation calculation underflows and is wrong", async () => {
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 3,
@@ -586,7 +586,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -632,7 +632,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
   describe("should correctly resolve a dispute over child skill", () => {
     it.skip("if the global origin skill is provided instead of the child origin skill", async () => {
       // We deduce the origin reputation key from the logEntry on chain now so the client cannot lie about it
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         skillId: 5,
@@ -644,7 +644,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
         worker: MINER2,
       });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         skillId: 5,
@@ -658,7 +658,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         skillId: 4,
@@ -701,7 +701,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if child skill reputation calculation is wrong", async () => {
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 3,
@@ -715,7 +715,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -759,7 +759,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if a child skill reputation calculation (in a negative update) is wrong", async () => {
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 3,
@@ -773,7 +773,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -818,7 +818,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     it("if a child skill reputation calculation is wrong and that user has never had that reputation before", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -863,7 +863,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
   describe("should correctly resolve a dispute over colony wide reputation", () => {
     it("if a colony-wide calculation (for a parent skill) is wrong", async () => {
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 3,
@@ -877,7 +877,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -920,7 +920,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if a colony-wide calculation (for a child skill) is wrong", async () => {
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 3,
@@ -934,7 +934,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -978,7 +978,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if a colony-wide child skill is wrong, and the log .amount is larger than the colony total, but the correct change is not", async () => {
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 3,
@@ -990,7 +990,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
         worker: MINER2,
       });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 3,
@@ -1004,7 +1004,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -1056,14 +1056,14 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         skillId: 5,
@@ -1077,8 +1077,8 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
 
-      // Task two payouts are less so that the reputation should bee nonzero afterwards
-      await setupFinalizedTask({
+      // Expenditure two payouts are less so that the reputation should bee nonzero afterwards
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         skillId: 4,
@@ -1152,7 +1152,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if a colony-wide child skill reputation amount calculation underflows and is wrong", async () => {
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 3,
@@ -1166,7 +1166,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 2,
@@ -1217,7 +1217,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domaindId: 3,
@@ -1231,7 +1231,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domaindId: 2,
