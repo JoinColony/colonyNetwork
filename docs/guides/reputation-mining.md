@@ -1,129 +1,98 @@
 ---
-description: How to use the Reputation Mining Client
+description: A guide on how to set up a reputation miner
 sidebar_position: 2
 ---
 
-# Reputation Mining Client
+# Reputation Mining
 
-## Running the Mining Client
+#### A. Introduction
 
-The reputation mining client can be run locally to sync with a local ganache instance, the `goerli` testnet, or with glider on `mainnet`.
+Colony's reputation system is key to its functionality, and in order to work successfully, with decays being calculated and new reputation being awarded as appropriate, it relies on the reputation 'mining' process. Any user with sufficient CLNY can stake that CLNY to participate in the process. This guide is intended to provide information for a (sufficiently technical) user who wishes to do so.
 
-To participate in the reputation mining process you need to have staked at least the [minimum amount of CLNY Tokens](../interfaces/ireputationminingcycle#getminstake-uint256-minstake), for at least [one full mining cycle duration](../interfaces/ireputationminingcycle#getminingwindowduration-uint256-miningwindowduration) before you can submit a new reputation root hash.
+To participate in the reputation mining process you need to have staked at least the minimum amount of CLNY Tokens (currently 2000 CLNY), for at least one full mining cycle duration (currently 60 minutes) before you can submit a new reputation root hash.
 
-Usage:
+#### B. Awarding appropriate permissions on-chain
 
-```bash
-node packages/reputation-miner/bin/index.js (--arguments <params>) [--arguments <params>]
+1\. Check out our contract repository, following [these instructions](../docs/quick-start.md#cloning-the-repository-and-preparing-the-dependencies). You should then be able to run `yarn run truffle console --network xdai` which will connect you to the right network. You will need to be able to sign messages from the address in control of your CLNY (which will also be the address earning reputation for mining), which in most cases means pasting your private key into `truffle.js` before launching the console. For Ledger support, you can use `yarn run truffle console --network xdaiLedger`. For other hardware wallets, you will need to find an appropriate provider compatible with Truffle, and add it into `truffle.js` in your local version of the repository.\
+\
+An appropriate gas price for the current level of network use can be found at [https://blockscout.com/xdai/mainnet/](https://blockscout.com/xdai/mainnet/). The default value in `truffle.js` represent 2Gwei.\
+
+
+2\. Create references to the various contracts that we will need. Run each of these commands in turn:
+
+```javascript
+colonyNetwork = await IColonyNetwork.at("0x78163f593D1Fa151B4B7cacD146586aD2b686294" );
+clnyToken = await Token.at("0xc9B6218AffE8Aba68a13899Cbf7cF7f14DDd304C");
+tokenLockingAddress = await colonyNetwork.getTokenLocking();
+tokenLocking = await ITokenLocking.at(tokenLockingAddress);
 ```
 
-Mandatory arguments:
+:::info
+_Note that all of the following commands, where they represent a transaction being sent on-chain, are documented with `estimateGas`. This is deliberate, and so copying and pasting these instructions should not do anything on chain. Once you are happy with the command, and the call to `estimateGas` does not error, you remove the .`estimateGas` from the command and re-run it to execute it on-chain._
+:::
 
-```
-(--minerAddress <address>) | (--privateKey <key>)
-(--colonyNetworkAddress <address>)
-(--syncFrom <number>)   // [goerli:'548534', mainnet:'7913100']
-```
+3\. Award the token locking contract the ability to take the CLNY you are intending to stake. The value used in this example is the minimum stake required; you may wish to stake more.
 
-Optional arguments:
-
-```
-[--network <(goerli|mainnet)>]  
-[--localPort <number>]
-[--dbPath <$PATH>]
-[--auto <(true|false)>]
-```
-
-#### `--minerAddress`
-Address of the miner account which the client will send reputation mining contract transactions from. Used when working with an unlocked account for the miner against **development networks only**. We provision twelve unlocked test accounts stored in `ganache-accounts.json` for testing that are available when starting a local ganache-cli instance via `npm run start:blockchain:client` command.
-
-#### `--privateKey`
-
-Private key of the miner account which the client will sign reputation mining contract transactions with.
-
-#### `--colonyNetworkAddress`
-
-The address of the Colony Network's `EtherRouter`. See [Upgrades to the Colony Network](../concepts/upgrades) for more information about the EtherRouter design pattern. This address is static on `goerli` and `mainnet` `goerli` `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B` `mainnet` `0x5346d0f80e2816fad329f2c140c870ffc3c3e2ef`
-
-#### `--dbPath`
-
-Path for the sqlite database storing reputation state. Default is `./reputationStates.sqlite`.
-
-#### `--network`
-
-Used for connecting to a supported Infura node (instead of a local client). Valid options are `goerli` and `mainnet`.
-
-#### `--localPort`
-
-Used to connect to a local clinet running on the specified port. Default is `8545`.
-
-#### `--syncFrom`
-
-Block number to start reputation state sync from. This is the block at which the reputation mining process was initialised. This number is static on `goerli` and `mainnet`
-
-* `goerli: 548534`
-* `mainnet: 7913100`
-
-Note that beginning the sync with a too-early block will result in an error. If you get this exception, try syncing from a more recent block. Note that the sync process can take long. Latest tests syncing a client from scratch to 28 reputation cycles took \~2 hours.
-
-#### `--auto`
-
-Default is `true`
-
-The "auto" reputation mining client will:
-
-* Propose a new hash at the first possible block time, and submit until the maximum number has been reached (based on staked CLNY, with a maximum of 12 submissions allowed)
-* Respond to challenges if there are disagreeing submissions.
-* Confirm the last hash after the mining window closes and any disputes have been resolved.
-
-Reputation mining protocol details can be found in the [Whitepaper TLDR](../tldr/reputation-mining).
-
-## Visualizations
-
-The reputation mining client comes with a set of built-in visualizers to make it easier to view reputation states and to see the current state of the mining process. Once a mining client is running and connected to a network, navigate to the client's address in a browser (i.e. `http://localhost:3000/`) to access the available visualization tools.
-
-### Force Reputation Updates
-
-The client is set to provide a reputation update once every 24 hours. For testing, you'll likely want to "fast-forward" your network through a few submissions to see usable reputation.
-
-You can move the network forward by 24 hours with the following command.
-
-```bash
-curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_increaseTime","params":[86400],"id": 1}' localhost:8545
+```javascript
+// Approve the tokens
+clnyToken.approve.estimateGas(tokenLocking.address, "2000000000000000000000");
+// Deposit the tokens
+tokenLocking.deposit.estimateGas(clnyToken.address, "2000000000000000000000", false); 
+// Stake the tokens for mining
+colonyNetwork.stakeForMining.estimateGas("2000000000000000000000");
+// (Optional) Confirm that the tokens have been staked
+await colonyNetwork.getMiningStake(accounts[0]);
+[
+  '2000000000000000000000',
+  '1613397970',
+  amount: '2000000000000000000000',
+  timestamp: '1613397970'
+]
 ```
 
-Once you have moved the network forward 24 hours, you can then mine a new block with the following command.
+4\. Award delegated mining permissions to your 'disposable' address:
 
-```bash
-curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_mine","params":[]}' localhost:8545
+```javascript
+const miningDelegate = "your-delegate-address"
+colonyNetwork.setMiningDelegate.estimateGas(miningDelegate, true)
+// To remove delegated mining permissions in the future, run the following
+colonyNetwork.setMiningDelegate.estimateGas(miningDelegate, false)
 ```
 
-Note that because reputation is awarded for the _previous_ submission window, you will need to use the "fast-forward" command above to speed through at least 2 reputation updates before noticing a change in the miner's reputation.
+:::info
+Using two addresses like this is not strictly required, but represents best practices - even if your mining process ended up compromised and the private key accessed, the worst that could be done with it would be to slowly have your stake slashed by misbehaving, which can be prevented by removing the permissions of the disposable address (see below)
+:::
 
-## Get Reputation from the Reputation Oracle
+Congratulations! You've set up all the necessary permissions to run a miner.
 
-The reputation mining client will answer queries for reputation scores locally over HTTP.
+#### C. Setting up the miner
 
-```
-http://127.0.0.1:3000/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
-```
+The biggest hurdle to running a reputation miner is syncing it initially. This requires an Xdai archive node. There is a public one available at [`https://xdai-archive.blockscout.com/`](https://xdai-archive.blockscout.com/), which we have successfully used in the past to sync a node from scratch, but can be unreliable for very old historical state. To speed up the syncing process, you can also use a recent snapshot of the reputation state tree ([see below](reputation-mining.md#snapshot)), but this doesn't remove the requirement for an archive node (for more recent historical state).
 
-An instance of the oracle is available for reputation queries against `goerli` or `mainnet` networks:
+Strictly speaking, once synced, an archive node is not required. However, should you fall behind (due to the miner not running for some reason), then you will need access to an archive mode to resume.&#x20;
 
-```
-https://xdai.colony.io/reputation/{network}/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
-```
+The most reliable way to run the miner is by using docker via the image provided by us, but you can also run it directly from a checked-out copy of our repository (which you already have, if you've completed the previous section).
 
-The oracle should be able to provide responses to any valid reputation score in all historical states, as well as the current state. For querying the colony-wide reputation instead of user-specific one, instead of {userAddress} use a zero address (`0x0000000000000000000000000000000000000000`)
+Regardless of which you use, you will need the private key you wish mining transactions to be signed from. Putting the private key in an environment variable is recommended for security purposes - in the below examples, it could be placed in the appropriate variable with `export PRIVATE_KEY=0xdeadbeef00000000000000000deadbeef000000000000000000000000000dead`
 
-For example, you can get the reputation score of the miner in a reputation state `0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc`) using the address of the Meta Colony (`0x14946533cefe742399e9734a123f0c02d0405a51`), the mining skill id (`2`), and address of a miner (`0x0A1d439C7d0b9244035d4F934BBF8A418B35d064`).
+<Tabs>
+<TabItem value="docker" label="Using Docker" default>
+`docker run -it --env ARGS="--providerAddress https://xdai-archive.blockscout.com/" --env COLONYNETWORK_ADDRESS=0x78163f593D1Fa151B4B7cacD146586aD2b686294 --env SYNC_FROM_BLOCK="11897848" --env REPUTATION_JSON_PATH=/root/datadir/reputations.sqlite --env PRIVATE_KEY=$PRIVATE_KEY -v $(pwd):/root/datadir joincolony/reputation-miner:latest`
+</TabItem>
 
-```
-https://xdai.colony.io/reputation/mainnet/0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc/0x14946533cefe742399e9734a123f0c02d0405a51/2/0x0A1d439C7d0b9244035d4F934BBF8A418B35d064
-```
+<TabItem value="repository" label="From repository" default>
+`node ./packages/reputation-miner/bin/index.js --providerAddress https://xdai-archive.blockscout.com --colonyNetworkAddress 0x78163f593D1Fa151B4B7cacD146586aD2b686294 --syncFrom 11897847 --privateKey $PRIVATE_KEY --dbPath ./reputations.sqlite`
+</TabItem>
+</Tabs>
 
-The oracle returns
+The docker image will create files in the directory you run this command from; you can alter the `-v` argument to change this behaviour.
 
-```
-{"branchMask":"0xc000000000000000000000000000000000000000000000000000000000000000","siblings":["0x15c45d734bccc204df2e275d516250ed0a1cd60ccabadf49e2157a3e8067e59c","0xd4ee79473ec5573d706be030f3077c44aef06f26745349bbd93dcf5f4e254422"],"key":"0x14946533cefe742399e9734a123f0c02d0405a5100000000000000000000000000000000000000000000000000000000000000020a1d439c7d0b9244035d4f934bbf8a418b35d064","value":"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004","reputation":"0x0000000000000000000000000000000000000000000000000000000000000000","uid":"0x0000000000000000000000000000000000000000000000000000000000000004","reputationAmount":"0"}
-```
+#### D. Getting a recent snapshot <a href="#snapshot" id="snapshot"></a>
+
+A recent snapshot, which should be from the last day or so, is available at [https://xdai.colony.io/reputation/xdai/latestState](https://xdai.colony.io/reputation/xdai/latestState).\
+\
+After downloading, place it whichever directory you are running the reputation miner from, and rename it to `reputations.sqlite` (if you are using the commands above). Upon start, the miner will load this snapshot, and sync from there.
+
+#### E. Rewards
+
+At the current time, there are no rewards for reputation mining, but this should change in the coming weeks.
