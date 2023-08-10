@@ -19,7 +19,6 @@ pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
 import "./../colony/ColonyDataTypes.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
 import "./ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108
@@ -54,7 +53,6 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
   /// @param _colony The colony in which the extension holds permissions
   function install(address _colony) public override auth {
     require(address(colony) == address(0x0), "extension-already-installed");
-
     colony = IColony(_colony);
   }
 
@@ -74,28 +72,24 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
 
   // Public
 
-  /// @notice Sets the stake fraction
-  /// @param _expenditureId Which expenditure to set whether it's a staged payment or not
-  /// @param _staged Whether to make the expenditure staged or not
+  /// @notice Mark an expenditure as staged
+  /// @dev Only owner can call this function, must be in draft state
+  /// @param _expenditureId Which expenditure we are changing
+  /// @param _staged Indcating whether the expenditure is staged or not
   function setExpenditureStaged(uint256 _expenditureId, bool _staged) public notDeprecated {
-    // Require owner of expenditure
     Expenditure memory e = IColony(colony).getExpenditure(_expenditureId);
     require(e.owner == msgSender(), "staged-expenditure-not-owner");
+    require(e.status == ColonyDataTypes.ExpenditureStatus.Draft, "expenditure-not-draft");
 
-    // Require draft state
-    require(
-      e.status == ColonyDataTypes.ExpenditureStatus.Draft,
-      "expenditure-not-draft"
-    );
-
-    // Set to staged
-    if (stagedExpenditures[_expenditureId] != _staged){
+    if (stagedExpenditures[_expenditureId] != _staged) {
       stagedExpenditures[_expenditureId] = _staged;
+
       emit ExpenditureMadeStaged(_expenditureId, _staged);
     }
   }
 
-  /// @notice Release a staged payment slot
+  /// @notice Release a staged payment slot and claim tokens
+  /// @dev Only owner can call this function, must be in finalized state
   /// @param _permissionDomainId The domainId in which the extension has the arbitration permission
   /// @param _childSkillIndex The index that the `_expenditureId` is relative to `_permissionDomainId`,
   /// @param _expenditureId The id of the expenditure
@@ -113,12 +107,8 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
     require(stagedExpenditures[_expenditureId], "staged-expenditure-not-staged-expenditure");
 
     Expenditure memory e = IColony(colony).getExpenditure(_expenditureId);
-
     require(e.owner == msgSender(), "staged-expenditure-not-owner");
-    require(
-      e.status == ColonyDataTypes.ExpenditureStatus.Finalized,
-      "expenditure-not-finalized"
-    );
+    require(e.status == ColonyDataTypes.ExpenditureStatus.Finalized, "expenditure-not-finalized");
 
     bool[] memory mask = new bool[](2); mask[0] = false; mask[1] = true;
     bytes32[] memory keys = new bytes32[](2); keys[0] = bytes32(0); keys[1] = bytes32(uint256(1));
