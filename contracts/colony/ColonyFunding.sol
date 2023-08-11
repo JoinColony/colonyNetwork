@@ -409,7 +409,8 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     assert(fundingPot.associatedType == FundingPotAssociatedType.Expenditure);
 
-    uint256 currentTotal = fundingPot.payouts[_token];
+    uint256 previousTotal = fundingPot.payouts[_token];
+    uint256 runningTotal = fundingPot.payouts[_token];
 
     for (uint256 i; i < _slots.length; i++) {
       require(_amounts[i] <= MAX_PAYOUT, "colony-payout-too-large");
@@ -417,13 +418,13 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
       uint256 currentPayout = expenditureSlotPayouts[_id][_slots[i]][_token];
 
       expenditureSlotPayouts[_id][_slots[i]][_token] = _amounts[i];
-      fundingPot.payouts[_token] = (currentTotal - currentPayout) + _amounts[i];
-
+      runningTotal = (runningTotal - currentPayout) + _amounts[i];
 
       emit ExpenditurePayoutSet(msgSender(), _id, _slots[i], _token, _amounts[i]);
     }
+    fundingPot.payouts[_token] = runningTotal;
 
-    updatePayoutsWeCannotMakeAfterBudgetChange(expenditures[_id].fundingPotId, _token, currentTotal);
+    updatePayoutsWeCannotMakeAfterBudgetChange(expenditures[_id].fundingPotId, _token, previousTotal);
   }
 
   function setTaskPayout(uint256 _id, TaskRole _role, address _token, uint256 _amount) private
