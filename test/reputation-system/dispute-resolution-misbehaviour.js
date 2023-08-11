@@ -316,25 +316,14 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(n));
       for (let i = 0; i < n; i += 1) {
         await giveUserCLNYTokensAndStake(colonyNetwork, accountsForTest[i], DEFAULT_STAKE);
-        // await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: accountsForTest[i] });
-        await metaColony.addPayment(1, UINT256_MAX, accountsForTest[i], clnyToken.address, 40, 1, 0);
-        const paymentId = await metaColony.getPaymentCount();
-        const payment = await metaColony.getPayment(paymentId);
-        await metaColony.moveFundsBetweenPots(
-          1,
-          UINT256_MAX,
-          1,
-          UINT256_MAX,
-          UINT256_MAX,
-          1,
-          payment.fundingPotId,
-          INITIAL_FUNDING,
-          clnyToken.address,
-        );
-        await metaColony.finalizePayment(1, UINT256_MAX, paymentId);
-
-        // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the
-        // right taskId, so if they're all created at once it messes up.
+        await setupClaimedExpenditure({
+          colonyNetwork,
+          colony: metaColony,
+          manager: accountsForTest[i],
+          managerPayout: INITIAL_FUNDING,
+          evaluatorPayout: 0,
+          workerPayout: 0,
+        });
       }
 
       // We need to complete the current reputation cycle so that all the required log entries are present
@@ -539,7 +528,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
-        token: clnyToken,
         manager: MINER1,
         worker: MINER2,
         workerRating: 1,
@@ -555,19 +543,16 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       let powerTwoEntries = false;
       while (!powerTwoEntries) {
-        await setupClaimedExpenditure( // eslint-disable-line prettier/prettier
-          {
-            colonyNetwork,
-            colony: metaColony,
-            token: clnyToken,
-            evaluator: MINER1,
-            worker: MINER2,
-            workerRating: 1,
-            managerPayout: 1,
-            evaluatorPayout: 1,
-            workerPayout: 1,
-          },
-        );
+        await setupClaimedExpenditure({ // eslint-disable-line prettier/prettier
+          colonyNetwork,
+          colony: metaColony,
+          evaluator: MINER1,
+          worker: MINER2,
+          workerRating: 1,
+          managerPayout: 1,
+          evaluatorPayout: 1,
+          workerPayout: 1,
+        });
 
         const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength();
         const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1);
