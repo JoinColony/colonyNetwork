@@ -74,7 +74,7 @@ process.env.SOLIDITY_COVERAGE
         await colonyNetwork.startNextCycle();
 
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-        await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, token: clnyToken });
+        await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
         const startingBlock = await currentBlock();
         startingBlockNumber = startingBlock.number;

@@ -73,7 +73,7 @@ contract("Reputation Updates", (accounts) => {
 
   describe("when added", () => {
     it("should be readable", async () => {
-      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, token: clnyToken });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryManager.user).to.equal(MANAGER);
@@ -109,14 +109,14 @@ contract("Reputation Updates", (accounts) => {
 
     it("should populate nPreviousUpdates correctly", async () => {
       const initialRepLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
-      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, token: clnyToken });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
       let repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength.addn(1));
       const nPrevious = new BN(repLogEntry.nPreviousUpdates);
       repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength.addn(2));
       expect(repLogEntry.nPreviousUpdates).to.eq.BN(nPrevious.addn(2));
 
-      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, token: clnyToken });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
       repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength.addn(3));
       expect(repLogEntry.nPreviousUpdates).to.eq.BN(nPrevious.addn(4));
     });
@@ -127,8 +127,9 @@ contract("Reputation Updates", (accounts) => {
       await metaColony.addDomain(1, 1, 2);
       await metaColony.addDomain(1, 2, 3);
       await metaColony.addDomain(1, 3, 4);
-      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, token: clnyToken, domainId: 3 });
       // 1 => 2 => 3 => 4 => 5
+
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, domainId: 3 });
 
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryWorker.amount).to.eq.BN(MANAGER_PAYOUT);
@@ -137,7 +138,7 @@ contract("Reputation Updates", (accounts) => {
       await metaColony.emitDomainReputationPenalty(1, 3, 4, WORKER, WORKER_PAYOUT.neg(), { from: MANAGER });
 
       // (Parents + 1) * 2 + Children * 2 updates
-      repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(4);
+      repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(5);
       expect(repLogEntryWorker.amount).to.eq.BN(WORKER_PAYOUT.neg());
       expect(repLogEntryWorker.nUpdates).to.eq.BN(10); // Negative reputation change means children change as well.
     });
@@ -160,7 +161,7 @@ contract("Reputation Updates", (accounts) => {
 
     it("should not make zero-valued reputation updates", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
-      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, token: clnyToken, workerPayout: 0 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, workerPayout: 0 });
 
       // Entries for manager and evaluator only + 1 for miner reward
       const numUpdates = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
@@ -209,7 +210,7 @@ contract("Reputation Updates", (accounts) => {
       await otherToken.unlock();
       await fundColonyWithTokens(metaColony, otherToken, WAD.muln(500));
 
-      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, token: otherToken });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, tokenAddress: otherToken.address });
 
       const reputationUpdateLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       expect(reputationUpdateLogLength).to.eq.BN(1); // Just the miner reward

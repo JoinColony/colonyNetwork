@@ -235,7 +235,7 @@ contract("Colony Reward Payouts", (accounts) => {
       domain = await newColony.getDomain(1);
       const rootDomainSkill = domain.skillId;
 
-      await setupClaimedExpenditure({ colonyNetwork, colony: newColony, token: newToken, domainId: domainCount });
+      await setupClaimedExpenditure({ colonyNetwork, colony: newColony, tokenAddress: newToken.address, domainId: domainCount });
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
