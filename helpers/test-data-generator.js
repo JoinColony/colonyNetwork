@@ -1,8 +1,7 @@
 /* globals artifacts */
 const BN = require("bn.js");
-const { ethers } = require("ethers");
 
-const { UINT256_MAX, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING } = require("./constants");
+const { UINT256_MAX, GLOBAL_SKILL_ID, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING } = require("./constants");
 const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } = require("./test-helper");
 
 const IColony = artifacts.require("IColony");
@@ -17,32 +16,34 @@ const Resolver = artifacts.require("Resolver");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 
-exports.makeExpenditure = async function makeExpenditure({ colonyNetwork, colony, domainId = 1, owner }) {
-  const accounts = await web3GetAccounts();
-  owner = owner || accounts[0]; // eslint-disable-line no-param-reassign
-
-  // Only Colony admins are allowed to make Expenditures, make the account an admin
-  let networkAddress;
+exports.makeExpenditure = async function makeExpenditure({
+  colonyNetwork,
+  colony,
+  domainId = 1,
+  skillId = GLOBAL_SKILL_ID,
+  manager,
+  evaluator,
+  worker,
+}) {
   if (colonyNetwork === undefined) {
-    networkAddress = await colony.getColonyNetwork();
+    const networkAddress = await colony.getColonyNetwork();
     colonyNetwork = await IColonyNetwork.at(networkAddress); // eslint-disable-line no-param-reassign
   }
-  const childSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, domainId);
-  await colony.setAdministrationRole(1, childSkillIndex, owner, domainId, true);
 
-  const { logs } = await colony.makeExpenditure(1, childSkillIndex, domainId, { from: owner });
-  // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
-  return logs.filter((log) => log.event === "ExpenditureAdded")[0].args.expenditureId;
-};
-
-exports.setupAssignedExpenditure = async function setupAssignedExpenditure({ colonyNetwork, colony, domainId, manager, evaluator, worker }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
   evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
   worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
-  const expenditureId = await exports.makeExpenditure({ colonyNetwork, colony, domainId, manager });
-  await colony.setExpenditureRecipients(expenditureId, [0, 1, 2], [manager, evaluator, worker]);
+  // Only Colony admins are allowed to make Expenditures, make the account an admin
+  const childSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, domainId);
+  await colony.setAdministrationRole(1, childSkillIndex, manager, domainId, true);
+
+  const { logs } = await colony.makeExpenditure(1, childSkillIndex, domainId, { from: manager });
+  const { expenditureId } = logs.filter((log) => log.event === "ExpenditureAdded")[0].args;
+
+  await colony.setExpenditureRecipients(expenditureId, [0, 1, 2], [manager, evaluator, worker], { from: manager });
+  await colony.setExpenditureSkills(expenditureId, [2], [skillId], { from: manager });
 
   return expenditureId;
 };
@@ -50,106 +51,76 @@ exports.setupAssignedExpenditure = async function setupAssignedExpenditure({ col
 exports.setupFundedExpenditure = async function setupFundedExpenditure({
   colonyNetwork,
   colony,
-  token,
   domainId,
+  skillId,
   manager,
   evaluator,
   worker,
+  tokenAddress,
   managerPayout = MANAGER_PAYOUT,
   evaluatorPayout = EVALUATOR_PAYOUT,
   workerPayout = WORKER_PAYOUT,
 }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
-  evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
-  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
-  let tokenAddress;
-  if (token === undefined) {
-    tokenAddress = await colony.getToken();
-  } else {
-    tokenAddress = token === ethers.constants.AddressZero ? ethers.constants.AddressZero : token.address;
+  if (tokenAddress === undefined) {
+    tokenAddress = await colony.getToken(); // eslint-disable-line no-param-reassign
   }
 
-  const expenditureId = await exports.makeExpenditure({ colonyNetwork, colony, domainId, manager });
-  await colony.setExpenditureRecipients(expenditureId, [0, 1, 2], [manager, evaluator, worker]);
+  const expenditureId = await exports.makeExpenditure({ colonyNetwork, colony, domainId, skillId, manager, evaluator, worker });
 
   const expenditure = await colony.getExpenditure(expenditureId);
   const childSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, expenditure.domainId);
   const moveFundsBetweenPots = colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"];
-
-  await colony.setFundingRole(1, UINT256_MAX, manager, 1, true);
   const totalPayouts = new BN(managerPayout).add(new BN(evaluatorPayout)).add(new BN(workerPayout));
 
+  // Only Colony funders are allowed to fund Expenditures, make the account a funder
+  await colony.setFundingRole(1, UINT256_MAX, manager, 1, true);
   await moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, childSkillIndex, 1, expenditure.fundingPotId, totalPayouts, tokenAddress, {
     from: manager,
   });
 
   await colony.setExpenditurePayouts(expenditureId, [0, 1, 2], tokenAddress, [managerPayout, evaluatorPayout, workerPayout], { from: manager });
-  return expenditureId;
-};
 
-exports.setupFinalizedExpenditure = async function setupFinalizedExpenditure({
-  colonyNetwork,
-  colony,
-  token,
-  domainId,
-  manager,
-  evaluator,
-  worker,
-  managerPayout,
-  evaluatorPayout,
-  workerPayout,
-}) {
-  const expenditureId = await exports.setupFundedExpenditure({
-    colonyNetwork,
-    colony,
-    token,
-    domainId,
-    manager,
-    evaluator,
-    worker,
-    managerPayout,
-    evaluatorPayout,
-    workerPayout,
-  });
-
-  await colony.finalizeExpenditure(expenditureId);
   return expenditureId;
 };
 
 exports.setupClaimedExpenditure = async function setupClaimedExpenditure({
   colonyNetwork,
   colony,
-  token,
   domainId,
+  skillId,
   manager,
   evaluator,
   worker,
+  tokenAddress,
   managerPayout,
   evaluatorPayout,
   workerPayout,
 }) {
-  let tokenAddress;
-  if (token === undefined) {
-    tokenAddress = await colony.getToken();
-  } else {
-    tokenAddress = token === ethers.constants.AddressZero ? ethers.constants.AddressZero : token.address;
+  const accounts = await web3GetAccounts();
+  manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
+
+  if (tokenAddress === undefined) {
+    tokenAddress = await colony.getToken(); // eslint-disable-line no-param-reassign
   }
 
-  const expenditureId = await exports.setupFinalizedExpenditure({
+  const expenditureId = await exports.setupFundedExpenditure({
     colonyNetwork,
     colony,
-    token,
     domainId,
+    skillId,
     manager,
     evaluator,
     worker,
+    tokenAddress,
     managerPayout,
     evaluatorPayout,
     workerPayout,
   });
 
+  await colony.finalizeExpenditure(expenditureId, { from: manager });
   await colony.claimExpenditurePayout(expenditureId, 0, tokenAddress);
   await colony.claimExpenditurePayout(expenditureId, 1, tokenAddress);
   await colony.claimExpenditurePayout(expenditureId, 2, tokenAddress);

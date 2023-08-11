@@ -6,7 +6,7 @@ const { ethers } = require("ethers");
 
 const { UINT256_MAX, WAD, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING } = require("../../helpers/constants");
 
-const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFinalizedExpenditure } = require("../../helpers/test-data-generator");
+const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
 const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit } = require("../../helpers/test-helper");
 
 const { expect } = chai;
@@ -374,7 +374,8 @@ contract("Colony Funding", (accounts) => {
 
     it("should not allow funds to be removed from a expenditure with payouts to go", async () => {
       await fundColonyWithTokens(colony, otherToken, INITIAL_FUNDING);
-      const expenditureId = await setupFinalizedExpenditure({ colonyNetwork, colony, token: otherToken });
+      const expenditureId = await setupFundedExpenditure({ colonyNetwork, colony, tokenAddress: otherToken.address });
+      await colony.finalizeExpenditure(expenditureId);
       const expenditure = await colony.getExpenditure(expenditureId);
 
       await checkErrorRevert(
@@ -388,7 +389,8 @@ contract("Colony Funding", (accounts) => {
 
     it("should automatically return surplus funds to the domain", async () => {
       await fundColonyWithTokens(colony, otherToken, WAD.muln(500));
-      const expenditureId = await setupFinalizedExpenditure({ colonyNetwork, colony, token: otherToken });
+      const expenditureId = await setupFundedExpenditure({ colonyNetwork, colony, tokenAddress: otherToken.address });
+      await colony.finalizeExpenditure(expenditureId);
       const expenditure = await colony.getExpenditure(expenditureId);
 
       // Add an extra WAD of funding
@@ -408,7 +410,8 @@ contract("Colony Funding", (accounts) => {
 
       await metaColony.setNetworkFeeInverse(1); // 100% to fees
 
-      const expenditureId = await setupFinalizedExpenditure({ colonyNetwork, colony, token });
+      const expenditureId = await setupFundedExpenditure({ colonyNetwork, colony });
+      await colony.finalizeExpenditure(expenditureId);
 
       const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
       await colony.claimExpenditurePayout(expenditureId, 0, token.address);
