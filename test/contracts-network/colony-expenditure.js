@@ -367,6 +367,11 @@ contract("Colony Expenditure", (accounts) => {
       expect(payout).to.eq.BN(10);
       payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT2, token.address);
       expect(payout).to.eq.BN(20);
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      const fundingPotId = await expenditure.fundingPotId;
+      const fundingPotPayout = await colony.getFundingPotPayout(fundingPotId, token.address);
+      expect(fundingPotPayout).to.eq.BN(30);
     });
 
     it("should not allow owners to update many slot payouts with mismatched arguments", async () => {
@@ -935,6 +940,46 @@ contract("Colony Expenditure", (accounts) => {
 
       const potBalance = await colony.getFundingPotBalance(expenditure.fundingPotId, token.address);
       const potPayout = await colony.getFundingPotPayout(expenditure.fundingPotId, token.address);
+      expect(potBalance).to.be.zero;
+      expect(potPayout).to.be.zero;
+    });
+
+    it("should be able to pay out all recipients if setExpenditurePayouts is used to set recipients", async () => {
+      await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
+      await colony.setExpenditureRecipient(expenditureId, SLOT1, RECIPIENT, { from: ADMIN });
+
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0, SLOT1], token.address, [10, 20], { from: ADMIN });
+
+      let expenditure = await colony.getExpenditure(expenditureId);
+
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        30,
+        token.address
+      );
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+
+      expenditure = await colony.getExpenditure(expenditureId);
+
+      const balanceBefore = await colony.getFundingPotBalance(expenditure.fundingPotId, token.address);
+      await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
+      const balanceAfter = await colony.getFundingPotBalance(expenditure.fundingPotId, token.address);
+      expect(balanceBefore.sub(balanceAfter)).to.eq.BN(10);
+
+      let potBalance = await colony.getFundingPotBalance(expenditure.fundingPotId, token.address);
+      let potPayout = await colony.getFundingPotPayout(expenditure.fundingPotId, token.address);
+      expect(potBalance).to.eq.BN(20);
+      expect(potPayout).to.eq.BN(20);
+
+      await colony.claimExpenditurePayout(expenditureId, SLOT1, token.address);
+      potBalance = await colony.getFundingPotBalance(expenditure.fundingPotId, token.address);
+      potPayout = await colony.getFundingPotPayout(expenditure.fundingPotId, token.address);
       expect(potBalance).to.be.zero;
       expect(potPayout).to.be.zero;
     });
