@@ -73,8 +73,11 @@ contract VotingReputationStaking is VotingReputationStorage {
     motion.stakes[_vote] += amount;
     stakes[_motionId][msgSender()][_vote] = stakerTotalAmount;
 
+    emit MotionStaked(_motionId, msgSender(), _vote, amount);
+
     // Increment counter & extend claim delay if staking for an expenditure state change
     // Note: if the expenditure is already locked, this is a no-op and motion is automatically finalized
+    bool finalized;
     if (
       _vote == YAY &&
       !motion.escalated &&
@@ -82,31 +85,31 @@ contract VotingReputationStaking is VotingReputationStorage {
       motion.altTarget == address(0x0) &&
       isExpenditureSig(motion.sig)
     ) {
-      lockExpenditure(_motionId);
+      finalized = lockExpenditure(_motionId);
     }
 
-    emit MotionStaked(_motionId, msgSender(), _vote, amount);
+    if (!finalized) {
+      // Move to vote submission once both sides are fully staked
+      if (motion.stakes[NAY] == requiredStake && motion.stakes[YAY] == requiredStake) {
+        motion.events[STAKE_END] = uint64(block.timestamp);
+        motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+        motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
-    // Move to vote submission once both sides are fully staked
-    if (motion.stakes[NAY] == requiredStake && motion.stakes[YAY] == requiredStake) {
-      motion.events[STAKE_END] = uint64(block.timestamp);
-      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
-      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
+        emit MotionEventSet(_motionId, STAKE_END);
 
-      emit MotionEventSet(_motionId, STAKE_END);
+      // Move to second staking window once one side is fully staked
+      } else if (
+        (_vote == NAY && motion.stakes[NAY] == requiredStake) ||
+        (_vote == YAY && motion.stakes[YAY] == requiredStake)
+      ) {
+        motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
 
-    // Move to second staking window once one side is fully staked
-    } else if (
-      (_vote == NAY && motion.stakes[NAY] == requiredStake) ||
-      (_vote == YAY && motion.stakes[YAY] == requiredStake)
-    ) {
-      motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
+        // New stake supersedes prior votes
+        delete motion.votes;
+        delete motion.repSubmitted;
 
-      // New stake supersedes prior votes
-      delete motion.votes;
-      delete motion.repSubmitted;
-
-      emit MotionEventSet(_motionId, STAKE_END);
+        emit MotionEventSet(_motionId, STAKE_END);
+      }
     }
 
     // Do the external bookkeeping
@@ -229,7 +232,7 @@ contract VotingReputationStaking is VotingReputationStorage {
 
   // Internal
 
-  function lockExpenditure(uint256 _motionId) internal {
+  function lockExpenditure(uint256 _motionId) internal returns (bool finalized) {
     Motion storage motion = motions[_motionId];
     bytes memory action = getExpenditureAction(motion.action);
     uint256 expenditureId = getExpenditureId(action);
@@ -242,6 +245,7 @@ contract VotingReputationStaking is VotingReputationStorage {
       require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
     } else {
       motion.finalized = true;
+      finalized = true;
 
       emit MotionFinalized(_motionId, motion.action, false);
     }

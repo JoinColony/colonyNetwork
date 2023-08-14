@@ -31,6 +31,7 @@ const {
   expectEvent,
   getTokenArgs,
   getBlockTime,
+  expectNoEvent,
 } = require("../../helpers/test-helper");
 
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
@@ -817,19 +818,23 @@ contract("Voting Reputation", (accounts) => {
       action = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, WAD]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId1 = await voting.getMotionCount();
-      await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      tx = await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await expectNoEvent(tx, "MotionFinalized");
+      await expectEvent(tx, "MotionEventSet", [motionId1, 0]);
 
       action = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, otherToken.address, WAD]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
       tx = await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await expectEvent(tx, "MotionFinalized", [motionId2, action, false]);
+      await expectNoEvent(tx, "MotionEventSet");
 
       action = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 1, token.address, WAD]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId3 = await voting.getMotionCount();
       tx = await voting.stakeMotion(motionId3, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await expectEvent(tx, "MotionFinalized", [motionId3, action, false]);
+      await expectNoEvent(tx, "MotionEventSet");
 
       const expenditureMotionLock = await voting.getExpenditureMotionLock(expenditureId);
       expect(expenditureMotionLock).to.eq.BN(motionId1);
