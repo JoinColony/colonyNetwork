@@ -136,6 +136,53 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     } else {
       fundingPot.payouts[_token] -= payout;
     }
+
+    if (!isExtension(task.roles[_role].user)) {
+      Role storage role = task.roles[_role];
+
+      int256 reputation = getTaskReputation(payout, role.rating, role.rateFail, _token);
+
+      emitReputation(role.user, reputation, domains[task.domainId].skillId);
+      if (_role == uint8(TaskRole.Worker)) {
+        if (role.rateFail) {
+          // If the worker failed to rate, we do not penalise the reputation being earned for the skill in
+          // question, so recalculate it without the penalty.
+          reputation = getTaskReputation(payout, role.rating, false, _token);
+        }
+        int256 nSkills = 0;
+        for (uint256 i = 0; i < task.skills.length; i += 1) {
+          if (task.skills[i] > 0 ) {
+            nSkills += 1;
+          }
+        }
+
+        assert(nSkills > 0);
+
+        int256 reputationPerSkill = reputation / nSkills;
+
+        for (uint256 i = 0; i < task.skills.length; i += 1) {
+          if (task.skills[i] > 0) {
+            emitReputation(role.user, reputationPerSkill, task.skills[i]);
+          }
+        }
+      }
+    }
+  }
+
+  function getTaskReputation(uint256 payout, TaskRatings rating, bool rateFail, address tokenAddress) internal view returns (int256) {
+    assert(rating != TaskRatings.None);
+
+    bool negative = (rating == TaskRatings.Unsatisfactory);
+    uint256 reputation = payout * ((rating == TaskRatings.Excellent) ? 3 : 2);
+
+    if (rateFail) {
+      reputation = negative ? reputation + payout : reputation - payout;
+    }
+
+    uint256 scaleFactor = tokenReputationScalings[tokenAddress]; // NB This is a WAD
+    // We may lose one atom of reputation here :sad:
+
+    return scaleReputation(int256(reputation / 2) * (negative ? int256(-1) : int256(1)), scaleFactor);
   }
 
   /// @notice For owners to update payouts with one token and many slots
@@ -209,8 +256,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     uint256 initialPayout = expenditureSlotPayouts[_id][_slot][_token];
     delete expenditureSlotPayouts[_id][_slot][_token];
 
-    int256 payoutModifier = imin(imax(slot.payoutModifier, MIN_PAYOUT_MODIFIER), MAX_PAYOUT_MODIFIER);
-    uint256 payoutScalar = uint256(payoutModifier + int256(WAD));
+    uint256 payoutScalar = uint256(imax(slot.payoutModifier, MIN_PAYOUT_MODIFIER) + int256(WAD));
 
     uint256 repPayout = wmul(initialPayout, payoutScalar);
     uint256 tokenPayout = min(initialPayout, repPayout);
@@ -221,13 +267,14 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
       fundingPot.payouts[_token] -= tokenSurplus;
     }
 
-    // Process reputation updates if internal token
-    if (_token == token && !isExtension(slot.recipient)) {
-      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-      colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), domains[expenditure.domainId].skillId);
+    // Process reputation updates if relevant for token being paid out
+    if (tokenReputationScalings[_token] > 0 && !isExtension(slot.recipient)) {
+      int256 tokenScaledReputationAmount = scaleReputation(int256(repPayout), tokenReputationScalings[_token]);
+
+      emitReputation(slot.recipient, tokenScaledReputationAmount, domains[expenditure.domainId].skillId);
       if (slot.skills.length > 0 && slot.skills[0] > 0) {
         // Currently we support at most one skill per Expenditure, but this will likely change in the future.
-        colonyNetworkContract.appendReputationUpdateLog(slot.recipient, int256(repPayout), slot.skills[0]);
+        emitReputation(slot.recipient, tokenScaledReputationAmount, slot.skills[0]);
       }
     }
 
@@ -260,6 +307,22 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     Payment storage payment = payments[_id];
     FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
     assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
+
+    if (!isExtension(payment.recipient)) {
+
+      uint256 scaleFactor = tokenReputationScalings[_token]; // NB This is a WAD
+      int256 tokenScaledReputationAmount = scaleReputation(int256(fundingPot.payouts[_token]), scaleFactor);
+
+      // Todo: Is this equality right?
+      if (tokenScaledReputationAmount > 0){
+        emitReputation(payment.recipient, tokenScaledReputationAmount, domains[payment.domainId].skillId);
+        if (payment.skills[0] > 0) {
+          // Currently we support at most one skill per Payment, similarly to Task model.
+          // This may change in future to allow multiple skills to be set on both Tasks and Payments
+          emitReputation(payment.recipient, tokenScaledReputationAmount, payment.skills[0]);
+        }
+      }
+    }
 
     processPayout(payment.fundingPotId, _token, fundingPot.payouts[_token], payment.recipient);
   }

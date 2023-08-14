@@ -20,6 +20,7 @@ pragma solidity 0.8.21;
 import "./../../lib/dappsys/math.sol";
 import "./../colony/IMetaColony.sol";
 import "./../common/CommonStorage.sol";
+import "./../common/MultiChain.sol";
 import "./../common/ERC20Extended.sol";
 import "./ColonyNetworkDataTypes.sol";
 
@@ -27,7 +28,7 @@ import "./ColonyNetworkDataTypes.sol";
 // ignore-file-swc-108
 
 
-contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
+contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, MultiChain {
   // Number of colonies in the network
   uint256 colonyCount; // Storage slot 6
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
@@ -106,6 +107,29 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   // Mining delegation mapping
   mapping(address => address) miningDelegators; // Storage slot 42
 
+  address miningBridgeAddress; // Storage slot 43
+  mapping(address => Bridge) bridgeData; // Storage slot 44
+
+  // A mapping that maps network id -> skill count
+  mapping(uint256 => uint256) networkSkillCounts; // Storage slot 45
+  // A mapping that stores pending bridged skill additions that have been bridged out-of-order
+  // networkId -> skillCount -> parentSkillId
+  mapping(uint256 => mapping(uint256 => uint256)) pendingSkillAdditions; // Storage slot 46
+
+  // A mapping that stores the latest reputation update received from a colony on a particular chain
+  // networkId -> colonyAddress -> updateCount
+  mapping(uint256 => mapping( address => uint256)) reputationUpdateCount; // Storage slot 47
+
+  // A mapping that stores reputation updates that haven't been added to the log yet, either because they've been
+  // received out of order, or because the skill in question hasn't been bridged yet.
+  // networkId -> colonyAddress -> updateCount -> update
+  mapping(uint256 => mapping( address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 48
+
+  // networkId -> colonyAddress -> reputation decay rate
+  // Note that a network Id of 0 here indicates the mining chain
+  mapping(uint256 => mapping(address => ColonyDecayRate)) colonyDecayRates; // Storage slot 49
+
+  // Modifiers
   modifier calledByColony() {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");
     assert(msgSender() == msg.sender);
@@ -127,6 +151,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   // All colonies are able to manage their Local (domain associated) skills
   modifier allowedToAddSkill(bool globalSkill) {
     if (globalSkill) {
+      assert(isMiningChain());
       require(msgSender() == metaColony, "colony-must-be-meta-colony");
     } else {
       require(_isColony[msgSender()] || msgSender() == address(this), "colony-caller-must-be-colony");
@@ -134,8 +159,26 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
     _;
   }
 
-  modifier skillExists(uint skillId) {
+  modifier skillExists(uint256 skillId) {
     require(skillCount >= skillId, "colony-invalid-skill-id");
+    require(isMiningChain() || toChainId(skillId) == getChainId() , "colony-invalid-skill-id");
     _;
   }
+
+  modifier knownBridge(address _bridgeAddress) {
+    require(bridgeData[_bridgeAddress].chainId != 0, "colony-network-not-known-bridge");
+    _;
+  }
+
+  // Internal functions
+
+  function toRootSkillId(uint256 _chainId) internal pure returns (uint256) {
+    require(_chainId <= type(uint128).max, "colony-chain-id-too-large");
+    return _chainId << 128;
+  }
+
+  function toChainId(uint256 _skillId) internal pure returns (uint256) {
+    return _skillId >> 128;
+  }
+
 }

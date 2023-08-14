@@ -58,10 +58,41 @@ interface IMetaColony is IColony {
   /// @param _amount The CLNY awarded per mining cycle to the miners
   function setReputationMiningCycleReward(uint256 _amount) external;
 
+  /// @notice Called to set the total per-cycle reputation scaling factor for the tokens paid out
+  /// @dev Calls the corresponding function on the ColonyNetwork.
+  /// @param _factor The scale factor to apply to reputation mining rewards
+  function setReputationMiningCycleRewardReputationScaling(uint256 _factor) external;
+
   /// @notice Add a new extension/version to the Extensions repository.
   /// @dev Calls `IColonyNetwork.addExtensionToNetwork`.
   /// @dev The extension version is queried from the resolver itself.
   /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param _resolver The deployed resolver containing the extension contract logic
   function addExtensionToNetwork(bytes32 _extensionId, address _resolver) external;
+
+  /// @notice Called to set the details about bridge _bridgeAddress
+  /// @param _bridgeAddress The address of the bridge
+  /// @param _chainId The chainId of the corresponding network
+  /// @param _gas How much gas to use for a bridged transaction
+  /// @param _updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
+  /// @param _updateLogAfter The tx data after the dynamic part of the tx to bridge to the update log
+  /// @param _skillCreationBefore The tx data before the dynamic part of the tx to bridge skill creation
+  /// @param _skillCreationAfter The tx data after the dynamic part of the tx to bridge skill creation
+  /// @param _setReputationRootHashBefore The tx data before the dynamic part of the tx to bridge a new reputation root hash
+  /// @param _setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
+  /// @param _setColonyDecayRateBefore The tx data before the dynamic part of the tx to set a colony's reputation decay rate
+  /// @param _setColonyDecayRateAfter The tx data after the dynamic part of the tx to set a colony's reputation decay rate
+  function setBridgeData(
+    address _bridgeAddress,
+    uint256 _chainId,
+    uint256 _gas,
+    bytes memory _updateLogBefore,
+    bytes memory _updateLogAfter,
+    bytes memory _skillCreationBefore,
+    bytes memory _skillCreationAfter,
+    bytes memory _setReputationRootHashBefore,
+    bytes memory _setReputationRootHashAfter,
+    bytes memory _setColonyDecayRateBefore,
+    bytes memory _setColonyDecayRateAfter
+  ) external;
 }

@@ -19,10 +19,9 @@ pragma solidity 0.8.21;
 
 import "./../ens/ENS.sol";
 import "./ColonyNetworkStorage.sol";
-import "./../common/MultiChain.sol";
 
 
-contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
+contract ColonyNetworkENS is ColonyNetworkStorage {
 
   bytes32 constant USER_HASH = keccak256("user");
   bytes32 constant COLONY_HASH = keccak256("colony");
@@ -152,6 +151,6 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
     } else if (isXdai()) {
       return "joincolony.colonyxdai";
     }
-    require(false, "colony-network-unsupported-network");
+    revert("colony-network-unsupported-network");
   }
 }

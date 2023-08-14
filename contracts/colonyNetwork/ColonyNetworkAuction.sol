@@ -18,10 +18,9 @@
 pragma solidity 0.8.21;
 
 import "./ColonyNetworkStorage.sol";
-import "./../common/MultiChain.sol";
 import "./../common/BasicMetaTransaction.sol";
 
-contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
+contract ColonyNetworkAuction is ColonyNetworkStorage {
   function startTokenAuction(address _token) public
   stoppable
   auth
@@ -39,12 +38,12 @@ contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
     if (_token==clny) {
       // We don't auction CLNY. We just burn it instead.
       // Note we can do this more often than every 30 days.
-      if (isXdai()){
-        // On Xdai, we can't burn bridged tokens
+      if (isMainnet()){
+        ERC20Extended(clny).burn(availableTokens);
+      } else {
+        // Elsewhere, we can't burn bridged tokens
         // so let's send them to the metacolony for now.
         require(ERC20Extended(clny).transfer(metaColony, availableTokens), "colony-network-transfer-failed");
-      } else {
-        ERC20Extended(clny).burn(availableTokens);
       }
       return;
     }

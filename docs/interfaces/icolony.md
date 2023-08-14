@@ -845,6 +845,24 @@ Get the root local skill id
 |---|---|---|
 |rootLocalSkill|uint256|The root local skill id
 
+### ▸ `getSkillReputationScaling(uint256 skillId):uint256 scaleFactor`
+
+Get the reputation scaling applied to reputation earned in a skill in this colony.
+
+*Note: To look up the scaling in a domain, look up the skill corresponding to that domain*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|skillId|uint256|The skill to get the value of scaling in
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|scaleFactor|uint256|Returns the scale factor applied to reputation earned in this skill, as a WAD.
+
 ### ▸ `getTask(uint256 _id):bytes32 specificationHash, bytes32 deliverableHash, TaskStatus status, uint256 dueDate, uint256 fundingPotId, uint256 completionTimestamp, uint256 domainId, uint256[] skillIds`
 
 Get a task with id `_id`
@@ -1000,6 +1018,23 @@ Get the current approval amount
 |Name|Type|Description|
 |---|---|---|
 |amount|uint256|The token approval amount
+
+### ▸ `getTokenReputationScaling(address token):uint256 scaleFactor`
+
+Call to get the reputation scaling applied to payouts made in a particular token
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|token|address|The token we wish to query
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|scaleFactor|uint256|The amount of scaling to applied as a WAD.
 
 ### ▸ `getTotalTokenApproval(address token):uint256 amount`
 
@@ -1446,6 +1481,19 @@ Update the default global claim delay for expenditures
 |_globalClaimDelay|uint256|The new default global claim delay
 
 
+### ▸ `setDomainReputationScaling(uint256 domainId, uint256 scaleFactor)`
+
+Call to set the reputation scaling applied to reputation earned in a domain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainId|uint256|The domain to set the value of scaling in
+|scaleFactor|uint256|The scale factor to apply, as a WAD
+
+
 ### ▸ `setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)`
 
 Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
@@ -1727,6 +1775,19 @@ Sets the skill on an existing payment. Secured function to authorised members.
 |_skillId|uint256|Id of the new skill to set
 
 
+### ▸ `setReputationDecayRate(uint256 numerator, uint256 denominator)`
+
+Call to set the rate at which reputation in this colony decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
+
+
 ### ▸ `setRewardInverse(uint256 _rewardInverse)`
 
 Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100.
@@ -1876,6 +1937,19 @@ Assigning worker role. Can only be set if there is no one currently assigned to 
 |---|---|---|
 |_id|uint256|Id of the task
 |_user|address|Address of the user we want to give a worker role to
+
+
+### ▸ `setTokenReputationScaling(address token, uint256 scaleFactor)`
+
+Call to set the reputation scaling applied to payouts made in a particular token
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|token|address|The token we wish to apply scaling to
+|scaleFactor|uint256|The amount of scaling to apply, as a WAD. Users will earn payout*scaleFactor reputation.
 
 
 ### ▸ `setUserRoles(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bytes32 _roles)`

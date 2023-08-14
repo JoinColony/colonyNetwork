@@ -21,7 +21,7 @@ const {
   getTokenArgs,
 } = require("../../helpers/test-helper");
 const {
-  setupFinalizedTask,
+  setupClaimedTask,
   giveUserCLNYTokensAndStake,
   fundColonyWithTokens,
   setupRandomColony,
@@ -192,6 +192,11 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.setPayoutWhitelist(ADDRESS_ZERO, true), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.claimMiningReward(ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.startTokenAuction(ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.bridgeSkill(1), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.bridgePendingReputationUpdate(ADDRESS_ZERO, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.addReputationUpdateLogFromBridge(ADDRESS_ZERO, ADDRESS_ZERO, 0, 0, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.addPendingReputationUpdate(0, ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setColonyReputationDecayRate(1, 1), "colony-in-recovery-mode");
 
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
@@ -389,7 +394,7 @@ contract("Colony Network Recovery", (accounts) => {
           await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
 
           await fundColonyWithTokens(metaColony, clny);
-          await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+          await setupClaimedTask({ colonyNetwork, colony: metaColony });
 
           await client.saveCurrentState();
           const startingHash = await client.getRootHash();

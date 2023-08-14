@@ -36,6 +36,49 @@ Add a new extension resolver to the Extensions repository.
 |_resolver|address|The deployed resolver containing the extension contract logic
 
 
+### ▸ `addPendingReputationUpdate(uint256 _chainId, address _colony)`
+
+Try to emit the next reputation update that was bridged but previously failed, if any
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId the update was bridged from
+|_colony|address|The colony being queried
+
+
+### ▸ `addPendingSkill(address _bridgeAddress, uint256 _skillId)`
+
+Called to add a bridged skill that wasn't next when it was bridged, but now is
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_bridgeAddress|address|The address of the bridge we're bridging from
+|_skillId|uint256|The skillId of the skill being bridged
+
+
+### ▸ `addReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId, uint256 _updateNumber)`
+
+Adds a reputation update entry to log.
+
+*Note: Errors if it is called by anyone but a known bridge*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colony|address|The colony the reputation is being awarded in
+|_user|address|The address of the user for the reputation update
+|_amount|int|The amount of reputation change for the update, this can be a negative as well as a positive value
+|_skillId|uint|The skill for the reputation update
+|_updateNumber|uint256|The counter used for ordering bridged updates
+
+
 ### ▸ `addSkill(uint256 _parentSkillId):uint256 _skillId`
 
 Adds a new skill to the global or local skills tree, under skill `_parentSkillId`. Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`. Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`.
@@ -53,6 +96,19 @@ Adds a new skill to the global or local skills tree, under skill `_parentSkillId
 |Name|Type|Description|
 |---|---|---|
 |_skillId|uint256|Id of the added skill
+
+### ▸ `addSkillFromBridge(uint256 _parentSkillId, uint256 _skillCount)`
+
+Function called by bridge transactions to add a new skill
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_parentSkillId|uint256|The parent id of the new skill
+|_skillCount|uint256|The number of the new skill being created
+
 
 ### ▸ `addr(bytes32 _node):address _address`
 
@@ -73,7 +129,7 @@ Returns the address the supplied node resolves do, if we are the resolver.
 
 ### ▸ `appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId)`
 
-Adds a reputation update entry to log.
+Adds a reputation update entry to the log.
 
 *Note: Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or.*
 
@@ -84,6 +140,43 @@ Adds a reputation update entry to log.
 |_user|address|The address of the user for the reputation update
 |_amount|int256|The amount of reputation change for the update, this can be a negative as well as a positive value
 |_skillId|uint256|The skill for the reputation update
+
+
+### ▸ `bridgeCurrentRootHash(address bridgeAddress)`
+
+Initiate a cross-chain update of the current reputation state
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|bridgeAddress|address|The bridge we're going over
+
+
+### ▸ `bridgePendingReputationUpdate(address _colony, uint256 _updateNumber)`
+
+Try to bridge a reputation update that (previously) failed
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colony|address|The colony being queried
+|_updateNumber|uint256|the emission index to bridge
+
+
+### ▸ `bridgeSkill(uint256 skillId)`
+
+Called to re-send the bridging transaction for a skill to the
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|skillId|uint256|The skillId we're bridging the creation of
 
 
 ### ▸ `burnUnneededRewards(uint256 _amount)`
@@ -332,6 +425,76 @@ Set deprecation status for a skill
 |---|---|---|
 |_changed|bool|Whether the deprecated state was changed
 
+### ▸ `getAllSkillParents(uint256 _skillId):uint256[] parents`
+
+Called to get an array containing all parent skill ids of a skill
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill id being queried
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|parents|uint256[]|An array containing the ids of all parent skills
+
+### ▸ `getBridgeData(address _bridgeAddress):Bridge bridge`
+
+Called to get the details about known bridge _bridgeAddress
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_bridgeAddress|address|The address of the bridge
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|bridge|Bridge|The bridge data
+
+### ▸ `getBridgedReputationUpdateCount(uint256 _chainId, address _colony):uint256 bridgedReputationCount`
+
+Get the (currently bridged) reputation update count of a chain
+
+*Note:  On the non-mining chain, this tracks the number of reputation updates that have either been bridged, or attempted to be bridged (and failed, and are now pending bridging). On the mining chain, it tracks how many have been successfully bridged and added to the log.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainid of the chain
+|_colony|address|The colony being queried
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|bridgedReputationCount|uint256|The bridge reputation count of the corresponding chain
+
+### ▸ `getBridgedSkillCounts(uint256 _chainId):uint256 skillCount`
+
+Get the (currently bridged) skill count of another chain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainid of foreign chain
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|skillCount|uint256|The skillCount of the corresponding chain
+
 ### ▸ `getChildSkillId(uint256 _skillId, uint256 _childSkillIndex):uint256 _childSkillId`
 
 Get the id of the child skill at index `_childSkillIndex` for skill with Id `_skillId`.
@@ -378,6 +541,25 @@ Get the number of colonies in the network.
 |Name|Type|Description|
 |---|---|---|
 |_count|uint256|The colony count
+
+### ▸ `getColonyReputationDecayRate(uint256 _chainId, address _colony):uint256 numerator, uint256 denominator`
+
+Called to get the rate at which reputation in a colony decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId the colony is deployed on
+|_colony|address|The address of the colony in question
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
 
 ### ▸ `getColonyVersionResolver(uint256 _version):address _resolverAddress`
 
@@ -480,6 +662,18 @@ Get the Meta Colony address.
 |---|---|---|
 |_colonyAddress|address|The Meta colony address, if no colony was found, returns 0x0
 
+### ▸ `getMiningBridgeAddress():address bridge`
+
+Called to get the next bridge in the list after bridge _bridgeAddress
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|bridge|address|The address of the bridge to the mining chain, if set
+
 ### ▸ `getMiningDelegator(address _delegate):address _delegator`
 
 Called to get the address _delegate is allowed to mine for
@@ -560,6 +754,43 @@ Get a token's status in the payout whitelist
 |Name|Type|Description|
 |---|---|---|
 |_status|bool|Will be `true` if token is whitelisted
+
+### ▸ `getPendingReputationUpdate(uint256 _chainId, address _colony, uint256 _updateNumber):PendingReputationUpdate update`
+
+Get the details of a reputation update that was bridged but was not added to the log because it was bridged out of order
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId the update was bridged from
+|_colony|address|The colony being queried
+|_updateNumber|uint256|the updatenumber being queries
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|update|PendingReputationUpdate|The update stored for that chain/colony/updateNumber
+
+### ▸ `getPendingSkillAddition(uint256 _chainId, uint256 _skillCount):uint256 parentId`
+
+Called to get the information about a skill that has been bridged out of order
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId we're bridging from
+|_skillCount|uint256|The skill count
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|parentId|uint256|The parent id of the skill being added
 
 ### ▸ `getProfileDBAddress(bytes32 _node):string _orbitdb`
 
@@ -867,6 +1098,55 @@ Used to track that a user is eligible to claim a reward
 |_amount|uint256|The amount of CLNY to be awarded
 
 
+### ▸ `setBridgeData(address _bridgeAddress, uint256 _chainId, uint256 _gas, bytes memory _updateLogBefore, bytes memory _updateLogAfter, bytes memory _skillCreationBefore, bytes memory _skillCreationAfter, bytes memory _setReputationRootHashBefore, bytes memory _setReputationRootHashAfter, bytes memory _setColonyDecayRateBefore, bytes memory _setColonyDecayRateAfter)`
+
+Called to set the details about bridge _bridgeAddress
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_bridgeAddress|address|The address of the bridge
+|_chainId|uint256|The chainId of the corresponding network
+|_gas|uint256|How much gas to use for a bridged transaction
+|_updateLogBefore|bytes|The tx data before the dynamic part of the tx to bridge to the update log
+|_updateLogAfter|bytes|The tx data after the dynamic part of the tx to bridge to the update log
+|_skillCreationBefore|bytes|The tx data before the dynamic part of the tx to brdige skill creation
+|_skillCreationAfter|bytes|The tx data after the dynamic part of the tx to brdige skill creation
+|_setReputationRootHashBefore|bytes|The tx data before the dynamic part of the tx to bridge a new reputation root hash
+|_setReputationRootHashAfter|bytes|The tx data after the dynamic part of the tx to bridge a new reputation root hash
+|_setColonyDecayRateBefore|bytes|The tx data before the dynamic part of the tx to set a colony's reputation decay rate
+|_setColonyDecayRateAfter|bytes|The tx data after the dynamic part of the tx to set a colony's reputation decay rate
+
+
+### ▸ `setColonyReputationDecayRate(uint256 _numerator, uint256 _denominator)`
+
+Called by a colony to set the rate at which reputation in that colony decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|_denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
+
+
+### ▸ `setColonyReputationDecayRateFromBridge(address _colony, uint256 _numerator, uint256 _denominator)`
+
+Called by a bridge to set the rate at which reputation in a colony on the chain corresponding to that bridge decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colony|address|The colony on the chain in question
+|_numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|_denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
+
+
 ### ▸ `setFeeInverse(uint256 _feeInverse)`
 
 Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as `_feeInverse`.
@@ -962,6 +1242,20 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |_newHash|bytes32|The reputation root hash
 |_newNLeaves|uint256|The updated leaves count value
 |_stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
+
+
+### ▸ `setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves)`
+
+Update the reputation on a foreign chain from the mining chain
+
+*Note: Should error if called by anyone other than the known bridge from the mining chain*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|newHash|bytes32|The new root hash
+|newNLeaves|uint256|The new nLeaves in the root hash
 
 
 ### ▸ `setTokenLocking(address _tokenLockingAddress)`

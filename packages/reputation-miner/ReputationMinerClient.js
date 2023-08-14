@@ -392,7 +392,7 @@ class ReputationMinerClient {
         // Let's process the reputation log if it's been this._processingDelay blocks
         if (this.blocksSinceCycleCompleted < this._processingDelay) {
           this.blocksSinceCycleCompleted += 1;
-		      if (this.blocksSinceCycleCompleted === 1) {
+          if (this.blocksSinceCycleCompleted === 1) {
             this._adapter.log(`⏰ Waiting for ${this._processingDelay} blocks before processing next log`)
           };
           this.endDoBlockChecks();

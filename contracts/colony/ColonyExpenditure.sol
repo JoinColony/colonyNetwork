@@ -175,7 +175,6 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureOnlyOwner(_id)
   {
     require(_slots.length == _skillIds.length, "colony-expenditure-bad-slots");
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
 
     for (uint256 i; i < _slots.length; i++) {
       require(isValidGlobalOrLocalSkill(_skillIds[i]), "colony-not-valid-global-or-local-skill");
@@ -214,6 +213,7 @@ contract ColonyExpenditure is ColonyStorage {
     require(_slots.length == _payoutModifiers.length, "colony-expenditure-bad-slots");
 
     for (uint256 i; i < _slots.length; i++) {
+      require(_payoutModifiers[i] <= 0, "colony-expenditure-bad-payout-modifier");
       expenditureSlots[_id][_slots[i]].payoutModifier = _payoutModifiers[i];
 
       emit ExpenditurePayoutModifierSet(msgSender(), _id, _slots[i], _payoutModifiers[i]);
@@ -316,14 +316,14 @@ contract ColonyExpenditure is ColonyStorage {
       // Validate payout modifier
       if (offset == 2) {
         require(
-          int256(uint256(_value)) <= MAX_PAYOUT_MODIFIER &&
+          (int256(uint256(_value)) <= 0 || IColony(address(this)).hasUserRole(msgSender(), 1, ColonyRole.Root)) &&
           int256(uint256(_value)) >= MIN_PAYOUT_MODIFIER,
           "colony-expenditure-bad-payout-modifier"
         );
       }
 
     } else {
-      require(false, "colony-expenditure-bad-slot");
+      revert("colony-expenditure-bad-slot");
     }
 
     executeStateChange(keccak256(abi.encode(_id, _storageSlot)), _mask, _keys, _value);
@@ -361,11 +361,11 @@ contract ColonyExpenditure is ColonyStorage {
     internal
   {
     for (uint256 i; i < _tokens.length; i++) {
-      (bool success, bytes memory returndata) = address(this).delegatecall(
+      (bool success, bytes memory returndata) = address(this).delegatecall( // solhint-disable-line avoid-low-level-calls
         abi.encodeWithSignature("setExpenditurePayouts(uint256,uint256[],address,uint256[])", _id, _slots[i], _tokens[i], _values[i])
       );
       if (!success) {
-        if (returndata.length == 0) revert();
+        if (returndata.length == 0) revert("colony-expenditure-null-return");
         assembly {
           revert(add(32, returndata), mload(returndata))
         }

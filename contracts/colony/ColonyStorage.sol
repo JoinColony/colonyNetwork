@@ -19,6 +19,7 @@ pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
 import "./../../lib/dappsys/math.sol";
+import "./../common/ScaleReputation.sol";
 import "./../common/CommonStorage.sol";
 import "./../common/ERC20Extended.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
@@ -31,7 +32,7 @@ import "./ColonyDataTypes.sol";
 // ignore-file-swc-108
 
 
-contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage {
+contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage, ScaleReputation {
   uint256 constant COLONY_NETWORK_SLOT = 6;
   uint256 constant ROOT_LOCAL_SKILL_SLOT = 36;
 
@@ -110,6 +111,11 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   uint256 rootLocalSkill; // Storage slot 36
   mapping (uint256 => bool) localSkills; // Storage slot 37
+
+  mapping(address => uint256) tokenReputationScalings; // Storage slot 38
+
+  // This mapping stores the complement of the reputation scaling factor. So the scaling factor is WAD-reputationScalingFactorComplement
+  mapping(uint256 => uint256) skillReputationScalingComplements; // Storage slot 39
 
   // Constants
 
@@ -357,5 +363,28 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
               // call(g,     a,  v,     in,              insize,      out, outsize)
       success := call(gas(), to, value, add(data, 0x20), mload(data), 0, 0)
     }
+  }
+
+  function getSkillReputationScaling(uint256 _skillId) public view returns (uint256) {
+    uint256 factor = WAD - skillReputationScalingComplements[_skillId];
+
+    uint256[] memory allParents = IColonyNetwork(colonyNetworkAddress).getAllSkillParents(_skillId);
+    uint256 count;
+
+    while (count < allParents.length && factor > 0) {
+      factor = wmul(factor, WAD - skillReputationScalingComplements[allParents[count]]);
+      count +=1;
+    }
+
+    return factor;
+  }
+
+  function emitReputation(address _user, int256 _amount, uint256 _skillId) internal {
+    uint256 scaleFactor = getSkillReputationScaling(_skillId);
+    if (scaleFactor == 0) { return; }
+
+    int256 scaledAmount = scaleReputation(_amount, scaleFactor);
+
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, scaledAmount, _skillId);
   }
 }

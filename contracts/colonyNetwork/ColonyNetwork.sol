@@ -19,12 +19,14 @@ pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
 import "./../common/BasicMetaTransaction.sol";
+import "./../common/ScaleReputation.sol";
 import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./ColonyNetworkStorage.sol";
 import "./../common/Multicall.sol";
+import "./../colony/ColonyDataTypes.sol";
 
 
-contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall {
+contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall, ScaleReputation {
 
   function isColony(address _colony) public view returns (bool) {
     return _isColony[_colony];
@@ -56,6 +58,17 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
 
   function getSkill(uint256 _skillId) public view returns (Skill memory skill) {
     skill = skills[_skillId];
+  }
+
+  function getAllSkillParents(uint256 _skillId) public view returns (uint256[] memory){
+    Skill storage skill = skills[_skillId];
+    uint[] memory allParents = new uint256[](skill.nParents);
+    for (uint256 count = 0; count < allParents.length; count += 1) {
+      allParents[count] = skill.parents[0];
+      skill = skills[skill.parents[0]];
+    }
+
+    return allParents;
   }
 
   function getReputationRootHash() public view returns (bytes32) {
@@ -111,130 +124,15 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     colonyVersionResolver[_version] = _resolver;
     currentColonyVersion = _version;
 
+    if (!isMiningChain()){
+      skillCount = toRootSkillId(getChainId());
+    }
+
     emit ColonyNetworkInitialised(_resolver);
   }
 
   function getColony(uint256 _id) public view returns (address) {
     return colonies[_id];
-  }
-
-  function addSkill(uint _parentSkillId) public stoppable
-  skillExists(_parentSkillId)
-  allowedToAddSkill(_parentSkillId == 0)
-  returns (uint256)
-  {
-    skillCount += 1;
-
-    Skill storage parentSkill = skills[_parentSkillId];
-    // Global and local skill trees are kept separate
-    require(_parentSkillId == 0 || !parentSkill.globalSkill, "colony-global-and-local-skill-trees-are-separate");
-
-    Skill memory s;
-    if (_parentSkillId != 0) {
-
-      s.nParents = parentSkill.nParents + 1;
-      skills[skillCount] = s;
-
-      uint parentSkillId = _parentSkillId;
-      bool notAtRoot = true;
-      uint powerOfTwo = 1;
-      uint treeWalkingCounter = 1;
-
-      // Walk through the tree parent skills up to the root
-      while (notAtRoot) {
-        // Add the new skill to each parent children
-        parentSkill.children.push(skillCount);
-        parentSkill.nChildren += 1;
-
-        // When we are at an integer power of two steps away from the newly added skill (leaf) node,
-        // add the current parent skill to the new skill's parents array
-        if (treeWalkingCounter == powerOfTwo) {
-          // slither-disable-next-line controlled-array-length
-          skills[skillCount].parents.push(parentSkillId);
-          powerOfTwo = powerOfTwo*2;
-        }
-
-        // Check if we've reached the root of the tree yet (it has no parents)
-        // Otherwise get the next parent
-        if (parentSkill.nParents == 0) {
-          notAtRoot = false;
-        } else {
-          parentSkillId = parentSkill.parents[0];
-          parentSkill = skills[parentSkill.parents[0]];
-        }
-
-        treeWalkingCounter += 1;
-      }
-    } else {
-      // Add a global skill
-      s.globalSkill = true;
-      skills[skillCount] = s;
-    }
-
-    emit SkillAdded(skillCount, _parentSkillId);
-    return skillCount;
-  }
-
-  function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
-    return ascendSkillTree(_skillId, _parentSkillIndex + 1);
-  }
-
-  function getChildSkillId(uint _skillId, uint _childSkillIndex) public view returns (uint256) {
-    if (_childSkillIndex == UINT256_MAX) {
-      return _skillId;
-    } else {
-      Skill storage skill = skills[_skillId];
-      require(_childSkillIndex < skill.children.length, "colony-network-out-of-range-child-skill-index");
-      return skill.children[_childSkillIndex];
-    }
-  }
-
-  function deprecateSkill(uint256 _skillId, bool _deprecated) public stoppable
-  allowedToAddSkill(skills[_skillId].nParents == 0)
-  returns (bool)
-  {
-    bool changed = skills[_skillId].deprecated != _deprecated;
-    skills[_skillId].deprecated = _deprecated;
-    return changed;
-  }
-
-  /// @notice @deprecated
-  function deprecateSkill(uint256 _skillId) public stoppable {
-    deprecateSkill(_skillId, true);
-  }
-
-  function initialiseRootLocalSkill() public
-  stoppable
-  calledByColony
-  returns (uint256)
-  {
-    return skillCount++;
-  }
-
-  function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public
-  stoppable
-  calledByColony
-  skillExists(_skillId)
-  {
-    if (_amount == 0 || _user == address(0x0)) {
-      // We short-circut amount=0 as it has no effect to save gas, and we ignore Address Zero because it will
-      // mess up the tracking of the total amount of reputation in a colony, as that's the key that it's
-      // stored under in the patricia/merkle tree. Colonies can still pay tokens out to it if they want,
-      // it just won't earn reputation.
-      return;
-    }
-
-    uint128 nParents = skills[_skillId].nParents;
-    // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
-    uint128 nChildren = _amount < 0 ? skills[_skillId].nChildren : 0;
-    IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(
-      _user,
-      _amount,
-      _skillId,
-      msgSender(),
-      nParents,
-      nChildren
-    );
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view { // solhint-disable-line no-empty-blocks
@@ -269,6 +167,84 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     return payoutWhitelist[_token];
   }
 
+  function setColonyReputationDecayRate(uint256 _numerator, uint256 _denominator) public stoppable calledByColony {
+    require(_numerator < 10**15, "colony-network-decay-numerator-too-big");
+    require(_numerator <= _denominator, "colony-network-decay-rate-over-1");
+
+    if (isMiningChain()){
+      setColonyReputationDecayRateInternal(0, msgSender(), _numerator, _denominator);
+    } else {
+      bridgeColonyDecayRate(_numerator, _denominator);
+    }
+  }
+
+  function bridgeColonyDecayRate(uint256 _numerator, uint256 _denominator) internal {
+    // Build the transaction we're going to send to the bridge to register the
+    // new colony decay rate on the home chain
+
+    bytes memory payload = abi.encodePacked(
+      bridgeData[miningBridgeAddress].setColonyDecayRateBefore,
+      abi.encodeWithSignature("setColonyReputationDecayRateFromBridge(address,uint256,uint256)", msgSender(), _numerator, _denominator),
+      bridgeData[miningBridgeAddress].setColonyDecayRateAfter
+    );
+
+    // Send bridge transaction
+    // slither-disable-next-line unchecked-lowlevel
+    (bool success, ) = miningBridgeAddress.call(payload);
+    require(success, "colony-network-bridging-transaction-failed");
+  }
+
+  function setColonyReputationDecayRateFromBridge(address _colony, uint256 _numerator, uint256 _denominator) public always
+    knownBridge(msgSender())
+    onlyMiningChain
+ {
+    setColonyReputationDecayRateInternal(bridgeData[msgSender()].chainId, _colony, _numerator, _denominator);
+  }
+
+  function setColonyReputationDecayRateInternal(uint256 _chainId, address _colony, uint256 _numerator, uint256 _denominator) internal {
+    ColonyDecayRate storage decayRate = colonyDecayRates[_chainId][_colony];
+
+    if (activeReputationMiningCycle != decayRate.afterMiningCycle) {
+      // Move the old-next values to current, as they are in effect
+      decayRate.currentNumerator = decayRate.nextNumerator;
+      decayRate.currentDenominator = decayRate.nextDenominator;
+
+      // Update afterMiningCycle
+      decayRate.afterMiningCycle = activeReputationMiningCycle;
+    }
+
+    // Whether we've updated the current decays rates or not, we update the next values
+    decayRate.nextNumerator = _numerator;
+    decayRate.nextDenominator = _denominator;
+
+    emit ColonyReputationDecayRateToChange(_chainId, _colony, activeReputationMiningCycle, _numerator, _denominator);
+  }
+
+  function getColonyReputationDecayRate(uint256 _chainId, address _colony) public view returns (uint256, uint256) {
+    uint256 numerator;
+    uint256 denominator;
+
+    uint256 chainId = _chainId;
+    if (isMiningChainId(_chainId)){
+      chainId = 0;
+    }
+
+    if (activeReputationMiningCycle != colonyDecayRates[chainId][_colony].afterMiningCycle) {
+      // Then the values of interest is whatever's in nextNumerator/nextDenominator
+      numerator = colonyDecayRates[chainId][_colony].nextNumerator;
+      denominator = colonyDecayRates[chainId][_colony].nextDenominator;
+    } else {
+      numerator = colonyDecayRates[chainId][_colony].currentNumerator;
+      denominator = colonyDecayRates[chainId][_colony].currentDenominator;
+    }
+
+    if (denominator == 0) {
+      // Then we return the 'default' decay rate
+      (numerator, denominator) = IReputationMiningCycle(activeReputationMiningCycle).getDecayConstant();
+    }
+    return (numerator, denominator);
+  }
+
   function incrementMetatransactionNonce(address _user) override internal {
     // We need to protect the metatransaction nonce slots, otherwise those with recovery
     // permissions could replay metatransactions, which would be a disaster.
@@ -277,20 +253,5 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     uint256 slot = uint256(keccak256(abi.encode(uint256(uint160(_user)), uint256(METATRANSACTION_NONCES_SLOT))));
     protectSlot(slot);
     metatransactionNonces[_user] += 1;
-  }
-
-  function ascendSkillTree(uint _skillId, uint _parentSkillNumber) internal view returns (uint256) {
-    if (_parentSkillNumber == 0) {
-      return _skillId;
-    }
-
-    Skill storage skill = skills[_skillId];
-    for (uint256 i; i < skill.parents.length; i++) {
-      if (2**(i+1) > _parentSkillNumber) {
-        uint _newSkillId = skill.parents[i];
-        uint _newParentSkillNumber = _parentSkillNumber - 2**i;
-        return ascendSkillTree(_newSkillId, _newParentSkillNumber);
-      }
-    }
   }
 }

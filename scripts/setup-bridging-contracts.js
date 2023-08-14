@@ -118,6 +118,8 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   await homeBridge.deployTransaction.wait();
 
   // Start the bridge service
+  console.log(`Home RPC Url: ${homeRpcUrl}`);
+  console.log(`Foreign RPC Url: ${foreignRpcUrl}`);
   const bridgeMonitor = new MockBridgeMonitor(homeRpcUrl, foreignRpcUrl, homeBridge.address, foreignBridge.address); // eslint-disable-line no-unused-vars
   console.log(`Home bridge address: ${homeBridge.address}`);
   console.log(`Foreign bridge address: ${foreignBridge.address}`);

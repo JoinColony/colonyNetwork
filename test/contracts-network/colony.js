@@ -16,7 +16,15 @@ const {
   WAD,
   ADDRESS_ZERO,
 } = require("../../helpers/constants");
-const { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } = require("../../helpers/test-helper");
+const {
+  getTokenArgs,
+  web3GetBalance,
+  checkErrorRevert,
+  expectNoEvent,
+  expectAllEvents,
+  expectEvent,
+  advanceMiningCycleNoContest,
+} = require("../../helpers/test-helper");
 const { makeTask, setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -448,6 +456,162 @@ contract("Colony", (accounts) => {
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, amount.divn(2), token.address);
 
       await checkErrorRevert(colony.burnTokens(token.address, amount), "colony-not-enough-tokens");
+    });
+  });
+
+  describe("should allow the decay rate in a colony to be set", async () => {
+    it("non-root users cannot set decay rate", async () => {
+      await checkErrorRevert(colony.setReputationDecayRate(1, 1, { from: USER1 }), "ds-auth-unauthorized");
+    });
+
+    it("should emit an event when the decay rate is set", async () => {
+      const tx = await colony.setReputationDecayRate(1, 1, { from: USER0 });
+      const activeReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
+
+      await expectEvent(tx, "ColonyReputationDecayRateToChange(uint256,address,address,uint256,uint256)", [
+        0,
+        colony.address,
+        activeReputationMiningCycleAddress,
+        1,
+        1,
+      ]);
+    });
+
+    it("a colony that hasn't had the decay rate explicitly set returns the default decay rate", async () => {
+      const decayRate = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
+
+      // Get default decay rate from mining cycle
+      const activeReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
+      const activeReputationMiningCycle = await IReputationMiningCycle.at(activeReputationMiningCycleAddress);
+      const decayRate2 = await activeReputationMiningCycle.getDecayConstant();
+
+      expect(decayRate.numerator).to.eq.BN(decayRate2.numerator);
+      expect(decayRate.denominator).to.eq.BN(decayRate2.denominator);
+    });
+
+    it("when a colony's decay rate is set, it only takes effect once a mining cycle is completed", async () => {
+      const decayRate = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
+      await colony.setReputationDecayRate(1, 2, { from: USER0 });
+      let decayRate2 = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
+
+      expect(decayRate.numerator).to.eq.BN(decayRate2.numerator);
+      expect(decayRate.denominator).to.eq.BN(decayRate2.denominator);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+      decayRate2 = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
+
+      expect(decayRate2.numerator).to.eq.BN(1);
+      expect(decayRate2.denominator).to.eq.BN(2);
+    });
+
+    it("a colony's decay rate is set, it cannot be set to an invalid value", async () => {
+      await checkErrorRevert(colony.setReputationDecayRate(2, 1, { from: USER0 }), "colony-network-decay-rate-over-1");
+      await checkErrorRevert(
+        colony.setReputationDecayRate("1000000000000000000", "1000000000000000000", { from: USER0 }),
+        "colony-network-decay-numerator-too-big"
+      );
+    });
+
+    it("a colony can return to following the default decay rate", async () => {
+      await colony.setReputationDecayRate(1, 2, { from: USER0 });
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      let decayRate = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
+      expect(decayRate.numerator).to.eq.BN(1);
+      expect(decayRate.denominator).to.eq.BN(2);
+
+      // Get default decay rate from mining cycle
+      const activeReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
+      const activeReputationMiningCycle = await IReputationMiningCycle.at(activeReputationMiningCycleAddress);
+      const defaultDecay = await activeReputationMiningCycle.getDecayConstant();
+
+      await colony.setReputationDecayRate(0, 0); // Special call to reset to follow default rate
+      decayRate = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
+      // Check hasn't changed yet
+      expect(decayRate.numerator).to.eq.BN(1);
+      expect(decayRate.denominator).to.eq.BN(2);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+      decayRate = await colonyNetwork.getColonyReputationDecayRate(0, colony.address);
+      expect(decayRate.numerator).to.eq.BN(defaultDecay.numerator);
+      expect(decayRate.denominator).to.eq.BN(defaultDecay.denominator);
+    });
+  });
+
+  describe("when setting the domain reputation scaling factor", async () => {
+    it("cannot set scale factor for a domain that does not exist", async () => {
+      await checkErrorRevert(colony.setDomainReputationScaling(UINT256_MAX, WAD.divn(2)), "colony-domain-does-not-exist");
+    });
+
+    it("cannot set scale factor to larger than 1", async () => {
+      await checkErrorRevert(colony.setDomainReputationScaling(1, WAD.muln(2)), "colony-network-invalid-reputation-scale-factor");
+    });
+
+    it("non-root users cannot set domain scale factor", async () => {
+      await checkErrorRevert(colony.setDomainReputationScaling(1, WAD.muln(2), { from: USER1 }), "ds-auth-unauthorized");
+    });
+
+    it("the domain reputation scaling factor can be removed", async () => {
+      await colony.setDomainReputationScaling(1, WAD.divn(2));
+      const domain = await colony.getDomain(1);
+
+      let scaleFactor = await colony.getSkillReputationScaling(domain.skillId);
+      expect(scaleFactor).to.be.eq.BN(WAD.divn(2));
+
+      await colony.setDomainReputationScaling(1, WAD);
+
+      scaleFactor = await colony.getSkillReputationScaling(domain.skillId);
+      expect(scaleFactor).to.be.eq.BN(WAD);
+    });
+
+    it("an event is emitted when reputation scaling is changed", async () => {
+      const tx = await colony.setDomainReputationScaling(1, WAD.divn(2));
+      await expectEvent(tx, "DomainReputationScalingSet(uint256,uint256)", [1, WAD.divn(2)]);
+    });
+  });
+
+  describe("when setting the token reputation scaling factor", async () => {
+    it("can read the reputation rate for a token", async () => {
+      const rate = await colony.getTokenReputationScaling(token.address);
+      expect(rate).to.eq.BN(WAD);
+    });
+
+    it("can set the reputation rate for more than ten tokens", async () => {
+      for (let i = 1; i <= 11; i += 1) {
+        await colony.setTokenReputationScaling(ethers.utils.hexZeroPad(ethers.BigNumber.from(i).toHexString(), 20), WAD.subn(i));
+      }
+    });
+
+    it("can remove tokens that award reputation", async () => {
+      let i = ethers.BigNumber.from(1);
+      while (i < 10) {
+        await colony.setTokenReputationScaling(ethers.utils.hexZeroPad(i.toHexString(), 20), WAD.subn(i.toNumber()));
+        i = i.add(1);
+      }
+
+      let res = await colony.getTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20));
+      expect(res).to.eq.BN(WAD.subn(2));
+
+      await colony.setTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20), 0);
+
+      res = await colony.getTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20));
+      expect(res).to.eq.BN(0);
+    });
+
+    it("can update the weight of tokens on the list", async () => {
+      let i = ethers.BigNumber.from(1);
+      while (i < 10) {
+        await colony.setTokenReputationScaling(ethers.utils.hexZeroPad(i.toHexString(), 20), WAD.subn(i.toNumber()));
+        i = i.add(1);
+      }
+
+      let res = await colony.getTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20));
+      expect(res).to.be.eq.BN(WAD.subn(2));
+
+      await colony.setTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20), 100);
+
+      res = await colony.getTokenReputationScaling(ethers.utils.hexZeroPad("0x02", 20));
+      expect(res).to.be.eq.BN(100);
     });
   });
 });

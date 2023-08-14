@@ -349,6 +349,12 @@ interface ColonyDataTypes {
 
   event ArbitraryTransaction(address target, bytes data, bool success);
 
+  event DomainReputationScalingSet(uint256 domainId, uint256 factor);
+
+  /// @notice Event logged when the reputation scaling factor for miners is set
+  /// @param factor The factor (from 0 to WAD) governing how reputation awards for miners is scaled
+  event MiningReputationScalingSet(uint256 factor);
+
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
     bytes32 reputationState;

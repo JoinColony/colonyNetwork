@@ -6,7 +6,13 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 
 const { TruffleLoader } = require("../../packages/package-utils");
-const { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } = require("../../helpers/test-data-generator");
+const {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  giveUserCLNYTokensAndStake,
+  giveUserCLNYTokens,
+  setupColony,
+} = require("../../helpers/test-data-generator");
 
 const {
   MINING_CYCLE_DURATION,
@@ -42,6 +48,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const ITokenLocking = artifacts.require("ITokenLocking");
+const IMetaColony = artifacts.require("IMetaColony");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
@@ -216,6 +223,10 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const miningSkillId = 3;
 
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
+
+      // Need tokens to pay out rewards
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD.muln(100));
+
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
@@ -273,6 +284,88 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       const reputationUpdateLogLength = await inactiveRepCycle.getReputationUpdateLogLength();
       expect(reputationUpdateLogLength).to.eq.BN(2);
+    });
+
+    it("only root in metacolony can set reputation mining cycle reward", async () => {
+      await checkErrorRevert(metaColony.setReputationMiningCycleRewardReputationScaling(WAD, { from: MINER1 }), "ds-auth-unauthorized");
+      const colony = await setupColony(colonyNetwork, clnyToken.address);
+      const colonyAsMetacolony = await IMetaColony.at(colony.address);
+      await checkErrorRevert(
+        colonyAsMetacolony.setReputationMiningCycleRewardReputationScaling(WAD, { from: accounts[0] }),
+        "colony-only-on-metacolony"
+      );
+
+      await metaColony.setReputationMiningCycleRewardReputationScaling(WAD.divn(2));
+      const miningSkillId = await colonyNetwork.getReputationMiningSkillId();
+      const factor = await metaColony.getSkillReputationScaling(miningSkillId);
+      expect(factor).to.eq.BN(WAD.divn(2));
+    });
+
+    it("should respect reputation scaling for mining rewards", async () => {
+      const miningSkillId = 3;
+
+      await metaColony.setReputationMiningCycleReward(WAD.muln(10));
+      await metaColony.setReputationMiningCycleRewardReputationScaling(WAD.divn(2));
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+
+      const entryNumber = await getValidEntryNumber(colonyNetwork, MINER1, "0x12345678");
+      const entryNumber2 = await getValidEntryNumber(colonyNetwork, MINER1, "0x12345678", entryNumber + 1);
+
+      await repCycle.submitRootHash("0x12345678", 10, "0x00", entryNumber, { from: MINER1 });
+      await repCycle.submitRootHash("0x12345678", 10, "0x00", entryNumber2, { from: MINER1 });
+
+      const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+      expect(nUniqueSubmittedHashes).to.eq.BN(1);
+
+      await forwardTime(MINING_CYCLE_DURATION / 2 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+      const lockedFor1 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
+
+      await repCycle.confirmNewHash(0, { from: MINER1 });
+      const lockedFor1Updated = await tokenLocking.getUserLock(clnyToken.address, MINER1);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(false);
+      const inactiveRepCycle = await IReputationMiningCycle.at(addr);
+
+      const blockTime = await currentBlockTime();
+      const stake = await colonyNetwork.getMiningStake(MINER1);
+      const mw1 = await colonyNetwork.calculateMinerWeight(blockTime - stake.timestamp, 0);
+      const mw2 = await colonyNetwork.calculateMinerWeight(blockTime - stake.timestamp, 1);
+
+      const r1 = await WAD.muln(10)
+        .mul(mw1.mul(WAD).div(mw1.add(mw2)))
+        .div(WAD);
+
+      const r2 = await WAD.muln(10)
+        .mul(mw2.mul(WAD).div(mw1.add(mw2)))
+        .div(WAD);
+
+      // Check they've been awarded the tokens
+      const m1Reward = new BN(lockedFor1Updated.balance).sub(new BN(lockedFor1.balance));
+      expect(m1Reward, "Account was not rewarded properly").to.be.eq.BN(r1.add(r2));
+
+      // Check that they will be getting the reputation owed to them.
+      let repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(0);
+      expect(repLogEntryMiner.user).to.equal(MINER1);
+      expect(repLogEntryMiner.amount).to.eq.BN(r1.divn(2));
+      expect(repLogEntryMiner.skillId).to.eq.BN(miningSkillId);
+      expect(repLogEntryMiner.colony).to.equal(metaColony.address);
+      expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
+      expect(repLogEntryMiner.nPreviousUpdates).to.be.zero;
+
+      repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(1);
+      expect(repLogEntryMiner.user).to.equal(MINER1);
+      expect(repLogEntryMiner.amount).to.eq.BN(r2.divn(2));
+      expect(repLogEntryMiner.skillId).to.eq.BN(miningSkillId);
+      expect(repLogEntryMiner.colony).to.equal(metaColony.address);
+      expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
+      expect(repLogEntryMiner.nPreviousUpdates).to.eq.BN(4);
+
+      const reputationUpdateLogLength = await inactiveRepCycle.getReputationUpdateLogLength();
+      expect(reputationUpdateLogLength).to.eq.BN(2);
+
+      // Reset scaling factor
+      await metaColony.setReputationMiningCycleRewardReputationScaling(WAD);
     });
 
     it("should only allow 12 entries to back a single hash in each cycle", async () => {
@@ -694,6 +787,9 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     it("should reward all stakers if they submitted the agreed new hash", async () => {
       const miningSkillId = 3;
 
+      // Need tokens to pay out rewards
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD.muln(100));
+
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       await clnyToken.burn(REWARD, { from: MINER1 });
@@ -767,7 +863,87 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       expect(reputationUpdateLogLength).to.eq.BN(2);
     });
 
+    it("should scale staking rewards by the scaling factor set for miners", async () => {
+      const miningSkillId = 3;
+
+      await metaColony.setReputationMiningCycleReward(WAD.muln(10));
+      await metaColony.setReputationMiningCycleRewardReputationScaling(WAD.divn(2));
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+      await clnyToken.burn(REWARD, { from: MINER1 });
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+
+      const entryNumber = await getValidEntryNumber(colonyNetwork, MINER1, "0x12345678");
+      const entryNumber2 = await getValidEntryNumber(colonyNetwork, MINER2, "0x12345678");
+
+      await repCycle.submitRootHash("0x12345678", 10, "0x00", entryNumber, { from: MINER1 });
+      await repCycle.submitRootHash("0x12345678", 10, "0x00", entryNumber2, { from: MINER2 });
+
+      const lockedFor1 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
+      const lockedFor2 = await tokenLocking.getUserLock(clnyToken.address, MINER2);
+
+      await forwardTime(MINING_CYCLE_DURATION / 2 + CHALLENGE_RESPONSE_WINDOW_DURATION, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+
+      await repCycle.confirmNewHash(0, { from: MINER1 });
+
+      const blockTime = await currentBlockTime();
+      const stake1 = await colonyNetwork.getMiningStake(MINER1);
+      const stake2 = await colonyNetwork.getMiningStake(MINER2);
+      const mw1 = await colonyNetwork.calculateMinerWeight(blockTime - stake1.timestamp, 0);
+      const mw2 = await colonyNetwork.calculateMinerWeight(blockTime - stake2.timestamp, 1);
+
+      const r1 = await WAD.muln(10)
+        .mul(mw1.mul(WAD).div(mw1.add(mw2)))
+        .div(WAD);
+
+      const r2 = await WAD.muln(10)
+        .mul(mw2.mul(WAD).div(mw1.add(mw2)))
+        .div(WAD);
+
+      // Check that they have had their balance increase
+      const lockedFor1Updated = await tokenLocking.getUserLock(clnyToken.address, MINER1);
+      const lockedFor2Updated = await tokenLocking.getUserLock(clnyToken.address, MINER2);
+      // More than half of the reward
+      const m1Reward = new BN(lockedFor1Updated.balance).sub(new BN(lockedFor1.balance));
+      expect(m1Reward).to.eq.BN(r1);
+      // Less than half of the reward
+      const m2Reward = new BN(lockedFor2Updated.balance).sub(new BN(lockedFor2.balance));
+      expect(m2Reward).to.eq.BN(r2);
+      expect(m1Reward.add(m2Reward)).to.be.lte.BN(WAD.muln(10));
+      // The first 18 significant figures should be correct, and they are 19 significant
+      // figures long. The biggest possible error in the sum is therefore 18 wei.
+      expect(WAD.muln(10).sub(m1Reward).sub(m2Reward).abs()).to.be.lte.BN(new BN(18));
+
+      const addr = await colonyNetwork.getReputationMiningCycle(false);
+      const inactiveRepCycle = await IReputationMiningCycle.at(addr);
+
+      // Check that they will be getting the reputation owed to them.
+      let repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(0);
+      expect(repLogEntryMiner.user).to.equal(MINER1);
+      expect(repLogEntryMiner.amount).to.eq.BN(r1.divn(2));
+      expect(repLogEntryMiner.skillId).to.eq.BN(miningSkillId);
+      expect(repLogEntryMiner.colony).to.equal(metaColony.address);
+      expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
+      expect(repLogEntryMiner.nPreviousUpdates).to.be.zero;
+
+      repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(1);
+      expect(repLogEntryMiner.user).to.equal(MINER2);
+      expect(repLogEntryMiner.amount).to.eq.BN(r2.divn(2));
+      expect(repLogEntryMiner.skillId).to.eq.BN(miningSkillId);
+      expect(repLogEntryMiner.colony).to.equal(metaColony.address);
+      expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
+      expect(repLogEntryMiner.nPreviousUpdates).to.eq.BN(4);
+
+      const reputationUpdateLogLength = await inactiveRepCycle.getReputationUpdateLogLength();
+      expect(reputationUpdateLogLength).to.eq.BN(2);
+    });
+
     it("should be able to complete a cycle and claim rewards even if CLNY has been locked", async () => {
+      // Need tokens to pay out rewards
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD.muln(100));
+
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
       await metaColony.mintTokens(WAD);
       await metaColony.claimColonyFunds(clnyToken.address);
@@ -793,7 +969,6 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const colonyWideReputationKey = makeReputationKey(metaColony.address, rootDomainSkill);
       const { key, value, branchMask, siblings } = await goodClient.getReputationProofObject(colonyWideReputationKey);
       const colonyWideReputationProof = [key, value, branchMask, siblings];
-
       await metaColony.startNextRewardPayout(clnyToken.address, ...colonyWideReputationProof);
 
       await goodClient.saveCurrentState();

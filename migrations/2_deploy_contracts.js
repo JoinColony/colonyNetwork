@@ -7,6 +7,7 @@ const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("./ColonyNetworkAuction");
 const ColonyNetworkENS = artifacts.require("./ColonyNetworkENS");
 const ColonyNetworkExtensions = artifacts.require("./ColonyNetworkExtensions");
+const ColonyNetworkSkills = artifacts.require("./ColonyNetworkSkills");
 const ReputationMiningCycle = artifacts.require("./ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("./ReputationMiningCycleRespond");
 const ReputationMiningCycleBinarySearch = artifacts.require("./ReputationMiningCycleBinarySearch");
@@ -28,6 +29,7 @@ module.exports = async function (deployer, network) {
   await deployer.deploy(ColonyNetworkAuction);
   await deployer.deploy(ColonyNetworkENS);
   await deployer.deploy(ColonyNetworkExtensions);
+  await deployer.deploy(ColonyNetworkSkills);
   await deployer.deploy(ReputationMiningCycle);
   await deployer.deploy(ReputationMiningCycleRespond);
   await deployer.deploy(ReputationMiningCycleBinarySearch);

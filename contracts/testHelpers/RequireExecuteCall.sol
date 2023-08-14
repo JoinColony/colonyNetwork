@@ -33,9 +33,9 @@ contract RequireExecuteCall {
           // Slice the sighash.
           returndata := add(returndata, 0x04)
         }
-        require(false, abi.decode(returndata, (string))); // All that remains is the revert string
+        revert(abi.decode(returndata, (string))); // All that remains is the revert string
       }
-      require(false, "require-execute-call-reverted-with-no-error");
+      revert("require-execute-call-reverted-with-no-error");
     }
   }
 }

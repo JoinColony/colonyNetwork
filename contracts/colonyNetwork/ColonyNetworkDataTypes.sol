@@ -48,7 +48,7 @@ interface ColonyNetworkDataTypes {
   /// @param metaColony Address of the MetaColony instance (i.e. EtherRouter)
   /// @param token Address of the associated CLNY token
   /// @param rootSkillId Id of the root skill of the global skills tree, normally this is 2
-  /// Note that the speciat mining skill is created at rootSkillId + 1, so normally this is 3
+  /// Note that the special mining skill is created at rootSkillId + 1, so normally this is 3
   /// Skill id 1 is normally the local skill associate with meta colony domain 1
   event MetaColonyCreated(address metaColony, address token, uint256 rootSkillId);
 
@@ -145,6 +145,55 @@ interface ColonyNetworkDataTypes {
   /// @param tokenAuthorityAddress The address of the token authority deployed
   event TokenAuthorityDeployed(address tokenAuthorityAddress);
 
+  /// @notice Event logged when the colony network has data about a bridge contract set.
+  /// @param bridgeAddress The address of the bridge contract that will be interacted with
+  event BridgeDataSet(address bridgeAddress);
+
+  /// @notice Event logged when bridging of a skill creation did not succeed.
+  /// @param skillId The skillId that failed to bridge
+  event SkillCreationStored(uint256 skillId);
+
+  /// @notice Event logged when bridging of a reputation update did not succeed.
+  /// @param colony The address of the colony where reputation is being emitted
+  /// @param count The number of the reputation update trying to be bridged in that colony
+  event ReputationUpdateStored(address colony, uint256 count);
+
+  /// @notice Event logged when a reputation update makes it to the bridge.
+  /// @param colony The address of the colony where reputation is being emitted
+  /// @param count The number of the reputation update trying to be bridged in that colony
+  event ReputationUpdateSentToBridge(address colony, uint256 count);
+
+  /// @notice Event logged when a skill is successfully added from a bridge.
+  /// @param skillId The skillId of the skill that was bridged
+  event SkillAddedFromBridge(uint256 skillId);
+
+  /// @notice Event logged when a skill is received from a bridge, but can't yet be
+  /// added to the skill tree.
+  /// @param skillId The skillId of the skill that was bridged
+  event SkillStoredFromBridge(uint256 skillId);
+
+  /// @notice Event logged when a reputation update is successfully bridged.
+  /// @param chainId The chainId of the chain the bridge is associated with
+  /// @param colony The address of the colony where reputation is being emitted
+  /// @param updateNumber The number of the reputation update bridged in that colony
+  event ReputationUpdateAddedFromBridge(uint256 chainId, address colony, uint256 updateNumber);
+
+  /// @notice Event logged when a reputation update is received from a bridge, but can't be
+  /// added to the reputation update log due to being bridged out of order or the skill not existing.
+  /// @param chainId The chainId of the chain the bridge is associated with
+  /// @param colony The address of the colony where reputation is being emitted
+  /// @param updateNumber The number of the reputation update bridged in that colony
+  event ReputationUpdateStoredFromBridge(uint256 chainId, address colony, uint256 updateNumber);
+
+  /// @notice Event logged when a colony sets what its next decay rate is going to be
+  /// @param chainId The chainId that the colony changing its decay rate is on
+  /// @dev Note that in the case of the mining chain, this will be 0
+  /// @param colony The colony changing its decay rate
+  /// @param fromCycleCompleted When this mining cycle is completed, the new rate will be in effect
+  /// @param numerator The new numerator of the decay rate
+  /// @param denominator The new denominator of the decay rate
+  event ColonyReputationDecayRateToChange(uint256 chainId, address colony, address fromCycleCompleted, uint256 numerator, uint256 denominator);
+
   struct Skill {
     // total number of parent skills
     uint128 nParents;
@@ -167,7 +216,7 @@ interface ColonyNetworkDataTypes {
 
   struct ReputationLogEntry {
     address user;
-    int amount;
+    int256 amount;
     uint256 skillId;
     address colony;
     uint128 nUpdates;
@@ -177,5 +226,34 @@ interface ColonyNetworkDataTypes {
   struct MiningStake {
     uint256 amount;
     uint256 timestamp;
+  }
+
+  struct Bridge {
+    uint256 chainId;
+    uint256 gas;
+    bytes updateLogBefore;
+    bytes updateLogAfter;
+    bytes skillCreationBefore;
+    bytes skillCreationAfter;
+    bytes setReputationRootHashBefore;
+    bytes setReputationRootHashAfter;
+    bytes setColonyDecayRateBefore;
+    bytes setColonyDecayRateAfter;
+  }
+
+  struct PendingReputationUpdate {
+    address user;
+    int256 amount;
+    uint256 skillId;
+    address colony;
+    uint256 timestamp;
+  }
+
+  struct ColonyDecayRate {
+    uint256 currentNumerator;
+    uint256 currentDenominator;
+    uint256 nextNumerator;
+    uint256 nextDenominator;
+    address afterMiningCycle;
   }
 }

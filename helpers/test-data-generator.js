@@ -21,7 +21,7 @@ const {
   GLOBAL_SKILL_ID,
 } = require("./constants");
 
-const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } = require("./test-helper");
+const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData, isXdai } = require("./test-helper");
 const { executeSignedTaskChange, executeSignedRoleAssignment } = require("./task-review-signing");
 
 const IColony = artifacts.require("IColony");
@@ -253,6 +253,57 @@ exports.setupFinalizedTask = async function setupFinalizedTask({
   return taskId;
 };
 
+exports.setupClaimedTask = async function setupClaimedTask({
+  colonyNetwork,
+  colony,
+  token,
+  dueDate,
+  domainId,
+  skillId,
+  manager,
+  evaluator,
+  worker,
+  managerPayout,
+  evaluatorPayout,
+  workerPayout,
+  managerRating,
+  workerRating,
+}) {
+  const accounts = await web3GetAccounts();
+  manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
+  evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
+  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
+
+  const taskId = await exports.setupFinalizedTask({
+    colonyNetwork,
+    colony,
+    token,
+    dueDate,
+    domainId,
+    skillId,
+    manager,
+    evaluator,
+    worker,
+    managerPayout,
+    evaluatorPayout,
+    workerPayout,
+    managerRating,
+    workerRating,
+  });
+
+  let tokenAddress;
+  if (token === undefined) {
+    tokenAddress = await colony.getToken();
+  } else {
+    tokenAddress = token === ethers.constants.AddressZero ? ethers.constants.AddressZero : token.address;
+  }
+
+  await colony.claimTaskPayout(taskId, MANAGER_ROLE, tokenAddress);
+  await colony.claimTaskPayout(taskId, EVALUATOR_ROLE, tokenAddress);
+  await colony.claimTaskPayout(taskId, WORKER_ROLE, tokenAddress);
+  return taskId;
+};
+
 exports.giveUserCLNYTokens = async function giveUserCLNYTokens(colonyNetwork, userAddress, amount) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
@@ -325,7 +376,9 @@ exports.setupMetaColonyWithLockedCLNYToken = async function setupMetaColonyWithL
   const locked = await clnyToken.locked();
   assert.isTrue(locked);
 
-  await metaColony.addGlobalSkill();
+  if (await isXdai()) {
+    await metaColony.addGlobalSkill();
+  }
 
   return { metaColony, clnyToken };
 };
@@ -365,9 +418,11 @@ exports.setupColonyNetwork = async function setupColonyNetwork() {
   // Initialise with originally deployed version
   await colonyNetwork.initialise(colonyVersionResolverAddress, version);
 
-  // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
-  const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
-  await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+  if (await isXdai()) {
+    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
+    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
+    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+  }
 
   // Get token-locking router from when it was deployed during migrations
   const deployedTokenLockingAddress = await deployedColonyNetwork.getTokenLocking();

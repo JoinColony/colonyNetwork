@@ -73,6 +73,28 @@ Mints CLNY in the Meta Colony and transfers them to the colony network. Only all
 |_wad|uint256|Amount to mint and transfer to the colony network
 
 
+### ▸ `setBridgeData(address _bridgeAddress, uint256 _chainId, uint256 _gas, bytes memory _updateLogBefore, bytes memory _updateLogAfter, bytes memory _skillCreationBefore, bytes memory _skillCreationAfter, bytes memory _setReputationRootHashBefore, bytes memory _setReputationRootHashAfter, bytes memory _setColonyDecayRateBefore, bytes memory _setColonyDecayRateAfter)`
+
+Called to set the details about bridge _bridgeAddress
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_bridgeAddress|address|The address of the bridge
+|_chainId|uint256|The chainId of the corresponding network
+|_gas|uint256|How much gas to use for a bridged transaction
+|_updateLogBefore|bytes|The tx data before the dynamic part of the tx to bridge to the update log
+|_updateLogAfter|bytes|The tx data after the dynamic part of the tx to bridge to the update log
+|_skillCreationBefore|bytes|The tx data before the dynamic part of the tx to bridge skill creation
+|_skillCreationAfter|bytes|The tx data after the dynamic part of the tx to bridge skill creation
+|_setReputationRootHashBefore|bytes|The tx data before the dynamic part of the tx to bridge a new reputation root hash
+|_setReputationRootHashAfter|bytes|The tx data after the dynamic part of the tx to bridge a new reputation root hash
+|_setColonyDecayRateBefore|bytes|The tx data before the dynamic part of the tx to set a colony's reputation decay rate
+|_setColonyDecayRateAfter|bytes|The tx data after the dynamic part of the tx to set a colony's reputation decay rate
+
+
 ### ▸ `setNetworkFeeInverse(uint256 _feeInverse)`
 
 Set the Colony Network fee inverse amount.
@@ -110,3 +132,16 @@ Called to set the total per-cycle reputation reward, which will be split between
 |Name|Type|Description|
 |---|---|---|
 |_amount|uint256|The CLNY awarded per mining cycle to the miners
+
+
+### ▸ `setReputationMiningCycleRewardReputationScaling(uint256 _factor)`
+
+Called to set the total per-cycle reputation scaling factor for the tokens paid out
+
+*Note: Calls the corresponding function on the ColonyNetwork.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_factor|uint256|The scale factor to apply to reputation mining rewards

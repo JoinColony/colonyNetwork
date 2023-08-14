@@ -5,11 +5,15 @@ const fs = require("fs");
 
 exports.parseImplementation = function parseImplementation(contractName, functionsToResolve, deployedImplementations) {
   // Goes through a contract, and sees if anything in it is in the interface. If it is, then wire up the resolver to point at it
-  const { abi } = JSON.parse(fs.readFileSync(`./build/contracts/${contractName}.json`));
-  abi.map((value) => {
+  const contract = JSON.parse(fs.readFileSync(`./build/contracts/${contractName}.json`));
+  contract.abi.map((value) => {
     const fName = value.name;
     if (functionsToResolve[fName]) {
-      if (functionsToResolve[fName].definedIn !== "" && functionsToResolve[fName].definedIn !== deployedImplementations[contractName]) {
+      if (
+        functionsToResolve[fName].definedIn !== "" &&
+        functionsToResolve[fName].definedIn !== deployedImplementations[contractName] &&
+        contract.source.indexOf(`function ${fName}`) >= 0 // Avoid false positives by inheritence
+      ) {
         // We allow function overloads so long as they are in the same file.
         // eslint-disable-next-line no-console
         console.log(
@@ -107,6 +111,7 @@ exports.setupUpgradableColonyNetwork = async function setupUpgradableColonyNetwo
   colonyNetworkAuction,
   colonyNetworkENS,
   colonyNetworkExtensions,
+  colonyNetworkSkills,
   contractRecovery
 ) {
   const deployedImplementations = {};
@@ -116,6 +121,7 @@ exports.setupUpgradableColonyNetwork = async function setupUpgradableColonyNetwo
   deployedImplementations.ColonyNetworkAuction = colonyNetworkAuction.address;
   deployedImplementations.ColonyNetworkENS = colonyNetworkENS.address;
   deployedImplementations.ColonyNetworkExtensions = colonyNetworkExtensions.address;
+  deployedImplementations.ColonyNetworkSkills = colonyNetworkSkills.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
 
   await exports.setupEtherRouter("IColonyNetwork", deployedImplementations, resolver);
@@ -149,8 +155,8 @@ exports.setupReputationMiningCycleResolver = async function setupReputationMinin
   await colonyNetwork.setMiningResolver(resolver.address);
 };
 
-exports.setupENSRegistrar = async function setupENSRegistrar(colonyNetwork, ensRegistry, registrarOwner) {
-  const rootNode = namehash.hash("joincolony.eth");
+exports.setupENSRegistrar = async function setupENSRegistrar(colonyNetwork, ensRegistry, registrarOwner, suffix) {
+  const rootNode = namehash.hash(`joincolony.${suffix}`);
   const USER_HASH = soliditySha3("user");
   const COLONY_HASH = soliditySha3("colony");
 

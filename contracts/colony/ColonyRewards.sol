@@ -21,7 +21,6 @@ pragma experimental "ABIEncoderV2";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
-
 contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
   function lockToken() public stoppable onlyOwnExtension returns (uint256) {
     uint256 lockId = ITokenLocking(tokenLockingAddress).lockToken(token);

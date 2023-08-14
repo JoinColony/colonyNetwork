@@ -531,7 +531,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
     if (u[U_DECAY_TRANSITION] == 1) {
-      require(uint256(_disagreeStateReputationValue) == (uint256(_agreeStateReputationValue)*DECAY_NUMERATOR)/DECAY_DENOMINATOR, "colony-reputation-mining-decay-incorrect");
+      uint256 numerator;
+      uint256 denominator;
+
+      // logEntry.skillId >> 128 gives us the chain Id. It's 0 if it's on the mining chain, but that's expected by
+      // the function.
+      (numerator, denominator) = IColonyNetwork(colonyNetworkAddress).getColonyReputationDecayRate(logEntry.skillId >> 128, logEntry.colony);
+      require(uint256(_disagreeStateReputationValue) == (uint256(_agreeStateReputationValue)*numerator)/denominator, "colony-reputation-mining-decay-incorrect");
     } else {
       if (logEntry.amount >= 0) {
         // Don't allow reputation to overflow
@@ -759,5 +765,4 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
         mstore(add(reputationKey, 52), skill)
     }
     return reputationKey;
-  }
-}
+  }}

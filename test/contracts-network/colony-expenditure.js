@@ -340,14 +340,21 @@ contract("Colony Expenditure", (accounts) => {
         "colony-expenditure-not-owner"
       );
 
-      await colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(2), WAD], { from: ADMIN });
+      await colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(-2), WAD.muln(-1)], { from: ADMIN });
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.payoutModifier).to.be.zero;
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT1);
-      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD.divn(2));
+      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD.divn(-2));
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT2);
-      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD);
+      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD.muln(-1));
+    });
+
+    it("should not allow owners to update many slot payout modifiers at once if one is >0", async () => {
+      await checkErrorRevert(
+        colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [0, 1], { from: ADMIN }),
+        "colony-expenditure-bad-payout-modifier"
+      );
     });
 
     it("should not allow owners to update many slot payout modifiers with mismatched arguments", async () => {
@@ -468,7 +475,7 @@ contract("Colony Expenditure", (accounts) => {
         [SLOT0, SLOT1],
         [10, 20],
         [SLOT0, SLOT2],
-        [WAD.divn(3), WAD.divn(2)],
+        [WAD.divn(-3), WAD.divn(-2)],
         [token.address, otherToken.address],
         [
           [SLOT0, SLOT1],
@@ -486,7 +493,7 @@ contract("Colony Expenditure", (accounts) => {
       expect(slot.recipient).to.equal(RECIPIENT);
       expect(slot.skills[0]).to.be.zero;
       expect(slot.claimDelay).to.eq.BN(10);
-      expect(slot.payoutModifier).to.eq.BN(WAD.divn(3));
+      expect(slot.payoutModifier).to.eq.BN(WAD.divn(-3));
 
       slot = await colony.getExpenditureSlot(expenditureId, SLOT1);
       expect(slot.recipient).to.equal(USER);
@@ -498,7 +505,7 @@ contract("Colony Expenditure", (accounts) => {
       expect(slot.recipient).to.equal(ADMIN);
       expect(slot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
       expect(slot.claimDelay).to.be.zero;
-      expect(slot.payoutModifier).to.eq.BN(WAD.divn(2));
+      expect(slot.payoutModifier).to.eq.BN(WAD.divn(-2));
 
       let payout;
       payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
@@ -527,7 +534,7 @@ contract("Colony Expenditure", (accounts) => {
           [SLOT0, SLOT1],
           [10, 20],
           [SLOT0, SLOT2],
-          [WAD.divn(3), WAD.divn(2)],
+          [WAD.divn(-3), WAD.divn(-2)],
           [token.address, otherToken.address],
           [[SLOT0], [SLOT1, SLOT2]],
           [
@@ -566,7 +573,7 @@ contract("Colony Expenditure", (accounts) => {
         [SLOT0, SLOT1],
         [10, 20],
         [SLOT0, SLOT2],
-        [WAD.divn(3), WAD.divn(2)],
+        [WAD.divn(-3), WAD.divn(-2)],
         [token.address, otherToken.address],
         [
           [SLOT0, SLOT1],
@@ -587,7 +594,7 @@ contract("Colony Expenditure", (accounts) => {
       expect(slot.recipient).to.equal(RECIPIENT);
       expect(slot.skills[0]).to.be.zero;
       expect(slot.claimDelay).to.eq.BN(10);
-      expect(slot.payoutModifier).to.eq.BN(WAD.divn(3));
+      expect(slot.payoutModifier).to.eq.BN(WAD.divn(-3));
 
       slot = await colony.getExpenditureSlot(expenditureId, SLOT1);
       expect(slot.recipient).to.equal(USER);
@@ -599,7 +606,7 @@ contract("Colony Expenditure", (accounts) => {
       expect(slot.recipient).to.equal(ADMIN);
       expect(slot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
       expect(slot.claimDelay).to.be.zero;
-      expect(slot.payoutModifier).to.eq.BN(WAD.divn(2));
+      expect(slot.payoutModifier).to.eq.BN(WAD.divn(-2));
 
       let payout;
       payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
@@ -1019,6 +1026,45 @@ contract("Colony Expenditure", (accounts) => {
       expect(domainEntry.amount).to.eq.BN(WAD);
     });
 
+    it("if custom reputation scaling for a token is set, reputation update should reflect scaling", async () => {
+      await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
+      await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
+      await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
+      await colony.setTokenReputationScaling(token.address, WAD.divn(2));
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+      await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(false);
+      const repCycle = await IReputationMiningCycle.at(addr);
+      const numEntries = await repCycle.getReputationUpdateLogLength();
+
+      const skillEntry = await repCycle.getReputationUpdateLogEntry(numEntries.subn(1));
+      expect(skillEntry.user).to.equal(RECIPIENT);
+      expect(skillEntry.skillId).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(skillEntry.amount).to.eq.BN(WAD.divn(2));
+
+      const domainEntry = await repCycle.getReputationUpdateLogEntry(numEntries.subn(2));
+      expect(domainEntry.user).to.equal(RECIPIENT);
+      expect(domainEntry.skillId).to.equal(domain1.skillId);
+      expect(domainEntry.amount).to.eq.BN(WAD.divn(2));
+
+      // Reset scaling for future tests
+      await colony.setTokenReputationScaling(token.address, WAD);
+    });
+
     it("should delay claims by claimDelay", async () => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
 
@@ -1280,12 +1326,48 @@ contract("Colony Expenditure", (accounts) => {
     it("should allow arbitration users to update expenditure slot payoutModifier", async () => {
       const mask = [MAPPING, ARRAY];
       const keys = ["0x0", bn2bytes32(new BN(2))];
-      const value = bn2bytes32(new BN(100));
+      const value = bn2bytes32(new BN(100).muln(-1));
 
       await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
 
       const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
-      expect(expenditureSlot.payoutModifier).to.eq.BN(100);
+      expect(expenditureSlot.payoutModifier).to.eq.BN(new BN(100).muln(-1));
+    });
+
+    it("should allow not allow arbitration users to update expenditure slot payoutModifier to a value greater than 1", async () => {
+      const mask = [MAPPING, ARRAY];
+      const keys = ["0x0", bn2bytes32(new BN(2))];
+      const value = bn2bytes32(WAD.muln(2));
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR }),
+        "colony-expenditure-bad-payout-modifier"
+      );
+
+      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.payoutModifier).to.eq.BN(0);
+    });
+
+    it("should allow root users to update expenditure slot payoutModifier to a value greater than 1", async () => {
+      const mask = [MAPPING, ARRAY];
+      const keys = ["0x0", bn2bytes32(new BN(2))];
+      const value = bn2bytes32(WAD.muln(2));
+
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ROOT });
+
+      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(expenditureSlot.payoutModifier).to.eq.BN(WAD.muln(2));
+    });
+
+    it("not even root users should be allowed to update expenditure slot payoutModifier to a value less than -1", async () => {
+      const mask = [MAPPING, ARRAY];
+      const keys = ["0x0", bn2bytes32(new BN(2))];
+      const value = bn2bytes32(WAD.muln(-2));
+
+      await checkErrorRevert(
+        colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ROOT }),
+        "colony-expenditure-bad-payout-modifier"
+      );
     });
 
     it("should not allow arbitration users to pass an invalid payoutModifier", async () => {
@@ -1457,7 +1539,7 @@ contract("Colony Expenditure", (accounts) => {
       const mask = [MAPPING, ARRAY];
       const keys = ["0x0", bn2bytes32(new BN(2))];
       const value = bn2bytes32(WAD);
-      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ROOT });
 
       const expenditure = await colony.getExpenditure(expenditureId);
       await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
@@ -1479,14 +1561,44 @@ contract("Colony Expenditure", (accounts) => {
       expect(entry.amount).to.eq.BN(WAD.muln(2));
     });
 
+    it("should scale up payout by payoutScalar for large payouts", async () => {
+      await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
+      await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
+
+      // Modifier of 1 WAD translates to scalar of 2 WAD
+      const mask = [MAPPING, ARRAY];
+      const keys = ["0x0", bn2bytes32(new BN(2))];
+      const value = bn2bytes32(WAD.muln(100));
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ROOT });
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+
+      const recipientBalanceBefore = await token.balanceOf(RECIPIENT);
+      await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
+
+      // Cash payout maxes out at payout
+      const recipientBalanceAfter = await token.balanceOf(RECIPIENT);
+      expect(recipientBalanceAfter.sub(recipientBalanceBefore)).to.eq.BN(WAD.divn(100).muln(99).subn(1)); // eslint-disable-line prettier/prettier
+
+      // But reputation gets a boost
+      const addr = await colonyNetwork.getReputationMiningCycle(false);
+      const repCycle = await IReputationMiningCycle.at(addr);
+      const numEntries = await repCycle.getReputationUpdateLogLength();
+      const entry = await repCycle.getReputationUpdateLogEntry(numEntries.subn(1));
+      expect(entry.user).to.equal(RECIPIENT);
+      expect(entry.amount).to.eq.BN(WAD.muln(101));
+    });
+
     it("should not overflow when using the maximum payout * modifier", async () => {
       await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, MAX_PAYOUT, { from: ADMIN });
 
       const mask = [MAPPING, ARRAY];
       const keys = ["0x0", bn2bytes32(new BN(2))];
-      const value = bn2bytes32(WAD);
-      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
+      const value = bn2bytes32(UINT256_MAX);
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ROOT });
 
       const expenditure = await colony.getExpenditure(expenditureId);
       await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, MAX_PAYOUT, token.address);
