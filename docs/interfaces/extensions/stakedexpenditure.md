@@ -100,6 +100,18 @@ Returns the identifier of the extension
 |---|---|---|
 |_identifier|bytes32|The extension's identifier
 
+### ▸ `initialise(uint256 _stakeFraction)`
+
+Initialise the extension
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_stakeFraction|uint256|WAD-denominated fraction, used to determine stake as fraction of rep in domain
+
+
 ### ▸ `install(address _colony)`
 
 Configures the extension
