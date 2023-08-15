@@ -1061,8 +1061,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   }
 
   function createClaimDelayAction(bytes memory action, uint256 value)
-    internal
-    pure
+    public
     returns (bytes memory)
   {
     // See https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types

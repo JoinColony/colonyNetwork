@@ -244,9 +244,11 @@ contract VotingReputationStaking is VotingReputationStorage {
       bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, currentClaimDelay + LOCK_DELAY);
       require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
     } else {
-      motion.finalized = true;
       finalized = true;
+      motion.finalized = true;
+      motion.events[STAKE_END] = uint64(block.timestamp);
 
+      emit MotionEventSet(_motionId, STAKE_END);
       emit MotionFinalized(_motionId, motion.action, false);
     }
   }

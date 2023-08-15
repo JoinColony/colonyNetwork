@@ -31,7 +31,6 @@ const {
   expectEvent,
   getTokenArgs,
   getBlockTime,
-  expectNoEvent,
 } = require("../../helpers/test-helper");
 
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
@@ -123,7 +122,7 @@ contract("Voting Reputation", (accounts) => {
   const SUBMIT = 2;
   // const REVEAL = 3;
   // const CLOSED = 4;
-  const FINALIZBLE = 5;
+  const FINALIZABLE = 5;
   const FINALIZED = 6;
   const FAILED = 7;
 
@@ -819,22 +818,18 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId1 = await voting.getMotionCount();
       tx = await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-      await expectNoEvent(tx, "MotionFinalized");
-      await expectEvent(tx, "MotionEventSet", [motionId1, 0]);
 
       action = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, otherToken.address, WAD]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
       tx = await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await expectEvent(tx, "MotionFinalized", [motionId2, action, false]);
-      await expectNoEvent(tx, "MotionEventSet");
 
       action = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 1, token.address, WAD]);
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId3 = await voting.getMotionCount();
       tx = await voting.stakeMotion(motionId3, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await expectEvent(tx, "MotionFinalized", [motionId3, action, false]);
-      await expectNoEvent(tx, "MotionEventSet");
 
       const expenditureMotionLock = await voting.getExpenditureMotionLock(expenditureId);
       expect(expenditureMotionLock).to.eq.BN(motionId1);
@@ -900,6 +895,31 @@ contract("Voting Reputation", (accounts) => {
         voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
         "voting-rep-motion-not-staking"
       );
+    });
+
+    it(`If staking a motion to completion that affects the same expenditure as an ongoing motion,
+      the newly staked motion is immediately finalized with timestamp updated`, async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+
+      const action = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, WAD]);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      const motionState = await voting.getMotionState(motionId);
+      expect(motionState).to.eq.BN(FINALIZED);
+
+      const motion = await voting.getMotion(motionId);
+      const latestBlockTimestamp = await getBlockTime("latest");
+      expect(motion.events[0]).to.eq.BN(latestBlockTimestamp);
     });
   });
 
@@ -2645,7 +2665,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 });
 
       const state = await voting.getMotionState(motionId);
-      expect(state).to.eq.BN(FINALIZBLE);
+      expect(state).to.eq.BN(FINALIZABLE);
     });
 
     it("can skip the staking phase if no new stake is required", async () => {
@@ -2910,7 +2930,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZBLE);
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
       await colony.upgradeExtension(VOTING_REPUTATION, 10);
 
@@ -2932,11 +2952,11 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZBLE);
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
       await colony.upgradeExtension(VOTING_REPUTATION, 10);
 
-      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZBLE);
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
       await voting.finalizeMotion(motionId);
 
@@ -2959,11 +2979,11 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZBLE);
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
       await colony.upgradeExtension(VOTING_REPUTATION, 10);
 
-      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZBLE);
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
       await voting.finalizeMotion(motionId);
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
@@ -2986,7 +3006,7 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZBLE);
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
       await colony.upgradeExtension(VOTING_REPUTATION, 10);
 

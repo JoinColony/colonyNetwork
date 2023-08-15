@@ -342,7 +342,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     }
   }
 
-  function getExpenditureAction(bytes memory action) internal view returns (bytes memory) {
+  function getExpenditureAction(bytes memory action) internal pure returns (bytes memory) {
     if (getSig(action) == MULTICALL) {
       bytes[] memory actions = abi.decode(extractCalldata(action), (bytes[]));
       for (uint256 i; i < actions.length; i++) {
@@ -359,7 +359,11 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
   // From https://ethereum.stackexchange.com/questions/131283/how-do-i-decode-call-data-in-solidity
   function extractCalldata(bytes memory calldataWithSelector) internal pure returns (bytes memory calldataWithoutSelector) {
-      require(calldataWithSelector.length >= 4, "voting-rep-invalid-calldata");
+      // For an empty bytes array i.e. the smallest amount of data we're expecting,
+      // we would expect 68 bytes
+      require(calldataWithSelector.length >= 68, "voting-rep-invalid-calldata");
+      // We expect the 4-byte function selector, and then some multiple of 32 bytes
+      require((calldataWithSelector.length - 4) % 32 == 0, "voting-rep-invalid-calldata");
 
       assembly {
           let totalLength := mload(calldataWithSelector)
@@ -397,7 +401,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     uint256 offset,
     uint256 value
   )
-    public
+    internal
     pure
     returns (bytes memory)
   {
@@ -443,7 +447,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
   // Kept for backwards-compatibility with v9, since a slot may have been locked
   function createClaimDelayAction(bytes memory action, uint256 value)
-    public
+    internal pure
     returns (bytes memory)
   {
     // See https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types

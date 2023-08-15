@@ -437,8 +437,8 @@ contract VotingReputation is VotingReputationStorage {
       executeCall(_motionId, claimDelayAction);
     } else { // Backwards compatibility for versions 9 and below
       bytes32 structHash = getExpenditureStructHash(action);
-      // If v9 multicall, won't have incremented the lock
-      if (expenditureMotionCounts_DEPRECATED[structHash] > 0) {
+      // If v9 multicall, won't have incremented the lock, so don't decrement
+      if (getSig(motion.action) != MULTICALL) {
         expenditureMotionCounts_DEPRECATED[structHash]--;
       }
 
@@ -454,7 +454,7 @@ contract VotingReputation is VotingReputationStorage {
   }
 
   // NOTE: This function is deprecated and only used to support v9 expenditure motions
-  function getExpenditureStructHash(bytes memory _action) internal view returns (bytes32 structHash) {
+  function getExpenditureStructHash(bytes memory _action) internal pure returns (bytes32 structHash) {
     bytes4 sig = getSig(_action);
     uint256 expenditureId;
     uint256 storageSlot;
