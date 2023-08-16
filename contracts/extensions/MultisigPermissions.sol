@@ -22,11 +22,13 @@ import { ColonyDataTypes, IColony } from "./../colony/IColony.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
+import { ExtractCallData } from "./../common/ExtractCallData.sol";
+import { GetActionDomainSkillId } from "./../common/GetActionDomainSkillId.sol";
 
 // ignore-file-swc-108
 
 
-contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
+contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCallData, GetActionDomainSkillId {
 
   // Events
 
@@ -69,6 +71,13 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
   uint256 globalThreshold;
   mapping(address => mapping(uint256 => bytes32)) internal userDomainRoles;
 
+
+  // Domain Skill Id => Role => Usercount
+  mapping(uint256 => mapping(uint8 => uint256)) domainSkillRoleCounts;
+
+  // Domain Skill Id => fixed threshold
+  mapping(uint256 => uint256) domainSkillThreshold;
+
   uint256 motionCount;
   mapping (uint256 => Motion) motions;
 
@@ -77,11 +86,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
   // Motion Id => Permission => Approval Count
   mapping(uint256 => mapping(ColonyRole => uint256)) motionRoleApprovalCount;
 
-  // Domain Skill Id => Role => Usercount
-  mapping(uint256 => mapping(uint8 => uint256)) domainSkillRoleCounts;
-
-  // Domain Skill Id => fixed threshold
-  mapping(uint256 => uint256) domainSkillThreshold;
 
   // Overrides
 
@@ -225,9 +229,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
           motionRoleApprovalCount[_motionId][ColonyRole(roleIndex)] < threshold
         ){
           anyBelowThreshold = true;
-        }
-
-        if (
+        } else if (
           motionRoleApprovalCount[_motionId][ColonyRole(roleIndex)] == threshold &&
           _approved
         ){
@@ -332,13 +334,18 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
   }
 
   // Evaluates a "domain proof" which checks that childDomainId is part of the subtree starting at permissionDomainId
-  function validateDomainInheritance(uint256 permissionDomainId, uint256 childSkillIndex, uint256 childDomainId) internal view returns (bool) {
-    if (permissionDomainId == childDomainId) {
-      return childSkillIndex == UINT256_MAX;
+  function validateDomainInheritance(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId) internal view returns (bool) {
+    // Validate the permissions proof
+    uint256 colonyDomainCount = colony.getDomainCount();
+    require(_permissionDomainId > 0 && _permissionDomainId <= colonyDomainCount, "multisig-domain-does-not-exist");
+    require(_domainId > 0 && _domainId <= colonyDomainCount, "multisig-domain-does-not-exist");
+    
+    if (_permissionDomainId == _domainId) {
+      return _childSkillIndex == UINT256_MAX;
     } else {
-      Domain memory domain = colony.getDomain(permissionDomainId);
-      uint256 childSkillId = colonyNetwork.getChildSkillId(domain.skillId, childSkillIndex);
-      Domain memory childDomain = colony.getDomain(childDomainId);
+      Domain memory domain = colony.getDomain(_permissionDomainId);
+      uint256 childSkillId = colonyNetwork.getChildSkillId(domain.skillId, _childSkillIndex);
+      Domain memory childDomain = colony.getDomain(_domainId);
       return childSkillId == childDomain.skillId;
     }
   }
@@ -352,10 +359,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
     bytes32 _roles
   ) public
   {
-    // Validate the permissions proof
-    uint256 colonyDomainCount = colony.getDomainCount();
-    require(_permissionDomainId > 0 && _permissionDomainId <= colonyDomainCount, "multisig-domain-does-not-exist");
-    require(_domainId > 0 && _domainId <= colonyDomainCount, "multisig-domain-does-not-exist");
     require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, _domainId), "multisig-invalid-domain-inheritance");
 
     // Allow this function to be called if the caller:
@@ -438,7 +441,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
         // tie it to root).
         permissionMask = ONLY_ROOT_ROLE_MASK;
       } else {
-        domainSkillId = getActionDomainSkillId(actions[i]);
+        domainSkillId = getActionDomainSkillId(actions[i], address(colonyNetwork), address(colony));
 
         // A special case for setUserRoles, which can be called by root (everywhere) and
         // by architecture (if being used in a child domain of where you have the permission)
@@ -462,48 +465,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes {
       }
     }
     return (overallDomainSkillId, overallPermissionMask);
-  }
-
-
-  function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
-    uint256 permissionDomainId;
-    uint256 childSkillIndex;
-
-    assembly {
-      permissionDomainId := mload(add(_action, 0x24))
-      childSkillIndex := mload(add(_action, 0x44))
-    }
-
-    uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
-    return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
-  }
-
-    // From https://ethereum.stackexchange.com/questions/131283/how-do-i-decode-call-data-in-solidity
-  function extractCalldata(bytes memory calldataWithSelector) internal pure returns (bytes memory) {
-      bytes memory calldataWithoutSelector;
-      require(calldataWithSelector.length >= 4);
-
-      assembly {
-          let totalLength := mload(calldataWithSelector)
-          let targetLength := sub(totalLength, 4)
-          calldataWithoutSelector := mload(0x40)
-
-          // Set the length of callDataWithoutSelector (initial length - 4)
-          mstore(calldataWithoutSelector, targetLength)
-
-          // Mark the memory space taken for callDataWithoutSelector as allocated
-          mstore(0x40, add(calldataWithoutSelector, add(0x20, targetLength)))
-
-          // Process first 32 bytes (we only take the last 28 bytes)
-          mstore(add(calldataWithoutSelector, 0x20), shl(0x20, mload(add(calldataWithSelector, 0x20))))
-
-          // Process all other data by chunks of 32 bytes
-          for { let i := 0x1C } lt(i, targetLength) { i := add(i, 0x20) } {
-              mstore(add(add(calldataWithoutSelector, 0x20), i), mload(add(add(calldataWithSelector, 0x20), add(i, 0x04))))
-          }
-      }
-
-      return calldataWithoutSelector;
   }
 
   function validateMotionDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _motionId) internal view {
