@@ -111,7 +111,7 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
     require(e.status == ColonyDataTypes.ExpenditureStatus.Finalized, "expenditure-not-finalized");
 
     bool[] memory mask = new bool[](2); mask[0] = false; mask[1] = true;
-    bytes32[] memory keys = new bytes32[](2); keys[0] = bytes32(0); keys[1] = bytes32(uint256(1));
+    bytes32[] memory keys = new bytes32[](2); keys[0] = bytes32(_slot); keys[1] = bytes32(uint256(1));
     colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, 26, mask, keys, bytes32(0));
 
     for (uint256 i; i < _tokens.length; i++) {

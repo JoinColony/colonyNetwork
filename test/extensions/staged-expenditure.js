@@ -271,17 +271,29 @@ contract("Staged Expenditure", (accounts) => {
 
       await colony.finalizeExpenditure(expenditureId);
 
-      const slotBefore = await colony.getExpenditureSlot(expenditureId, 0);
+      let slotBefore = await colony.getExpenditureSlot(expenditureId, 0);
 
       await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [], { from: USER0 });
 
-      const slotAfter = await colony.getExpenditureSlot(expenditureId, 0);
+      let slotAfter = await colony.getExpenditureSlot(expenditureId, 0);
 
       expect(slotBefore.claimDelay).to.equal(UINT128_MAX.toString());
       expect(slotAfter.claimDelay).to.equal("0");
 
-      const slotPayout = await colony.getExpenditureSlotPayout(expenditureId, 0, token.address);
+      let slotPayout = await colony.getExpenditureSlotPayout(expenditureId, 0, token.address);
       expect(slotPayout).to.eq.BN(WAD);
+
+      slotBefore = await colony.getExpenditureSlot(expenditureId, 1);
+
+      await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 1, [], { from: USER0 });
+
+      slotAfter = await colony.getExpenditureSlot(expenditureId, 1);
+
+      expect(slotBefore.claimDelay).to.equal(UINT128_MAX.toString());
+      expect(slotAfter.claimDelay).to.equal("0");
+
+      slotPayout = await colony.getExpenditureSlotPayout(expenditureId, 1, token.address);
+      expect(slotPayout).to.eq.BN(WAD.muln(2));
     });
 
     it("cannot release a stage if not a staged payment", async () => {
