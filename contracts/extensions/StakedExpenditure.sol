@@ -95,15 +95,16 @@ contract StakedExpenditure is ColonyExtensionMeta {
   /// @param _stakeFraction WAD-denominated fraction, used to determine stake as fraction of rep in domain
   function initialise(uint256 _stakeFraction) onlyRoot public {
     require(stakeFraction == 0, "staked-expenditure-already-initialised");
-    stakeFraction = _stakeFraction;
-
-    emit ExtensionInitialised();
+    setStakeFraction(_stakeFraction);
   }
 
   /// @notice Sets the stake fraction
   /// @param _stakeFraction WAD-denominated fraction, used to determine stake as fraction of rep in domain
   function setStakeFraction(uint256 _stakeFraction) public onlyRoot {
-    require(stakeFraction > 0, "staked-expenditure-not-initialised");
+    if (stakeFraction == 0) {
+      emit ExtensionInitialised();
+    }
+    require(_stakeFraction > 0, "staked-expenditure-value-too-small");
     require(_stakeFraction <= WAD, "staked-expenditure-value-too-large");
     stakeFraction = _stakeFraction;
 
