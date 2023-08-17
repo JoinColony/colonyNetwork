@@ -39,6 +39,7 @@ const {
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
   HASHZERO,
+  GLOBAL_SKILL_ID,
 } = require("../../helpers/constants");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
@@ -83,6 +84,8 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 };
 
 contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
+  const USER0 = accounts[0];
+
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
   const MINER3 = accounts[7];
@@ -525,16 +528,12 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        manager: MINER1,
-        worker: MINER2,
-        workerRating: 1,
-        managerPayout: 1,
-        evaluatorPayout: 1,
-        workerPayout: 1,
-      });
+
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(1, USER0, 1);
+      await metaColony.emitDomainReputationReward(1, MINER1, 1);
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MINER2, -1);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
 
@@ -543,16 +542,11 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       let powerTwoEntries = false;
       while (!powerTwoEntries) {
-        await setupClaimedExpenditure({ // eslint-disable-line prettier/prettier
-          colonyNetwork,
-          colony: metaColony,
-          evaluator: MINER1,
-          worker: MINER2,
-          workerRating: 1,
-          managerPayout: 1,
-          evaluatorPayout: 1,
-          workerPayout: 1,
-        });
+        // Manager, evaluator, worker
+        await metaColony.emitDomainReputationReward(1, USER0, 1);
+        await metaColony.emitDomainReputationReward(1, MINER1, 1);
+        await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MINER2, -1);
+        await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
 
         const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength();
         const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1);
@@ -918,17 +912,11 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000000,
-        workerPayout: 1000000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -1000000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1000000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -974,29 +962,18 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await fundColonyWithTokens(metaColony, clnyToken, new BN("1000000000000").muln(4).add(new BN(5000000000000)).add(new BN(1000000000)));
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000000,
-        workerPayout: 1,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(2, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(2, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
+
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -1);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
