@@ -244,6 +244,13 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @return _vote The largest past vote on this variable
   function getExpenditurePastVote(uint256 _expenditureId) external view returns (uint256 _vote);
 
+  /// @notice DEPRECATED Get the largest past vote on an expenditure
+  /// @dev This is deprecated, and allows visibility on to this variable for any v9 motions that are still
+  /// ongoing.
+  /// @param _slotSignature The slot signature
+  /// @return _vote The largest past vote on this variable
+  function getExpenditurePastVotes_DEPRECATED(bytes32 _slotSignature) external view returns (uint256 _vote);
+
   /// @notice Get the current state of the motion
   /// @param _motionId The id of the motion
   /// @return _motionState The current motion state

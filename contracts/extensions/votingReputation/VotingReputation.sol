@@ -289,12 +289,8 @@ contract VotingReputation is VotingReputationStorage {
         uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
           motion.votes[YAY] : motion.stakes[YAY];
 
-        bytes32 actionHash;
         bytes memory action = getExpenditureAction(motion.action);
-        assembly {
-          mstore(add(action, 0xe4), 0x0)
-          actionHash := keccak256(add(action, 0x64), sub(mload(action), 0x44))
-        }
+        bytes32 actionHash = hashExpenditureAction(action);
 
         if (expenditurePastVotes_DEPRECATED[actionHash] < votePower) {
           expenditurePastVotes_DEPRECATED[actionHash] = votePower;
@@ -386,6 +382,10 @@ contract VotingReputation is VotingReputationStorage {
     return expenditurePastVotes[_expenditureId];
   }
 
+  function getExpenditurePastVotes_DEPRECATED(bytes32 _slotSignature) public view returns (uint256 _vote) {
+    return expenditurePastVotes_DEPRECATED[_slotSignature];
+  }
+
   function getVoterReward(uint256 _motionId, uint256 _voterRep) public view returns (uint256 _reward) {
     Motion storage motion = motions[_motionId];
     uint256 fractionUserReputation = wdiv(_voterRep, motion.repSubmitted);
@@ -475,4 +475,25 @@ contract VotingReputation is VotingReputationStorage {
       structHash = keccak256(abi.encodePacked(expenditureId, expenditureSlot));
     }
   }
+
+  // NOTE: This function is deprecated and only used to support v9 expenditure motions
+  function hashExpenditureAction(bytes memory action) internal pure returns (bytes32 hash) {
+    bytes4 sig = getSig(action);
+    assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
+
+    uint256 valueLoc = (sig == SET_EXPENDITURE_STATE) ? 0xe4 : 0xc4;
+
+    // Hash all but the domain proof and action value, so actions for the
+    //   same storage slot return the same hash.
+    // Recall: mload(action) gives the length of the bytes array
+    // So skip past the three bytes32 (length + domain proof),
+    //   plus 4 bytes for the sig (0x64). Subtract the same from the end, less
+    //   the length bytes32 (0x44). And zero out the value.
+
+    assembly {
+      mstore(add(action, valueLoc), 0x0)
+      hash := keccak256(add(action, 0x64), sub(mload(action), 0x44))
+    }
+  }
+
 }

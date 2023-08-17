@@ -188,6 +188,24 @@ Get the largest past vote on an expenditure
 |---|---|---|
 |_vote|uint256|The largest past vote on this variable
 
+### ▸ `getExpenditurePastVotes_DEPRECATED(bytes32 _slotSignature):uint256 _vote`
+
+DEPRECATED Get the largest past vote on an expenditure
+
+*Note: This is deprecated, and allows visibility on to this variable for any v9 motions that are still ongoing.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_slotSignature|bytes32|The slot signature
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_vote|uint256|The largest past vote on this variable
+
 ### ▸ `getMaxVoteFraction():uint256 _fraction`
 
 Get the max vote fraction

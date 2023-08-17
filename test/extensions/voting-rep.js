@@ -2755,7 +2755,7 @@ contract("Voting Reputation", (accounts) => {
       );
     });
 
-    it("can create a v9 motion, upgrade, and then finalize the motion", async () => {
+    it("can create a v9 motion, upgrade, and then finalize the motion if it's setExpenditureState", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId = await colony.getExpenditureCount();
       await colony.finalizeExpenditure(expenditureId);
@@ -2781,6 +2781,54 @@ contract("Voting Reputation", (accounts) => {
 
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.globalClaimDelay).to.be.zero; // V9 behavior still
+
+      let canonicalAction = await encodeTxData(colony, "setExpenditureState", [
+        1,
+        UINT256_MAX,
+        expenditureId,
+        25,
+        [true],
+        [bn2bytes32(new BN(3))],
+        bn2bytes32(new BN(0)),
+      ]);
+
+      canonicalAction = `0x${canonicalAction.slice(2 + (4 + 32 + 32) * 2)}`;
+
+      const pastVotes = await voting.getExpenditurePastVotes_DEPRECATED(web3.utils.soliditySha3(canonicalAction));
+      expect(pastVotes).to.eq.BN(REQUIRED_STAKE);
+    });
+
+    it("can create a v9 motion, upgrade, and then finalize the motion if it's setExpenditurePayout", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+      await colony.finalizeExpenditure(expenditureId);
+
+      // Set slot 0 payout to 1
+      const action = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, 1]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      let slot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(slot.claimDelay).to.eq.BN(UINT256_MAX.divn(3)); // V9 behavior
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      expect(await voting.version()).to.eq.BN(10);
+
+      await forwardTime(STAKE_PERIOD, this);
+      await voting.finalizeMotion(motionId);
+
+      slot = await colony.getExpenditureSlot(expenditureId, 0);
+      expect(slot.claimDelay).to.be.zero; // V9 behavior still
+
+      let canonicalAction = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, 0]);
+      canonicalAction = `0x${canonicalAction.slice(2 + (4 + 32 + 32) * 2)}`;
+
+      const pastVotes = await voting.getExpenditurePastVotes_DEPRECATED(web3.utils.soliditySha3(canonicalAction));
+      expect(pastVotes).to.eq.BN(REQUIRED_STAKE);
     });
 
     it("cannot make a new expenditure motion if an existing expenditure motion exists using the old lock", async () => {
