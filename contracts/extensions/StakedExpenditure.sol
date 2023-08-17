@@ -91,10 +91,20 @@ contract StakedExpenditure is ColonyExtensionMeta {
   }
 
   // Public
+  /// @notice Initialise the extension
+  /// @param _stakeFraction WAD-denominated fraction, used to determine stake as fraction of rep in domain
+  function initialise(uint256 _stakeFraction) onlyRoot public {
+    require(stakeFraction == 0, "staked-expenditure-already-initialised");
+    setStakeFraction(_stakeFraction);
+  }
 
   /// @notice Sets the stake fraction
   /// @param _stakeFraction WAD-denominated fraction, used to determine stake as fraction of rep in domain
   function setStakeFraction(uint256 _stakeFraction) public onlyRoot {
+    if (stakeFraction == 0) {
+      emit ExtensionInitialised();
+    }
+    require(_stakeFraction > 0, "staked-expenditure-value-too-small");
     require(_stakeFraction <= WAD, "staked-expenditure-value-too-large");
     stakeFraction = _stakeFraction;
 
@@ -121,6 +131,8 @@ contract StakedExpenditure is ColonyExtensionMeta {
     public
     notDeprecated
   {
+    require(stakeFraction > 0, "staked-expenditure-not-initialised");
+
     bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork()).getReputationRootHash();
     uint256 domainSkillId = colony.getDomain(_domainId).skillId;
     uint256 domainRep = checkReputation(rootHash, domainSkillId, address(0x0), _key, _value, _branchMask, _siblings);

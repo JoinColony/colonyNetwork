@@ -14,6 +14,8 @@ const {
   makeReputationValue,
   getActiveRepCycle,
   forwardTime,
+  expectEvent,
+  expectNoEvent,
 } = require("../../helpers/test-helper");
 
 const PatriciaTree = require("../../packages/reputation-miner/patricia");
@@ -144,11 +146,36 @@ contract("StakedExpenditure", (accounts) => {
 
       await colony.uninstallExtension(STAKED_EXPENDITURE, { from: USER0 });
     });
+
+    it("setStakeFraction will emit the correct event if stakeFraction == 0", async () => {
+      let tx = await stakedExpenditure.setStakeFraction(WAD, { from: USER0 });
+      await expectEvent(tx, "ExtensionInitialised", []);
+
+      // But not the second time
+      tx = await stakedExpenditure.setStakeFraction(WAD, { from: USER0 });
+      await expectNoEvent(tx, "ExtensionInitialised", []);
+    });
+
+    it("can't call initialise if initialised", async () => {
+      await stakedExpenditure.initialise(WAD, { from: USER0 });
+      await checkErrorRevert(stakedExpenditure.initialise(WAD, { from: USER0 }), "staked-expenditure-already-initialised");
+    });
+
+    it("must be root to initialise", async () => {
+      await checkErrorRevert(stakedExpenditure.initialise(WAD, { from: USER1 }), "staked-expenditure-caller-not-root");
+    });
+
+    it("can't call makeExpenditureWithStake if not initialised", async () => {
+      await checkErrorRevert(
+        stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 }),
+        "staked-expenditure-not-initialised"
+      );
+    });
   });
 
   describe("using stakes to manage expenditures", async () => {
     beforeEach(async () => {
-      await stakedExpenditure.setStakeFraction(WAD.divn(10)); // Stake of .3 WADs
+      await stakedExpenditure.initialise(WAD.divn(10)); // Stake of .3 WADs
       requiredStake = WAD.muln(3).divn(10);
 
       await token.mint(USER0, WAD);
