@@ -13,7 +13,6 @@ const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
-  setupClaimedExpenditure,
   fundColonyWithTokens,
 } = require("../../helpers/test-data-generator");
 
@@ -42,6 +41,8 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   //                                                       \-> 2
   await metaColony.addDomain(1, UINT256_MAX, 1);
   await metaColony.addDomain(1, 1, 2);
+  // 1 -> M
+  //   -> 2 -> 3
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
@@ -50,14 +51,6 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };
-
-async function customSetupClaimedExpenditure(args) {
-  const newArgs = Object.assign(args, {
-    evaluatorPayout: 0,
-    managerPayout: 0,
-  });
-  return setupClaimedExpenditure(newArgs);
-}
 
 process.env.SOLIDITY_COVERAGE
   ? contract.skip
@@ -96,54 +89,23 @@ process.env.SOLIDITY_COVERAGE
 
       describe("core functionality", () => {
         it("should correctly calculate increments and decrements in parent reputations", async () => {
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 100,
-            worker: OTHER,
-            domainId: 3,
-          });
+          await metaColony.emitDomainReputationReward(3, OTHER, 100);
           // Skills in 1 / 5 / 6
           // OTHER: (100 / 100 / 100)
 
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 100,
-            worker: WORKER,
-            domainId: 3,
-          });
+          await metaColony.emitDomainReputationReward(3, WORKER, 100);
           // WORKER: (100 / 100 / 100)
           // OTHER: (100 / 100 / 100)
 
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 900,
-            worker: OTHER,
-            domainId: 2,
-          });
+          await metaColony.emitDomainReputationReward(2, OTHER, 900);
           // WORKER: (100 / 100 / 100)
           // OTHER: (1000 / 1000 / 100)
 
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 1000,
-            worker: OTHER,
-            domainId: 1,
-          });
+          await metaColony.emitDomainReputationReward(1, OTHER, 1000);
           // WORKER: (100 / 100 / 100)
           // OTHER: (2000 / 1000 / 100)
 
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 200,
-            workerRating: 1,
-            worker: OTHER,
-            domainId: 3,
-          });
+          await metaColony.emitDomainReputationPenalty(1, 2, 3, OTHER, -100);
           // WORKER: (100 / 100 / 100)
           // OTHER: (1900 / 900 / 0)
 
@@ -171,44 +133,19 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("should correctly calculate decrements in child reputations", async () => {
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 100,
-            worker: OTHER,
-            domainId: 3,
-          });
+          await metaColony.emitDomainReputationReward(3, OTHER, 100);
           // Skills in 1 / 5 / 6
           // OTHER: (100 / 100 / 100)
 
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 100,
-            worker: WORKER,
-            domainId: 3,
-          });
+          await metaColony.emitDomainReputationReward(3, WORKER, 100);
           // WORKER: (100 / 100 / 100)
           // OTHER: (100 / 100 / 100)
 
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 900,
-            worker: OTHER,
-            domainId: 2,
-          });
+          await metaColony.emitDomainReputationReward(2, OTHER, 900);
           // WORKER: (100 / 100 / 100)
-          // THER: (1000 / 1000 / 100)
+          // OTHER: (1000 / 1000 / 100)
 
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 200,
-            workerRating: 1,
-            worker: OTHER,
-            domainId: 2,
-          });
+          await metaColony.emitDomainReputationPenalty(1, 1, 2, OTHER, -200);
           // WORKER: (100 / 100 / 100)
           // OTHER: (800 / 800 / 80)
 
@@ -236,54 +173,23 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("should correctly calculate decrements in child reputations if the user loses all reputation", async () => {
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 100,
-            worker: OTHER,
-            domainId: 3,
-          });
+          await metaColony.emitDomainReputationReward(3, OTHER, 100);
           // Skills in 1 / 5 / 6
           // OTHER: (100 / 100 / 100)
 
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 100,
-            worker: WORKER,
-            domainId: 3,
-          });
+          await metaColony.emitDomainReputationReward(3, WORKER, 100);
           // WORKER: (100 / 100 / 100)
           // OTHER: (100 / 100 / 100)
 
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 900,
-            worker: OTHER,
-            domainId: 2,
-          });
+          await metaColony.emitDomainReputationReward(2, OTHER, 900);
           // WORKER: (100 / 100 / 100)
           // OTHER: (1000 / 1000 / 100)
 
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 500,
-            worker: OTHER,
-            domainId: 1,
-          });
+          await metaColony.emitDomainReputationReward(1, OTHER, 500);
           // WORKER: (100 / 100 / 100)
           // OTHER: (1500 / 1000 / 100)
 
-          await customSetupClaimedExpenditure({
-            colonyNetwork,
-            colony: metaColony,
-            workerPayout: 100000000,
-            workerRating: 1,
-            worker: OTHER,
-            domainId: 2,
-          });
+          await metaColony.emitDomainReputationPenalty(1, 1, 2, OTHER, -100000000);
           // WORKER: (100 / 100 / 100)
           // OTHER: (500 / 0 / 0)
 

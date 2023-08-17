@@ -23,7 +23,14 @@ const {
   fundColonyWithTokens,
 } = require("../../helpers/test-data-generator");
 
-const { UINT256_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
+const {
+  UINT256_MAX,
+  DEFAULT_STAKE,
+  INITIAL_FUNDING,
+  MINING_CYCLE_DURATION,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  GLOBAL_SKILL_ID,
+} = require("../../helpers/constants");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
@@ -69,6 +76,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 };
 
 contract("Reputation Mining - disputes over child reputation", (accounts) => {
+  const USER0 = accounts[0];
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
   const MINER3 = accounts[7];
@@ -113,30 +121,18 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 3,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(3, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(3, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
 
       // Expenditure two payouts are less so that the reputation should be nonzero afterwards
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 100000000000,
-        evaluatorPayout: 100000000,
-        workerPayout: 500000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -100000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 100000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -500000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -180,30 +176,18 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 3,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(3, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(3, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
 
       // Expenditure two payouts are less so that the reputation should bee nonzero afterwards
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 100000000000,
-        evaluatorPayout: 100000000,
-        workerPayout: 500000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -100000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 100000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -500000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -248,30 +232,18 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(2, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(2, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
 
       // Expenditure two payouts are less so that the reputation should be nonzero afterwards
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 100000000000,
-        evaluatorPayout: 100000000,
-        workerPayout: 500000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -100000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 100000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -500000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -314,17 +286,11 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 3,
-        managerPayout: 100000000000,
-        evaluatorPayout: 100000000,
-        workerPayout: 500000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 2, 3, USER0, -100000000000);
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 2, 3, MINER2, -500000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -500000000000);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -387,30 +353,18 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(2, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(2, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
 
       // Expenditure two payouts are less so that the reputation should bee nonzero afterwards
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 100000000000,
-        evaluatorPayout: 100000000,
-        workerPayout: 500000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -100000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -500000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -500000000000);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -478,32 +432,20 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        skillId: 5,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(1, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(1, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(1, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(5, MINER2, 7500000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
 
       // Expenditure two payouts are less so that the reputation should bee nonzero afterwards
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        skillId: 4,
-        managerPayout: 100000000000,
-        evaluatorPayout: 100000000,
-        workerPayout: 500000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, USER0, -100000000000);
+      await metaColony.emitDomainReputationReward(1, USER0, 100000000);
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MINER2, -500000000000);
+      await metaColony.emitSkillReputationPenalty(4, MINER2, -500000000000);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -572,31 +514,19 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 3,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(3, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(3, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -5000000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -5000000000000);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -701,31 +631,19 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if child skill reputation calculation is wrong", async () => {
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 3,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(3, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(3, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 1000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -1000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -759,31 +677,19 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if a child skill reputation calculation (in a negative update) is wrong", async () => {
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 3,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(3, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(3, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -5000000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -5000000000000);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -818,17 +724,11 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     it("if a child skill reputation calculation is wrong and that user has never had that reputation before", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -5000000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -5000000000000);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -863,31 +763,19 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
   describe("should correctly resolve a dispute over colony wide reputation", () => {
     it("if a colony-wide calculation (for a parent skill) is wrong", async () => {
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 3,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 2,
-        workerRating: 2,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000000);
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(3, MINER2, 5000000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 5000000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 1000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -1000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1000000000);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -920,31 +808,19 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if a colony-wide calculation (for a child skill) is wrong", async () => {
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 3,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(3, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(3, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: accounts[5],
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER1, -5000000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER1, -5000000000000);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -978,43 +854,25 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if a colony-wide child skill is wrong, and the log .amount is larger than the colony total, but the correct change is not", async () => {
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 3,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 1000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(3, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(3, MINER2, 1500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 1500000000000);
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 3,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 1000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER1,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(3, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(3, MINER2, 1500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER1, 1500000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 1000000000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -1000000000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1000000000000000);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -1063,32 +921,19 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
       // any update caused by the second task
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        skillId: 5,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      await metaColony.emitDomainReputationReward(1, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(1, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(1, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(5, MINER2, 7500000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
 
       // Expenditure two payouts are less so that the reputation should bee nonzero afterwards
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        skillId: 4,
-        managerPayout: 100000000000,
-        evaluatorPayout: 100000000,
-        workerPayout: 500000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, USER0, -100000000000);
+      await metaColony.emitDomainReputationReward(1, USER0, 100000000);
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MINER2, -500000000000);
+      await metaColony.emitSkillReputationPenalty(4, MINER2, -500000000000);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -1152,31 +997,19 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if a colony-wide child skill reputation amount calculation underflows and is wrong", async () => {
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 3,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 1000000000000,
-        managerRating: 2,
-        workerRating: 2,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000000);
+      await metaColony.emitDomainReputationReward(3, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(3, MINER2, 1000000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 1000000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 1000000000001,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
+      await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -1000000000001);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1000000000001);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -1217,31 +1050,19 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domaindId: 3,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(1, USER0, 1500000000000);
+      await metaColony.emitDomainReputationReward(1, USER0, 1000000000);
+      await metaColony.emitDomainReputationReward(1, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domaindId: 2,
-        managerPayout: 1000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 1000000000,
-        managerRating: 1,
-        workerRating: 1,
-        worker: MINER2,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, USER0, -1000000000);
+      await metaColony.emitDomainReputationReward(1, USER0, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MINER2, -1000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1000000000);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
