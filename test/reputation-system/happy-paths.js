@@ -212,17 +212,11 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
-        await setupClaimedExpenditure( // eslint-disable-line prettier/prettier
-          {
-            colonyNetwork,
-            colony: metaColony,
-            token: clnyToken,
-            workerRating: 2,
-            managerPayout: 1,
-            evaluatorPayout: 1,
-            workerPayout: 1,
-          },
-        );
+        // Manager, evaluator, worker
+        await metaColony.emitDomainReputationReward(1, MANAGER, 1);
+        await metaColony.emitDomainReputationReward(1, MANAGER, 1);
+        await metaColony.emitDomainReputationReward(1, WORKER, 1);
+        await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, WORKER, 1);
       }
 
       console.log("Finished setting up tasks for test");
@@ -238,17 +232,11 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
-        await setupClaimedExpenditure( // eslint-disable-line prettier/prettier
-          {
-            colonyNetwork,
-            colony: metaColony,
-            token: clnyToken,
-            workerRating: 2,
-            managerPayout: 1,
-            evaluatorPayout: 1,
-            workerPayout: 1,
-          },
-        );
+        // Manager, evaluator, worker
+        await metaColony.emitDomainReputationReward(1, MANAGER, 1);
+        await metaColony.emitDomainReputationReward(1, MANAGER, 1);
+        await metaColony.emitDomainReputationReward(1, WORKER, 1);
+        await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, WORKER, 1);
       }
 
       console.log("Finished setting up tasks for test");
@@ -303,15 +291,11 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await badClient.initialise(colonyNetwork.address);
 
       // Send rep to 0
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000000,
-        workerPayout: 1000000000000,
-        managerRating: 1,
-        workerRating: 1,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MANAGER, -1000000000000);
+      await metaColony.emitDomainReputationReward(1, MANAGER, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, WORKER, -1000000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, WORKER, -1000000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -336,16 +320,11 @@ contract("Reputation Mining - happy paths", (accounts) => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 31, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        worker: accounts[4],
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000000,
-        workerPayout: 1000000000000,
-        managerRating: 1,
-        workerRating: 1,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MANAGER, -1000000000000);
+      await metaColony.emitDomainReputationReward(1, MANAGER, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, accounts[4], -1000000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, accounts[4], -1000000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -388,16 +367,12 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       const rootHash = await goodClient.getRootHash();
       await fundColonyWithTokens(metaColony, clnyToken, bigPayout.muln(4));
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        worker: MINER1,
-        managerPayout: bigPayout,
-        evaluatorPayout: bigPayout,
-        workerPayout: bigPayout,
-        managerRating: 3,
-        workerRating: 3,
-      });
+
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(1, MANAGER, bigPayout.divn(2).muln(3));
+      await metaColony.emitDomainReputationReward(1, MANAGER, bigPayout);
+      await metaColony.emitDomainReputationReward(1, MINER1, bigPayout.divn(2).muln(3));
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER1, bigPayout.divn(2).muln(3));
 
       await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
@@ -485,18 +460,11 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 1,
-        workerRating: 1,
-        evaluator: EVALUATOR,
-        worker: accounts[3],
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MANAGER, -1000000000000);
+      await metaColony.emitDomainReputationReward(2, EVALUATOR, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, accounts[3], -5000000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, accounts[3], -5000000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -575,29 +543,18 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
       // Earn some reputation for manager and worker in first task, then do badly in second task and lose some of it
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 8,
-        evaluator: EVALUATOR,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-      });
 
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 6,
-        evaluator: EVALUATOR,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 4200000000000,
-        managerRating: 2,
-        workerRating: 1,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(8, MANAGER, 1500000000000);
+      await metaColony.emitDomainReputationReward(8, EVALUATOR, 1000000000);
+      await metaColony.emitDomainReputationReward(8, WORKER, 7500000000000);
+      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, WORKER, 7500000000000);
+
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(6, MANAGER, 1000000000000);
+      await metaColony.emitDomainReputationReward(6, EVALUATOR, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 5, 6, WORKER, -4200000000000);
+      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, WORKER, -4200000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
