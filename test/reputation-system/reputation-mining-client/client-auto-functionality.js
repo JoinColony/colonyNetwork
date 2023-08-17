@@ -351,7 +351,6 @@ process.env.SOLIDITY_COVERAGE
           }
           reputationMinerClient.lockedForBlockProcessing = true;
           reputationMinerClient2.lockedForBlockProcessing = true;
-          await mineBlock();
 
           let latestBlock = await currentBlock();
           let firstSubmissionBlockNumber = latestBlock.number;
@@ -367,14 +366,26 @@ process.env.SOLIDITY_COVERAGE
           for (let i = 0; i < 11; i += 1) {
             await goodClient.submitRootHash();
           }
+
           await stopMining();
+          latestBlock = await currentBlock();
+
+          // Wait until all our block listeners have fired on both clients
+          while (
+            latestBlock.number !== reputationMinerClient.blockSeenWhileLocked ||
+            latestBlock.number !== reputationMinerClient2.blockSeenWhileLocked
+          ) {
+            await sleep(1000);
+            latestBlock = await currentBlock();
+          }
 
           const miner1TxCountBefore = await web3.eth.getTransactionCount(MINER1);
           const miner3TxCountBefore = await web3.eth.getTransactionCount(MINER3);
+          let miner1TxCountAfter = miner1TxCountBefore;
+          let miner3TxCountAfter = miner3TxCountBefore;
+
           reputationMinerClient.lockedForBlockProcessing = false;
           reputationMinerClient2.lockedForBlockProcessing = false;
-          let miner1TxCountAfter = await web3.eth.getTransactionCount(MINER1);
-          let miner3TxCountAfter = await web3.eth.getTransactionCount(MINER3);
 
           while (miner1TxCountAfter === miner1TxCountBefore || miner3TxCountAfter === miner3TxCountBefore) {
             await sleep(1000);

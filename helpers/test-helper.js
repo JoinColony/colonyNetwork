@@ -524,9 +524,6 @@ exports.stopMining = async function stopMining() {
           while (await exports.getHardhatAutomine()) {
             await exports.sleep(1000);
           }
-          // An extra wait, because _even when it reports it's not automining_, it
-          // still sometimes will if we send a tx immediately after.
-          await exports.sleep(5000);
           return resolve();
         }
       );
