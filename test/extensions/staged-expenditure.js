@@ -151,6 +151,14 @@ contract("Staged Expenditure", (accounts) => {
       await colony.claimExpenditurePayout(expenditureId, 0, token.address);
     });
 
+    it("can't mark an expenditure as staged if extension is deprecated", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+
+      await colony.deprecateExtension(STAGED_EXPENDITURE, true);
+      await checkErrorRevert(stagedExpenditure.setExpenditureStaged(expenditureId, true, { from: USER0 }), "colony-extension-deprecated");
+    });
+
     it("can create a staged payment via a stake", async () => {
       const STAKED_EXPENDITURE = soliditySha3("StakedExpenditure");
       const extension = await StakedExpenditure.new();
