@@ -114,10 +114,10 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
     bytes32[] memory keys = new bytes32[](2); keys[0] = bytes32(_slot); keys[1] = bytes32(uint256(1));
     colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, 26, mask, keys, bytes32(0));
 
+    emit StagedPaymentReleased(_expenditureId, _slot);
+    
     for (uint256 i; i < _tokens.length; i++) {
       colony.claimExpenditurePayout(_expenditureId, _slot, _tokens[i]);
     }
-
-    emit StagedPaymentReleased(_expenditureId, _slot);
   }
 }
