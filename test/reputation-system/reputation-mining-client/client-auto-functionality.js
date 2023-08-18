@@ -387,14 +387,15 @@ process.env.SOLIDITY_COVERAGE
           reputationMinerClient.lockedForBlockProcessing = false;
           reputationMinerClient2.lockedForBlockProcessing = false;
 
+          await mineBlock();
           while (miner1TxCountAfter === miner1TxCountBefore || miner3TxCountAfter === miner3TxCountBefore) {
             await sleep(1000);
-            miner1TxCountAfter = await web3.eth.getTransactionCount(MINER1);
-            miner3TxCountAfter = await web3.eth.getTransactionCount(MINER3);
-            await mineBlock();
+            miner1TxCountAfter = await web3.eth.getTransactionCount(MINER1, "pending");
+            miner3TxCountAfter = await web3.eth.getTransactionCount(MINER3, "pending");
           }
 
           await startMining();
+          await mineBlock();
 
           await receive12Submissions;
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
