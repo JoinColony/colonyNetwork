@@ -24,6 +24,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const ITokenLocking = artifacts.require("ITokenLocking");
 const EtherRouter = artifacts.require("EtherRouter");
 const StagedExpenditure = artifacts.require("StagedExpenditure");
 const StakedExpenditure = artifacts.require("StakedExpenditure");
@@ -153,7 +154,7 @@ contract("Staged Expenditure", (accounts) => {
     it("can create a staged payment via a stake", async () => {
       const STAKED_EXPENDITURE = soliditySha3("StakedExpenditure");
       const extension = await StakedExpenditure.new();
-      const stakedExpenditureversion = await extension.version();
+      const stakedExpenditureVersion = await extension.version();
 
       const reputationTree = new PatriciaTree();
       const domain1 = await colony.getDomain(1);
@@ -166,13 +167,21 @@ contract("Staged Expenditure", (accounts) => {
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(0, { from: MINER });
 
-      await colony.installExtension(STAKED_EXPENDITURE, stakedExpenditureversion);
+      await colony.installExtension(STAKED_EXPENDITURE, stakedExpenditureVersion);
 
       const stakedExpenditureAddress = await colonyNetwork.getExtensionInstallation(STAKED_EXPENDITURE, colony.address);
       const stakedExpenditure = await StakedExpenditure.at(stakedExpenditureAddress);
+      await stakedExpenditure.initialise(WAD.divn(10));
       await colony.setAdministrationRole(1, UINT256_MAX, stakedExpenditure.address, 1, true);
 
       await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+      const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+      await token.mint(USER0, WAD);
+      await token.approve(tokenLocking.address, WAD, { from: USER0 });
+      await tokenLocking.deposit(token.address, WAD, false, { from: USER0 });
+      await colony.approveStake(stakedExpenditure.address, 1, WAD.divn(10), { from: USER0 });
 
       const domain1Key = makeReputationKey(colony.address, domain1.skillId);
       const domain1Value = makeReputationValue(WAD, 1);
