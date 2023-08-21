@@ -233,6 +233,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
     // Finish the payout
     processPayout(expenditure.fundingPotId, _token, tokenPayout, slot.recipient);
+    emit ExpenditurePayoutClaimed(msgSender(), _id, _slot, _token, tokenPayout);
   }
 
   function setPaymentPayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _token, uint256 _amount) public
