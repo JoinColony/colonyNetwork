@@ -7,17 +7,7 @@ const { ethers } = require("ethers");
 const { BigNumber } = require("bignumber.js");
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 
-const {
-  UINT256_MAX,
-  MIN_STAKE,
-  MINING_CYCLE_DURATION,
-  DEFAULT_STAKE,
-  CHALLENGE_RESPONSE_WINDOW_DURATION,
-  XDAI_CHAINID,
-  FORKED_XDAI_CHAINID,
-  MAINNET_CHAINID,
-  FORKED_MAINNET_CHAINID,
-} = require("./constants");
+const { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("./constants");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -215,7 +205,6 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
     }
 
     const tx = await provider.getTransaction(txid);
-
     let reason;
     try {
       const callResult = await provider.call(
@@ -223,7 +212,7 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
           from: tx.from,
           to: tx.to,
           data: tx.data,
-          gas: ethers.utils.hexValue(tx.gas),
+          gas: ethers.utils.hexValue(tx.gasLimit),
           value: ethers.utils.hexValue(parseInt(tx.value, 10)),
         },
         receipt.blockNumber
@@ -1159,12 +1148,12 @@ exports.upgradeColonyTo = async function (colony, _version) {
 
 exports.isMainnet = async function isMainnet() {
   const chainId = await exports.web3GetChainId();
-  return chainId === MAINNET_CHAINID || chainId === FORKED_MAINNET_CHAINID;
+  return chainId === 1 || chainId === 2656691;
 };
 
 exports.isXdai = async function isXdai() {
   const chainId = await exports.web3GetChainId();
-  return chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID;
+  return chainId === 100 || chainId === 265669100;
 };
 
 class TestAdapter {
