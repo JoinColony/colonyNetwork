@@ -73,7 +73,7 @@ contract("Multisig Permissions", (accounts) => {
     const multisigPermissionsAddress = await colonyNetwork.getExtensionInstallation(MULTISIG_PERMISSIONS, colony.address);
     multisigPermissions = await MultisigPermissions.at(multisigPermissionsAddress);
 
-    await multisigPermissions.initialise(0);
+    await multisigPermissions.setGlobalThreshold(0);
 
     await colony.setRootRole(multisigPermissions.address, true);
     await colony.setArbitrationRole(1, UINT256_MAX, multisigPermissions.address, 1, true);
@@ -134,26 +134,26 @@ contract("Multisig Permissions", (accounts) => {
       multisigPermissions = await MultisigPermissions.new();
       await multisigPermissions.install(colony.address);
 
-      await expectEvent(multisigPermissions.initialise(1), "ExtensionInitialised", []);
+      await expectEvent(multisigPermissions.setGlobalThreshold(1), "GlobalThresholdSet", [1]);
     });
 
     it("only core root can initialise", async () => {
       multisigPermissions = await MultisigPermissions.new();
       await multisigPermissions.install(colony.address);
 
-      await expectEvent(multisigPermissions.initialise(1), "ExtensionInitialised", []);
+      await expectEvent(multisigPermissions.setGlobalThreshold(1), "GlobalThresholdSet", [1]);
 
       // Remove core root
       await colony.setUserRoles(1, UINT256_MAX, USER0, 1, ethers.utils.hexZeroPad("0x00", 32));
 
-      await checkErrorRevert(multisigPermissions.initialise(2), "multisig-permissions-not-core-root");
+      await checkErrorRevert(multisigPermissions.setGlobalThreshold(2), "multisig-permissions-not-core-root");
     });
 
     it("can query for initialisation values", async () => {
       let threshold = await multisigPermissions.getGlobalThreshold();
       expect(threshold).to.eq.BN(0);
 
-      await multisigPermissions.initialise(2);
+      await multisigPermissions.setGlobalThreshold(2);
       threshold = await multisigPermissions.getGlobalThreshold();
       expect(threshold).to.eq.BN(2);
     });
@@ -356,7 +356,7 @@ contract("Multisig Permissions", (accounts) => {
     });
 
     it("The domain skill threshold for execution changes as expected", async () => {
-      await multisigPermissions.initialise(2);
+      await multisigPermissions.setGlobalThreshold(2);
       // By default, it's the global threshold
       const domain = await colony.getDomain(1);
 
@@ -364,7 +364,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(res).to.eq.BN(2);
 
       // Update global threshold
-      await multisigPermissions.initialise(3);
+      await multisigPermissions.setGlobalThreshold(3);
       res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
       expect(res).to.eq.BN(3);
 
@@ -374,7 +374,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(res).to.eq.BN(2);
 
       // Changing the global threshold has no effect
-      await multisigPermissions.initialise(1);
+      await multisigPermissions.setGlobalThreshold(1);
       res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
       expect(res).to.eq.BN(2);
 
@@ -390,7 +390,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(res).to.eq.BN(2);
 
       // Set default to be relative
-      await multisigPermissions.initialise(0);
+      await multisigPermissions.setGlobalThreshold(0);
 
       // Still no change
       res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
