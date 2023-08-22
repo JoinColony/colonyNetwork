@@ -31,10 +31,13 @@ import { GetActionDomainSkillId } from "./../common/GetActionDomainSkillId.sol";
 contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCallData, GetActionDomainSkillId {
 
   // Events
-
-  // event ExpenditureMadeViaStake(address indexed creator, uint256 expenditureId, uint256 stake);
-  // event ExpenditureCancelled(uint256 expenditureId);
-  // event StakeReclaimed(uint256 expenditureId);
+  
+  event MultisigRoleSet(address agent, address user, uint256 domainId, uint256 roleId, bool setTo);
+  event MotionExecuted(address agent, uint256 motionId, bool success);
+  event MotionCreated(address agent, uint256 motionId);
+  event ApprovalChanged(address agent, uint256 motionId, ColonyRole role, bool approval);
+  event GlobalThresholdSet(uint256 globalThreshold);
+  event DomainSkillThresholdSet(uint256 domainSkillId, uint256 threshold);
 
   // Datatypes
 
@@ -48,11 +51,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     uint256 overallApprovalTimestamp;
     bool executed;
   }
-
-  event MultisigRoleSet(address agent, address user, uint256 domainId, uint256 roleId, bool setTo);
-  event MotionExecuted(address agent, uint256 motionId, bool success);
-  event MotionCreated(address agent, uint256 motionId);
-  event ApprovalChanged(address agent, uint256 motionId, ColonyRole role, bool approval);
 
   bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
   bytes4 constant SET_USER_ROLES = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
@@ -143,17 +141,17 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     _;
   }
 
-  function initialise(uint256 _globalThreshold) public onlyCoreRoot {
+  function setGlobalThreshold(uint256 _globalThreshold) public onlyCoreRoot {
     globalThreshold = _globalThreshold;
 
-    emit ExtensionInitialised();
+    emit GlobalThresholdSet(_globalThreshold);
   }
 
   function getGlobalThreshold() public view returns (uint256) {
     return globalThreshold;
   }
 
-  function createMotion(uint256 _permissionDomainId, uint256 _childSkillIndex, address[] memory _targets, bytes[] memory _data) notDeprecated public {
+  function createMotion(uint256 _permissionDomainId, uint256 _childSkillIndex, address[] memory _targets, bytes[] memory _data) public notDeprecated {
     require(_targets.length == _data.length, "colony-multisig-invalid-motion");
     require(_targets.length >= 1, "colony-multisig-invalid-motion");
 
@@ -181,7 +179,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
 
     emit MotionCreated(msgSender(), motionCount);
 
-    // TODO: do this per-permission
     changeApproval(_permissionDomainId, _childSkillIndex, motionCount, true);
   }
 
@@ -251,15 +248,15 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
   function execute(uint256 _motionId) public notExecuted(_motionId) {
     Motion storage motion = motions[_motionId];
 
-    // TODO: Check per-permission
     bytes32 motionPermissions = motion.requiredPermissions;
     uint8 roleIndex = 0;
-    while (motionPermissions > 0){
-      if (uint256(motionPermissions) % 2 == 1){
+    // While there are still relevant roles we've not checked yet
+    while (uint256(motionPermissions) >= (1 << roleIndex)){
+      // For the current role, is it required for the motion?
+      if ((motionPermissions & bytes32(1 << roleIndex)) > 0){
         uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, ColonyRole(roleIndex));
         require(motionRoleApprovalCount[_motionId][ColonyRole(roleIndex)] >= threshold, "colony-multisig-permissions-not-enough-approvals");
       }
-      motionPermissions = motionPermissions >> 1;
       roleIndex += 1;
     }
 
@@ -277,7 +274,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
 
     // Execute the motion, if it meets the threshold
     for (uint256 i = 0; i < motion.data.length; i += 1){
-      (bool success, bytes memory result) = address(motion.targets[i]).call(motion.data[i]);
+      (bool success, ) = address(motion.targets[i]).call(motion.data[i]);
       overallSuccess = overallSuccess && success;
       // Allow failing execution after seven days
       require(success || motion.overallApprovalTimestamp + 7 days <= block.timestamp, "colony-multisig-failed-not-one-week");
@@ -311,8 +308,10 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     return domainSkillThreshold[_domainSkillId];
   }
 
-  function setDomainSkillThreshold(uint256 _domainSkillId, uint256 _threshold) public onlyCoreRoot returns (uint256) {
+  function setDomainSkillThreshold(uint256 _domainSkillId, uint256 _threshold) public onlyCoreRoot {
     domainSkillThreshold[_domainSkillId] = _threshold;
+
+    emit DomainSkillThresholdSet(_domainSkillId, _threshold);
   }
 
   function getDomainSkillRoleThreshold(uint256 _domainSkillId, ColonyRole _role) public view returns (uint256) {
@@ -413,8 +412,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
 
   function getActionSummary(bytes memory action, address target) public view returns (uint256 domainSkillId, bytes32 requiredPermissions) {
     bytes4 sig;
-    uint256 expenditureId;
-    uint256 domainSkillId;
     bytes[] memory actions;
 
     if (getSig(action) == MULTICALL) {
