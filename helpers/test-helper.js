@@ -216,10 +216,10 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
         from: tx.from,
         to: tx.to,
         data: tx.input,
-        gas: tx.gas,
-        value: ethers.utils.hexlify(parseInt(tx.value, 10)),
+        gas: ethers.utils.hexValue(tx.gas),
+        value: ethers.utils.hexValue(parseInt(tx.value, 10)),
       },
-      receipt.blockNumber
+      ethers.utils.hexValue(receipt.blockNumber)
     );
     const reason = exports.extractReasonString(response);
     expect(reason).to.equal(errorMessage);
@@ -424,7 +424,7 @@ exports.forwardTime = async function forwardTime(seconds, test) {
   }
   const client = await exports.web3GetClient();
   const p = new Promise((resolve, reject) => {
-    if (client.indexOf("TestRPC") === -1) {
+    if (client.indexOf("TestRPC") === -1 && client.indexOf("Hardhat") === -1) {
       resolve(test.skip());
     } else {
       // console.log(`Forwarding time with ${seconds}s ...`);
@@ -486,7 +486,50 @@ exports.mineBlock = async function mineBlock(timestamp) {
   });
 };
 
+exports.getHardhatAutomine = async function checkHardhatAutomine() {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "hardhat_getAutomine",
+        params: [],
+        id: new Date().getTime(),
+      },
+      (err, res) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(Boolean(res.result));
+      }
+    );
+  });
+};
+
 exports.stopMining = async function stopMining() {
+  const client = await exports.web3GetClient();
+  if (client.indexOf("Hardhat") !== -1) {
+    return new Promise((resolve, reject) => {
+      web3.currentProvider.send(
+        {
+          jsonrpc: "2.0",
+          method: "evm_setAutomine",
+          params: [false],
+          id: new Date().getTime(),
+        },
+        async (err) => {
+          if (err) {
+            return reject(err);
+          }
+          // Wait until actually reports that it's stopped mining
+          while (await exports.getHardhatAutomine()) {
+            await exports.sleep(1000);
+          }
+          return resolve();
+        }
+      );
+    });
+  }
+
   return new Promise((resolve, reject) => {
     web3.currentProvider.send(
       {
@@ -506,6 +549,26 @@ exports.stopMining = async function stopMining() {
 };
 
 exports.startMining = async function startMining() {
+  const client = await exports.web3GetClient();
+  if (client.indexOf("Hardhat") !== -1) {
+    return new Promise((resolve, reject) => {
+      web3.currentProvider.send(
+        {
+          jsonrpc: "2.0",
+          method: "evm_setAutomine",
+          params: [true],
+          id: new Date().getTime(),
+        },
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve();
+        }
+      );
+    });
+  }
+
   return new Promise((resolve, reject) => {
     web3.currentProvider.send(
       {
