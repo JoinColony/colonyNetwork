@@ -350,13 +350,14 @@ interface ColonyDataTypes {
   event ArbitraryTransaction(address target, bytes data, bool success);
 
   /// @notice Event logged when an expenditure payout is claimed.
-  /// @dev This is emitted in addition to PayoutClaimed event
+  /// @dev This is emitted in addition to the other PayoutClaimed
+  /// event. The other will be removed soon.
   /// @param agent The address that is responsible for triggering this event
   /// @param id Id of the expenditure
   /// @param slot Expenditure slot of the payout claimed
   /// @param token Token of the payout claim
   /// @param tokenPayout Amount of the payout claimed, after network fee was deducted
-  event ExpenditurePayoutClaimed(address agent, uint256 id, uint256 slot, address token, uint256 tokenPayout);
+  event PayoutClaimed(address agent, uint256 id, uint256 slot, address token, uint256 tokenPayout);
 
   // Structs
 

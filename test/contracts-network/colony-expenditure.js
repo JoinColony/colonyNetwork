@@ -802,7 +802,7 @@ contract("Colony Expenditure", (accounts) => {
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       const tx = await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
-      await expectEvent(tx, "ExpenditurePayoutClaimed", [accounts[0], expenditureId, SLOT0, token.address, WAD]);
+      await expectEvent(tx, "PayoutClaimed", [accounts[0], expenditureId, SLOT0, token.address, WAD]);
       await expectEvent(tx, "PayoutClaimed", [accounts[0], expenditure.fundingPotId, token.address, WAD.divn(100).muln(99).subn(1)]);
     });
 
