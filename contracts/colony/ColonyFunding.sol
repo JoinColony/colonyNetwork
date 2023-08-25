@@ -261,6 +261,10 @@ contract ColonyFunding is
 
     if (fundingPot.associatedType == FundingPotAssociatedType.Domain) {
       domainId = fundingPot.associatedTypeId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.DEPRECATED_Task) {
+      domainId = DEPRECATED_tasks[fundingPot.associatedTypeId].domainId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.DEPRECATED_Payment) {
+      domainId = DEPRECATED_payments[fundingPot.associatedTypeId].domainId;
     } else if (fundingPot.associatedType == FundingPotAssociatedType.Expenditure) {
       domainId = expenditures[fundingPot.associatedTypeId].domainId;
     } else {
@@ -308,12 +312,20 @@ contract ColonyFunding is
       );
     }
 
-    if (fromPot.associatedType == FundingPotAssociatedType.Expenditure) {
+    if (
+      fromPot.associatedType == FundingPotAssociatedType.Expenditure ||
+      fromPot.associatedType == FundingPotAssociatedType.DEPRECATED_Payment ||
+      fromPot.associatedType == FundingPotAssociatedType.DEPRECATED_Task
+    ) {
       uint256 fromPotPreviousAmount = fromPot.balance[_token] + _amount;
       updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
     }
 
-    if (toPot.associatedType == FundingPotAssociatedType.Expenditure) {
+    if (
+      toPot.associatedType == FundingPotAssociatedType.Expenditure ||
+      toPot.associatedType == FundingPotAssociatedType.DEPRECATED_Payment ||
+      toPot.associatedType == FundingPotAssociatedType.DEPRECATED_Task
+    ) {
       uint256 toPotPreviousAmount = toPot.balance[_token] - _amount;
       updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
     }

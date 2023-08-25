@@ -52,13 +52,13 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   uint256 domainCount; // Storage slot 11
 
   // Mapping function signature to 2 task roles whose approval is needed to execute
-  mapping(bytes4 => uint8[2]) DEPRECATED_reviewers; // Storage slot 12
+  mapping (bytes4 => TaskRole[2]) DEPRECATED_reviewers; // Storage slot 12
 
   // Role assignment functions require special type of sign-off.
   // This keeps track of which functions are related to role assignment
   mapping(bytes4 => bool) DEPRECATED_roleAssignmentSigs; // Storage slot 13
 
-  mapping(uint256 => bytes32[10]) DEPRECATED_tasks; // Storage slot 14
+  mapping (uint256 => Task) DEPRECATED_tasks; // Storage slot 14
 
   // FundingPots can be tied to tasks or domains, so giving them their own mapping.
   // FundingPot 1 can be thought of as the pot belonging to the colony itself that hasn't been assigned
@@ -76,15 +76,15 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   // This is decremented whenever a payout occurs and the colony loses control of the funds.
   mapping(address => uint256) nonRewardPotsTotal; // Storage slot 18
 
-  mapping(uint256 => bytes32[3]) public DEPRECATED_taskWorkRatings; // Storage slot 19
+  mapping (uint256 => RatingSecrets) public DEPRECATED_taskWorkRatings; // Storage slot 19
 
   mapping(uint256 => Domain) public domains; // Storage slot 20
 
   // Mapping task id to current "active" nonce for executing task changes
   mapping(uint256 => uint256) DEPRECATED_taskChangeNonces; // Storage slot 21
 
-  uint256 paymentCount; // Storage slot 22
-  mapping(uint256 => bytes32[4]) DEPRECATED_payments; // Storage slot 23
+  uint256 DEPRECATED_paymentCount; // Storage slot 22
+  mapping (uint256 => Payment) DEPRECATED_payments; // Storage slot 23
 
   uint256 expenditureCount; // Storage slot 24
   mapping(uint256 => Expenditure) expenditures; // Storage slot 25
@@ -128,11 +128,6 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
       !IColonyNetwork(colonyNetworkAddress).getSkill(domains[_id].skillId).deprecated,
       "colony-domain-deprecated"
     );
-    _;
-  }
-
-  modifier validPayoutAmount(uint256 _amount) {
-    require(_amount <= MAX_PAYOUT, "colony-payout-too-large");
     _;
   }
 
