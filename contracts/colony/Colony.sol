@@ -101,6 +101,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   stoppable
   auth
   {
+    require(DEPRECATED_taskCount == 0 && DEPRECATED_paymentCount == 0, "colony-not-in-bootstrap-mode");
     require(expenditureCount == 0, "colony-not-in-bootstrap-mode");
     require(_users.length == _amounts.length, "colony-bootstrap-bad-inputs");
 
@@ -398,6 +399,59 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function getTotalTokenApproval(address _token) public view returns (uint256) {
     return tokenApprovalTotals[_token];
+  }
+
+  // Deprecated view functions for Tasks and Payments
+
+  function getTaskCount() public view returns (uint256) {
+    return DEPRECATED_taskCount;
+  }
+
+  function getTaskChangeNonce(uint256 _id) public view returns (uint256) {
+    return DEPRECATED_taskChangeNonces[_id];
+  }
+
+  function getTaskWorkRatingSecretsInfo(uint256 _id) public view returns (uint256, uint256) {
+    return (DEPRECATED_taskWorkRatings[_id].count, DEPRECATED_taskWorkRatings[_id].timestamp);
+  }
+
+  function getTaskWorkRatingSecret(uint256 _id, uint8 _role) public view returns (bytes32) {
+    return DEPRECATED_taskWorkRatings[_id].secret[_role];
+  }
+
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role memory role) {
+    role = DEPRECATED_tasks[_id].roles[_role];
+  }
+
+  function getTask(uint256 _id) public view returns (
+    bytes32,
+    bytes32,
+    TaskStatus,
+    uint256,
+    uint256,
+    uint256,
+    uint256,
+    uint256[] memory)
+  {
+    Task storage t = DEPRECATED_tasks[_id];
+    return (
+      t.specificationHash,
+      t.deliverableHash,
+      t.status,
+      t.dueDate,
+      t.fundingPotId,
+      t.completionTimestamp,
+      t.domainId,
+      t.skills
+    );
+  }
+
+  function getPayment(uint256 _id) public view returns (Payment memory) {
+    return DEPRECATED_payments[_id];
+  }
+
+  function getPaymentCount() public view returns (uint256) {
+    return DEPRECATED_paymentCount;
   }
 
 }

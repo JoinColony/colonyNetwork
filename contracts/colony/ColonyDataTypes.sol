@@ -254,6 +254,27 @@ interface ColonyDataTypes {
 
   event ArbitraryTransaction(address target, bytes data, bool success);
 
+  // Deprecated Task and Payment events
+  event TaskAdded(address agent, uint256 taskId);
+  event TaskBriefSet(uint256 indexed taskId, bytes32 specificationHash);
+  event TaskDueDateSet(uint256 indexed taskId, uint256 dueDate);
+  event TaskSkillSet(uint256 indexed taskId, uint256 indexed skillId);
+  event TaskRoleUserSet(uint256 indexed taskId, TaskRole role, address indexed user);
+  event TaskPayoutSet(uint256 indexed taskId, TaskRole role, address token, uint256 amount);
+  event TaskChangedViaSignatures(address[] reviewerAddresses);
+  event TaskDeliverableSubmitted(address agent, uint256 indexed taskId, bytes32 deliverableHash);
+  event TaskCompleted(address agent, uint256 indexed taskId);
+  event TaskWorkRatingRevealed(address agent, uint256 indexed taskId, TaskRole role, uint8 rating);
+  event TaskFinalized(address agent, uint256 indexed taskId);
+  event TaskCanceled(uint256 indexed taskId);
+  event PaymentAdded(address agent, uint256 paymentId);
+  event PaymentPayoutSet(address agent, uint256 indexed paymentId, address token, uint256 amount);
+  event PaymentSkillSet(address agent, uint256 indexed paymentId, uint256 skillId);
+  event PaymentRecipientSet(address agent, uint256 indexed paymentId, address recipient);
+  event PaymentFinalized(address agent, uint256 indexed paymentId);
+
+  // Structs
+
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
     bytes32 reputationState;
@@ -296,7 +317,7 @@ interface ColonyDataTypes {
 
   // We do have 1 "special" funding pot with id 0 for rewards which will carry the "Unassigned" type.
   // as they are unrelated to other entities in the Colony the same way the remaining funding pots are releated to domains, tasks and payouts.
-  enum FundingPotAssociatedType { Unassigned, Domain, Task, Payment, Expenditure }
+  enum FundingPotAssociatedType { Unassigned, Domain, DEPRECATED_Task, DEPRECATED_Payment, Expenditure }
 
   struct FundingPot {
     // Funding pots can store multiple token balances, for ETH use 0x0 address
@@ -316,5 +337,43 @@ interface ColonyDataTypes {
 
   struct LocalSkill {
     bool exists;
+  }
+
+  // Deprecated Task and Payment datatypes
+  enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }
+  enum TaskRole { Manager, Evaluator, Worker }
+  enum TaskStatus { Active, Cancelled, Finalized }
+
+  struct Task {
+    bytes32 specificationHash;
+    bytes32 deliverableHash;
+    TaskStatus status;
+    uint256 dueDate;
+    uint256 fundingPotId;
+    uint256 completionTimestamp;
+    uint256 domainId;
+    uint256[] skills;
+    mapping (uint8 => Role) roles;
+    mapping (uint8 => mapping (address => uint256)) payouts;
+  }
+
+  struct Role {
+    address payable user;
+    bool rateFail;
+    TaskRatings rating;
+  }
+
+  struct RatingSecrets {
+    uint256 count;
+    uint256 timestamp;
+    mapping (uint8 => bytes32) secret;
+  }
+
+  struct Payment {
+    address payable recipient;
+    bool finalized;
+    uint256 fundingPotId;
+    uint256 domainId;
+    uint256[] skills;
   }
 }
