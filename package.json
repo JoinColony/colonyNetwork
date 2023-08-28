@@ -2,6 +2,10 @@
   "name": "@colony.io/colony-network-contracts",
   "version": "1.0.0",
   "description": "Contracts for Colony Network",
+  "engines": {
+    "node": "^14.21 || ^16.20",
+    "npm": "^8.19"
+  },
   "scripts": {
     "solhint-staged": "bash ./scripts/solhint.sh",
     "eslint-staged": "bash ./scripts/eslint.sh",
