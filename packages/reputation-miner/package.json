@@ -1,7 +1,11 @@
 {
   "name": "@colony/reputation-miner",
   "version": "0.1.0",
-  "description": "Colony",
+  "description": "Colony Reputation Miner",
+  "engines": {
+    "node": "^14.18 || ^16.20",
+    "npm": "^8.19"
+  },
   "main": "ReputationMinerClient.js",
   "directories": {
     "test": "test"
