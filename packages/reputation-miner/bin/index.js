@@ -1,9 +1,5 @@
 const path = require("path");
-const { argv } = require("yargs")
-  .option('privateKey', {string:true})
-  .option('colonyNetworkAddress', {string:true})
-  .option('minerAddress', {string:true})
-  .option('providerAddress', {type: "array", default: []});
+const yargs = require("yargs")
 const ethers = require("ethers");
 const backoff = require("exponential-backoff").backOff;
 
@@ -12,24 +8,98 @@ const ReputationMinerClient = require("../ReputationMinerClient");
 const { ConsoleAdapter, SlackAdapter, DiscordAdapter, TruffleLoader } = require("../../package-utils");
 
 const supportedInfuraNetworks = ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"];
+
+const { argv } = yargs
+  .option("adapter", {
+    type: "string",
+    choices: ["console", "discord", "slack"],
+    default: "console"
+  })
+  .option("adapterLabel", {
+    type: "string",
+  })
+  .option("auto", {
+    describe: "Whether to automatically submit hashes and respond to challenges",
+    type: "boolean",
+    default: true
+  })
+  .option("colonyNetworkAddress", {
+    type: "string",
+    default: "0x78163f593D1Fa151B4B7cacD146586aD2b686294"
+  })
+  .option("dbPath", {
+    describe: "Path where to save the database",
+    type: "string",
+    default: "./reputations.sqlite"
+  })
+  .option("exitOnError", {
+    describe: "Whether to exit when an error is hit or not.",
+    type: "boolean",
+    default: false,
+  })
+  .option("minerAddress", {
+    describe: "The address that is staking CLNY that will allow the miner to submit reputation hashes",
+    type: "string",
+    conflicts: "privateKey",
+  })
+  .option("network", {
+    type: "string",
+    choices: supportedInfuraNetworks,
+    conflicts: ["providerAddress", "localProviderAddress"]
+  })
+  .option("oracle", {
+    describe: "Whether to serve requests as a reputation oracle or not",
+    type: "boolean",
+    default: true
+  })
+  .option("oraclePort", {
+    type: "number",
+    default: 3000,
+  })
+  .option("privateKey", {
+    // eslint-disable-next-line max-len
+    describe: "The private key of the address that is mining, allowing the miner to sign transactions. If used, `minerAddress` is not needed and will be derived.",
+    type: "string",
+    conflicts: "minerAddress",
+  })
+  .option("processingDelay", {
+    describe: "Delay between processing reputation logs",
+    type: 'number',
+    default: 10,
+  })
+  .option("providerAddress", {
+    type: "array",
+    conflicts: ["network", "localProviderAddress"]
+  })
+  .option("rpcEndpoint", {
+    type: "string",
+    conflicts: ["network", "providerAddress"]
+  })
+  .option("syncFrom", {
+    type: "number",
+    default: 11897847,
+  })
+  .env("REP_MINER")
+;
+
 const {
-  minerAddress,
-  privateKey,
+  adapter,
+  adapterLabel,
+  auto,
   colonyNetworkAddress,
   dbPath,
-  network,
-  localPort,
-  localProviderAddress,
-  providerAddress,
-  syncFrom,
-  auto,
-  oracle,
   exitOnError,
-  adapter,
+  minerAddress,
+  network,
+  oracle,
   oraclePort,
+  privateKey,
   processingDelay,
-  adapterLabel,
+  providerAddress,
+  rpcEndpoint,
+  syncFrom,
 } = argv;
+
 
 class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
   constructor(connectionInfo, adapterObject){
@@ -57,11 +127,10 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
   }
 }
 
-if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
-  console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress and --syncFrom on the command line!");
+if (!minerAddress && !privateKey) {
+  console.log("❗️ You have to specify either --minerAddress or --privateKey");
   process.exit();
 }
-
 
 let adapterObject;
 
@@ -84,10 +153,7 @@ if (network) {
     process.exit();
   }
   provider = new ethers.providers.InfuraProvider(network);
-} else if (providerAddress.length === 0){
-  const rpcEndpoint = `${localProviderAddress || "http://localhost"}:${localPort || "8545"}`;
-  provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
-} else {
+} else if (providerAddress.length) {
   const providers = providerAddress.map(endpoint => {
     const {protocol, username, password, host, pathname} = new URL(endpoint);
     const connectionInfo = {
@@ -105,6 +171,8 @@ if (network) {
   // When sorted, use this line instead.
   // provider = new ethers.providers.FallbackProvider(providers, 1)
   [ provider ] = providers;
+} else {
+  provider = new ethers.providers.JsonRpcProvider(rpcEndpoint || 'http://localhost:8545');
 }
 
 const client = new ReputationMinerClient({
