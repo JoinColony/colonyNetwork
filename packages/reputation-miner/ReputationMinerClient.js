@@ -637,19 +637,23 @@ class ReputationMinerClient {
   endDoBlockChecks() {
     if (this.resolveBlockChecksFinished){
       this.resolveBlockChecksFinished();
-    }
-    this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
-    this.lockedForBlockProcessing = false;
-    if (this.blockSeenWhileLocked){
-      // NB Not an async call - we do not want to wait here for the block checks to complete.
-      this.doBlockChecks(this.blockSeenWhileLocked);
+    } else {
+      this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
+      this.lockedForBlockProcessing = false;
+      if (this.blockSeenWhileLocked){
+        // NB Not an async call - we do not want to wait here for the block checks to complete.
+        this.doBlockChecks(this.blockSeenWhileLocked);
+      }
     }
   }
 
   async close() {
+    // This check guards against calling close() twice
+    if (this.resolveBlockChecksFinished){ return; }
+
     this._miner.realProvider.polling = false;
 
-    const blockChecksFinished = new Promise((resolve) => {
+    const blockChecksFinishedPromise = new Promise((resolve) => {
       this.resolveBlockChecksFinished = resolve;
     });
 
@@ -664,7 +668,7 @@ class ReputationMinerClient {
     }
 
     if (this.lockedForBlockProcessing) {
-      await blockChecksFinished;
+      await blockChecksFinishedPromise;
     }
 
     if (this.blockTimeoutCheck) {
