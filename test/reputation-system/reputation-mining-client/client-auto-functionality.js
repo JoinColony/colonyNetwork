@@ -82,14 +82,14 @@ process.env.SOLIDITY_COVERAGE
         goodClient = new ReputationMinerTestWrapper({
           loader,
           realProviderPort,
-          minerAddress: MINER2,
+          minerAddress: _MINER2,
           useJsTree: true,
           // dbPath: "./reputationStates_good.sqlite"
         });
         reputationMinerClient = new ReputationMinerClient({
           loader,
           realProviderPort,
-          minerAddress: MINER1,
+          minerAddress: _MINER1,
           useJsTree: true,
           auto: true,
           oracle: false,
