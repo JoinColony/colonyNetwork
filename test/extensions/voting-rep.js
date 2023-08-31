@@ -2932,20 +2932,64 @@ contract("Voting Reputation", (accounts) => {
       const motionId1 = await voting.getMotionCount();
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId2 = await voting.getMotionCount();
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId3 = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 1, WAD.muln(3), { from: USER0 });
       await voting.stakeMotion(motionId1, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId3, 1, UINT256_MAX, NAY, REQUIRED_STAKE.divn(2), user0Key, user0Value, user0Mask, user0Siblings, {
+        from: USER0,
+      });
 
       await colony.upgradeExtension(VOTING_REPUTATION, 10);
 
-      // Can counter-stake the first motion
+      // Can counter-stake the first two motions
       await voting.stakeMotion(motionId1, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      // Cannot stake the second motion
+      // Cannot stake the third motion
       await checkErrorRevert(
-        voting.stakeMotion(motionId2, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        voting.stakeMotion(motionId3, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
         "voting-rep-invalid-stake"
       );
+
+      await checkErrorRevert(
+        voting.stakeMotion(motionId3, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
+        "voting-rep-invalid-stake"
+      );
+    });
+
+    it("cannot stake an expenditure-based motion created before the upgrade, unless it has been escalated", async () => {
+      await colony.makeExpenditure(1, 0, 2);
+      const expenditureId = await colony.getExpenditureCount();
+
+      // Set finalizedTimestamp to WAD
+      const action = await encodeTxData(colony, "setExpenditureState", [1, 0, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
+      await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
+      const motionId = await voting.getMotionCount();
+
+      const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
+      const user0Value2 = makeReputationValue(WAD.divn(3), 9);
+      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
+
+      await colony.approveStake(voting.address, 1, WAD.muln(3), { from: USER0 });
+      await colony.approveStake(voting.address, 2, WAD.muln(3), { from: USER0 });
+
+      await voting.stakeMotion(motionId, 1, 0, YAY, REQUIRED_STAKE, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, 0, NAY, REQUIRED_STAKE, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+
+      await voting.submitVote(motionId, soliditySha3(SALT, YAY), user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+
+      await forwardTime(SUBMIT_PERIOD, this);
+
+      await voting.revealVote(motionId, SALT, YAY, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
+
+      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+
+      // Can upgrade the motion and submit the stake
+      await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
     });
 
     it("can create a v9 NO_ACTION motion, upgrade, and then finalize the motion", async () => {
