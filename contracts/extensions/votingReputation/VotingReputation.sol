@@ -285,7 +285,7 @@ contract VotingReputation is VotingReputationStorage {
     } else { // Backwards compatibility for versions 9 and below
       ActionSummary memory actionSummary = getActionSummary(motion.action, motion.altTarget);
       if (isExpenditureSig(actionSummary.sig) && getTarget(motion.altTarget) == address(colony)) {
-        unlockExpenditure(_motionId);
+        unlockV9Expenditure(_motionId);
         uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
           motion.votes[YAY] : motion.stakes[YAY];
 
@@ -418,36 +418,47 @@ contract VotingReputation is VotingReputationStorage {
   // Internal
 
   function unlockExpenditure(uint256 _motionId) internal returns (uint256) {
+    // This function is only for motions made with v10 and above
+    assert(_motionId > motionCountV10); 
+    
     Motion storage motion = motions[_motionId];
     bytes memory action = getExpenditureAction(motion.action);
     uint256 expenditureId = getExpenditureId(action);
 
-    if (_motionId > motionCountV10) { // New functionality for versions 10 and above
-      assert(expenditureMotionLocks[expenditureId] == _motionId);
-      delete expenditureMotionLocks[expenditureId];
+    assert(expenditureMotionLocks[expenditureId] == _motionId);
+    delete expenditureMotionLocks[expenditureId];
 
-      ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(expenditureId);
-      uint256 sinceFinalized = (expenditure.status == ColonyDataTypes.ExpenditureStatus.Finalized) ?
-        (block.timestamp - expenditure.finalizedTimestamp) :
-        0;
+    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(expenditureId);
+    uint256 sinceFinalized = (expenditure.status == ColonyDataTypes.ExpenditureStatus.Finalized) ?
+      (block.timestamp - expenditure.finalizedTimestamp) :
+      0;
 
-      uint256 claimDelay = expenditure.globalClaimDelay - LOCK_DELAY + sinceFinalized;
-      bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, claimDelay);
+    uint256 claimDelay = expenditure.globalClaimDelay - LOCK_DELAY + sinceFinalized;
+    bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, claimDelay);
+    // No require this time, since we don't want stakes to be permanently locked
+    executeCall(_motionId, claimDelayAction);
+
+    return expenditureId;
+  }
+
+  function unlockV9Expenditure(uint256 _motionId) internal returns (uint256) {
+    // This function is only for motions created with v9 and below
+    assert(_motionId <= motionCountV10); 
+    Motion storage motion = motions[_motionId];
+    bytes memory action = getExpenditureAction(motion.action);
+    uint256 expenditureId = getExpenditureId(action);
+
+    bytes32 structHash = getExpenditureStructHash(action);
+    // If v9 multicall, won't have incremented the lock, so don't decrement
+    if (getSig(motion.action) != MULTICALL) {
+      expenditureMotionCounts_DEPRECATED[structHash]--;
+    }
+
+    // Release the claimDelay if this is the last active motion
+    if (expenditureMotionCounts_DEPRECATED[structHash] == 0) {
+      bytes memory claimDelayAction = createClaimDelayAction(action, 0);
       // No require this time, since we don't want stakes to be permanently locked
       executeCall(_motionId, claimDelayAction);
-    } else { // Backwards compatibility for versions 9 and below
-      bytes32 structHash = getExpenditureStructHash(action);
-      // If v9 multicall, won't have incremented the lock, so don't decrement
-      if (getSig(motion.action) != MULTICALL) {
-        expenditureMotionCounts_DEPRECATED[structHash]--;
-      }
-
-      // Release the claimDelay if this is the last active motion
-      if (expenditureMotionCounts_DEPRECATED[structHash] == 0) {
-        bytes memory claimDelayAction = createClaimDelayAction(action, 0);
-        // No require this time, since we don't want stakes to be permanently locked
-        executeCall(_motionId, claimDelayAction);
-      }
     }
 
     return expenditureId;

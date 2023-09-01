@@ -34,12 +34,12 @@ const {
 } = require("../../helpers/test-helper");
 
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
-const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 const PatriciaTree = require("../../packages/reputation-miner/patricia");
 
 const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
+const deployOldExtensionVersion = require("../../scripts/deployOldExtensionVersion");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -50,11 +50,9 @@ const IMetaColony = artifacts.require("IMetaColony");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const IVotingReputation = artifacts.require("IVotingReputation");
 const OneTxPayment = artifacts.require("OneTxPayment");
-const Resolver = artifacts.require("Resolver");
 const Token = artifacts.require("Token");
 const TokenLocking = artifacts.require("TokenLocking");
 const VotingReputation = artifacts.require("VotingReputation");
-const VotingReputationV9 = artifacts.require("VotingReputationV9");
 
 const VOTING_REPUTATION = soliditySha3("VotingReputation");
 
@@ -2725,13 +2723,27 @@ contract("Voting Reputation", (accounts) => {
     });
   });
 
-  describe("upgrading the extension", async () => {
+  describe("upgrading the extension from v9", async () => {
     before(async () => {
-      const votingReputationV9Resolver = await Resolver.new();
-      const votingReputationV9 = await VotingReputationV9.new();
-      await setupEtherRouter("VotingReputationV9", { VotingReputationV9: votingReputationV9.address }, votingReputationV9Resolver);
-      await metaColony.addExtensionToNetwork(VOTING_REPUTATION, votingReputationV9Resolver.address);
+      // V9 is `glwss4`,
+      await deployOldExtensionVersion(
+        "VotingReputation",
+        "IVotingReputation",
+        ["VotingReputation,VotingReputationMisalignedRecovery"],
+        "glwss4",
+        colonyNetwork
+      );
+      // We also need to deploy all tags from glwss4 to the most recent release
+      // though we can skip any tags where the contract did not change
+      // I don't think there's an elegant way to automate this, as the deployOldExtensionVersion
+      // call might change between versions
     });
+
+    // This function as written would also need updating every version, but is infinitely more
+    // upgradeable
+    async function upgradeFromV9ToLatest(colonyInTest) {
+      await colonyInTest.upgradeExtension(VOTING_REPUTATION, 10);
+    }
 
     beforeEach(async () => {
       await colony.uninstallExtension(VOTING_REPUTATION);
@@ -2773,7 +2785,7 @@ contract("Voting Reputation", (accounts) => {
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.globalClaimDelay).to.eq.BN(UINT256_MAX.divn(3)); // V9 behavior
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
       expect(await voting.version()).to.eq.BN(10);
 
       await forwardTime(STAKE_PERIOD, this);
@@ -2815,7 +2827,7 @@ contract("Voting Reputation", (accounts) => {
       let slot = await colony.getExpenditureSlot(expenditureId, 0);
       expect(slot.claimDelay).to.eq.BN(UINT256_MAX.divn(3)); // V9 behavior
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
       expect(await voting.version()).to.eq.BN(10);
 
       await forwardTime(STAKE_PERIOD, this);
@@ -2847,7 +2859,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       expect(await voting.getExpenditureMotionCount(structHash)).to.eq.BN(1);
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
 
       await checkErrorRevert(
         voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
@@ -2878,7 +2890,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       expect(await voting.getExpenditureMotionCount(structHash)).to.eq.BN(1);
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
       // Change a slot's payout
       const action2 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, 1]);
 
@@ -2911,7 +2923,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       expect(await voting.getExpenditureMotionCount(structHash)).to.eq.BN(1);
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
       // Set finalizedTimestamp to WAD
 
       await forwardTime(STAKE_PERIOD, this);
@@ -2942,7 +2954,7 @@ contract("Voting Reputation", (accounts) => {
         from: USER0,
       });
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
 
       // Can counter-stake the first two motions
       await voting.stakeMotion(motionId1, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -2985,7 +2997,7 @@ contract("Voting Reputation", (accounts) => {
 
       await voting.revealVote(motionId, SALT, YAY, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
 
       // Can upgrade the motion and submit the stake
       await voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
@@ -3004,7 +3016,7 @@ contract("Voting Reputation", (accounts) => {
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
     });
@@ -3024,7 +3036,7 @@ contract("Voting Reputation", (accounts) => {
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
     });
@@ -3046,7 +3058,7 @@ contract("Voting Reputation", (accounts) => {
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
@@ -3073,7 +3085,7 @@ contract("Voting Reputation", (accounts) => {
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
@@ -3100,7 +3112,7 @@ contract("Voting Reputation", (accounts) => {
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
     });
@@ -3110,7 +3122,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId = await voting.getMotionCount();
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
       expect(await voting.version()).to.eq.BN(10);
 
       const motion = await voting.getMotion(motionId);
@@ -3125,7 +3137,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.createMotion(1, UINT256_MAX, oneTxPayment.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId = await voting.getMotionCount();
 
-      await colony.upgradeExtension(VOTING_REPUTATION, 10);
+      await upgradeFromV9ToLatest(colony);
       expect(await voting.version()).to.eq.BN(10);
 
       const motion = await voting.getMotion(motionId);
