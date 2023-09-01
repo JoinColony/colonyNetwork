@@ -5,11 +5,15 @@ const fs = require("fs");
 
 exports.parseImplementation = function parseImplementation(contractName, functionsToResolve, deployedImplementations) {
   // Goes through a contract, and sees if anything in it is in the interface. If it is, then wire up the resolver to point at it
-  const { abi } = JSON.parse(fs.readFileSync(`./build/contracts/${contractName}.json`));
-  abi.map((value) => {
+  const contract = JSON.parse(fs.readFileSync(`./build/contracts/${contractName}.json`));
+  contract.abi.map((value) => {
     const fName = value.name;
     if (functionsToResolve[fName]) {
-      if (functionsToResolve[fName].definedIn !== "" && functionsToResolve[fName].definedIn !== deployedImplementations[contractName]) {
+      if (
+        functionsToResolve[fName].definedIn !== "" &&
+        functionsToResolve[fName].definedIn !== deployedImplementations[contractName] &&
+        contract.source.indexOf(`function ${fName}`) >= 0 // Avoid false positives by inheritence
+      ) {
         // We allow function overloads so long as they are in the same file.
         // eslint-disable-next-line no-console
         console.log(

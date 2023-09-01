@@ -39,25 +39,6 @@ Claim the staker's reward
 |_vote|uint256|The side being supported (0 = NAY, 1 = YAY)
 
 
-### ▸ `createClaimDelayAction(bytes memory _action, uint256 _value):bytes _delayAction`
-
-Create the action that should be taken based on the passed action to appropriately set the claim window of an expenditure from starting.
-
-*Note: Not expected to be used directly, could be made private in the future*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_action|bytes|The action being voted on
-|_value|uint256|The value to set the claim delay to
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_delayAction|bytes|The delay action
-
 ### ▸ `createMotion(uint256 _domainId, uint256 _childSkillIndex, address _altTarget, bytes memory _action, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
 
 Create a motion
@@ -125,6 +106,24 @@ Finalized a motion, executing its action if appropriate
 |_motionId|uint256|The id of the motion to finalize
 
 
+### ▸ `getActionSummary(bytes memory _action, address _altTarget):ActionSummary _summary`
+
+Return a summary of the multicall action
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_action|bytes|The id of the motion
+|_altTarget|address|The address of the altTarget, or 0x0 if none exists
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_summary|ActionSummary|A summary of the multicall
+
 ### ▸ `getEscalationPeriod():uint256 _period`
 
 Get the escalation period
@@ -139,31 +138,67 @@ Get the escalation period
 
 ### ▸ `getExpenditureMotionCount(bytes32 _structHash):uint256 _count`
 
-Get the number of ongoing motions for a single expenditure / expenditure slot
+DEPRECATED Get the count of active motions for an expenditure slot
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_structHash|bytes32|The hash of the expenditureId or expenditureId*expenditureSlot
+|_structHash|bytes32|Hash of an expenditure id and slot
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_count|uint256|The number of ongoing motions
+|_count|uint256|Number of motions
 
-### ▸ `getExpenditurePastVote(bytes32 _actionHash):uint256 _vote`
+### ▸ `getExpenditureMotionLock(uint256 _expenditureId):uint256 _motionId`
 
-Get the largest past vote on a single expenditure variable
+Get the motion which holds the lock on an expenditure
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_actionHash|bytes32|The hash of the particular expenditure action
+|_expenditureId|uint256|The expenditureId
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_motionId|uint256|The motion holding the lock
+
+### ▸ `getExpenditurePastVote(uint256 _expenditureId):uint256 _vote`
+
+Get the largest past vote on an expenditure
+
+*Note: The previous version of this function which took an actionHash has been deprecated*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_expenditureId|uint256|The expenditureId
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_vote|uint256|The largest past vote on this variable
+
+### ▸ `getExpenditurePastVotes_DEPRECATED(bytes32 _slotSignature):uint256 _vote`
+
+DEPRECATED Get the largest past vote on an expenditure
+
+*Note: This is deprecated, and allows visibility on to this variable for any v9 motions that are still ongoing.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_slotSignature|bytes32|The slot signature
 
 **Return Parameters**
 
@@ -330,8 +365,9 @@ Get the user min stake fraction
 
 ### ▸ `getVoterReward(uint256 _motionId, uint256 _voterRep):uint256 _reward`
 
-Get the voter reward NB This function will only return a meaningful value if in the reveal state. Prior to the reveal state, getVoterRewardRange should be used.
+Get the voter reward
 
+*Note: This function will only return an accurate value if in the reveal state. Otherwise, use getVoterRewardRange*
 
 **Parameters**
 

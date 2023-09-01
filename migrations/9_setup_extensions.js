@@ -12,6 +12,7 @@ const OneTxPayment = artifacts.require("./OneTxPayment");
 const ReputationBootstrapper = artifacts.require("./ReputationBootstrapper");
 const StreamingPayments = artifacts.require("./StreamingPayments");
 const VotingReputation = artifacts.require("./VotingReputation");
+const VotingReputationStaking = artifacts.require("./VotingReputationStaking");
 const VotingReputationMisalignedRecovery = artifacts.require("./VotingReputationMisalignedRecovery");
 const TokenSupplier = artifacts.require("./TokenSupplier");
 const Whitelist = artifacts.require("./Whitelist");
@@ -52,7 +53,11 @@ module.exports = async function (deployer, network, accounts) {
   await addExtension(colonyNetwork, "StakedExpenditure", "StakedExpenditure", [StakedExpenditure]);
   await addExtension(colonyNetwork, "StreamingPayments", "StreamingPayments", [StreamingPayments]);
   await addExtension(colonyNetwork, "TokenSupplier", "TokenSupplier", [TokenSupplier]);
-  await addExtension(colonyNetwork, "IVotingReputation", "VotingReputation", [VotingReputation, VotingReputationMisalignedRecovery]);
+  await addExtension(colonyNetwork, "IVotingReputation", "VotingReputation", [
+    VotingReputation,
+    VotingReputationStaking,
+    VotingReputationMisalignedRecovery,
+  ]);
   await addExtension(colonyNetwork, "Whitelist", "Whitelist", [Whitelist]);
   await addExtension(colonyNetwork, "StagedExpenditure", "StagedExpenditure", [StagedExpenditure]);
 };

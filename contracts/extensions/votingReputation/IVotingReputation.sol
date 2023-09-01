@@ -228,15 +228,28 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @return _stake The user's stake
   function getStake(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256 _stake);
 
-  /// @notice Get the number of ongoing motions for a single expenditure / expenditure slot
-  /// @param _structHash The hash of the expenditureId or expenditureId*expenditureSlot
-  /// @return _count The number of ongoing motions
+  /// @notice DEPRECATED Get the count of active motions for an expenditure slot
+  /// @param _structHash Hash of an expenditure id and slot
+  /// @return _count Number of motions
   function getExpenditureMotionCount(bytes32 _structHash) external view returns (uint256 _count);
 
-  /// @notice Get the largest past vote on a single expenditure variable
-  /// @param _actionHash The hash of the particular expenditure action
+  /// @notice Get the motion which holds the lock on an expenditure
+  /// @param _expenditureId The expenditureId
+  /// @return _motionId The motion holding the lock
+  function getExpenditureMotionLock(uint256 _expenditureId) external view returns (uint256 _motionId);
+
+  /// @notice Get the largest past vote on an expenditure
+  /// @dev The previous version of this function which took an actionHash has been deprecated
+  /// @param _expenditureId The expenditureId
   /// @return _vote The largest past vote on this variable
-  function getExpenditurePastVote(bytes32 _actionHash) external view returns (uint256 _vote);
+  function getExpenditurePastVote(uint256 _expenditureId) external view returns (uint256 _vote);
+
+  /// @notice DEPRECATED Get the largest past vote on an expenditure
+  /// @dev This is deprecated, and allows visibility on to this variable for any v9 motions that are still
+  /// ongoing.
+  /// @param _slotSignature The slot signature
+  /// @return _vote The largest past vote on this variable
+  function getExpenditurePastVotes_DEPRECATED(bytes32 _slotSignature) external view returns (uint256 _vote);
 
   /// @notice Get the current state of the motion
   /// @param _motionId The id of the motion
@@ -244,8 +257,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   function getMotionState(uint256 _motionId) external view returns (MotionState _motionState);
 
   /// @notice Get the voter reward
-  /// NB This function will only return a meaningful value if in the reveal state.
-  /// Prior to the reveal state, getVoterRewardRange should be used.
+  /// @dev This function will only return an accurate value if in the reveal state. Otherwise, use getVoterRewardRange
   /// @param _motionId The id of the motion
   /// @param _voterRep The reputation the voter has in the domain
   /// @return _reward The voter reward
@@ -261,6 +273,12 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @return _rewardMax The voter reward range upper bound
   function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) external view returns (uint256 _rewardMin, uint256 _rewardMax);
 
+  /// @notice Return a summary of the multicall action
+  /// @param _action The id of the motion
+  /// @param _altTarget The address of the altTarget, or 0x0 if none exists
+  /// @return _summary A summary of the multicall
+  function getActionSummary(bytes memory _action, address _altTarget) external view returns (ActionSummary memory _summary);
+
   /// @notice Get the staker reward
   /// @param _motionId The id of the motion
   /// @param _staker The staker's address
@@ -268,16 +286,6 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @return _reward The staker reward (if any)
   /// @return _penalty The reputation penalty (if any)
   function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256 _reward, uint256 _penalty);
-
-  /// @notice Create the action that should be taken based on the passed action to appropriately
-  /// set the claim window of an expenditure from starting.
-  /// @param _action The action being voted on
-  /// @param _value The value to set the claim delay to
-  /// @return _delayAction The delay action
-  /// @dev Not expected to be used directly, could be made private in the future
-  function createClaimDelayAction(bytes memory _action, uint256 _value)
-    external
-    returns (bytes memory _delayAction);
 
   /// @notice Claim the staker's reward from a motion that was created with v4 of the extension, and is
   /// now missing and cannot be interacted with via the normal claim function.

@@ -20,7 +20,8 @@ import "./../../colony/ColonyDataTypes.sol";
 
 
 interface VotingReputationDataTypes {
-  // Constants
+  // Data structures
+
   enum ExtensionState { Deployed, Active, Deprecated }
 
   enum MotionState { Null, Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
@@ -39,7 +40,14 @@ interface VotingReputationDataTypes {
     bool escalated;
     bool finalized;
     address altTarget;
+    bytes4 sig;
     bytes action;
+  }
+
+  struct ActionSummary {
+    bytes4 sig;
+    uint256 domainSkillId;
+    uint256 expenditureId;
   }
 
   // Events
