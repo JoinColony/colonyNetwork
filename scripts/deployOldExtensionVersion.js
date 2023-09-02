@@ -46,7 +46,6 @@ module.exports = async (contractName, interfaceName, implementationNames, versio
         ` --implementationNames ${implementationNames.join(",")}`
     );
 
-    console.log(res);
     const extensionResolverAddress = res.split("\n").slice(-2)[0].trim();
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();

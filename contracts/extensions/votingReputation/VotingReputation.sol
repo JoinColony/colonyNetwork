@@ -434,7 +434,7 @@ contract VotingReputation is VotingReputationStorage {
       0;
 
     uint256 claimDelay = expenditure.globalClaimDelay - LOCK_DELAY + sinceFinalized;
-    bytes memory claimDelayAction = createExpenditureAction(action, GLOBAL_CLAIM_DELAY_OFFSET, claimDelay);
+    bytes memory claimDelayAction = createExpenditureGlobalClaimDelayAction(action, GLOBAL_CLAIM_DELAY_OFFSET, claimDelay);
     // No require this time, since we don't want stakes to be permanently locked
     executeCall(_motionId, claimDelayAction);
 
