@@ -47,7 +47,6 @@ module.exports = async (contractName, interfaceName, implementationNames, versio
     );
 
     const extensionResolverAddress = res.split("\n").slice(-2)[0].trim();
-
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     const metaColony = await artifacts.require("IMetaColony").at(metaColonyAddress);
     await metaColony.addExtensionToNetwork(web3.utils.soliditySha3(contractName), extensionResolverAddress);

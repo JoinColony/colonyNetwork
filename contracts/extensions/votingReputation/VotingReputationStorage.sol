@@ -39,7 +39,6 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
   uint256 constant REVEAL_END = 2;
 
   uint256 constant LOCK_DELAY = 10 * 365 days;
-  uint256 constant GLOBAL_CLAIM_DELAY_OFFSET = 4;
 
   bytes32 constant ROOT_ROLES = (
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Recovery) |
@@ -214,14 +213,11 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
       return MotionState.Finalized;
     } else if (_motionId <= motionCountV10 && getSig(motion.action) == MULTICALL) {
       // (Inefficiently) handle the potential case of a v9 motion:
-      //  Return `Finalized` if either NO_ACTION or OLD_MOVE_FUNDS or invalid multicall
+      //  Return `Finalized` if either NO_ACTION or OLD_MOVE_FUNDS
       ActionSummary memory actionSummary = getActionSummary(motion.action, motion.altTarget);
-      return (
-        actionSummary.sig == NO_ACTION ||
-        actionSummary.sig == OLD_MOVE_FUNDS ||
-        actionSummary.domainSkillId == type(uint256).max ||
-        actionSummary.expenditureId == type(uint256).max
-      ) ? MotionState.Finalized : MotionState.Finalizable;
+      return (actionSummary.sig == NO_ACTION || actionSummary.sig == OLD_MOVE_FUNDS)
+        ? MotionState.Finalized
+        : MotionState.Finalizable;
     } else {
       return MotionState.Finalizable;
     }
@@ -396,11 +392,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     }
   }
 
-  function createExpenditureGlobalClaimDelayAction(
-    bytes memory action,
-    uint256 offset,
-    uint256 value
-  )
+  function createGlobalClaimDelayAction(bytes memory action, uint256 value)
     internal
     pure
     returns (bytes memory)
@@ -439,13 +431,13 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
       mstore(add(expenditureAction, 0x104), 1)      // mask length
       mstore(add(expenditureAction, 0x124), 1)      // offset
       mstore(add(expenditureAction, 0x144), 1)      // keys length
-      mstore(add(expenditureAction, 0x164), offset) // expenditure struct offset
+      mstore(add(expenditureAction, 0x164), 4)      // claimDelay offset
     }
 
     return expenditureAction;
   }
 
-  function createExpenditureSlotClaimDelayAction(
+  function createSlotClaimDelayAction(
     bytes memory action,
     uint256 expenditureSlotLoc,
     uint256 value
@@ -511,15 +503,11 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
     // If we are editing the main expenditure struct
     if (sig == SET_EXPENDITURE_STATE && storageSlot == 25) {
-
-      return createExpenditureGlobalClaimDelayAction(action, GLOBAL_CLAIM_DELAY_OFFSET, value);
-
+      return createGlobalClaimDelayAction(action, value);
     // If we are editing an expenditure slot
     } else {
       uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
-
-      return createExpenditureSlotClaimDelayAction(action, expenditureSlotLoc, value);
-
+      return createSlotClaimDelayAction(action, expenditureSlotLoc, value);
     }
   }
 }
