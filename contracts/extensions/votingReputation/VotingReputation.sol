@@ -285,7 +285,10 @@ contract VotingReputation is VotingReputationStorage {
     } else { // Backwards compatibility for versions 9 and below
       ActionSummary memory actionSummary = getActionSummary(motion.action, motion.altTarget);
       if (isExpenditureSig(actionSummary.sig) && getTarget(motion.altTarget) == address(colony)) {
-        unlockV9Expenditure(_motionId);
+        if (getSig(motion.action) != MULTICALL) {
+          unlockV9Expenditure(_motionId);
+        }
+
         uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
           motion.votes[YAY] : motion.stakes[YAY];
 
@@ -419,8 +422,8 @@ contract VotingReputation is VotingReputationStorage {
 
   function unlockExpenditure(uint256 _motionId) internal returns (uint256) {
     // This function is only for motions made with v10 and above
-    assert(_motionId > motionCountV10); 
-    
+    assert(_motionId > motionCountV10);
+
     Motion storage motion = motions[_motionId];
     bytes memory action = getExpenditureAction(motion.action);
     uint256 expenditureId = getExpenditureId(action);
@@ -434,7 +437,7 @@ contract VotingReputation is VotingReputationStorage {
       0;
 
     uint256 claimDelay = expenditure.globalClaimDelay - LOCK_DELAY + sinceFinalized;
-    bytes memory claimDelayAction = createExpenditureGlobalClaimDelayAction(action, GLOBAL_CLAIM_DELAY_OFFSET, claimDelay);
+    bytes memory claimDelayAction = createGlobalClaimDelayAction(action, claimDelay);
     // No require this time, since we don't want stakes to be permanently locked
     executeCall(_motionId, claimDelayAction);
 
@@ -443,7 +446,8 @@ contract VotingReputation is VotingReputationStorage {
 
   function unlockV9Expenditure(uint256 _motionId) internal returns (uint256) {
     // This function is only for motions created with v9 and below
-    assert(_motionId <= motionCountV10); 
+    assert(_motionId <= motionCountV10);
+
     Motion storage motion = motions[_motionId];
     bytes memory action = getExpenditureAction(motion.action);
     uint256 expenditureId = getExpenditureId(action);
