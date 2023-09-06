@@ -59,6 +59,8 @@ interface IMetaColony is IColony {
   /// @param _bridgeAddress The address of the bridge
   /// @param _chainId The chainId of the corresponding network
   /// @param _gas How much gas to use for a bridged transaction
+  /// @param _msgSenderFunctionSig The function signature of the function to call on the bridge to get the msgSender
+  /// @param _correspondingNetwork The address of the corresponding colony network contract on the other network
   /// @param _updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
   /// @param _updateLogAfter The tx data after the dynamic part of the tx to bridge to the update log
   /// @param _skillCreationBefore The tx data before the dynamic part of the tx to brdige skill creation
@@ -69,6 +71,8 @@ interface IMetaColony is IColony {
     address _bridgeAddress,
     uint256 _chainId,
     uint256 _gas,
+    bytes4 _msgSenderFunctionSig,
+    address _correspondingNetwork,
     bytes memory _updateLogBefore,
     bytes memory _updateLogAfter,
     bytes memory _skillCreationBefore,

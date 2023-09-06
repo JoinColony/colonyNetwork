@@ -214,6 +214,8 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     address _bridgeAddress,
     uint256 _chainId,
     uint256 _gas,
+    bytes4 _msgSenderSig,
+    address _correspondingNetwork,
     bytes memory _updateLogBefore,
     bytes memory _updateLogAfter,
     bytes memory _skillCreationBefore,
@@ -229,6 +231,8 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
       _bridgeAddress,
       _chainId,
       _gas,
+      _msgSenderSig,
+      _correspondingNetwork,
       _updateLogBefore,
       _updateLogAfter,
       _skillCreationBefore,
@@ -340,7 +344,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("setBridgeData(address,uint256,uint256,bytes,bytes,bytes,bytes,bytes,bytes)"));
+    sig = bytes4(keccak256("setBridgeData(address,uint256,uint256,bytes4,address,bytes,bytes,bytes,bytes,bytes,bytes)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
