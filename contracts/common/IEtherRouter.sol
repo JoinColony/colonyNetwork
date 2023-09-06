@@ -21,7 +21,6 @@ pragma experimental ABIEncoderV2;
 // Note that we have deliberately left the fallback function off here to accommodate
 // address / address payable conversion issues where we want to use this.
 
-
 interface IEtherRouter {
   /// @notice Sets the resolver address. This is used in the routing of all delegatecalls by the EtherRouter.
   /// @param _resolver Address of the new Resolver

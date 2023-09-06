@@ -17,9 +17,7 @@
 
 pragma solidity 0.8.21;
 
-
 interface TokenLockingDataTypes {
-
   event ColonyNetworkSet(address colonyNetwork);
   event TokenLocked(address indexed token, address indexed lockedBy, uint256 lockCount);
   event UserTokenUnlocked(address token, address user, uint256 lockId);

@@ -23,9 +23,7 @@ import "./ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108
 
-
 contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
-
   // Events
 
   event ExpenditureMadeStaged(uint256 indexed expenditureId, bool staged);
@@ -33,19 +31,19 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
 
   // Storage
 
-  mapping (uint256 => bool) stagedExpenditures;
+  mapping(uint256 => bool) stagedExpenditures;
 
   // Overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("StagedExpenditure");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
+  function version() public pure override returns (uint256 _version) {
     return 1;
   }
 
@@ -101,21 +99,23 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
     uint256 _expenditureId,
     uint256 _slot,
     address[] memory _tokens
-  )
-    public
-  {
+  ) public {
     require(stagedExpenditures[_expenditureId], "staged-expenditure-not-staged-expenditure");
 
     Expenditure memory e = IColony(colony).getExpenditure(_expenditureId);
     require(e.owner == msgSender(), "staged-expenditure-not-owner");
     require(e.status == ColonyDataTypes.ExpenditureStatus.Finalized, "expenditure-not-finalized");
 
-    bool[] memory mask = new bool[](2); mask[0] = false; mask[1] = true;
-    bytes32[] memory keys = new bytes32[](2); keys[0] = bytes32(_slot); keys[1] = bytes32(uint256(1));
+    bool[] memory mask = new bool[](2);
+    mask[0] = false;
+    mask[1] = true;
+    bytes32[] memory keys = new bytes32[](2);
+    keys[0] = bytes32(_slot);
+    keys[1] = bytes32(uint256(1));
     colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, 26, mask, keys, bytes32(0));
 
     emit StagedPaymentReleased(_expenditureId, _slot);
-    
+
     for (uint256 i; i < _tokens.length; i++) {
       colony.claimExpenditurePayout(_expenditureId, _slot, _tokens[i]);
     }

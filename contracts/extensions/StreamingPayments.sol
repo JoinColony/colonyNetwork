@@ -22,9 +22,7 @@ import "./ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108
 
-
 contract StreamingPayments is ColonyExtensionMeta {
-
   // Events
 
   event StreamingPaymentCreated(address agent, uint256 streamingPaymentId);
@@ -55,12 +53,16 @@ contract StreamingPayments is ColonyExtensionMeta {
   }
 
   uint256 numStreamingPayments;
-  mapping (uint256 => StreamingPayment) streamingPayments;
-  mapping (uint256 => mapping (address => PaymentToken)) paymentTokens;
+  mapping(uint256 => StreamingPayment) streamingPayments;
+  mapping(uint256 => mapping(address => PaymentToken)) paymentTokens;
 
   // Modifiers
 
-  modifier validateFundingPermission(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId) {
+  modifier validateFundingPermission(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId
+  ) {
     require(
       colony.hasInheritedUserRole(msgSender(), _permissionDomainId, FUNDING, _childSkillIndex, _domainId),
       "streaming-payments-funding-not-authorized"
@@ -68,7 +70,11 @@ contract StreamingPayments is ColonyExtensionMeta {
     _;
   }
 
-  modifier validateAdministrationPermission(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId) {
+  modifier validateAdministrationPermission(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId
+  ) {
     require(
       colony.hasInheritedUserRole(msgSender(), _permissionDomainId, ADMINISTRATION, _childSkillIndex, _domainId),
       "streaming-payments-admin-not-authorized"
@@ -80,13 +86,13 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("StreamingPayments");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
+  function version() public pure override returns (uint256 _version) {
     return 3;
   }
 
@@ -158,7 +164,6 @@ contract StreamingPayments is ColonyExtensionMeta {
 
       emit PaymentTokenUpdated(msgSender(), numStreamingPayments, _tokens[i], _amounts[i]);
     }
-
   }
 
   /// @notice Claim a streaming payment
@@ -195,7 +200,9 @@ contract StreamingPayments is ColonyExtensionMeta {
     }
 
     // Skip expenditure setup if there's nothing to claim
-    if (!anythingToClaim) { return; }
+    if (!anythingToClaim) {
+      return;
+    }
 
     uint256 expenditureId = setupExpenditure(
       _permissionDomainId,
@@ -217,7 +224,6 @@ contract StreamingPayments is ColonyExtensionMeta {
     }
   }
 
-
   /// @notice Add a new token/amount pair
   /// @param _fundingPermissionDomainId The domain in which the caller holds the funding permission
   /// @param _fundingChildSkillIndex The index linking the fundingPermissionDomainId to the domainId
@@ -230,10 +236,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _id,
     address _token,
     uint256 _amount
-  )
-    public
-    validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, streamingPayments[_id].domainId)
-  {
+  ) public validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, streamingPayments[_id].domainId) {
     require(paymentTokens[_id][_token].amount == 0, "streaming-payments-token-exists");
 
     paymentTokens[_id][_token] = PaymentToken(_amount, 0);
@@ -262,10 +265,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _id,
     address _token,
     uint256 _amount
-  )
-    public
-    validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, streamingPayments[_id].domainId)
-  {
+  ) public validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, streamingPayments[_id].domainId) {
     claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id, toArray(_token));
 
     PaymentToken storage paymentToken = paymentTokens[_id][_token];
@@ -288,11 +288,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _adminChildSkillIndex,
     uint256 _id,
     uint256 _startTime
-  )
-    public
-    validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, streamingPayments[_id].domainId)
-
-  {
+  ) public validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, streamingPayments[_id].domainId) {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     require(block.timestamp <= streamingPayment.startTime, "streaming-payments-already-started");
     require(_startTime <= streamingPayment.endTime, "streaming-payments-invalid-start-time");
@@ -310,11 +306,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _adminChildSkillIndex,
     uint256 _id,
     uint256 _endTime
-  )
-    public
-    validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, streamingPayments[_id].domainId)
-
-  {
+  ) public validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, streamingPayments[_id].domainId) {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     require(block.timestamp <= streamingPayment.endTime, "streaming-payments-already-ended");
     require(block.timestamp <= _endTime, "streaming-payments-invalid-end-time");
@@ -331,10 +323,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _adminPermissionDomainId,
     uint256 _adminChildSkillIndex,
     uint256 _id
-  )
-    public
-    validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, streamingPayments[_id].domainId)
-  {
+  ) public validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, streamingPayments[_id].domainId) {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     if (streamingPayment.startTime > block.timestamp) {
       streamingPayment.startTime = block.timestamp;
@@ -346,12 +335,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// to specified tokens already earned. Only callable by the recipient.
   /// @param _id The id of the streaming payment
   /// @param _tokens The tokens to waive any claims to.
-  function cancelAndWaive(
-    uint256 _id,
-    address[] memory _tokens
-  )
-    public
-  {
+  function cancelAndWaive(uint256 _id, address[] memory _tokens) public {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     // slither-disable-next-line incorrect-equality
     require(streamingPayment.recipient == msgSender(), "streaming-payments-not-recipient");
@@ -398,7 +382,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   function getAmountEntitledFromStart(uint256 _id, address _token) public view returns (uint256 amount) {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     PaymentToken storage paymentToken = paymentTokens[_id][_token];
-    if (streamingPayment.startTime >= block.timestamp){
+    if (streamingPayment.startTime >= block.timestamp) {
       return 0;
     }
 
@@ -412,15 +396,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   // Internal
 
-  function getAmountClaimable(
-    uint256 _fundingPotId,
-    address _token,
-    uint256 _amountEntitledToClaimNow
-  )
-    internal
-    view
-    returns (uint256)
-  {
+  function getAmountClaimable(uint256 _fundingPotId, address _token, uint256 _amountEntitledToClaimNow) internal view returns (uint256) {
     uint256 domainBalance = colony.getFundingPotBalance(_fundingPotId, _token);
     return min(domainBalance, _amountEntitledToClaimNow);
   }
@@ -434,10 +410,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _domainFundingPotId,
     address[] memory _tokens,
     uint256[] memory _amountsToClaim
-  )
-    internal
-    returns (uint256)
-  {
+  ) internal returns (uint256) {
     uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, streamingPayments[_id].domainId);
     uint256 expenditureFundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 

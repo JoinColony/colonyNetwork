@@ -19,9 +19,8 @@ pragma solidity 0.8.21; // ignore-swc-103
 
 import "./../../lib/dappsys/roles.sol";
 
-
 contract DomainRoles is DSRoles {
-  mapping(address=>mapping(uint256=>bytes32)) internal userDomainRoles;
+  mapping(address => mapping(uint256 => bytes32)) internal userDomainRoles;
 
   // New function signatures taking arbitrary domains
 
@@ -72,5 +71,4 @@ contract DomainRoles is DSRoles {
   function canCall(address caller, address code, bytes4 sig) public view override returns (bool) {
     return canCall(caller, 1, code, sig);
   }
-
 }

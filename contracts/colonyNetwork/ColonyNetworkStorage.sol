@@ -26,7 +26,6 @@ import "./ColonyNetworkDataTypes.sol";
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-
 contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   // Number of colonies in the network
   uint256 colonyCount; // Storage slot 6
@@ -56,18 +55,18 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   address inactiveReputationMiningCycle; // Storage slot 17
 
   // Maps index to colony address
-  mapping (uint256 => address) colonies; // Storage slot 18
-  mapping (address => bool) _isColony; // Storage slot 19
+  mapping(uint256 => address) colonies; // Storage slot 18
+  mapping(address => bool) _isColony; // Storage slot 19
   // Maps colony contract versions to respective resolvers
-  mapping (uint256 => address) colonyVersionResolver; // Storage slot 20
+  mapping(uint256 => address) colonyVersionResolver; // Storage slot 20
   // Contains all global and local skills in the network, mapping skillId to Skill. Where skillId is 1-based unique identifier
-  mapping (uint256 => Skill) skills; // Storage slot 21
+  mapping(uint256 => Skill) skills; // Storage slot 21
 
   // Mapping containing how much has been staked by each user
-  mapping (address => uint) stakedBalances; // Storage slot 22
+  mapping(address => uint) stakedBalances; // Storage slot 22
 
   // Mapping containing the last auction start timestamp for a token address
-  mapping (address => uint) recentAuctions; // Storage slot 23
+  mapping(address => uint) recentAuctions; // Storage slot 23
 
   // Address of the ENS registrar for joincolony.eth
   address ens; // Storage slot 24
@@ -78,15 +77,15 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   // Namehash of the colony node that we administer (i.e. namehash("colony.joincolony.eth"))
   bytes32 colonyNode; // Storage slot 27
   // Mapping from colony address to claimed colony label
-  mapping (address => string) colonyLabels; // Storage slot 28
+  mapping(address => string) colonyLabels; // Storage slot 28
   // Mapping from user address to claimed user label
-  mapping (address => string) userLabels; // Storage slot 29
+  mapping(address => string) userLabels; // Storage slot 29
 
-  mapping (bytes32 => ENSRecord) records; // Storage slot 30
-  mapping (address => mapping(uint256 => ReputationLogEntry)) replacementReputationUpdateLog; // Storage slot 31
-  mapping (address => bool) replacementReputationUpdateLogsExist; // Storage slot 32
-  mapping (address => MiningStake) miningStakes; // Storage slot 33
-  mapping (address => uint256) pendingMiningRewards; // Storage slot 34
+  mapping(bytes32 => ENSRecord) records; // Storage slot 30
+  mapping(address => mapping(uint256 => ReputationLogEntry)) replacementReputationUpdateLog; // Storage slot 31
+  mapping(address => bool) replacementReputationUpdateLogsExist; // Storage slot 32
+  mapping(address => MiningStake) miningStakes; // Storage slot 33
+  mapping(address => uint256) pendingMiningRewards; // Storage slot 34
 
   uint256 totalMinerRewardPerCycle; // Storage slot 35
   uint256 DEPRECATED_annualMetaColonyStipend; // Storage slot 36
@@ -98,7 +97,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   mapping(bytes32 => mapping(address => address payable)) installations; // Storage slot 39
 
   // Used for whitelisting payout tokens
-  mapping (address => bool) payoutWhitelist; // Storage slot 40
+  mapping(address => bool) payoutWhitelist; // Storage slot 40
 
   uint256 constant METATRANSACTION_NONCES_SLOT = 41;
   mapping(address => uint256) metatransactionNonces; // Storage slot 41

@@ -23,7 +23,6 @@ import "./../common/IBasicMetaTransaction.sol";
 import "./../common/IMulticall.sol";
 import "./ColonyDataTypes.sol";
 
-
 interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
   // Implemented in DSAuth.sol
   /// @notice Get the `ColonyAuthority` for the colony.
@@ -100,7 +99,13 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _user User we want to give an arbitration role to
   /// @param _domainId Domain in which we are giving user the role
   /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
-  function setArbitrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) external;
+  function setArbitrationRole(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bool _setTo
+  ) external;
 
   /// @notice Set new colony architecture role.
   /// Can be called by root role or architecture role.
@@ -109,7 +114,13 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _user User we want to give an architecture role to
   /// @param _domainId Domain in which we are giving user the role
   /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
-  function setArchitectureRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) external;
+  function setArchitectureRole(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bool _setTo
+  ) external;
 
   /// @notice Set new colony funding role.
   /// Can be called by root role or architecture role.
@@ -127,7 +138,13 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _user User we want to give an admin role to
   /// @param _domainId Domain in which we are giving user the role
   /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
-  function setAdministrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) external;
+  function setAdministrationRole(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bool _setTo
+  ) external;
 
   /// @notice Set several roles in one transaction.
   /// Can be called by root role or architecture role.
@@ -136,13 +153,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _user User we want to give a role to
   /// @param _domainId Domain in which we are giving user the role
   /// @param _roles Byte array representing the desired role setting (1 for on, 0 for off)
-  function setUserRoles(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    address _user,
-    uint256 _domainId,
-    bytes32 _roles
-    ) external;
+  function setUserRoles(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bytes32 _roles) external;
 
   /// @notice Check whether a given user has a given role for the colony.
   /// Calls the function of the same name on the colony's authority contract.
@@ -160,8 +171,13 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _childSkillIndex The index that the `_childDomainId` is relative to `_domainId`
   /// @param _childDomainId The domain where we want to use the role
   /// @return hasRole Boolean indicating whether the given user has the given role in domain
-  function hasInheritedUserRole(address _user, uint256 _domainId, ColonyRole _role, uint256 _childSkillIndex, uint256 _childDomainId)
-    external view returns (bool hasRole);
+  function hasInheritedUserRole(
+    address _user,
+    uint256 _domainId,
+    ColonyRole _role,
+    uint256 _childSkillIndex,
+    uint256 _childDomainId
+  ) external view returns (bool hasRole);
 
   /// @notice Check whether a given user can modify roles in the target domain `_childDomainId`.
   /// Mostly a convenience function to provide a uniform interface for extension contracts validating permissions
@@ -170,8 +186,12 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _childSkillIndex The index that the `_childDomainId` is relative to `_domainId`
   /// @param _childDomainId The domain where we want to edit roles
   /// @return canSet Boolean indicating whether the given user is allowed to edit roles in the target domain.
-  function userCanSetRoles(address _user, uint256 _domainId, uint256 _childSkillIndex, uint256 _childDomainId)
-    external view returns (bool canSet);
+  function userCanSetRoles(
+    address _user,
+    uint256 _domainId,
+    uint256 _childSkillIndex,
+    uint256 _childDomainId
+  ) external view returns (bool canSet);
 
   /// @notice Gets the bytes32 representation of the roles for a user in a given domain
   /// @param _user The user whose roles we want to get
@@ -208,7 +228,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _domainId,
     address _user,
     int256 _amount
-    ) external;
+  ) external;
 
   /// @notice Emit a negative skill reputation update. Available only to Arbitration role holders in the root domain
   /// @param _skillId The skill where the user will lose reputation
@@ -354,8 +374,12 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// While external, likely only to be used by the Colony contracts, as it checks that the user is proving their own
   /// reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function
   /// is not currently exposed on the Colony's EtherRouter.
-  function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
-    external view returns (bool isValid);
+  function verifyReputationProof(
+    bytes memory key,
+    bytes memory value,
+    uint256 branchMask,
+    bytes32[] memory siblings
+  ) external view returns (bool isValid);
 
   // Implemented in ColonyExpenditure.sol
 
@@ -369,7 +393,11 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// (only used if `_permissionDomainId` is different to `_domainId`)
   /// @param _domainId The domain where the expenditure belongs
   /// @return expenditureId Identifier of the newly created expenditure
-  function makeExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId) external returns (uint256 expenditureId);
+  function makeExpenditure(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId
+  ) external returns (uint256 expenditureId);
 
   /// @notice Updates the expenditure owner. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
@@ -384,7 +412,12 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// (only used if `_permissionDomainId` is different to `_domainId`)
   /// @param _id Expenditure identifier
   /// @param _newOwner New owner of expenditure
-  function transferExpenditureViaArbitration(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _newOwner) external;
+  function transferExpenditureViaArbitration(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    address _newOwner
+  ) external;
 
   /// @notice Cancels the expenditure and prevents further editing. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
@@ -536,7 +569,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     bool[] memory _mask,
     bytes32[] memory _keys,
     bytes32 _value
-    ) external;
+  ) external;
 
   /// @notice Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
   /// @param _id Expenditure identifier
@@ -584,8 +617,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     address _token,
     uint256 _amount,
     uint256 _domainId,
-    uint256 _skillId)
-    external returns (uint256 paymentId);
+    uint256 _skillId
+  ) external returns (uint256 paymentId);
 
   /// @notice Finalizes the payment and logs the reputation log updates.
   /// Allowed to be called once after payment is fully funded. Secured function to authorised members.
@@ -645,7 +678,8 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     bytes32 _specificationHash,
     uint256 _domainId,
     uint256 _skillId,
-    uint256 _dueDate) external;
+    uint256 _dueDate
+  ) external;
 
   /// @notice Get the number of tasks in the colony.
   /// @return count The task count
@@ -674,7 +708,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint8[] memory _mode,
     uint256 _value,
     bytes memory _data
-    ) external;
+  ) external;
 
   /// @notice Executes a task role update transaction `_data` which is approved and signed by two of addresses.
   /// depending of which function we are calling. Allowed functions are `setTaskManagerRole`, `setTaskEvaluatorRole` and `setTaskWorkerRole`.
@@ -693,7 +727,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint8[] memory _mode,
     uint256 _value,
     bytes memory _data
-    ) external;
+  ) external;
 
   /// @notice Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role`.
   /// Allowed within 5 days period starting which whichever is first from either the deliverable being submitted or the dueDate been reached.
@@ -832,15 +866,20 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
-  function getTask(uint256 _id) external view returns (
-    bytes32 specificationHash,
-    bytes32 deliverableHash,
-    TaskStatus status,
-    uint256 dueDate,
-    uint256 fundingPotId,
-    uint256 completionTimestamp,
-    uint256 domainId,
-    uint256[] memory skillIds
+  function getTask(
+    uint256 _id
+  )
+    external
+    view
+    returns (
+      bytes32 specificationHash,
+      bytes32 deliverableHash,
+      TaskStatus status,
+      uint256 dueDate,
+      uint256 fundingPotId,
+      uint256 completionTimestamp,
+      uint256 domainId,
+      uint256[] memory skillIds
     );
 
   /// @notice Get the `Role` properties back for role `_role` in task `_id`.
@@ -907,7 +946,13 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param value Reputation value
   /// @param branchMask The branchmask of the proof
   /// @param siblings The siblings of the proof
-  function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings) external;
+  function startNextRewardPayout(
+    address _token,
+    bytes memory key,
+    bytes memory value,
+    uint256 branchMask,
+    bytes32[] memory siblings
+  ) external;
 
   /// @notice Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation
   /// which will be proven via Merkle proof inside this function.
@@ -933,7 +978,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     bytes memory value,
     uint256 branchMask,
     bytes32[] memory siblings
-    ) external;
+  ) external;
 
   /// @notice Get useful information about specific reward payout.
   /// @param _payoutId Id of the reward payout
@@ -957,10 +1002,9 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @return associatedTypeId Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
   /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current funding
   /// @dev For the reward funding pot (e.g. id: 0) this returns (0, 0, 0).
-  function getFundingPot(uint256 _id) external view returns (
-    FundingPotAssociatedType associatedType,
-    uint256 associatedTypeId,
-    uint256 payoutsWeCannotMake);
+  function getFundingPot(
+    uint256 _id
+  ) external view returns (FundingPotAssociatedType associatedType, uint256 associatedTypeId, uint256 payoutsWeCannotMake);
 
   /// @notice Get the number of funding pots in the colony.
   /// @return count The funding pots count
@@ -999,7 +1043,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _toPot,
     uint256 _amount,
     address _token
-    ) external;
+  ) external;
 
   /// @notice @deprecated
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
@@ -1018,7 +1062,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _toPot,
     uint256 _amount,
     address _token
-    ) external;
+  ) external;
 
   /// @notice Move any funds received by the colony in `_token` denomination to the top-level domain pot,
   /// siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
@@ -1065,7 +1109,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _domainId,
     uint256 _amount,
     address _recipient
-    ) external;
+  ) external;
 
   /// @notice View an approval to obligate tokens.
   /// @param _user User allowing their tokens to be obligated.

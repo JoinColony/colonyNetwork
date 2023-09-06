@@ -20,7 +20,6 @@ pragma solidity 0.8.21;
 import "./../common/CommonAuthority.sol";
 import "./ColonyDataTypes.sol";
 
-
 contract ColonyAuthority is CommonAuthority {
   uint8 constant FUNDING_ROLE = uint8(ColonyDataTypes.ColonyRole.Funding);
   uint8 constant ADMINISTRATION_ROLE = uint8(ColonyDataTypes.ColonyRole.Administration);
@@ -33,7 +32,7 @@ contract ColonyAuthority is CommonAuthority {
   address internal colony;
 
   constructor(address _colony) CommonAuthority(_colony) {
-    require(_colony  != address(0x0), "colony-authority-colony-cannot-be-zero");
+    require(_colony != address(0x0), "colony-authority-colony-cannot-be-zero");
 
     colony = _colony;
 

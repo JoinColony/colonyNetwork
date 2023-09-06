@@ -5,6 +5,7 @@
   "scripts": {
     "solhint-staged": "bash ./scripts/solhint.sh",
     "eslint-staged": "bash ./scripts/eslint.sh",
+    "prettier-contracts-staged": "bash ./scripts/prettier-contracts.sh",
     "eslint": "eslint .",
     "solhint": "solhint ./contracts/**/*.sol",
     "build:docs": "scripts/docgen.js",
@@ -120,7 +121,8 @@
     "nthline": "^1.0.2",
     "nyc": "^15.1.0",
     "pre-commit": "^1.2.2",
-    "prettier": "^2.7.1",
+    "prettier": "^2.8.8",
+    "prettier-plugin-solidity": "^1.1.3",
     "rimraf": "^3.0.2",
     "shortid": "^2.2.16",
     "solhint": "^3.3.7",

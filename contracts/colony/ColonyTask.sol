@@ -21,7 +21,6 @@ pragma experimental "ABIEncoderV2";
 import "./ColonyStorage.sol";
 import "./IColony.sol";
 
-
 contract ColonyTask is ColonyStorage {
   uint256 constant RATING_COMMIT_TIMEOUT = 5 days;
   uint256 constant RATING_REVEAL_TIMEOUT = 5 days;
@@ -75,7 +74,10 @@ contract ColonyTask is ColonyStorage {
     } else if (ratingSecrets.count < 2) {
       uint taskCompletionTime = tasks[_id].completionTimestamp;
       require(block.timestamp - taskCompletionTime > RATING_COMMIT_TIMEOUT, "colony-task-rating-secret-reveal-period-not-open");
-      require(block.timestamp - taskCompletionTime <= RATING_COMMIT_TIMEOUT + RATING_REVEAL_TIMEOUT, "colony-task-rating-secret-reveal-period-closed");
+      require(
+        block.timestamp - taskCompletionTime <= RATING_COMMIT_TIMEOUT + RATING_REVEAL_TIMEOUT,
+        "colony-task-rating-secret-reveal-period-closed"
+      );
     }
     _;
   }
@@ -98,10 +100,7 @@ contract ColonyTask is ColonyStorage {
     uint256 _domainId,
     uint256 _skillId,
     uint256 _dueDate
-  ) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
     taskCount += 1;
 
     fundingPotCount += 1;
@@ -145,8 +144,8 @@ contract ColonyTask is ColonyStorage {
     bytes32[] memory _sigS,
     uint8[] memory _mode,
     uint256 _value,
-    bytes memory _data) public stoppable
-  {
+    bytes memory _data
+  ) public stoppable {
     require(_value == 0, "colony-task-change-non-zero-value");
     require(_sigR.length == _sigS.length && _sigR.length == _sigV.length, "colony-task-change-signatures-count-do-not-match");
 
@@ -173,25 +172,17 @@ contract ColonyTask is ColonyStorage {
     require(_sigR.length == nSignaturesRequired, "colony-task-change-does-not-meet-signatures-required");
 
     bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonces[taskId]));
-    address[] memory reviewerAddresses = getReviewerAddresses(
-      _sigV,
-      _sigR,
-      _sigS,
-      _mode,
-      msgHash
-    );
+    address[] memory reviewerAddresses = getReviewerAddresses(_sigV, _sigR, _sigS, _mode, msgHash);
 
     require(
-      reviewerAddresses[0] == tasks[taskId].roles[taskRole1].user ||
-      reviewerAddresses[0] == tasks[taskId].roles[taskRole2].user,
+      reviewerAddresses[0] == tasks[taskId].roles[taskRole1].user || reviewerAddresses[0] == tasks[taskId].roles[taskRole2].user,
       "colony-task-signatures-do-not-match-reviewer-1"
     );
 
     if (nSignaturesRequired == 2) {
       require(reviewerAddresses[0] != reviewerAddresses[1], "colony-task-duplicate-reviewers");
       require(
-        reviewerAddresses[1] == tasks[taskId].roles[taskRole1].user ||
-        reviewerAddresses[1] == tasks[taskId].roles[taskRole2].user,
+        reviewerAddresses[1] == tasks[taskId].roles[taskRole1].user || reviewerAddresses[1] == tasks[taskId].roles[taskRole2].user,
         "colony-task-signatures-do-not-match-reviewer-2"
       );
     }
@@ -208,8 +199,8 @@ contract ColonyTask is ColonyStorage {
     bytes32[] memory _sigS,
     uint8[] memory _mode,
     uint256 _value,
-    bytes memory _data) public stoppable
-  {
+    bytes memory _data
+  ) public stoppable {
     require(_value == 0, "colony-task-role-assignment-non-zero-value");
     require(_sigR.length == _sigS.length && _sigR.length == _sigV.length, "colony-task-role-assignment-signatures-count-do-not-match");
 
@@ -231,26 +222,19 @@ contract ColonyTask is ColonyStorage {
     require(_sigR.length == nSignaturesRequired, "colony-task-role-assignment-does-not-meet-required-signatures");
 
     bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonces[taskId]));
-    address[] memory reviewerAddresses = getReviewerAddresses(
-      _sigV,
-      _sigR,
-      _sigS,
-      _mode,
-      msgHash
-    );
+    address[] memory reviewerAddresses = getReviewerAddresses(_sigV, _sigR, _sigS, _mode, msgHash);
 
     if (nSignaturesRequired == 1) {
       // Since we want to set a manager as an evaluator, require just manager's signature
       require(reviewerAddresses[0] == manager, "colony-task-role-assignment-not-signed-by-manager");
     } else {
       // One of signers must be a manager
-      require(
-        reviewerAddresses[0] == manager ||
-        reviewerAddresses[1] == manager,
-        "colony-task-role-assignment-not-signed-by-manager"
-      );
+      require(reviewerAddresses[0] == manager || reviewerAddresses[1] == manager, "colony-task-role-assignment-not-signed-by-manager");
       // One of the signers must be an address we want to set here
-      require(userAddress == reviewerAddresses[0] || userAddress == reviewerAddresses[1], "colony-task-role-assignment-not-signed-by-new-user-for-role");
+      require(
+        userAddress == reviewerAddresses[0] || userAddress == reviewerAddresses[1],
+        "colony-task-role-assignment-not-signed-by-new-user-for-role"
+      );
       // Require that signatures are not from the same address
       // This will never throw, because we require that manager is one of the signers,
       // and if manager is both signers, then `userAddress` must also be a manager, and if
@@ -264,13 +248,11 @@ contract ColonyTask is ColonyStorage {
     emit TaskChangedViaSignatures(reviewerAddresses);
   }
 
-  function submitTaskWorkRating(uint256 _id, TaskRole _role, bytes32 _ratingSecret) public
-  stoppable
-  taskComplete(_id)
-  userCanRateRole(_id, _role)
-  ratingSecretDoesNotExist(_id, _role)
-  taskWorkRatingCommitOpen(_id)
-  {
+  function submitTaskWorkRating(
+    uint256 _id,
+    TaskRole _role,
+    bytes32 _ratingSecret
+  ) public stoppable taskComplete(_id) userCanRateRole(_id, _role) ratingSecretDoesNotExist(_id, _role) taskWorkRatingCommitOpen(_id) {
     require(_ratingSecret != "", "colony-task-rating-secret-missing");
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
     ratingSecrets.count += 1;
@@ -278,10 +260,7 @@ contract ColonyTask is ColonyStorage {
     ratingSecrets.secret[uint8(_role)] = _ratingSecret;
   }
 
-  function revealTaskWorkRating(uint256 _id, TaskRole _role, uint8 _rating, bytes32 _salt) public
-  stoppable
-  taskWorkRatingRevealOpen(_id)
-  {
+  function revealTaskWorkRating(uint256 _id, TaskRole _role, uint8 _rating, bytes32 _salt) public stoppable taskWorkRatingRevealOpen(_id) {
     // MAYBE: we should hash these the other way around, i.e. generateSecret(_rating, _salt)
     bytes32 ratingSecret = generateSecret(_salt, _rating);
     require(ratingSecret == taskWorkRatings[_id].secret[uint8(_role)], "colony-task-rating-secret-mismatch");
@@ -305,11 +284,12 @@ contract ColonyTask is ColonyStorage {
     return taskWorkRatings[_id].secret[_role];
   }
 
-  function setTaskManagerRole(uint256 _id, address payable _user, uint256 _permissionDomainId, uint256 _childSkillIndex) public
-  stoppable
-  self()
-  isAdmin(_permissionDomainId, _childSkillIndex, _id, _user)
-  {
+  function setTaskManagerRole(
+    uint256 _id,
+    address payable _user,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex
+  ) public stoppable self isAdmin(_permissionDomainId, _childSkillIndex, _id, _user) {
     setTaskRoleUser(_id, TaskRole.Manager, _user);
   }
 
@@ -336,37 +316,24 @@ contract ColonyTask is ColonyStorage {
     setTaskRoleUser(_id, TaskRole.Worker, payable(address(0x0)));
   }
 
-  function setTaskSkill(uint256 _id, uint256 _skillId) public
-  stoppable
-  taskExists(_id)
-  taskNotComplete(_id)
-  validGlobalOrLocalSkill(_skillId)
-  self()
-  {
+  function setTaskSkill(
+    uint256 _id,
+    uint256 _skillId
+  ) public stoppable taskExists(_id) taskNotComplete(_id) validGlobalOrLocalSkill(_skillId) self {
     tasks[_id].skills[0] = _skillId;
     // We only allow setting of the first skill here. If we allow more in the future, make sure to have a hard limit that comfortably limits
     // respondToChallenge's gas.
     emit TaskSkillSet(_id, _skillId);
   }
 
-  function setTaskBrief(uint256 _id, bytes32 _specificationHash) public
-  stoppable
-  taskExists(_id)
-  taskNotComplete(_id)
-  self()
-  {
+  function setTaskBrief(uint256 _id, bytes32 _specificationHash) public stoppable taskExists(_id) taskNotComplete(_id) self {
     tasks[_id].specificationHash = _specificationHash;
 
     emit TaskBriefSet(_id, _specificationHash);
   }
 
-  function setTaskDueDate(uint256 _id, uint256 _dueDate) public
-  stoppable
-  taskExists(_id)
-  taskNotComplete(_id)
-  self()
-  {
-    require (_dueDate > 0, "colony-task-due-date-cannot-be-zero");
+  function setTaskDueDate(uint256 _id, uint256 _dueDate) public stoppable taskExists(_id) taskNotComplete(_id) self {
+    require(_dueDate > 0, "colony-task-due-date-cannot-be-zero");
     tasks[_id].dueDate = _dueDate;
 
     emit TaskDueDateSet(_id, _dueDate);
@@ -378,66 +345,42 @@ contract ColonyTask is ColonyStorage {
     uint256 _managerAmount,
     uint256 _evaluatorAmount,
     uint256 _workerAmount
-  )
-  public
-  stoppable
-  confirmTaskRoleIdentity(_id, TaskRole.Manager)
-  {
+  ) public stoppable confirmTaskRoleIdentity(_id, TaskRole.Manager) {
     Task storage task = tasks[_id];
     address manager = task.roles[uint8(TaskRole.Manager)].user;
     address evaluator = task.roles[uint8(TaskRole.Evaluator)].user;
     address worker = task.roles[uint8(TaskRole.Worker)].user;
 
-    require(
-      evaluator == manager ||
-      evaluator == address(0x0),
-      "colony-funding-evaluator-already-set");
+    require(evaluator == manager || evaluator == address(0x0), "colony-funding-evaluator-already-set");
 
-    require(
-      worker == manager ||
-      worker == address(0x0),
-      "colony-funding-worker-already-set");
+    require(worker == manager || worker == address(0x0), "colony-funding-worker-already-set");
 
     IColony(address(this)).setTaskManagerPayout(_id, _token, _managerAmount);
     IColony(address(this)).setTaskEvaluatorPayout(_id, _token, _evaluatorAmount);
     IColony(address(this)).setTaskWorkerPayout(_id, _token, _workerAmount);
   }
 
-  function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public
-  stoppable
-  taskExists(_id)
-  taskNotComplete(_id)
-  confirmTaskRoleIdentity(_id, TaskRole.Worker)
-  {
+  function submitTaskDeliverable(
+    uint256 _id,
+    bytes32 _deliverableHash
+  ) public stoppable taskExists(_id) taskNotComplete(_id) confirmTaskRoleIdentity(_id, TaskRole.Worker) {
     tasks[_id].deliverableHash = _deliverableHash;
     markTaskCompleted(_id);
     emit TaskDeliverableSubmitted(msgSender(), _id, _deliverableHash);
   }
 
-  function submitTaskDeliverableAndRating(uint256 _id, bytes32 _deliverableHash, bytes32 _ratingSecret) public
-  stoppable
-  {
+  function submitTaskDeliverableAndRating(uint256 _id, bytes32 _deliverableHash, bytes32 _ratingSecret) public stoppable {
     submitTaskDeliverable(_id, _deliverableHash);
     submitTaskWorkRating(_id, TaskRole.Manager, _ratingSecret);
   }
 
-  function completeTask(uint256 _id) public
-  stoppable
-  taskExists(_id)
-  taskNotComplete(_id)
-  afterDueDate(_id)
-  confirmTaskRoleIdentity(_id, TaskRole.Manager)
-  {
+  function completeTask(
+    uint256 _id
+  ) public stoppable taskExists(_id) taskNotComplete(_id) afterDueDate(_id) confirmTaskRoleIdentity(_id, TaskRole.Manager) {
     markTaskCompleted(_id);
   }
 
-  function finalizeTask(uint256 _id) public
-  stoppable
-  taskComplete(_id)
-  taskWorkRatingsComplete(_id)
-  taskFunded(_id)
-  taskNotFinalized(_id)
-  {
+  function finalizeTask(uint256 _id) public stoppable taskComplete(_id) taskWorkRatingsComplete(_id) taskFunded(_id) taskNotFinalized(_id) {
     if (!taskWorkRatingsAssigned(_id)) {
       assignWorkRating(_id);
     } else {
@@ -458,38 +401,15 @@ contract ColonyTask is ColonyStorage {
     emit TaskFinalized(msgSender(), _id);
   }
 
-  function cancelTask(uint256 _id) public
-  stoppable
-  taskExists(_id)
-  taskNotComplete(_id)
-  self()
-  {
+  function cancelTask(uint256 _id) public stoppable taskExists(_id) taskNotComplete(_id) self {
     tasks[_id].status = TaskStatus.Cancelled;
 
     emit TaskCanceled(_id);
   }
 
-  function getTask(uint256 _id) public view returns (
-    bytes32,
-    bytes32,
-    TaskStatus,
-    uint256,
-    uint256,
-    uint256,
-    uint256,
-    uint256[] memory)
-  {
+  function getTask(uint256 _id) public view returns (bytes32, bytes32, TaskStatus, uint256, uint256, uint256, uint256, uint256[] memory) {
     Task storage t = tasks[_id];
-    return (
-      t.specificationHash,
-      t.deliverableHash,
-      t.status,
-      t.dueDate,
-      t.fundingPotId,
-      t.completionTimestamp,
-      t.domainId,
-      t.skills
-    );
+    return (t.specificationHash, t.deliverableHash, t.status, t.dueDate, t.fundingPotId, t.completionTimestamp, t.domainId, t.skills);
   }
 
   function getTaskRole(uint256 _id, uint8 _role) public view returns (Role memory role) {
@@ -518,7 +438,7 @@ contract ColonyTask is ColonyStorage {
       }
       int256 nSkills = 0;
       for (uint256 i = 0; i < task.skills.length; i += 1) {
-        if (task.skills[i] > 0 ) {
+        if (task.skills[i] > 0) {
           nSkills += 1;
         }
       }
@@ -555,8 +475,7 @@ contract ColonyTask is ColonyStorage {
     bytes32[] memory _sigS,
     uint8[] memory _mode,
     bytes32 msgHash
-  ) internal pure returns (address[] memory)
-  {
+  ) internal pure returns (address[] memory) {
     address[] memory reviewerAddresses = new address[](_sigR.length);
     for (uint256 i = 0; i < _sigR.length; i++) {
       // 0 'Normal' mode - geth, etc.
@@ -600,10 +519,8 @@ contract ColonyTask is ColonyStorage {
 
   function taskWorkRatingsClosed(uint256 _id) internal view returns (bool) {
     // More than 10 days from completion have passed
-    return (
-      tasks[_id].completionTimestamp > 0 && // If this is zero, the task isn't complete yet!
-      block.timestamp - tasks[_id].completionTimestamp > RATING_COMMIT_TIMEOUT + RATING_REVEAL_TIMEOUT
-    );
+    return (tasks[_id].completionTimestamp > 0 && // If this is zero, the task isn't complete yet!
+      block.timestamp - tasks[_id].completionTimestamp > RATING_COMMIT_TIMEOUT + RATING_REVEAL_TIMEOUT);
   }
 
   // In the event of a user not committing or revealing within the 10 day rating window,
@@ -631,15 +548,8 @@ contract ColonyTask is ColonyStorage {
     }
   }
 
-  function setTaskRoleUser(uint256 _id, TaskRole _role, address payable _user) private
-  taskExists(_id)
-  taskNotComplete(_id)
-  {
-    tasks[_id].roles[uint8(_role)] = Role({
-      user: _user,
-      rateFail: false,
-      rating: TaskRatings.None
-    });
+  function setTaskRoleUser(uint256 _id, TaskRole _role, address payable _user) private taskExists(_id) taskNotComplete(_id) {
+    tasks[_id].roles[uint8(_role)] = Role({user: _user, rateFail: false, rating: TaskRatings.None});
 
     emit TaskRoleUserSet(_id, _role, _user);
   }

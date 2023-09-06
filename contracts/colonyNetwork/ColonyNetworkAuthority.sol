@@ -19,9 +19,8 @@ pragma solidity 0.8.21;
 
 import "./../common/CommonAuthority.sol";
 
-
 contract ColonyNetworkAuthority is CommonAuthority {
-  constructor(address colonyNetwork) CommonAuthority(colonyNetwork) { // solhint-disable-line no-empty-blocks
-
+  constructor(address colonyNetwork) CommonAuthority(colonyNetwork) {
+    // solhint-disable-line no-empty-blocks
   }
 }

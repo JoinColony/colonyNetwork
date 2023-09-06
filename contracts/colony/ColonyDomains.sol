@@ -20,9 +20,7 @@ pragma experimental ABIEncoderV2;
 
 import "./ColonyStorage.sol";
 
-
 contract ColonyDomains is ColonyStorage {
-
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
     require(_colonyNetworkAddress != address(0x0), "colony-network-cannot-be-zero");
     require(_token != address(0x0), "colony-token-cannot-be-zero");
@@ -57,23 +55,25 @@ contract ColonyDomains is ColonyStorage {
     initialiseRootLocalSkill();
 
     // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
-    rewardInverse = 2**256 - 1;
+    rewardInverse = 2 ** 256 - 1;
 
     emit ColonyInitialised(msgSender(), _colonyNetworkAddress, _token);
   }
 
-  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
-  stoppable
-  domainNotDeprecated(_parentDomainId)
-  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
-  {
+  function addDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _parentDomainId
+  ) public stoppable domainNotDeprecated(_parentDomainId) authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId) {
     addDomain(_permissionDomainId, _childSkillIndex, _parentDomainId, "");
   }
 
-  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId, string memory _metadata) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
-  {
+  function addDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _parentDomainId,
+    string memory _metadata
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId) {
     // Note: Remove when we want to allow more domain hierarchy levels
     require(_parentDomainId == 1, "colony-parent-domain-not-root");
 
@@ -92,21 +92,24 @@ contract ColonyDomains is ColonyStorage {
     }
   }
 
-  function editDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, string memory _metadata) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
+  function editDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    string memory _metadata
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
     if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
       emit DomainMetadata(msgSender(), _domainId, _metadata);
     }
   }
 
-  function deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
+  function deprecateDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    bool _deprecated
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
     if (IColonyNetwork(colonyNetworkAddress).deprecateSkill(domains[_domainId].skillId, _deprecated)) {
-
       emit DomainDeprecated(msgSender(), _domainId, _deprecated);
     }
   }
@@ -134,23 +137,17 @@ contract ColonyDomains is ColonyStorage {
     fundingPots[fundingPotCount].associatedTypeId = domainCount;
 
     // Create a new domain with the given skill and new funding pot
-    domains[domainCount] = Domain({
-      skillId: _skillId,
-      fundingPotId: fundingPotCount
-    });
+    domains[domainCount] = Domain({skillId: _skillId, fundingPotId: fundingPotCount});
 
     emit DomainAdded(msgSender(), domainCount);
     emit FundingPotAdded(fundingPotCount);
   }
 
-  function setFunctionReviewers(bytes4 _sig, TaskRole _firstReviewer, TaskRole _secondReviewer)
-  private
-  {
+  function setFunctionReviewers(bytes4 _sig, TaskRole _firstReviewer, TaskRole _secondReviewer) private {
     reviewers[_sig] = [_firstReviewer, _secondReviewer];
   }
 
   function setRoleAssignmentFunction(bytes4 _sig) private {
     roleAssignmentSigs[_sig] = true;
   }
-
 }

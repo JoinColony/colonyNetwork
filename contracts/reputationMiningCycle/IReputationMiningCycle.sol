@@ -20,7 +20,6 @@ pragma experimental "ABIEncoderV2";
 
 import "./ReputationMiningCycleDataTypes.sol";
 
-
 interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice The getter for the disputeRounds mapping.
   /// @param _round The dispute round to query
@@ -82,7 +81,8 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
     uint256 _round,
     uint256 _idx,
     bytes memory _jhIntermediateValue,
-    bytes32[] memory _siblings) external;
+    bytes32[] memory _siblings
+  ) external;
 
   /// @notice Confirm the result of a binary search - depending on how exactly the binary search finished, the saved binary search intermediate state might be incorrect.
   /// @notice This function ensures that the intermediate hashes saved are correct.
@@ -90,11 +90,7 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param _idx The index in the round that the hash we are responding on behalf of is in
   /// @param _jhIntermediateValue The contents of the Justification Tree at the key given by `targetLeaf` (see function description). The value of `targetLeaf` is computed locally to establish what to submit to this function.
   /// @param _siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetLeaf`
-  function confirmBinarySearchResult(
-    uint256 _round,
-    uint256 _idx,
-    bytes memory _jhIntermediateValue,
-    bytes32[] memory _siblings) external;
+  function confirmBinarySearchResult(uint256 _round, uint256 _idx, bytes memory _jhIntermediateValue, bytes32[] memory _siblings) external;
 
   /// @notice Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
   /// @param _u A `uint256[27]` array. The elements of this array, in order are:
@@ -151,7 +147,8 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
     bytes32[] memory _disagreeStateSiblings,
     bytes32[] memory _userOriginReputationSiblings,
     bytes32[] memory _childReputationSiblings,
-    bytes32[] memory _adjacentReputationSiblings) external;
+    bytes32[] memory _adjacentReputationSiblings
+  ) external;
 
   /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible.
   /// @param _round The round that the hash is currently in.
@@ -162,11 +159,7 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @dev Note that it is possible for this function to be required to be called in every round - the hash getting the bye can wait until they will also be awarded the bye in the next round, if
   /// one is going to exist. There is an incentive to do so from a gas-cost perspective, but they don't know for sure there's going to be a bye until the submission window has expired, so I think
   /// this is okay.
-  function confirmJustificationRootHash(
-    uint256 _round,
-    uint256 _index,
-    bytes32[] memory _siblings1,
-    bytes32[] memory _siblings2) external;
+  function confirmJustificationRootHash(uint256 _round, uint256 _index, bytes32[] memory _siblings1, bytes32[] memory _siblings2) external;
 
   /// @notice Add a new entry to the reputation update log.
   /// @param _user The address of the user having their reputation changed by this log entry
@@ -182,7 +175,7 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
     address _colonyAddress,
     uint128 _nParents,
     uint128 _nChildren
-    ) external;
+  ) external;
 
   /// @notice Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract.
   /// @return nUpdates
@@ -208,7 +201,7 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
     address _metaColonyAddress,
     uint256 _reward,
     uint256 _miningSkillId
-    ) external;
+  ) external;
 
   /// @notice Get the timestamp that the current reputation mining window opened.
   /// @return timestamp The timestamp

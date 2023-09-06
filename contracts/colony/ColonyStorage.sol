@@ -30,7 +30,6 @@ import "./ColonyDataTypes.sol";
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-
 contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage {
   uint256 constant COLONY_NETWORK_SLOT = 6;
   uint256 constant ROOT_LOCAL_SKILL_SLOT = 36;
@@ -50,58 +49,58 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   uint256 domainCount; // Storage slot 11
 
   // Mapping function signature to 2 task roles whose approval is needed to execute
-  mapping (bytes4 => TaskRole[2]) reviewers; // Storage slot 12
+  mapping(bytes4 => TaskRole[2]) reviewers; // Storage slot 12
 
   // Role assignment functions require special type of sign-off.
   // This keeps track of which functions are related to role assignment
-  mapping (bytes4 => bool) roleAssignmentSigs; // Storage slot 13
+  mapping(bytes4 => bool) roleAssignmentSigs; // Storage slot 13
 
-  mapping (uint256 => Task) tasks; // Storage slot 14
+  mapping(uint256 => Task) tasks; // Storage slot 14
 
   // FundingPots can be tied to tasks or domains, so giving them their own mapping.
   // FundingPot 1 can be thought of as the pot belonging to the colony itself that hasn't been assigned
   // to anything yet, but has had some siphoned off in to the reward pot.
   // FundingPot 0 is the 'reward' pot containing funds that can be paid to holders of colony tokens in the future.
-  mapping (uint256 => FundingPot) fundingPots; // Storage slot 15
+  mapping(uint256 => FundingPot) fundingPots; // Storage slot 15
 
   // Keeps track of all reward payout cycles
-  mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles; // Storage slot 16
+  mapping(uint256 => RewardPayoutCycle) rewardPayoutCycles; // Storage slot 16
 
-  mapping (address => uint256) pendingRewardPayments; // Storage slot 17
+  mapping(address => uint256) pendingRewardPayments; // Storage slot 17
 
   // This keeps track of how much of the colony's funds that it owns have been moved into funding pots other than pot 0,
   // which (by definition) have also had the reward amount siphoned off and put in to pot 0.
   // This is decremented whenever a payout occurs and the colony loses control of the funds.
-  mapping (address => uint256) nonRewardPotsTotal; // Storage slot 18
+  mapping(address => uint256) nonRewardPotsTotal; // Storage slot 18
 
-  mapping (uint256 => RatingSecrets) public taskWorkRatings; // Storage slot 19
+  mapping(uint256 => RatingSecrets) public taskWorkRatings; // Storage slot 19
 
-  mapping (uint256 => Domain) public domains; // Storage slot 20
+  mapping(uint256 => Domain) public domains; // Storage slot 20
 
   // Mapping task id to current "active" nonce for executing task changes
-  mapping (uint256 => uint256) taskChangeNonces; // Storage slot 21
+  mapping(uint256 => uint256) taskChangeNonces; // Storage slot 21
 
   uint256 paymentCount; // Storage slot 22
-  mapping (uint256 => Payment) payments; // Storage slot 23
+  mapping(uint256 => Payment) payments; // Storage slot 23
 
   uint256 expenditureCount; // Storage slot 24
-  mapping (uint256 => Expenditure) expenditures; // Storage slot 25
-  mapping (uint256 => mapping (uint256 => ExpenditureSlot)) expenditureSlots; // Storage slot 26
-  mapping (uint256 => mapping (uint256 => mapping (address => uint256))) expenditureSlotPayouts; // Storage slot 27
+  mapping(uint256 => Expenditure) expenditures; // Storage slot 25
+  mapping(uint256 => mapping(uint256 => ExpenditureSlot)) expenditureSlots; // Storage slot 26
+  mapping(uint256 => mapping(uint256 => mapping(address => uint256))) expenditureSlotPayouts; // Storage slot 27
 
   // Used for stake management ([user][approvee][domainId] => amount)
-  mapping (address => mapping (address => mapping (uint256 => uint256))) approvals; // Storage slot 28
-  mapping (address => mapping (address => mapping (uint256 => uint256))) obligations; // Storage slot 29
+  mapping(address => mapping(address => mapping(uint256 => uint256))) approvals; // Storage slot 28
+  mapping(address => mapping(address => mapping(uint256 => uint256))) obligations; // Storage slot 29
 
   address tokenLockingAddress; // Storage slot 30
 
-  mapping (address => mapping (uint256 => bool)) tokenLocks; // Storage slot 31
+  mapping(address => mapping(uint256 => bool)) tokenLocks; // Storage slot 31
 
   // Mapping of token address -> address approved -> amount approved
-  mapping (address => mapping (address => uint256 )) tokenApprovals; // Storage slot 32
+  mapping(address => mapping(address => uint256)) tokenApprovals; // Storage slot 32
 
   // Mapping of token address -> total amount approved
-  mapping (address => uint256 ) tokenApprovalTotals; // Storage slot 33
+  mapping(address => uint256) tokenApprovalTotals; // Storage slot 33
 
   uint256 defaultGlobalClaimDelay; // Storage slot 34
 
@@ -109,21 +108,18 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   mapping(address => uint256) metatransactionNonces; // Storage slot 35
 
   uint256 rootLocalSkill; // Storage slot 36
-  mapping (uint256 => bool) localSkills; // Storage slot 37
+  mapping(uint256 => bool) localSkills; // Storage slot 37
 
   // Constants
 
-  uint256 constant MAX_PAYOUT = 2**128 - 1; // 340,282,366,920,938,463,463 WADs
-  bytes32 constant ROOT_ROLES = bytes32(uint256(1)) << uint8(ColonyRole.Recovery) | bytes32(uint256(1)) << uint8(ColonyRole.Root);
+  uint256 constant MAX_PAYOUT = 2 ** 128 - 1; // 340,282,366,920,938,463,463 WADs
+  bytes32 constant ROOT_ROLES = (bytes32(uint256(1)) << uint8(ColonyRole.Recovery)) | (bytes32(uint256(1)) << uint8(ColonyRole.Root));
   bytes32 constant BYTES32_1 = bytes32(uint256(1));
 
   // Modifiers
 
   modifier domainNotDeprecated(uint256 _id) {
-    require(
-      !IColonyNetwork(colonyNetworkAddress).getSkill(domains[_id].skillId).deprecated,
-      "colony-domain-deprecated"
-    );
+    require(!IColonyNetwork(colonyNetworkAddress).getSkill(domains[_id].skillId).deprecated, "colony-domain-deprecated");
     _;
   }
 
@@ -183,8 +179,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   modifier expenditureDraftOrLocked(uint256 _id) {
     require(expenditureExists(_id), "colony-expenditure-does-not-exist");
     require(
-      expenditures[_id].status == ExpenditureStatus.Draft ||
-      expenditures[_id].status == ExpenditureStatus.Locked,
+      expenditures[_id].status == ExpenditureStatus.Draft || expenditures[_id].status == ExpenditureStatus.Locked,
       "colony-expenditure-not-draft-or-locked"
     );
     _;
@@ -231,8 +226,16 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   // Note that these require messages currently cannot propogate up because of the `executeTaskRoleAssignment` logic
-  modifier isAdmin(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _user) {
-    require(ColonyAuthority(address(authority)).hasUserRole(_user, _permissionDomainId, uint8(ColonyRole.Administration)), "colony-not-admin");
+  modifier isAdmin(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    address _user
+  ) {
+    require(
+      ColonyAuthority(address(authority)).hasUserRole(_user, _permissionDomainId, uint8(ColonyRole.Administration)),
+      "colony-not-admin"
+    );
     require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, tasks[_id].domainId), "ds-auth-invalid-domain-inheritance");
     _;
   }
@@ -248,12 +251,16 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
-  modifier auth override {
+  modifier auth() override {
     require(isAuthorized(msgSender(), 1, msg.sig), "ds-auth-unauthorized");
     _;
   }
 
-  modifier authDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _childDomainId) {
+  modifier authDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _childDomainId
+  ) {
     require(domainExists(_permissionDomainId), "ds-auth-permission-domain-does-not-exist");
     require(domainExists(_childDomainId), "ds-auth-child-domain-does-not-exist");
     require(isAuthorized(msgSender(), _permissionDomainId, msg.sig), "ds-auth-unauthorized");
@@ -269,7 +276,11 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   // Evaluates a "domain proof" which checks that childDomainId is part of the subtree starting at permissionDomainId
-  function validateDomainInheritance(uint256 permissionDomainId, uint256 childSkillIndex, uint256 childDomainId) internal view returns (bool) {
+  function validateDomainInheritance(
+    uint256 permissionDomainId,
+    uint256 childSkillIndex,
+    uint256 childDomainId
+  ) internal view returns (bool) {
     if (permissionDomainId == childDomainId) {
       return childSkillIndex == UINT256_MAX;
     } else {
@@ -289,7 +300,9 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   function isContract(address addr) internal returns (bool) {
     uint256 size;
-    assembly { size := extcodesize(addr) }
+    assembly {
+      size := extcodesize(addr)
+    }
     return size > 0;
   }
 
@@ -350,11 +363,11 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   function executeCall(address to, uint256 value, bytes memory data) internal returns (bool success) {
     assembly {
-              // call contract at address a with input mem[in…(in+insize))
-              //   providing g gas and v wei and output area mem[out…(out+outsize))
-              //   returning 0 on error (eg. out of gas) and 1 on success
+      // call contract at address a with input mem[in…(in+insize))
+      //   providing g gas and v wei and output area mem[out…(out+outsize))
+      //   returning 0 on error (eg. out of gas) and 1 on success
 
-              // call(g,     a,  v,     in,              insize,      out, outsize)
+      // call(g,     a,  v,     in,              insize,      out, outsize)
       success := call(gas(), to, value, add(data, 0x20), mload(data), 0, 0)
     }
   }

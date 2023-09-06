@@ -21,9 +21,7 @@ pragma experimental "ABIEncoderV2";
 import "./TokenLockingDataTypes.sol";
 import "./../common/IBasicMetaTransaction.sol";
 
-
 interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
-
   /// @notice Set the ColonyNetwork contract address.
   /// @dev ColonyNetwork is used for checking if sender is a colony created on colony network.
   /// @param _colonyNetwork Address of the ColonyNetwork

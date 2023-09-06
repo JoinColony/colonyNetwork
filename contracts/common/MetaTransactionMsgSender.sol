@@ -3,18 +3,17 @@ pragma solidity 0.8.21;
 import "../../lib/dappsys/math.sol";
 
 abstract contract MetaTransactionMsgSender is DSMath {
-
   bytes32 constant METATRANSACTION_FLAG = keccak256("METATRANSACTION");
 
-  function msgSender() internal view returns(address payable sender) {
+  function msgSender() internal view returns (address payable sender) {
     uint256 index = msg.data.length;
-    if(msg.sender == address(this) && index >= 52) {
+    if (msg.sender == address(this) && index >= 52) {
       bytes memory array = msg.data;
       bytes32 flag;
       assembly {
         flag := mload(add(array, sub(index, 20)))
       }
-      if (flag != METATRANSACTION_FLAG){
+      if (flag != METATRANSACTION_FLAG) {
         return payable(msg.sender);
       }
       assembly {

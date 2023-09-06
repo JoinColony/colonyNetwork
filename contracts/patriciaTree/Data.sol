@@ -3,10 +3,8 @@ pragma experimental "ABIEncoderV2";
 
 import {Bits} from "./Bits.sol";
 
-
 /// More info at: https://github.com/chriseth/patricia-trie
 library Data {
-
   struct Label {
     bytes32 data;
     uint length;
@@ -29,11 +27,7 @@ library Data {
 
   // Returns a label containing the longest common prefix of `self` and `label`,
   // and a label consisting of the remaining part of `label`.
-  function splitCommonPrefix(Label memory self, Label memory other) internal pure returns (
-    Label memory prefix,
-    Label memory labelSuffix
-  )
-  {
+  function splitCommonPrefix(Label memory self, Label memory other) internal pure returns (Label memory prefix, Label memory labelSuffix) {
     return splitAt(self, commonPrefix(self, other));
   }
 
@@ -90,7 +84,8 @@ library Data {
     if (suffix.length == 0) {
       // Full match with the key, update operation
       newNodeHash = value;
-    } else if (prefix.length >= e.label.length) {  // NOTE: how could a common prefix be longer than either label?
+    } else if (prefix.length >= e.label.length) {
+      // NOTE: how could a common prefix be longer than either label?
       // Partial match, just follow the path
       Node memory n = self.nodes[e.node];
       (head, tail) = chopFirstBit(suffix);
@@ -133,7 +128,7 @@ library Data {
     if (length == 0) {
       return 0;
     }
-    uint diff = uint(self.data ^ other.data) & ~uint(0) << 256 - length; // TODO Mask should not be needed.
+    uint diff = uint(self.data ^ other.data) & (~uint(0) << (256 - length)); // TODO Mask should not be needed.
     if (diff == 0) {
       return length;
     }

@@ -24,52 +24,51 @@ import "./../../lib/dappsys/math.sol";
 import "./../common/BasicMetaTransaction.sol";
 
 abstract contract DSTokenBaseMeta is ERC20, DSMath, BasicMetaTransaction {
-    uint256                                            _supply;
-    mapping (address => uint256)                       _balances;
-    mapping (address => mapping (address => uint256))  _approvals;
+  uint256 _supply;
+  mapping(address => uint256) _balances;
+  mapping(address => mapping(address => uint256)) _approvals;
 
-    constructor(uint256 supply) {
-        _balances[msgSender()] = supply;
-        _supply = supply;
+  constructor(uint256 supply) {
+    _balances[msgSender()] = supply;
+    _supply = supply;
+  }
+
+  function totalSupply() public view override returns (uint) {
+    return _supply;
+  }
+
+  function balanceOf(address src) public view override returns (uint) {
+    return _balances[src];
+  }
+
+  function allowance(address src, address guy) public view override returns (uint) {
+    return _approvals[src][guy];
+  }
+
+  function transfer(address dst, uint256 wad) public override returns (bool) {
+    return transferFrom(msgSender(), dst, wad);
+  }
+
+  function transferFrom(address src, address dst, uint256 wad) public virtual override returns (bool) {
+    if (src != msgSender()) {
+      require(_approvals[src][msgSender()] >= wad, "ds-token-insufficient-approval");
+      _approvals[src][msgSender()] -= wad;
     }
 
-    function totalSupply() public override view returns (uint) {
-        return _supply;
-    }
-    function balanceOf(address src) public override view returns (uint) {
-        return _balances[src];
-    }
-    function allowance(address src, address guy) public override view returns (uint) {
-        return _approvals[src][guy];
-    }
+    require(_balances[src] >= wad, "ds-token-insufficient-balance");
+    _balances[src] -= wad;
+    _balances[dst] += wad;
 
-    function transfer(address dst, uint256 wad) public override returns (bool) {
-        return transferFrom(msgSender(), dst, wad);
-    }
+    emit Transfer(src, dst, wad);
 
-    function transferFrom(address src, address dst, uint256 wad)
-        public override virtual
-        returns (bool)
-    {
-        if (src != msgSender()) {
-            require(_approvals[src][msgSender()] >= wad, "ds-token-insufficient-approval");
-            _approvals[src][msgSender()] -= wad;
-        }
+    return true;
+  }
 
-        require(_balances[src] >= wad, "ds-token-insufficient-balance");
-        _balances[src] -= wad;
-        _balances[dst] += wad;
+  function approve(address guy, uint256 wad) public override returns (bool) {
+    _approvals[msgSender()][guy] = wad;
 
-        emit Transfer(src, dst, wad);
+    emit Approval(msgSender(), guy, wad);
 
-        return true;
-    }
-
-    function approve(address guy, uint256 wad) public override returns (bool) {
-        _approvals[msgSender()][guy] = wad;
-
-        emit Approval(msgSender(), guy, wad);
-
-        return true;
-    }
+    return true;
+  }
 }

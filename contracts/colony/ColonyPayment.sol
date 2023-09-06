@@ -20,7 +20,6 @@ pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
 
-
 contract ColonyPayment is ColonyStorage {
   function addPayment(
     uint256 _permissionDomainId,
@@ -30,13 +29,7 @@ contract ColonyPayment is ColonyStorage {
     uint256 _amount,
     uint256 _domainId,
     uint256 _skillId
-  )
-  public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  validPayoutAmount(_amount)
-  returns (uint256)
-  {
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) validPayoutAmount(_amount) returns (uint256) {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
     paymentCount += 1;
 
@@ -70,12 +63,11 @@ contract ColonyPayment is ColonyStorage {
     return paymentCount;
   }
 
-  function finalizePayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
-  paymentFunded(_id)
-  paymentNotFinalized(_id)
-  {
+  function finalizePayment(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId) paymentFunded(_id) paymentNotFinalized(_id) {
     Payment storage payment = payments[_id];
     payment.finalized = true;
 
@@ -95,22 +87,29 @@ contract ColonyPayment is ColonyStorage {
     emit PaymentFinalized(msgSender(), _id);
   }
 
-  function setPaymentRecipient(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address payable _recipient) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
-  paymentNotFinalized(_id)
-  {
+  function setPaymentRecipient(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    address payable _recipient
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId) paymentNotFinalized(_id) {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
     payments[_id].recipient = _recipient;
 
     emit PaymentRecipientSet(msgSender(), _id, _recipient);
   }
 
-  function setPaymentSkill(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _skillId) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
-  paymentNotFinalized(_id)
-  validGlobalOrLocalSkill(_skillId)
+  function setPaymentSkill(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _skillId
+  )
+    public
+    stoppable
+    authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
+    paymentNotFinalized(_id)
+    validGlobalOrLocalSkill(_skillId)
   {
     payments[_id].skills[0] = _skillId;
 

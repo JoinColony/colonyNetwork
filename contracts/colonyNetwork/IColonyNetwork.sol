@@ -24,9 +24,7 @@ import "./../common/IMulticall.sol";
 
 import "./ColonyNetworkDataTypes.sol";
 
-
 interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
-
   /// @notice Query if a contract implements an interface
   /// @param _interfaceID The interface identifier, as specified in ERC-165
   /// @dev Interface identification is specified in ERC-165.
@@ -54,14 +52,16 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
     address _colony,
     uint128 _nUpdates,
     uint128 _nPreviousUpdates
-    ) external;
+  ) external;
 
   /// @notice Get a replacement log entry (if set) for the log entry `_id` in the mining cycle that was at the address `_reputationMiningCycle`.
   /// @param _reputationMiningCycle The address of the reputation mining cycle we are asking about
   /// @param _id The log entry number we wish to see if there is a replacement for
   /// @return _reputationLogEntry ReputationLogEntry instance with the details of the log entry (if it exists)
-  function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) external view returns
-    (ReputationLogEntry memory _reputationLogEntry);
+  function getReplacementReputationUpdateLogEntry(
+    address _reputationMiningCycle,
+    uint256 _id
+  ) external view returns (ReputationLogEntry memory _reputationLogEntry);
 
   /// @notice Get whether any replacement log entries have been set for the supplied reputation mining cycle.
   /// @notice Used by the client to avoid doubling the number of RPC calls when syncing from scratch.
@@ -154,8 +154,13 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _orbitdb DEPRECATED Currently a no-op
   /// @param _useExtensionManager DEPRECATED Currently a no-op
   /// @return _colonyAddress Address of the newly created colony
-  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _orbitdb, bool _useExtensionManager)
-    external returns (address _colonyAddress);
+  function createColony(
+    address _tokenAddress,
+    uint256 _version,
+    string memory _colonyName,
+    string memory _orbitdb,
+    bool _useExtensionManager
+  ) external returns (address _colonyAddress);
 
   /// @notice Creates a new colony in the network, with an optional ENS name
   /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
@@ -163,8 +168,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _version The version of colony to deploy (pass 0 for the current version)
   /// @param _colonyName The label to register (if null, no label is registered)
   /// @return _colonyAddress Address of the newly created colony
-  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName)
-    external returns (address _colonyAddress);
+  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName) external returns (address _colonyAddress);
 
   /// @notice Creates a new colony in the network, with an optional ENS name
   /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
@@ -174,8 +178,12 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _metadata The metadata associated with the new colony
   /// @return _colonyAddress Address of the newly created colony
   /// @dev We expect this function to only be used by the dapp
-  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _metadata)
-    external returns (address _colonyAddress);
+  function createColony(
+    address _tokenAddress,
+    uint256 _version,
+    string memory _colonyName,
+    string memory _metadata
+  ) external returns (address _colonyAddress);
 
   /// @notice Creates a new colony in the network, possibly with a token and token authority,
   /// with an optional ENS name
@@ -198,8 +206,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
     uint256 _version,
     string memory _colonyName,
     string memory _metadata
-  )
-    external returns (address token, address colony);
+  ) external returns (address token, address colony);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
   /// Allowed to be called by the Meta Colony only.
@@ -315,7 +322,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @notice Reverse lookup a username from an address.
   /// @param _addr The address we wish to find the corresponding ENS domain for (if any)
   /// @return _domain A string containing the colony-based ENS name corresponding to addr
-  function lookupRegisteredENSDomain(address _addr) external view returns(string memory _domain);
+  function lookupRegisteredENSDomain(address _addr) external view returns (string memory _domain);
 
   /// @notice Returns the address the supplied node resolves do, if we are the resolver.
   /// @param _node The namehash of the ENS address being requested
@@ -451,7 +458,11 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _colony The address of the colony in control of the token
   /// @param _allowedToTransfer An array of addresses that are allowed to transfer the token even if it's locked
   /// @return _tokenAuthority The address of the newly deployed TokenAuthority
-  function deployTokenAuthority(address _token, address _colony, address[] memory _allowedToTransfer) external returns (address _tokenAuthority);
+  function deployTokenAuthority(
+    address _token,
+    address _colony,
+    address[] memory _allowedToTransfer
+  ) external returns (address _tokenAuthority);
 
   /// @notice Called to give or remove another address's permission to mine on your behalf
   /// @param _delegate The address you're giving or removing permission from
@@ -462,5 +473,4 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _delegate The address that wants to mine
   /// @return _delegator The address they are allowed to mine on behalf of
   function getMiningDelegator(address _delegate) external view returns (address _delegator);
-
 }

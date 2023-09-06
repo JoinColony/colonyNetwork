@@ -17,13 +17,11 @@
 
 pragma solidity 0.8.21;
 
-
-
 contract MultiChain {
   function getChainId() public view returns (uint256) {
     uint256 id;
     assembly {
-        id := chainid()
+      id := chainid()
     }
     return id;
   }

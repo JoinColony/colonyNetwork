@@ -24,7 +24,6 @@ import "./../patriciaTree/PatriciaTreeProofs.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ReputationMiningCycleCommon.sol";
 
-
 contract ReputationMiningCycle is ReputationMiningCycleCommon {
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param _roundNumber The `roundNumber` to check if it is the final round
@@ -59,12 +58,15 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     // If this user has submitted before during this round...
     if (reputationHashSubmissions[_minerAddress].proposedNewRootHash != bytes32(0)) {
       // ...require that they are submitting the same hash ...
-      require(_newHash == reputationHashSubmissions[_minerAddress].proposedNewRootHash, "colony-reputation-mining-submitting-different-hash");
+      require(
+        _newHash == reputationHashSubmissions[_minerAddress].proposedNewRootHash,
+        "colony-reputation-mining-submitting-different-hash"
+      );
       // ...require that they are submitting the same number of leaves for that hash ...
       require(_nLeaves == reputationHashSubmissions[_minerAddress].nLeaves, "colony-reputation-mining-submitting-different-nleaves");
       // ...require that they are submitting the same jrh for that hash ...
       require(_jrh == reputationHashSubmissions[_minerAddress].jrh, "colony-reputation-mining-submitting-different-jrh");
-       // ... but not this exact entry
+      // ... but not this exact entry
       require(submittedEntries[_minerAddress][_entryIndex] == false, "colony-reputation-mining-submitting-same-entry-index");
     }
   }
@@ -74,7 +76,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   /// @notice A function that checks if the proposed entry is within the current allowable submission window
   /// @dev A submission will only be accepted from a reputation miner if `keccak256(address, N, hash) < target`
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1.
-  function checkWithinTarget (address _minerAddress, bytes32 _newHash, uint256 _entryIndex) internal {
+  function checkWithinTarget(address _minerAddress, bytes32 _newHash, uint256 _entryIndex) internal {
     // Check the ticket is a winning one.
     // All entries are acceptable if the 24 hour-long window is closed, so skip this check if that's the case
     if (!submissionWindowClosed()) {
@@ -82,7 +84,10 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       if (windowElapsed < MINING_WINDOW_SIZE - ALL_ENTRIES_ALLOWED_END_OF_WINDOW) {
         // The end of the window, any entry can be submitted, so skip this check
         uint256 target = (block.timestamp - reputationMiningWindowOpenTimestamp) * X;
-        require(uint256(getEntryHash(_minerAddress, _entryIndex, _newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
+        require(
+          uint256(getEntryHash(_minerAddress, _entryIndex, _newHash)) < target,
+          "colony-reputation-mining-cycle-submission-not-within-target"
+        );
       }
     }
   }
@@ -157,9 +162,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     return true;
   }
 
-  function submitRootHash(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex) public
-  submissionPossible()
-  {
+  function submitRootHash(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex) public submissionPossible {
     address minerAddress = getMinerAddressIfStaked();
     checkEntryQualifies(minerAddress, _newHash, _nLeaves, _jrh, _entryIndex);
     checkWithinTarget(minerAddress, _newHash, _entryIndex);
@@ -173,27 +176,24 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       // And add it to the first disputeRound
       // NB if no other hash is submitted, no dispute resolution will be required.
       // slither-disable-next-line controlled-array-length
-      disputeRounds[0].push(DisputedEntry({
-        firstSubmitter: minerAddress,
-        lastResponseTimestamp: reputationMiningWindowOpenTimestamp + MINING_WINDOW_SIZE,
-        challengeStepCompleted: 0,
-        lowerBound: 0,
-        upperBound: 0,
-        intermediateReputationHash: 0x0,
-        intermediateReputationNLeaves: 0,
-        targetHashDuringSearch: _jrh,
-        hash1: 0x00,
-        hash2: 0x00
-      }));
+      disputeRounds[0].push(
+        DisputedEntry({
+          firstSubmitter: minerAddress,
+          lastResponseTimestamp: reputationMiningWindowOpenTimestamp + MINING_WINDOW_SIZE,
+          challengeStepCompleted: 0,
+          lowerBound: 0,
+          upperBound: 0,
+          intermediateReputationHash: 0x0,
+          intermediateReputationNLeaves: 0,
+          targetHashDuringSearch: _jrh,
+          hash1: 0x00,
+          hash2: 0x00
+        })
+      );
     }
 
     if (reputationHashSubmissions[minerAddress].proposedNewRootHash == bytes32(0)) {
-      reputationHashSubmissions[minerAddress] = Submission({
-        proposedNewRootHash: _newHash,
-        nLeaves: _nLeaves,
-        jrh: _jrh,
-        jrhNLeaves: 0
-      });
+      reputationHashSubmissions[minerAddress] = Submission({proposedNewRootHash: _newHash, nLeaves: _nLeaves, jrh: _jrh, jrhNLeaves: 0});
     }
 
     // And add the miner to the array list of submissions here
@@ -206,9 +206,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   }
 
   // slither-disable-next-line suicidal
-  function confirmNewHash(uint256 _roundNumber) public
-  finalDisputeRoundCompleted(_roundNumber)
-  {
+  function confirmNewHash(uint256 _roundNumber) public finalDisputeRoundCompleted(_roundNumber) {
     // No rewardResponders here - the submitters of the hash are incentivised to make this call, as it
     // is the one that gives them the reward for staking in the first place. This means we don't have to
     // take it in to account when calculating the reward for responders, which in turn means that the
@@ -267,7 +265,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       // Prevent us invalidating the final hash
       require(disputeRounds[_round].length > 1, "colony-reputation-mining-cannot-invalidate-final-hash");
       // Move opponent on to next round
-      disputeRounds[_round+1].push(disputeRounds[_round][opponentIdx]);
+      disputeRounds[_round + 1].push(disputeRounds[_round][opponentIdx]);
       delete disputeRounds[_round][opponentIdx];
 
       // Note the fact that this round has had another challenge complete
@@ -285,14 +283,23 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       require(submission.proposedNewRootHash != "", "colony-reputation-mining-hash-already-progressed");
 
       // Require that this is not better than its opponent.
-      require(disputeRounds[_round][opponentIdx].challengeStepCompleted >= disputeRounds[_round][_idx].challengeStepCompleted, "colony-reputation-mining-less-challenge-rounds-completed");
+      require(
+        disputeRounds[_round][opponentIdx].challengeStepCompleted >= disputeRounds[_round][_idx].challengeStepCompleted,
+        "colony-reputation-mining-less-challenge-rounds-completed"
+      );
 
       // Require that it has failed a challenge (i.e. failed to respond in time)
-      require((disputeRounds[_round][_idx].lastResponseTimestamp + CHALLENGE_RESPONSE_WINDOW_DURATION) <= block.timestamp, "colony-reputation-mining-not-timed-out"); // Timeout is twenty minutes here.
+      require(
+        (disputeRounds[_round][_idx].lastResponseTimestamp + CHALLENGE_RESPONSE_WINDOW_DURATION) <= block.timestamp,
+        "colony-reputation-mining-not-timed-out"
+      ); // Timeout is twenty minutes here.
 
       // The submission can be invalidated - now check the person invalidating is allowed to
       require(
-        responsePossible(DisputeStages.InvalidateHash, (disputeRounds[_round][_idx].lastResponseTimestamp + CHALLENGE_RESPONSE_WINDOW_DURATION)),
+        responsePossible(
+          DisputeStages.InvalidateHash,
+          (disputeRounds[_round][_idx].lastResponseTimestamp + CHALLENGE_RESPONSE_WINDOW_DURATION)
+        ),
         "colony-reputation-mining-user-ineligible-to-respond"
       );
 
@@ -304,14 +311,13 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       );
 
       // Work out whether we are invalidating just the supplied idx or its opponent too.
-      bool eliminateOpponent = (
-        disputeRounds[_round][opponentIdx].challengeStepCompleted == disputeRounds[_round][_idx].challengeStepCompleted
-      );
+      bool eliminateOpponent = (disputeRounds[_round][opponentIdx].challengeStepCompleted ==
+        disputeRounds[_round][_idx].challengeStepCompleted);
 
       if (!eliminateOpponent) {
         // If here, then the opponent completed one more challenge round than the submission being invalidated or
         // proved a later UID was in the tree, so we don't know if they're valid or not yet. Move them on to the next round.
-        disputeRounds[_round+1].push(disputeRounds[_round][opponentIdx]);
+        disputeRounds[_round + 1].push(disputeRounds[_round][opponentIdx]);
         delete disputeRounds[_round][opponentIdx];
         // TODO Delete the hash(es) being invalidated?
         nInvalidatedHashes += 1;
@@ -322,7 +328,9 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
         nInvalidatedHashes += 2;
 
         // Punish the people who proposed our opponent
-        stakeLost += submittedHashes[opponentSubmission.proposedNewRootHash][opponentSubmission.nLeaves][opponentSubmission.jrh].length * MIN_STAKE;
+        stakeLost +=
+          submittedHashes[opponentSubmission.proposedNewRootHash][opponentSubmission.nLeaves][opponentSubmission.jrh].length *
+          MIN_STAKE;
         IColonyNetwork(colonyNetworkAddress).punishStakers(
           submittedHashes[opponentSubmission.proposedNewRootHash][opponentSubmission.nLeaves][opponentSubmission.jrh],
           MIN_STAKE
@@ -340,13 +348,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
 
-  function confirmJustificationRootHash(
-    uint256 _round,
-    uint256 _index,
-    bytes32[] memory _siblings1,
-    bytes32[] memory _siblings2
-  ) public
-  {
+  function confirmJustificationRootHash(uint256 _round, uint256 _index, bytes32[] memory _siblings1, bytes32[] memory _siblings2) public {
     require(submissionWindowClosed(), "colony-reputation-mining-cycle-submissions-not-closed");
     require(_index < disputeRounds[_round].length, "colony-reputation-mining-index-beyond-round-length");
     require(
@@ -362,8 +364,11 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     uint256 reputationRootHashNLeaves = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNLeaves();
     uint256 nLogEntries = reputationUpdateLog.length;
 
-    submission.jrhNLeaves = reputationUpdateLog[nLogEntries-1].nUpdates +
-      reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNLeaves + 1; // This is the number of leaves we expect in the justification tree
+    submission.jrhNLeaves =
+      reputationUpdateLog[nLogEntries - 1].nUpdates +
+      reputationUpdateLog[nLogEntries - 1].nPreviousUpdates +
+      reputationRootHashNLeaves +
+      1; // This is the number of leaves we expect in the justification tree
 
     uint256 expectedLength = expectedProofLength(submission.jrhNLeaves, 0);
     require(expectedLength == _siblings1.length, "colony-reputation-mining-invalid-jrh-proof-1-length");
@@ -373,15 +378,10 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
     // Get the branch mask for the two proofs we asked for a plausible justification tree would have
     uint256 branchMask1 = expectedBranchMask(submission.jrhNLeaves, 0);
-    uint256 branchMask2 = expectedBranchMask(submission.jrhNLeaves, submission.jrhNLeaves-1);
+    uint256 branchMask2 = expectedBranchMask(submission.jrhNLeaves, submission.jrhNLeaves - 1);
     // Check the proofs for the JRH
     checkJRHProof1(submission.jrh, branchMask1, _siblings1, reputationRootHashNLeaves);
-    checkJRHProof2(
-      _round,
-      _index,
-      branchMask2,
-      _siblings2
-    );
+    checkJRHProof2(_round, _index, branchMask2, _siblings2);
 
     // Record that they've responded
     disputeRounds[_round][_index].lastResponseTimestamp = block.timestamp;
@@ -402,13 +402,14 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     address _colonyAddress,
     uint128 _nParents,
     uint128 _nChildren
-  ) public
-  {
+  ) public {
     require(colonyNetworkAddress == msg.sender, "colony-reputation-mining-sender-not-network");
     uint reputationUpdateLogLength = reputationUpdateLog.length;
     uint128 nPreviousUpdates = 0;
     if (reputationUpdateLogLength > 0) {
-      nPreviousUpdates = reputationUpdateLog[reputationUpdateLogLength-1].nPreviousUpdates + reputationUpdateLog[reputationUpdateLogLength-1].nUpdates;
+      nPreviousUpdates =
+        reputationUpdateLog[reputationUpdateLogLength - 1].nPreviousUpdates +
+        reputationUpdateLog[reputationUpdateLogLength - 1].nUpdates;
     }
     uint128 nUpdates = (_nParents + 1) * 2;
     if (_amount < 0) {
@@ -424,13 +425,16 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     }
 
     // slither-disable-next-line controlled-array-length
-    reputationUpdateLog.push(ReputationLogEntry(
-      _user,
-      amount, // Potentially adjusted amount to int128 scoe
-      _skillId,
-      _colonyAddress,
-      nUpdates,
-      nPreviousUpdates));
+    reputationUpdateLog.push(
+      ReputationLogEntry(
+        _user,
+        amount, // Potentially adjusted amount to int128 scoe
+        _skillId,
+        _colonyAddress,
+        nUpdates,
+        nPreviousUpdates
+      )
+    );
   }
 
   function getReputationUpdateLogLength() public view returns (uint256) {
@@ -460,8 +464,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     address _metaColonyAddress,
     uint256 _reward,
     uint256 _miningSkillId
-  ) public
-  {
+  ) public {
     require(msg.sender == colonyNetworkAddress, "colony-reputation-mining-sender-not-network");
     require(reputationUpdateLog.length == 0, "colony-reputation-mining-log-length-non-zero");
     require(_stakers.length == _weights.length, "colony-reputation-mining-staker-weight-mismatch");
@@ -475,14 +478,16 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
         amount = MAX_INT128;
       }
 
-      reputationUpdateLog.push(ReputationLogEntry(
-        _stakers[i],
-        int256(wmul(_reward, _weights[i])),
-        _miningSkillId, //This should be the special 'mining' skill.
-        _metaColonyAddress, // They earn this reputation in the meta colony.
-        4, // Updates the user's skill, and the colony's skill, both globally and for the special 'mining' skill
-        i*4 //We're zero indexed, so this is the number of updates that came before in the reputation log.
-      ));
+      reputationUpdateLog.push(
+        ReputationLogEntry(
+          _stakers[i],
+          int256(wmul(_reward, _weights[i])),
+          _miningSkillId, //This should be the special 'mining' skill.
+          _metaColonyAddress, // They earn this reputation in the meta colony.
+          4, // Updates the user's skill, and the colony's skill, both globally and for the special 'mining' skill
+          i * 4 //We're zero indexed, so this is the number of updates that came before in the reputation log.
+        )
+      );
     }
   }
 
@@ -507,7 +512,12 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
   // Internal functions
   /////////////////////////
 
-  function checkJRHProof1(bytes32 _jrh, uint256 _branchMask1, bytes32[] memory _siblings1, uint256 _reputationRootHashNLeaves) internal view {
+  function checkJRHProof1(
+    bytes32 _jrh,
+    uint256 _branchMask1,
+    bytes32[] memory _siblings1,
+    uint256 _reputationRootHashNLeaves
+  ) internal view {
     // Proof 1 needs to prove that they started with the current reputation root hash
     bytes32 reputationRootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
     bytes memory jhLeafValue = new bytes(64);
@@ -516,16 +526,10 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       mstore(add(jhLeafValue, 0x40), _reputationRootHashNLeaves)
     }
     bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(0), jhLeafValue, _branchMask1, _siblings1);
-    require(_jrh==impliedRoot, "colony-reputation-mining-invalid-jrh-proof-1");
+    require(_jrh == impliedRoot, "colony-reputation-mining-invalid-jrh-proof-1");
   }
 
-  function checkJRHProof2(
-    uint256 _round,
-    uint256 _index,
-    uint256 _branchMask2,
-    bytes32[] memory _siblings2
-  ) internal
-  {
+  function checkJRHProof2(uint256 _round, uint256 _index, uint256 _branchMask2, bytes32[] memory _siblings2) internal {
     // Proof 2 needs to prove that they finished with the reputation root hash they submitted, and the
     // key is the number of updates implied by the contents of the reputation update log
     // plus the number of leaves in the last accepted update, each of which will have decayed once.
@@ -540,7 +544,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       mstore(add(jhLeafValue, 0x20), submittedHash)
       mstore(add(jhLeafValue, 0x40), submittedHashNLeaves)
     }
-    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(submission.jrhNLeaves-1), jhLeafValue, _branchMask2, _siblings2);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(submission.jrhNLeaves - 1), jhLeafValue, _branchMask2, _siblings2);
     require(submission.jrh == impliedRoot, "colony-reputation-mining-invalid-jrh-proof-2");
   }
 
@@ -564,8 +568,8 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
 
   function startPairingInRound(uint256 _roundNumber) internal {
     uint256 nInRound = disputeRounds[_roundNumber].length;
-    startMemberOfPair(_roundNumber, nInRound-1);
-    startMemberOfPair(_roundNumber, nInRound-2);
+    startMemberOfPair(_roundNumber, nInRound - 1);
+    startMemberOfPair(_roundNumber, nInRound - 2);
   }
 
   function updateTimestamps(uint256 _roundNumber) internal {
@@ -576,7 +580,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       startPairingInRound(_roundNumber);
     } else {
       // Update the 'last responded time'
-      disputeRounds[_roundNumber][nInRound-1].lastResponseTimestamp = block.timestamp;
+      disputeRounds[_roundNumber][nInRound - 1].lastResponseTimestamp = block.timestamp;
     }
   }
 }

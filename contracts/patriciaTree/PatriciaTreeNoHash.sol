@@ -4,10 +4,8 @@ pragma experimental "ABIEncoderV2";
 import "./PatriciaTreeBase.sol";
 import "./IPatriciaTreeNoHash.sol";
 
-
 /// More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTreeNoHash is IPatriciaTreeNoHash, PatriciaTreeBase {
-
   using Data for Data.Tree;
   using Data for Data.Edge;
   using Data for Data.Label;
@@ -21,9 +19,12 @@ contract PatriciaTreeNoHash is IPatriciaTreeNoHash, PatriciaTreeBase {
     return getProofFunctionality(key);
   }
 
-  function getImpliedRoot(bytes32 key, bytes memory value, uint branchMask, bytes32[] memory siblings) public
-  pure override returns (bytes32)
-  {
+  function getImpliedRoot(
+    bytes32 key,
+    bytes memory value,
+    uint branchMask,
+    bytes32[] memory siblings
+  ) public pure override returns (bytes32) {
     return getImpliedRootNoHashKey(key, value, branchMask, siblings);
   }
 

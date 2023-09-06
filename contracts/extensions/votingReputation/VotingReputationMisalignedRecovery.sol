@@ -26,12 +26,11 @@ import "./../../../lib/dappsys/auth.sol";
 import "./VotingReputationDataTypes.sol";
 
 contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationDataTypes {
-
   // THIS FILE IS DELIBERATELY WRONG. IF YOU'RE EDITING THIS FILE, AND YOU'VE NOT BEEN EXPLICITLY
   // TOLD TO DO SO, LEAVE NOW. THERE BE DRAGONS HERE.
 
   // Constants
-  uint256 constant UINT128_MAX = 2**128 - 1;
+  uint256 constant UINT128_MAX = 2 ** 128 - 1;
 
   uint256 constant NAY = 0;
   uint256 constant YAY = 1;
@@ -60,12 +59,12 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
   mapping(address => uint256) DO_NOT_USE_metatransactionNonces;
 
   uint256 DO_NOT_USE_motionCount;
-  mapping (uint256 => Motion) motions;
-  mapping (uint256 => mapping (address => mapping (uint256 => uint256))) stakes;
-  mapping (uint256 => mapping (address => bytes32)) DO_NOT_USE_voteSecrets;
+  mapping(uint256 => Motion) motions;
+  mapping(uint256 => mapping(address => mapping(uint256 => uint256))) stakes;
+  mapping(uint256 => mapping(address => bytes32)) DO_NOT_USE_voteSecrets;
 
-  mapping (bytes32 => uint256) DO_NOT_USE_expenditurePastVotes;
-  mapping (bytes32 => uint256) DO_NOT_USE_expenditureMotionCounts;
+  mapping(bytes32 => uint256) DO_NOT_USE_expenditurePastVotes;
+  mapping(bytes32 => uint256) DO_NOT_USE_expenditureMotionCounts;
 
   // Public functions (interface)
 
@@ -81,9 +80,7 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
     uint256 _childSkillIndex,
     address _staker,
     uint256 _vote
-  )
-    public
-  {
+  ) public {
     Motion storage motion = motions[_motionId];
     // Motions might have been in any point in their lifecycle, so we lose our restirction
     // on only being able to call this function on finalized/failed motions. These motions
@@ -102,13 +99,7 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
     tokenLocking.transfer(token, stakerReward, _staker, true);
 
     if (repPenalty > 0) {
-      colony.emitDomainReputationPenalty(
-        _permissionDomainId,
-        _childSkillIndex,
-        motion.domainId,
-        _staker,
-        -int256(repPenalty)
-      );
+      colony.emitDomainReputationPenalty(_permissionDomainId, _childSkillIndex, motion.domainId, _staker, -int256(repPenalty));
     }
 
     emit MotionRewardClaimed(_motionId, _staker, _vote, stakerReward);
@@ -123,7 +114,9 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
     Motion storage motion = motions[_motionId];
 
     uint256 totalSideStake = motion.stakes[_vote] + motion.pastVoterComp[_vote];
-    if (totalSideStake == 0) { return (0, 0); }
+    if (totalSideStake == 0) {
+      return (0, 0);
+    }
 
     uint256 stakeFraction = wdiv(stakes[_motionId][_staker][_vote], totalSideStake);
 
@@ -134,10 +127,9 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
 
     // If finalized and went to a vote, use vote to determine reward or penalty
     if (motion.finalized && (motion.votes[NAY] + motion.votes[YAY]) > 0) {
-
       uint256 loserStake;
       uint256 winnerStake;
-      if (motion.votes[YAY] > motion.votes[NAY]){
+      if (motion.votes[YAY] > motion.votes[NAY]) {
         loserStake = motion.stakes[NAY];
         winnerStake = motion.stakes[YAY];
       } else {
@@ -158,37 +150,27 @@ contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationD
         repPenalty = realStake - stakerReward;
       }
 
-    // Else if finalized, rewards based on stakes alone
+      // Else if finalized, rewards based on stakes alone
     } else if (motion.finalized) {
       assert(motion.paidVoterComp == 0);
       uint256 requiredStake = getRequiredStake(_motionId);
 
       // Your side fully staked, receive 10% (proportional) of loser's stake
-      if (
-        motion.stakes[_vote] == requiredStake &&
-        motion.stakes[flip(_vote)] < requiredStake
-      ) {
-
+      if (motion.stakes[_vote] == requiredStake && motion.stakes[flip(_vote)] < requiredStake) {
         uint256 loserStake = motion.stakes[flip(_vote)];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
         stakerReward = wmul(stakeFraction, (requiredStake + totalPenalty));
 
-      // Opponent's side fully staked, pay 10% penalty
-      } else if (
-        motion.stakes[_vote] < requiredStake &&
-        motion.stakes[flip(_vote)] == requiredStake
-      ) {
-
+        // Opponent's side fully staked, pay 10% penalty
+      } else if (motion.stakes[_vote] < requiredStake && motion.stakes[flip(_vote)] == requiredStake) {
         uint256 loserStake = motion.stakes[_vote];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
         stakerReward = wmul(stakeFraction, (loserStake - totalPenalty));
         repPenalty = realStake - stakerReward;
 
-      // Neither side fully staked (or no votes were revealed), no reward or penalty
+        // Neither side fully staked (or no votes were revealed), no reward or penalty
       } else {
-
         stakerReward = realStake;
-
       }
     } else {
       // Motion was never finalized. We just return stakes, exactly as if neither

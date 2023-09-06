@@ -17,7 +17,6 @@
 
 pragma solidity 0.8.21;
 
-
 contract ContractEditing {
   function setStorageSlot(uint256 _slot, bytes32 _value) public {
     uint x = _slot;

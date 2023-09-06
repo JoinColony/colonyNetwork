@@ -19,7 +19,6 @@ pragma solidity 0.8.21;
 
 import "../../lib/dappsys/auth.sol";
 
-
 contract TokenAuthority is DSAuthority {
   address public immutable token;
   mapping(address => mapping(bytes4 => bool)) authorizations;

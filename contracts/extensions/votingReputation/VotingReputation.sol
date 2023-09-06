@@ -21,7 +21,6 @@ pragma experimental ABIEncoderV2;
 import "./VotingReputationStorage.sol";
 
 contract VotingReputation is VotingReputationStorage {
-
   // Public
 
   function initialise(
@@ -33,10 +32,7 @@ contract VotingReputation is VotingReputationStorage {
     uint256 _submitPeriod,
     uint256 _revealPeriod,
     uint256 _escalationPeriod
-  )
-    public
-    onlyRoot
-  {
+  ) public onlyRoot {
     require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
 
     require(_totalStakeFraction <= WAD / 2, "voting-rep-greater-than-half-wad");
@@ -66,7 +62,7 @@ contract VotingReputation is VotingReputationStorage {
     emit ExtensionInitialised();
   }
 
- function createMotion(
+  function createMotion(
     uint256 _domainId,
     uint256 _childSkillIndex,
     address _altTarget,
@@ -75,10 +71,7 @@ contract VotingReputation is VotingReputationStorage {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-    notDeprecated
-  {
+  ) public notDeprecated {
     require(state == ExtensionState.Active, "voting-rep-not-active");
     require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");
 
@@ -86,8 +79,7 @@ contract VotingReputation is VotingReputationStorage {
 
     require(actionSummary.sig != OLD_MOVE_FUNDS, "voting-rep-disallowed-function");
     require(
-      actionSummary.domainSkillId != type(uint256).max &&
-      actionSummary.expenditureId != type(uint256).max,
+      actionSummary.domainSkillId != type(uint256).max && actionSummary.expenditureId != type(uint256).max,
       "voting-rep-invalid-multicall"
     );
 
@@ -143,9 +135,7 @@ contract VotingReputation is VotingReputationStorage {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-  {
+  ) public {
     Motion storage motion = motions[_motionId];
     require(getMotionState(_motionId) == MotionState.Submit, "voting-rep-motion-not-open");
     require(_voteSecret != bytes32(0), "voting-rep-invalid-secret");
@@ -177,9 +167,7 @@ contract VotingReputation is VotingReputationStorage {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-  {
+  ) public {
     Motion storage motion = motions[_motionId];
     require(getMotionState(_motionId) == MotionState.Reveal, "voting-rep-motion-not-reveal");
     require(_vote <= 1, "voting-rep-bad-vote");
@@ -214,9 +202,7 @@ contract VotingReputation is VotingReputationStorage {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-  {
+  ) public {
     Motion storage motion = motions[_motionId];
     require(getMotionState(_motionId) == MotionState.Closed, "voting-rep-motion-not-closed");
 
@@ -257,24 +243,18 @@ contract VotingReputation is VotingReputationStorage {
     Motion storage motion = motions[_motionId];
     require(getMotionState(_motionId) == MotionState.Finalizable, "voting-rep-motion-not-finalizable");
 
-    assert(
-      motion.stakes[YAY] == getRequiredStake(_motionId) ||
-      (motion.votes[NAY] + motion.votes[YAY]) > 0
-    );
+    assert(motion.stakes[YAY] == getRequiredStake(_motionId) || (motion.votes[NAY] + motion.votes[YAY]) > 0);
 
     motion.finalized = true;
 
-    bool canExecute = (
-      motion.stakes[NAY] < motion.stakes[YAY] ||
-      motion.votes[NAY] < motion.votes[YAY]
-    );
+    bool canExecute = (motion.stakes[NAY] < motion.stakes[YAY] || motion.votes[NAY] < motion.votes[YAY]);
 
     // Perform vote power checks
-    if (_motionId > motionCountV10) { // New functionality for versions 10 and above
+    if (_motionId > motionCountV10) {
+      // New functionality for versions 10 and above
       if (isExpenditureSig(motion.sig) && getTarget(motion.altTarget) == address(colony)) {
         uint256 expenditureId = unlockExpenditure(_motionId);
-        uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
-          motion.votes[YAY] : motion.stakes[YAY];
+        uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ? motion.votes[YAY] : motion.stakes[YAY];
 
         if (expenditurePastVotes[expenditureId] < votePower) {
           expenditurePastVotes[expenditureId] = votePower;
@@ -282,7 +262,8 @@ contract VotingReputation is VotingReputationStorage {
           canExecute = false;
         }
       }
-    } else { // Backwards compatibility for versions 9 and below
+    } else {
+      // Backwards compatibility for versions 9 and below
       ActionSummary memory actionSummary = getActionSummary(motion.action, motion.altTarget);
       if (isExpenditureSig(actionSummary.sig) && getTarget(motion.altTarget) == address(colony)) {
         if (getSig(motion.action) != MULTICALL) {
@@ -396,7 +377,11 @@ contract VotingReputation is VotingReputationStorage {
     return wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
   }
 
-  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) public view returns (uint256 _rewardMin, uint256 _rewardMax) {
+  function getVoterRewardRange(
+    uint256 _motionId,
+    uint256 _voterRep,
+    address _voterAddress
+  ) public view returns (uint256 _rewardMin, uint256 _rewardMax) {
     Motion storage motion = motions[_motionId];
     // The minimum reward is when everyone has voted, with a total weight of motion.skillRep
     uint256 minFractionUserReputation = wdiv(_voterRep, motion.skillRep);
@@ -508,5 +493,4 @@ contract VotingReputation is VotingReputationStorage {
       hash := keccak256(add(action, 0x64), sub(mload(action), 0x44))
     }
   }
-
 }

@@ -5,10 +5,8 @@ import {Data} from "./Data.sol";
 import {Bits} from "./Bits.sol";
 import "./PatriciaTreeProofs.sol";
 
-
 /// More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTreeBase is PatriciaTreeProofs {
-
   using Data for Data.Tree;
   using Data for Data.Edge;
   using Data for Data.Label;
@@ -45,7 +43,7 @@ contract PatriciaTreeBase is PatriciaTreeProofs {
         break;
       }
       length += prefix.length;
-      branchMask |= uint(1) << 255 - length;
+      branchMask |= uint(1) << (255 - length);
       length += 1;
       uint256 head;
       Data.Label memory tail;

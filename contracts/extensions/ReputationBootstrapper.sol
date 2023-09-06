@@ -25,12 +25,10 @@ import "./ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108
 
-
 contract ReputationBootstrapper is ColonyExtensionMeta {
-
   // Constants
 
-  uint256 constant INT128_MAX = 2**127 - 1;
+  uint256 constant INT128_MAX = 2 ** 127 - 1;
   uint256 constant SECURITY_DELAY = 1 hours;
 
   // Events
@@ -54,8 +52,8 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   uint256 decayDenominator;
 
   uint256 totalPayableGrants;
-  mapping (bool => mapping (bytes32 => Grant)) grants;
-  mapping (bytes32 => uint256) committedSecrets;
+  mapping(bool => mapping(bytes32 => Grant)) grants;
+  mapping(bytes32 => uint256) committedSecrets;
 
   // Modifiers
 
@@ -67,12 +65,12 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   // Overrides
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  function identifier() public pure override returns (bytes32) {
     return keccak256("ReputationBootstrapper");
   }
 
   /// @notice Returns the version of the extension
-  function version() public override pure returns (uint256) {
+  function version() public pure override returns (uint256) {
     return 3;
   }
 
@@ -147,10 +145,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     bytes32 addressHash = keccak256(abi.encodePacked(msgSender(), committedSecret));
     uint256 commitTimestamp = committedSecrets[addressHash];
 
-    require(
-      commitTimestamp > 0 && commitTimestamp + SECURITY_DELAY <= block.timestamp,
-      "reputation-bootstrapper-commit-window-unelapsed"
-    );
+    require(commitTimestamp > 0 && commitTimestamp + SECURITY_DELAY <= block.timestamp, "reputation-bootstrapper-commit-window-unelapsed");
 
     bytes32 hashedSecret = keccak256(abi.encodePacked(_secret));
     uint256 grantAmount = grants[_paid][hashedSecret].amount;
@@ -171,14 +166,14 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     // This algorithm successively doubles the decay factor while halving the number of epochs
     // This allows us to perform the decay in O(log(n)) time
     // For example, a decay of 50 epochs would be applied as (k**2)(k**16)(k**32)
-    while (decayEpochs > 0){
+    while (decayEpochs > 0) {
       // slither-disable-next-line weak-prng
       if (decayEpochs % 2 >= 1) {
         // slither-disable-next-line divide-before-multiply
-        grantAmount = grantAmount * adjustedNumerator / decayDenominator;
+        grantAmount = (grantAmount * adjustedNumerator) / decayDenominator;
       }
       // slither-disable-next-line divide-before-multiply
-      adjustedNumerator = adjustedNumerator * adjustedNumerator / decayDenominator;
+      adjustedNumerator = (adjustedNumerator * adjustedNumerator) / decayDenominator;
       decayEpochs >>= 1;
     }
 
@@ -187,7 +182,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     emit GrantClaimed(msgSender(), grantAmount, _paid);
   }
 
-// View
+  // View
 
   function getToken() external view returns (address) {
     return token;

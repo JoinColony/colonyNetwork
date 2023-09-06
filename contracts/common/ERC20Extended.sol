@@ -19,7 +19,6 @@ pragma solidity 0.8.21; // ignore-swc-103
 
 import "./../../lib/dappsys/erc20.sol";
 
-
 abstract contract ERC20Extended is ERC20 {
   event Mint(address indexed guy, uint wad);
   event Burn(address indexed guy, uint wad);
