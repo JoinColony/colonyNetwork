@@ -124,7 +124,7 @@ contract("One transaction payments", (accounts) => {
           [token.address],
           [10],
           1,
-          GLOBAL_SKILL_ID.toString()
+          GLOBAL_SKILL_ID.toString(),
         )
         .encodeABI();
       const { r, s, v } = await getMetaTransactionParameters(txData, accounts[0], oneTxPayment.address);
@@ -182,7 +182,7 @@ contract("One transaction payments", (accounts) => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       await checkErrorRevert(
         oneTxPayment.makePayment(2, UINT256_MAX, 2, UINT256_MAX, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID, { from: USER1 }),
-        "one-tx-payment-not-authorized"
+        "one-tx-payment-not-authorized",
       );
     });
 
@@ -213,7 +213,7 @@ contract("One transaction payments", (accounts) => {
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID, {
           from: USER1,
         }),
-        "one-tx-payment-not-authorized"
+        "one-tx-payment-not-authorized",
       );
     });
 
@@ -223,14 +223,14 @@ contract("One transaction payments", (accounts) => {
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID, {
           from: USER1,
         }),
-        "one-tx-payment-not-authorized"
+        "one-tx-payment-not-authorized",
       );
     });
 
     it("should not allow an admin to specify a non-global skill", async () => {
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 2),
-        "colony-not-valid-global-or-local-skill"
+        "colony-not-valid-global-or-local-skill",
       );
     });
 
@@ -241,21 +241,21 @@ contract("One transaction payments", (accounts) => {
 
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, skillId),
-        "colony-not-valid-global-or-local-skill"
+        "colony-not-valid-global-or-local-skill",
       );
     });
 
     it("should not allow an admin to specify a non-existent domain", async () => {
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, 98, 1, 98, [USER1], [token.address], [10], 99, GLOBAL_SKILL_ID),
-        "colony-network-out-of-range-child-skill-index"
+        "colony-network-out-of-range-child-skill-index",
       );
     });
 
     it("should not allow an admin to specify a non-existent skill", async () => {
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 99),
-        "colony-not-valid-global-or-local-skill"
+        "colony-not-valid-global-or-local-skill",
       );
     });
 
@@ -264,7 +264,7 @@ contract("One transaction payments", (accounts) => {
       // When actually domain 2 in which we are creating the task is skill 5
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, 1, 1, 1, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID),
-        "one-tx-payment-not-authorized"
+        "one-tx-payment-not-authorized",
       );
     });
 
@@ -281,7 +281,7 @@ contract("One transaction payments", (accounts) => {
         [token.address, token.address],
         [10, 5],
         1,
-        GLOBAL_SKILL_ID
+        GLOBAL_SKILL_ID,
       );
 
       const balanceAfter1 = await token.balanceOf(USER1);
@@ -306,7 +306,7 @@ contract("One transaction payments", (accounts) => {
         [ADDRESS_ZERO, ADDRESS_ZERO],
         [10, 5],
         1,
-        GLOBAL_SKILL_ID
+        GLOBAL_SKILL_ID,
       );
 
       const balanceAfter1 = await web3.eth.getBalance(USER1);
@@ -332,7 +332,7 @@ contract("One transaction payments", (accounts) => {
         [token.address, ADDRESS_ZERO],
         [10, 5],
         1,
-        GLOBAL_SKILL_ID
+        GLOBAL_SKILL_ID,
       );
 
       const balanceTokenAfter1 = await token.balanceOf(USER1);
@@ -360,7 +360,7 @@ contract("One transaction payments", (accounts) => {
         [ADDRESS_ZERO, token.address, ADDRESS_ZERO, token.address],
         [5, 10, 5, 5],
         1,
-        GLOBAL_SKILL_ID
+        GLOBAL_SKILL_ID,
       );
 
       const balanceTokenAfter1 = await token.balanceOf(USER1);
@@ -394,7 +394,7 @@ contract("One transaction payments", (accounts) => {
         [ADDRESS_ZERO, token.address, ADDRESS_ZERO, token.address],
         [5, 10, 5, 5],
         2,
-        GLOBAL_SKILL_ID
+        GLOBAL_SKILL_ID,
       );
 
       const balanceTokenAfter1 = await token.balanceOf(USER1);
@@ -412,12 +412,12 @@ contract("One transaction payments", (accounts) => {
     it("should not allow arrays of different sizes", async () => {
       await checkErrorRevert(
         oneTxPayment.makePayment(1, 0, 1, 0, [USER2], [token.address, token.address], [10, 5], 2, 0),
-        "one-tx-payment-invalid-input"
+        "one-tx-payment-invalid-input",
       );
 
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, 0, 1, 0, [USER2], [token.address, token.address], [10, 5], 2, 0),
-        "one-tx-payment-invalid-input"
+        "one-tx-payment-invalid-input",
       );
     });
 
@@ -426,7 +426,7 @@ contract("One transaction payments", (accounts) => {
 
       await checkErrorRevert(
         oneTxPayment.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [USER2, USER1], [token.address, token.address], [5, 5], 1, 0),
-        "one-tx-payment-bad-worker-order"
+        "one-tx-payment-bad-worker-order",
       );
     });
 
@@ -438,7 +438,7 @@ contract("One transaction payments", (accounts) => {
 
       await checkErrorRevert(
         oneTxPayment.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [USER1, USER1], [token.address, ADDRESS_ZERO], [5, 5], 1, 0),
-        "one-tx-payment-bad-token-order"
+        "one-tx-payment-bad-token-order",
       );
     });
 
@@ -447,7 +447,7 @@ contract("One transaction payments", (accounts) => {
 
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER2, USER1], [token.address, token.address], [5, 5], 1, 0),
-        "one-tx-payment-bad-worker-order"
+        "one-tx-payment-bad-worker-order",
       );
     });
 
@@ -459,7 +459,7 @@ contract("One transaction payments", (accounts) => {
 
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1, USER1], [token.address, ADDRESS_ZERO], [5, 5], 1, 0),
-        "one-tx-payment-bad-token-order"
+        "one-tx-payment-bad-token-order",
       );
     });
   });
@@ -476,7 +476,7 @@ contract("One transaction payments", (accounts) => {
 
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID),
-        "ds-auth-unauthorized"
+        "ds-auth-unauthorized",
       );
     });
 

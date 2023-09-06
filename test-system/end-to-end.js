@@ -264,7 +264,7 @@ contract("End to end Colony network and Reputation mining testing", function (ac
             managerRating: taskProp.managerRating,
             workerRating: taskProp.workerRating,
           });
-        })
+        }),
       );
 
       await Promise.all(
@@ -284,7 +284,7 @@ contract("End to end Colony network and Reputation mining testing", function (ac
             managerRating: taskProp.managerRating,
             workerRating: taskProp.workerRating,
           });
-        })
+        }),
       );
     });
 

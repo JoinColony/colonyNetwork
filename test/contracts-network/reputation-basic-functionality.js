@@ -98,7 +98,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
 
       await checkErrorRevert(
         tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, 10000, true, { from: MINER2 }),
-        "ds-token-insufficient-balance"
+        "ds-token-insufficient-balance",
       );
 
       const userBalance = await clnyToken.balanceOf(MINER2);
@@ -114,7 +114,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
 
       await checkErrorRevert(
         tokenLocking.methods["withdraw(address,uint256,bool)"](clnyToken.address, 10000, false, { from: MINER2 }),
-        "Panic: Arithmetic overflow"
+        "Panic: Arithmetic overflow",
       );
 
       const info = await tokenLocking.getUserLock(clnyToken.address, MINER2);
@@ -143,7 +143,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
 
       await checkErrorRevert(
         repCycle.submitRootHash("0x12345678", 10, "0x00", 0, { from: MINER2 }),
-        "colony-reputation-mining-zero-entry-index-passed"
+        "colony-reputation-mining-zero-entry-index-passed",
       );
 
       const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
@@ -202,7 +202,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await checkErrorRevert(
         repCycle.appendReputationUpdateLog(MINER1, 100, 0, metaColony.address, 0, 1),
-        "colony-reputation-mining-sender-not-network"
+        "colony-reputation-mining-sender-not-network",
       );
     });
 
@@ -214,7 +214,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
     it('should not allow "setReputationRootHash" to be called from an account that is not a ReputationMiningCycle', async () => {
       await checkErrorRevert(
         colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]]),
-        "colony-reputation-mining-sender-not-active-reputation-cycle"
+        "colony-reputation-mining-sender-not-active-reputation-cycle",
       );
     });
 
@@ -232,7 +232,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
 
       await checkErrorRevert(
         repCycle.rewardStakersWithReputation([MINER1], [1], ethers.constants.AddressZero, 10000, 3),
-        "colony-reputation-mining-sender-not-network"
+        "colony-reputation-mining-sender-not-network",
       );
     });
 
@@ -241,7 +241,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
 
       await checkErrorRevert(
         repCycle.initialise(ethers.constants.AddressZero, ethers.constants.AddressZero),
-        "colony-reputation-token-locking-cannot-be-zero"
+        "colony-reputation-token-locking-cannot-be-zero",
       );
       await checkErrorRevert(repCycle.initialise(tokenLocking.address, ethers.constants.AddressZero), "colony-reputation-clny-token-cannot-be-zero");
       await checkErrorRevert(repCycle.initialise(tokenLocking.address, clnyToken.address), "colony-reputation-mining-cycle-already-initialised");

@@ -89,7 +89,7 @@ module.exports = async function (deployer, network, accounts) {
     colonyTask,
     contractRecovery,
     colonyArbitraryTransaction,
-    resolver3
+    resolver3,
   );
   const v3responder = await Version3.new();
   await resolver3.register("version()", v3responder.address);
@@ -107,7 +107,7 @@ module.exports = async function (deployer, network, accounts) {
     colonyTask,
     contractRecovery,
     colonyArbitraryTransaction,
-    resolver4
+    resolver4,
   );
   const v4responder = await Version4.new();
   await resolver4.register("version()", v4responder.address);

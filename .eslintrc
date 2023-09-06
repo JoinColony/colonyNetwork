@@ -1,4 +1,5 @@
 {
+  "root": true,
   "extends": "@colony/eslint-config-colony",
   "env": {
     "node": true,

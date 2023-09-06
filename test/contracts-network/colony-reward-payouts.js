@@ -140,7 +140,7 @@ contract("Colony Reward Payouts", (accounts) => {
       const newFakeColonyWideReputationProof = [key, value, branchMask, siblings];
       await checkErrorRevert(
         colony.startNextRewardPayout(otherToken.address, ...newFakeColonyWideReputationProof),
-        "colony-reputation-invalid-user-address"
+        "colony-reputation-invalid-user-address",
       );
     });
 
@@ -161,7 +161,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof),
-        "colony-reputation-invalid-colony-address"
+        "colony-reputation-invalid-colony-address",
       );
     });
 
@@ -228,7 +228,7 @@ contract("Colony Reward Payouts", (accounts) => {
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...newUserReputationProof, {
           from: userAddress1,
         }),
-        "colony-reputation-invalid-user-address"
+        "colony-reputation-invalid-user-address",
       );
     });
 
@@ -270,7 +270,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         newColony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof, { from: userAddress1 }),
-        "colony-reputation-invalid-skill-id"
+        "colony-reputation-invalid-skill-id",
       );
     });
 
@@ -298,7 +298,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         newColony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof),
-        "colony-reward-payout-invalid-total-tokens"
+        "colony-reward-payout-invalid-total-tokens",
       );
     });
 
@@ -418,7 +418,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         newColony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof),
-        "colony-reward-payout-invalid-colony-wide-reputation"
+        "colony-reward-payout-invalid-colony-wide-reputation",
       );
     });
 
@@ -444,7 +444,7 @@ contract("Colony Reward Payouts", (accounts) => {
         colony.claimRewardPayout(payoutId, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
           from: userAddress3,
         }),
-        "colony-reward-payout-invalid-user-tokens"
+        "colony-reward-payout-invalid-user-tokens",
       );
     });
 
@@ -480,7 +480,7 @@ contract("Colony Reward Payouts", (accounts) => {
         colony.claimRewardPayout(payoutId, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
           from: userAddress3,
         }),
-        "colony-reward-payout-invalid-user-reputation"
+        "colony-reward-payout-invalid-user-reputation",
       );
     });
 
@@ -502,7 +502,7 @@ contract("Colony Reward Payouts", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
-        "colony-reward-payout-not-active"
+        "colony-reward-payout-not-active",
       );
     });
 
@@ -514,7 +514,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
-        "colony-token-locking-already-unlocked"
+        "colony-token-locking-already-unlocked",
       );
     });
 
@@ -531,7 +531,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId2, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
-        "colony-token-locking-has-previous-active-locks"
+        "colony-token-locking-has-previous-active-locks",
       );
     });
 
@@ -610,7 +610,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
-        "colony-token-locking-already-unlocked"
+        "colony-token-locking-already-unlocked",
       );
     });
 
@@ -625,7 +625,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
-        "colony-token-locking-already-unlocked"
+        "colony-token-locking-already-unlocked",
       );
     });
 
@@ -803,7 +803,7 @@ contract("Colony Reward Payouts", (accounts) => {
         colony2.claimRewardPayout(payoutId1, squareRoots, userProof.key, userProof.value, userProof.branchMask, userProof.siblings, {
           from: userAddress1,
         }),
-        "colony-reputation-invalid-root-hash"
+        "colony-reputation-invalid-root-hash",
       );
     });
 
@@ -944,7 +944,7 @@ contract("Colony Reward Payouts", (accounts) => {
         console.log(
           "Percentage Wrong: ",
           solidityReward.sub(reward).muln(100).div(reward).toString(), // eslint-disable-line prettier/prettier
-          "%"
+          "%",
         );
         console.log("Absolute Wrong: ", solidityReward.sub(reward).toString(), "\n");
 
@@ -965,7 +965,7 @@ contract("Colony Reward Payouts", (accounts) => {
         const remainingAfterClaim2 = await newColony.getFundingPotBalance(0, payoutToken.address);
         const user2BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
         expect(user2BalanceAfterClaim).to.eq.BN(
-          amountAvailableForPayout.sub(user1BalanceAfterClaim).sub(colonyNetworkFeeClaim1).sub(remainingAfterClaim2).sub(colonyNetworkFeeClaim2)
+          amountAvailableForPayout.sub(user1BalanceAfterClaim).sub(colonyNetworkFeeClaim1).sub(remainingAfterClaim2).sub(colonyNetworkFeeClaim2),
         );
 
         console.log("Remaining after claim 2: ", remainingAfterClaim2.toString());
@@ -990,11 +990,11 @@ contract("Colony Reward Payouts", (accounts) => {
             .sub(colonyNetworkFeeClaim1)
             .sub(colonyNetworkFeeClaim2)
             .sub(colonyNetworkFeeClaim3)
-            .sub(remainingAfterClaim3)
+            .sub(remainingAfterClaim3),
         );
 
         console.log("Remaining after claim 3: ", remainingAfterClaim3.toString());
-      })
+      }),
     );
   });
 });

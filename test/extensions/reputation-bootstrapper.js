@@ -82,7 +82,7 @@ contract("Reputation Bootstrapper", (accounts) => {
 
       await checkErrorRevert(
         colony.installExtension(REPUTATION_BOOTSTRAPPER, version, { from: USER0 }),
-        "colony-network-extension-already-installed"
+        "colony-network-extension-already-installed",
       );
       await checkErrorRevert(colony.uninstallExtension(REPUTATION_BOOTSTRAPPER, { from: USER1 }), "ds-auth-unauthorized");
 
@@ -133,7 +133,7 @@ contract("Reputation Bootstrapper", (accounts) => {
     it("cannot setup reputation amounts with invalid values", async () => {
       await checkErrorRevert(
         reputationBootstrapper.setGrants([true], [soliditySha3(PIN1)], [INT128_MAX.addn(1)]),
-        "reputation-bootstrapper-invalid-amount"
+        "reputation-bootstrapper-invalid-amount",
       );
     });
 
@@ -243,7 +243,7 @@ contract("Reputation Bootstrapper", (accounts) => {
       // Can't add new grants until funds are there
       await checkErrorRevert(
         reputationBootstrapper.setGrants([true], [soliditySha3(PIN2)], [WAD.muln(2)]),
-        "reputation-bootstrapper-insufficient-balance"
+        "reputation-bootstrapper-insufficient-balance",
       );
 
       await token.mint(reputationBootstrapper.address, WAD.muln(2));
@@ -279,7 +279,7 @@ contract("Reputation Bootstrapper", (accounts) => {
       // Cannot set to 3 WAD
       await checkErrorRevert(
         reputationBootstrapper.setGrants([true], [soliditySha3(PIN1)], [WAD.muln(3)]),
-        "reputation-bootstrapper-insufficient-balance"
+        "reputation-bootstrapper-insufficient-balance",
       );
 
       // Cannot add a second grant

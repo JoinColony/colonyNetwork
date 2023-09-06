@@ -322,7 +322,7 @@ contract("Colony", (accounts) => {
         colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS, {
           from: USER1,
         }),
-        "ds-auth-unauthorized"
+        "ds-auth-unauthorized",
       );
     });
 
@@ -407,7 +407,7 @@ contract("Colony", (accounts) => {
 
       await checkErrorRevert(
         colony.executeMetaTransaction(USER0, txData, r, ADDRESS_ZERO, v + 1, { from: USER1 }),
-        "colony-metatx-invalid-signature"
+        "colony-metatx-invalid-signature",
       );
     });
   });

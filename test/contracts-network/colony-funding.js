@@ -119,7 +119,7 @@ contract("Colony Funding", (accounts) => {
       await fundColonyWithTokens(colony, otherToken, 1);
       await checkErrorRevert(
         colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 1, 1, otherToken.address),
-        "colony-funding-cannot-move-funds-between-the-same-pot"
+        "colony-funding-cannot-move-funds-between-the-same-pot",
       );
       const colonyPotBalance = await colony.getFundingPotBalance(1, otherToken.address);
       expect(colonyPotBalance).to.eq.BN(1);
@@ -132,7 +132,7 @@ contract("Colony Funding", (accounts) => {
 
       await checkErrorRevert(
         colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 0, task.fundingPotId, 1, otherToken.address),
-        "colony-funding-cannot-move-funds-from-rewards-pot"
+        "colony-funding-cannot-move-funds-from-rewards-pot",
       );
       const colonyPotBalance = await colony.getFundingPotBalance(1, otherToken.address);
       const colonyRewardPotBalance = await colony.getFundingPotBalance(0, otherToken.address);
@@ -152,7 +152,7 @@ contract("Colony Funding", (accounts) => {
       const moveFundsBetweenPots = colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"];
       await checkErrorRevert(
         moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, task.fundingPotId, 51, otherToken.address, { from: WORKER }),
-        "ds-auth-unauthorized"
+        "ds-auth-unauthorized",
       );
 
       const colonyPotBalance = await colony.getFundingPotBalance(1, otherToken.address);
@@ -294,7 +294,7 @@ contract("Colony Funding", (accounts) => {
       // FundingPot was equal to payout, transition to pot being below payout by changing pot (7)
       await checkErrorRevert(
         colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 20, otherToken.address),
-        "colony-funding-task-bad-state"
+        "colony-funding-task-bad-state",
       );
 
       // Remove 20 from pot
@@ -326,7 +326,7 @@ contract("Colony Funding", (accounts) => {
       // FundingPot was above payout, change to being below by changing pot (9)
       await checkErrorRevert(
         colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 60, otherToken.address),
-        "colony-funding-task-bad-state"
+        "colony-funding-task-bad-state",
       );
 
       // Remove 60 from pot
@@ -410,7 +410,7 @@ contract("Colony Funding", (accounts) => {
       // FundingPot was below payout, change to being below by changing pot (13)
       await checkErrorRevert(
         colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 5, otherToken.address),
-        "colony-funding-task-bad-state"
+        "colony-funding-task-bad-state",
       );
 
       // Remove 5 from pot
@@ -502,7 +502,7 @@ contract("Colony Funding", (accounts) => {
 
       await checkErrorRevert(
         colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 40, otherToken.address),
-        "colony-funding-task-bad-state"
+        "colony-funding-task-bad-state",
       );
 
       const colonyPotBalance = await colony.getFundingPotBalance(2, otherToken.address);
@@ -658,7 +658,7 @@ contract("Colony Funding", (accounts) => {
       // Cannot bring pot balance below current payout
       await checkErrorRevert(
         colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 30, ethers.constants.AddressZero),
-        "colony-funding-task-bad-state"
+        "colony-funding-task-bad-state",
       );
 
       // Set manager payout above pot value 50 > 40
@@ -681,7 +681,7 @@ contract("Colony Funding", (accounts) => {
       // Cannot bring pot balance below current payout
       await checkErrorRevert(
         colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, task.fundingPotId, 1, 30, ethers.constants.AddressZero),
-        "colony-funding-task-bad-state"
+        "colony-funding-task-bad-state",
       );
 
       // Can remove surplus 50 = 50

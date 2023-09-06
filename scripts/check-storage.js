@@ -78,7 +78,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "The contract ",
       contractName,
       " contains state variable declarations. ",
-      "Add new state variables to relevant Storage contract instead, to guarantee that the storage layout is the same between contracts."
+      "Add new state variables to relevant Storage contract instead, to guarantee that the storage layout is the same between contracts.",
     );
     process.exit(1);
   }

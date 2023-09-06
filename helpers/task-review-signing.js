@@ -51,7 +51,7 @@ exports.createSignatures = async function createSignatures(colony, taskId, signe
   const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${padLeft(value.toString(16), "64", "0")}${data.slice(2)}${padLeft(
     nonce.toString(16),
     "64",
-    "0"
+    "0",
   )}`; // eslint-disable-line max-len
   const sigV = [];
   const sigR = [];
@@ -93,7 +93,7 @@ exports.createSignaturesTrezor = async function createSignaturesTrezor(colony, t
   const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${padLeft(value.toString(16), "64", "0")}${data.slice(2)}${padLeft(
     nonce.toString(16),
     "64",
-    "0"
+    "0",
   )}`; // eslint-disable-line max-len
   const sigV = [];
   const sigR = [];

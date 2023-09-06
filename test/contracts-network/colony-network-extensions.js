@@ -125,7 +125,7 @@ contract("Colony Network Extensions", (accounts) => {
     it("does not allow the meta colony to overwrite existing extensions", async () => {
       await checkErrorRevert(
         metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address),
-        "colony-network-extension-already-set"
+        "colony-network-extension-already-set",
       );
     });
 
@@ -138,7 +138,7 @@ contract("Colony Network Extensions", (accounts) => {
 
       await checkErrorRevert(
         fakeMetaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address),
-        "colony-caller-must-be-meta-colony"
+        "colony-caller-must-be-meta-colony",
       );
     });
   });

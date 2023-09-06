@@ -112,14 +112,14 @@ contract("Streaming Payments", (accounts) => {
     it("cannot create a streaming payment without relevant permissions", async () => {
       await checkErrorRevert(
         streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD], { from: USER1 }),
-        "streaming-payments-funding-not-authorized"
+        "streaming-payments-funding-not-authorized",
       );
 
       await colony.setFundingRole(1, UINT256_MAX, USER1, 1, true);
 
       await checkErrorRevert(
         streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD], { from: USER1 }),
-        "streaming-payments-admin-not-authorized"
+        "streaming-payments-admin-not-authorized",
       );
 
       await colony.setFundingRole(1, UINT256_MAX, USER1, 1, false);
@@ -128,14 +128,14 @@ contract("Streaming Payments", (accounts) => {
     it("cannot create a streaming payment with mismatched arguments", async () => {
       await checkErrorRevert(
         streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], []),
-        "streaming-payments-bad-input"
+        "streaming-payments-bad-input",
       );
     });
 
     it("cannot create a streaming payment with an interval of 0", async () => {
       await checkErrorRevert(
         streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, 0, USER1, [token.address], [WAD]),
-        "streaming-payments-bad-interval"
+        "streaming-payments-bad-interval",
       );
     });
 
@@ -145,7 +145,7 @@ contract("Streaming Payments", (accounts) => {
 
       await checkErrorRevert(
         streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, startTime, endTime, SECONDS_PER_DAY, USER1, [token.address], [WAD]),
-        "streaming-payments-bad-end-time"
+        "streaming-payments-bad-end-time",
       );
     });
 
@@ -154,7 +154,7 @@ contract("Streaming Payments", (accounts) => {
 
       await checkErrorRevert(
         streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]),
-        "colony-extension-deprecated"
+        "colony-extension-deprecated",
       );
     });
 
@@ -197,7 +197,7 @@ contract("Streaming Payments", (accounts) => {
 
       await checkErrorRevert(
         streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, newStartTime),
-        "streaming-payments-invalid-start-time"
+        "streaming-payments-invalid-start-time",
       );
     });
 
@@ -209,7 +209,7 @@ contract("Streaming Payments", (accounts) => {
 
       await checkErrorRevert(
         streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, 0, { from: USER1 }),
-        "streaming-payments-admin-not-authorized"
+        "streaming-payments-admin-not-authorized",
       );
     });
 
@@ -271,7 +271,7 @@ contract("Streaming Payments", (accounts) => {
 
       await checkErrorRevert(
         streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, 0, { from: USER1 }),
-        "streaming-payments-admin-not-authorized"
+        "streaming-payments-admin-not-authorized",
       );
     });
 
@@ -316,7 +316,7 @@ contract("Streaming Payments", (accounts) => {
         streamingPayments.create,
         [1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]],
         blockTime,
-        this
+        this,
       );
       const streamingPaymentId2 = await streamingPayments.getNumStreamingPayments();
 
@@ -414,7 +414,7 @@ contract("Streaming Payments", (accounts) => {
 
       await checkErrorRevert(
         streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]),
-        "streaming-payments-too-soon-to-claim"
+        "streaming-payments-too-soon-to-claim",
       );
     });
 
@@ -480,7 +480,7 @@ contract("Streaming Payments", (accounts) => {
         streamingPayments.cancelAndWaive,
         [streamingPaymentId, [token.address], { from: USER1 }],
         blockTime + SECONDS_PER_DAY * 2,
-        this
+        this,
       );
 
       const streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
@@ -500,7 +500,7 @@ contract("Streaming Payments", (accounts) => {
         streamingPayments.cancelAndWaive,
         [streamingPaymentId, [token.address], { from: USER1 }],
         blockTime + SECONDS_PER_DAY * 2,
-        this
+        this,
       );
 
       const streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
@@ -510,7 +510,7 @@ contract("Streaming Payments", (accounts) => {
         streamingPayments.cancelAndWaive,
         [streamingPaymentId, [token.address], { from: USER1 }],
         blockTime + SECONDS_PER_DAY * 4,
-        this
+        this,
       );
 
       const streamingPayment2 = await streamingPayments.getStreamingPayment(streamingPaymentId);
@@ -625,7 +625,7 @@ contract("Streaming Payments", (accounts) => {
         SECONDS_PER_DAY,
         USER1,
         [token.address, otherToken.address],
-        [WAD, WAD.muln(2)]
+        [WAD, WAD.muln(2)],
       );
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
@@ -660,7 +660,7 @@ contract("Streaming Payments", (accounts) => {
         SECONDS_PER_DAY,
         USER1,
         [token.address, otherToken.address],
-        [WAD, WAD.muln(2)]
+        [WAD, WAD.muln(2)],
       );
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
@@ -728,7 +728,7 @@ contract("Streaming Payments", (accounts) => {
 
       await checkErrorRevert(
         streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, token.address, WAD.muln(2)),
-        "streaming-payments-insufficient-funds"
+        "streaming-payments-insufficient-funds",
       );
     });
 

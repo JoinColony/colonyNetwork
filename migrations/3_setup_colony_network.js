@@ -35,7 +35,7 @@ module.exports = async function (deployer) {
     colonyNetworkAuction,
     colonyNetworkENS,
     colonyNetworkExtensions,
-    contractRecovery
+    contractRecovery,
   );
 
   const authorityNetwork = await ColonyNetworkAuthority.new(etherRouter.address);
@@ -52,6 +52,6 @@ module.exports = async function (deployer) {
     ", EtherRouter",
     etherRouter.address,
     " and Authority ",
-    authorityNetwork.address
+    authorityNetwork.address,
   );
 };

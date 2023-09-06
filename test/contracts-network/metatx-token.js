@@ -327,7 +327,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 }),
-          "metatransaction-signer-signature-mismatch"
+          "metatransaction-signer-signature-mismatch",
         );
       });
 
@@ -338,7 +338,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 }),
-          "colony-metatx-function-call-unsuccessful"
+          "colony-metatx-function-call-unsuccessful",
         );
 
         const balanceAccount2 = await metaTxToken.balanceOf(USER1);
@@ -367,7 +367,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER2 }),
-          "colony-metatx-function-call-unsuccessful"
+          "colony-metatx-function-call-unsuccessful",
         );
         const balanceAccount2 = await metaTxToken.balanceOf(USER1);
         expect(balanceAccount2).to.be.zero;
@@ -381,7 +381,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER2 }),
-          "colony-metatx-function-call-unsuccessful"
+          "colony-metatx-function-call-unsuccessful",
         );
 
         const balanceAccount2 = await metaTxToken.balanceOf(USER1);
@@ -397,7 +397,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER2 }),
-          "colony-metatx-function-call-unsuccessful"
+          "colony-metatx-function-call-unsuccessful",
         );
         const balanceAccount2 = await metaTxToken.balanceOf(USER1);
         expect(balanceAccount2).to.be.zero;
@@ -427,7 +427,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER2 }),
-          "colony-metatx-function-call-unsuccessful"
+          "colony-metatx-function-call-unsuccessful",
         );
 
         const balanceAccount1 = await metaTxToken.balanceOf(USER1);
@@ -445,7 +445,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER2, txData, r, s, v, { from: USER0 }),
-          "colony-metatx-function-call-unsuccessful"
+          "colony-metatx-function-call-unsuccessful",
         );
 
         const balanceAccount1 = await metaTxToken.balanceOf(USER1);
@@ -507,7 +507,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 }),
-          "colony-metatx-function-call-unsuccessful"
+          "colony-metatx-function-call-unsuccessful",
         );
 
         const totalSupply = await metaTxToken.totalSupply();
@@ -543,7 +543,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER2, txData, r, s, v, { from: USER0 }),
-          "colony-metatx-function-call-unsuccessful"
+          "colony-metatx-function-call-unsuccessful",
         );
 
         const totalSupply = await metaTxToken.totalSupply();
@@ -586,7 +586,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 }),
-          "colony-metatx-function-call-unsuccessful"
+          "colony-metatx-function-call-unsuccessful",
         );
 
         const balance = await metaTxToken.balanceOf(USER1);
@@ -623,7 +623,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER2, txData, r, s, v, { from: USER0 }),
-          "colony-metatx-function-call-unsuccessful"
+          "colony-metatx-function-call-unsuccessful",
         );
 
         txData = await metaTxToken.contract.methods.setAuthority(USER0).encodeABI();
@@ -632,7 +632,7 @@ contract("MetaTxToken", (accounts) => {
 
         await checkErrorRevert(
           metaTxToken.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 }),
-          "colony-metatx-function-call-unsuccessful"
+          "colony-metatx-function-call-unsuccessful",
         );
 
         const locked = await metaTxToken.locked();

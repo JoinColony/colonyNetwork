@@ -30,7 +30,7 @@ contract("ReputationMiningCycle contract upgrade", function () {
       reputationMiningCycleRespond,
       reputationMiningCycleBinarySearch,
       resolver,
-      colonyNetwork
+      colonyNetwork,
     );
   });
 

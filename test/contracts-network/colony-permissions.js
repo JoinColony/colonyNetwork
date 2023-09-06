@@ -140,9 +140,9 @@ contract("ColonyPermissions", (accounts) => {
           domain2.fundingPotId,
           WAD,
           token.address,
-          { from: USER1 }
+          { from: USER1 },
         ),
-        "ds-auth-unauthorized"
+        "ds-auth-unauthorized",
       );
 
       const taskId = await makeTask({ colonyNetwork, colony, domainId: 2 });
@@ -157,7 +157,7 @@ contract("ColonyPermissions", (accounts) => {
         task.fundingPotId,
         WAD,
         token.address,
-        { from: USER1 }
+        { from: USER1 },
       );
     });
 
@@ -205,7 +205,7 @@ contract("ColonyPermissions", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, USER2, 2, UINT256_MAX],
         }),
-        "colony-task-role-assignment-execution-failed"
+        "colony-task-role-assignment-execution-failed",
       );
 
       await colony.setAdministrationRole(1, 0, USER2, 2, true);
@@ -229,7 +229,7 @@ contract("ColonyPermissions", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, FOUNDER, 1, 1],
         }),
-        "colony-task-role-assignment-execution-failed"
+        "colony-task-role-assignment-execution-failed",
       );
 
       await executeSignedRoleAssignment({
@@ -297,7 +297,7 @@ contract("ColonyPermissions", (accounts) => {
       // But not permissions in the domain itself!
       await checkErrorRevert(
         colony.setAdministrationRole(1, UINT256_MAX, USER2, 1, true, { from: USER1 }),
-        "ds-auth-only-authorized-in-child-domain"
+        "ds-auth-only-authorized-in-child-domain",
       );
 
       // Not without root!
@@ -425,7 +425,7 @@ contract("ColonyPermissions", (accounts) => {
         token.address,
         {
           from: USER2,
-        }
+        },
       );
       await colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
         1,
@@ -435,7 +435,7 @@ contract("ColonyPermissions", (accounts) => {
         domain3.fundingPotId,
         WAD,
         token.address,
-        { from: USER2 }
+        { from: USER2 },
       );
 
       // Newest version
@@ -449,7 +449,7 @@ contract("ColonyPermissions", (accounts) => {
         domain2.fundingPotId,
         WAD,
         token.address,
-        { from: USER2 }
+        { from: USER2 },
       );
 
       await colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
@@ -462,7 +462,7 @@ contract("ColonyPermissions", (accounts) => {
         domain3.fundingPotId,
         WAD,
         token.address,
-        { from: USER2 }
+        { from: USER2 },
       );
 
       // But only with valid proofs. Deprecated version of this function
@@ -475,9 +475,9 @@ contract("ColonyPermissions", (accounts) => {
           domain3.fundingPotId,
           WAD,
           token.address,
-          { from: USER2 }
+          { from: USER2 },
         ),
-        "ds-auth-invalid-domain-inheritance"
+        "ds-auth-invalid-domain-inheritance",
       );
       await checkErrorRevert(
         colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
@@ -488,9 +488,9 @@ contract("ColonyPermissions", (accounts) => {
           domain3.fundingPotId,
           WAD,
           token.address,
-          { from: USER2 }
+          { from: USER2 },
         ),
-        "ds-auth-invalid-domain-inheritance"
+        "ds-auth-invalid-domain-inheritance",
       );
 
       // The newest version
@@ -505,9 +505,9 @@ contract("ColonyPermissions", (accounts) => {
           domain3.fundingPotId,
           WAD,
           token.address,
-          { from: USER2 }
+          { from: USER2 },
         ),
-        "colony-invalid-domain-inheritance"
+        "colony-invalid-domain-inheritance",
       );
 
       await checkErrorRevert(
@@ -521,9 +521,9 @@ contract("ColonyPermissions", (accounts) => {
           domain3.fundingPotId,
           WAD,
           token.address,
-          { from: USER2 }
+          { from: USER2 },
         ),
-        "colony-invalid-domain-inheritance"
+        "colony-invalid-domain-inheritance",
       );
     });
 
@@ -650,7 +650,7 @@ contract("ColonyPermissions", (accounts) => {
       await checkErrorRevert(authority.setUserRole(ADDRESS_ZERO, 0, true, { from: USER1 }), "ds-auth-unauthorized");
       await checkErrorRevert(
         authority.methods["setUserRole(address,uint256,uint8,bool)"](ADDRESS_ZERO, 0, 0, true, { from: USER1 }),
-        "ds-auth-unauthorized"
+        "ds-auth-unauthorized",
       );
     });
   });

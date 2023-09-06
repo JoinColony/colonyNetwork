@@ -130,7 +130,7 @@ contract("Token Supplier", (accounts) => {
 
       await checkErrorRevert(
         tokenSupplier.setTokenIssuanceRate(WAD, { from: USER1, gas: ISSUETOKENS_GAS_LIMIT }),
-        "token-supplier-caller-not-authorized"
+        "token-supplier-caller-not-authorized",
       );
     });
 
@@ -146,7 +146,7 @@ contract("Token Supplier", (accounts) => {
       // Cannot change more than once in 4 weeks
       await checkErrorRevert(
         tokenSupplier.setTokenIssuanceRate(smallChange, { from: USER1, gas: ISSUETOKENS_GAS_LIMIT }),
-        "token-supplier-caller-not-authorized"
+        "token-supplier-caller-not-authorized",
       );
 
       await forwardTime(SECONDS_PER_DAY * 28, this);
@@ -154,7 +154,7 @@ contract("Token Supplier", (accounts) => {
       // Cannot change more than 10%
       await checkErrorRevert(
         tokenSupplier.setTokenIssuanceRate(bigChange, { from: USER1, gas: ISSUETOKENS_GAS_LIMIT }),
-        "token-supplier-caller-not-authorized"
+        "token-supplier-caller-not-authorized",
       );
 
       await tokenSupplier.setTokenIssuanceRate(smallChange, { from: USER1, gas: ISSUETOKENS_GAS_LIMIT });

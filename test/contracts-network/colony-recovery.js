@@ -75,7 +75,7 @@ contract("Colony Recovery", (accounts) => {
       await expectEvent(
         colony.setStorageSlotRecovery("0xdead", "0xbeef00000000000000000000000000000000000000000000000000000000beef"),
         "RecoveryStorageSlotSet",
-        [accounts[0], "0xdead", "0x00", "0xbeef00000000000000000000000000000000000000000000000000000000beef"]
+        [accounts[0], "0xdead", "0x00", "0xbeef00000000000000000000000000000000000000000000000000000000beef"],
       );
       await expectEvent(
         colony.setStorageSlotRecovery("0xdead", "0xbadbeef00000000000000000000000000000000000000000000000000badbeef"),
@@ -85,7 +85,7 @@ contract("Colony Recovery", (accounts) => {
           "0xdead",
           "0xbeef00000000000000000000000000000000000000000000000000000000beef",
           "0xbadbeef00000000000000000000000000000000000000000000000000badbeef",
-        ]
+        ],
       );
       await expectEvent(colony.approveExitRecovery(), "RecoveryModeExitApproved", [accounts[0]]);
       await expectEvent(colony.exitRecoveryMode(), "RecoveryModeExited", [accounts[0]]);
@@ -335,13 +335,13 @@ contract("Colony Recovery", (accounts) => {
       // So this user has their nonce stored at
       const user0MetatransactionNonceSlot = await web3.utils.soliditySha3(
         { type: "bytes32", value: ethers.utils.hexZeroPad(accounts[0], 32) },
-        { type: "uint256", value: "35" }
+        { type: "uint256", value: "35" },
       );
 
       // Try and edit that slot
       await checkErrorRevert(
         colony.setStorageSlotRecovery(user0MetatransactionNonceSlot, "0x00000000000000000000000000000000000000000000000000000000000000ff"),
-        "colony-protected-variable"
+        "colony-protected-variable",
       );
 
       // Try and edit the protection

@@ -68,7 +68,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
     await checkErrorRevert(
       colony.makeArbitraryTransactions([token.address, ADDRESS_ZERO], [action, action2], true),
-      "colony-arbitrary-transaction-failed"
+      "colony-arbitrary-transaction-failed",
     );
 
     const balancePost = await token.balanceOf(colony.address);
@@ -129,7 +129,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 50, token.address);
     await checkErrorRevert(
       colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 50, token.address),
-      "colony-funding-too-many-approvals"
+      "colony-funding-too-many-approvals",
     );
     const approval = await colony.getTokenApproval(token.address, USER0);
     expect(approval).to.be.eq.BN(50);
@@ -151,7 +151,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     expect(allApprovals).to.eq.BN(20);
     await checkErrorRevert(
       colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 81, token.address),
-      "colony-funding-too-many-approvals"
+      "colony-funding-too-many-approvals",
     );
     await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 80, token.address);
     // Pot still thinks it has 20 tokens in it

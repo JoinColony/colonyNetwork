@@ -98,7 +98,7 @@ class MetatransactionBroadcaster {
       `CREATE TABLE IF NOT EXISTS addresses (
         address text NOT NULL UNIQUE,
         validForMtx bool NOT NULL
-      )`
+      )`,
     );
     await db.close();
   }
@@ -109,7 +109,7 @@ class MetatransactionBroadcaster {
     const res = await db.all(
       `SELECT DISTINCT addresses.validForMtx as validForMtx
        FROM addresses
-       WHERE addresses.address="${checksummedAddress}"`
+       WHERE addresses.address="${checksummedAddress}"`,
     );
     await db.close();
     const valid = res.map((x) => x.validForMtx);
@@ -163,7 +163,7 @@ class MetatransactionBroadcaster {
       `INSERT INTO addresses (address, validForMtx)
        VALUES ("${address}", true)
        ON CONFLICT(address) DO
-       UPDATE SET validForMtx = "true"`
+       UPDATE SET validForMtx = "true"`,
     );
     await db.close();
   }
@@ -248,7 +248,7 @@ class MetatransactionBroadcaster {
         const { addressValid, validTokenTransaction, allowedColonyFamilyTransaction } = await this.doValidTransactionChecks(
           motionTarget,
           motion.action,
-          userAddress
+          userAddress,
         );
         if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
           return false;
@@ -370,7 +370,7 @@ class MetatransactionBroadcaster {
         const { addressValid, validTokenTransaction, allowedColonyFamilyTransaction } = await this.doValidTransactionChecks(
           target,
           payload,
-          userAddress
+          userAddress,
         );
 
         if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {

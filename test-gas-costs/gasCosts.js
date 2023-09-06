@@ -265,7 +265,7 @@ contract("All", function (accounts) {
         [firstToken, secondToken, firstToken, secondToken],
         [10, 10, 10, 10],
         1,
-        0
+        0,
       );
     });
 
@@ -290,12 +290,12 @@ contract("All", function (accounts) {
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: STAKER2, realProviderPort: REAL_PROVIDER_PORT, useJsTree: true },
         1,
-        0xfffffffff
+        0xfffffffff,
       );
       const badClient2 = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: STAKER3, realProviderPort: REAL_PROVIDER_PORT, useJsTree: true },
         2,
-        0xfffffffff
+        0xfffffffff,
       );
       await goodClient.initialise(colonyNetwork.address);
       await badClient.initialise(colonyNetwork.address);
@@ -423,7 +423,7 @@ contract("All", function (accounts) {
         [false, false, false, false, false],
         [soliditySha3(1), soliditySha3(2), soliditySha3(3), soliditySha3(4), soliditySha3(5)],
         [WAD, WAD, WAD, WAD, WAD],
-        { from: MANAGER }
+        { from: MANAGER },
       );
 
       await reputationBootstrapper.commitSecret(soliditySha3(WORKER, 1), { from: WORKER });
@@ -442,7 +442,7 @@ contract("All", function (accounts) {
         [true, true, true, true, true],
         [soliditySha3(1), soliditySha3(2), soliditySha3(3), soliditySha3(4), soliditySha3(5)],
         [WAD, WAD, WAD, WAD, WAD],
-        { from: MANAGER }
+        { from: MANAGER },
       );
 
       await reputationBootstrapper.commitSecret(soliditySha3(WORKER, 1), { from: WORKER });
@@ -460,7 +460,7 @@ contract("All", function (accounts) {
         [false, false, false, false, false],
         [soliditySha3(1), soliditySha3(2), soliditySha3(3), soliditySha3(4), soliditySha3(5)],
         [WAD, WAD, WAD, WAD, WAD],
-        { from: MANAGER }
+        { from: MANAGER },
       );
 
       await reputationBootstrapper.commitSecret(soliditySha3(WORKER, 1), { from: WORKER });
@@ -531,7 +531,7 @@ contract("All", function (accounts) {
         SECONDS_PER_DAY * 3,
         SECONDS_PER_DAY * 2,
         SECONDS_PER_DAY * 2,
-        SECONDS_PER_DAY
+        SECONDS_PER_DAY,
       );
 
       await colony.setRootRole(voting.address, true);

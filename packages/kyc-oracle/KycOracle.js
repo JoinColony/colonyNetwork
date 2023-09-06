@@ -82,7 +82,7 @@ class KycOracle {
                 "Api-Key": this.apiKey,
                 alias: address,
               },
-            }
+            },
           );
           sessionId = data.session_id;
           if (!/^[0-9a-f-]+$/.test(sessionId)) {
@@ -207,7 +207,7 @@ class KycOracle {
       `CREATE TABLE IF NOT EXISTS users (
         address text NOT NULL UNIQUE,
         session_id text NOT NULL
-      )`
+      )`,
     );
     await db.close();
   }
@@ -217,7 +217,7 @@ class KycOracle {
     const res = await db.all(
       `SELECT DISTINCT users.session_id as session_id
        FROM users
-       WHERE users.address="${address}"`
+       WHERE users.address="${address}"`,
     );
     await db.close();
     const sessionIds = res.map((x) => x.session_id);
@@ -233,7 +233,7 @@ class KycOracle {
       `INSERT INTO users (address, session_id)
        VALUES ("${address}", "${session}")
        ON CONFLICT(address) DO
-       UPDATE SET session_id = "${session}"`
+       UPDATE SET session_id = "${session}"`,
     );
     await db.close();
   }
@@ -243,7 +243,7 @@ class KycOracle {
     const res = await db.all(
       `SELECT DISTINCT users.address as address
        FROM users
-       WHERE users.session_id="${sessionId}"`
+       WHERE users.session_id="${sessionId}"`,
     );
     await db.close();
     const addresses = res.map((x) => x.address);

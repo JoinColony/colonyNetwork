@@ -110,14 +110,14 @@ contract("EvaluatedExpenditure", (accounts) => {
     it("cannot set the payout modifier with bad arguments", async () => {
       await checkErrorRevert(
         evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [], { from: USER0 }),
-        "evaluated-expenditure-bad-slots"
+        "evaluated-expenditure-bad-slots",
       );
     });
 
     it("cannot set the payout modifier if not the owner", async () => {
       await checkErrorRevert(
         evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [WAD], { from: USER1 }),
-        "evaluated-expenditure-not-owner"
+        "evaluated-expenditure-not-owner",
       );
     });
 

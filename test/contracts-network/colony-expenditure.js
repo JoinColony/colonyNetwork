@@ -182,7 +182,7 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.transferExpenditure(100, USER), "colony-expenditure-does-not-exist");
       await checkErrorRevert(
         colony.transferExpenditureViaArbitration(0, UINT256_MAX, 100, USER, { from: ARBITRATOR }),
-        "colony-expenditure-does-not-exist"
+        "colony-expenditure-does-not-exist",
       );
       await checkErrorRevert(colony.cancelExpenditure(100), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.lockExpenditure(100), "colony-expenditure-does-not-exist");
@@ -190,7 +190,7 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditureMetadata(100, ""), "colony-expenditure-does-not-exist");
       await checkErrorRevert(
         colony.methods["setExpenditureMetadata(uint256,uint256,uint256,string)"](0, 0, 100, ""),
-        "colony-expenditure-does-not-exist"
+        "colony-expenditure-does-not-exist",
       );
       await checkErrorRevert(colony.setExpenditureRecipients(100, [], []), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.setExpenditureClaimDelays(100, [], []), "colony-expenditure-does-not-exist");
@@ -232,7 +232,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should allow only owners to update many slot recipients at once", async () => {
       await checkErrorRevert(
         colony.setExpenditureRecipients(expenditureId, [SLOT1, SLOT2], [RECIPIENT, USER], { from: USER }),
-        "colony-expenditure-not-owner"
+        "colony-expenditure-not-owner",
       );
 
       await colony.setExpenditureRecipients(expenditureId, [SLOT1, SLOT2], [RECIPIENT, USER], { from: ADMIN });
@@ -270,7 +270,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should not allow owners to update many slot skills with mismatched arguments", async () => {
       await checkErrorRevert(
         colony.setExpenditureSkills(expenditureId, [SLOT0, SLOT1], [GLOBAL_SKILL_ID], { from: ADMIN }),
-        "colony-expenditure-bad-slots"
+        "colony-expenditure-bad-slots",
       );
     });
 
@@ -291,7 +291,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditureSkill(expenditureId, SLOT0, localSkillId, { from: ADMIN }),
-        "colony-not-valid-global-or-local-skill"
+        "colony-not-valid-global-or-local-skill",
       );
     });
 
@@ -302,7 +302,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditureSkill(expenditureId, SLOT0, localSkillId, { from: ADMIN }),
-        "colony-not-valid-global-or-local-skill"
+        "colony-not-valid-global-or-local-skill",
       );
     });
 
@@ -337,7 +337,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should allow only owners to update many slot payout modifiers at once", async () => {
       await checkErrorRevert(
         colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(2), WAD], { from: USER }),
-        "colony-expenditure-not-owner"
+        "colony-expenditure-not-owner",
       );
 
       await colony.setExpenditurePayoutModifiers(expenditureId, [SLOT1, SLOT2], [WAD.divn(2), WAD], { from: ADMIN });
@@ -353,7 +353,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should not allow owners to update many slot payout modifiers with mismatched arguments", async () => {
       await checkErrorRevert(
         colony.setExpenditurePayoutModifiers(expenditureId, [SLOT0, SLOT1], [WAD], { from: ADMIN }),
-        "colony-expenditure-bad-slots"
+        "colony-expenditure-bad-slots",
       );
     });
 
@@ -377,7 +377,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should not allow owners to update many slot payouts with mismatched arguments", async () => {
       await checkErrorRevert(
         colony.setExpenditurePayouts(expenditureId, [SLOT0, SLOT1], token.address, [WAD], { from: ADMIN }),
-        "colony-expenditure-bad-slots"
+        "colony-expenditure-bad-slots",
       );
     });
 
@@ -418,7 +418,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditurePayout(expenditureId, SLOT0, token.address, MAX_PAYOUT.addn(1), { from: ADMIN }),
-        "colony-payout-too-large"
+        "colony-payout-too-large",
       );
     });
 
@@ -478,7 +478,7 @@ contract("Colony Expenditure", (accounts) => {
           [WAD.muln(10), WAD.muln(20)],
           [WAD.muln(30), WAD.muln(40)],
         ],
-        { from: ADMIN }
+        { from: ADMIN },
       );
 
       let slot;
@@ -534,16 +534,16 @@ contract("Colony Expenditure", (accounts) => {
             [WAD.muln(10), WAD.muln(20)],
             [WAD.muln(30), WAD.muln(40)],
           ],
-          { from: ADMIN }
+          { from: ADMIN },
         ),
-        "colony-expenditure-bad-slots"
+        "colony-expenditure-bad-slots",
       );
     });
 
     it("should not allow owners to update many values simultaneously if not owner", async () => {
       await checkErrorRevert(
         colony.setExpenditureValues(expenditureId, [], [], [], [], [], [], [], [], [], [[], []], [[], []], { from: USER }),
-        "colony-expenditure-not-owner"
+        "colony-expenditure-not-owner",
       );
     });
 
@@ -552,7 +552,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditureValues(expenditureId, [], [], [], [], [], [], [], [], [], [[], []], [[], []], { from: ADMIN }),
-        "colony-expenditure-not-draft"
+        "colony-expenditure-not-draft",
       );
     });
 
@@ -576,7 +576,7 @@ contract("Colony Expenditure", (accounts) => {
           [WAD.muln(10), WAD.muln(20)],
           [WAD.muln(30), WAD.muln(40)],
         ],
-        { from: ADMIN }
+        { from: ADMIN },
       );
 
       // This call has no effect
@@ -661,7 +661,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should not allow the owner to set claim delays", async () => {
       await checkErrorRevert(
         colony.setExpenditureClaimDelays(expenditureId, [SLOT0], [SECONDS_PER_DAY], { from: ADMIN }),
-        "colony-expenditure-not-draft"
+        "colony-expenditure-not-draft",
       );
     });
 
@@ -672,7 +672,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should not allow the owner to set payouts", async () => {
       await checkErrorRevert(
         colony.setExpenditurePayouts(expenditureId, [SLOT0], token.address, [WAD], { from: ADMIN }),
-        "colony-expenditure-not-draft"
+        "colony-expenditure-not-draft",
       );
     });
   });
@@ -741,7 +741,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
 
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
@@ -770,7 +770,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
@@ -798,7 +798,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       const tx = await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
@@ -821,7 +821,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
       await colony.moveFundsBetweenPots(
         1,
@@ -832,7 +832,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        otherToken.address
+        otherToken.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
@@ -860,7 +860,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
@@ -888,7 +888,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
@@ -922,7 +922,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
@@ -951,7 +951,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD.muln(2),
-        token.address
+        token.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
@@ -983,7 +983,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         30,
-        token.address
+        token.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
@@ -1021,7 +1021,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
@@ -1058,7 +1058,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
@@ -1127,7 +1127,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
@@ -1167,7 +1167,7 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
@@ -1214,13 +1214,13 @@ contract("Colony Expenditure", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
 
       // Try to move funds back
       await checkErrorRevert(
         colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, domain1.fundingPotId, WAD, token.address),
-        "colony-funding-expenditure-bad-state"
+        "colony-funding-expenditure-bad-state",
       );
 
       await colony.cancelExpenditure(expenditureId, { from: ADMIN });
@@ -1233,7 +1233,7 @@ contract("Colony Expenditure", (accounts) => {
         expenditure.fundingPotId,
         domain1.fundingPotId,
         WAD,
-        token.address
+        token.address,
       );
     });
   });
@@ -1265,7 +1265,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, value, { from: ARBITRATOR }),
-        "colony-expenditure-bad-offset"
+        "colony-expenditure-bad-offset",
       );
     });
 
@@ -1276,7 +1276,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, value, { from: ARBITRATOR }),
-        "colony-expenditure-bad-offset"
+        "colony-expenditure-bad-offset",
       );
     });
 
@@ -1331,7 +1331,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR }),
-        "colony-expenditure-bad-payout-modifier"
+        "colony-expenditure-bad-payout-modifier",
       );
     });
 
@@ -1402,7 +1402,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, invalidSlot, mask, keys, value, { from: ARBITRATOR }),
-        "colony-expenditure-bad-slot"
+        "colony-expenditure-bad-slot",
       );
     });
 
@@ -1413,7 +1413,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, value, { from: ARBITRATOR }),
-        "colony-expenditure-bad-mask"
+        "colony-expenditure-bad-mask",
       );
     });
 
@@ -1424,7 +1424,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR }),
-        "colony-expenditure-large-offset"
+        "colony-expenditure-large-offset",
       );
     });
 
@@ -1434,24 +1434,24 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
-        "colony-expenditure-bad-keys"
+        "colony-expenditure-bad-keys",
       );
 
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
-        "colony-expenditure-bad-offset"
+        "colony-expenditure-bad-offset",
       );
 
       keys = [bn2bytes32(new BN(10))];
 
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, HASHZERO, { from: ARBITRATOR }),
-        "colony-expenditure-bad-keys"
+        "colony-expenditure-bad-keys",
       );
 
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId, 1000000, mask, keys, HASHZERO, { from: ARBITRATOR }),
-        "colony-expenditure-bad-slot"
+        "colony-expenditure-bad-slot",
       );
     });
 

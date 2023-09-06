@@ -158,13 +158,13 @@ contract("Reputation Mining - happy paths", (accounts) => {
           const client = new MaliciousReputationMinerExtraRep(
             { loader, realProviderPort, useJsTree, minerAddress: addr },
             entryToFalsify,
-            amountToFalsify
+            amountToFalsify,
           );
           // Each client will get a different reputation update entry wrong by a different amount, apart from the first one which
           // will submit a correct hash.
           await client.initialise(colonyNetwork.address);
           return client;
-        })
+        }),
       );
 
       // We need to complete the current reputation cycle so that all the required log entries are present
@@ -221,7 +221,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
             managerPayout: 1,
             evaluatorPayout: 1,
             workerPayout: 1,
-          }
+          },
         );
       }
 
@@ -247,7 +247,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
             managerPayout: 1,
             evaluatorPayout: 1,
             workerPayout: 1,
-          }
+          },
         );
       }
 
@@ -372,7 +372,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
         29,
-        bigPayout.muln(2).neg()
+        bigPayout.muln(2).neg(),
       );
       await badClient.initialise(colonyNetwork.address);
 
@@ -448,7 +448,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       const decimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
 
       expect(largeCalculationResult.toString(16, 64), `Incorrect decay. Actual value is ${decimalValueDecay}`).to.equal(
-        goodClient.reputations[decayKey].slice(2, 66)
+        goodClient.reputations[decayKey].slice(2, 66),
       );
     });
 
@@ -563,7 +563,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
         expect(
           goodClient.reputations[key],
-          `${reputationProp.id} failed. Actual value is ${decimalValue}, and expected ${reputationProp.value}`
+          `${reputationProp.id} failed. Actual value is ${decimalValue}, and expected ${reputationProp.value}`,
         ).to.eq.BN(value);
       });
     });
@@ -873,7 +873,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
         value,
         branchMask,
         ["0xbfb84f69f3b58ba43019d6e253d476669af78901fe05eaedfc98ed345dbd8221"],
-        { from: MINER1 }
+        { from: MINER1 },
       );
       expect(isValid).to.be.false;
     });
@@ -904,7 +904,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       // Check we have exactly one reputation.
       expect(
-        "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002"
+        "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
       ).to.equal(goodClient.reputations[userKey]);
 
       repCycle = await getActiveRepCycle(colonyNetwork);
@@ -925,7 +925,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       // Check it decayed from 1 to 0.
       expect(
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002"
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
       ).to.equal(goodClient.reputations[userKey]);
 
       // If we use the existing badClient we get `Error: invalid BigNumber value`, not sure why.
@@ -951,7 +951,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       // Check it 'decayed' from 0 to 0
       expect(
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002"
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
       ).to.equal(goodClient.reputations[userKey]);
     });
 

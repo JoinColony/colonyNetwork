@@ -147,29 +147,29 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.registerUserLabel("", ""), "colony-in-recovery-mode");
       await checkErrorRevertEstimateGas(
         colonyNetwork.registerColonyLabel.estimateGas("", "", { from: metaColony.address }),
-        "colony-in-recovery-mode"
+        "colony-in-recovery-mode",
       );
       await checkErrorRevertEstimateGas(colonyNetwork.updateColonyOrbitDB.estimateGas("", { from: metaColony.address }), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.updateUserOrbitDB(""), "colony-in-recovery-mode");
       await checkErrorRevertEstimateGas(
         colonyNetwork.addExtensionToNetwork.estimateGas(HASHZERO, ADDRESS_ZERO, { from: metaColony.address }),
-        "colony-in-recovery-mode"
+        "colony-in-recovery-mode",
       );
       await checkErrorRevertEstimateGas(
         colonyNetwork.installExtension.estimateGas(HASHZERO, 1, { from: metaColony.address }),
-        "colony-in-recovery-mode"
+        "colony-in-recovery-mode",
       );
       await checkErrorRevertEstimateGas(
         colonyNetwork.upgradeExtension.estimateGas(HASHZERO, 2, { from: metaColony.address }),
-        "colony-in-recovery-mode"
+        "colony-in-recovery-mode",
       );
       await checkErrorRevertEstimateGas(
         colonyNetwork.deprecateExtension.estimateGas(HASHZERO, true, { from: metaColony.address }),
-        "colony-in-recovery-mode"
+        "colony-in-recovery-mode",
       );
       await checkErrorRevertEstimateGas(
         colonyNetwork.uninstallExtension.estimateGas(HASHZERO, { from: metaColony.address }),
-        "colony-in-recovery-mode"
+        "colony-in-recovery-mode",
       );
       await checkErrorRevert(colonyNetwork.deployTokenViaNetwork("", "", 18), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.deployTokenAuthority(ADDRESS_ZERO, ADDRESS_ZERO, []), "colony-in-recovery-mode");
@@ -200,7 +200,7 @@ contract("Colony Network Recovery", (accounts) => {
     it("should not be able to call recovery functions when not in recovery mode", async () => {
       await checkErrorRevert(
         colonyNetwork.setReplacementReputationUpdateLogEntry(ADDRESS_ZERO, 0, ADDRESS_ZERO, 0, 0, ADDRESS_ZERO, 0, 0),
-        "colony-not-in-recovery-mode"
+        "colony-not-in-recovery-mode",
       );
     });
 
@@ -290,13 +290,13 @@ contract("Colony Network Recovery", (accounts) => {
       // So this user has their nonce stored at
       const user0MetatransactionNonceSlot = await web3.utils.soliditySha3(
         { type: "bytes32", value: ethers.utils.hexZeroPad(accounts[1], 32) },
-        { type: "uint256", value: "41" }
+        { type: "uint256", value: "41" },
       );
 
       // Try and edit that slot
       await checkErrorRevert(
         colonyNetwork.setStorageSlotRecovery(user0MetatransactionNonceSlot, "0x00000000000000000000000000000000000000000000000000000000000000ff"),
-        "colony-protected-variable"
+        "colony-protected-variable",
       );
 
       // Try and edit the protection
@@ -354,7 +354,7 @@ contract("Colony Network Recovery", (accounts) => {
         entry.skillId,
         entry.colony,
         entry.nUpdates,
-        entry.nPreviousUpdates
+        entry.nPreviousUpdates,
       );
 
       const replacementEntry = await colonyNetwork.getReplacementReputationUpdateLogEntry(repCycle.address, 0);
@@ -374,7 +374,7 @@ contract("Colony Network Recovery", (accounts) => {
 
       await checkErrorRevert(
         colonyNetwork.setReplacementReputationUpdateLogEntry(ADDRESS_ZERO, 0, ADDRESS_ZERO, 0, 0, ADDRESS_ZERO, 0, 0, { from: accounts[1] }),
-        "ds-auth-unauthorized"
+        "ds-auth-unauthorized",
       );
 
       await colonyNetwork.approveExitRecovery();
@@ -430,7 +430,7 @@ contract("Colony Network Recovery", (accounts) => {
             invalidEntry.skillId,
             invalidEntry.colony,
             invalidEntry.nUpdates,
-            invalidEntry.nPreviousUpdates
+            invalidEntry.nPreviousUpdates,
           );
           await client.loadState(startingHash);
           // This sync call will log an error - this is because we've changed a log entry, but the root hash
@@ -555,7 +555,7 @@ contract("Colony Network Recovery", (accounts) => {
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
             await newActiveCycleAsRecovery.setStorageSlot(
               logEntryStartingSlot.addn(4),
-              `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`
+              `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`,
             );
 
             const portedLogEntry = await newActiveCycle.getReputationUpdateLogEntry(i);
@@ -584,7 +584,7 @@ contract("Colony Network Recovery", (accounts) => {
             await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
             await newInactiveCycleAsRecovery.setStorageSlot(
               logEntryStartingSlot.addn(4),
-              `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`
+              `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`,
             );
 
             const portedLogEntry = await newInactiveCycle.getReputationUpdateLogEntry(i);

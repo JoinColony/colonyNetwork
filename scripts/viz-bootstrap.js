@@ -32,9 +32,9 @@ async function forwardTime(seconds) {
               return reject(err2);
             }
             return resolve(res);
-          }
+          },
         );
-      }
+      },
     );
   });
   return p;

@@ -169,7 +169,7 @@ contract("Voting Reputation", (accounts) => {
       STAKE_PERIOD,
       SUBMIT_PERIOD,
       REVEAL_PERIOD,
-      ESCALATION_PERIOD
+      ESCALATION_PERIOD,
     );
 
     await colony.setRootRole(voting.address, true);
@@ -192,61 +192,61 @@ contract("Voting Reputation", (accounts) => {
     reputationTree = new PatriciaTree();
     reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId), // Colony total
-      makeReputationValue(WAD.muln(3), 1)
+      makeReputationValue(WAD.muln(3), 1),
     );
     reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER0), // User0
-      makeReputationValue(WAD, 2)
+      makeReputationValue(WAD, 2),
     );
     reputationTree.insert(
       makeReputationKey(metaColony.address, domain1.skillId, USER0), // Wrong colony
-      makeReputationValue(WAD, 3)
+      makeReputationValue(WAD, 3),
     );
     reputationTree.insert(
       makeReputationKey(colony.address, 1234, USER0), // Wrong skill
-      makeReputationValue(WAD, 4)
+      makeReputationValue(WAD, 4),
     );
     reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER1), // User1 (and 2x value)
-      makeReputationValue(WAD.muln(2), 5)
+      makeReputationValue(WAD.muln(2), 5),
     );
     reputationTree.insert(
       makeReputationKey(colony.address, domain2.skillId), // Colony total, domain 2
-      makeReputationValue(WAD, 6)
+      makeReputationValue(WAD, 6),
     );
     reputationTree.insert(
       makeReputationKey(colony.address, domain3.skillId), // Colony total, domain 3
-      makeReputationValue(WAD.muln(3), 7)
+      makeReputationValue(WAD.muln(3), 7),
     );
     reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER2), // User2, very little rep
-      makeReputationValue(REQUIRED_STAKE.subn(1), 8)
+      makeReputationValue(REQUIRED_STAKE.subn(1), 8),
     );
     reputationTree.insert(
       makeReputationKey(colony.address, domain2.skillId, USER0), // User0, domain 2
-      makeReputationValue(WAD.divn(3), 9)
+      makeReputationValue(WAD.divn(3), 9),
     );
     reputationTree.insert(
       makeReputationKey(colony.address, domain2.skillId, USER1), // User1, domain 2
-      makeReputationValue(WAD.divn(3).muln(2), 10)
+      makeReputationValue(WAD.divn(3).muln(2), 10),
     );
     reputationTree.insert(
       makeReputationKey(colony.address, domain3.skillId, USER0), // User0, domain 3
-      makeReputationValue(WAD, 11)
+      makeReputationValue(WAD, 11),
     );
     reputationTree.insert(
       makeReputationKey(colony.address, domain3.skillId, USER1), // User1, domain 3
-      makeReputationValue(WAD.muln(2), 12)
+      makeReputationValue(WAD.muln(2), 12),
     );
 
     reputationTree.insert(
       makeReputationKey(colony.address, domain4.skillId), // Colony total, domain 4
-      makeReputationValue(0, 13)
+      makeReputationValue(0, 13),
     );
 
     reputationTree.insert(
       makeReputationKey(colony.address, domain4.skillId, USER1), // User1, domain 4
-      makeReputationValue(0, 14)
+      makeReputationValue(0, 14),
     );
 
     domain1Key = makeReputationKey(colony.address, domain1.skillId);
@@ -315,7 +315,7 @@ contract("Voting Reputation", (accounts) => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await checkErrorRevert(
         voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
-        "colony-extension-deprecated"
+        "colony-extension-deprecated",
       );
 
       deprecated = await voting.getDeprecated();
@@ -416,7 +416,7 @@ contract("Voting Reputation", (accounts) => {
       const action = await encodeTxData(colony, "makeTask", [1, UINT256_MAX, FAKE, 1, 0, 0]);
       await checkErrorRevert(
         voting.createMotion(1, 0, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
-        "voting-rep-invalid-domain-id"
+        "voting-rep-invalid-domain-id",
       );
     });
 
@@ -468,7 +468,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.createMotion(1, UINT256_MAX, colony.address, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
-        "voting-rep-alt-target-cannot-be-base-colony"
+        "voting-rep-alt-target-cannot-be-base-colony",
       );
     });
 
@@ -497,7 +497,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.createMotion(2, UINT256_MAX, oneTxPayment.address, action, key, value, mask, siblings),
-        "voting-rep-invalid-domain-id"
+        "voting-rep-invalid-domain-id",
       );
     });
 
@@ -550,7 +550,7 @@ contract("Voting Reputation", (accounts) => {
       const action = await encodeTxData(colony, "makeTask", [1, 2, FAKE, 4, 0, 0]);
       await checkErrorRevert(
         voting.createMotion(4, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings),
-        "voting-rep-no-reputation-in-domain"
+        "voting-rep-no-reputation-in-domain",
       );
     });
   });
@@ -609,21 +609,21 @@ contract("Voting Reputation", (accounts) => {
     it("cannot stake on a non-existent motion", async () => {
       await checkErrorRevert(
         voting.stakeMotion(0, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-motion-not-staking"
+        "voting-rep-motion-not-staking",
       );
     });
 
     it("cannot stake 0", async () => {
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, 0, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-bad-amount"
+        "voting-rep-bad-amount",
       );
     });
 
     it("cannot stake a nonexistent side", async () => {
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, 2, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-bad-vote"
+        "voting-rep-bad-vote",
       );
     });
 
@@ -632,7 +632,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake.subn(1), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-insufficient-stake"
+        "voting-rep-insufficient-stake",
       );
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, minStake, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -907,14 +907,14 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-expenditure-lock-failed"
+        "voting-rep-expenditure-lock-failed",
       );
     });
 
     it("cannot stake with someone else's reputation", async () => {
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER1 }),
-        "colony-extension-invalid-user-address"
+        "colony-extension-invalid-user-address",
       );
     });
 
@@ -925,7 +925,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 }),
-        "voting-rep-insufficient-rep"
+        "voting-rep-insufficient-rep",
       );
     });
 
@@ -934,12 +934,12 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-motion-not-staking"
+        "voting-rep-motion-not-staking",
       );
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
-        "voting-rep-motion-not-staking"
+        "voting-rep-motion-not-staking",
       );
     });
 
@@ -1060,7 +1060,7 @@ contract("Voting Reputation", (accounts) => {
       // Revealing first vote fails
       await checkErrorRevert(
         voting.revealVote(motionId, SALT, NAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-secret-no-match"
+        "voting-rep-secret-no-match",
       );
 
       // Revealing second succeeds
@@ -1089,7 +1089,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.revealVote(motionId, SALT, 2, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-bad-vote"
+        "voting-rep-bad-vote",
       );
     });
 
@@ -1101,7 +1101,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-secret-no-match"
+        "voting-rep-secret-no-match",
       );
     });
 
@@ -1147,14 +1147,14 @@ contract("Voting Reputation", (accounts) => {
     it("cannot submit a vote on a non-existent motion", async () => {
       await checkErrorRevert(
         voting.submitVote(0, "0x0", user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-motion-not-open"
+        "voting-rep-motion-not-open",
       );
     });
 
     it("cannot submit a null vote", async () => {
       await checkErrorRevert(
         voting.submitVote(motionId, "0x0", user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-invalid-secret"
+        "voting-rep-invalid-secret",
       );
     });
 
@@ -1163,7 +1163,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.submitVote(motionId, soliditySha3(SALT, NAY), user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-motion-not-open"
+        "voting-rep-motion-not-open",
       );
     });
 
@@ -1172,7 +1172,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.revealVote(0, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-motion-not-reveal"
+        "voting-rep-motion-not-reveal",
       );
     });
 
@@ -1197,7 +1197,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.revealVote(motionId, SALT, YAY, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-secret-no-match"
+        "voting-rep-secret-no-match",
       );
     });
 
@@ -1217,7 +1217,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.revealVote(motionId, SALT, NAY, key, value, mask, siblings, { from: USER0 }),
-        "colony-extension-invalid-colony-address"
+        "colony-extension-invalid-colony-address",
       );
 
       // Invalid skill id
@@ -1227,13 +1227,13 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.revealVote(motionId, SALT, NAY, key, value, mask, siblings, { from: USER0 }),
-        "colony-extension-invalid-skill-id"
+        "colony-extension-invalid-skill-id",
       );
 
       // Invalid user address
       await checkErrorRevert(
         voting.revealVote(motionId, SALT, NAY, user1Key, user1Value, user1Mask, user1Siblings, { from: USER0 }),
-        "colony-extension-invalid-user-address"
+        "colony-extension-invalid-user-address",
       );
     });
   });
@@ -2022,7 +2022,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, multicall, domain2Key, domain2Value, domain2Mask, domain2Siblings),
-        "voting-rep-invalid-multicall"
+        "voting-rep-invalid-multicall",
       );
     });
 
@@ -2498,14 +2498,14 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.escalateMotion(motionId, 1, 0, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER2 }),
-        "voting-rep-motion-not-closed"
+        "voting-rep-motion-not-closed",
       );
     });
 
     it("cannot internally escalate a domain motion with an invalid domain proof", async () => {
       await checkErrorRevert(
         voting.escalateMotion(motionId, 1, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 }),
-        "voting-rep-invalid-domain-proof"
+        "voting-rep-invalid-domain-proof",
       );
     });
 
@@ -2730,7 +2730,7 @@ contract("Voting Reputation", (accounts) => {
         STAKE_PERIOD,
         SUBMIT_PERIOD,
         REVEAL_PERIOD,
-        ESCALATION_PERIOD
+        ESCALATION_PERIOD,
       );
 
       // Run a vote in domain 3, same rep as domain 1
@@ -2811,7 +2811,7 @@ contract("Voting Reputation", (accounts) => {
         STAKE_PERIOD,
         SUBMIT_PERIOD,
         REVEAL_PERIOD,
-        ESCALATION_PERIOD
+        ESCALATION_PERIOD,
       );
     });
 
@@ -2911,7 +2911,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings),
-        "voting-rep-motion-locked"
+        "voting-rep-motion-locked",
       );
 
       await forwardTime(STAKE_PERIOD, this);
@@ -2944,7 +2944,7 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action2, domain1Key, domain1Value, domain1Mask, domain1Siblings),
-        "voting-rep-motion-locked"
+        "voting-rep-motion-locked",
       );
 
       await forwardTime(STAKE_PERIOD, this);
@@ -3011,12 +3011,12 @@ contract("Voting Reputation", (accounts) => {
       // Cannot stake the third motion
       await checkErrorRevert(
         voting.stakeMotion(motionId3, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-invalid-stake"
+        "voting-rep-invalid-stake",
       );
 
       await checkErrorRevert(
         voting.stakeMotion(motionId3, 1, UINT256_MAX, NAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "voting-rep-invalid-stake"
+        "voting-rep-invalid-stake",
       );
     });
 
