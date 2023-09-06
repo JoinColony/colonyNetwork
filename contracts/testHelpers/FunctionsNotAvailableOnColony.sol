@@ -21,7 +21,6 @@ pragma experimental ABIEncoderV2;
 import "./../colony/Colony.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 
-
 contract FunctionsNotAvailableOnColony is Colony {
   function registerUserLabel(string memory username, string memory orbitdb) public {
     return IColonyNetwork(colonyNetworkAddress).registerUserLabel(username, orbitdb);

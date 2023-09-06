@@ -20,7 +20,6 @@ pragma experimental "ABIEncoderV2";
 
 import "./IColony.sol";
 
-
 interface IMetaColony is IColony {
   /// @notice Mints CLNY in the Meta Colony and transfers them to the colony network.
   /// Only allowed to be called on the Meta Colony by the colony network.

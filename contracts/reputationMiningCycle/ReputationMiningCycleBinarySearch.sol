@@ -25,17 +25,18 @@ import "../tokenLocking/ITokenLocking.sol";
 import "./ReputationMiningCycleStorage.sol";
 import "./ReputationMiningCycleCommon.sol";
 
-
 contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
   function respondToBinarySearchForChallenge(
     uint256 _round,
     uint256 _idx,
     bytes memory _jhIntermediateValue,
     bytes32[] memory _siblings
-  ) public
-  {
+  ) public {
     require(_idx < disputeRounds[_round].length, "colony-reputation-mining-index-beyond-round-length");
-    require(disputeRounds[_round][_idx].lowerBound != disputeRounds[_round][_idx].upperBound, "colony-reputation-mining-challenge-not-active");
+    require(
+      disputeRounds[_round][_idx].lowerBound != disputeRounds[_round][_idx].upperBound,
+      "colony-reputation-mining-challenge-not-active"
+    );
     require(
       responsePossible(DisputeStages.BinarySearchResponse, disputeRounds[_round][_idx].lastResponseTimestamp),
       "colony-reputation-mining-user-ineligible-to-respond"
@@ -55,12 +56,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     // branchmask, if everything is working right.
     uint256 branchMask = expectedBranchMask(submission.jrhNLeaves, disputeRounds[_round][_idx].lowerBound);
 
-    (impliedRoot, lastSiblings) = getFinalPairAndImpliedRootNoHash(
-      bytes32(targetNode),
-      _jhIntermediateValue,
-      branchMask,
-      _siblings
-    );
+    (impliedRoot, lastSiblings) = getFinalPairAndImpliedRootNoHash(bytes32(targetNode), _jhIntermediateValue, branchMask, _siblings);
     require(impliedRoot == targetHashDuringSearch, "colony-reputation-mining-invalid-binary-search-response");
     // If require hasn't thrown, proof is correct.
     // Process the consequences
@@ -71,19 +67,13 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     emit BinarySearchStep(submission.proposedNewRootHash, submission.nLeaves, submission.jrh);
   }
 
-  function confirmBinarySearchResult(
-    uint256 _round,
-    uint256 _idx,
-    bytes memory _jhIntermediateValue,
-    bytes32[] memory _siblings
-  ) public
-  {
+  function confirmBinarySearchResult(uint256 _round, uint256 _idx, bytes memory _jhIntermediateValue, bytes32[] memory _siblings) public {
     require(_idx < disputeRounds[_round].length, "colony-reputation-mining-index-beyond-round-length");
     Submission storage submission = reputationHashSubmissions[disputeRounds[_round][_idx].firstSubmitter];
     require(submission.jrhNLeaves != 0, "colony-reputation-jrh-hash-not-verified");
     require(disputeRounds[_round][_idx].lowerBound == disputeRounds[_round][_idx].upperBound, "colony-reputation-binary-search-incomplete");
     require(
-      2**(disputeRounds[_round][_idx].challengeStepCompleted - 2) <= submission.jrhNLeaves,
+      2 ** (disputeRounds[_round][_idx].challengeStepCompleted - 2) <= submission.jrhNLeaves,
       "colony-reputation-binary-search-result-already-confirmed"
     );
     require(
@@ -93,7 +83,12 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
 
     // uint256 targetNode = disputeRounds[round][idx].lowerBound;
     uint256 branchMask = expectedBranchMask(submission.jrhNLeaves, disputeRounds[_round][_idx].lowerBound);
-    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(disputeRounds[_round][_idx].lowerBound), _jhIntermediateValue, branchMask, _siblings);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(
+      bytes32(disputeRounds[_round][_idx].lowerBound),
+      _jhIntermediateValue,
+      branchMask,
+      _siblings
+    );
     require(impliedRoot == submission.jrh, "colony-reputation-mining-invalid-binary-search-confirmation");
     bytes32 intermediateReputationHash;
     uint256 intermediateReputationNLeaves;
@@ -103,7 +98,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     }
     disputeRounds[_round][_idx].intermediateReputationHash = intermediateReputationHash;
     disputeRounds[_round][_idx].intermediateReputationNLeaves = intermediateReputationNLeaves;
-    while (2**(disputeRounds[_round][_idx].challengeStepCompleted - 2) <= submission.jrhNLeaves) {
+    while (2 ** (disputeRounds[_round][_idx].challengeStepCompleted - 2) <= submission.jrhNLeaves) {
       disputeRounds[_round][_idx].challengeStepCompleted += 1;
     }
     disputeRounds[_round][_idx].lastResponseTimestamp = block.timestamp;
@@ -118,8 +113,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     uint256 _idx,
     bytes memory _jhIntermediateValue,
     bytes32[2] memory _lastSiblings
-  ) internal
-  {
+  ) internal {
     disputeRounds[_round][_idx].lastResponseTimestamp = block.timestamp;
     disputeRounds[_round][_idx].challengeStepCompleted += 1;
     // Save our intermediate hash
@@ -136,7 +130,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     disputeRounds[_round][_idx].hash2 = _lastSiblings[1];
 
     uint256 opponentIdx = getOpponentIdx(_idx);
-    if (disputeRounds[_round][opponentIdx].challengeStepCompleted == disputeRounds[_round][_idx].challengeStepCompleted ) {
+    if (disputeRounds[_round][opponentIdx].challengeStepCompleted == disputeRounds[_round][_idx].challengeStepCompleted) {
       // Our opponent answered this challenge already.
       // Compare our intermediateReputationHash to theirs to establish how to move the bounds.
       processBinaryChallengeSearchStep(_round, _idx);
@@ -147,17 +141,14 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     uint256 opponentIdx = getOpponentIdx(_idx);
     uint256 searchWidth = (disputeRounds[_round][_idx].upperBound - disputeRounds[_round][_idx].lowerBound) + 1;
     uint256 searchWidthNextPowerOfTwo = nextPowerOfTwoInclusive(searchWidth);
-    if (
-      disputeRounds[_round][opponentIdx].hash1 == disputeRounds[_round][_idx].hash1
-      )
-    {
-      disputeRounds[_round][_idx].lowerBound += searchWidthNextPowerOfTwo/2;
-      disputeRounds[_round][opponentIdx].lowerBound += searchWidthNextPowerOfTwo/2;
+    if (disputeRounds[_round][opponentIdx].hash1 == disputeRounds[_round][_idx].hash1) {
+      disputeRounds[_round][_idx].lowerBound += searchWidthNextPowerOfTwo / 2;
+      disputeRounds[_round][opponentIdx].lowerBound += searchWidthNextPowerOfTwo / 2;
       disputeRounds[_round][_idx].targetHashDuringSearch = disputeRounds[_round][_idx].hash2;
       disputeRounds[_round][opponentIdx].targetHashDuringSearch = disputeRounds[_round][opponentIdx].hash2;
     } else {
-      disputeRounds[_round][_idx].upperBound -= (searchWidth - searchWidthNextPowerOfTwo/2);
-      disputeRounds[_round][opponentIdx].upperBound -= (searchWidth - searchWidthNextPowerOfTwo/2);
+      disputeRounds[_round][_idx].upperBound -= (searchWidth - searchWidthNextPowerOfTwo / 2);
+      disputeRounds[_round][opponentIdx].upperBound -= (searchWidth - searchWidthNextPowerOfTwo / 2);
       disputeRounds[_round][_idx].targetHashDuringSearch = disputeRounds[_round][_idx].hash1;
       disputeRounds[_round][opponentIdx].targetHashDuringSearch = disputeRounds[_round][opponentIdx].hash1;
     }
@@ -173,7 +164,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     // they've submitted their jrh
     Submission storage submission = reputationHashSubmissions[disputeRounds[_round][_idx].firstSubmitter];
     if (disputeRounds[_round][_idx].lowerBound == disputeRounds[_round][_idx].upperBound) {
-      if (2**(disputeRounds[_round][_idx].challengeStepCompleted-1) < submission.jrhNLeaves) {
+      if (2 ** (disputeRounds[_round][_idx].challengeStepCompleted - 1) < submission.jrhNLeaves) {
         disputeRounds[_round][_idx].challengeStepCompleted += 1;
         disputeRounds[_round][opponentIdx].challengeStepCompleted += 1;
       }

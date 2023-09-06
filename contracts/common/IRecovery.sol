@@ -20,7 +20,6 @@ pragma experimental "ABIEncoderV2";
 
 import "./ContractRecoveryDataTypes.sol";
 
-
 interface IRecovery is ContractRecoveryDataTypes {
   /// @notice Put colony network mining into recovery mode.
   /// Can only be called by user with recovery role.
@@ -49,7 +48,7 @@ interface IRecovery is ContractRecoveryDataTypes {
 
   /// @notice Return number of recovery roles.
   /// @return numRoles Number of users with the recovery role.
-  function numRecoveryRoles() external view returns(uint64 numRoles);
+  function numRecoveryRoles() external view returns (uint64 numRoles);
 
   /// @notice Update value of arbitrary storage variable.
   /// Can only be called by user with recovery role.

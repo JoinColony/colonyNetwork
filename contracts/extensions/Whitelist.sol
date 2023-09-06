@@ -23,9 +23,7 @@ import "./ColonyExtension.sol";
 
 // ignore-file-swc-108
 
-
 contract Whitelist is ColonyExtension, BasicMetaTransaction {
-
   //  Events
 
   event UserApproved(address indexed _user, bool _status);
@@ -36,21 +34,20 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   bool useApprovals;
   string agreementHash;
 
-  mapping (address => bool) approvals;
-  mapping (address => bool) signatures;
+  mapping(address => bool) approvals;
+  mapping(address => bool) signatures;
   mapping(address => uint256) metatransactionNonces;
 
   /// @notice Gets the next nonce for a meta-transaction
   /// @param userAddress The user's address
   /// @return nonce The nonce
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+  function getMetatransactionNonce(address userAddress) public view override returns (uint256 nonce) {
     return metatransactionNonces[userAddress];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
+  function incrementMetatransactionNonce(address user) internal override {
     metatransactionNonces[user]++;
   }
-
 
   // Modifiers
 
@@ -63,13 +60,13 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("Whitelist");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
+  function version() public pure override returns (uint256 _version) {
     return 5;
   }
 
@@ -127,11 +124,7 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   /// @param _agreementHash The agreement hash being signed
   function signAgreement(string memory _agreementHash) public initialised notDeprecated {
     require(bytes(agreementHash).length > 0, "whitelist-no-agreement");
-    require(
-      keccak256(abi.encodePacked(agreementHash)) ==
-      keccak256(abi.encodePacked(_agreementHash)),
-      "whitelist-bad-signature"
-    );
+    require(keccak256(abi.encodePacked(agreementHash)) == keccak256(abi.encodePacked(_agreementHash)), "whitelist-bad-signature");
 
     signatures[msgSender()] = true;
 
@@ -141,12 +134,8 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   /// @notice Get the user's overall whitelist status
   /// @param _user The address of the user
   /// @return _approved Is `true` when the user is approved
-  function isApproved(address _user) public initialised view returns (bool _approved) {
-    return (
-      !deprecated &&
-      (!useApprovals || approvals[_user]) &&
-      (bytes(agreementHash).length == 0 || signatures[_user])
-    );
+  function isApproved(address _user) public view initialised returns (bool _approved) {
+    return (!deprecated && (!useApprovals || approvals[_user]) && (bytes(agreementHash).length == 0 || signatures[_user]));
   }
 
   /// @notice Get the useApprovals boolean

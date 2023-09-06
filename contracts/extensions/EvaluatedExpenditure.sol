@@ -23,9 +23,7 @@ import "./../common/BasicMetaTransaction.sol";
 
 // ignore-file-swc-108
 
-
 contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
-
   uint256 constant EXPENDITURESLOTS_SLOT = 26;
   uint256 constant PAYOUT_MODIFIER_OFFSET = 2;
   bool constant MAPPING = false;
@@ -34,13 +32,13 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("EvaluatedExpenditure");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
+  function version() public pure override returns (uint256 _version) {
     return 5;
   }
 
@@ -69,11 +67,11 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _userAddress The user's address
   /// @return nonce The nonce
-  function getMetatransactionNonce(address _userAddress) override public view returns (uint256 nonce){
+  function getMetatransactionNonce(address _userAddress) public view override returns (uint256 nonce) {
     return metatransactionNonces[_userAddress];
   }
 
-  function incrementMetatransactionNonce(address _user) override internal {
+  function incrementMetatransactionNonce(address _user) internal override {
     metatransactionNonces[_user] += 1;
   }
 
@@ -89,9 +87,7 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
     uint256 _id,
     uint256[] memory _slots,
     int256[] memory _payoutModifiers
-  )
-    public
-  {
+  ) public {
     require(_slots.length == _payoutModifiers.length, "evaluated-expenditure-bad-slots");
     require(colony.getExpenditure(_id).owner == msgSender(), "evaluated-expenditure-not-owner");
 
@@ -117,5 +113,4 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
       );
     }
   }
-
 }

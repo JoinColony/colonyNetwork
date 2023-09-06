@@ -26,9 +26,8 @@ import "./../colony/ColonyDataTypes.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 
-
 abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall {
-  uint256 constant UINT256_MAX = 2**256 - 1;
+  uint256 constant UINT256_MAX = 2 ** 256 - 1;
 
   event ExtensionInitialised();
 
@@ -43,10 +42,15 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
   }
 
   function identifier() public pure virtual returns (bytes32);
+
   function version() public pure virtual returns (uint256);
+
   function install(address _colony) public virtual;
+
   function finishUpgrade() public virtual;
+
   function deprecate(bool _deprecated) public virtual;
+
   function uninstall() public virtual;
 
   function getCapabilityRoles(bytes4 _sig) public view virtual returns (bytes32) {
@@ -57,7 +61,7 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
     return deprecated;
   }
 
-  function getColony() public view returns(address) {
+  function getColony() public view returns (address) {
     return address(colony);
   }
 
@@ -69,11 +73,7 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    internal
-    view
-    returns (uint256)
-  {
+  ) internal view returns (uint256) {
     bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
     require(_rootHash == impliedRoot, "colony-extension-invalid-root-hash");
 

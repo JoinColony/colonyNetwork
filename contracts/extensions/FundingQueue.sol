@@ -26,7 +26,6 @@ import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyExtension.sol";
 
 contract FundingQueue is ColonyExtension, BasicMetaTransaction {
-
   // Events
   event ProposalCreated(uint256 id, uint256 indexed fromPot, uint256 indexed toPot, address indexed token, uint256 amount);
   event ProposalStaked(uint256 indexed id, uint256 domainTotalRep);
@@ -47,7 +46,12 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   address token;
 
   // Data structures
-  enum ProposalState { Inactive, Active, Completed, Cancelled }
+  enum ProposalState {
+    Inactive,
+    Active,
+    Completed,
+    Cancelled
+  }
 
   struct Proposal {
     ProposalState state;
@@ -67,20 +71,20 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
   // Storage
   uint256 proposalCount;
-  mapping (uint256 => Proposal) proposals;
-  mapping (uint256 => mapping (address => uint256)) supporters;
+  mapping(uint256 => Proposal) proposals;
+  mapping(uint256 => mapping(address => uint256)) supporters;
   // Technically a circular singly-linked list
-  mapping (uint256 => uint256) queue; // proposalId => nextProposalId
+  mapping(uint256 => uint256) queue; // proposalId => nextProposalId
   mapping(address => uint256) metatransactionNonces;
 
   /// @notice Gets the next nonce for a meta-transaction
   /// @param userAddress The user's address
   /// @return nonce The nonce
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+  function getMetatransactionNonce(address userAddress) public view override returns (uint256 nonce) {
     return metatransactionNonces[userAddress];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
+  function incrementMetatransactionNonce(address user) internal override {
     metatransactionNonces[user]++;
   }
 
@@ -88,13 +92,13 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("FundingQueue");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
+  function version() public pure override returns (uint256 _version) {
     return 6;
   }
 
@@ -143,10 +147,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     uint256 _toPot,
     uint256 _totalRequested,
     address _token
-  )
-    public
-    notDeprecated
-  {
+  ) public notDeprecated {
     uint256 fromDomain = colony.getDomainFromFundingPot(_fromPot);
     uint256 toDomain = colony.getDomainFromFundingPot(_toPot);
 
@@ -156,12 +157,12 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
     require(
       (domainSkillId == fromSkillId && _fromChildSkillIndex == UINT256_MAX) ||
-      fromSkillId == colonyNetwork.getChildSkillId(domainSkillId, _fromChildSkillIndex),
+        fromSkillId == colonyNetwork.getChildSkillId(domainSkillId, _fromChildSkillIndex),
       "funding-queue-bad-inheritence-from"
     );
     require(
       (domainSkillId == toSkillId && _toChildSkillIndex == UINT256_MAX) ||
-      toSkillId == colonyNetwork.getChildSkillId(domainSkillId, _toChildSkillIndex),
+        toSkillId == colonyNetwork.getChildSkillId(domainSkillId, _toChildSkillIndex),
       "funding-queue-bad-inheritence-to"
     );
 
@@ -214,15 +215,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   /// @param _value Reputation value indicating the total reputation in _domainId
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
-  function stakeProposal(
-    uint256 _id,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  )
-    public
-  {
+  function stakeProposal(uint256 _id, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings) public {
     Proposal storage proposal = proposals[_id];
 
     require(proposal.state == ProposalState.Inactive, "funding-queue-not-inactive");
@@ -255,9 +248,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-  {
+  ) public {
     Proposal storage proposal = proposals[_id];
 
     require(proposal.state == ProposalState.Active, "funding-queue-proposal-not-active");
@@ -283,16 +274,10 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
       pingProposal(nextId);
     }
     // Does this proposal have less than or equal support to the previous proposal?
-    require(
-      proposals[_newPrevId].totalSupport >= proposal.totalSupport,
-      "funding-queue-excess-support"
-    );
+    require(proposals[_newPrevId].totalSupport >= proposal.totalSupport, "funding-queue-excess-support");
     // Does this proposal have more support than the next proposal?
     //  (Special case for the tail of the list since "next" is HEAD)
-    require(
-      nextId == HEAD || proposals[nextId].totalSupport < proposal.totalSupport,
-      "funding-queue-insufficient-support"
-    );
+    require(nextId == HEAD || proposals[nextId].totalSupport < proposal.totalSupport, "funding-queue-insufficient-support");
     queue[_newPrevId] = _id; // prev proposal => this proposal
     queue[_id] = nextId; // this proposal => next proposal
 
@@ -326,9 +311,9 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     // Check if the extension has the permissions to do this
     // If not, cancel the proposal so others aren't blocked
     if (!colony.hasUserRole(address(this), proposal.domainId, ColonyDataTypes.ColonyRole.Funding)) {
-        emit ProposalPinged(_id, 0);
-        cancelProposal(_id, HEAD);
-        return;
+      emit ProposalPinged(_id, 0);
+      cancelProposal(_id, HEAD);
+      return;
     }
 
     if (proposal.totalPaid == proposal.totalRequested) {
@@ -342,13 +327,13 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     }
 
     colony.moveFundsBetweenPots(
-        proposal.domainId,
-        proposal.fromChildSkillIndex,
-        proposal.toChildSkillIndex,
-        proposal.fromPot,
-        proposal.toPot,
-        actualFundingToTransfer,
-        proposal.token
+      proposal.domainId,
+      proposal.fromChildSkillIndex,
+      proposal.toChildSkillIndex,
+      proposal.fromPot,
+      proposal.toPot,
+      actualFundingToTransfer,
+      proposal.token
     );
 
     emit ProposalPinged(_id, actualFundingToTransfer);
@@ -407,11 +392,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    internal
-    view
-    returns (uint256)
-  {
+  ) internal view returns (uint256) {
     bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork()).getReputationRootHash();
     uint256 domainSkillId = colony.getDomain(_domainId).skillId;
     return checkReputation(rootHash, domainSkillId, _user, _key, _value, _branchMask, _siblings);

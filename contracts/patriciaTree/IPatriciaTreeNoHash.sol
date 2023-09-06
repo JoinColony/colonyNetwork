@@ -4,10 +4,8 @@ pragma experimental "ABIEncoderV2";
 import {Data} from "./Data.sol";
 import "./IPatriciaTreeBase.sol";
 
-
 /// More info at: https://github.com/chriseth/patricia-trie
 interface IPatriciaTreeNoHash is IPatriciaTreeBase {
-
   /// @notice Insert the `key`/`value`in the appropriate place in the tree
   function insert(bytes32 key, bytes memory value) external;
 
@@ -18,6 +16,10 @@ interface IPatriciaTreeNoHash is IPatriciaTreeBase {
 
   /// @notice Calculates and returns a root hash for the `key`, `value`, `branchMask` and `siblings`
   /// @return rootHash The calculated hash
-  function getImpliedRoot(bytes32 key, bytes memory value, uint256 branchMask, bytes32[] memory siblings) external pure returns (bytes32 rootHash);
-
+  function getImpliedRoot(
+    bytes32 key,
+    bytes memory value,
+    uint256 branchMask,
+    bytes32[] memory siblings
+  ) external pure returns (bytes32 rootHash);
 }

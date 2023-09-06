@@ -25,21 +25,20 @@ import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyNetworkStorage.sol";
 
-
 contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
-  modifier onlyReputationMiningCycle () {
+  modifier onlyReputationMiningCycle() {
     require(msgSender() == activeReputationMiningCycle, "colony-reputation-mining-sender-not-active-reputation-cycle");
     _;
   }
 
   function setMiningDelegate(address _delegate, bool _allowed) public stoppable {
-    if (miningDelegators[_delegate] != address(0x00)){
+    if (miningDelegators[_delegate] != address(0x00)) {
       require(miningDelegators[_delegate] == msgSender(), "colony-reputation-mining-not-your-delegate");
     }
 
-    if (_allowed){
+    if (_allowed) {
       miningDelegators[_delegate] = msgSender();
     } else {
       miningDelegators[_delegate] = address(0x00);
@@ -58,9 +57,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     uint256 _skillId,
     address _colony,
     uint128 _nUpdates,
-    uint128 _nPreviousUpdates)
-    public recovery auth
-    {
+    uint128 _nPreviousUpdates
+  ) public recovery auth {
     replacementReputationUpdateLogsExist[_reputationMiningCycle] = true;
 
     replacementReputationUpdateLog[_reputationMiningCycle][_id] = ReputationLogEntry(
@@ -73,9 +71,10 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     );
   }
 
-  function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) public view returns
-    (ReputationLogEntry memory reputationLogEntry)
-    {
+  function getReplacementReputationUpdateLogEntry(
+    address _reputationMiningCycle,
+    uint256 _id
+  ) public view returns (ReputationLogEntry memory reputationLogEntry) {
     reputationLogEntry = replacementReputationUpdateLog[_reputationMiningCycle][_id];
   }
 
@@ -83,10 +82,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     return replacementReputationUpdateLogsExist[_reputationMiningCycle];
   }
 
-  function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers) public
-  stoppable
-  onlyReputationMiningCycle
-  {
+  function setReputationRootHash(bytes32 newHash, uint256 newNLeaves, address[] memory stakers) public stoppable onlyReputationMiningCycle {
     reputationRootHash = newHash;
     reputationRootHashNLeaves = newNLeaves;
     // Reward stakers
@@ -128,7 +124,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     emit ReputationMiningCycleComplete(reputationRootHash, reputationRootHashNLeaves);
   }
 
-  function getReputationMiningCycle(bool _active) public view returns(address) {
+  function getReputationMiningCycle(bool _active) public view returns (address) {
     if (_active) {
       return activeReputationMiningCycle;
     } else {
@@ -243,7 +239,12 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     ITokenLocking(tokenLocking).approveStake(msgSender(), _amount, clnyToken);
     ITokenLocking(tokenLocking).obligateStake(msgSender(), _amount, clnyToken);
 
-    miningStakes[msgSender()].timestamp = getNewTimestamp(miningStakes[msgSender()].amount, _amount, miningStakes[msgSender()].timestamp, block.timestamp);
+    miningStakes[msgSender()].timestamp = getNewTimestamp(
+      miningStakes[msgSender()].amount,
+      _amount,
+      miningStakes[msgSender()].timestamp,
+      block.timestamp
+    );
     miningStakes[msgSender()].amount += _amount;
   }
 
@@ -259,13 +260,15 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     return miningStakes[_user];
   }
 
-  function burnUnneededRewards(uint256 _amount) public stoppable onlyReputationMiningCycle() {
+  function burnUnneededRewards(uint256 _amount) public stoppable onlyReputationMiningCycle {
     // If there are no rewards to burn, no need to do anything
-    if (_amount == 0){ return; }
+    if (_amount == 0) {
+      return;
+    }
 
     address clnyToken = IMetaColony(metaColony).getToken();
     ITokenLocking(tokenLocking).withdraw(clnyToken, _amount, true);
-    if (isXdai()){
+    if (isXdai()) {
       // On Xdai, I'm burning bridged tokens is certainly not what we want.
       //   So let's send them to the metacolony for now.
       require(ERC20Extended(clnyToken).transfer(metaColony, _amount), "colony-network-transfer-failed");
@@ -284,7 +287,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     return totalMinerRewardPerCycle;
   }
 
-  uint256 constant UINT192_MAX = 2**192 - 1; // Used for updating the stake timestamp
+  uint256 constant UINT192_MAX = 2 ** 192 - 1; // Used for updating the stake timestamp
 
   function getNewTimestamp(uint256 _prevWeight, uint256 _currWeight, uint256 _prevTime, uint256 _currTime) internal pure returns (uint256) {
     uint256 prevWeight = _prevWeight;
@@ -301,10 +304,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
     // slither-disable-end divide-before-multiply
   }
 
-  function setMiningResolver(address _miningResolver) public
-  stoppable
-  auth
-  {
+  function setMiningResolver(address _miningResolver) public stoppable auth {
     require(_miningResolver != address(0x0), "colony-mining-resolver-cannot-be-zero");
 
     miningCycleResolver = _miningResolver;

@@ -18,19 +18,15 @@
 pragma solidity 0.8.21;
 
 interface IAvatar {
-  function execTransactionFromModule(
-    address to,
-    uint256 value,
-    bytes memory data,
-    uint8 operation
-  ) external returns (bool success);
+  function execTransactionFromModule(address to, uint256 value, bytes memory data, uint8 operation) external returns (bool success);
 }
 
 contract ZodiacBridgeModuleMock {
   event SafeTransactionExecuted(bool success);
 
   address avatar;
-  constructor (address _avatar) {
+
+  constructor(address _avatar) {
     avatar = _avatar;
   }
 

@@ -20,7 +20,6 @@ pragma experimental ABIEncoderV2;
 
 import "../extensions/ColonyExtensionMeta.sol";
 
-
 abstract contract TestExtension is ColonyExtensionMeta {
   function install(address _colony) public override auth {
     require(address(colony) == address(0x0), "extension-already-installed");
@@ -39,38 +38,63 @@ abstract contract TestExtension is ColonyExtensionMeta {
   }
 }
 
-
 contract TestExtension0 is TestExtension {
-  function identifier() public override pure returns (bytes32) { return keccak256("TestExtension"); }
-  function version() public override pure returns (uint256) { return 0; }
+  function identifier() public pure override returns (bytes32) {
+    return keccak256("TestExtension");
+  }
+
+  function version() public pure override returns (uint256) {
+    return 0;
+  }
 }
 
-
 contract TestExtension1 is TestExtension {
-  function identifier() public override pure returns (bytes32) { return keccak256("TestExtension"); }
-  function version() public pure override returns (uint256) { return 1; }
+  function identifier() public pure override returns (bytes32) {
+    return keccak256("TestExtension");
+  }
+
+  function version() public pure override returns (uint256) {
+    return 1;
+  }
+
   function receiveEther() external payable {} // solhint-disable-line no-empty-blocks
+
   function foo() public notDeprecated {} // solhint-disable-line no-empty-blocks
 }
 
-
 contract TestExtension2 is TestExtension {
-  function identifier() public override pure returns (bytes32) { return keccak256("TestExtension"); }
-  function version() public pure override returns (uint256) { return 2; }
+  function identifier() public pure override returns (bytes32) {
+    return keccak256("TestExtension");
+  }
+
+  function version() public pure override returns (uint256) {
+    return 2;
+  }
 }
 
-
 contract TestExtension3 is TestExtension {
-  function identifier() public override pure returns (bytes32) { return keccak256("TestExtension"); }
-  function version() public pure override returns (uint256) { return 3; }
+  function identifier() public pure override returns (bytes32) {
+    return keccak256("TestExtension");
+  }
+
+  function version() public pure override returns (uint256) {
+    return 3;
+  }
 }
 
 contract TestVotingToken is TestExtension {
-  function identifier() public pure override returns (bytes32) { return keccak256("VotingToken"); }
-  function version() public pure override returns (uint256) { return 1; }
+  function identifier() public pure override returns (bytes32) {
+    return keccak256("VotingToken");
+  }
+
+  function version() public pure override returns (uint256) {
+    return 1;
+  }
+
   function lockToken() public returns (uint256) {
     return colony.lockToken();
   }
+
   function unlockTokenForUser(address _user, uint256 _lockId) public {
     colony.unlockTokenForUser(_user, _lockId);
   }

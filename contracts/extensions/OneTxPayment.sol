@@ -23,7 +23,6 @@ import "./../common/BasicMetaTransaction.sol";
 
 // ignore-file-swc-108
 
-
 contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   event OneTxPaymentMade(address agent, uint256 fundamentalId, uint256 nPayouts);
 
@@ -35,23 +34,23 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   /// @notice Gets the next nonce for a meta-transaction
   /// @param userAddress The user's address
   /// @return nonce The nonce
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+  function getMetatransactionNonce(address userAddress) public view override returns (uint256 nonce) {
     return metatransactionNonces[userAddress];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
+  function incrementMetatransactionNonce(address user) internal override {
     metatransactionNonces[user]++;
   }
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("OneTxPayment");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
+  function version() public pure override returns (uint256 _version) {
     return 6;
   }
 
@@ -75,18 +74,13 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     selfdestruct(payable(address(colony)));
   }
 
-  bytes4 constant MAKE_PAYMENT_SIG = bytes4(keccak256(
-    "makePayment(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"
-  ));
+  bytes4 constant MAKE_PAYMENT_SIG =
+    bytes4(keccak256("makePayment(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"));
 
-  bytes4 constant MAKE_PAYMENT_DOMAIN_SIG = bytes4(keccak256(
-    "makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"
-  ));
+  bytes4 constant MAKE_PAYMENT_DOMAIN_SIG =
+    bytes4(keccak256("makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"));
 
-  bytes32 constant REQUIRED_ROLES = (
-    bytes32(uint256(1)) << uint8(FUNDING) |
-    bytes32(uint256(1)) << uint8(ADMINISTRATION)
-  );
+  bytes32 constant REQUIRED_ROLES = ((bytes32(uint256(1)) << uint8(FUNDING)) | (bytes32(uint256(1)) << uint8(ADMINISTRATION)));
 
   /// @notice Return the permissions required for each function
   /// @param _sig The function signature
@@ -120,14 +114,12 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     uint256[] memory _amounts,
     uint256 _domainId,
     uint256 _skillId
-  )
-    public
-  {
+  ) public {
     require(_workers.length == _tokens.length && _workers.length == _amounts.length, "one-tx-payment-invalid-input");
 
     require(
       colony.hasInheritedUserRole(msgSender(), 1, FUNDING, _childSkillIndex, _domainId) &&
-      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
+        colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
       "one-tx-payment-not-authorized"
     );
 
@@ -143,7 +135,6 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
 
       emit OneTxPaymentMade(msgSender(), paymentId, _workers.length);
     } else {
-
       uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
       uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
@@ -153,10 +144,9 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       uint256 slot;
 
       for (idx = 0; idx < _workers.length; idx++) {
-
-         // If a new worker, start a new slot
-        if (idx == 0 || _workers[idx] != _workers[idx-1]) {
-          require(idx == 0 || _workers[idx] > _workers[idx-1], "one-tx-payment-bad-worker-order");
+        // If a new worker, start a new slot
+        if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
+          require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
 
           slot++;
           colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
@@ -165,7 +155,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
             colony.setExpenditureSkill(expenditureId, slot, _skillId);
           }
         } else {
-          require(_tokens[idx] > _tokens[idx-1], "one-tx-payment-bad-token-order");
+          require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
         }
 
         colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
@@ -195,25 +185,30 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     uint256 _childSkillIndex,
     uint256 _callerPermissionDomainId,
     uint256 _callerChildSkillIndex,
-    address payable[] memory  _workers,
+    address payable[] memory _workers,
     address[] memory _tokens,
     uint256[] memory _amounts,
     uint256 _domainId,
     uint256 _skillId
-  )
-    public
-  {
+  ) public {
     require(_workers.length == _tokens.length && _workers.length == _amounts.length, "one-tx-payment-invalid-input");
 
     require(
       colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, FUNDING, _callerChildSkillIndex, _domainId) &&
-      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
+        colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
       "one-tx-payment-not-authorized"
     );
 
     if (_workers.length == 1) {
-
-      uint256 paymentId = colony.addPayment(_permissionDomainId, _childSkillIndex, _workers[0], _tokens[0], _amounts[0], _domainId, _skillId);
+      uint256 paymentId = colony.addPayment(
+        _permissionDomainId,
+        _childSkillIndex,
+        _workers[0],
+        _tokens[0],
+        _amounts[0],
+        _domainId,
+        _skillId
+      );
       uint256 fundingPotId = colony.getPayment(paymentId).fundingPotId;
       uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
 
@@ -225,7 +220,6 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
 
       emit OneTxPaymentMade(msgSender(), paymentId, _workers.length);
     } else {
-
       uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
       uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
       uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
@@ -236,10 +230,9 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       uint256 slot;
 
       for (idx = 0; idx < _workers.length; idx++) {
-
-         // If a new worker, start a new slot
-        if (idx == 0 || _workers[idx] != _workers[idx-1]) {
-          require(idx == 0 || _workers[idx] > _workers[idx-1], "one-tx-payment-bad-worker-order");
+        // If a new worker, start a new slot
+        if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
+          require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
 
           slot++;
           colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
@@ -248,7 +241,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
             colony.setExpenditureSkill(expenditureId, slot, _skillId);
           }
         } else {
-          require(_tokens[idx] > _tokens[idx-1], "one-tx-payment-bad-token-order");
+          require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
         }
 
         colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
@@ -263,17 +256,12 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   function calculateUniqueAmounts(
     address[] memory _tokens,
     uint256[] memory _amounts
-  )
-    internal
-    pure
-    returns (uint256, address[] memory, uint256[] memory)
-  {
+  ) internal pure returns (uint256, address[] memory, uint256[] memory) {
     uint256 uniqueTokensIdx;
     address[] memory uniqueTokens = new address[](_tokens.length);
     uint256[] memory uniqueAmounts = new uint256[](_tokens.length);
 
     for (uint256 i; i < _tokens.length; i++) {
-
       bool isMatch;
       uint256 j;
 
@@ -290,34 +278,16 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
         uniqueAmounts[uniqueTokensIdx] = _amounts[i];
         uniqueTokensIdx++;
       }
-
     }
 
     return (uniqueTokensIdx, uniqueTokens, uniqueAmounts);
   }
 
-  function prepareFunding(
-    uint256 _childSkillIndex,
-    uint256 _fundingPotId,
-    address[] memory _tokens,
-    uint256[] memory _amounts
-  ) internal {
-    (
-      uint256 uniqueTokensIdx,
-      address[] memory uniqueTokens,
-      uint256[] memory uniqueAmounts
-    ) = calculateUniqueAmounts(_tokens, _amounts);
+  function prepareFunding(uint256 _childSkillIndex, uint256 _fundingPotId, address[] memory _tokens, uint256[] memory _amounts) internal {
+    (uint256 uniqueTokensIdx, address[] memory uniqueTokens, uint256[] memory uniqueAmounts) = calculateUniqueAmounts(_tokens, _amounts);
 
     for (uint256 i; i < uniqueTokensIdx; i++) {
-      colony.moveFundsBetweenPots(
-        1,
-        UINT256_MAX,
-        _childSkillIndex,
-        1,
-        _fundingPotId,
-        uniqueAmounts[i],
-        uniqueTokens[i]
-      );
+      colony.moveFundsBetweenPots(1, UINT256_MAX, _childSkillIndex, 1, _fundingPotId, uniqueAmounts[i], uniqueTokens[i]);
     }
   }
 
@@ -329,11 +299,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     address[] memory _tokens,
     uint256[] memory _amounts
   ) internal {
-    (
-      uint256 uniqueTokensIdx,
-      address[] memory uniqueTokens,
-      uint256[] memory uniqueAmounts
-    ) = calculateUniqueAmounts(_tokens, _amounts);
+    (uint256 uniqueTokensIdx, address[] memory uniqueTokens, uint256[] memory uniqueAmounts) = calculateUniqueAmounts(_tokens, _amounts);
 
     for (uint256 i; i < uniqueTokensIdx; i++) {
       colony.moveFundsBetweenPots(
@@ -355,19 +321,17 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     uint256 _fundingPotId,
     uint256 _amount,
     address _token
-  )
-    internal
-  {
+  ) internal {
     colony.moveFundsBetweenPots(_permissionDomainId, _childSkillIndex, _childSkillIndex, _domainPotId, _fundingPotId, _amount, _token);
   }
 
-  function finalizeAndClaim(uint256 _expenditureId, address payable[] memory  _workers, address[] memory _tokens) internal {
+  function finalizeAndClaim(uint256 _expenditureId, address payable[] memory _workers, address[] memory _tokens) internal {
     colony.finalizeExpenditure(_expenditureId);
 
     uint256 slot;
 
     for (uint256 idx; idx < _workers.length; idx++) {
-      if (idx == 0 || _workers[idx] != _workers[idx-1]) {
+      if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
         slot++;
       }
       colony.claimExpenditurePayout(_expenditureId, slot, _tokens[idx]);

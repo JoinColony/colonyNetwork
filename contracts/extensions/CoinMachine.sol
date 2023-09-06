@@ -25,9 +25,7 @@ import "./Whitelist.sol";
 
 // ignore-file-swc-108
 
-
 contract CoinMachine is ColonyExtension, BasicMetaTransaction {
-
   // Events
 
   event TokensBought(address indexed buyer, address token, uint256 numTokens, uint256 totalCost);
@@ -67,14 +65,15 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   mapping(address => uint256) soldUser; // Tokens sold to a particular user
 
   mapping(address => uint256) metatransactionNonces;
+
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _userAddress The user's address
   /// @return _nonce The nonce
-  function getMetatransactionNonce(address _userAddress) override public view returns (uint256 _nonce){
+  function getMetatransactionNonce(address _userAddress) public view override returns (uint256 _nonce) {
     return metatransactionNonces[_userAddress];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
+  function incrementMetatransactionNonce(address user) internal override {
     metatransactionNonces[user]++;
   }
 
@@ -89,13 +88,13 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("CoinMachine");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
+  function version() public pure override returns (uint256 _version) {
     return 9;
   }
 
@@ -120,7 +119,9 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
 
-    if (_deprecated) { setPriceEvolution(false); }
+    if (_deprecated) {
+      setPriceEvolution(false);
+    }
   }
 
   /// @notice Called when uninstalling the extension
@@ -128,10 +129,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     if (token != address(0x0)) {
       uint256 tokenBalance = getTokenBalance();
       if (tokenBalance > 0) {
-        require(
-          ERC20(token).transfer(address(colony), tokenBalance),
-          "coin-machine-transfer-failed"
-        );
+        require(ERC20(token).transfer(address(colony), tokenBalance), "coin-machine-transfer-failed");
       }
     }
 
@@ -158,10 +156,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     uint256 _userLimitFraction,
     uint256 _startingPrice,
     address _whitelist
-  )
-    public
-    onlyRoot
-  {
+  ) public onlyRoot {
     require(activePeriod == 0, "coin-machine-already-initialised");
 
     require(_token != address(0x0), "coin-machine-invalid-token");
@@ -192,7 +187,9 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
     emaIntake = wmul(targetPerPeriod, _startingPrice);
 
-    if (_whitelist != address(0x0)) { setWhitelist(_whitelist); }
+    if (_whitelist != address(0x0)) {
+      setWhitelist(_whitelist);
+    }
 
     setPriceEvolution(getTokenBalance() > 0 && !deprecated);
 
@@ -212,17 +209,16 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   function buyTokens(uint256 _numTokens) public payable notDeprecated {
     updatePeriod();
 
-    require(
-      whitelist == address(0x0) || Whitelist(whitelist).isApproved(msgSender()),
-      "coin-machine-unauthorised"
-    );
+    require(whitelist == address(0x0) || Whitelist(whitelist).isApproved(msgSender()), "coin-machine-unauthorised");
 
     uint256 maxPurchase = getMaxPurchase(msgSender());
     uint256 numTokens = min(maxPurchase, _numTokens);
     uint256 totalCost = wmul(numTokens, activePrice);
 
     if (numTokens <= 0) {
-      if (msg.value > 0) { msgSender().transfer(msg.value); } // Refund any balance
+      if (msg.value > 0) {
+        msgSender().transfer(msg.value);
+      } // Refund any balance
       return;
     }
 
@@ -238,11 +234,15 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     }
 
     // Check if we've sold out
-    if (numTokens >= getTokenBalance()) { setPriceEvolution(false); }
+    if (numTokens >= getTokenBalance()) {
+      setPriceEvolution(false);
+    }
 
     if (purchaseToken == address(0x0)) {
       require(msg.value >= totalCost, "coin-machine-insufficient-funds");
-      if (msg.value > totalCost) { msgSender().transfer(msg.value - totalCost); } // Refund any balance
+      if (msg.value > totalCost) {
+        msgSender().transfer(msg.value - totalCost);
+      } // Refund any balance
       payable(address(colony)).transfer(totalCost);
     } else {
       require(ERC20(purchaseToken).transferFrom(msgSender(), address(colony), totalCost), "coin-machine-purchase-failed");
@@ -270,7 +270,6 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       // Are we still sold out?
       setPriceEvolution(getTokenBalance() > 0 && !deprecated);
     }
-
 
     // We need to update the price if the active period is not the current one.
     if (activePeriod < currentPeriod) {
@@ -368,7 +367,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     if (activePeriod >= currentPeriod || !evolvePrice) {
       return activePrice;
 
-    // Otherwise, infer the new price
+      // Otherwise, infer the new price
     } else {
       uint256 newIntake = emaIntake;
 
@@ -396,10 +395,9 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @return _max Maximum amount of tokens
   function getUserLimit(address _user) public view returns (uint256 _max) {
     return
-      (userLimitFraction == WAD || whitelist == address(0x0)) ?
-      UINT256_MAX :
-      wmul(getTokenBalance() + soldTotal, userLimitFraction) - soldUser[_user]
-    ;
+      (userLimitFraction == WAD || whitelist == address(0x0))
+        ? UINT256_MAX
+        : wmul(getTokenBalance() + soldTotal, userLimitFraction) - soldUser[_user];
   }
 
   /// @notice Get the maximum amount of tokens a user can purchase in a period

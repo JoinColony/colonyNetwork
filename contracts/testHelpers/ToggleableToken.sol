@@ -6,74 +6,69 @@ import "./../../lib/dappsys/erc20.sol";
 import "./../../lib/dappsys/math.sol";
 
 contract ToggleableToken is DSMath, ERC20Events {
-    uint256                                            _supply;
-    mapping (address => uint256)                       _balances;
-    mapping (address => mapping (address => uint256))  _approvals;
-    bool locked = false;
-    event Mint(address indexed guy, uint wad);
+  uint256 _supply;
+  mapping(address => uint256) _balances;
+  mapping(address => mapping(address => uint256)) _approvals;
+  bool locked = false;
+  event Mint(address indexed guy, uint wad);
 
+  constructor(uint supply) {
+    _balances[msg.sender] = supply;
+    _supply = supply;
+  }
 
-    constructor(uint supply) {
-        _balances[msg.sender] = supply;
-        _supply = supply;
+  function totalSupply() public view returns (uint) {
+    return _supply;
+  }
+
+  function balanceOf(address src) public view returns (uint) {
+    return _balances[src];
+  }
+
+  function toggleLock() public {
+    locked = !locked;
+  }
+
+  function transfer(address dst, uint wad) public returns (bool) {
+    if (locked) {
+      return false;
+    }
+    return transferFrom(msg.sender, dst, wad);
+  }
+
+  function transferFrom(address src, address dst, uint wad) public returns (bool) {
+    if (locked) {
+      return false;
     }
 
-    function totalSupply() public view returns (uint) {
-        return _supply;
-    }
-    function balanceOf(address src) public view returns (uint) {
-        return _balances[src];
+    if (src != msg.sender) {
+      require(_approvals[src][msg.sender] >= wad, "ds-token-insufficient-approval");
+      _approvals[src][msg.sender] -= wad;
     }
 
-    function toggleLock() public {
-        locked = !locked;
-    }
+    require(_balances[src] >= wad, "ds-token-insufficient-balance");
+    _balances[src] -= wad;
+    _balances[dst] += wad;
 
-    function transfer(address dst, uint wad) public returns (bool) {
-        if (locked){
-            return false;
-        }
-        return transferFrom(msg.sender, dst, wad);
-    }
+    emit Transfer(src, dst, wad);
 
-    function transferFrom(address src, address dst, uint wad)
-        public
-        returns (bool)
-    {
-    	if (locked){
-            return false;
-        }
+    return true;
+  }
 
-        if (src != msg.sender) {
-            require(_approvals[src][msg.sender] >= wad, "ds-token-insufficient-approval");
-            _approvals[src][msg.sender] -= wad;
-        }
+  function approve(address guy, uint wad) public returns (bool) {
+    _approvals[msg.sender][guy] = wad;
 
-        require(_balances[src] >= wad, "ds-token-insufficient-balance");
-        _balances[src] -= wad;
-        _balances[dst] += wad;
+    emit Approval(msg.sender, guy, wad);
 
-        emit Transfer(src, dst, wad);
+    return true;
+  }
 
-        return true;
-    }
+  function mint(address guy, uint wad) public {
+    _balances[guy] += wad;
+    _supply += wad;
+    emit Mint(guy, wad);
+    emit Transfer(address(0x0), guy, wad);
+  }
 
-    function approve(address guy, uint wad) public returns (bool) {
-        _approvals[msg.sender][guy] = wad;
-
-        emit Approval(msg.sender, guy, wad);
-
-        return true;
-    }
-
-    function mint(address guy, uint wad) public {
-       	_balances[guy] += wad;
-        _supply += wad;
-        emit Mint(guy, wad);
-        emit Transfer(address(0x0), guy, wad);
-    }
-
-    function setAuthority(address authority) public {
-
-    }
+  function setAuthority(address authority) public {}
 }

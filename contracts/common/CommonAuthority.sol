@@ -20,7 +20,6 @@ pragma solidity 0.8.21;
 import "./../colony/ColonyDataTypes.sol";
 import "./DomainRoles.sol";
 
-
 contract CommonAuthority is DomainRoles {
   uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
 

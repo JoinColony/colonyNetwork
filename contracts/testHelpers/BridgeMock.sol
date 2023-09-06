@@ -17,12 +17,14 @@
 
 pragma solidity 0.8.21;
 
-
 contract BridgeMock {
   event UserRequestForSignature(bytes32 indexed messageId, bytes encodedData);
 
   function requireToPassMessage(address _target, bytes memory _data, uint256 _gasLimit) public {
-    emit UserRequestForSignature(keccak256(abi.encodePacked(_target,_data,block.timestamp)), abi.encode(_target, _data, _gasLimit, msg.sender));
+    emit UserRequestForSignature(
+      keccak256(abi.encodePacked(_target, _data, block.timestamp)),
+      abi.encode(_target, _data, _gasLimit, msg.sender)
+    );
   }
 
   event RelayedMessage(address sender, address executor, bytes32 messageId, bool status);
@@ -30,15 +32,14 @@ contract BridgeMock {
   function execute(address _target, bytes memory _data, uint256 _gasLimit, bytes32 _messageId, address _sender) public {
     bool success;
     assembly {
-              // call contract at address a with input mem[in…(in+insize))
-              //   providing g gas and v wei and output area mem[out…(out+outsize))
-              //   returning 0 on error (eg. out of gas) and 1 on success
+      // call contract at address a with input mem[in…(in+insize))
+      //   providing g gas and v wei and output area mem[out…(out+outsize))
+      //   returning 0 on error (eg. out of gas) and 1 on success
 
-              // call(g,     a,  v,     in,              insize,      out, outsize)
+      // call(g,     a,  v,     in,              insize,      out, outsize)
       success := call(_gasLimit, _target, 0, add(_data, 0x20), mload(_data), 0, 0)
     }
 
     emit RelayedMessage(_sender, msg.sender, _messageId, success);
   }
-
 }

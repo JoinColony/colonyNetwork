@@ -1,13 +1,14 @@
 pragma solidity 0.8.21;
 
-
 contract Migrations {
   address public immutable owner;
 
   uint public last_completed_migration;
 
   modifier restricted() {
-    if (msg.sender == owner) { _; }
+    if (msg.sender == owner) {
+      _;
+    }
   }
 
   constructor() {

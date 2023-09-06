@@ -26,10 +26,9 @@ import "./../ColonyExtension.sol";
 import "./VotingReputationDataTypes.sol";
 
 contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, VotingReputationDataTypes {
-
   // Constants
 
-  uint256 constant UINT128_MAX = 2**128 - 1;
+  uint256 constant UINT128_MAX = 2 ** 128 - 1;
 
   uint256 constant NAY = 0;
   uint256 constant YAY = 1;
@@ -40,22 +39,15 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
   uint256 constant LOCK_DELAY = 10 * 365 days;
 
-  bytes32 constant ROOT_ROLES = (
-    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Recovery) |
-    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
-  );
+  bytes32 constant ROOT_ROLES = ((bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Recovery)) |
+    (bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)));
 
   bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
   bytes4 constant NO_ACTION = 0x12345678;
-  bytes4 constant OLD_MOVE_FUNDS = bytes4(keccak256(
-    "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"
-  ));
-  bytes4 constant SET_EXPENDITURE_STATE = bytes4(keccak256(
-    "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"
-  ));
-  bytes4 constant SET_EXPENDITURE_PAYOUT = bytes4(keccak256(
-    "setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"
-  ));
+  bytes4 constant OLD_MOVE_FUNDS = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"));
+  bytes4 constant SET_EXPENDITURE_STATE =
+    bytes4(keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"));
+  bytes4 constant SET_EXPENDITURE_PAYOUT = bytes4(keccak256("setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"));
 
   // Initialization data
   ExtensionState state;
@@ -86,28 +78,28 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
   uint256 escalationPeriod; // Length of time for escalating after a vote
 
   uint256 motionCount;
-  mapping (uint256 => Motion) motions;
-  mapping (uint256 => mapping (address => mapping (uint256 => uint256))) stakes;
-  mapping (uint256 => mapping (address => bytes32)) voteSecrets;
+  mapping(uint256 => Motion) motions;
+  mapping(uint256 => mapping(address => mapping(uint256 => uint256))) stakes;
+  mapping(uint256 => mapping(address => bytes32)) voteSecrets;
 
-  mapping (bytes32 => uint256) expenditurePastVotes_DEPRECATED; // expenditure slot signature => voting power
-  mapping (bytes32 => uint256) expenditureMotionCounts_DEPRECATED; // expenditure struct signature => count
+  mapping(bytes32 => uint256) expenditurePastVotes_DEPRECATED; // expenditure slot signature => voting power
+  mapping(bytes32 => uint256) expenditureMotionCounts_DEPRECATED; // expenditure struct signature => count
 
   mapping(address => uint256) metatransactionNonces;
 
-  mapping (uint256 => uint256) expenditurePastVotes; // expenditureId => voting power
-  mapping (uint256 => uint256) expenditureMotionLocks; // expenditureId => active motionId
+  mapping(uint256 => uint256) expenditurePastVotes; // expenditureId => voting power
+  mapping(uint256 => uint256) expenditureMotionLocks; // expenditureId => active motionId
 
   uint256 motionCountV10; // Motion count during the v9 -> v10 upgrade
 
-  function getMetatransactionNonce(address _userAddress) override public view returns (uint256 _nonce){
+  function getMetatransactionNonce(address _userAddress) public view override returns (uint256 _nonce) {
     // This offset is a result of fixing the storage layout, and having to prevent metatransactions being able to be replayed as a result
     // of the nonce resetting. The broadcaster has made ~3000 transactions in total at time of commit, so we definitely won't have a single
     // account at 1 million nonce by then.
     return metatransactionNonces[_userAddress] + 1000000;
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
+  function incrementMetatransactionNonce(address user) internal override {
     metatransactionNonces[user]++;
   }
 
@@ -120,7 +112,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
   // Extension Interface
 
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("VotingReputation");
   }
 
@@ -159,45 +151,35 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
     // Check for valid motion Id / motion
     if (_motionId == 0 || _motionId > motionCount || motion.action.length == 0) {
-
       return MotionState.Null;
 
-    // If finalized, we're done
+      // If finalized, we're done
     } else if (motion.finalized) {
-
       return MotionState.Finalized;
 
-    // Not fully staked
-    } else if (
-      motion.stakes[YAY] < requiredStake ||
-      motion.stakes[NAY] < requiredStake
-    ) {
-
+      // Not fully staked
+    } else if (motion.stakes[YAY] < requiredStake || motion.stakes[NAY] < requiredStake) {
       // Are we still staking?
       if (block.timestamp < motion.events[STAKE_END]) {
         return MotionState.Staking;
-      // If not, did the YAY side stake?
+        // If not, did the YAY side stake?
       } else if (motion.stakes[YAY] == requiredStake) {
         return finalizableOrFinalized(_motionId);
-      // If not, was there a prior vote we can fall back on?
+        // If not, was there a prior vote we can fall back on?
       } else if (motion.votes[NAY] + motion.votes[YAY] > 0) {
         return finalizableOrFinalized(_motionId);
-      // Otherwise, the motion failed
+        // Otherwise, the motion failed
       } else {
         return MotionState.Failed;
       }
 
-    // Fully staked, go to a vote
+      // Fully staked, go to a vote
     } else {
-
       if (block.timestamp < motion.events[SUBMIT_END]) {
         return MotionState.Submit;
       } else if (block.timestamp < motion.events[REVEAL_END]) {
         return MotionState.Reveal;
-      } else if (
-        block.timestamp < motion.events[REVEAL_END] + escalationPeriod &&
-        motion.domainId > 1
-      ) {
+      } else if (block.timestamp < motion.events[REVEAL_END] + escalationPeriod && motion.domainId > 1) {
         return MotionState.Closed;
       } else {
         return finalizableOrFinalized(_motionId);
@@ -254,7 +236,8 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
     if (getSig(_action) == MULTICALL) {
       actions = abi.decode(extractCalldata(_action), (bytes[]));
     } else {
-      actions = new bytes[](1); actions[0] = _action;
+      actions = new bytes[](1);
+      actions[0] = _action;
     }
 
     ActionSummary memory summary;
@@ -266,8 +249,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
       if (sig == NO_ACTION || sig == OLD_MOVE_FUNDS) {
         // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS, the entire multicall is such and we break
-        return ActionSummary({ sig: sig, domainSkillId: 0, expenditureId: 0 });
-
+        return ActionSummary({sig: sig, domainSkillId: 0, expenditureId: 0});
       } else if (isExpenditureSig(sig)) {
         // If it is an expenditure action, we record the expenditure and domain ids,
         //  and ensure they are consistent throughout the multicall.
@@ -278,18 +260,17 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
         if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
           // Invalid multicall, caller should handle appropriately
-          return ActionSummary({ sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0 });
+          return ActionSummary({sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0});
         } else {
           summary.domainSkillId = domainSkillId;
         }
 
         if (summary.expenditureId > 0 && summary.expenditureId != expenditureId) {
           // Invalid multicall, caller should handle appropriately
-          return ActionSummary({ sig: bytes4(0x0), domainSkillId: 0, expenditureId: type(uint256).max });
+          return ActionSummary({sig: bytes4(0x0), domainSkillId: 0, expenditureId: type(uint256).max});
         } else {
           summary.expenditureId = expenditureId;
         }
-
       } else {
         // Otherwise we record the domain id and ensure it is consistent throughout the multicall
         // If no expenditure signatures have been seen, we record the latest signature
@@ -302,7 +283,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
         if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
           // Invalid multicall, caller should handle appropriately
-          return ActionSummary({ sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0 });
+          return ActionSummary({sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0});
         } else {
           summary.domainSkillId = domainSkillId;
         }
@@ -355,39 +336,43 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
   // From https://ethereum.stackexchange.com/questions/131283/how-do-i-decode-call-data-in-solidity
   function extractCalldata(bytes memory calldataWithSelector) internal pure returns (bytes memory calldataWithoutSelector) {
-      // For an empty bytes array i.e. the smallest amount of data we're expecting,
-      // we would expect 68 bytes
-      require(calldataWithSelector.length >= 68, "voting-rep-invalid-calldata");
-      // We expect the 4-byte function selector, and then some multiple of 32 bytes
-      require((calldataWithSelector.length - 4) % 32 == 0, "voting-rep-invalid-calldata");
+    // For an empty bytes array i.e. the smallest amount of data we're expecting,
+    // we would expect 68 bytes
+    require(calldataWithSelector.length >= 68, "voting-rep-invalid-calldata");
+    // We expect the 4-byte function selector, and then some multiple of 32 bytes
+    require((calldataWithSelector.length - 4) % 32 == 0, "voting-rep-invalid-calldata");
 
-      assembly {
-          let totalLength := mload(calldataWithSelector)
-          let targetLength := sub(totalLength, 4)
-          calldataWithoutSelector := mload(0x40)
+    assembly {
+      let totalLength := mload(calldataWithSelector)
+      let targetLength := sub(totalLength, 4)
+      calldataWithoutSelector := mload(0x40)
 
-          // Set the length of callDataWithoutSelector (initial length - 4)
-          mstore(calldataWithoutSelector, targetLength)
-          // Mark the memory space taken for callDataWithoutSelector as allocated
-          mstore(0x40, add(calldataWithoutSelector, add(0x20, targetLength)))
-          // Process first 32 bytes (we only take the last 28 bytes)
-          mstore(add(calldataWithoutSelector, 0x20), shl(0x20, mload(add(calldataWithSelector, 0x20))))
-          // Process all other data by chunks of 32 bytes
-          for { let i := 0x1C } lt(i, targetLength) { i := add(i, 0x20) } {
-              mstore(add(add(calldataWithoutSelector, 0x20), i), mload(add(add(calldataWithSelector, 0x20), add(i, 0x04))))
-          }
+      // Set the length of callDataWithoutSelector (initial length - 4)
+      mstore(calldataWithoutSelector, targetLength)
+      // Mark the memory space taken for callDataWithoutSelector as allocated
+      mstore(0x40, add(calldataWithoutSelector, add(0x20, targetLength)))
+      // Process first 32 bytes (we only take the last 28 bytes)
+      mstore(add(calldataWithoutSelector, 0x20), shl(0x20, mload(add(calldataWithSelector, 0x20))))
+      // Process all other data by chunks of 32 bytes
+      for {
+        let i := 0x1C
+      } lt(i, targetLength) {
+        i := add(i, 0x20)
+      } {
+        mstore(add(add(calldataWithoutSelector, 0x20), i), mload(add(add(calldataWithSelector, 0x20), add(i, 0x04))))
       }
+    }
   }
 
   function executeCall(uint256 motionId, bytes memory action) internal returns (bool success) {
     address to = getTarget(motions[motionId].altTarget);
 
     assembly {
-              // call contract at address a with input mem[in…(in+insize))
-              //   providing g gas and v wei and output area mem[out…(out+outsize))
-              //   returning 0 on error (eg. out of gas) and 1 on success
+      // call contract at address a with input mem[in…(in+insize))
+      //   providing g gas and v wei and output area mem[out…(out+outsize))
+      //   returning 0 on error (eg. out of gas) and 1 on success
 
-              // call(g,   a,  v, in,                insize,        out, outsize)
+      // call(g,   a,  v, in,                insize,        out, outsize)
       success := call(gas(), to, 0, add(action, 0x20), mload(action), 0, 0)
     }
   }
@@ -424,9 +409,9 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
       mstore(add(expenditureAction, 0x24), permissionDomainId)
       mstore(add(expenditureAction, 0x44), childSkillIndex)
       mstore(add(expenditureAction, 0x64), expenditureId)
-      mstore(add(expenditureAction, 0x84), 25)      // expenditure storage slot
-      mstore(add(expenditureAction, 0xa4), 0xe0)    // mask location
-      mstore(add(expenditureAction, 0xc4), 0x120)   // keys location
+      mstore(add(expenditureAction, 0x84), 25) // expenditure storage slot
+      mstore(add(expenditureAction, 0xa4), 0xe0) // mask location
+      mstore(add(expenditureAction, 0xc4), 0x120) // keys location
       mstore(add(expenditureAction, 0xe4), value)
       mstore(add(expenditureAction, 0x104), 1)      // mask length
       mstore(add(expenditureAction, 0x124), 1)      // offset
@@ -481,10 +466,7 @@ contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, Votin
 
 
   // Kept for backwards-compatibility with v9, since a slot may have been locked
-  function createClaimDelayAction(bytes memory action, uint256 value)
-    internal pure
-    returns (bytes memory)
-  {
+  function createClaimDelayAction(bytes memory action, uint256 value) internal pure returns (bytes memory) {
     // See https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
     //  for documentation on how the action `bytes` is encoded
     // In brief, the first byte32 is the length of the array. Then we have

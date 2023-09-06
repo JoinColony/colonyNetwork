@@ -17,7 +17,6 @@
 
 pragma solidity 0.8.21;
 
-
 interface ColonyDataTypes {
   // Events
 
@@ -396,7 +395,12 @@ interface ColonyDataTypes {
     uint256[] skills;
   }
 
-  enum ExpenditureStatus { Draft, Cancelled, Finalized, Locked }
+  enum ExpenditureStatus {
+    Draft,
+    Cancelled,
+    Finalized,
+    Locked
+  }
 
   struct Payment {
     address payable recipient;
@@ -415,20 +419,41 @@ interface ColonyDataTypes {
     uint256 completionTimestamp;
     uint256 domainId;
     uint256[] skills;
-
-    mapping (uint8 => Role) roles;
+    mapping(uint8 => Role) roles;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
-    mapping (uint8 => mapping (address => uint256)) payouts;
+    mapping(uint8 => mapping(address => uint256)) payouts;
   }
 
-  enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }
+  enum TaskRatings {
+    None,
+    Unsatisfactory,
+    Satisfactory,
+    Excellent
+  }
 
-  enum TaskRole { Manager, Evaluator, Worker }
+  enum TaskRole {
+    Manager,
+    Evaluator,
+    Worker
+  }
 
-  enum TaskStatus { Active, Cancelled, Finalized }
+  enum TaskStatus {
+    Active,
+    Cancelled,
+    Finalized
+  }
 
   // Any new roles added should be added before NUMBER_OF_ROLES, which should always be the last entry in this enum
-  enum ColonyRole { Recovery, Root, Arbitration, Architecture, ArchitectureSubdomain_DEPRECATED, Funding, Administration, NUMBER_OF_ROLES }
+  enum ColonyRole {
+    Recovery,
+    Root,
+    Arbitration,
+    Architecture,
+    ArchitectureSubdomain_DEPRECATED,
+    Funding,
+    Administration,
+    NUMBER_OF_ROLES
+  }
 
   struct Role {
     // Address of the user for the given role
@@ -442,21 +467,27 @@ interface ColonyDataTypes {
   struct RatingSecrets {
     uint256 count;
     uint256 timestamp;
-    mapping (uint8 => bytes32) secret;
+    mapping(uint8 => bytes32) secret;
   }
 
   // We do have 1 "special" funding pot with id 0 for rewards which will carry the "Unassigned" type.
   // as they are unrelated to other entities in the Colony the same way the remaining funding pots are releated to domains, tasks and payouts.
-  enum FundingPotAssociatedType { Unassigned, Domain, Task, Payment, Expenditure }
+  enum FundingPotAssociatedType {
+    Unassigned,
+    Domain,
+    Task,
+    Payment,
+    Expenditure
+  }
 
   struct FundingPot {
     // Funding pots can store multiple token balances, for ETH use 0x0 address
-    mapping (address => uint256) balance;
+    mapping(address => uint256) balance;
     // Funding pots can be associated with different fundable entities, for now these are: tasks, domains and payments.
     FundingPotAssociatedType associatedType;
     uint256 associatedTypeId;
     // Map any assigned payouts from this pot, note that in Tasks these are broken down to a more granular level on a per role basis
-    mapping (address => uint256) payouts;
+    mapping(address => uint256) payouts;
     uint256 payoutsWeCannotMake;
   }
 

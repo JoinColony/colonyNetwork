@@ -22,10 +22,7 @@ import "./../common/MultiChain.sol";
 import "./../common/BasicMetaTransaction.sol";
 
 contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
-  function startTokenAuction(address _token) public
-  stoppable
-  auth
-  {
+  function startTokenAuction(address _token) public stoppable auth {
     require(_token != address(0x0), "colony-auction-invalid-token");
 
     uint lastAuctionTimestamp = recentAuctions[_token];
@@ -36,10 +33,10 @@ contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
 
     uint availableTokens = ERC20Extended(_token).balanceOf(address(this));
 
-    if (_token==clny) {
+    if (_token == clny) {
       // We don't auction CLNY. We just burn it instead.
       // Note we can do this more often than every 30 days.
-      if (isXdai()){
+      if (isXdai()) {
         // On Xdai, we can't burn bridged tokens
         // so let's send them to the metacolony for now.
         require(ERC20Extended(clny).transfer(metaColony, availableTokens), "colony-network-transfer-failed");
@@ -58,7 +55,6 @@ contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
     emit AuctionCreated(address(auction), _token, availableTokens);
   }
 }
-
 
 contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   address payable public immutable colonyNetwork;
@@ -84,16 +80,16 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   bool public finalized;
   mapping(address => uint256) metatransactionNonces;
 
-  mapping (address => uint256) public bids;
+  mapping(address => uint256) public bids;
 
-  modifier auctionNotStarted {
+  modifier auctionNotStarted() {
     // slither-disable-next-line incorrect-equality
     require(startTime == 0, "colony-auction-already-started");
     require(!started, "colony-auction-already-started");
     _;
   }
 
-  modifier auctionStartedAndOpen {
+  modifier auctionStartedAndOpen() {
     require(started, "colony-auction-not-started");
     require(startTime > 0, "colony-auction-not-started");
     // slither-disable-next-line incorrect-equality
@@ -101,7 +97,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     _;
   }
 
-  modifier auctionClosed {
+  modifier auctionClosed() {
     require(endTime > 0, "colony-auction-not-closed");
     _;
   }
@@ -111,12 +107,12 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     _;
   }
 
-  modifier auctionFinalized {
+  modifier auctionFinalized() {
     require(finalized, "colony-auction-not-finalized");
     _;
   }
 
-  modifier allBidsClaimed  {
+  modifier allBidsClaimed() {
     require(claimCount == bidCount, "colony-auction-not-all-bids-claimed");
     _;
   }
@@ -135,17 +131,15 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     token = ERC20Extended(_token);
   }
 
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
+  function getMetatransactionNonce(address userAddress) public view override returns (uint256 nonce) {
     return metatransactionNonces[userAddress];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
+  function incrementMetatransactionNonce(address user) internal override {
     metatransactionNonces[user] += 1;
   }
 
-  function start() public
-  auctionNotStarted
-  {
+  function start() public auctionNotStarted {
     quantity = token.balanceOf(address(this));
     assert(quantity > 0);
 
@@ -158,10 +152,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     emit AuctionStarted(address(token), quantity, minPrice);
   }
 
-  function remainingToEndAuction() public view
-  auctionStartedAndOpen
-  returns (uint256)
-  {
+  function remainingToEndAuction() public view auctionStartedAndOpen returns (uint256) {
     // Total amount to end the auction at the current price
     uint totalToEndAuctionAtCurrentPrice;
     // For low quantity auctions, there are cases where q * p < 1e18 once price has decreased sufficiently
@@ -169,7 +160,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     if (quantity < TOKEN_MULTIPLIER && price() == minPrice) {
       totalToEndAuctionAtCurrentPrice = 1;
     } else {
-      totalToEndAuctionAtCurrentPrice = quantity * price() / TOKEN_MULTIPLIER;
+      totalToEndAuctionAtCurrentPrice = (quantity * price()) / TOKEN_MULTIPLIER;
     }
 
     uint _remainingToEndAuction = 0;
@@ -182,10 +173,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
 
   // Get the price in CLNY per 10**18 Tokens (min 1 max 1e36)
   // Starting price is 10**36, after 1 day price is 10**35, after 2 days price is 10**34 and so on
-  function price() public view
-  auctionStartedAndOpen
-  returns (uint256)
-  {
+  function price() public view auctionStartedAndOpen returns (uint256) {
     uint duration = block.timestamp - startTime;
     uint daysOpen = duration / 86400;
     if (daysOpen > 36) {
@@ -196,14 +184,12 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     //slither-disable-next-line weak-prng
     uint r = duration % 86400;
 
-    uint x = 10**(36 - daysOpen) * (864000 - 9 * r) / 864000;
+    uint x = (10 ** (36 - daysOpen) * (864000 - 9 * r)) / 864000;
     uint p = x < minPrice ? minPrice : x;
     return p;
   }
 
-  function bid(uint256 _amount) public
-  auctionStartedAndOpen
-  {
+  function bid(uint256 _amount) public auctionStartedAndOpen {
     // Adjust the amount for final bid in case that takes us over the offered quantity at current price
     require(_amount > 0, "colony-auction-invalid-bid");
     uint _remainingToEndAuction = remainingToEndAuction();
@@ -234,10 +220,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   }
 
   // Finalize the auction and set the final Token price
-  function finalize() public
-  auctionClosed
-  auctionNotFinalized
-  {
+  function finalize() public auctionClosed auctionNotFinalized {
     finalPrice = (receivedTotal * TOKEN_MULTIPLIER) / quantity;
     finalPrice = finalPrice <= minPrice ? minPrice : finalPrice;
     assert(finalPrice != 0);
@@ -245,7 +228,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     finalized = true;
 
     // Burn all CLNY received
-    if (isXdai()){
+    if (isXdai()) {
       // On Xdai, we can't burn bridged tokens
       // so let's send them to the metacolony for now.
       require(clnyToken.transfer(metaColonyAddress, receivedTotal), "colony-network-transfer-failed");
@@ -255,10 +238,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     emit AuctionFinalized(finalPrice);
   }
 
-  function claim(address recipient) public
-  auctionFinalized
-  returns (bool)
-  {
+  function claim(address recipient) public auctionFinalized returns (bool) {
     uint amount = bids[recipient];
     require(amount > 0, "colony-auction-zero-bid-total");
 
@@ -288,10 +268,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   }
 
   // slither-disable-next-line suicidal
-  function destruct() public
-  auctionFinalized
-  allBidsClaimed
-  {
+  function destruct() public auctionFinalized allBidsClaimed {
     // Transfer token remainder to the network
     uint auctionTokenBalance = token.balanceOf(address(this));
     assert(token.transfer(colonyNetwork, auctionTokenBalance));

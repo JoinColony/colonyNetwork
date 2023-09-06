@@ -25,13 +25,8 @@ import "./ColonyNetworkStorage.sol";
 import "./IColonyNetwork.sol";
 import "./../metaTxToken/MetaTxToken.sol";
 
-
 contract ColonyNetworkDeployer is ColonyNetworkStorage {
-
-  function createMetaColony(address _tokenAddress) public
-  stoppable
-  auth
-  {
+  function createMetaColony(address _tokenAddress) public stoppable auth {
     require(metaColony == address(0x0), "colony-meta-colony-exists-already");
 
     metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
@@ -43,10 +38,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
   }
 
   /// @notice @deprecated only deploys version 3 colonies.
-  function createColony(address _tokenAddress) public
-  stoppable
-  returns (address)
-  {
+  function createColony(address _tokenAddress) public stoppable returns (address) {
     return createColony(_tokenAddress, 3, "", "");
   }
 
@@ -57,17 +49,11 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     string memory _colonyName,
     string memory _orbitdb, // solhint-disable-line no-unused-vars
     bool _useExtensionManager // solhint-disable-line no-unused-vars
-  ) public stoppable returns (address)
-  {
+  ) public stoppable returns (address) {
     return createColony(_tokenAddress, 4, _colonyName, "");
   }
 
-  function createColony(
-    address _tokenAddress,
-    uint256 _version,
-    string memory _colonyName
-  ) public stoppable returns (address)
-  {
+  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName) public stoppable returns (address) {
     return createColony(_tokenAddress, _version, _colonyName, "");
   }
 
@@ -76,8 +62,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     uint256 _version,
     string memory _colonyName,
     string memory _metadata
-  ) public stoppable returns (address)
-  {
+  ) public stoppable returns (address) {
     uint256 version = (_version == 0) ? currentColonyVersion : _version;
     address colonyAddress = deployColony(_tokenAddress, version);
 
@@ -102,13 +87,10 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     uint256 _version,
     string memory _colonyName,
     string memory _metadata
-  )
-  public stoppable
-  returns (address token, address colony)
-  {
+  ) public stoppable returns (address token, address colony) {
     // Create Token
     MetaTxToken token;
-    if (_tokenAddress == address(0x0)){
+    if (_tokenAddress == address(0x0)) {
       token = MetaTxToken(IColonyNetwork(address(this)).deployTokenViaNetwork(_name, _symbol, _decimals));
       emit TokenDeployed(address(token));
     } else {
@@ -119,7 +101,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     address colonyAddress = createColony(address(token), _version, _colonyName, _metadata);
 
     // Extra token bookkeeping if we deployed it
-    if (_tokenAddress == address(0x0)){
+    if (_tokenAddress == address(0x0)) {
       // Deploy Authority
       address[] memory allowedToTransfer;
       address tokenAuthorityAddress = IColonyNetwork(address(this)).deployTokenAuthority(address(token), colonyAddress, allowedToTransfer);

@@ -3,9 +3,7 @@ pragma experimental "ABIEncoderV2";
 
 import {Data} from "./Data.sol";
 
-
 interface IPatriciaTreeBase {
-
   /// @notice Get the root hash
   /// @dev This value is a keccak256 hash of the rootEdge: `keccak256(Edge.node, Edge.label.length, Edge.label.data)`
   /// @return rootHash The `bytes32` hash value

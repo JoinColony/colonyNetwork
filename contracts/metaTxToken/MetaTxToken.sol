@@ -37,20 +37,20 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
   event Mint(address indexed guy, uint256 wad);
   event Burn(address indexed guy, uint256 wad);
 
-  function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 
   // EIP2612 function signature
-  function nonces(address _user) external view returns (uint256 nonce){
+  function nonces(address _user) external view returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address _user) override internal {
+  function incrementMetatransactionNonce(address _user) internal override {
     metatransactionNonces[_user]++;
   }
 
-  modifier unlocked {
+  modifier unlocked() {
     if (locked) {
       require(isAuthorized(msgSender(), msg.sig), "colony-token-unauthorised");
     }
@@ -65,24 +65,21 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
 
     uint256 chainId;
     assembly {
-        chainId := chainid()
+      chainId := chainid()
     }
 
     DOMAIN_SEPARATOR = keccak256(
-        abi.encode(
-            keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-            keccak256(bytes(name)),
-            keccak256(bytes("1")),
-            chainId,
-            address(this)
-        )
+      abi.encode(
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+        keccak256(bytes(name)),
+        keccak256(bytes("1")),
+        chainId,
+        address(this)
+      )
     );
   }
 
-  function transferFrom(address src, address dst, uint256 wad) public
-  unlocked override
-  returns (bool)
-  {
+  function transferFrom(address src, address dst, uint256 wad) public override unlocked returns (bool) {
     return super.transferFrom(src, dst, wad);
   }
 
@@ -109,15 +106,13 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
     }
 
     require(_balances[guy] >= wad, "ds-token-insufficient-balance");
-    _balances[guy] -=  wad;
+    _balances[guy] -= wad;
     _supply -= wad;
 
     emit Burn(guy, wad);
   }
 
-  function unlock() public
-  auth
-  {
+  function unlock() public auth {
     locked = false;
   }
 
@@ -129,19 +124,19 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
   string constant EIP_712_PREFIX = "\x19\x01";
 
   function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external unlocked {
-      require(deadline >= block.timestamp, "colony-token-expired-deadline");
+    require(deadline >= block.timestamp, "colony-token-expired-deadline");
 
-      bytes32 digest = keccak256(
-          abi.encodePacked(
-              EIP_712_PREFIX,
-              DOMAIN_SEPARATOR,
-              keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, metatransactionNonces[owner]++, deadline))
-          )
-      );
-      address recoveredAddress = ecrecover(digest, v, r, s);
-      require(recoveredAddress != address(0) && recoveredAddress == owner, "colony-token-invalid-signature");
-      _approvals[owner][spender] = value;
+    bytes32 digest = keccak256(
+      abi.encodePacked(
+        EIP_712_PREFIX,
+        DOMAIN_SEPARATOR,
+        keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, metatransactionNonces[owner]++, deadline))
+      )
+    );
+    address recoveredAddress = ecrecover(digest, v, r, s);
+    require(recoveredAddress != address(0) && recoveredAddress == owner, "colony-token-invalid-signature");
+    _approvals[owner][spender] = value;
 
-      emit Approval(owner, spender, value);
+    emit Approval(owner, spender, value);
   }
 }

@@ -21,7 +21,6 @@ pragma experimental ABIEncoderV2;
 import "./VotingReputationStorage.sol";
 
 contract VotingReputationStaking is VotingReputationStorage {
-
   // Public
 
   function stakeMotion(
@@ -34,9 +33,7 @@ contract VotingReputationStaking is VotingReputationStorage {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-  {
+  ) public {
     Motion storage motion = motions[_motionId];
 
     require(_vote <= 1, "voting-rep-bad-vote");
@@ -49,16 +46,8 @@ contract VotingReputationStaking is VotingReputationStorage {
     uint256 stakerTotalAmount = stakes[_motionId][msgSender()][_vote] + amount;
 
     // For v9 expenditure motions, only allow counterstaking unless escalated
-    if (
-      _motionId <= motionCountV10 &&
-      isExpenditureSig(getActionSummary(motion.action, motion.altTarget).sig)
-    ) {
-      require(
-        motion.stakes[YAY] == requiredStake ||
-        motion.stakes[NAY] == requiredStake ||
-        motion.escalated,
-        "voting-rep-invalid-stake"
-      );
+    if (_motionId <= motionCountV10 && isExpenditureSig(getActionSummary(motion.action, motion.altTarget).sig)) {
+      require(motion.stakes[YAY] == requiredStake || motion.stakes[NAY] == requiredStake || motion.escalated, "voting-rep-invalid-stake");
     }
 
     require(
@@ -66,8 +55,7 @@ contract VotingReputationStaking is VotingReputationStorage {
       "voting-rep-insufficient-rep"
     );
     require(
-      stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction) ||
-      (motion.stakes[_vote] + amount) == requiredStake, // To prevent a residual stake from being un-stakable
+      stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction) || (motion.stakes[_vote] + amount) == requiredStake, // To prevent a residual stake from being un-stakable
       "voting-rep-insufficient-stake"
     );
 
@@ -99,11 +87,8 @@ contract VotingReputationStaking is VotingReputationStorage {
 
         emit MotionEventSet(_motionId, STAKE_END);
 
-      // Move to second staking window once one side is fully staked
-      } else if (
-        (_vote == NAY && motion.stakes[NAY] == requiredStake) ||
-        (_vote == YAY && motion.stakes[YAY] == requiredStake)
-      ) {
+        // Move to second staking window once one side is fully staked
+      } else if ((_vote == NAY && motion.stakes[NAY] == requiredStake) || (_vote == YAY && motion.stakes[YAY] == requiredStake)) {
         motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
 
         // New stake supersedes prior votes
@@ -120,19 +105,10 @@ contract VotingReputationStaking is VotingReputationStorage {
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msgSender(), motion.domainId, amount, address(this));
   }
 
-  function claimReward(
-    uint256 _motionId,
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    address _staker,
-    uint256 _vote
-  )
-    public
-  {
+  function claimReward(uint256 _motionId, uint256 _permissionDomainId, uint256 _childSkillIndex, address _staker, uint256 _vote) public {
     Motion storage motion = motions[_motionId];
     require(
-      getMotionState(_motionId) == MotionState.Finalized ||
-      getMotionState(_motionId) == MotionState.Failed,
+      getMotionState(_motionId) == MotionState.Finalized || getMotionState(_motionId) == MotionState.Failed,
       "voting-rep-motion-not-claimable"
     );
 
@@ -144,13 +120,7 @@ contract VotingReputationStaking is VotingReputationStorage {
     tokenLocking.transfer(token, stakerReward, _staker, true);
 
     if (repPenalty > 0) {
-      colony.emitDomainReputationPenalty(
-        _permissionDomainId,
-        _childSkillIndex,
-        motion.domainId,
-        _staker,
-        -int256(repPenalty)
-      );
+      colony.emitDomainReputationPenalty(_permissionDomainId, _childSkillIndex, motion.domainId, _staker, -int256(repPenalty));
     }
 
     emit MotionRewardClaimed(_motionId, _staker, _vote, stakerReward);
@@ -160,7 +130,9 @@ contract VotingReputationStaking is VotingReputationStorage {
     Motion storage motion = motions[_motionId];
 
     uint256 totalSideStake = motion.stakes[_vote] + motion.pastVoterComp[_vote];
-    if (totalSideStake == 0) { return (0, 0); }
+    if (totalSideStake == 0) {
+      return (0, 0);
+    }
 
     uint256 stakeFraction = wdiv(stakes[_motionId][_staker][_vote], totalSideStake);
 
@@ -171,10 +143,9 @@ contract VotingReputationStaking is VotingReputationStorage {
 
     // Went to a vote, use vote to determine reward or penalty
     if ((motion.votes[NAY] + motion.votes[YAY]) > 0) {
-
       uint256 loserStake;
       uint256 winnerStake;
-      if (motion.votes[YAY] > motion.votes[NAY]){
+      if (motion.votes[YAY] > motion.votes[NAY]) {
         loserStake = motion.stakes[NAY];
         winnerStake = motion.stakes[YAY];
       } else {
@@ -195,37 +166,27 @@ contract VotingReputationStaking is VotingReputationStorage {
         repPenalty = realStake - stakerReward;
       }
 
-    // Determine rewards based on stakes alone
+      // Determine rewards based on stakes alone
     } else {
       assert(motion.paidVoterComp == 0);
       uint256 requiredStake = getRequiredStake(_motionId);
 
       // Your side fully staked, receive 10% (proportional) of loser's stake
-      if (
-        motion.stakes[_vote] == requiredStake &&
-        motion.stakes[flip(_vote)] < requiredStake
-      ) {
-
+      if (motion.stakes[_vote] == requiredStake && motion.stakes[flip(_vote)] < requiredStake) {
         uint256 loserStake = motion.stakes[flip(_vote)];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
         stakerReward = wmul(stakeFraction, (requiredStake + totalPenalty));
 
-      // Opponent's side fully staked, pay 10% penalty
-      } else if (
-        motion.stakes[_vote] < requiredStake &&
-        motion.stakes[flip(_vote)] == requiredStake
-      ) {
-
+        // Opponent's side fully staked, pay 10% penalty
+      } else if (motion.stakes[_vote] < requiredStake && motion.stakes[flip(_vote)] == requiredStake) {
         uint256 loserStake = motion.stakes[_vote];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
         stakerReward = wmul(stakeFraction, loserStake - totalPenalty);
         repPenalty = realStake - stakerReward;
 
-      // Neither side fully staked (or no votes were revealed), no reward or penalty
+        // Neither side fully staked (or no votes were revealed), no reward or penalty
       } else {
-
         stakerReward = realStake;
-
       }
     }
 

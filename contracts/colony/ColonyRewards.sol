@@ -21,8 +21,10 @@ pragma experimental "ABIEncoderV2";
 import "./../tokenLocking/ITokenLocking.sol";
 import "./ColonyStorage.sol";
 
-
-contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
+contract ColonyRewards is
+  ColonyStorage,
+  PatriciaTreeProofs // ignore-swc-123
+{
   function lockToken() public stoppable onlyOwnExtension returns (uint256) {
     uint256 lockId = ITokenLocking(tokenLockingAddress).lockToken(token);
     tokenLocks[msgSender()][lockId] = true;
@@ -34,9 +36,13 @@ contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, _user, _lockId);
   }
 
-  function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
-  public stoppable auth
-  {
+  function startNextRewardPayout(
+    address _token,
+    bytes memory key,
+    bytes memory value,
+    uint256 branchMask,
+    bytes32[] memory siblings
+  ) public stoppable auth {
     ITokenLocking tokenLocking = ITokenLocking(tokenLockingAddress);
     uint256 totalLockCount = tokenLocking.lockToken(token);
     uint256 thisPayoutAmount = fundingPots[0].balance[_token] - pendingRewardPayments[_token];
@@ -47,15 +53,7 @@ contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     require(totalTokens > 0, "colony-reward-payout-invalid-total-tokens");
 
     bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
-    uint256 colonyWideReputation = checkReputation(
-      rootHash,
-      domains[1].skillId,
-      address(0x0),
-      key,
-      value,
-      branchMask,
-      siblings
-    );
+    uint256 colonyWideReputation = checkReputation(rootHash, domains[1].skillId, address(0x0), key, value, branchMask, siblings);
     require(colonyWideReputation > 0, "colony-reward-payout-invalid-colony-wide-reputation");
 
     rewardPayoutCycles[totalLockCount] = RewardPayoutCycle(
@@ -80,8 +78,7 @@ contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     bytes memory value,
     uint256 branchMask,
     bytes32[] memory siblings
-  ) public stoppable
-  {
+  ) public stoppable {
     uint256 userReputation = checkReputation(
       rewardPayoutCycles[_payoutId].reputationState,
       domains[1].skillId,
@@ -127,10 +124,7 @@ contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     rewardPayoutCycle = rewardPayoutCycles[_payoutId];
   }
 
-  function setRewardInverse(uint256 _rewardInverse) public
-  stoppable
-  auth
-  {
+  function setRewardInverse(uint256 _rewardInverse) public stoppable auth {
     require(_rewardInverse > 0, "colony-reward-inverse-cannot-be-zero");
     rewardInverse = _rewardInverse;
 
@@ -145,8 +139,7 @@ contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     bytes memory value,
     uint256 branchMask,
     bytes32[] memory siblings
-  ) internal view returns (uint256)
-  {
+  ) internal view returns (uint256) {
     bytes32 impliedRoot = getImpliedRootHashKey(key, value, branchMask, siblings);
     require(rootHash == impliedRoot, "colony-reputation-invalid-root-hash");
 
@@ -169,7 +162,11 @@ contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     return reputationValue;
   }
 
-  function calculateRewardForUser(uint256 payoutId, uint256[7] memory squareRoots, uint256 userReputation) internal returns (address, uint256) {
+  function calculateRewardForUser(
+    uint256 payoutId,
+    uint256[7] memory squareRoots,
+    uint256 userReputation
+  ) internal returns (address, uint256) {
     RewardPayoutCycle memory payout = rewardPayoutCycles[payoutId];
 
     // Checking if payout is active
@@ -198,7 +195,7 @@ contract ColonyRewards is ColonyStorage, PatriciaTreeProofs { // ignore-swc-123
     require(squareRoots[4] * squareRoots[4] <= numerator, "colony-reward-payout-invalid-parameter-numerator");
     require(squareRoots[5] * squareRoots[5] >= denominator, "colony-reward-payout-invalid-parameter-denominator");
 
-    uint256 reward = (squareRoots[4] * squareRoots[6] / squareRoots[5]) ** 2;
+    uint256 reward = ((squareRoots[4] * squareRoots[6]) / squareRoots[5]) ** 2;
 
     return (payout.tokenAddress, reward);
   }

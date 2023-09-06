@@ -18,13 +18,25 @@
 pragma solidity 0.8.21;
 import "./../../colony/ColonyDataTypes.sol";
 
-
 interface VotingReputationDataTypes {
   // Data structures
 
-  enum ExtensionState { Deployed, Active, Deprecated }
+  enum ExtensionState {
+    Deployed,
+    Active,
+    Deprecated
+  }
 
-  enum MotionState { Null, Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
+  enum MotionState {
+    Null,
+    Staking,
+    Submit,
+    Reveal,
+    Closed,
+    Finalizable,
+    Finalized,
+    Failed
+  }
 
   struct Motion {
     uint64[3] events; // For recording motion lifecycle timestamps (STAKE, SUBMIT, REVEAL)

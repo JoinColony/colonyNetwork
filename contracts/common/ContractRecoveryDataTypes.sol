@@ -17,7 +17,6 @@
 
 pragma solidity 0.8.21;
 
-
 interface ContractRecoveryDataTypes {
   /// @notice Event logged when user gets/loses the recovery role.
   /// @param user The address being modified
@@ -43,5 +42,4 @@ interface ContractRecoveryDataTypes {
   /// and wish to leave recovery mode
   /// @param user The address signalling they are happy with the state
   event RecoveryModeExitApproved(address user);
-
 }

@@ -5,7 +5,6 @@ import "./ENS.sol";
 // ignore-file-swc-101 This is due to ConsenSys/truffle-security#245 and the bad-line reporting associated with it
 // (It's really the abi.encodepacked in setSubnodeOwner.
 
-
 contract ENSRegistry is ENS {
   struct Record {
     address owner;
@@ -13,7 +12,7 @@ contract ENSRegistry is ENS {
     uint64 ttl;
   }
 
-  mapping (bytes32 => Record) internal records;
+  mapping(bytes32 => Record) internal records;
 
   // Permits modifications only by the owner of the specified node, or if unowned.
   modifier onlyOwner(bytes32 node) {
@@ -82,5 +81,4 @@ contract ENSRegistry is ENS {
   function ttl(bytes32 node) public view override returns (uint64) {
     return records[node].ttl;
   }
-
 }
