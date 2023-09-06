@@ -30,7 +30,6 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   const GnosisSafeProxyFactory = await loader.load({ contractName: "GnosisSafeProxyFactory" }, { abi: true, address: false });
   const GnosisSafe = await loader.load({ contractName: "GnosisSafe" }, { abi: true, address: false });
   const ZodiacBridgeModuleMock = await loader.load({ contractName: "ZodiacBridgeModuleMock" }, { abi: true, address: false });
-  const BridgeMock = await loader.load({ contractName: "BridgeMock" }, { abi: true, address: false });
   const Erc721Mock = await loader.load({ contractName: "ERC721Mock" }, { abi: true, address: false });
   const Token = await loader.load({ contractName: "Token" }, { abi: true, address: false });
 
@@ -107,15 +106,10 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   }
 
   // Deploy a foreign bridge
-
-  const foreignBridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, ethersForeignSigner);
-  const foreignBridge = await foreignBridgeFactory.deploy();
-  await foreignBridge.deployTransaction.wait();
+  const foreignBridge = await deployBridge(ethersForeignSigner);
 
   // Deploy a home bridge
-  const homeBridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, ethersHomeSigner);
-  const homeBridge = await homeBridgeFactory.deploy();
-  await homeBridge.deployTransaction.wait();
+  const homeBridge = await deployBridge(ethersHomeSigner);
 
   // Start the bridge service
   console.log(`Home RPC Url: ${homeRpcUrl}`);
@@ -147,8 +141,16 @@ async function getSig(provider, account, dataHash) {
   return modifiedSig;
 }
 
+async function deployBridge(signer) {
+  const BridgeMock = await loader.load({ contractName: "BridgeMock" }, { abi: true, address: false });
+  const bridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, signer);
+  const bridge = await bridgeFactory.deploy();
+  await bridge.deployTransaction.wait();
+  return bridge;
+}
+
 if (process.argv.includes("start-bridging-environment")) {
   setupBridging("http://127.0.0.1:8545", "http://127.0.0.1:8546");
 }
 
-module.exports = setupBridging;
+module.exports = { setupBridging, deployBridge };
