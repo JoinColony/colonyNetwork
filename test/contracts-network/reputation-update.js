@@ -378,7 +378,7 @@ contract("Reputation Updates", (accounts) => {
         domain1.fundingPotId,
         expenditure.fundingPotId,
         WAD,
-        clnyToken.address
+        clnyToken.address,
       );
       await metaColony.finalizeExpenditure(expenditureId);
       await metaColony.claimExpenditurePayout(expenditureId, SLOT0, clnyToken.address);
@@ -403,7 +403,7 @@ contract("Reputation Updates", (accounts) => {
         1,
         payment.fundingPotId,
         WAD.add(WAD.divn(10)),
-        clnyToken.address
+        clnyToken.address,
       );
       await metaColony.finalizePayment(1, UINT256_MAX, paymentId);
       await metaColony.claimPayment(paymentId, clnyToken.address);
@@ -443,7 +443,7 @@ contract("Reputation Updates", (accounts) => {
         1,
         payment.fundingPotId,
         WAD.add(WAD.divn(10)),
-        otherToken.address
+        otherToken.address,
       );
       await metaColony.finalizePayment(1, UINT256_MAX, paymentId);
       await metaColony.claimPayment(paymentId, otherToken.address);

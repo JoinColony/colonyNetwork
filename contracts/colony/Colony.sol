@@ -28,9 +28,8 @@ import "./ColonyStorage.sol";
 contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeProofs {
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) {
-    return 14;
-  }
+  // prettier-ignore
+  function version() public pure returns (uint256 colonyVersion) { return 14; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;

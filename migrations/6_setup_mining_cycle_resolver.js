@@ -26,7 +26,7 @@ module.exports = async function (deployer) {
     reputationMiningCycleRespond,
     reputationMiningCycleBinarySearch,
     resolver,
-    colonyNetwork
+    colonyNetwork,
   );
 
   console.log("### ReputationMiningCycle set to Resolver", resolver.address);

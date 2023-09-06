@@ -162,7 +162,7 @@ contract("Colony Staking", (accounts) => {
 
       await checkErrorRevert(
         colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD.addn(1), ethers.constants.AddressZero, { from: USER2 }),
-        "Panic: Arithmetic overflow"
+        "Panic: Arithmetic overflow",
       );
     });
 
@@ -172,7 +172,7 @@ contract("Colony Staking", (accounts) => {
 
       await checkErrorRevert(
         tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, 1, false, { from: USER1 }),
-        "colony-token-locking-excess-obligation"
+        "colony-token-locking-excess-obligation",
       );
     });
 
@@ -182,7 +182,7 @@ contract("Colony Staking", (accounts) => {
 
       await checkErrorRevert(
         tokenLocking.transfer(token.address, 1, ethers.constants.AddressZero, false, { from: USER1 }),
-        "colony-token-locking-excess-obligation"
+        "colony-token-locking-excess-obligation",
       );
     });
 

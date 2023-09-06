@@ -70,7 +70,7 @@ contract("Colony contract upgrade", (accounts) => {
       colonyTask,
       contractRecovery,
       colonyArbitraryTransaction,
-      resolver
+      resolver,
     );
 
     updatedColonyVersion = await updatedColonyContract.version();

@@ -141,7 +141,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await colony.completeTask(taskId);
       await checkErrorRevert(
         colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: OTHER }),
-        "colony-user-cannot-rate-task-worker"
+        "colony-user-cannot-rate-task-worker",
       );
       const ratingSecrets = await colony.getTaskWorkRatingSecretsInfo(taskId);
       expect(ratingSecrets[1]).to.be.zero;
@@ -153,7 +153,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await colony.completeTask(taskId);
       await checkErrorRevert(
         colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: OTHER }),
-        "colony-user-cannot-rate-task-manager"
+        "colony-user-cannot-rate-task-manager",
       );
       const ratingSecrets = await colony.getTaskWorkRatingSecretsInfo(taskId);
       expect(ratingSecrets.nSecrets).to.be.zero;
@@ -165,7 +165,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await colony.completeTask(taskId);
       await checkErrorRevert(
         colony.submitTaskWorkRating(taskId, EVALUATOR_ROLE, RATING_2_SECRET, { from: EVALUATOR }),
-        "colony-unsupported-role-to-rate"
+        "colony-unsupported-role-to-rate",
       );
       const ratingSecrets = await colony.getTaskWorkRatingSecretsInfo(taskId);
       expect(ratingSecrets.nSecrets).to.be.zero;
@@ -179,7 +179,7 @@ contract("Colony Task Work Rating", (accounts) => {
 
       await checkErrorRevert(
         colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_1_SECRET, { from: EVALUATOR }),
-        "colony-task-rating-secret-already-exists"
+        "colony-task-rating-secret-already-exists",
       );
       const ratingSecrets = await colony.getTaskWorkRatingSecretsInfo(taskId);
       expect(ratingSecrets.nSecrets).to.eq.BN(1);
@@ -195,7 +195,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await checkErrorRevert(
         colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }),
-        "colony-task-rating-secret-submit-period-closed"
+        "colony-task-rating-secret-submit-period-closed",
       );
       const ratingSecrets = await colony.getTaskWorkRatingSecretsInfo(taskId);
       expect(ratingSecrets.nSecrets).to.be.zero;
@@ -217,7 +217,7 @@ contract("Colony Task Work Rating", (accounts) => {
       const EMPTY_RATING_SECRET = web3.utils.fromAscii("");
       await checkErrorRevert(
         colony.submitTaskWorkRating(taskId, WORKER_ROLE, EMPTY_RATING_SECRET, { from: EVALUATOR }),
-        "colony-task-rating-secret-missing"
+        "colony-task-rating-secret-missing",
       );
 
       const ratingSecrets = await colony.getTaskWorkRatingSecretsInfo(taskId);
@@ -267,7 +267,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       await checkErrorRevert(
         colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_2_SALT, { from: WORKER }),
-        "colony-task-rating-secret-mismatch"
+        "colony-task-rating-secret-mismatch",
       );
 
       const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -284,7 +284,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 5 + 2, this);
       await checkErrorRevert(
         colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
-        "colony-task-rating-secret-reveal-period-closed"
+        "colony-task-rating-secret-reveal-period-closed",
       );
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -301,7 +301,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 5 + 2, this);
       await checkErrorRevert(
         colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER }),
-        "colony-task-rating-secret-reveal-period-closed"
+        "colony-task-rating-secret-reveal-period-closed",
       );
 
       const roleManager = await colony.getTaskRole(1, MANAGER_ROLE);
@@ -316,7 +316,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 4, this);
       await checkErrorRevert(
         colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
-        "colony-task-rating-secret-reveal-period-not-open"
+        "colony-task-rating-secret-reveal-period-not-open",
       );
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -332,7 +332,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
       await checkErrorRevert(
         colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
-        "colony-task-rating-secret-reveal-period-closed"
+        "colony-task-rating-secret-reveal-period-closed",
       );
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -350,7 +350,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await checkErrorRevert(
         colony.revealTaskWorkRating(taskId, WORKER_ROLE, badWorkerRating, RATING_2_SALT, { from: EVALUATOR }),
-        "colony-task-rating-missing"
+        "colony-task-rating-missing",
       );
     });
 
@@ -366,7 +366,7 @@ contract("Colony Task Work Rating", (accounts) => {
       await expectEvent(
         colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
         "TaskWorkRatingRevealed",
-        [EVALUATOR, taskId, WORKER_ROLE, WORKER_RATING]
+        [EVALUATOR, taskId, WORKER_ROLE, WORKER_RATING],
       );
     });
   });

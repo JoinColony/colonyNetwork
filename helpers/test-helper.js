@@ -219,7 +219,7 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
         gas: ethers.utils.hexValue(tx.gas),
         value: ethers.utils.hexValue(parseInt(tx.value, 10)),
       },
-      ethers.utils.hexValue(receipt.blockNumber)
+      ethers.utils.hexValue(receipt.blockNumber),
     );
     const reason = exports.extractReasonString(response);
     expect(reason).to.equal(errorMessage);
@@ -362,7 +362,7 @@ async function eventMatches(tx, nameOrSig, args) {
 
         event.args = iface.parseLog(event).args;
         return eventMatchArgs(event, args);
-      })
+      }),
     );
   } else {
     const { logs } = await tx;
@@ -451,9 +451,9 @@ exports.forwardTime = async function forwardTime(seconds, test) {
                 return reject(err2);
               }
               return resolve(res);
-            }
+            },
           );
-        }
+        },
       );
     }
   });
@@ -481,7 +481,7 @@ exports.mineBlock = async function mineBlock(timestamp) {
           return reject(err);
         }
         return resolve();
-      }
+      },
     );
   });
 };
@@ -500,7 +500,7 @@ exports.getHardhatAutomine = async function checkHardhatAutomine() {
           return reject(err);
         }
         return resolve(Boolean(res.result));
-      }
+      },
     );
   });
 };
@@ -525,7 +525,7 @@ exports.stopMining = async function stopMining() {
             await exports.sleep(1000);
           }
           return resolve();
-        }
+        },
       );
     });
   }
@@ -543,7 +543,7 @@ exports.stopMining = async function stopMining() {
           return reject(err);
         }
         return resolve();
-      }
+      },
     );
   });
 };
@@ -564,7 +564,7 @@ exports.startMining = async function startMining() {
             return reject(err);
           }
           return resolve();
-        }
+        },
       );
     });
   }
@@ -582,7 +582,7 @@ exports.startMining = async function startMining() {
           return reject(err);
         }
         return resolve();
-      }
+      },
     );
   });
 };
@@ -767,7 +767,7 @@ exports.advanceMiningCycleNoContest = async function advanceMiningCycleNoContest
 exports.accommodateChallengeAndInvalidateHashViaTimeout = async function accommodateChallengeAndInvalidateHashViaTimeout(
   colonyNetwork,
   _test,
-  client1
+  client1,
 ) {
   const repCycle = await exports.getActiveRepCycle(colonyNetwork);
   const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
@@ -866,7 +866,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   const submission2before = await repCycle.getReputationHashSubmission(client2.minerAddress);
   expect(
     idx1.sub(idx2).pow(2).eq(1), // eslint-disable-line prettier/prettier
-    "Clients are not facing each other in this round"
+    "Clients are not facing each other in this round",
   ).to.be.true;
 
   await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
@@ -894,25 +894,25 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep]) {
       await exports.checkErrorRevertEthers(
         client1.respondToBinarySearchForChallenge(),
-        errors.client1.respondToBinarySearchForChallenge[binarySearchStep]
+        errors.client1.respondToBinarySearchForChallenge[binarySearchStep],
       );
       binarySearchError = true;
     } else {
       await exports.checkSuccessEthers(
         client1.respondToBinarySearchForChallenge(),
-        `Client 1 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
+        `Client 1 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`,
       );
     }
     if (errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {
       await exports.checkErrorRevertEthers(
         client2.respondToBinarySearchForChallenge(),
-        errors.client2.respondToBinarySearchForChallenge[binarySearchStep]
+        errors.client2.respondToBinarySearchForChallenge[binarySearchStep],
       );
       binarySearchError = true;
     } else {
       await exports.checkSuccessEthers(
         client2.respondToBinarySearchForChallenge(),
-        `Client2 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
+        `Client2 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`,
       );
     }
     disputeRound = await repCycle.getDisputeRound(round1);
@@ -1015,7 +1015,7 @@ exports.withdrawAllMinerStakes = async function withdrawAllMinerStakes(colonyNet
       if (userBalance.gt(new BN(0))) {
         await clny.burn(userBalance, { from: user });
       }
-    })
+    }),
   );
 };
 

@@ -23,7 +23,7 @@ exports.parseImplementation = function parseImplementation(contractName, functio
           " in ",
           contractName,
           "and ",
-          functionsToResolve[fName].definedIn
+          functionsToResolve[fName].definedIn,
         );
         process.exit(1);
       }
@@ -85,7 +85,7 @@ exports.setupColonyVersionResolver = async function setupColonyVersionResolver(
   colonyTask,
   contractRecovery,
   colonyArbitraryTransaction,
-  resolver
+  resolver,
 ) {
   const deployedImplementations = {};
   deployedImplementations.Colony = colony.address;
@@ -111,7 +111,7 @@ exports.setupUpgradableColonyNetwork = async function setupUpgradableColonyNetwo
   colonyNetworkAuction,
   colonyNetworkENS,
   colonyNetworkExtensions,
-  contractRecovery
+  contractRecovery,
 ) {
   const deployedImplementations = {};
   deployedImplementations.ColonyNetwork = colonyNetwork.address;
@@ -141,7 +141,7 @@ exports.setupReputationMiningCycleResolver = async function setupReputationMinin
   reputationMiningCycleRespond,
   reputationMiningCycleBinarySearch,
   resolver,
-  colonyNetwork
+  colonyNetwork,
 ) {
   const deployedImplementations = {};
   deployedImplementations.ReputationMiningCycle = reputationMiningCycle.address;

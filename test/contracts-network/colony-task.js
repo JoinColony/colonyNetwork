@@ -220,7 +220,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, WORKER],
         }),
-        "colony-task-change-is-not-role-assignment"
+        "colony-task-change-is-not-role-assignment",
       );
     });
 
@@ -257,7 +257,7 @@ contract("ColonyTask", (accounts) => {
 
       await checkErrorRevert(
         colony.executeTaskRoleAssignment([sigV[0]], sigR, sigS, [0], 0, txData),
-        "colony-task-role-assignment-signatures-count-do-not-match"
+        "colony-task-role-assignment-signatures-count-do-not-match",
       );
     });
 
@@ -313,7 +313,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, WORKER],
         }),
-        "colony-task-role-assignment-execution-failed"
+        "colony-task-role-assignment-execution-failed",
       );
 
       await executeSignedTaskChange({
@@ -359,7 +359,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, newEvaluator],
         }),
-        "colony-task-role-assignment-does-not-meet-required-signatures"
+        "colony-task-role-assignment-does-not-meet-required-signatures",
       );
 
       const evaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
@@ -374,7 +374,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, WORKER],
         }),
-        "colony-task-role-assignment-does-not-meet-required-signatures"
+        "colony-task-role-assignment-does-not-meet-required-signatures",
       );
 
       const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -402,7 +402,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, OTHER],
         }),
-        "colony-task-role-assignment-execution-failed"
+        "colony-task-role-assignment-execution-failed",
       );
 
       await checkErrorRevert(
@@ -414,7 +414,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, OTHER],
         }),
-        "colony-task-role-assignment-execution-failed"
+        "colony-task-role-assignment-execution-failed",
       );
     });
 
@@ -467,7 +467,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, ethers.constants.AddressZero],
         }),
-        "colony-task-role-assignment-not-signed-by-new-user-for-role"
+        "colony-task-role-assignment-not-signed-by-new-user-for-role",
       );
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -489,7 +489,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, newEvaluator],
         }),
-        "colony-task-role-assignment-not-signed-by-new-user-for-role"
+        "colony-task-role-assignment-not-signed-by-new-user-for-role",
       );
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -524,7 +524,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, WORKER],
         }),
-        "colony-task-role-assignment-does-not-meet-required-signatures"
+        "colony-task-role-assignment-does-not-meet-required-signatures",
       );
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -559,7 +559,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, WORKER],
         }),
-        "colony-task-role-assignment-not-signed-by-manager"
+        "colony-task-role-assignment-not-signed-by-manager",
       );
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -594,7 +594,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, MANAGER],
         }),
-        "colony-task-role-assignment-not-signed-by-manager"
+        "colony-task-role-assignment-not-signed-by-manager",
       );
 
       const managerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -613,7 +613,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, COLONY_ADMIN, 1, UINT256_MAX],
         }),
-        "colony-task-role-assignment-not-signed-by-new-user-for-role"
+        "colony-task-role-assignment-not-signed-by-new-user-for-role",
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -632,7 +632,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, OTHER, 1, UINT256_MAX],
         }),
-        "colony-task-role-assignment-execution-failed"
+        "colony-task-role-assignment-execution-failed",
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -651,7 +651,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, ethers.constants.AddressZero, 1, UINT256_MAX],
         }),
-        "colony-task-role-assignment-not-signed-by-new-user-for-role"
+        "colony-task-role-assignment-not-signed-by-new-user-for-role",
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -703,7 +703,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, WORKER, 1, UINT256_MAX],
         }),
-        "colony-task-role-assignment-not-signed-by-manager"
+        "colony-task-role-assignment-not-signed-by-manager",
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -898,7 +898,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 1],
           args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
-        "colony-task-duplicate-reviewers"
+        "colony-task-duplicate-reviewers",
       );
 
       const task = await colony.getTask(taskId);
@@ -937,7 +937,7 @@ contract("ColonyTask", (accounts) => {
 
       await checkErrorRevert(
         executeSignedTaskChange({ colony, taskId, functionName: "setTaskDueDate", signers: [MANAGER], sigTypes: [0], args: [taskId, 0] }),
-        "colony-task-change-execution-failed"
+        "colony-task-change-execution-failed",
       );
 
       const task = await colony.getTask(taskId);
@@ -971,7 +971,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
-        "colony-task-change-does-not-meet-signatures-required"
+        "colony-task-change-does-not-meet-signatures-required",
       );
     });
 
@@ -996,7 +996,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
-        "colony-task-change-does-not-meet-signatures-required"
+        "colony-task-change-does-not-meet-signatures-required",
       );
     });
 
@@ -1012,7 +1012,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, 0],
         }),
-        "colony-task-change-does-not-meet-signatures-required"
+        "colony-task-change-does-not-meet-signatures-required",
       );
     });
 
@@ -1030,7 +1030,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [nonExistentTaskId, SPECIFICATION_HASH_UPDATED],
         }),
-        "colony-task-does-not-exist"
+        "colony-task-does-not-exist",
       );
     });
 
@@ -1046,7 +1046,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
-        "colony-task-does-not-exist"
+        "colony-task-does-not-exist",
       );
     });
 
@@ -1062,7 +1062,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, 0],
         }),
-        "colony-task-change-execution-failed"
+        "colony-task-change-execution-failed",
       );
     });
 
@@ -1079,7 +1079,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED],
         }),
-        "colony-task-finalized"
+        "colony-task-finalized",
       );
     });
 
@@ -1100,7 +1100,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId, COLONY_ADMIN, 1, UINT256_MAX],
         }),
-        "colony-task-role-assignment-execution-failed"
+        "colony-task-role-assignment-execution-failed",
       );
     });
 
@@ -1390,7 +1390,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [100],
         }),
-        "colony-task-does-not-exist"
+        "colony-task-does-not-exist",
       );
     });
 
@@ -1443,7 +1443,7 @@ contract("ColonyTask", (accounts) => {
         taskPotId,
         domainPotId,
         originalTaskEtherBalance,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, taskPotId, domainPotId, originalTaskTokenBalance, token.address);
       await colony.moveFundsBetweenPots(
@@ -1455,7 +1455,7 @@ contract("ColonyTask", (accounts) => {
         taskPotId,
         domainPotId,
         originalTaskOtherTokenBalance,
-        otherToken.address
+        otherToken.address,
       );
 
       const cancelledTaskEtherBalance = await colony.getFundingPotBalance(taskPotId, ethers.constants.AddressZero);
@@ -1494,7 +1494,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0, 0],
           args: [taskId],
         }),
-        "colony-task-change-execution-failed"
+        "colony-task-change-execution-failed",
       );
     });
 
@@ -1512,7 +1512,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [invalidTaskId],
         }),
-        "colony-task-does-not-exist"
+        "colony-task-does-not-exist",
       );
     });
 
@@ -1631,7 +1631,7 @@ contract("ColonyTask", (accounts) => {
       const taskId = await makeTask({ colony, dueDate });
       await checkErrorRevert(
         colony.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000, { from: OTHER }),
-        "colony-task-role-identity-mismatch"
+        "colony-task-role-identity-mismatch",
       );
       await colony.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000);
 
@@ -1688,7 +1688,7 @@ contract("ColonyTask", (accounts) => {
 
       await checkErrorRevert(
         colony.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000),
-        "colony-funding-evaluator-already-set"
+        "colony-funding-evaluator-already-set",
       );
     });
 
@@ -1749,7 +1749,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [taskId, ethers.constants.AddressZero, MAX_PAYOUT.addn(1)],
         }),
-        "colony-task-change-execution-failed" // Should be "colony-payout-too-large"
+        "colony-task-change-execution-failed", // Should be "colony-payout-too-large"
       );
     });
 
@@ -1763,7 +1763,7 @@ contract("ColonyTask", (accounts) => {
           sigTypes: [0],
           args: [1000, ethers.constants.AddressZero, MAX_PAYOUT.addn(1)],
         }),
-        "colony-task-does-not-exist"
+        "colony-task-does-not-exist",
       );
     });
   });

@@ -140,7 +140,7 @@ walkSync("./contracts/").forEach((contractName) => {
           "doesn't appear to have the right auth declaration for function ",
           functionDef.name,
           ". Errors: ",
-          res.errors
+          res.errors,
         );
         process.exit(1);
       }

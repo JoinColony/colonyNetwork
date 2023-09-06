@@ -210,7 +210,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await checkErrorRevert(
         repCycle.confirmJustificationRootHash(0, 10000, [HASHZERO], [HASHZERO]),
-        "colony-reputation-mining-index-beyond-round-length"
+        "colony-reputation-mining-index-beyond-round-length",
       );
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
@@ -219,14 +219,14 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await checkErrorRevert(
         repCycle.respondToBinarySearchForChallenge(0, 10000, HASHZERO, [HASHZERO]),
-        "colony-reputation-mining-index-beyond-round-length"
+        "colony-reputation-mining-index-beyond-round-length",
       );
 
       await runBinarySearch(goodClient, badClient);
 
       await checkErrorRevert(
         repCycle.confirmBinarySearchResult(0, 10000, HASHZERO, [HASHZERO]),
-        "colony-reputation-mining-index-beyond-round-length"
+        "colony-reputation-mining-index-beyond-round-length",
       );
 
       // // Check we can't respond to challenge before we've confirmed the binary search result
@@ -244,9 +244,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
           [],
           [],
           [],
-          []
+          [],
         ),
-        "colony-reputation-mining-index-beyond-round-length"
+        "colony-reputation-mining-index-beyond-round-length",
       );
 
       // Cleanup
@@ -329,7 +329,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
           1,
           payment.fundingPotId,
           INITIAL_FUNDING,
-          clnyToken.address
+          clnyToken.address,
         );
         await metaColony.finalizePayment(1, UINT256_MAX, paymentId);
 
@@ -345,13 +345,13 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
           const client = new MaliciousReputationMinerExtraRep(
             { loader, realProviderPort, useJsTree, minerAddress: addr },
             accountsForTest.length - index,
-            index
+            index,
           );
           // Each client will get a different reputation update entry wrong by a different amount, apart from the first one which
           // will submit a correct hash.
           await client.initialise(colonyNetwork.address);
           return client;
-        })
+        }),
       );
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -389,7 +389,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       // We check 4 can't claim a bye yet, because one of (6,7) might end up facing them.
       await checkErrorRevert(
         accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[4]),
-        "colony-reputation-mining-previous-dispute-round-not-complete"
+        "colony-reputation-mining-previous-dispute-round-not-complete",
       );
 
       console.log("Cleaning up");
@@ -456,7 +456,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await checkErrorRevert(
         accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[8]),
-        "colony-reputation-mining-previous-dispute-round-not-complete"
+        "colony-reputation-mining-previous-dispute-round-not-complete",
       );
 
       console.log("Cleaning up");
@@ -510,7 +510,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await checkErrorRevert(
         accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[8]),
-        "colony-reputation-mining-previous-dispute-round-not-complete"
+        "colony-reputation-mining-previous-dispute-round-not-complete",
       );
 
       console.log("Cleaning up");
@@ -566,7 +566,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
             managerPayout: 1,
             evaluatorPayout: 1,
             workerPayout: 1,
-          }
+          },
         );
 
         const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength();
@@ -690,7 +690,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await checkErrorRevert(
         makeTxAtTimestamp(repCycle.confirmJustificationRootHash, [round, index, siblings1, siblings2, { from: MINER3 }], timestamp, this),
-        "colony-reputation-mining-user-ineligible-to-respond"
+        "colony-reputation-mining-user-ineligible-to-respond",
       );
 
       timestamp += CHALLENGE_RESPONSE_WINDOW_DURATION - ALL_ENTRIES_ALLOWED_END_OF_WINDOW + 1;
@@ -719,7 +719,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       // Check it cannot respond at the start of the window
       await checkErrorRevertEthers(
         makeTxAtTimestamp(goodClient.confirmJustificationRootHash.bind(goodClient), [], timestamp, this),
-        "colony-reputation-mining-user-ineligible-to-respond"
+        "colony-reputation-mining-user-ineligible-to-respond",
       );
 
       // Check a non-miner cannot respond, even  the end of the window
@@ -735,7 +735,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await checkErrorRevert(
         makeTxAtTimestamp(repCycle.confirmJustificationRootHash, [0, 0, siblings1, siblings2, { from: NOT_MINER }], timestamp, this),
-        "colony-reputation-mining-no-stake-or-delegator"
+        "colony-reputation-mining-no-stake-or-delegator",
       );
 
       await makeTxAtTimestamp(goodClient.confirmJustificationRootHash.bind(goodClient), [], timestamp, this);
@@ -757,7 +757,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await checkErrorRevertEthers(
         makeTxAtTimestamp(goodClient.respondToBinarySearchForChallenge.bind(goodClient), [], timestamp, this),
-        "colony-reputation-mining-user-ineligible-to-respond"
+        "colony-reputation-mining-user-ineligible-to-respond",
       );
 
       timestamp += CHALLENGE_RESPONSE_WINDOW_DURATION - 1;
@@ -770,7 +770,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       // Can't confirm at start of window
       await checkErrorRevertEthers(
         makeTxAtTimestamp(goodClient.confirmBinarySearchResult.bind(goodClient), [], timestamp + 1, this),
-        "colony-reputation-mining-user-ineligible-to-respond"
+        "colony-reputation-mining-user-ineligible-to-respond",
       );
 
       timestamp += CHALLENGE_RESPONSE_WINDOW_DURATION;
@@ -780,7 +780,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       // Can't respond at start of window
       await checkErrorRevertEthers(
         makeTxAtTimestamp(goodClient.respondToChallenge.bind(goodClient), [], timestamp + 1, this),
-        "colony-reputation-mining-user-ineligible-to-respond"
+        "colony-reputation-mining-user-ineligible-to-respond",
       );
 
       timestamp += CHALLENGE_RESPONSE_WINDOW_DURATION - ALL_ENTRIES_ALLOWED_END_OF_WINDOW;
@@ -789,7 +789,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       // Can't invalidate even once defence restrictions lifted
       await checkErrorRevert(
         makeTxAtTimestamp(repCycle.invalidateHash, [0, 1, { from: MINER1 }], timestamp, this),
-        "colony-reputation-mining-not-timed-out"
+        "colony-reputation-mining-not-timed-out",
       );
 
       // Entire response window has passed. Responses are still possible, but we're now in to the
@@ -799,7 +799,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       // Can't invalidate at start of window
       await checkErrorRevert(
         makeTxAtTimestamp(repCycle.invalidateHash, [0, 1, { from: MINER1 }], timestamp, this),
-        "colony-reputation-mining-user-ineligible-to-respond"
+        "colony-reputation-mining-user-ineligible-to-respond",
       );
 
       // Can invalidate once restrictions are lifted
@@ -836,14 +836,14 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await checkErrorRevert(
         repCycle.confirmJustificationRootHash(round, index, siblings1, siblings2, { from: MINER1 }),
-        "colony-reputation-mining-invalid-jrh-proof-2-length"
+        "colony-reputation-mining-invalid-jrh-proof-2-length",
       );
 
       siblings1.pop();
 
       await checkErrorRevert(
         repCycle.confirmJustificationRootHash(round, index, siblings1, siblings2, { from: MINER1 }),
-        "colony-reputation-mining-invalid-jrh-proof-1-length"
+        "colony-reputation-mining-invalid-jrh-proof-1-length",
       );
 
       // Cleanup
@@ -874,7 +874,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await checkErrorRevert(
         repCycle.respondToBinarySearchForChallenge(0, 0, HASHZERO, [HASHZERO, HASHZERO, HASHZERO], { from: MINER1 }),
-        "colony-reputation-mining-invalid-binary-search-response"
+        "colony-reputation-mining-invalid-binary-search-response",
       );
 
       // Cleanup
@@ -915,7 +915,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await checkErrorRevert(
         repCycle.confirmBinarySearchResult(round, index, HASHZERO, siblings, { from: MINER1 }),
-        "colony-reputation-mining-invalid-binary-search-confirmation"
+        "colony-reputation-mining-invalid-binary-search-confirmation",
       );
 
       // Cleanup
@@ -1132,9 +1132,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
           [],
           [],
           [],
-          { from: MINER1 }
+          { from: MINER1 },
         ),
-        "colony-reputation-mining-colony-address-mismatch"
+        "colony-reputation-mining-colony-address-mismatch",
       );
 
       await checkErrorRevert(
@@ -1147,9 +1147,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
           [],
           [],
           [],
-          { from: MINER1 }
+          { from: MINER1 },
         ),
-        "colony-reputation-mining-skill-id-mismatch"
+        "colony-reputation-mining-skill-id-mismatch",
       );
 
       await checkErrorRevert(
@@ -1162,9 +1162,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
           [],
           [],
           [],
-          { from: MINER1 }
+          { from: MINER1 },
         ),
-        "colony-reputation-mining-user-address-mismatch"
+        "colony-reputation-mining-user-address-mismatch",
       );
 
       await checkErrorRevert(
@@ -1177,9 +1177,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
           [],
           [],
           [],
-          { from: MINER1 }
+          { from: MINER1 },
         ),
-        "colony-reputation-mining-reputation-key-and-hash-mismatch"
+        "colony-reputation-mining-reputation-key-and-hash-mismatch",
       );
 
       await goodClient.respondToChallenge();
@@ -1215,9 +1215,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
           [],
           [],
           [],
-          []
+          [],
         ),
-        "colony-reputation-binary-search-incomplete"
+        "colony-reputation-binary-search-incomplete",
       );
 
       // Cleanup
@@ -1261,13 +1261,13 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         const badClient = new MaliciousReputationMinerExtraRep(
           { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
           args.badClient1Argument,
-          10
+          10,
         );
         await badClient.initialise(colonyNetwork.address);
 
         const badClient2 = new MaliciousReputationMinerWrongProofLogEntry(
           { loader, realProviderPort, useJsTree, minerAddress: MINER3 },
-          args.badClient2Argument
+          args.badClient2Argument,
         );
         await badClient2.initialise(colonyNetwork.address);
 

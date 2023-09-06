@@ -79,14 +79,14 @@ contract("Colony Payment", (accounts) => {
     it("should not allow admins to add payment with no domain set", async () => {
       await checkErrorRevert(
         colony.addPayment(1, UINT256_MAX, RECIPIENT, token.address, WAD, 0, 0, { from: COLONY_ADMIN }),
-        "ds-auth-child-domain-does-not-exist"
+        "ds-auth-child-domain-does-not-exist",
       );
     });
 
     it("should not allow admins to add payment with no recipient set", async () => {
       await checkErrorRevert(
         colony.addPayment(1, UINT256_MAX, ethers.constants.AddressZero, token.address, WAD, 1, 0, { from: COLONY_ADMIN }),
-        "colony-payment-invalid-recipient"
+        "colony-payment-invalid-recipient",
       );
     });
 
@@ -105,7 +105,7 @@ contract("Colony Payment", (accounts) => {
 
       await checkErrorRevert(
         colony.addPayment(1, UINT256_MAX, RECIPIENT, token.address, 0, 1, skillId, { from: COLONY_ADMIN }),
-        "colony-not-valid-global-or-local-skill"
+        "colony-not-valid-global-or-local-skill",
       );
     });
 
@@ -116,7 +116,7 @@ contract("Colony Payment", (accounts) => {
     it("should not be able to set a payout above the limit", async () => {
       await checkErrorRevert(
         colony.addPayment(1, UINT256_MAX, RECIPIENT, token.address, MAX_PAYOUT.addn(1), 1, 0, { from: COLONY_ADMIN }),
-        "colony-payout-too-large"
+        "colony-payout-too-large",
       );
     });
   });
@@ -137,7 +137,7 @@ contract("Colony Payment", (accounts) => {
 
       await checkErrorRevert(
         colony.setPaymentRecipient(1, UINT256_MAX, paymentId, ethers.constants.AddressZero, { from: COLONY_ADMIN }),
-        "colony-payment-invalid-recipient"
+        "colony-payment-invalid-recipient",
       );
     });
 
@@ -165,7 +165,7 @@ contract("Colony Payment", (accounts) => {
 
       await checkErrorRevert(
         colony.setPaymentSkill(1, UINT256_MAX, paymentId, skillId, { from: COLONY_ADMIN }),
-        "colony-not-valid-global-or-local-skill"
+        "colony-not-valid-global-or-local-skill",
       );
     });
 
@@ -272,7 +272,7 @@ contract("Colony Payment", (accounts) => {
       await colony.finalizePayment(1, UINT256_MAX, paymentId);
       await checkErrorRevert(
         colony.setPaymentPayout(1, UINT256_MAX, paymentId, token.address, 1, { from: COLONY_ADMIN }),
-        "colony-payment-finalized"
+        "colony-payment-finalized",
       );
     });
 
@@ -280,7 +280,7 @@ contract("Colony Payment", (accounts) => {
       await colony.finalizePayment(1, UINT256_MAX, paymentId);
       await checkErrorRevert(
         colony.setPaymentPayout(1, UINT256_MAX, paymentId, token.address, MAX_PAYOUT.addn(1), { from: COLONY_ADMIN }),
-        "colony-payout-too-large"
+        "colony-payout-too-large",
       );
     });
   });

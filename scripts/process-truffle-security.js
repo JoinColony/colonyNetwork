@@ -22,7 +22,7 @@ async function main() {
           const globals = await findInFiles.findSync(
             `//.*ignore-file-${message.ruleId.toLowerCase()}`,
             path.dirname(file.filePath),
-            path.basename(file.filePath)
+            path.basename(file.filePath),
           );
           if (Object.keys(globals).length === 0) {
             // No global ignores. So let's check the specific line.

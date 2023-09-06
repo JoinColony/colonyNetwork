@@ -527,7 +527,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       const badClient = new MaliciousReputationMinerWrongJRHRightNLeaves(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
         [500000],
-        [1, 11, 10, 9, 8]
+        [1, 11, 10, 9, 8],
       );
       await badClient.initialise(colonyNetwork.address);
 
@@ -724,7 +724,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
         17,
-        toBN("170141183460469231731687302715884105727").mul(toBN(-1))
+        toBN("170141183460469231731687302715884105727").mul(toBN(-1)),
       );
       await badClient.initialise(colonyNetwork.address);
 

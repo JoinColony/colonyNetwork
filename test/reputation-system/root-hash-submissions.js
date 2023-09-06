@@ -135,7 +135,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       await checkErrorRevert(
         repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MINER1 }),
-        "colony-reputation-mining-cycle-submission-not-within-target"
+        "colony-reputation-mining-cycle-submission-not-within-target",
       );
     });
 
@@ -166,7 +166,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const entryNumber2 = await getValidEntryNumber(colonyNetwork, MINER1, "0x87654321");
       await checkErrorRevert(
         repCycle.submitRootHash("0x87654321", 10, "0x00", entryNumber2, { from: MINER1 }),
-        "colony-reputation-mining-submitting-different-hash"
+        "colony-reputation-mining-submitting-different-hash",
       );
     });
 
@@ -179,7 +179,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       await checkErrorRevert(
         repCycle.submitRootHash("0x12345678", 11, "0x00", entryNumber, { from: MINER1 }),
-        "colony-reputation-mining-submitting-different-nleaves"
+        "colony-reputation-mining-submitting-different-nleaves",
       );
     });
 
@@ -192,7 +192,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       await checkErrorRevert(
         repCycle.submitRootHash("0x12345678", 10, "0x01", entryNumber, { from: MINER1 }),
-        "colony-reputation-mining-submitting-different-jrh"
+        "colony-reputation-mining-submitting-different-jrh",
       );
       const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
       expect(nUniqueSubmittedHashes).to.eq.BN(1);
@@ -208,7 +208,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       await checkErrorRevert(
         repCycle.submitRootHash("0x12345678", 10, "0x00", entryNumber, { from: MINER1 }),
-        "colony-reputation-mining-submitting-same-entry-index"
+        "colony-reputation-mining-submitting-same-entry-index",
       );
     });
 
@@ -287,7 +287,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       await checkErrorRevert(
         repCycle.submitRootHash("0x12345678", 10, "0x00", entryNumber, { from: MINER1 }),
-        "colony-reputation-mining-max-number-miners-reached"
+        "colony-reputation-mining-max-number-miners-reached",
       );
     });
 
@@ -297,7 +297,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       await checkErrorRevert(
         repCycle.submitRootHash("0x12345678", 10, "0x00", 1000000000000, { from: MINER1 }),
-        "colony-reputation-mining-stake-minimum-not-met-for-index"
+        "colony-reputation-mining-stake-minimum-not-met-for-index",
       );
 
       await repCycle.submitRootHash("0x87654321", 10, "0x00", 10, { from: MINER1 });
@@ -308,7 +308,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       await checkErrorRevert(
         repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MINER1 }),
-        "colony-reputation-mining-cycle-submission-not-within-target"
+        "colony-reputation-mining-cycle-submission-not-within-target",
       );
     });
 
@@ -319,7 +319,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
 
       await checkErrorRevert(
         repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MINER2 }),
-        "colony-reputation-mining-cycle-submissions-closed"
+        "colony-reputation-mining-cycle-submissions-closed",
       );
 
       const submitterAddress = await repCycle.getSubmissionUser("0x12345678", 10, "0x00", 0);
@@ -372,7 +372,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       await repCycle.submitRootHash("0x12345678", 10, HASHZERO, 10, { from: MINER1 });
       await checkErrorRevertEstimateGas(
         repCycle.getSubmissionUser.estimateGas("0x12345678", 10, HASHZERO, 10),
-        "colony-reputation-mining-submission-index-out-of-range"
+        "colony-reputation-mining-submission-index-out-of-range",
       );
     });
   });
@@ -463,7 +463,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       // TODO: this should just call invalidateHash, right?
       await checkErrorRevert(
         accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient),
-        "colony-reputation-mining-cannot-invalidate-final-hash"
+        "colony-reputation-mining-cannot-invalidate-final-hash",
       );
     });
 

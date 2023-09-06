@@ -127,13 +127,13 @@ contract("Staged Expenditure", (accounts) => {
         expenditure.fundingPotId,
         WAD.muln(3),
         token.address,
-        { from: USER0 }
+        { from: USER0 },
       );
 
       // Cannot release stage if not finalized
       await checkErrorRevert(
         stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 }),
-        "expenditure-not-finalized"
+        "expenditure-not-finalized",
       );
 
       await colony.finalizeExpenditure(expenditureId);
@@ -144,7 +144,7 @@ contract("Staged Expenditure", (accounts) => {
       // Cannot release stage if not owner
       await checkErrorRevert(
         stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER1 }),
-        "staged-expenditure-not-owner"
+        "staged-expenditure-not-owner",
       );
 
       await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 });
@@ -215,7 +215,7 @@ contract("Staged Expenditure", (accounts) => {
         expenditure.fundingPotId,
         WAD.muln(3),
         token.address,
-        { from: USER0 }
+        { from: USER0 },
       );
 
       await colony.finalizeExpenditure(expenditureId);
@@ -283,7 +283,7 @@ contract("Staged Expenditure", (accounts) => {
         expenditure.fundingPotId,
         WAD.muln(3),
         token.address,
-        { from: USER0 }
+        { from: USER0 },
       );
 
       await colony.finalizeExpenditure(expenditureId);
@@ -319,7 +319,7 @@ contract("Staged Expenditure", (accounts) => {
 
       await checkErrorRevert(
         stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 }),
-        "staged-expenditure-not-staged-expenditure"
+        "staged-expenditure-not-staged-expenditure",
       );
     });
   });

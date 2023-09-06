@@ -133,7 +133,7 @@ contract("Token Locking", (addresses) => {
     it("should not be able to deposit tokens if they are not approved", async () => {
       await checkErrorRevert(
         tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress }),
-        "ds-token-insufficient-approval"
+        "ds-token-insufficient-approval",
       );
 
       const info = await tokenLocking.getUserLock(token.address, userAddress);
@@ -157,7 +157,7 @@ contract("Token Locking", (addresses) => {
 
       await checkErrorRevert(
         tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, false, { from: userAddress }),
-        "colony-token-locking-token-locked"
+        "colony-token-locking-token-locked",
       );
     });
 
@@ -212,7 +212,7 @@ contract("Token Locking", (addresses) => {
 
       await checkErrorRevert(
         tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, otherUserTokens, false, { from: userAddress }),
-        "Panic: Arithmetic overflow"
+        "Panic: Arithmetic overflow",
       );
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       expect(info.balance).to.eq.BN(usersTokens);
@@ -250,7 +250,7 @@ contract("Token Locking", (addresses) => {
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       await checkErrorRevert(
         tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, usersTokens, false, { from: userAddress }),
-        "colony-token-locking-token-locked"
+        "colony-token-locking-token-locked",
       );
     });
 
@@ -311,7 +311,7 @@ contract("Token Locking", (addresses) => {
 
       await checkErrorRevert(
         tokenLocking.transfer(token.address, usersTokens, otherUserAddress, false, { from: userAddress }),
-        "colony-token-locking-token-locked"
+        "colony-token-locking-token-locked",
       );
     });
 
@@ -459,7 +459,7 @@ contract("Token Locking", (addresses) => {
       const payoutId = logs[0].args.rewardPayoutId;
       await checkErrorRevert(
         tokenLocking.unlockTokenForUser(token.address, userAddress, payoutId),
-        "colony-token-locking-sender-not-colony-or-network"
+        "colony-token-locking-sender-not-colony-or-network",
       );
     });
 

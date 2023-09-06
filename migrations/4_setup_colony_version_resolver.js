@@ -47,7 +47,7 @@ module.exports = async function (deployer) {
     colonyTask,
     contractRecovery,
     colonyArbitraryTransaction,
-    resolver
+    resolver,
   );
   await colonyNetwork.initialise(resolver.address, version);
 

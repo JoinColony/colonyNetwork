@@ -424,7 +424,7 @@ exports.getMetaTransactionParameters = async function getMetaTransactionParamete
     { t: "uint256", v: nonce.toString() },
     { t: "address", v: targetAddress },
     { t: "uint256", v: chainId },
-    { t: "bytes", v: txData }
+    { t: "bytes", v: txData },
   );
   const sig = await web3.eth.sign(msg, userAddress);
 

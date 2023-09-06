@@ -319,7 +319,7 @@ ${
 ${printParamTable(method, method.returnParameters, method.natspec.returns)}`
     : ""
 }
-`
+`,
   )
   .join("")}`;
 }
