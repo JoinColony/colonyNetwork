@@ -21,6 +21,8 @@ pragma solidity 0.8.21;
 contract BridgeMock {
   event UserRequestForSignature(bytes32 indexed messageId, bytes encodedData);
   bool bridgeEnabled = true;
+  address public messageSender = address(0);
+
 
   function requireToPassMessage(address _target, bytes memory _data, uint256 _gasLimit) public {
     require(bridgeEnabled, "bridge-not-working");
@@ -30,7 +32,8 @@ contract BridgeMock {
   event RelayedMessage(address sender, address executor, bytes32 messageId, bool status);
 
   function execute(address _target, bytes memory _data, uint256 _gasLimit, bytes32 _messageId, address _sender) public {
-
+      require(messageSender == address(0), "bridge-no-nested-calls");
+      messageSender = _sender;
       (bool success, bytes memory returndata) = address(_target).call{gas:_gasLimit}(_data);
 
       // call failed
@@ -40,6 +43,8 @@ contract BridgeMock {
           revert(add(32, returndata), mload(returndata))
         }
       }
+
+    messageSender = address(0);
 
     emit RelayedMessage(_sender, msg.sender, _messageId, success);
   }
