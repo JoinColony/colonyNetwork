@@ -36,13 +36,17 @@ class MockBridgeMonitor {
         this.skipped.push([foreignBridge, messageId, encodedData]);
         return;
       }
-      const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
-      const tx = await foreignBridge.execute(target, data, gasLimit, messageId, sender);
-      await tx.wait();
       console.log("seen on home bridge");
+      const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
+      const tx = await foreignBridge.execute(target, data, gasLimit, messageId, sender, { gasLimit: gasLimit * 1.5 });
+      try {
+        await tx.wait();
+      } catch (err) {
+        // We don't need to do anything here, we just want to make sure the transaction is mined
+      }
       this.bridgingPromiseCount -= 1;
       if (this.bridgingPromiseCount === 0) {
-        this.resolveBridgingPromise();
+        this.resolveBridgingPromise(tx);
       }
     });
 
@@ -65,13 +69,12 @@ class MockBridgeMonitor {
           console.log("WARNING: Bridged transaction failed");
         }
       } catch (err) {
-        console.log(err);
+        // console.log(err);
       }
-      console.log("seen on foreign bridge");
       console.log("bridging transaction on home chain", tx.hash);
       this.bridgingPromiseCount -= 1;
       if (this.bridgingPromiseCount === 0) {
-        this.resolveBridgingPromise();
+        this.resolveBridgingPromise(tx);
       }
     });
 
@@ -85,13 +88,17 @@ class MockBridgeMonitor {
   async bridgeSkipped() {
     const [bridge, messageId, encodedData] = this.skipped.shift();
     const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
-    const tx = await bridge.execute(target, data, gasLimit, messageId, sender);
-    await tx.wait();
+    const tx = await bridge.execute(target, data, gasLimit, messageId, sender, { gasLimit: gasLimit * 1.5 });
+    try {
+      await tx.wait();
+    } catch (err) {
+      // We don't need to do anything here, we just want to make sure the transaction is mined
+    }
     console.log("bridged pending request");
     this.bridgingPromiseCount -= 1;
 
     if (this.bridgingPromiseCount === 0) {
-      this.resolveBridgingPromise();
+      this.resolveBridgingPromise(tx);
     }
   }
 

@@ -94,8 +94,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   // Well this is a weird hack to need
   function newAddressArray() pure internal returns (address[] memory) {}
-  function setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves) onlyNotMiningChain stoppable public {
-    require(bridgeData[msgSender()].chainId != 0, "colony-network-not-known-bridge");
+  function setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves, uint256 _nonce) onlyNotMiningChain checkBridgedSender() stoppable public {
+    require(_nonce >= bridgeCurrentRootHashNonces[bridgeData[msgSender()].chainId], "colony-mining-bridge-invalid-nonce");
+    bridgeCurrentRootHashNonces[bridgeData[msgSender()].chainId] = _nonce;
     reputationRootHash = newHash;
     reputationRootHashNLeaves = newNLeaves;
 
@@ -103,10 +104,14 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   function bridgeCurrentRootHash(address _bridgeAddress) onlyMiningChain stoppable public {
-    require(bridgeData[_bridgeAddress].chainId != 0, "colony-network-not-known-bridge");
+    uint256 chainId = bridgeData[_bridgeAddress].chainId;
+    require(chainId != 0, "colony-network-not-known-bridge");
+
+    bridgeCurrentRootHashNonces[chainId] += 1;
+
     bytes memory payload = abi.encodePacked(
       bridgeData[_bridgeAddress].setReputationRootHashBefore,
-      abi.encodeWithSignature("setReputationRootHashFromBridge(bytes32,uint256)", reputationRootHash, reputationRootHashNLeaves),
+      abi.encodeWithSignature("setReputationRootHashFromBridge(bytes32,uint256,uint256)", reputationRootHash, reputationRootHashNLeaves, bridgeCurrentRootHashNonces[chainId]),
       bridgeData[_bridgeAddress].setReputationRootHashAfter
     );
 

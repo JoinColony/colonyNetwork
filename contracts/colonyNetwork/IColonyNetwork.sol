@@ -513,6 +513,8 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _bridgeAddress The address of the bridge
   /// @param _chainId The chainId of the corresponding network
   /// @param _gas How much gas to use for a bridged transaction
+  /// @param _msgSenderFunctionSig The function signature of the function to call on the bridge to get the msgSender
+  /// @param _correspondingNetwork The address of the corresponding colony network contract on the other network
   /// @param _updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
   /// @param _updateLogAfter The tx data after the dynamic part of the tx to bridge to the update log
   /// @param _skillCreationBefore The tx data before the dynamic part of the tx to brdige skill creation
@@ -523,6 +525,8 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
     address _bridgeAddress,
     uint256 _chainId,
     uint256 _gas,
+    bytes4 _msgSenderFunctionSig,
+    address _correspondingNetwork,
     bytes memory _updateLogBefore,
     bytes memory _updateLogAfter,
     bytes memory _skillCreationBefore,
@@ -544,7 +548,8 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @dev Should error if called by anyone other than the known bridge from the mining chain
   /// @param newHash The new root hash
   /// @param newNLeaves The new nLeaves in the root hash
-  function setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves) external;
+  /// @param nonce The nonce to ensure these txs can't be replayed
+  function setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves, uint256 nonce) external;
 
   /// @notice Initiate a cross-chain update of the current reputation state
   /// @param bridgeAddress The bridge we're going over

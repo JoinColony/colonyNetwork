@@ -126,6 +126,8 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   // networkId -> colonyAddress -> updateCount -> update
   mapping(uint256 => mapping( address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 48
 
+  mapping(uint256 => uint256) bridgeCurrentRootHashNonces;
+
   // Modifiers
 
   modifier calledByColony() {
@@ -156,6 +158,20 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
     _;
   }
 
+  modifier checkBridgedSender(){
+    // Block scoping to avoid stack too deep errors
+    {
+      address bridgeAddress = msgSender();
+      Bridge storage bridge = bridgeData[bridgeAddress];
+      require(bridge.chainId != 0, "colony-network-not-known-bridge");
+      (bool success, bytes memory data) = bridgeAddress.staticcall(abi.encodeWithSelector(bridge.msgSenderSig));
+      require(success, "colony-network-bridge-msg-sender-failed");
+      (address returnedAddr) = abi.decode(data, (address));
+      require(returnedAddr == bridge.correspondingNetwork, "colony-network-bridged-tx-only-from-network");
+    }
+    _;
+  }
+
   // Internal functions
 
   function toRootSkillId(uint256 _chainId) internal pure returns (uint256) {
@@ -166,5 +182,4 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   function toChainId(uint256 _skillId) internal pure returns (uint256) {
     return _skillId >> 128;
   }
-
 }

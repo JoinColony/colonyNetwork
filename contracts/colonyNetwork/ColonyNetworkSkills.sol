@@ -100,6 +100,8 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     address _bridgeAddress,
     uint256 _chainId,
     uint256 _gas,
+    bytes4 _msgSenderFunctionSig,
+    address _correspondingNetwork,
     bytes memory _updateLogBefore,
     bytes memory _updateLogAfter,
     bytes memory _skillCreationBefore,
@@ -120,6 +122,8 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     bridgeData[_bridgeAddress] = Bridge(
       _chainId,
       _gas,
+      _msgSenderFunctionSig,
+      _correspondingNetwork,
       _updateLogBefore,
       _updateLogAfter,
       _skillCreationBefore,
@@ -206,9 +210,11 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     public
     always
     onlyMiningChain
+    checkBridgedSender()
     skillAndBridgeConsistent(msgSender(), _skillId)
   {
     uint256 bridgeChainId = bridgeData[msgSender()].chainId;
+    require(networkSkillCounts[bridgeChainId] < _skillId, "colony-network-skill-already-added");
 
     // Check skill count - if not next, then store for later.
     if (networkSkillCounts[bridgeChainId] + 1 == _skillId){
@@ -216,11 +222,13 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       networkSkillCounts[bridgeChainId] += 1;
 
       emit SkillAddedFromBridge(_skillId);
-    } else if (networkSkillCounts[bridgeChainId] < _skillId){
+    } else {
+      require(pendingSkillAdditions[bridgeChainId][_skillId] == 0, "colony-network-skill-already-pending");
+      
       pendingSkillAdditions[bridgeChainId][_skillId] = _parentSkillId;
 
       emit SkillStoredFromBridge(_skillId);
-    }
+    } 
   }
 
   function addReputationUpdateLogFromBridge(
@@ -233,9 +241,12 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     public
     stoppable
     onlyMiningChain
+    checkBridgedSender()
     skillAndBridgeConsistent(msgSender(), _skillId)
   {
     uint256 bridgeChainId = bridgeData[msgSender()].chainId;
+    
+    require(reputationUpdateCount[bridgeChainId][_colony] < _updateNumber, "colony-network-update-already-added");
 
     // If next expected update, add to log
     if (
@@ -246,8 +257,10 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       appendReputationUpdateLogInternal(_user, _amount, _skillId, _colony);
 
       emit ReputationUpdateAddedFromBridge(bridgeChainId, _colony, _updateNumber);
-    } else {
+      return;
+    } else { 
       // Not next update, store for later
+      require(pendingReputationUpdates[bridgeChainId][_colony][_updateNumber].timestamp == 0, "colony-network-update-already-pending");
       pendingReputationUpdates[bridgeChainId][_colony][_updateNumber] = PendingReputationUpdate(_user, _amount, _skillId, _colony, block.timestamp);
 
       emit ReputationUpdateStoredFromBridge(bridgeChainId, _colony, _updateNumber);

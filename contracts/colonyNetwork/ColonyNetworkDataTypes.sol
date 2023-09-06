@@ -224,6 +224,8 @@ interface ColonyNetworkDataTypes {
   struct Bridge {
     uint256 chainId;
     uint256 gas;
+    bytes4 msgSenderSig;
+    address correspondingNetwork;
     bytes updateLogBefore;
     bytes updateLogAfter;
     bytes skillCreationBefore;

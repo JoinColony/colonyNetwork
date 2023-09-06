@@ -1063,7 +1063,7 @@ Used to track that a user is eligible to claim a reward
 |_amount|uint256|The amount of CLNY to be awarded
 
 
-### ▸ `setBridgeData(address _bridgeAddress, uint256 _chainId, uint256 _gas, bytes memory _updateLogBefore, bytes memory _updateLogAfter, bytes memory _skillCreationBefore, bytes memory _skillCreationAfter, bytes memory _setReputationRootHashBefore, bytes memory _setReputationRootHashAfter)`
+### ▸ `setBridgeData(address _bridgeAddress, uint256 _chainId, uint256 _gas, bytes4 _msgSenderFunctionSig, address _correspondingNetwork, bytes memory _updateLogBefore, bytes memory _updateLogAfter, bytes memory _skillCreationBefore, bytes memory _skillCreationAfter, bytes memory _setReputationRootHashBefore, bytes memory _setReputationRootHashAfter)`
 
 Called to set the details about bridge _bridgeAddress
 
@@ -1075,6 +1075,8 @@ Called to set the details about bridge _bridgeAddress
 |_bridgeAddress|address|The address of the bridge
 |_chainId|uint256|The chainId of the corresponding network
 |_gas|uint256|How much gas to use for a bridged transaction
+|_msgSenderFunctionSig|bytes4|The function signature of the function to call on the bridge to get the msgSender
+|_correspondingNetwork|address|The address of the corresponding colony network contract on the other network
 |_updateLogBefore|bytes|The tx data before the dynamic part of the tx to bridge to the update log
 |_updateLogAfter|bytes|The tx data after the dynamic part of the tx to bridge to the update log
 |_skillCreationBefore|bytes|The tx data before the dynamic part of the tx to brdige skill creation
@@ -1180,7 +1182,7 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |_stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 
 
-### ▸ `setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves)`
+### ▸ `setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves, uint256 nonce)`
 
 Update the reputation on a foreign chain from the mining chain
 
@@ -1192,6 +1194,7 @@ Update the reputation on a foreign chain from the mining chain
 |---|---|---|
 |newHash|bytes32|The new root hash
 |newNLeaves|uint256|The new nLeaves in the root hash
+|nonce|uint256|The nonce to ensure these txs can't be replayed
 
 
 ### ▸ `setTokenLocking(address _tokenLockingAddress)`
