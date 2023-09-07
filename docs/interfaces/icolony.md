@@ -620,6 +620,35 @@ View an obligation of tokens.
 |---|---|---|
 |obligation|uint256|The amount that is currently obligated
 
+### ▸ `getPayment(uint256 _id):Payment payment`
+
+Returns an exiting payment.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Payment identifier
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|payment|Payment|The Payment data structure
+
+### ▸ `getPaymentCount():uint256 count`
+
+Get the number of payments in the colony.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|count|uint256|The payment count
+
 ### ▸ `getRewardInverse():uint256 rewardInverse`
 
 Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), return 100.
@@ -660,6 +689,113 @@ Get the root local skill id
 |Name|Type|Description|
 |---|---|---|
 |rootLocalSkill|uint256|The root local skill id
+
+### ▸ `getTask(uint256 _id):bytes32 specificationHash, bytes32 deliverableHash, TaskStatus status, uint256 dueDate, uint256 fundingPotId, uint256 completionTimestamp, uint256 domainId, uint256[] skillIds`
+
+Get a task with id `_id`
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the task
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|specificationHash|bytes32|Task brief hash
+|deliverableHash|bytes32|Task deliverable hash
+|status|TaskStatus|TaskStatus property. 0 - Active. 1 - Cancelled. 2 - Finalized
+|dueDate|uint256|Due date
+|fundingPotId|uint256|Id of funding pot for task
+|completionTimestamp|uint256|Task completion timestamp
+|domainId|uint256|Task domain id, default is root colony domain with id 1
+|skillIds|uint256[]|Array of global skill ids assigned to task
+
+### ▸ `getTaskChangeNonce(uint256 _id):uint256 nonce`
+
+Starts from 0 and is incremented on every co-reviewed task change via `executeTaskChange` call.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the task
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nonce|uint256|The current task change nonce value
+
+### ▸ `getTaskCount():uint256 count`
+
+Get the number of tasks in the colony.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|count|uint256|The task count
+
+### ▸ `getTaskRole(uint256 _id, uint8 _role):Role role`
+
+Get the `Role` properties back for role `_role` in task `_id`.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the task
+|_role|uint8|Id of the role, as defined in TaskRole enum
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|role|Role|The Role
+
+### ▸ `getTaskWorkRatingSecret(uint256 _id, uint8 _role):bytes32 secret`
+
+Get the rating secret submitted for role `_role` in task `_id`
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the task
+|_role|uint8|Id of the role, as defined in TaskRole enum
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|secret|bytes32|Rating secret `bytes32` value
+
+### ▸ `getTaskWorkRatingSecretsInfo(uint256 _id):uint256 nSecrets, uint256 lastSubmittedAt`
+
+Get the `ColonyStorage.RatingSecrets` information for task `_id`.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the task
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nSecrets|uint256|Number of secrets
+|lastSubmittedAt|uint256|Timestamp of the last submitted rating secret
 
 ### ▸ `getToken():address tokenAddress`
 
