@@ -2085,4 +2085,91 @@ contract.skip("ColonyTask", (accounts) => {
       expect(balance).to.be.lt.BN(WORKER_PAYOUT);
     });
   });
+
+  describe("when setting domain and skill on task", () => {
+    beforeEach(async () => {
+      ({ colony, token } = await setupRandomColony(colonyNetwork));
+    });
+
+    it("should be able to set domain on task", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+
+      const { logs } = await colony.makeTask(1, 0, SPECIFICATION_HASH, 2, 0, 0);
+      const { taskId } = logs[0].args;
+
+      const task = await colony.getTask(taskId);
+      expect(task.domainId).to.eq.BN(2);
+    });
+
+    it("should NOT be able to set a nonexistent domain on task", async () => {
+      await checkErrorRevert(colony.makeTask(1, 0, SPECIFICATION_HASH, 2, 0, 0), "ds-auth-child-domain-does-not-exist");
+    });
+
+    it("should be able to set global skill on task", async () => {
+      await metaColony.addGlobalSkill();
+      await metaColony.addGlobalSkill();
+      const globalSkillId = await colonyNetwork.getSkillCount();
+
+      const taskId = await makeTask({ colony });
+
+      await executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "setTaskSkill",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, globalSkillId],
+      });
+
+      const task = await colony.getTask(taskId);
+      expect(task.skillIds[0]).to.eq.BN(globalSkillId);
+    });
+
+    it("should not allow anyone but the colony to set global skill on task", async () => {
+      await metaColony.addGlobalSkill();
+      const globalSkillId = await colonyNetwork.getSkillCount();
+
+      const taskId = await makeTask({ colony, skillId: 0 });
+      await checkErrorRevert(colony.setTaskSkill(taskId, globalSkillId, { from: MANAGER }), "colony-not-self");
+
+      const task = await colony.getTask(taskId);
+      expect(task.skillIds[0]).to.be.zero;
+    });
+
+    it("should NOT be able to set global skill on nonexistent task", async () => {
+      await checkErrorRevert(colony.setTaskSkill(10, 1), "colony-task-does-not-exist");
+    });
+
+    it("should NOT be able to set global skill on completed task", async () => {
+      await metaColony.addGlobalSkill();
+      await metaColony.addGlobalSkill();
+      const globalSkillId = await colonyNetwork.getSkillCount();
+
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupFinalizedTask({ colonyNetwork, colony });
+      await checkErrorRevert(colony.setTaskSkill(taskId, globalSkillId), "colony-task-complete");
+
+      const task = await colony.getTask(taskId);
+      expect(task.skillIds[0]).to.eq.BN(GLOBAL_SKILL_ID);
+    });
+
+    it("should NOT be able to set nonexistent skill on task", async () => {
+      const taskId = await makeTask({ colony });
+      await checkErrorRevert(colony.setTaskSkill(taskId, 100), "colony-not-valid-global-or-local-skill");
+    });
+
+    it("should NOT be able to set a domain skill on task", async () => {
+      const taskId = await makeTask({ colony });
+      await checkErrorRevert(colony.setTaskSkill(taskId, 1), "colony-not-valid-global-or-local-skill");
+    });
+
+    it("should NOT be able to set a deprecated global skill on task", async () => {
+      const taskId = await makeTask({ colony });
+      await metaColony.addGlobalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+      await metaColony.deprecateGlobalSkill(skillId);
+
+      await checkErrorRevert(colony.setTaskSkill(taskId, skillId), "colony-not-valid-global-or-local-skill");
+    });
+  });
 });
