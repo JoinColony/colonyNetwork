@@ -119,6 +119,7 @@ contract("All", function (accounts) {
       await oneTxExtension.install(colony.address);
       await colony.setAdministrationRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
       await colony.setFundingRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
+      await colony.setArbitrationRole(1, UINT256_MAX, oneTxExtension.address, 1, true);
 
       // 1 tx payment to one recipient, native token
       await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER], [token.address], [10], 1, 0);

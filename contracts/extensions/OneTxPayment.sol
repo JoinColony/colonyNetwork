@@ -29,6 +29,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
 
   ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
   ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
+  ColonyDataTypes.ColonyRole constant ARBITRATION = ColonyDataTypes.ColonyRole.Arbitration;
 
   mapping(address => uint256) metatransactionNonces;
 
@@ -52,7 +53,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public override pure returns (uint256 _version) {
-    return 6;
+    return 7;
   }
 
   /// @notice Configures the extension
@@ -84,6 +85,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   ));
 
   bytes32 constant REQUIRED_ROLES = (
+    bytes32(uint256(1)) << uint8(ARBITRATION) |
     bytes32(uint256(1)) << uint8(FUNDING) |
     bytes32(uint256(1)) << uint8(ADMINISTRATION)
   );
@@ -157,7 +159,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
     }
 
-    finalizeAndClaim(expenditureId, _workers, _tokens);
+    finalizeAndClaim(_permissionDomainId, _childSkillIndex, expenditureId, _workers, _tokens);
 
     emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
   }
@@ -224,7 +226,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
     }
 
-    finalizeAndClaim(expenditureId, _workers, _tokens);
+    finalizeAndClaim(_permissionDomainId, _childSkillIndex, expenditureId, _workers, _tokens);
 
     emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
   }
@@ -330,8 +332,24 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     colony.moveFundsBetweenPots(_permissionDomainId, _childSkillIndex, _childSkillIndex, _domainPotId, _fundingPotId, _amount, _token);
   }
 
-  function finalizeAndClaim(uint256 _expenditureId, address payable[] memory  _workers, address[] memory _tokens) internal {
+  bool constant ARRAY = true;
+  uint256 constant EXPENDITURES_SLOT = 25;
+  bytes32 constant CLAIM_DELAY_OFFSET = bytes32(uint256(4));
+
+  function finalizeAndClaim(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _expenditureId,
+    address payable[] memory  _workers,
+    address[] memory _tokens
+  )
+    internal
+  {
     colony.finalizeExpenditure(_expenditureId);
+
+    bool[] memory mask = new bool[](1); mask[0] = ARRAY;
+    bytes32[] memory keys = new bytes32[](1); keys[0] = CLAIM_DELAY_OFFSET;
+    colony.setExpenditureState( _permissionDomainId, _childSkillIndex, _expenditureId, EXPENDITURES_SLOT, mask, keys, bytes32(0));
 
     uint256 slot;
 

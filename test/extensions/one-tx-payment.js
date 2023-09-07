@@ -5,7 +5,18 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID, FUNDING_ROLE, ADMINISTRATION_ROLE, ADDRESS_ZERO } = require("../../helpers/constants");
+const {
+  UINT256_MAX,
+  WAD,
+  INITIAL_FUNDING,
+  GLOBAL_SKILL_ID,
+  ARBITRATION_ROLE,
+  FUNDING_ROLE,
+  ADMINISTRATION_ROLE,
+  ADDRESS_ZERO,
+  SECONDS_PER_DAY,
+} = require("../../helpers/constants");
+
 const { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent } = require("../../helpers/test-helper");
 const { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
@@ -30,7 +41,7 @@ contract("One transaction payments", (accounts) => {
   const USER1 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[1] : accounts[2];
   const USER2 = accounts[1].toLowerCase() < accounts[2].toLowerCase() ? accounts[2] : accounts[1];
 
-  const ROLES = rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]);
+  const ROLES = rolesToBytes32([ARBITRATION_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE]);
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
@@ -108,6 +119,20 @@ contract("One transaction payments", (accounts) => {
       expect(balanceAfter).to.eq.BN(9);
 
       await expectEvent(tx, "OneTxPaymentMade", [accounts[0], 1, 1]);
+    });
+
+    it("should allow a single-transaction payment of tokens to occur, regardless of global claim delay", async () => {
+      await colony.setDefaultGlobalClaimDelay(SECONDS_PER_DAY);
+
+      const balanceBefore = await token.balanceOf(USER1);
+      expect(balanceBefore).to.be.zero;
+
+      await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID);
+
+      const balanceAfter = await token.balanceOf(USER1);
+      expect(balanceAfter).to.eq.BN(9);
+
+      await colony.setDefaultGlobalClaimDelay(0);
     });
 
     it("should allow a single-transaction payment of tokens to occur via metatransaction", async () => {
