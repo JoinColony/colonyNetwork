@@ -4,9 +4,9 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
-const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO } = require("../../helpers/constants");
+const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO, SPECIFICATION_HASH, GLOBAL_SKILL_ID, HASHZERO } = require("../../helpers/constants");
 const { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } = require("../../helpers/test-helper");
-const { setupRandomColony, getMetaTransactionParameters, makeExpenditure } = require("../../helpers/test-data-generator");
+const { setupRandomColony, getMetaTransactionParameters, makeExpenditure, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -14,6 +14,8 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const Resolver = artifacts.require("Resolver");
+const TasksPayments = artifacts.require("TasksPayments");
 const TransferTest = artifacts.require("TransferTest");
 const Token = artifacts.require("Token");
 
@@ -413,6 +415,79 @@ contract("Colony", (accounts) => {
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, amount.divn(2), token.address);
 
       await checkErrorRevert(colony.burnTokens(token.address, amount), "colony-not-enough-tokens");
+    });
+  });
+
+  describe("when deprecating Tasks and Payments", () => {
+    let tasksPayments;
+
+    beforeEach(async () => {
+      const colonyVersion = await colony.version();
+      const colonyResolverAddress = await colonyNetwork.getColonyVersionResolver(colonyVersion);
+      const colonyResolver = await Resolver.at(colonyResolverAddress);
+
+      const tasksPaymentsContract = await TasksPayments.new();
+      await colonyResolver.register("makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)", tasksPaymentsContract.address);
+      await colonyResolver.register("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)", tasksPaymentsContract.address);
+
+      tasksPayments = await TasksPayments.at(colony.address);
+    });
+
+    it("should be able to query for a task", async () => {
+      await tasksPayments.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: USER0 });
+
+      const taskId = await colony.getTaskCount();
+      const task = await colony.getTask(taskId);
+
+      expect(task.specificationHash).to.equal(SPECIFICATION_HASH);
+      expect(task.domainId).to.eq.BN(1);
+
+      const taskChangeNonce = await colony.getTaskChangeNonce(taskId);
+      const taskWorkRatingSecretsInfo = await colony.getTaskWorkRatingSecretsInfo(taskId);
+      const taskWorkRatingSecret = await colony.getTaskWorkRatingSecret(taskId, 0);
+      const taskRole = await colony.getTaskRole(taskId, 0);
+
+      expect(taskChangeNonce).to.eq.BN(0);
+      expect(taskWorkRatingSecretsInfo[0]).to.eq.BN(0);
+      expect(taskWorkRatingSecretsInfo[1]).to.eq.BN(0);
+      expect(taskWorkRatingSecret).to.equal(HASHZERO);
+      expect(taskRole.user).to.equal(USER0);
+    });
+
+    it("should be able to query for a payment", async () => {
+      await tasksPayments.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, GLOBAL_SKILL_ID);
+
+      const paymentId = await colony.getPaymentCount();
+      const payment = await colony.getPayment(paymentId);
+
+      expect(payment.recipient).to.equal(USER1);
+      expect(payment.domainId).to.eq.BN(1);
+    });
+
+    it("should be able to transfer funds allocated to a task back to the domain", async () => {
+      await fundColonyWithTokens(colony, token, WAD);
+
+      await tasksPayments.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: USER0 });
+      const taskId = await colony.getTaskCount();
+      const { fundingPotId } = await colony.getTask(taskId);
+
+      // Move funds into task funding pot
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);
+      // Move funds back
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, fundingPotId, 1, WAD, token.address);
+    });
+
+    it("should be able to transfer funds allocated to a payment back to the domain", async () => {
+      await fundColonyWithTokens(colony, token, WAD);
+
+      await tasksPayments.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, GLOBAL_SKILL_ID);
+      const paymentId = await colony.getPaymentCount();
+      const { fundingPotId } = await colony.getPayment(paymentId);
+
+      // Move funds into task funding pot
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);
+      // Move funds back
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, fundingPotId, 1, WAD, token.address);
     });
   });
 });
