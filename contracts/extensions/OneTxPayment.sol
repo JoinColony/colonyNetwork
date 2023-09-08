@@ -139,13 +139,8 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
 
     require(
       colony.hasInheritedUserRole(msgSender(), 1, FUNDING, _childSkillIndex, _domainId) &&
-        colony.hasInheritedUserRole(
-          msgSender(),
-          _callerPermissionDomainId,
-          ADMINISTRATION,
-          _callerChildSkillIndex,
-          _domainId
-        ),
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId) &&
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ARBITRATION, _callerChildSkillIndex, _domainId),
       "one-tx-payment-not-authorized"
     );
 
@@ -210,20 +205,9 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     );
 
     require(
-      colony.hasInheritedUserRole(
-        msgSender(),
-        _callerPermissionDomainId,
-        FUNDING,
-        _callerChildSkillIndex,
-        _domainId
-      ) &&
-        colony.hasInheritedUserRole(
-          msgSender(),
-          _callerPermissionDomainId,
-          ADMINISTRATION,
-          _callerChildSkillIndex,
-          _domainId
-        ),
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, FUNDING, _callerChildSkillIndex, _domainId) &&
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId) &&
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ARBITRATION, _callerChildSkillIndex, _domainId),
       "one-tx-payment-not-authorized"
     );
 
