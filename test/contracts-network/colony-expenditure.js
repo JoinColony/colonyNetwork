@@ -1297,7 +1297,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
 
-      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.recipient).to.equal(USER);
     });
 
@@ -1308,7 +1308,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
 
-      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.claimDelay).to.eq.BN(100);
     });
 
@@ -1319,7 +1319,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
 
-      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.payoutModifier).to.eq.BN(100);
     });
 
@@ -1335,7 +1335,7 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should allow arbitration users to update expenditure slot skills", async () => {
-      await colony.setExpenditureSkill(expenditureId, 0, GLOBAL_SKILL_ID, { from: ADMIN });
+      await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
 
       const mask = [MAPPING, ARRAY, ARRAY];
       const keys = ["0x0", bn2bytes32(new BN(3)), bn2bytes32(new BN(0))];
@@ -1343,14 +1343,14 @@ contract("Colony Expenditure", (accounts) => {
 
       await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
 
-      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      const expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.skills[0]).to.eq.BN(100);
     });
 
     it("should allow arbitration users to add or remove expenditure slot skills", async () => {
-      await colony.setExpenditureSkill(expenditureId, 0, GLOBAL_SKILL_ID, { from: ADMIN });
+      await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
 
-      let expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      let expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.skills.length).to.eq.BN(1);
       expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
 
@@ -1368,7 +1368,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
 
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.skills.length).to.eq.BN(2);
       expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
       expect(expenditureSlot.skills[1]).to.eq.BN(100);
@@ -1380,7 +1380,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURESLOTS_SLOT, mask, keys, value, { from: ARBITRATOR });
 
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.skills.length).to.eq.BN(1);
       expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
     });
