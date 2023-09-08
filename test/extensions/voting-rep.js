@@ -17,6 +17,8 @@ const {
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   FUNDING_ROLE,
   ADMINISTRATION_ROLE,
+  SLOT0,
+  SLOT1,
 } = require("../../helpers/constants");
 
 const {
@@ -673,7 +675,7 @@ contract("Voting Reputation", (accounts) => {
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.globalClaimDelay).to.eq.BN(10 * YEAR);
 
-      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, SLOT0, token.address), "colony-expenditure-cannot-claim");
     });
 
     it("does not update the expenditure globalClaimDelay if the target is another colony", async () => {
@@ -747,7 +749,7 @@ contract("Voting Reputation", (accounts) => {
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.globalClaimDelay).to.eq.BN(SECONDS_PER_DAY + 10 * YEAR);
 
-      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, SLOT0, token.address), "colony-expenditure-cannot-claim");
 
       await forwardTime(STAKE_PERIOD, this);
       const tx = await voting.finalizeMotion(motionId);
@@ -788,7 +790,7 @@ contract("Voting Reputation", (accounts) => {
       expenditure = await colony.getExpenditure(expenditureId);
       expect(expenditure.globalClaimDelay).to.eq.BN(10 * YEAR);
 
-      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, SLOT0, token.address), "colony-expenditure-cannot-claim");
 
       // Finalizing will reset global claim delay to difference between finalized timestamp and block.timestamp
       await forwardTime(STAKE_PERIOD, this);
@@ -1952,14 +1954,14 @@ contract("Voting Reputation", (accounts) => {
 
       await forwardTime(STAKE_PERIOD, this);
 
-      expect(await colony.getExpenditureSlotPayout(expenditureId, 0, token.address)).to.be.zero;
-      expect(await colony.getExpenditureSlotPayout(expenditureId, 1, token.address)).to.be.zero;
+      expect(await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address)).to.be.zero;
+      expect(await colony.getExpenditureSlotPayout(expenditureId, SLOT1, token.address)).to.be.zero;
 
       const { logs } = await voting.finalizeMotion(motionId);
       expect(logs[0].args.executed).to.be.true;
 
-      expect(await colony.getExpenditureSlotPayout(expenditureId, 0, token.address)).to.eq.BN(WAD);
-      expect(await colony.getExpenditureSlotPayout(expenditureId, 1, token.address)).to.eq.BN(WAD);
+      expect(await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address)).to.eq.BN(WAD);
+      expect(await colony.getExpenditureSlotPayout(expenditureId, SLOT1, token.address)).to.eq.BN(WAD);
     });
 
     it("invalid multicall actions cannot have motions created", async () => {
@@ -2812,7 +2814,7 @@ contract("Voting Reputation", (accounts) => {
       await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
 
-      let slot = await colony.getExpenditureSlot(expenditureId, 0);
+      let slot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(slot.claimDelay).to.eq.BN(UINT256_MAX.divn(3)); // V9 behavior
 
       await colony.upgradeExtension(VOTING_REPUTATION, 10);
@@ -2821,7 +2823,7 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(STAKE_PERIOD, this);
       await voting.finalizeMotion(motionId);
 
-      slot = await colony.getExpenditureSlot(expenditureId, 0);
+      slot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(slot.claimDelay).to.be.zero; // V9 behavior still
 
       let canonicalAction = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, 0]);
@@ -2918,7 +2920,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.finalizeMotion(motionId);
 
       // Examine delays
-      const slot = await colony.getExpenditureSlot(motionId, 0);
+      const slot = await colony.getExpenditureSlot(motionId, SLOT0);
       expect(slot.claimDelay).to.eq.BN(0);
     });
 

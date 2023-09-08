@@ -5,7 +5,16 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, UINT128_MAX, WAD, ADDRESS_ZERO, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
+const {
+  UINT256_MAX,
+  UINT128_MAX,
+  WAD,
+  ADDRESS_ZERO,
+  MINING_CYCLE_DURATION,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  SLOT0,
+  SLOT1,
+} = require("../../helpers/constants");
 const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 const {
   checkErrorRevert,
@@ -113,9 +122,9 @@ contract("Staged Expenditure", (accounts) => {
 
       await stagedExpenditure.setExpenditureStaged(expenditureId, true, { from: USER0 });
 
-      await colony.setExpenditureRecipients(expenditureId, [0, 1], [USER1, USER1], { from: USER0 });
-      await colony.setExpenditureClaimDelays(expenditureId, [0, 1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
-      await colony.setExpenditurePayouts(expenditureId, [0, 1], token.address, [WAD, WAD.muln(2)], { from: USER0 });
+      await colony.setExpenditureRecipients(expenditureId, [SLOT0, SLOT1], [USER1, USER1], { from: USER0 });
+      await colony.setExpenditureClaimDelays(expenditureId, [SLOT0, SLOT1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0, SLOT1], token.address, [WAD, WAD.muln(2)], { from: USER0 });
 
       await colony.moveFundsBetweenPots(
         1,
@@ -132,23 +141,23 @@ contract("Staged Expenditure", (accounts) => {
 
       // Cannot release stage if not finalized
       await checkErrorRevert(
-        stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 }),
+        stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, SLOT0, [token.address], { from: USER0 }),
         "expenditure-not-finalized"
       );
 
       await colony.finalizeExpenditure(expenditureId);
 
       // Cannot claim until the slot is released
-      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, SLOT0, token.address), "colony-expenditure-cannot-claim");
 
       // Cannot release stage if not owner
       await checkErrorRevert(
-        stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER1 }),
+        stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, SLOT0, [token.address], { from: USER1 }),
         "staged-expenditure-not-owner"
       );
 
-      await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 });
-      await colony.claimExpenditurePayout(expenditureId, 0, token.address);
+      await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, SLOT0, [token.address], { from: USER0 });
+      await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
     });
 
     it("can't mark an expenditure as staged if extension is deprecated", async () => {
@@ -201,9 +210,9 @@ contract("Staged Expenditure", (accounts) => {
 
       await stagedExpenditure.setExpenditureStaged(expenditureId, true, { from: USER0 });
 
-      await colony.setExpenditureRecipients(expenditureId, [0, 1], [USER1, USER1], { from: USER0 });
-      await colony.setExpenditureClaimDelays(expenditureId, [0, 1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
-      await colony.setExpenditurePayouts(expenditureId, [0, 1], token.address, [WAD, WAD.muln(2)], { from: USER0 });
+      await colony.setExpenditureRecipients(expenditureId, [SLOT0, SLOT1], [USER1, USER1], { from: USER0 });
+      await colony.setExpenditureClaimDelays(expenditureId, [SLOT0, SLOT1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0, SLOT1], token.address, [WAD, WAD.muln(2)], { from: USER0 });
 
       await colony.moveFundsBetweenPots(
         1,
@@ -220,9 +229,9 @@ contract("Staged Expenditure", (accounts) => {
 
       await colony.finalizeExpenditure(expenditureId);
 
-      await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 });
+      await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, SLOT0, [token.address], { from: USER0 });
 
-      await colony.claimExpenditurePayout(expenditureId, 0, token.address);
+      await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
     });
 
     it("non-owners cannot set an expenditure to a staged payment", async () => {
@@ -269,9 +278,9 @@ contract("Staged Expenditure", (accounts) => {
         from: USER0,
       });
 
-      await colony.setExpenditureRecipients(expenditureId, [0, 1], [USER1, USER1], { from: USER0 });
-      await colony.setExpenditureClaimDelays(expenditureId, [0, 1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
-      await colony.setExpenditurePayouts(expenditureId, [0, 1], token.address, [WAD, WAD.muln(2)], { from: USER0 });
+      await colony.setExpenditureRecipients(expenditureId, [SLOT0, SLOT1], [USER1, USER1], { from: USER0 });
+      await colony.setExpenditureClaimDelays(expenditureId, [SLOT0, SLOT1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0, SLOT1], token.address, [WAD, WAD.muln(2)], { from: USER0 });
 
       await colony.moveFundsBetweenPots(
         1,
@@ -288,28 +297,28 @@ contract("Staged Expenditure", (accounts) => {
 
       await colony.finalizeExpenditure(expenditureId);
 
-      let slotBefore = await colony.getExpenditureSlot(expenditureId, 0);
+      let slotBefore = await colony.getExpenditureSlot(expenditureId, SLOT0);
 
-      await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [], { from: USER0 });
+      await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, SLOT0, [], { from: USER0 });
 
-      let slotAfter = await colony.getExpenditureSlot(expenditureId, 0);
+      let slotAfter = await colony.getExpenditureSlot(expenditureId, SLOT0);
 
       expect(slotBefore.claimDelay).to.equal(UINT128_MAX.toString());
       expect(slotAfter.claimDelay).to.equal("0");
 
-      let slotPayout = await colony.getExpenditureSlotPayout(expenditureId, 0, token.address);
+      let slotPayout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
       expect(slotPayout).to.eq.BN(WAD);
 
-      slotBefore = await colony.getExpenditureSlot(expenditureId, 1);
+      slotBefore = await colony.getExpenditureSlot(expenditureId, SLOT1);
 
-      await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 1, [], { from: USER0 });
+      await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, SLOT1, [], { from: USER0 });
 
-      slotAfter = await colony.getExpenditureSlot(expenditureId, 1);
+      slotAfter = await colony.getExpenditureSlot(expenditureId, SLOT1);
 
       expect(slotBefore.claimDelay).to.equal(UINT128_MAX.toString());
       expect(slotAfter.claimDelay).to.equal("0");
 
-      slotPayout = await colony.getExpenditureSlotPayout(expenditureId, 1, token.address);
+      slotPayout = await colony.getExpenditureSlotPayout(expenditureId, SLOT1, token.address);
       expect(slotPayout).to.eq.BN(WAD.muln(2));
     });
 
@@ -318,7 +327,7 @@ contract("Staged Expenditure", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
 
       await checkErrorRevert(
-        stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 }),
+        stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, SLOT0, [token.address], { from: USER0 }),
         "staged-expenditure-not-staged-expenditure"
       );
     });

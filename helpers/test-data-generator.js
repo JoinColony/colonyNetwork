@@ -1,7 +1,17 @@
 /* globals artifacts */
 const BN = require("bn.js");
 
-const { UINT256_MAX, GLOBAL_SKILL_ID, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING } = require("./constants");
+const {
+  UINT256_MAX,
+  GLOBAL_SKILL_ID,
+  MANAGER_PAYOUT,
+  EVALUATOR_PAYOUT,
+  WORKER_PAYOUT,
+  INITIAL_FUNDING,
+  SLOT0,
+  SLOT1,
+  SLOT2,
+} = require("./constants");
 const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } = require("./test-helper");
 
 const IColony = artifacts.require("IColony");
@@ -42,8 +52,8 @@ exports.makeExpenditure = async function makeExpenditure({
   const { logs } = await colony.makeExpenditure(1, childSkillIndex, domainId, { from: manager });
   const { expenditureId } = logs.filter((log) => log.event === "ExpenditureAdded")[0].args;
 
-  await colony.setExpenditureRecipients(expenditureId, [0, 1, 2], [manager, evaluator, worker], { from: manager });
-  await colony.setExpenditureSkills(expenditureId, [2], [skillId], { from: manager });
+  await colony.setExpenditureRecipients(expenditureId, [SLOT0, SLOT1, SLOT2], [manager, evaluator, worker], { from: manager });
+  await colony.setExpenditureSkills(expenditureId, [SLOT2], [skillId], { from: manager });
 
   return expenditureId;
 };
@@ -81,7 +91,9 @@ exports.setupFundedExpenditure = async function setupFundedExpenditure({
     from: manager,
   });
 
-  await colony.setExpenditurePayouts(expenditureId, [0, 1, 2], tokenAddress, [managerPayout, evaluatorPayout, workerPayout], { from: manager });
+  await colony.setExpenditurePayouts(expenditureId, [SLOT0, SLOT1, SLOT2], tokenAddress, [managerPayout, evaluatorPayout, workerPayout], {
+    from: manager,
+  });
 
   return expenditureId;
 };
@@ -121,9 +133,9 @@ exports.setupClaimedExpenditure = async function setupClaimedExpenditure({
   });
 
   await colony.finalizeExpenditure(expenditureId, { from: manager });
-  await colony.claimExpenditurePayout(expenditureId, 0, tokenAddress);
-  await colony.claimExpenditurePayout(expenditureId, 1, tokenAddress);
-  await colony.claimExpenditurePayout(expenditureId, 2, tokenAddress);
+  await colony.claimExpenditurePayout(expenditureId, SLOT0, tokenAddress);
+  await colony.claimExpenditurePayout(expenditureId, SLOT1, tokenAddress);
+  await colony.claimExpenditurePayout(expenditureId, SLOT2, tokenAddress);
 };
 
 exports.giveUserCLNYTokens = async function giveUserCLNYTokens(colonyNetwork, userAddress, amount) {

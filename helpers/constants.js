@@ -73,6 +73,10 @@ const DECAY_RATE = {
 
 const GLOBAL_SKILL_ID = new BN("4"); // Not a root global skill ID or anything, just the first global skill's ID
 
+const SLOT0 = 0;
+const SLOT1 = 1;
+const SLOT2 = 2;
+
 module.exports = {
   UINT256_MAX,
   UINT128_MAX,
@@ -122,4 +126,7 @@ module.exports = {
   IPFS_HASH,
   HASHZERO,
   ADDRESS_ZERO,
+  SLOT0,
+  SLOT1,
+  SLOT2,
 };
