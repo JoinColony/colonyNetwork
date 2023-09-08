@@ -212,10 +212,11 @@ contract("One transaction payments", (accounts) => {
     });
 
     it(`should allow a single-transaction to occur in a child  domain, paid out from the root domain
-      when user has funding in the root domain and administration in a child domain`, async () => {
+      when user has funding in the root domain and administration and arbitration in a child domain`, async () => {
       // Set funding in root, administration in child
       await colony.setFundingRole(1, UINT256_MAX, USER1, 1, true);
       await colony.setAdministrationRole(1, 0, USER1, 2, true);
+      await colony.setArbitrationRole(1, 0, USER1, 2, true);
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       await oneTxPayment.makePayment(1, 0, 2, UINT256_MAX, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID, { from: USER1 });
@@ -230,6 +231,7 @@ contract("One transaction payments", (accounts) => {
 
       await colony.setAdministrationRole(1, 0, USER1, 2, true);
       await colony.setFundingRole(1, 0, USER1, 2, true);
+      await colony.setArbitrationRole(1, 0, USER1, 2, true);
       await oneTxPayment.makePaymentFundedFromDomain(1, 0, 2, UINT256_MAX, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID, { from: USER1 });
     });
 

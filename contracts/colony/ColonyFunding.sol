@@ -312,20 +312,12 @@ contract ColonyFunding is
       );
     }
 
-    if (
-      fromPot.associatedType == FundingPotAssociatedType.Expenditure ||
-      fromPot.associatedType == FundingPotAssociatedType.DEPRECATED_Payment ||
-      fromPot.associatedType == FundingPotAssociatedType.DEPRECATED_Task
-    ) {
+    if (fromPot.associatedType == FundingPotAssociatedType.Expenditure) {
       uint256 fromPotPreviousAmount = fromPot.balance[_token] + _amount;
       updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
     }
 
-    if (
-      toPot.associatedType == FundingPotAssociatedType.Expenditure ||
-      toPot.associatedType == FundingPotAssociatedType.DEPRECATED_Payment ||
-      toPot.associatedType == FundingPotAssociatedType.DEPRECATED_Task
-    ) {
+    if (toPot.associatedType == FundingPotAssociatedType.Expenditure) {
       uint256 toPotPreviousAmount = toPot.balance[_token] - _amount;
       updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
     }

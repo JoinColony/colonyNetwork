@@ -18,8 +18,9 @@
 
 pragma solidity 0.8.21;
 
-// prettier-ignore
-interface ColonyDataTypes {
+import "./ColonyDataTypesDeprecated.sol";
+
+interface ColonyDataTypes is ColonyDataTypesDeprecated {
   // Events
 
   /// @notice Event logged when Colony is initialised
@@ -322,43 +323,5 @@ interface ColonyDataTypes {
 
   struct LocalSkill {
     bool exists;
-  }
-
-  // Deprecated Task and Payment datatypes
-  enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }
-  enum TaskRole { Manager, Evaluator, Worker }
-  enum TaskStatus { Active, Cancelled, Finalized }
-
-  struct Task {
-    bytes32 specificationHash;
-    bytes32 deliverableHash;
-    TaskStatus status;
-    uint256 dueDate;
-    uint256 fundingPotId;
-    uint256 completionTimestamp;
-    uint256 domainId;
-    uint256[] skills;
-    mapping (uint8 => Role) roles;
-    mapping (uint8 => mapping (address => uint256)) payouts;
-  }
-
-  struct Role {
-    address payable user;
-    bool rateFail;
-    TaskRatings rating;
-  }
-
-  struct RatingSecrets {
-    uint256 count;
-    uint256 timestamp;
-    mapping (uint8 => bytes32) secret;
-  }
-
-  struct Payment {
-    address payable recipient;
-    bool finalized;
-    uint256 fundingPotId;
-    uint256 domainId;
-    uint256[] skills;
   }
 }
