@@ -4,7 +4,17 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
-const { UINT256_MAX, WAD, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING } = require("../../helpers/constants");
+const {
+  UINT256_MAX,
+  WAD,
+  MANAGER_PAYOUT,
+  EVALUATOR_PAYOUT,
+  WORKER_PAYOUT,
+  INITIAL_FUNDING,
+  SLOT0,
+  SLOT1,
+  SLOT2,
+} = require("../../helpers/constants");
 
 const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
 const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit } = require("../../helpers/test-helper");
@@ -194,11 +204,11 @@ contract("Colony Funding", (accounts) => {
       await fundColonyWithTokens(colony, otherToken, 100);
       const expenditureId = await makeExpenditure({ colony });
       const expenditure = await colony.getExpenditure(expenditureId);
-      await colony.setExpenditureRecipients(expenditureId, [0, 1], [MANAGER, WORKER]);
+      await colony.setExpenditureRecipients(expenditureId, [SLOT0, SLOT1], [MANAGER, WORKER]);
 
       // FundingPot 0, Payout 0
       // FundingPot was equal to payout, transition to pot being equal by changing payout (18)
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [0]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [0]);
       let fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
@@ -210,7 +220,7 @@ contract("Colony Funding", (accounts) => {
 
       // FundingPot 0, Payout 0
       // FundingPot was equal to payout, transition to pot being lower by increasing payout (8)
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [40]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [40]);
       fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
@@ -228,13 +238,13 @@ contract("Colony Funding", (accounts) => {
 
       // FundingPot Balance: 80, Payout 40
       // FundingPot was above payout, transition to being equal by increasing payout (12)
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [80]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [80]);
       fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 80, Payout 80
       // FundingPot was equal to payout, transition to being above by decreasing payout (6)
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [40]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [40]);
       fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
@@ -252,9 +262,9 @@ contract("Colony Funding", (accounts) => {
       );
 
       // Remove 20 from pot
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [20]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [20]);
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 20, otherToken.address);
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [40]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [40]);
 
       // FundingPot 20, Payout 40
       // FundingPot was below payout, change to being above by changing pot (3)
@@ -270,19 +280,19 @@ contract("Colony Funding", (accounts) => {
       );
 
       // Remove 60 from pot
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [20]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [20]);
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 60, otherToken.address);
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [40]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [40]);
 
       // FundingPot 20, Payout 40
       // FundingPot was below payout, change to being above by changing payout (4)
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [10]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [10]);
       fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 20, Payout 10
       // FundingPot was above, change to being above by changing payout (16)
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [5]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [5]);
       fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
@@ -294,13 +304,13 @@ contract("Colony Funding", (accounts) => {
 
       // FundingPot 10, Payout 5
       // FundingPot was above payout, change to being below by changing payout (10)
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [40]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [40]);
       fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // FundingPot 10, Payout 40
       // FundingPot was below payout, change to being below by changing payout (14)
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [30]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [30]);
       fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
@@ -312,13 +322,13 @@ contract("Colony Funding", (accounts) => {
       );
 
       // Remove 5 from pot
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [5]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [5]);
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, expenditure.fundingPotId, 1, 5, otherToken.address);
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [30]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [30]);
 
       // FundingPot 5, Payout 30
       // FundingPot was below payout, change to being equal by changing payout (2)
-      await colony.setExpenditurePayouts(expenditureId, [0], otherToken.address, [5]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], otherToken.address, [5]);
       fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
@@ -396,9 +406,9 @@ contract("Colony Funding", (accounts) => {
       // Add an extra WAD of funding
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, expenditure.fundingPotId, WAD, otherToken.address);
 
-      await colony.claimExpenditurePayout(expenditureId, 0, otherToken.address);
-      await colony.claimExpenditurePayout(expenditureId, 1, otherToken.address);
-      await colony.claimExpenditurePayout(expenditureId, 2, otherToken.address);
+      await colony.claimExpenditurePayout(expenditureId, SLOT0, otherToken.address);
+      await colony.claimExpenditurePayout(expenditureId, SLOT1, otherToken.address);
+      await colony.claimExpenditurePayout(expenditureId, SLOT2, otherToken.address);
 
       // WAD is gone
       const expenditurePotBalance = await colony.getFundingPotBalance(expenditure.fundingPotId, otherToken.address);
@@ -414,14 +424,14 @@ contract("Colony Funding", (accounts) => {
       await colony.finalizeExpenditure(expenditureId);
 
       const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
-      await colony.claimExpenditurePayout(expenditureId, 0, token.address);
+      await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
       const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
       expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(MANAGER_PAYOUT);
 
       await metaColony.setPayoutWhitelist(token.address, true);
 
       const metaColonyBalanceBefore = await token.balanceOf(metaColony.address);
-      await colony.claimExpenditurePayout(expenditureId, 2, token.address);
+      await colony.claimExpenditurePayout(expenditureId, SLOT2, token.address);
       const metaColonyBalanceAfter = await token.balanceOf(metaColony.address);
       expect(metaColonyBalanceAfter.sub(metaColonyBalanceBefore)).to.eq.BN(WORKER_PAYOUT);
     });
@@ -484,10 +494,10 @@ contract("Colony Funding", (accounts) => {
       const expenditureId = await makeExpenditure({ colony });
       const expenditure = await colony.getExpenditure(expenditureId);
 
-      await colony.setExpenditureRecipients(expenditureId, [0, 1], [MANAGER, WORKER]);
+      await colony.setExpenditureRecipients(expenditureId, [SLOT0, SLOT1], [MANAGER, WORKER]);
 
       // Set manager payout above pot value 40 > 0
-      await colony.setExpenditurePayouts(expenditureId, [0], ethers.constants.AddressZero, [40]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], ethers.constants.AddressZero, [40]);
       let fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
@@ -503,7 +513,7 @@ contract("Colony Funding", (accounts) => {
       );
 
       // Set manager payout above pot value 50 > 40
-      await colony.setExpenditurePayouts(expenditureId, [0], ethers.constants.AddressZero, [50]);
+      await colony.setExpenditurePayouts(expenditureId, [SLOT0], ethers.constants.AddressZero, [50]);
       fundingPot = await colony.getFundingPot(expenditure.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 

@@ -5,7 +5,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD, ADDRESS_ZERO } = require("../../helpers/constants");
+const { UINT256_MAX, WAD, ADDRESS_ZERO, SLOT0 } = require("../../helpers/constants");
 const { checkErrorRevert, web3GetCode } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
@@ -98,43 +98,43 @@ contract("EvaluatedExpenditure", (accounts) => {
     it("can set the payout modifier in the locked state", async () => {
       let expenditureSlot;
 
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.payoutModifier).to.be.zero;
 
-      await evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [WAD], { from: USER0 });
+      await evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [SLOT0], [WAD], { from: USER0 });
 
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.payoutModifier).to.eq.BN(WAD);
     });
 
     it("cannot set the payout modifier with bad arguments", async () => {
       await checkErrorRevert(
-        evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [], { from: USER0 }),
-        "evaluated-expenditure-bad-slots",
+        evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [SLOT0], [], { from: USER0 }),
+        "evaluated-expenditure-bad-slots"
       );
     });
 
     it("cannot set the payout modifier if not the owner", async () => {
       await checkErrorRevert(
-        evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [0], [WAD], { from: USER1 }),
-        "evaluated-expenditure-not-owner",
+        evaluatedExpenditure.setExpenditurePayoutModifiers(1, UINT256_MAX, expenditureId, [SLOT0], [WAD], { from: USER1 }),
+        "evaluated-expenditure-not-owner"
       );
     });
 
     it("can set the payout modifier via metatransaction", async () => {
       const txData = await evaluatedExpenditure.contract.methods
-        .setExpenditurePayoutModifiers(1, UINT256_MAX.toString(), expenditureId.toString(), [0], [WAD.toString()])
+        .setExpenditurePayoutModifiers(1, UINT256_MAX.toString(), expenditureId.toString(), [SLOT0], [WAD.toString()])
         .encodeABI();
 
       const { r, s, v } = await getMetaTransactionParameters(txData, USER0, evaluatedExpenditure.address);
 
       let expenditureSlot;
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.payoutModifier).to.be.zero;
 
       await evaluatedExpenditure.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
 
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, 0);
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.payoutModifier).to.eq.BN(WAD);
     });
   });
