@@ -232,7 +232,9 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
 
     // Finish the payout
-    processPayout(expenditure.fundingPotId, _token, tokenPayout, slot.recipient);
+    uint256 payoutMinusFee = processPayout(expenditure.fundingPotId, _token, tokenPayout, slot.recipient);
+    
+    emit PayoutClaimed(msgSender(), _id, _slot, _token, payoutMinusFee);
   }
 
   function setPaymentPayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _token, uint256 _amount) public
@@ -445,7 +447,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);
   }
 
-  function processPayout(uint256 _fundingPotId, address _token, uint256 _payout, address payable _user) private {
+  function processPayout(uint256 _fundingPotId, address _token, uint256 _payout, address payable _user) private returns (uint256 payoutToUser) {
     refundDomain(_fundingPotId, _token);
 
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
@@ -456,19 +458,19 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     nonRewardPotsTotal[_token] -= _payout;
 
     uint fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
-    uint remainder = _payout - fee;
+    uint payoutToUser = _payout - fee;
 
     if (_token == address(0x0)) {
       // Payout ether
       // Fee goes directly to Meta Colony
-      _user.transfer(remainder);
+      _user.transfer(payoutToUser);
       metaColonyAddress.transfer(fee);
     } else {
       // Payout token
       // If it's a whitelisted token, it goes straight to the metaColony
       // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
       ERC20Extended payoutToken = ERC20Extended(_token);
-      assert(payoutToken.transfer(_user, remainder));
+      assert(payoutToken.transfer(_user, payoutToUser));
       if (colonyNetworkContract.getPayoutWhitelist(_token)) {
         assert(payoutToken.transfer(metaColonyAddress, fee));
       } else {
@@ -477,7 +479,9 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     }
 
     // slither-disable-next-line reentrancy-unlimited-gas
-    emit PayoutClaimed(msgSender(), _fundingPotId, _token, remainder);
+    emit PayoutClaimed(msgSender(), _fundingPotId, _token, payoutToUser);
+
+    return payoutToUser;
   }
 
   function refundDomain(uint256 _fundingPotId, address _token) private {

@@ -784,6 +784,28 @@ contract("Colony Expenditure", (accounts) => {
       expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(WAD.divn(100).addn(1)); // eslint-disable-line prettier/prettier
     });
 
+    it("when claiming a payout, the appropriate events are emitted", async () => {
+      await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
+      await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address
+      );
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+      const tx = await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
+      await expectEvent(tx, "PayoutClaimed", [accounts[0], expenditureId, SLOT0, token.address, WAD.divn(100).muln(99).subn(1)]);
+      await expectEvent(tx, "PayoutClaimed", [accounts[0], expenditure.fundingPotId, token.address, WAD.divn(100).muln(99).subn(1)]);
+    });
+
     it("should allow anyone to claim on behalf of the slot, in multiple tokens", async () => {
       await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
