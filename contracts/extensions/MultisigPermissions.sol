@@ -366,13 +366,21 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
       "multisig-invalid-domain-inheritance"
     );
 
-    // Core root or architect in a parent domain
+    // Allow this function to be called if the caller:
     require(
-      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root) || (
-        colony.hasUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Architecture) &&
+      // Has core root permissions OR
+      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root) || 
+      // Has core architecture, if we're using that permission in a child domain of where we have it
+      (
+        // Core architecture check
+        colony.hasUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Architecture) && 
+        // In a child domain check
         (_permissionDomainId != _domainId)
       ), "multisig-caller-not-correct-permissions"
     );
+
+    // This is not strictly necessary, since these roles are never used in subdomains
+    require(_roles & ROOT_ROLES == 0 || _domainId == 1, "colony-bad-domain-for-role");
 
     Domain memory domain = colony.getDomain(_domainId);
 
