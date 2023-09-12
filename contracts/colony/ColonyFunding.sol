@@ -78,9 +78,9 @@ contract ColonyFunding is
   }
 
   function claimColonyFunds(address _token) public stoppable {
-    uint toClaim;
-    uint feeToPay;
-    uint remainder;
+    uint256 toClaim;
+    uint256 feeToPay;
+    uint256 remainder;
     if (_token == address(0x0)) {
       // It's ether
       toClaim =
@@ -329,11 +329,7 @@ contract ColonyFunding is
     emit ColonyFundsMovedBetweenFundingPots(msgSender(), _fromPot, _toPot, _amount, _token);
   }
 
-  function updatePayoutsWeCannotMakeAfterPotChange(
-    uint256 _fundingPotId,
-    address _token,
-    uint _prev
-  ) internal {
+  function updatePayoutsWeCannotMakeAfterPotChange(uint256 _fundingPotId, address _token, uint256 _prev) internal {
     FundingPot storage tokenPot = fundingPots[_fundingPotId];
 
     if (_prev >= tokenPot.payouts[_token]) {
@@ -351,11 +347,7 @@ contract ColonyFunding is
     }
   }
 
-  function updatePayoutsWeCannotMakeAfterBudgetChange(
-    uint256 _fundingPotId,
-    address _token,
-    uint _prev
-  ) internal {
+  function updatePayoutsWeCannotMakeAfterBudgetChange(uint256 _fundingPotId, address _token, uint256 _prev) internal {
     FundingPot storage tokenPot = fundingPots[_fundingPotId];
 
     if (tokenPot.balance[_token] >= _prev) {
@@ -406,7 +398,10 @@ contract ColonyFunding is
     address _token,
     uint256 _payout,
     address payable _user
-  ) private {
+  )
+    private
+    returns (uint256)
+  {
     refundDomain(_fundingPotId, _token);
 
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
@@ -416,8 +411,8 @@ contract ColonyFunding is
     fundingPots[_fundingPotId].payouts[_token] -= _payout;
     nonRewardPotsTotal[_token] -= _payout;
 
-    uint fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
-    payoutToUser = _payout - fee;
+    uint256 fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
+    uint256 payoutToUser = _payout - fee;
 
     if (_token == address(0x0)) {
       // Payout ether
