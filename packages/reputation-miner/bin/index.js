@@ -7,15 +7,15 @@ const ReputationMinerClient = require("../ReputationMinerClient");
 
 const { ConsoleAdapter, SlackAdapter, DiscordAdapter, TruffleLoader } = require("../../package-utils");
 
-const supportedInfuraNetworks = ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"];
-
 const { argv } = yargs
   .option("adapter", {
+    describe: "Adapter to report mining logs to",
     type: "string",
     choices: ["console", "discord", "slack"],
     default: "console"
   })
   .option("adapterLabel", {
+    describe: "Label for the adapter (only needed for Discord adapter)",
     type: "string",
   })
   .option("auto", {
@@ -24,6 +24,7 @@ const { argv } = yargs
     default: true
   })
   .option("colonyNetworkAddress", {
+    describe: "Ethereum address of the ColonyNetwork smart contract in the network the miner is connected to",
     type: "string",
     default: "0x78163f593D1Fa151B4B7cacD146586aD2b686294"
   })
@@ -43,9 +44,10 @@ const { argv } = yargs
     conflicts: "privateKey",
   })
   .option("network", {
+    describe: "Network to connect to. Uses infura public nodes to connect.",
     type: "string",
-    choices: supportedInfuraNetworks,
-    conflicts: ["providerAddress", "localProviderAddress"]
+    choices: ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"],
+    conflicts: ["rpcEndpoint"]
   })
   .option("oracle", {
     describe: "Whether to serve requests as a reputation oracle or not",
@@ -53,27 +55,25 @@ const { argv } = yargs
     default: true
   })
   .option("oraclePort", {
+    describe: "Port the reputation oracle should be exposed on. Only applicable if `oracle` is set to `true`",
     type: "number",
     default: 3000,
   })
   .option("privateKey", {
     // eslint-disable-next-line max-len
-    describe: "The private key of the address that is mining, allowing the miner to sign transactions. If used, `minerAddress` is not needed and will be derived.",
+    describe: "The private key of the address that is mining, allowing the miner to sign transactions. If used, `minerAddress` is not needed and will be derived",
     type: "string",
     conflicts: "minerAddress",
   })
   .option("processingDelay", {
-    describe: "Delay between processing reputation logs",
-    type: 'number',
+    describe: "Delay between processing reputation logs (in blocks)",
+    type: "number",
     default: 10,
   })
-  .option("providerAddress", {
-    type: "array",
-    conflicts: ["network", "localProviderAddress"]
-  })
   .option("rpcEndpoint", {
+    describe: "http address of the RPC node to connect to",
     type: "string",
-    conflicts: ["network", "providerAddress"]
+    conflicts: ["network"]
   })
   .option("syncFrom", {
     type: "number",
@@ -95,7 +95,6 @@ const {
   oraclePort,
   privateKey,
   processingDelay,
-  providerAddress,
   rpcEndpoint,
   syncFrom,
 } = argv;
@@ -107,7 +106,7 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
     this.adapter = adapterObject;
   }
 
-  static attemptCheck(err, attemptNumber){
+  static attemptCheck(_err, attemptNumber){
     console.log("Retrying RPC request #", attemptNumber);
     if (attemptNumber === 5){
       return false;
@@ -116,14 +115,14 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
   }
 
   getNetwork(){
-    return backoff(() => super.getNetwork(), {retry: RetryProvider.attemptCheck});
+    return backoff(() => super.getNetwork(), { retry: RetryProvider.attemptCheck });
   }
 
   // This should return a Promise (and may throw erros)
   // method is the method name (e.g. getBalance) and params is an
   // object with normalized values passed in, depending on the method
   perform(method, params) {
-    return backoff(() => super.perform(method, params), {retry: RetryProvider.attemptCheck, startingDelay: 1000});
+    return backoff(() => super.perform(method, params), { retry: RetryProvider.attemptCheck, startingDelay: 1000 });
   }
 }
 
@@ -134,9 +133,9 @@ if (!minerAddress && !privateKey) {
 
 let adapterObject;
 
-if (adapter === 'slack') {
+if (adapter === "slack") {
   adapterObject = new SlackAdapter();
-} else if (adapter === 'discord'){
+} else if (adapter === "discord"){
   adapterObject = new DiscordAdapter(adapterLabel);
 } else {
   adapterObject = new ConsoleAdapter();
@@ -148,31 +147,16 @@ const loader = new TruffleLoader({
 
 let provider;
 if (network) {
-  if (!supportedInfuraNetworks.includes(network)) {
-    console.log(`❗️ "network" option accepts only supported Infura networks: ${supportedInfuraNetworks} !`);
-    process.exit();
-  }
   provider = new ethers.providers.InfuraProvider(network);
-} else if (providerAddress.length) {
-  const providers = providerAddress.map(endpoint => {
-    const {protocol, username, password, host, pathname} = new URL(endpoint);
-    const connectionInfo = {
-      url: `${protocol}//${host}${pathname}`,
-      user: decodeURI(username),
-      password: decodeURI(password.replace(/%23/, '#')),
-    }
-    return new RetryProvider(connectionInfo, adapterObject);
-  })
-  // This is, at best, a huge hack...
-  providers.forEach(x => x.getNetwork());
-
-  // The Fallback provider somehow strips out blockTag, so isn't suitable for use during syncing.
-  // See https://github.com/ethers-io/ethers.js/discussions/1960
-  // When sorted, use this line instead.
-  // provider = new ethers.providers.FallbackProvider(providers, 1)
-  [ provider ] = providers;
 } else {
-  provider = new ethers.providers.JsonRpcProvider(rpcEndpoint || 'http://localhost:8545');
+  const endpoint = rpcEndpoint || "http://localhost:8545";
+  const { protocol, username, password, host, pathname } = new URL(endpoint);
+  const connectionInfo = {
+    url: `${protocol}//${host}${pathname}`,
+    user: decodeURI(username),
+    password: decodeURI(password.replace(/%23/, "#")),
+  };
+  provider = new RetryProvider(connectionInfo, adapterObject);
 }
 
 const client = new ReputationMinerClient({
