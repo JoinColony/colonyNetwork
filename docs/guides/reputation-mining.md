@@ -11,7 +11,9 @@ Colony's reputation system is key to its functionality, and in order to work suc
 
 To participate in the reputation mining process you need to have staked at least the minimum amount of CLNY Tokens (currently 2000 CLNY), for at least one full mining cycle duration (currently 60 minutes) before you can submit a new reputation root hash.
 
-#### B. Awarding appropriate permissions on-chain
+#### B. Staking and awarding appropriate permissions on-chain
+
+<reputation-mining-setup />
 
 1\. Check out our contract repository, following [these instructions](../docs/quick-start.md#cloning-the-repository-and-preparing-the-dependencies). You should then be able to run `yarn run truffle console --network xdai` which will connect you to the right network. You will need to be able to sign messages from the address in control of your CLNY (which will also be the address earning reputation for mining), which in most cases means pasting your private key into `truffle.js` before launching the console. For Ledger support, you can use `yarn run truffle console --network xdaiLedger`. For other hardware wallets, you will need to find an appropriate provider compatible with Truffle, and add it into `truffle.js` in your local version of the repository.\
 \
@@ -75,13 +77,21 @@ The most reliable way to run the miner is by using docker via the image provided
 
 Regardless of which you use, you will need the private key you wish mining transactions to be signed from. Putting the private key in an environment variable is recommended for security purposes - in the below examples, it could be placed in the appropriate variable with `export PRIVATE_KEY=0xdeadbeef00000000000000000deadbeef000000000000000000000000000dead`
 
+FIXME: remove the non-docker option
+FIXME: make most of these values default values
+FIXME: is there a better way to provide args? Maybe we can also pull all args from env variables directly
+
 <Tabs>
 <TabItem value="docker" label="Using Docker" default>
-`docker run -it --env ARGS="--providerAddress https://xdai-archive.blockscout.com/" --env COLONYNETWORK_ADDRESS=0x78163f593D1Fa151B4B7cacD146586aD2b686294 --env SYNC_FROM_BLOCK="11897848" --env REPUTATION_JSON_PATH=/root/datadir/reputations.sqlite --env PRIVATE_KEY=$PRIVATE_KEY -v $(pwd):/root/datadir joincolony/reputation-miner:latest`
+```bash
+docker run -it --env ARGS="--providerAddress https://xdai-archive.blockscout.com/" --env COLONYNETWORK_ADDRESS=0x78163f593D1Fa151B4B7cacD146586aD2b686294 --env SYNC_FROM_BLOCK="11897848" --env REPUTATION_JSON_PATH=/root/datadir/reputations.sqlite --env PRIVATE_KEY=$PRIVATE_KEY -v $(pwd):/root/datadir joincolony/reputation-miner:latest
+```
 </TabItem>
 
 <TabItem value="repository" label="From repository" default>
-`node ./packages/reputation-miner/bin/index.js --providerAddress https://xdai-archive.blockscout.com --colonyNetworkAddress 0x78163f593D1Fa151B4B7cacD146586aD2b686294 --syncFrom 11897847 --privateKey $PRIVATE_KEY --dbPath ./reputations.sqlite`
+```bash
+node ./packages/reputation-miner/bin/index.js --providerAddress https://xdai-archive.blockscout.com --colonyNetworkAddress 0x78163f593D1Fa151B4B7cacD146586aD2b686294 --syncFrom 11897847 --privateKey $PRIVATE_KEY --dbPath ./reputations.sqlite
+```
 </TabItem>
 </Tabs>
 
