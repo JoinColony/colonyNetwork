@@ -270,7 +270,9 @@ contract("StakedExpenditure", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
-      await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true);
+      const tx = await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true);
+
+      await expectEvent(tx, "ExpenditureCancelled", [expenditureId, true]);
 
       const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
       expect(obligation).to.be.zero;
@@ -310,7 +312,9 @@ contract("StakedExpenditure", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
-      await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, false);
+      const tx = await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, false);
+
+      await expectEvent(tx, "ExpenditureCancelled", [expenditureId, false]);
 
       let obligation;
       let userLock;

@@ -30,7 +30,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
   // Events
 
   event ExpenditureMadeViaStake(address indexed creator, uint256 expenditureId, uint256 stake);
-  event ExpenditureCancelled(uint256 expenditureId);
+  event ExpenditureCancelled(uint256 expenditureId, bool punished);
   event StakeReclaimed(uint256 expenditureId);
   event StakeFractionSet(uint256 stakeFraction);
 
@@ -264,6 +264,8 @@ contract StakedExpenditure is ColonyExtensionMeta {
     }
 
     cancelExpenditure(_permissionDomainId, _childSkillIndex, _expenditureId, expenditure.owner);
+
+    emit ExpenditureCancelled(_expenditureId, _punish);
   }
 
   // View
@@ -315,7 +317,5 @@ contract StakedExpenditure is ColonyExtensionMeta {
       keys,
       value
     );
-
-    emit ExpenditureCancelled(_expenditureId);
   }
 }
