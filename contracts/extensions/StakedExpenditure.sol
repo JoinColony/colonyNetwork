@@ -30,9 +30,10 @@ contract StakedExpenditure is ColonyExtensionMeta {
   // Events
 
   event ExpenditureMadeViaStake(address indexed creator, uint256 expenditureId, uint256 stake);
-  event ExpenditureCancelled(uint256 expenditureId, bool punished);
+  event ExpenditureCancelled(address agent, uint256 expenditureId);
   event StakeReclaimed(uint256 expenditureId);
-  event StakeFractionSet(uint256 stakeFraction);
+  event StakeFractionSet(address agent, uint256 stakeFraction);
+  event ExpenditureStakerPunished(address agent, uint256 expenditureId, bool punished);
 
   // Datatypes
 
@@ -108,7 +109,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
     require(_stakeFraction <= WAD, "staked-expenditure-value-too-large");
     stakeFraction = _stakeFraction;
 
-    emit StakeFractionSet(_stakeFraction);
+    emit StakeFractionSet(msgSender(), _stakeFraction);
   }
 
   /// @notice Make an expenditure by putting up a stake
@@ -265,7 +266,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
 
     cancelExpenditure(_permissionDomainId, _childSkillIndex, _expenditureId, expenditure.owner);
 
-    emit ExpenditureCancelled(_expenditureId, _punish);
+    emit ExpenditureStakerPunished(msgSender(), _expenditureId, _punish);
   }
 
   // View
@@ -317,5 +318,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
       keys,
       value
     );
+
+    emit ExpenditureCancelled(msgSender(), _expenditureId);
   }
 }

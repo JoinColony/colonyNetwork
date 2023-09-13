@@ -49,6 +49,7 @@ contract("StakedExpenditure", (accounts) => {
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
+  const USER2 = accounts[2];
   const MINER = accounts[5];
 
   const CANCELLED = 1;
@@ -74,6 +75,8 @@ contract("StakedExpenditure", (accounts) => {
 
     await colony.setArbitrationRole(1, UINT256_MAX, stakedExpenditure.address, 1, true);
     await colony.setAdministrationRole(1, UINT256_MAX, stakedExpenditure.address, 1, true);
+
+    await colony.setArbitrationRole(1, UINT256_MAX, USER1, 1, true);
 
     const domain1 = await colony.getDomain(1);
 
@@ -270,9 +273,10 @@ contract("StakedExpenditure", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
-      const tx = await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true);
+      const tx = await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true, { from: USER1 });
 
-      await expectEvent(tx, "ExpenditureCancelled", [expenditureId, true]);
+      await expectEvent(tx, "ExpenditureCancelled", [USER1, expenditureId]);
+      await expectEvent(tx, "ExpenditureStakerPunished", [USER1, expenditureId, true]);
 
       const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
       expect(obligation).to.be.zero;
@@ -302,7 +306,7 @@ contract("StakedExpenditure", (accounts) => {
       await colony.lockExpenditure(expenditureId);
 
       await checkErrorRevert(
-        stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true, { from: USER1 }),
+        stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true, { from: USER2 }),
         "staked-expenditure-caller-not-arbitration"
       );
     });
@@ -312,9 +316,10 @@ contract("StakedExpenditure", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
-      const tx = await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, false);
+      const tx = await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, false, { from: USER1 });
 
-      await expectEvent(tx, "ExpenditureCancelled", [expenditureId, false]);
+      await expectEvent(tx, "ExpenditureCancelled", [USER1, expenditureId]);
+      await expectEvent(tx, "ExpenditureStakerPunished", [USER1, expenditureId, false]);
 
       let obligation;
       let userLock;
@@ -358,7 +363,8 @@ contract("StakedExpenditure", (accounts) => {
       await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
 
-      await colony.cancelExpenditure(expenditureId);
+      const tx = await colony.cancelExpenditure(expenditureId);
+      await expectEvent(tx, "ExpenditureCancelled", [USER0, expenditureId]);
 
       await stakedExpenditure.reclaimStake(expenditureId);
 
@@ -373,7 +379,8 @@ contract("StakedExpenditure", (accounts) => {
       await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
 
-      await stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId);
+      const tx = await stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId);
+      await expectEvent(tx, "ExpenditureCancelled", [USER0, expenditureId]);
 
       const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
       expect(obligation).to.be.zero;
