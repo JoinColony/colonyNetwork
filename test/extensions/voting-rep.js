@@ -3021,7 +3021,44 @@ contract("Voting Reputation", (accounts) => {
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
     });
 
-    it("can let any multicall motion be finalized after upgrade", async () => {
+    it("cannot let an invalid motion involving multicalling OLD_MOVE_FUNDS be finalized", async () => {
+      const action1 = await encodeTxData(colony, "moveFundsBetweenPots", [1, 0, 2, 0, 0, 0, ADDRESS_ZERO]);
+      const multicall = await encodeTxData(colony, "multicall", [[action1]]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
+
+      await upgradeFromV9ToLatest(colony);
+
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
+    });
+
+    it("cannot let an invalid motion involving multicalling NO_ACTION be finalized", async () => {
+      const multicall = await encodeTxData(colony, "multicall", [["0x12345678"]]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
+
+      await upgradeFromV9ToLatest(colony);
+
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
+    });
+
+    it("can let any (allowed) multicall motion be finalized after upgrade", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId1 = await colony.getExpenditureCount();
       await colony.makeExpenditure(1, 0, 2);
