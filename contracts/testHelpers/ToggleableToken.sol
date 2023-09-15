@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Judiciously tweaked from ../../lib/dappsys/base.sol
 
 pragma solidity 0.8.21;
