@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /// base.sol -- basic ERC20 implementation
 
 // Copyright (C) 2015, 2016, 2017  DappHub, LLC

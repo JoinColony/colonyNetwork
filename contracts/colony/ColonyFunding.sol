@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -439,7 +440,12 @@ contract ColonyFunding is
     updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);
   }
 
-  function processPayout(uint256 _fundingPotId, address _token, uint256 _payout, address payable _user) private returns (uint256 payoutToUser) {
+  function processPayout(
+    uint256 _fundingPotId,
+    address _token,
+    uint256 _payout,
+    address payable _user
+  ) private returns (uint256 payoutToUser) {
     refundDomain(_fundingPotId, _token);
 
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
