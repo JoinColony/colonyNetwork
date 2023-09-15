@@ -19,8 +19,9 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./ColonyStorage.sol";
-import "./IColony.sol";
+import {ColonyStorage} from "./ColonyStorage.sol";
+import {IColony} from "./IColony.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract ColonyTask is ColonyStorage {
   uint256 constant RATING_COMMIT_TIMEOUT = 5 days;

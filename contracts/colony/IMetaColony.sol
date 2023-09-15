@@ -19,7 +19,7 @@
 pragma solidity >=0.8.21; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import "./IColony.sol";
+import {IColony} from "./IColony.sol";
 
 interface IMetaColony is IColony {
   /// @notice Mints CLNY in the Meta Colony and transfers them to the colony network.

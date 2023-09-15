@@ -19,11 +19,11 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./../../lib/dappsys/math.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../patriciaTree/PatriciaTreeProofs.sol";
-import "./../tokenLocking/ITokenLocking.sol";
-import "./ReputationMiningCycleCommon.sol";
+import {DSMath} from "./../../lib/dappsys/math.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import {PatriciaTreeProofs} from "./../patriciaTree/PatriciaTreeProofs.sol";
+import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
+import {ReputationMiningCycleCommon} from "./ReputationMiningCycleCommon.sol";
 
 contract ReputationMiningCycle is ReputationMiningCycleCommon {
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round

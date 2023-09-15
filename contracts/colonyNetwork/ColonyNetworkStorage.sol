@@ -18,11 +18,11 @@
 
 pragma solidity 0.8.21;
 
-import "./../../lib/dappsys/math.sol";
-import "./../colony/IMetaColony.sol";
-import "./../common/CommonStorage.sol";
-import "./../common/ERC20Extended.sol";
-import "./ColonyNetworkDataTypes.sol";
+import {DSMath} from "./../../lib/dappsys/math.sol";
+import {IMetaColony} from "./../colony/IMetaColony.sol";
+import {CommonStorage} from "./../common/CommonStorage.sol";
+import {ERC20Extended} from "./../common/ERC20Extended.sol";
+import {ColonyNetworkDataTypes} from "./ColonyNetworkDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108

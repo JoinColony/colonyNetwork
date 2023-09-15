@@ -3,7 +3,7 @@ pragma solidity >=0.8.21; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
 import {Data} from "./Data.sol";
-import "./IPatriciaTreeBase.sol";
+import {IPatriciaTreeBase} from "./IPatriciaTreeBase.sol";
 
 /// More info at: https://github.com/chriseth/patricia-trie
 interface IPatriciaTreeNoHash is IPatriciaTreeBase {

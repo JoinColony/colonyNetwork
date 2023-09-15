@@ -20,9 +20,9 @@
 
 pragma solidity 0.8.21;
 
-import "./../../lib/dappsys/erc20.sol";
-import "./../../lib/dappsys/math.sol";
-import "./../common/BasicMetaTransaction.sol";
+import {ERC20} from "./../../lib/dappsys/erc20.sol";
+import {DSMath} from "./../../lib/dappsys/math.sol";
+import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
 
 abstract contract DSTokenBaseMeta is ERC20, DSMath, BasicMetaTransaction {
   uint256 _supply;

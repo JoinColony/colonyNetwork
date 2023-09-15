@@ -18,8 +18,8 @@
 
 pragma solidity 0.8.21;
 
-import "./../../lib/dappsys/auth.sol";
-import "./../common/MetaTransactionMsgSender.sol";
+import {DSAuth} from "./../../lib/dappsys/auth.sol";
+import {MetaTransactionMsgSender} from "./../common/MetaTransactionMsgSender.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108

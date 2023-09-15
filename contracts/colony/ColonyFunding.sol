@@ -19,8 +19,10 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./../tokenLocking/ITokenLocking.sol";
-import "./ColonyStorage.sol";
+import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
+import {ColonyStorage} from "./ColonyStorage.sol";
+import {ERC20Extended} from "./../common/ERC20Extended.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract ColonyFunding is
   ColonyStorage // ignore-swc-123
@@ -456,7 +458,7 @@ contract ColonyFunding is
     nonRewardPotsTotal[_token] -= _payout;
 
     uint fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
-    uint payoutToUser = _payout - fee;
+    payoutToUser = _payout - fee;
 
     if (_token == address(0x0)) {
       // Payout ether

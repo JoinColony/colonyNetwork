@@ -19,7 +19,7 @@
 pragma solidity >=0.8.21; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import "./ReputationMiningCycleDataTypes.sol";
+import {ReputationMiningCycleDataTypes} from "./ReputationMiningCycleDataTypes.sol";
 
 interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice The getter for the disputeRounds mapping.

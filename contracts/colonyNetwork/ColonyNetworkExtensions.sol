@@ -19,12 +19,14 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "../colony/ColonyDataTypes.sol";
-import "../colonyNetwork/IColonyNetwork.sol";
-import "../extensions/ColonyExtension.sol";
-import "./ColonyNetworkStorage.sol";
-import "./../metaTxToken/MetaTxToken.sol";
-import "./../common/TokenAuthority.sol";
+import {ColonyDataTypes} from "../colony/ColonyDataTypes.sol";
+import {IColonyNetwork} from "../colonyNetwork/IColonyNetwork.sol";
+import {ColonyExtension} from "../extensions/ColonyExtension.sol";
+import {ColonyNetworkStorage} from "./ColonyNetworkStorage.sol";
+import {MetaTxToken} from "./../metaTxToken/MetaTxToken.sol";
+import {TokenAuthority} from "./../common/TokenAuthority.sol";
+import {EtherRouter} from "./../common/EtherRouter.sol";
+import {Resolver} from "./../common/Resolver.sol";
 
 contract ColonyNetworkExtensions is ColonyNetworkStorage {
   // Public functions

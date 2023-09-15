@@ -19,11 +19,11 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./../../lib/dappsys/math.sol";
-import "./../patriciaTree/PatriciaTreeProofs.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../tokenLocking/ITokenLocking.sol";
-import "./ReputationMiningCycleStorage.sol";
+import {DSMath} from "./../../lib/dappsys/math.sol";
+import {PatriciaTreeProofs} from "./../patriciaTree/PatriciaTreeProofs.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
+import {ReputationMiningCycleStorage} from "./ReputationMiningCycleStorage.sol";
 
 contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
   // Minimum reputation mining stake in CLNY

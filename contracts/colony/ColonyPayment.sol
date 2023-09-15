@@ -19,7 +19,8 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./ColonyStorage.sol";
+import {ColonyStorage} from "./ColonyStorage.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract ColonyPayment is ColonyStorage {
   function addPayment(

@@ -3,7 +3,7 @@
 // adjustments
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
-import "./MetaTransactionMsgSender.sol";
+import {MetaTransactionMsgSender} from "./MetaTransactionMsgSender.sol";
 
 abstract contract Multicall is MetaTransactionMsgSender {
   bytes4 constant multicallSig = bytes4(keccak256("multicall(bytes[])"));

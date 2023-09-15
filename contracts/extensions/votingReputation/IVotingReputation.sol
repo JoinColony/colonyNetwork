@@ -19,15 +19,15 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-// import "./../colonyNetwork/IColonyNetwork.sol";
-// import "./../colony/ColonyRoles.sol";
-import "./../../common/IBasicMetaTransaction.sol";
-import "./../IColonyExtension.sol";
-import "./VotingReputationDataTypes.sol";
+// import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+// import { ColonyRoles } from "./../colony/ColonyRoles.sol";
+import {IBasicMetaTransaction} from "./../../common/IBasicMetaTransaction.sol";
+import {IColonyExtension} from "./../IColonyExtension.sol";
+import {VotingReputationDataTypes} from "./VotingReputationDataTypes.sol";
 
-// import "./../patriciaTree/PatriciaTreeProofs.sol";
-// import "./../tokenLocking/ITokenLocking.sol";
-// import "./ColonyExtension.sol";
+// import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
+// import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+// import { ColonyExtension } from "./ColonyExtension.sol";
 
 interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @notice Initialise the extension

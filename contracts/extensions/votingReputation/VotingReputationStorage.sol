@@ -19,12 +19,13 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../../colonyNetwork/IColonyNetwork.sol";
-import "./../../colony/ColonyRoles.sol";
-import "./../../common/BasicMetaTransaction.sol";
-import "./../../tokenLocking/ITokenLocking.sol";
-import "./../ColonyExtension.sol";
-import "./VotingReputationDataTypes.sol";
+import {IColonyNetwork} from "./../../colonyNetwork/IColonyNetwork.sol";
+import {ColonyRoles} from "./../../colony/ColonyRoles.sol";
+import {IColony, ColonyDataTypes} from "./../../colony/IColony.sol";
+import {BasicMetaTransaction} from "./../../common/BasicMetaTransaction.sol";
+import {ITokenLocking} from "./../../tokenLocking/ITokenLocking.sol";
+import {ColonyExtension} from "./../ColonyExtension.sol";
+import {VotingReputationDataTypes} from "./VotingReputationDataTypes.sol";
 
 contract VotingReputationStorage is ColonyExtension, BasicMetaTransaction, VotingReputationDataTypes {
   // Constants

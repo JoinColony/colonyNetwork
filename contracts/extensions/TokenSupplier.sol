@@ -19,9 +19,10 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../common/BasicMetaTransaction.sol";
-import "./../common/ERC20Extended.sol";
-import "./ColonyExtension.sol";
+import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
+import {ERC20Extended} from "./../common/ERC20Extended.sol";
+import {ColonyExtension} from "./ColonyExtension.sol";
+import {IColony, ColonyDataTypes} from "./../colony/IColony.sol";
 
 contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   uint256 constant ISSUANCE_PERIOD = 1 days;

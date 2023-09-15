@@ -4,7 +4,7 @@ pragma experimental "ABIEncoderV2";
 
 import {Data} from "./Data.sol";
 import {Bits} from "./Bits.sol";
-import "./PatriciaTreeProofs.sol";
+import {PatriciaTreeProofs} from "./PatriciaTreeProofs.sol";
 
 /// More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTreeBase is PatriciaTreeProofs {

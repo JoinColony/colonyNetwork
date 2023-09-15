@@ -19,10 +19,10 @@
 pragma solidity >=0.8.21; // ignore-swc-103
 pragma experimental ABIEncoderV2;
 
-import "./../common/IRecovery.sol";
-import "./../common/IBasicMetaTransaction.sol";
-import "./../common/IMulticall.sol";
-import "./ColonyDataTypes.sol";
+import {IRecovery} from "./../common/IRecovery.sol";
+import {IBasicMetaTransaction} from "./../common/IBasicMetaTransaction.sol";
+import {IMulticall} from "./../common/IMulticall.sol";
+import {ColonyDataTypes} from "./ColonyDataTypes.sol";
 
 interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
   // Implemented in DSAuth.sol

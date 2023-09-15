@@ -19,7 +19,8 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./ColonyExtensionMeta.sol";
+import {ColonyExtensionMeta} from "./ColonyExtensionMeta.sol";
+import {IColony, ColonyDataTypes} from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 

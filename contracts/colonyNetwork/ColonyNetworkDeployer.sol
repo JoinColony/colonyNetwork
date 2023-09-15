@@ -19,12 +19,13 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./../common/EtherRouter.sol";
-import "./../colony/ColonyAuthority.sol";
-import "./../colony/IColony.sol";
-import "./ColonyNetworkStorage.sol";
-import "./IColonyNetwork.sol";
-import "./../metaTxToken/MetaTxToken.sol";
+import {EtherRouter} from "./../common/EtherRouter.sol";
+import {ColonyAuthority} from "./../colony/ColonyAuthority.sol";
+import {IColony} from "./../colony/IColony.sol";
+import {ColonyNetworkStorage} from "./ColonyNetworkStorage.sol";
+import {IColonyNetwork} from "./IColonyNetwork.sol";
+import {MetaTxToken} from "./../metaTxToken/MetaTxToken.sol";
+import {DSAuth, DSAuthority} from "./../../lib/dappsys/auth.sol";
 
 contract ColonyNetworkDeployer is ColonyNetworkStorage {
   function createMetaColony(address _tokenAddress) public stoppable auth {
