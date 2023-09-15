@@ -800,6 +800,54 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditure.globalClaimDelay).to.eq.BN(blockTime - expenditure.finalizedTimestamp);
     });
 
+    it("can lock and unlock an expenditure global while avoiding overflows and underflows", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId = await colony.getExpenditureCount();
+      await colony.finalizeExpenditure(expenditureId);
+
+      // Set payout to WAD for expenditure slot 0, internal token
+      const action = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId, 0, token.address, WAD]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      // Set globalClaimDelay to UINT256_MAX - 1
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(4))], bn2bytes32(UINT256_MAX.subn(1)));
+
+      let expenditureMotionLock;
+      let expenditure;
+
+      expenditureMotionLock = await voting.getExpenditureMotionLock(expenditureId);
+      expect(expenditureMotionLock).to.be.zero;
+
+      expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.globalClaimDelay).to.eq.BN(UINT256_MAX.subn(1));
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      expenditureMotionLock = await voting.getExpenditureMotionLock(expenditureId);
+      expect(expenditureMotionLock).to.eq.BN(motionId);
+
+      expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.globalClaimDelay).to.eq.BN(UINT256_MAX); // Doesn't overflow
+
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
+
+      // Set globalClaimDelay to 1
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, 25, [true], [bn2bytes32(new BN(4))], bn2bytes32(new BN(1)));
+
+      // Finalizing will reset global claim delay to difference between finalized timestamp and block.timestamp
+      await forwardTime(STAKE_PERIOD, this);
+      const tx = await voting.finalizeMotion(motionId);
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+
+      expenditureMotionLock = await voting.getExpenditureMotionLock(expenditureId);
+      expect(expenditureMotionLock).to.be.zero;
+
+      expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.globalClaimDelay).to.eq.BN(blockTime - expenditure.finalizedTimestamp); // Doesn't underflow
+    });
+
     it("can only lock the expenditure once if multiple motions are made", async () => {
       const tokenArgs = getTokenArgs();
       const otherToken = await Token.new(...tokenArgs);

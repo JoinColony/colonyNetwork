@@ -432,12 +432,14 @@ contract VotingReputation is VotingReputationStorage {
     delete expenditureMotionLocks[expenditureId];
 
     ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(expenditureId);
-    uint256 sinceFinalized = (expenditure.status == ColonyDataTypes.ExpenditureStatus.Finalized) ?
-      (block.timestamp - expenditure.finalizedTimestamp) :
-      0;
+    uint256 sinceFinalized = (expenditure.status == ColonyDataTypes.ExpenditureStatus.Finalized)
+      ? (block.timestamp - expenditure.finalizedTimestamp)
+      : 0;
+    uint256 newClaimDelay = (expenditure.globalClaimDelay > LOCK_DELAY)
+      ? expenditure.globalClaimDelay - LOCK_DELAY
+      : 0;
 
-    uint256 claimDelay = expenditure.globalClaimDelay - LOCK_DELAY + sinceFinalized;
-    bytes memory claimDelayAction = createGlobalClaimDelayAction(action, claimDelay);
+    bytes memory claimDelayAction = createGlobalClaimDelayAction(action, newClaimDelay + sinceFinalized);
     // No require this time, since we don't want stakes to be permanently locked
     executeCall(_motionId, claimDelayAction);
 
