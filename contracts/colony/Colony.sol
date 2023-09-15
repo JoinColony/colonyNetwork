@@ -19,12 +19,15 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../common/ERC20Extended.sol";
-import "./../common/Multicall.sol";
-import "./../common/IEtherRouter.sol";
-import "./../common/BasicMetaTransaction.sol";
-import "./../tokenLocking/ITokenLocking.sol";
-import "./ColonyStorage.sol";
+import {ERC20Extended} from "./../common/ERC20Extended.sol";
+import {Multicall} from "./../common/Multicall.sol";
+import {IEtherRouter} from "./../common/IEtherRouter.sol";
+import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
+import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import {PatriciaTreeProofs} from "./../patriciaTree/PatriciaTreeProofs.sol";
+import {ColonyStorage} from "./ColonyStorage.sol";
+import {ColonyAuthority} from "./ColonyAuthority.sol";
 
 contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeProofs {
   // This function, exactly as defined, is used in build scripts. Take care when updating.

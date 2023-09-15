@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-2-Clause
 pragma solidity 0.8.21;
 
-import "./ENS.sol";
+import {ENS} from "./ENS.sol";
 
 // ignore-file-swc-101 This is due to ConsenSys/truffle-security#245 and the bad-line reporting associated with it
 // (It's really the abi.encodepacked in setSubnodeOwner.

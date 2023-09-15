@@ -18,9 +18,9 @@
 
 pragma solidity 0.8.21;
 
-import "./../ens/ENS.sol";
-import "./ColonyNetworkStorage.sol";
-import "./../common/MultiChain.sol";
+import {ENS} from "./../ens/ENS.sol";
+import {ColonyNetworkStorage} from "./ColonyNetworkStorage.sol";
+import {MultiChain} from "./../common/MultiChain.sol";
 
 contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
   bytes32 constant USER_HASH = keccak256("user");

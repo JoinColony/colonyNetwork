@@ -3,9 +3,9 @@
 // in openzeppelin-solidity / openzeppelin-contracts was deprecated in favour of.
 pragma solidity 0.8.21;
 
-import "../../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../../node_modules/@openzeppelin/contracts/security/Pausable.sol";
-import "../../node_modules/@openzeppelin/contracts/access/AccessControl.sol";
+import {ERC20} from "../../node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Pausable} from "../../node_modules/@openzeppelin/contracts/security/Pausable.sol";
+import {AccessControl} from "../../node_modules/@openzeppelin/contracts/access/AccessControl.sol";
 
 contract ERC20PresetMinterPauser is ERC20, Pausable, AccessControl {
   bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");

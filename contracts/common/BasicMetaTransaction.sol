@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.21;
 
-import "../../lib/dappsys/math.sol";
-import "./MetaTransactionMsgSender.sol";
-import "./MultiChain.sol";
+import {DSMath} from "../../lib/dappsys/math.sol";
+import {MetaTransactionMsgSender} from "./MetaTransactionMsgSender.sol";
+import {MultiChain} from "./MultiChain.sol";
 
 abstract contract BasicMetaTransaction is DSMath, MetaTransactionMsgSender, MultiChain {
   event MetaTransactionExecuted(address user, address payable relayerAddress, bytes functionSignature);

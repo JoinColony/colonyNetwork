@@ -18,8 +18,8 @@
 
 pragma solidity 0.8.21;
 
-import "./../common/CommonAuthority.sol";
-import "./ColonyDataTypes.sol";
+import {CommonAuthority} from "./../common/CommonAuthority.sol";
+import {ColonyDataTypes} from "./ColonyDataTypes.sol";
 
 contract ColonyAuthority is CommonAuthority {
   uint8 constant FUNDING_ROLE = uint8(ColonyDataTypes.ColonyRole.Funding);

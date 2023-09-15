@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.21; // ignore-swc-103
 
-import "./../../lib/dappsys/roles.sol";
+import {DSRoles} from "./../../lib/dappsys/roles.sol";
 
 contract DomainRoles is DSRoles {
   mapping(address => mapping(uint256 => bytes32)) internal userDomainRoles;

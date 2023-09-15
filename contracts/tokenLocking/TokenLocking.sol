@@ -19,13 +19,13 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./../../lib/dappsys/math.sol";
-import "./../colony/IMetaColony.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../common/ERC20Extended.sol";
-import "./../common/BasicMetaTransaction.sol";
-import "./../reputationMiningCycle/IReputationMiningCycle.sol";
-import "./../tokenLocking/TokenLockingStorage.sol";
+import {DSMath} from "./../../lib/dappsys/math.sol";
+import {IMetaColony} from "./../colony/IMetaColony.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import {ERC20Extended} from "./../common/ERC20Extended.sol";
+import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
+import {IReputationMiningCycle} from "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import {TokenLockingStorage} from "./../tokenLocking/TokenLockingStorage.sol";
 
 contract TokenLocking is
   TokenLockingStorage,

@@ -19,8 +19,9 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./ColonyExtension.sol";
-import "./../common/BasicMetaTransaction.sol";
+import {ColonyExtension} from "./ColonyExtension.sol";
+import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
+import {IColony} from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 

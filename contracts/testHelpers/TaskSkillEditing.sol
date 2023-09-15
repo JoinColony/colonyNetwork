@@ -19,7 +19,7 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../colony/ColonyStorage.sol";
+import {ColonyStorage} from "./../colony/ColonyStorage.sol";
 
 contract TaskSkillEditing is ColonyStorage {
   // No modifier guards, we're living on the edge. This is really only for testing until

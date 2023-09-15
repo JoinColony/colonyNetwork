@@ -3,8 +3,8 @@
 
 pragma solidity 0.8.21;
 
-import "./../../lib/dappsys/erc20.sol";
-import "./../../lib/dappsys/math.sol";
+import {ERC20, ERC20Events} from "./../../lib/dappsys/erc20.sol";
+import {DSMath} from "./../../lib/dappsys/math.sol";
 
 contract ToggleableToken is DSMath, ERC20Events {
   uint256 _supply;

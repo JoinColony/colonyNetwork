@@ -18,8 +18,8 @@
 
 pragma solidity 0.8.21;
 
-import "./DSTokenBaseMeta.sol";
-import "./DSAuthMeta.sol";
+import {DSTokenBaseMeta} from "./DSTokenBaseMeta.sol";
+import {DSAuthMeta} from "./DSAuthMeta.sol";
 
 contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
   uint8 public immutable decimals;

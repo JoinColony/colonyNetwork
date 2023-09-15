@@ -18,9 +18,12 @@
 
 pragma solidity 0.8.21;
 
-import "./ColonyNetworkStorage.sol";
-import "./../common/MultiChain.sol";
-import "./../common/BasicMetaTransaction.sol";
+import {ColonyNetworkStorage} from "./ColonyNetworkStorage.sol";
+import {MultiChain} from "./../common/MultiChain.sol";
+import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
+import {ERC20Extended} from "./../common/ERC20Extended.sol";
+import {IMetaColony} from "./../colony/IMetaColony.sol";
+import {DSMath} from "./../../lib/dappsys/math.sol";
 
 contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
   function startTokenAuction(address _token) public stoppable auth {

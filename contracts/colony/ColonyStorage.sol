@@ -19,14 +19,16 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../../lib/dappsys/math.sol";
-import "./../common/CommonStorage.sol";
-import "./../common/ERC20Extended.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../extensions/ColonyExtension.sol";
-import "./../patriciaTree/PatriciaTreeProofs.sol";
-import "./ColonyAuthority.sol";
-import "./ColonyDataTypes.sol";
+import {DSMath} from "./../../lib/dappsys/math.sol";
+import {CommonStorage} from "./../common/CommonStorage.sol";
+import {ERC20Extended} from "./../common/ERC20Extended.sol";
+import {DomainRoles} from "./../common/DomainRoles.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import {ColonyNetworkDataTypes} from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
+import {ColonyExtension} from "./../extensions/ColonyExtension.sol";
+import {PatriciaTreeProofs} from "./../patriciaTree/PatriciaTreeProofs.sol";
+import {ColonyAuthority} from "./ColonyAuthority.sol";
+import {ColonyDataTypes} from "./ColonyDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108

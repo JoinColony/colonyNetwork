@@ -19,11 +19,13 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../common/ERC20Extended.sol";
-import "./../common/IEtherRouter.sol";
-import "./../common/MultiChain.sol";
-import "./../tokenLocking/ITokenLocking.sol";
-import "./ColonyStorage.sol";
+import {ERC20Extended} from "./../common/ERC20Extended.sol";
+import {IEtherRouter} from "./../common/IEtherRouter.sol";
+import {MultiChain} from "./../common/MultiChain.sol";
+import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
+import {ColonyStorage} from "./ColonyStorage.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import {ColonyExtension} from "./../extensions/ColonyExtension.sol";
 
 contract ColonyArbitraryTransaction is ColonyStorage {
   bytes4 constant APPROVE_SIG = bytes4(keccak256("approve(address,uint256)"));
@@ -137,7 +139,7 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
   }
 
-  function burnGuyOrTransferFromTransactionPreparation(bytes memory _action) internal {
+  function burnGuyOrTransferFromTransactionPreparation(bytes memory _action) internal view {
     address spender;
     assembly {
       spender := mload(add(_action, 0x24))

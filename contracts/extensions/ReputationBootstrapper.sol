@@ -19,10 +19,11 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../../lib/dappsys/erc20.sol";
-import "./../reputationMiningCycle/IReputationMiningCycle.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./ColonyExtensionMeta.sol";
+import {ERC20} from "./../../lib/dappsys/erc20.sol";
+import {IReputationMiningCycle} from "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import {ColonyExtensionMeta} from "./ColonyExtensionMeta.sol";
+import {IColony, ColonyDataTypes} from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 

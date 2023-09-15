@@ -19,12 +19,13 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./../common/ERC20Extended.sol";
-import "./../common/EtherRouter.sol";
-import "./../common/MultiChain.sol";
-import "./../reputationMiningCycle/IReputationMiningCycle.sol";
-import "./../tokenLocking/ITokenLocking.sol";
-import "./ColonyNetworkStorage.sol";
+import {ERC20Extended} from "./../common/ERC20Extended.sol";
+import {EtherRouter} from "./../common/EtherRouter.sol";
+import {MultiChain} from "./../common/MultiChain.sol";
+import {IReputationMiningCycle} from "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
+import {ColonyNetworkStorage} from "./ColonyNetworkStorage.sol";
+import {IMetaColony} from "./../colony/IMetaColony.sol";
 
 contract ColonyNetworkMining is ColonyNetworkStorage, MultiChain {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?

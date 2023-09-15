@@ -19,11 +19,11 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../patriciaTree/PatriciaTreeProofs.sol";
-import "./../tokenLocking/ITokenLocking.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import {PatriciaTreeProofs} from "./../patriciaTree/PatriciaTreeProofs.sol";
+import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
 import {Bits} from "./../patriciaTree/Bits.sol";
-import "./ReputationMiningCycleCommon.sol";
+import {ReputationMiningCycleCommon} from "./ReputationMiningCycleCommon.sol";
 
 // TODO (post CCv1, possibly never): Can we handle all possible disputes regarding the very first hash that should be set?
 // Currently, at the very least, we can't handle a dispute if the very first entry is disputed.

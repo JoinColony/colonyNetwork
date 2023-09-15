@@ -19,13 +19,14 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../../lib/dappsys/math.sol";
-import "./../common/EtherRouter.sol";
-import "./../common/Multicall.sol";
-import "./../colony/IColony.sol";
-import "./../colony/ColonyDataTypes.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../patriciaTree/PatriciaTreeProofs.sol";
+import {DSMath} from "./../../lib/dappsys/math.sol";
+import {DSAuth} from "./../../lib/dappsys/auth.sol";
+import {EtherRouter} from "./../common/EtherRouter.sol";
+import {Multicall} from "./../common/Multicall.sol";
+import {IColony} from "./../colony/IColony.sol";
+import {ColonyDataTypes} from "./../colony/ColonyDataTypes.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import {PatriciaTreeProofs} from "./../patriciaTree/PatriciaTreeProofs.sol";
 
 abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall {
   uint256 constant UINT256_MAX = 2 ** 256 - 1;

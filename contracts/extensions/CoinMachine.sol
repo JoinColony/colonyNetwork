@@ -19,10 +19,11 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../../lib/dappsys/erc20.sol";
-import "./../common/BasicMetaTransaction.sol";
-import "./ColonyExtension.sol";
-import "./Whitelist.sol";
+import {ERC20} from "./../../lib/dappsys/erc20.sol";
+import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
+import {ColonyExtension} from "./ColonyExtension.sol";
+import {Whitelist} from "./Whitelist.sol";
+import {IColony, ColonyDataTypes} from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 

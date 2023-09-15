@@ -19,8 +19,8 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../common/BasicMetaTransaction.sol";
-import "./ColonyExtension.sol";
+import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
+import {ColonyExtension} from "./ColonyExtension.sol";
 
 abstract contract ColonyExtensionMeta is ColonyExtension, BasicMetaTransaction {
   mapping(address => uint256) metatransactionNonces;

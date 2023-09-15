@@ -19,12 +19,12 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../../colonyNetwork/IColonyNetwork.sol";
-import "./../../colony/IColony.sol";
-import "./../../tokenLocking/ITokenLocking.sol";
-import "./../../../lib/dappsys/math.sol";
-import "./../../../lib/dappsys/auth.sol";
-import "./VotingReputationDataTypes.sol";
+import {IColonyNetwork} from "./../../colonyNetwork/IColonyNetwork.sol";
+import {IColony} from "./../../colony/IColony.sol";
+import {ITokenLocking} from "./../../tokenLocking/ITokenLocking.sol";
+import {DSMath} from "./../../../lib/dappsys/math.sol";
+import {DSAuth} from "./../../../lib/dappsys/auth.sol";
+import {VotingReputationDataTypes} from "./VotingReputationDataTypes.sol";
 
 contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationDataTypes {
   // THIS FILE IS DELIBERATELY WRONG. IF YOU'RE EDITING THIS FILE, AND YOU'VE NOT BEEN EXPLICITLY

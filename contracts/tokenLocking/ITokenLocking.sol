@@ -19,8 +19,8 @@
 pragma solidity >=0.8.21; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import "./TokenLockingDataTypes.sol";
-import "./../common/IBasicMetaTransaction.sol";
+import {TokenLockingDataTypes} from "./TokenLockingDataTypes.sol";
+import {IBasicMetaTransaction} from "./../common/IBasicMetaTransaction.sol";
 
 interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @notice Set the ColonyNetwork contract address.

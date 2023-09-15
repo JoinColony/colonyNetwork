@@ -19,7 +19,8 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./VotingReputationStorage.sol";
+import {VotingReputationStorage} from "./VotingReputationStorage.sol";
+import {IColony, ColonyDataTypes} from "./../../colony/IColony.sol";
 
 contract VotingReputation is VotingReputationStorage {
   // Public

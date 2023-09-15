@@ -19,7 +19,8 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "../extensions/ColonyExtensionMeta.sol";
+import {ColonyExtensionMeta} from "../extensions/ColonyExtensionMeta.sol";
+import {IColony} from "./../colony/IColony.sol";
 
 abstract contract TestExtension is ColonyExtensionMeta {
   function install(address _colony) public override auth {

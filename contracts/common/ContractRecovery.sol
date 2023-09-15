@@ -18,11 +18,11 @@
 
 pragma solidity 0.8.21;
 
-import "./../colony/ColonyDataTypes.sol";
-import "./ContractRecoveryDataTypes.sol";
-import "./CommonAuthority.sol";
-import "./CommonStorage.sol";
-import "./IRecovery.sol";
+import {ColonyDataTypes} from "./../colony/ColonyDataTypes.sol";
+import {ContractRecoveryDataTypes} from "./ContractRecoveryDataTypes.sol";
+import {CommonAuthority} from "./CommonAuthority.sol";
+import {CommonStorage} from "./CommonStorage.sol";
+import {IRecovery} from "./IRecovery.sol";
 
 contract ContractRecovery is
   ContractRecoveryDataTypes,

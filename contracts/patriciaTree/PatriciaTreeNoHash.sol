@@ -2,8 +2,11 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./PatriciaTreeBase.sol";
-import "./IPatriciaTreeNoHash.sol";
+import {PatriciaTreeBase} from "./PatriciaTreeBase.sol";
+import {IPatriciaTreeBase} from "./IPatriciaTreeBase.sol";
+import {IPatriciaTreeNoHash} from "./IPatriciaTreeNoHash.sol";
+import {Data} from "./Data.sol";
+import {Bits} from "./Bits.sol";
 
 /// More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTreeNoHash is IPatriciaTreeNoHash, PatriciaTreeBase {

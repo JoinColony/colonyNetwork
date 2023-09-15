@@ -19,8 +19,11 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./../tokenLocking/ITokenLocking.sol";
-import "./ColonyStorage.sol";
+import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
+import {ColonyStorage} from "./ColonyStorage.sol";
+import {PatriciaTreeProofs} from "./../patriciaTree/PatriciaTreeProofs.sol";
+import {ERC20Extended} from "./../common/ERC20Extended.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract ColonyRewards is
   ColonyStorage,
@@ -167,7 +170,7 @@ contract ColonyRewards is
     uint256 payoutId,
     uint256[7] memory squareRoots,
     uint256 userReputation
-  ) internal returns (address, uint256) {
+  ) internal view returns (address, uint256) {
     RewardPayoutCycle memory payout = rewardPayoutCycles[payoutId];
 
     // Checking if payout is active

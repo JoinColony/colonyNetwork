@@ -19,10 +19,10 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import "./../common/BasicMetaTransaction.sol";
-import "./../reputationMiningCycle/IReputationMiningCycle.sol";
-import "./ColonyNetworkStorage.sol";
-import "./../common/Multicall.sol";
+import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
+import {IReputationMiningCycle} from "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import {ColonyNetworkStorage} from "./ColonyNetworkStorage.sol";
+import {Multicall} from "./../common/Multicall.sol";
 
 contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall {
   function isColony(address _colony) public view returns (bool) {

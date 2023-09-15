@@ -19,8 +19,9 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./ColonyStorage.sol";
-import "./../common/ContractRecoveryDataTypes.sol";
+import {ColonyStorage} from "./ColonyStorage.sol";
+import {ContractRecoveryDataTypes} from "./../common/ContractRecoveryDataTypes.sol";
+import {ColonyAuthority} from "./../colony/ColonyAuthority.sol";
 
 contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
   function setRootRole(address _user, bool _setTo) public stoppable auth {

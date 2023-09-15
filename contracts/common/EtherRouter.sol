@@ -18,8 +18,8 @@
 
 pragma solidity 0.8.21;
 
-import "./../../lib/dappsys/auth.sol";
-import "./Resolver.sol";
+import {DSAuth} from "./../../lib/dappsys/auth.sol";
+import {Resolver} from "./Resolver.sol";
 
 contract EtherRouter is DSAuth {
   Resolver public resolver;

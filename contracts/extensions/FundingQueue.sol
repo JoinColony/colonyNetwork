@@ -19,12 +19,13 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import "./../colony/ColonyDataTypes.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../common/BasicMetaTransaction.sol";
-import "./../common/ERC20Extended.sol";
-import "./../tokenLocking/ITokenLocking.sol";
-import "./ColonyExtension.sol";
+import {ColonyDataTypes} from "./../colony/ColonyDataTypes.sol";
+import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
+import {ERC20Extended} from "./../common/ERC20Extended.sol";
+import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
+import {ColonyExtension} from "./ColonyExtension.sol";
+import {IColony} from "./../colony/IColony.sol";
 
 contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   // Events
@@ -414,7 +415,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     return fundingToTransfer;
   }
 
-  function getDecayRate(uint256 backingPercent) internal view returns (uint256) {
+  function getDecayRate(uint256 backingPercent) internal pure returns (uint256) {
     assert(backingPercent <= WAD);
 
     if (backingPercent == WAD) {

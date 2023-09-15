@@ -17,7 +17,7 @@
 */
 
 pragma solidity 0.8.21;
-import "./../../colony/ColonyDataTypes.sol";
+import {ColonyDataTypes} from "./../../colony/ColonyDataTypes.sol";
 
 interface VotingReputationDataTypes {
   // Data structures
