@@ -87,7 +87,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   /// @notice Return the permissions required for each function
   /// @param _sig The function signature
   /// @return _roles The byte32 of permissions required
-  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32 _roles) {
+  function getCapabilityRoles(bytes4 _sig) public pure override returns (bytes32 _roles) {
     if (_sig == MAKE_PAYMENT_SIG || _sig == MAKE_PAYMENT_DOMAIN_SIG) {
       return REQUIRED_ROLES;
     } else {

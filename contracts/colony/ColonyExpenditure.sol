@@ -20,7 +20,6 @@ pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
 import {ColonyStorage} from "./ColonyStorage.sol";
-import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract ColonyExpenditure is ColonyStorage {
   int256 constant MAX_PAYOUT_MODIFIER = int256(WAD);
@@ -133,7 +132,6 @@ contract ColonyExpenditure is ColonyStorage {
     uint256[] memory _skillIds
   ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
     require(_slots.length == _skillIds.length, "colony-expenditure-bad-slots");
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
 
     for (uint256 i; i < _slots.length; i++) {
       require(isValidGlobalOrLocalSkill(_skillIds[i]), "colony-not-valid-global-or-local-skill");
