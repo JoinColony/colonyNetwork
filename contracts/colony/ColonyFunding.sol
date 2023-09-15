@@ -198,7 +198,10 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
     Expenditure storage expenditure = expenditures[_id];
     ExpenditureSlot storage slot = expenditureSlots[_id][_slot];
 
+    // First two checks prevent overflows
     require(
+      type(uint256).max - expenditure.globalClaimDelay > slot.claimDelay &&
+      type(uint256).max - expenditure.globalClaimDelay - slot.claimDelay > expenditure.finalizedTimestamp &&
       expenditure.finalizedTimestamp + expenditure.globalClaimDelay + slot.claimDelay <= block.timestamp,
       "colony-expenditure-cannot-claim"
     );
@@ -233,7 +236,7 @@ contract ColonyFunding is ColonyStorage { // ignore-swc-123
 
     // Finish the payout
     uint256 payoutMinusFee = processPayout(expenditure.fundingPotId, _token, tokenPayout, slot.recipient);
-    
+
     emit PayoutClaimed(msgSender(), _id, _slot, _token, payoutMinusFee);
   }
 

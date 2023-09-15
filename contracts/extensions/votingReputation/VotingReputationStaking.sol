@@ -243,7 +243,10 @@ contract VotingReputationStaking is VotingReputationStorage {
     if (expenditureMotionLocks[expenditureId] == 0) {
       expenditureMotionLocks[expenditureId] = _motionId;
       uint256 currentClaimDelay = colony.getExpenditure(expenditureId).globalClaimDelay;
-      bytes memory claimDelayAction = createGlobalClaimDelayAction(action, currentClaimDelay + LOCK_DELAY);
+      uint256 newClaimDelay = (type(uint256).max - currentClaimDelay < LOCK_DELAY)
+        ? type(uint256).max
+        : currentClaimDelay + LOCK_DELAY;
+      bytes memory claimDelayAction = createGlobalClaimDelayAction(action, newClaimDelay);
       require(executeCall(_motionId, claimDelayAction), "voting-rep-expenditure-lock-failed");
     } else {
       finalized = true;

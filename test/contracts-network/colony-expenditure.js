@@ -1069,6 +1069,20 @@ contract("Colony Expenditure", (accounts) => {
       await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
     });
 
+    it("should not overflow if there is a large global claim delay", async () => {
+      await colony.setExpenditureState(1, UINT256_MAX, expenditureId, EXPENDITURES_SLOT, [ARRAY], [bn2bytes32(new BN(4))], bn2bytes32(UINT256_MAX));
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, SLOT0, token.address), "colony-expenditure-cannot-claim");
+    });
+
+    it("should not overflow if there is a large slot claim delay", async () => {
+      await colony.setExpenditureClaimDelay(expenditureId, SLOT0, UINT256_MAX, { from: ADMIN });
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, SLOT0, token.address), "colony-expenditure-cannot-claim");
+    });
+
     it("should error when expenditure is not finalized", async () => {
       await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, SLOT0, token.address), "colony-expenditure-not-finalized");
     });
