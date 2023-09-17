@@ -1,4 +1,5 @@
 FROM node:16.20.2-slim
+COPY ./build ./build
 COPY ./packages ./packages
 COPY ./package.json ./
 COPY ./package-lock.json ./

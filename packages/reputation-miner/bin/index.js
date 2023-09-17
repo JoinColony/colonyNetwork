@@ -24,7 +24,7 @@ const { argv } = yargs
     default: true
   })
   .option("colonyNetworkAddress", {
-    describe: "Ethereum address of the ColonyNetwork smart contract in the network the miner is connected to",
+    describe: "Ethereum address of the ColonyNetwork Smart Contract in the network the Miner is connected to",
     type: "string",
     default: "0x78163f593D1Fa151B4B7cacD146586aD2b686294"
   })
@@ -39,15 +39,11 @@ const { argv } = yargs
     default: false,
   })
   .option("minerAddress", {
-    describe: "The address that is staking CLNY that will allow the miner to submit reputation hashes",
+    // eslint-disable-next-line max-len
+    describe: "Address of the miner account which the client will send reputation mining contract transactions from. Used when working with an unlocked account for the miner against development networks only",
     type: "string",
     conflicts: "privateKey",
-  })
-  .option("network", {
-    describe: "Network to connect to. Uses infura public nodes to connect.",
-    type: "string",
-    choices: ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"],
-    conflicts: ["rpcEndpoint"]
+    hidden: true
   })
   .option("oracle", {
     describe: "Whether to serve requests as a reputation oracle or not",
@@ -61,7 +57,7 @@ const { argv } = yargs
   })
   .option("privateKey", {
     // eslint-disable-next-line max-len
-    describe: "The private key of the address that is mining, allowing the miner to sign transactions. If used, `minerAddress` is not needed and will be derived",
+    describe: "The private key of the address that is mining, allowing the miner to sign transactions.",
     type: "string",
     conflicts: "minerAddress",
   })
@@ -73,9 +69,10 @@ const { argv } = yargs
   .option("rpcEndpoint", {
     describe: "http address of the RPC node to connect to",
     type: "string",
-    conflicts: ["network"]
+    default: "http://localhost:8545",
   })
   .option("syncFrom", {
+    describe: "Block number to start reputation state sync from",
     type: "number",
     default: 11897847,
   })
@@ -90,7 +87,6 @@ const {
   dbPath,
   exitOnError,
   minerAddress,
-  network,
   oracle,
   oraclePort,
   privateKey,
@@ -127,7 +123,7 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
 }
 
 if (!minerAddress && !privateKey) {
-  console.log("❗️ You have to specify either --minerAddress or --privateKey");
+  console.log("❗️ You have to specify --privateKey (or --minerAddress when in development mode)");
   process.exit();
 }
 
@@ -145,19 +141,33 @@ const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts")
 });
 
-let provider;
-if (network) {
-  provider = new ethers.providers.InfuraProvider(network);
-} else {
-  const endpoint = rpcEndpoint || "http://localhost:8545";
-  const { protocol, username, password, host, pathname } = new URL(endpoint);
-  const connectionInfo = {
-    url: `${protocol}//${host}${pathname}`,
-    user: decodeURI(username),
-    password: decodeURI(password.replace(/%23/, "#")),
-  };
-  provider = new RetryProvider(connectionInfo, adapterObject);
-}
+const { protocol, username, password, host, pathname } = new URL(rpcEndpoint);
+const connectionInfo = {
+  url: `${protocol}//${host}${pathname}`,
+  user: decodeURI(username),
+  password: decodeURI(password.replace(/%23/, "#")),
+};
+const provider = new RetryProvider(connectionInfo, adapterObject);
+
+console.log(`
+-----------------------------------------------------------------------------------------
+Running with the following configuration:
+  adapter: ${adapter}
+  adapterLabel: ${adapterLabel}
+  auto: ${auto}
+  colonyNetworkAddress: ${colonyNetworkAddress}
+  dbPath: ${dbPath}
+  exitOnError: ${exitOnError}
+  minerAddress: ${minerAddress}
+  oracle: ${oracle}
+  oraclePort: ${oraclePort}
+  privateKey: --REDACTED--,
+  processingDelay: ${processingDelay}
+  rpcEndpoint: ${rpcEndpoint}
+  syncFrom: ${syncFrom}
+
+-----------------------------------------------------------------------------------------
+`)
 
 const client = new ReputationMinerClient({
   loader,
