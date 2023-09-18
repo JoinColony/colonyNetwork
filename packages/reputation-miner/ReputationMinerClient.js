@@ -750,7 +750,7 @@ class ReputationMinerClient {
 
     // Submit hash
     let submitRootHashTx = await this._miner.submitRootHash(entryIndex);
-    if (!submitRootHashTx.nonce) {
+    if (!Object.prototype.hasOwnProperty.call(submitRootHashTx, "nonce")) {
       // Assume we've been given back the submitRootHashTx hash.
       submitRootHashTx = await this._miner.realProvider.getTransaction(submitRootHashTx);
     }
