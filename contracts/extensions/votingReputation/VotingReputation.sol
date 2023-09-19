@@ -446,28 +446,24 @@ contract VotingReputation is VotingReputationStorage {
     return expenditureId;
   }
 
+  // This function is only for non-multicall motions created with v9 and below
   function unlockV9Expenditure(uint256 _motionId) internal returns (uint256) {
-    // This function is only for motions created with v9 and below
-    assert(_motionId <= motionCountV10);
-
     Motion storage motion = motions[_motionId];
-    bytes memory action = getExpenditureAction(motion.action);
-    uint256 expenditureId = getExpenditureId(action);
 
-    bytes32 structHash = getExpenditureStructHash(action);
-    // If v9 multicall, won't have incremented the lock, so don't decrement
-    if (getSig(motion.action) != MULTICALL) {
-      expenditureMotionCounts_DEPRECATED[structHash]--;
-    }
+    assert(_motionId <= motionCountV10);
+    assert(getSig(motion.action) != MULTICALL);
+
+    bytes32 structHash = getExpenditureStructHash(motion.action);
+    expenditureMotionCounts_DEPRECATED[structHash]--;
 
     // Release the claimDelay if this is the last active motion
     if (expenditureMotionCounts_DEPRECATED[structHash] == 0) {
-      bytes memory claimDelayAction = createClaimDelayAction(action, 0);
+      bytes memory claimDelayAction = createClaimDelayAction(motion.action, 0);
       // No require this time, since we don't want stakes to be permanently locked
       executeCall(_motionId, claimDelayAction);
     }
 
-    return expenditureId;
+    return getExpenditureId(motion.action);
   }
 
   // NOTE: This function is deprecated and only used to support v9 expenditure motions
