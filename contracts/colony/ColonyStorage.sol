@@ -19,21 +19,26 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {DSMath} from "./../../lib/dappsys/math.sol";
-import {CommonStorage} from "./../common/CommonStorage.sol";
-import {ERC20Extended} from "./../common/ERC20Extended.sol";
-import {DomainRoles} from "./../common/DomainRoles.sol";
-import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
-import {ColonyNetworkDataTypes} from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
-import {ColonyExtension} from "./../extensions/ColonyExtension.sol";
-import {PatriciaTreeProofs} from "./../patriciaTree/PatriciaTreeProofs.sol";
-import {ColonyAuthority} from "./ColonyAuthority.sol";
-import {ColonyDataTypes} from "./ColonyDataTypes.sol";
+import { DSMath } from "./../../lib/dappsys/math.sol";
+import { CommonStorage } from "./../common/CommonStorage.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { DomainRoles } from "./../common/DomainRoles.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
+import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
+import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
+import { ColonyAuthority } from "./ColonyAuthority.sol";
+import { ColonyDataTypes } from "./ColonyDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage {
+contract ColonyStorage is
+  ColonyDataTypes,
+  ColonyNetworkDataTypes,
+  DSMath,
+  CommonStorage
+{
   uint256 constant COLONY_NETWORK_SLOT = 6;
   uint256 constant ROOT_LOCAL_SKILL_SLOT = 36;
 
@@ -116,13 +121,20 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   // Constants
 
   uint256 constant MAX_PAYOUT = 2 ** 128 - 1; // 340,282,366,920,938,463,463 WADs
-  bytes32 constant ROOT_ROLES = (bytes32(uint256(1)) << uint8(ColonyRole.Recovery)) | (bytes32(uint256(1)) << uint8(ColonyRole.Root));
+  bytes32 constant ROOT_ROLES =
+    (bytes32(uint256(1)) << uint8(ColonyRole.Recovery)) |
+      (bytes32(uint256(1)) << uint8(ColonyRole.Root));
   bytes32 constant BYTES32_1 = bytes32(uint256(1));
 
   // Modifiers
 
   modifier domainNotDeprecated(uint256 _id) {
-    require(!IColonyNetwork(colonyNetworkAddress).getSkill(domains[_id].skillId).deprecated, "colony-domain-deprecated");
+    require(
+      !IColonyNetwork(colonyNetworkAddress)
+        .getSkill(domains[_id].skillId)
+        .deprecated,
+      "colony-domain-deprecated"
+    );
     _;
   }
 
@@ -159,12 +171,18 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   modifier taskNotFinalized(uint256 _id) {
-    require(tasks[_id].status != TaskStatus.Finalized, "colony-task-already-finalized");
+    require(
+      tasks[_id].status != TaskStatus.Finalized,
+      "colony-task-already-finalized"
+    );
     _;
   }
 
   modifier taskFinalized(uint256 _id) {
-    require(tasks[_id].status == TaskStatus.Finalized, "colony-task-not-finalized");
+    require(
+      tasks[_id].status == TaskStatus.Finalized,
+      "colony-task-not-finalized"
+    );
     _;
   }
 
@@ -175,14 +193,18 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   modifier expenditureDraft(uint256 _id) {
     require(expenditureExists(_id), "colony-expenditure-does-not-exist");
-    require(expenditures[_id].status == ExpenditureStatus.Draft, "colony-expenditure-not-draft");
+    require(
+      expenditures[_id].status == ExpenditureStatus.Draft,
+      "colony-expenditure-not-draft"
+    );
     _;
   }
 
   modifier expenditureDraftOrLocked(uint256 _id) {
     require(expenditureExists(_id), "colony-expenditure-does-not-exist");
     require(
-      expenditures[_id].status == ExpenditureStatus.Draft || expenditures[_id].status == ExpenditureStatus.Locked,
+      expenditures[_id].status == ExpenditureStatus.Draft ||
+        expenditures[_id].status == ExpenditureStatus.Locked,
       "colony-expenditure-not-draft-or-locked"
     );
     _;
@@ -190,17 +212,26 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   modifier expenditureFinalized(uint256 _id) {
     require(expenditureExists(_id), "colony-expenditure-does-not-exist");
-    require(expenditures[_id].status == ExpenditureStatus.Finalized, "colony-expenditure-not-finalized");
+    require(
+      expenditures[_id].status == ExpenditureStatus.Finalized,
+      "colony-expenditure-not-finalized"
+    );
     _;
   }
 
   modifier expenditureOnlyOwner(uint256 _id) {
-    require(expenditures[_id].owner == msgSender(), "colony-expenditure-not-owner");
+    require(
+      expenditures[_id].owner == msgSender(),
+      "colony-expenditure-not-owner"
+    );
     _;
   }
 
   modifier validGlobalOrLocalSkill(uint256 _skillId) {
-    require(isValidGlobalOrLocalSkill(_skillId), "colony-not-valid-global-or-local-skill");
+    require(
+      isValidGlobalOrLocalSkill(_skillId),
+      "colony-not-valid-global-or-local-skill"
+    );
     _;
   }
 
@@ -216,7 +247,10 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   modifier validFundingTransfer(uint256 _fromPot, uint256 _toPot) {
     // Prevent moving funds from between the same pot, which otherwise would cause the pot balance to increment by _amount.
-    require(_fromPot != _toPot, "colony-funding-cannot-move-funds-between-the-same-pot");
+    require(
+      _fromPot != _toPot,
+      "colony-funding-cannot-move-funds-between-the-same-pot"
+    );
 
     // Prevent people moving funds from the pot designated to paying out token holders
     require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
@@ -224,7 +258,10 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   modifier isInBootstrapPhase() {
-    require(taskCount == 0 && expenditureCount == 0 && paymentCount == 0, "colony-not-in-bootstrap-mode");
+    require(
+      taskCount == 0 && expenditureCount == 0 && paymentCount == 0,
+      "colony-not-in-bootstrap-mode"
+    );
     _;
   }
 
@@ -236,10 +273,21 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     address _user
   ) {
     require(
-      ColonyAuthority(address(authority)).hasUserRole(_user, _permissionDomainId, uint8(ColonyRole.Administration)),
+      ColonyAuthority(address(authority)).hasUserRole(
+        _user,
+        _permissionDomainId,
+        uint8(ColonyRole.Administration)
+      ),
       "colony-not-admin"
     );
-    require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, tasks[_id].domainId), "ds-auth-invalid-domain-inheritance");
+    require(
+      validateDomainInheritance(
+        _permissionDomainId,
+        _childSkillIndex,
+        tasks[_id].domainId
+      ),
+      "ds-auth-invalid-domain-inheritance"
+    );
     _;
   }
 
@@ -264,16 +312,37 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     uint256 _childSkillIndex,
     uint256 _childDomainId
   ) {
-    require(domainExists(_permissionDomainId), "ds-auth-permission-domain-does-not-exist");
-    require(domainExists(_childDomainId), "ds-auth-child-domain-does-not-exist");
-    require(isAuthorized(msgSender(), _permissionDomainId, msg.sig), "ds-auth-unauthorized");
-    require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-inheritance");
+    require(
+      domainExists(_permissionDomainId),
+      "ds-auth-permission-domain-does-not-exist"
+    );
+    require(
+      domainExists(_childDomainId),
+      "ds-auth-child-domain-does-not-exist"
+    );
+    require(
+      isAuthorized(msgSender(), _permissionDomainId, msg.sig),
+      "ds-auth-unauthorized"
+    );
+    require(
+      validateDomainInheritance(
+        _permissionDomainId,
+        _childSkillIndex,
+        _childDomainId
+      ),
+      "ds-auth-invalid-domain-inheritance"
+    );
     _;
   }
 
   modifier archSubdomain(uint256 _permissionDomainId, uint256 _childDomainId) {
-    if (canCallOnlyBecauseArchitect(msgSender(), _permissionDomainId, msg.sig)) {
-      require(_permissionDomainId != _childDomainId, "ds-auth-only-authorized-in-child-domain");
+    if (
+      canCallOnlyBecauseArchitect(msgSender(), _permissionDomainId, msg.sig)
+    ) {
+      require(
+        _permissionDomainId != _childDomainId,
+        "ds-auth-only-authorized-in-child-domain"
+      );
     }
     _;
   }
@@ -287,18 +356,41 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     if (permissionDomainId == childDomainId) {
       return childSkillIndex == UINT256_MAX;
     } else {
-      uint256 childSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(domains[permissionDomainId].skillId, childSkillIndex);
+      uint256 childSkillId = IColonyNetwork(colonyNetworkAddress)
+        .getChildSkillId(domains[permissionDomainId].skillId, childSkillIndex);
       return childSkillId == domains[childDomainId].skillId;
     }
   }
 
   // Checks to see if the permission comes ONLY from the Architecture role (i.e. user does not have root, etc.)
-  function canCallOnlyBecauseArchitect(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
-    return DomainRoles(address(authority)).canCallOnlyBecause(src, domainId, uint8(ColonyRole.Architecture), address(this), sig);
+  function canCallOnlyBecauseArchitect(
+    address src,
+    uint256 domainId,
+    bytes4 sig
+  ) internal view returns (bool) {
+    return
+      DomainRoles(address(authority)).canCallOnlyBecause(
+        src,
+        domainId,
+        uint8(ColonyRole.Architecture),
+        address(this),
+        sig
+      );
   }
 
-  function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
-    return (src == owner) || DomainRoles(address(authority)).canCall(src, domainId, address(this), sig);
+  function isAuthorized(
+    address src,
+    uint256 domainId,
+    bytes4 sig
+  ) internal view returns (bool) {
+    return
+      (src == owner) ||
+      DomainRoles(address(authority)).canCall(
+        src,
+        domainId,
+        address(this),
+        sig
+      );
   }
 
   function isContract(address addr) internal returns (bool) {
@@ -316,7 +408,11 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
     // slither-disable-next-line unused-return
     try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
-      return IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) == addr;
+      return
+        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(
+          extensionId,
+          address(this)
+        ) == addr;
     } catch {
       return false;
     }
@@ -330,8 +426,14 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     // slither-disable-next-line unused-return
     try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
       // slither-disable-next-line unused-return
-      try ColonyExtension(addr).getColony() returns (address claimedAssociatedColony) {
-        return IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, claimedAssociatedColony) == addr;
+      try ColonyExtension(addr).getColony() returns (
+        address claimedAssociatedColony
+      ) {
+        return
+          IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(
+            extensionId,
+            claimedAssociatedColony
+          ) == addr;
       } catch {
         return false;
       }
@@ -340,7 +442,9 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     }
   }
 
-  function isValidGlobalOrLocalSkill(uint256 skillId) internal view returns (bool) {
+  function isValidGlobalOrLocalSkill(
+    uint256 skillId
+  ) internal view returns (bool) {
     Skill memory skill = IColonyNetwork(colonyNetworkAddress).getSkill(skillId);
     return (skill.globalSkill || localSkills[skillId]) && !skill.deprecated;
   }
@@ -349,11 +453,15 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     return domainId > 0 && domainId <= domainCount;
   }
 
-  function expenditureExists(uint256 expenditureId) internal view returns (bool) {
+  function expenditureExists(
+    uint256 expenditureId
+  ) internal view returns (bool) {
     return expenditureId > 0 && expenditureId <= expenditureCount;
   }
 
-  function calculateNetworkFeeForPayout(uint256 _payout) internal view returns (uint256 fee) {
+  function calculateNetworkFeeForPayout(
+    uint256 _payout
+  ) internal view returns (uint256 fee) {
     uint256 feeInverse = IColonyNetwork(colonyNetworkAddress).getFeeInverse();
 
     // slither-disable-next-line incorrect-equality
@@ -364,7 +472,11 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     }
   }
 
-  function executeCall(address to, uint256 value, bytes memory data) internal returns (bool success) {
+  function executeCall(
+    address to,
+    uint256 value,
+    bytes memory data
+  ) internal returns (bool success) {
     assembly {
       // call contract at address a with input mem[in…(in+insize))
       //   providing g gas and v wei and output area mem[out…(out+outsize))

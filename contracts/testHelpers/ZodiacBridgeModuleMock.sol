@@ -19,7 +19,12 @@
 pragma solidity 0.8.21;
 
 interface IAvatar {
-  function execTransactionFromModule(address to, uint256 value, bytes memory data, uint8 operation) external returns (bool success);
+  function execTransactionFromModule(
+    address to,
+    uint256 value,
+    bytes memory data,
+    uint8 operation
+  ) external returns (bool success);
 }
 
 contract ZodiacBridgeModuleMock {
@@ -31,9 +36,19 @@ contract ZodiacBridgeModuleMock {
     avatar = _avatar;
   }
 
-  function executeTransaction(address _target, uint256 _value, bytes memory _data, uint8 _operation) public {
+  function executeTransaction(
+    address _target,
+    uint256 _value,
+    bytes memory _data,
+    uint8 _operation
+  ) public {
     require(_operation == 0, "operation-must-be-zero");
-    bool success = IAvatar(avatar).execTransactionFromModule(_target, _value, _data, _operation);
+    bool success = IAvatar(avatar).execTransactionFromModule(
+      _target,
+      _value,
+      _data,
+      _operation
+    );
     emit SafeTransactionExecuted(success);
   }
 }

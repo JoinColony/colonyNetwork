@@ -19,10 +19,10 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
-import {ERC20Extended} from "./../common/ERC20Extended.sol";
-import {ColonyExtension} from "./ColonyExtension.sol";
-import {IColony, ColonyDataTypes} from "./../colony/IColony.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { ColonyExtension } from "./ColonyExtension.sol";
+import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
 
 contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   uint256 constant ISSUANCE_PERIOD = 1 days;
@@ -46,7 +46,9 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   /// @notice Gets the next nonce for a meta-transaction
   /// @param userAddress The user's address
   /// @return nonce The nonce
-  function getMetatransactionNonce(address userAddress) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(
+    address userAddress
+  ) public view override returns (uint256 nonce) {
     return metatransactionNonces[userAddress];
   }
 
@@ -99,10 +101,16 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   /// @notice Initialise the extension, must be called before any tokens can be issued
   /// @param _tokenSupplyCeiling Total amount of tokens to issue
   /// @param _tokenIssuanceRate Number of tokens to issue per day
-  function initialise(uint256 _tokenSupplyCeiling, uint256 _tokenIssuanceRate) public {
+  function initialise(
+    uint256 _tokenSupplyCeiling,
+    uint256 _tokenIssuanceRate
+  ) public {
     require(isRoot(), "token-supplier-caller-not-root");
     require(lastIssue == 0, "token-supplier-already-initialised");
-    require(_tokenSupplyCeiling > ERC20Extended(token).totalSupply(), "token-supplier-ceiling-too-low");
+    require(
+      _tokenSupplyCeiling > ERC20Extended(token).totalSupply(),
+      "token-supplier-ceiling-too-low"
+    );
 
     tokenSupplyCeiling = _tokenSupplyCeiling;
     tokenIssuanceRate = _tokenIssuanceRate;
@@ -114,9 +122,14 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Update the tokenSupplyCeiling, cannot set below current tokenSupply
   /// @param _tokenSupplyCeiling Total amount of tokens to issue
-  function setTokenSupplyCeiling(uint256 _tokenSupplyCeiling) public initialised {
+  function setTokenSupplyCeiling(
+    uint256 _tokenSupplyCeiling
+  ) public initialised {
     require(isRoot(), "token-supplier-caller-not-root");
-    require(_tokenSupplyCeiling > ERC20Extended(token).totalSupply(), "token-supplier-ceiling-too-low");
+    require(
+      _tokenSupplyCeiling > ERC20Extended(token).totalSupply(),
+      "token-supplier-ceiling-too-low"
+    );
 
     tokenSupplyCeiling = _tokenSupplyCeiling;
 
@@ -151,8 +164,13 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
     uint256 tokenSupply = ERC20Extended(token).totalSupply();
 
     uint256 newSupply = min(
-      (tokenSupplyCeiling > tokenSupply) ? (tokenSupplyCeiling - tokenSupply) : 0,
-      wmul(tokenIssuanceRate, wdiv((block.timestamp - lastIssue), ISSUANCE_PERIOD))
+      (tokenSupplyCeiling > tokenSupply)
+        ? (tokenSupplyCeiling - tokenSupply)
+        : 0,
+      wmul(
+        tokenIssuanceRate,
+        wdiv((block.timestamp - lastIssue), ISSUANCE_PERIOD)
+      )
     );
 
     assert(newSupply == 0 || (tokenSupply + newSupply) <= tokenSupplyCeiling);
@@ -197,6 +215,7 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   }
 
   function isRootFunding() internal view returns (bool) {
-    return colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Funding);
+    return
+      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Funding);
   }
 }

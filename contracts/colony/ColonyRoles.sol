@@ -19,13 +19,17 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {ColonyStorage} from "./ColonyStorage.sol";
-import {ContractRecoveryDataTypes} from "./../common/ContractRecoveryDataTypes.sol";
-import {ColonyAuthority} from "./../colony/ColonyAuthority.sol";
+import { ColonyStorage } from "./ColonyStorage.sol";
+import { ContractRecoveryDataTypes } from "./../common/ContractRecoveryDataTypes.sol";
+import { ColonyAuthority } from "./../colony/ColonyAuthority.sol";
 
 contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
   function setRootRole(address _user, bool _setTo) public stoppable auth {
-    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
+    ColonyAuthority(address(authority)).setUserRole(
+      _user,
+      uint8(ColonyRole.Root),
+      _setTo
+    );
 
     emit ColonyRoleSet(msgSender(), _user, 1, uint8(ColonyRole.Root), _setTo);
   }
@@ -36,10 +40,26 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
     address _user,
     uint256 _domainId,
     bool _setTo
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) archSubdomain(_permissionDomainId, _domainId) {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
+  )
+    public
+    stoppable
+    authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+    archSubdomain(_permissionDomainId, _domainId)
+  {
+    ColonyAuthority(address(authority)).setUserRole(
+      _user,
+      _domainId,
+      uint8(ColonyRole.Arbitration),
+      _setTo
+    );
 
-    emit ColonyRoleSet(msgSender(), _user, _domainId, uint8(ColonyRole.Arbitration), _setTo);
+    emit ColonyRoleSet(
+      msgSender(),
+      _user,
+      _domainId,
+      uint8(ColonyRole.Arbitration),
+      _setTo
+    );
   }
 
   function setArchitectureRole(
@@ -48,10 +68,26 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
     address _user,
     uint256 _domainId,
     bool _setTo
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) archSubdomain(_permissionDomainId, _domainId) {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Architecture), _setTo);
+  )
+    public
+    stoppable
+    authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+    archSubdomain(_permissionDomainId, _domainId)
+  {
+    ColonyAuthority(address(authority)).setUserRole(
+      _user,
+      _domainId,
+      uint8(ColonyRole.Architecture),
+      _setTo
+    );
 
-    emit ColonyRoleSet(msgSender(), _user, _domainId, uint8(ColonyRole.Architecture), _setTo);
+    emit ColonyRoleSet(
+      msgSender(),
+      _user,
+      _domainId,
+      uint8(ColonyRole.Architecture),
+      _setTo
+    );
   }
 
   function setFundingRole(
@@ -60,10 +96,26 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
     address _user,
     uint256 _domainId,
     bool _setTo
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) archSubdomain(_permissionDomainId, _domainId) {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
+  )
+    public
+    stoppable
+    authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+    archSubdomain(_permissionDomainId, _domainId)
+  {
+    ColonyAuthority(address(authority)).setUserRole(
+      _user,
+      _domainId,
+      uint8(ColonyRole.Funding),
+      _setTo
+    );
 
-    emit ColonyRoleSet(msgSender(), _user, _domainId, uint8(ColonyRole.Funding), _setTo);
+    emit ColonyRoleSet(
+      msgSender(),
+      _user,
+      _domainId,
+      uint8(ColonyRole.Funding),
+      _setTo
+    );
   }
 
   function setAdministrationRole(
@@ -72,10 +124,26 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
     address _user,
     uint256 _domainId,
     bool _setTo
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) archSubdomain(_permissionDomainId, _domainId) {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
+  )
+    public
+    stoppable
+    authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+    archSubdomain(_permissionDomainId, _domainId)
+  {
+    ColonyAuthority(address(authority)).setUserRole(
+      _user,
+      _domainId,
+      uint8(ColonyRole.Administration),
+      _setTo
+    );
 
-    emit ColonyRoleSet(msgSender(), _user, _domainId, uint8(ColonyRole.Administration), _setTo);
+    emit ColonyRoleSet(
+      msgSender(),
+      _user,
+      _domainId,
+      uint8(ColonyRole.Administration),
+      _setTo
+    );
   }
 
   function setUserRoles(
@@ -84,12 +152,23 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
     address _user,
     uint256 _domainId,
     bytes32 _roles
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) archSubdomain(_permissionDomainId, _domainId) {
+  )
+    public
+    stoppable
+    authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+    archSubdomain(_permissionDomainId, _domainId)
+  {
     // This is not strictly necessary, since these roles are never used in subdomains
-    require(_roles & ROOT_ROLES == 0 || _domainId == 1, "colony-bad-domain-for-role");
+    require(
+      _roles & ROOT_ROLES == 0 || _domainId == 1,
+      "colony-bad-domain-for-role"
+    );
 
     bool setTo;
-    bytes32 existingRoles = ColonyAuthority(address(authority)).getUserRoles(_user, _domainId);
+    bytes32 existingRoles = ColonyAuthority(address(authority)).getUserRoles(
+      _user,
+      _domainId
+    );
     bytes32 rolesChanged = _roles ^ existingRoles;
     bytes32 roles = _roles;
 
@@ -104,12 +183,21 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
       }
     }
 
-    for (uint8 roleId; roleId < uint8(ColonyRole.NUMBER_OF_ROLES); roleId += 1) {
+    for (
+      uint8 roleId;
+      roleId < uint8(ColonyRole.NUMBER_OF_ROLES);
+      roleId += 1
+    ) {
       bool changed = uint256(rolesChanged) % 2 == 1;
       if (changed) {
         setTo = uint256(roles) % 2 == 1;
 
-        ColonyAuthority(address(authority)).setUserRole(_user, _domainId, roleId, setTo);
+        ColonyAuthority(address(authority)).setUserRole(
+          _user,
+          _domainId,
+          roleId,
+          setTo
+        );
         emit ColonyRoleSet(msgSender(), _user, _domainId, roleId, setTo);
       }
       roles >>= 1;
@@ -117,8 +205,17 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
     }
   }
 
-  function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool) {
-    return ColonyAuthority(address(authority)).hasUserRole(_user, _domainId, uint8(_role));
+  function hasUserRole(
+    address _user,
+    uint256 _domainId,
+    ColonyRole _role
+  ) public view returns (bool) {
+    return
+      ColonyAuthority(address(authority)).hasUserRole(
+        _user,
+        _domainId,
+        uint8(_role)
+      );
   }
 
   function hasInheritedUserRole(
@@ -128,19 +225,39 @@ contract ColonyRoles is ColonyStorage, ContractRecoveryDataTypes {
     uint256 _childSkillIndex,
     uint256 _childDomainId
   ) public view returns (bool) {
-    return (hasUserRole(_user, _domainId, _role) && validateDomainInheritance(_domainId, _childSkillIndex, _childDomainId));
+    return (hasUserRole(_user, _domainId, _role) &&
+      validateDomainInheritance(_domainId, _childSkillIndex, _childDomainId));
   }
 
-  function userCanSetRoles(address _user, uint256 _domainId, uint256 _childSkillIndex, uint256 _childDomainId) public view returns (bool) {
+  function userCanSetRoles(
+    address _user,
+    uint256 _domainId,
+    uint256 _childSkillIndex,
+    uint256 _childDomainId
+  ) public view returns (bool) {
     return (hasUserRole(_user, 1, ColonyRole.Root) ||
-      (_domainId != _childDomainId && hasInheritedUserRole(_user, _domainId, ColonyRole.Architecture, _childSkillIndex, _childDomainId)));
+      (_domainId != _childDomainId &&
+        hasInheritedUserRole(
+          _user,
+          _domainId,
+          ColonyRole.Architecture,
+          _childSkillIndex,
+          _childDomainId
+        )));
   }
 
-  function getUserRoles(address _user, uint256 _domain) public view returns (bytes32) {
+  function getUserRoles(
+    address _user,
+    uint256 _domain
+  ) public view returns (bytes32) {
     return ColonyAuthority(address(authority)).getUserRoles(_user, _domain);
   }
 
   function getCapabilityRoles(bytes4 _sig) public view returns (bytes32) {
-    return ColonyAuthority(address(authority)).getCapabilityRoles(address(this), _sig);
+    return
+      ColonyAuthority(address(authority)).getCapabilityRoles(
+        address(this),
+        _sig
+      );
   }
 }

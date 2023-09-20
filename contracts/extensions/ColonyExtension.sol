@@ -19,16 +19,21 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {DSMath} from "./../../lib/dappsys/math.sol";
-import {DSAuth} from "./../../lib/dappsys/auth.sol";
-import {EtherRouter} from "./../common/EtherRouter.sol";
-import {Multicall} from "./../common/Multicall.sol";
-import {IColony} from "./../colony/IColony.sol";
-import {ColonyDataTypes} from "./../colony/ColonyDataTypes.sol";
-import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
-import {PatriciaTreeProofs} from "./../patriciaTree/PatriciaTreeProofs.sol";
+import { DSMath } from "./../../lib/dappsys/math.sol";
+import { DSAuth } from "./../../lib/dappsys/auth.sol";
+import { EtherRouter } from "./../common/EtherRouter.sol";
+import { Multicall } from "./../common/Multicall.sol";
+import { IColony } from "./../colony/IColony.sol";
+import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 
-abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall {
+abstract contract ColonyExtension is
+  DSAuth,
+  DSMath,
+  PatriciaTreeProofs,
+  Multicall
+{
   uint256 constant UINT256_MAX = 2 ** 256 - 1;
 
   event ExtensionInitialised();
@@ -55,7 +60,9 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
 
   function uninstall() public virtual;
 
-  function getCapabilityRoles(bytes4 _sig) public view virtual returns (bytes32) {
+  function getCapabilityRoles(
+    bytes4 _sig
+  ) public view virtual returns (bytes32) {
     return bytes32(0);
   }
 
@@ -76,7 +83,12 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
     uint256 _branchMask,
     bytes32[] memory _siblings
   ) internal view returns (uint256) {
-    bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
+    bytes32 impliedRoot = getImpliedRootHashKey(
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
     require(_rootHash == impliedRoot, "colony-extension-invalid-root-hash");
 
     uint256 reputationValue;
@@ -91,7 +103,10 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
       keyUserAddress := mload(add(_key, 72))
     }
 
-    require(keyColonyAddress == address(colony), "colony-extension-invalid-colony-address");
+    require(
+      keyColonyAddress == address(colony),
+      "colony-extension-invalid-colony-address"
+    );
     // slither-disable-next-line incorrect-equality
     require(keySkillId == _skillId, "colony-extension-invalid-skill-id");
     require(keyUserAddress == _user, "colony-extension-invalid-user-address");

@@ -19,8 +19,8 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {IColony, ColonyDataTypes} from "./../colony/IColony.sol";
-import {ColonyExtensionMeta} from "./ColonyExtensionMeta.sol";
+import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108
 
@@ -75,10 +75,16 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
   /// @dev Only owner can call this function, must be in draft state
   /// @param _expenditureId Which expenditure we are changing
   /// @param _staged Indcating whether the expenditure is staged or not
-  function setExpenditureStaged(uint256 _expenditureId, bool _staged) public notDeprecated {
+  function setExpenditureStaged(
+    uint256 _expenditureId,
+    bool _staged
+  ) public notDeprecated {
     Expenditure memory e = IColony(colony).getExpenditure(_expenditureId);
     require(e.owner == msgSender(), "staged-expenditure-not-owner");
-    require(e.status == ColonyDataTypes.ExpenditureStatus.Draft, "expenditure-not-draft");
+    require(
+      e.status == ColonyDataTypes.ExpenditureStatus.Draft,
+      "expenditure-not-draft"
+    );
 
     if (stagedExpenditures[_expenditureId] != _staged) {
       stagedExpenditures[_expenditureId] = _staged;
@@ -101,11 +107,17 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
     uint256 _slot,
     address[] memory _tokens
   ) public {
-    require(stagedExpenditures[_expenditureId], "staged-expenditure-not-staged-expenditure");
+    require(
+      stagedExpenditures[_expenditureId],
+      "staged-expenditure-not-staged-expenditure"
+    );
 
     Expenditure memory e = IColony(colony).getExpenditure(_expenditureId);
     require(e.owner == msgSender(), "staged-expenditure-not-owner");
-    require(e.status == ColonyDataTypes.ExpenditureStatus.Finalized, "expenditure-not-finalized");
+    require(
+      e.status == ColonyDataTypes.ExpenditureStatus.Finalized,
+      "expenditure-not-finalized"
+    );
 
     bool[] memory mask = new bool[](2);
     mask[0] = false;
@@ -113,7 +125,15 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
     bytes32[] memory keys = new bytes32[](2);
     keys[0] = bytes32(_slot);
     keys[1] = bytes32(uint256(1));
-    colony.setExpenditureState(_permissionDomainId, _childSkillIndex, _expenditureId, 26, mask, keys, bytes32(0));
+    colony.setExpenditureState(
+      _permissionDomainId,
+      _childSkillIndex,
+      _expenditureId,
+      26,
+      mask,
+      keys,
+      bytes32(0)
+    );
 
     emit StagedPaymentReleased(_expenditureId, _slot);
 

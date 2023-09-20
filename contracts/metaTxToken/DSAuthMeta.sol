@@ -11,10 +11,10 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import {ERC20Extended} from "./../common/ERC20Extended.sol";
-import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
-import {ERC20Extended} from "./../common/ERC20Extended.sol";
-import {DSAuth, DSAuthEvents, DSAuthority} from "./../../lib/dappsys/auth.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { DSAuth, DSAuthEvents, DSAuthority } from "./../../lib/dappsys/auth.sol";
 
 pragma solidity 0.8.21;
 

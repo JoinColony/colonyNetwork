@@ -19,18 +19,23 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {ERC20} from "./../../lib/dappsys/erc20.sol";
-import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
-import {ColonyExtension} from "./ColonyExtension.sol";
-import {Whitelist} from "./Whitelist.sol";
-import {IColony, ColonyDataTypes} from "./../colony/IColony.sol";
+import { ERC20 } from "./../../lib/dappsys/erc20.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ColonyExtension } from "./ColonyExtension.sol";
+import { Whitelist } from "./Whitelist.sol";
+import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 
 contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   // Events
 
-  event TokensBought(address indexed buyer, address token, uint256 numTokens, uint256 totalCost);
+  event TokensBought(
+    address indexed buyer,
+    address token,
+    uint256 numTokens,
+    uint256 totalCost
+  );
   event PeriodUpdated(uint256 activePeriod, uint256 currentPeriod);
   event PriceEvolutionSet(bool evolvePrice);
   event WhitelistSet(address whitelist);
@@ -71,7 +76,9 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _userAddress The user's address
   /// @return _nonce The nonce
-  function getMetatransactionNonce(address _userAddress) public view override returns (uint256 _nonce) {
+  function getMetatransactionNonce(
+    address _userAddress
+  ) public view override returns (uint256 _nonce) {
     return metatransactionNonces[_userAddress];
   }
 
@@ -82,7 +89,10 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "coin-machine-caller-not-root");
+    require(
+      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      "coin-machine-caller-not-root"
+    );
     _;
   }
 
@@ -131,7 +141,10 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     if (token != address(0x0)) {
       uint256 tokenBalance = getTokenBalance();
       if (tokenBalance > 0) {
-        require(ERC20(token).transfer(address(colony), tokenBalance), "coin-machine-transfer-failed");
+        require(
+          ERC20(token).transfer(address(colony), tokenBalance),
+          "coin-machine-transfer-failed"
+        );
       }
     }
 
@@ -211,7 +224,10 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   function buyTokens(uint256 _numTokens) public payable notDeprecated {
     updatePeriod();
 
-    require(whitelist == address(0x0) || Whitelist(whitelist).isApproved(msgSender()), "coin-machine-unauthorised");
+    require(
+      whitelist == address(0x0) || Whitelist(whitelist).isApproved(msgSender()),
+      "coin-machine-unauthorised"
+    );
 
     uint256 maxPurchase = getMaxPurchase(msgSender());
     uint256 numTokens = min(maxPurchase, _numTokens);
@@ -247,10 +263,20 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       } // Refund any balance
       payable(address(colony)).transfer(totalCost);
     } else {
-      require(ERC20(purchaseToken).transferFrom(msgSender(), address(colony), totalCost), "coin-machine-purchase-failed");
+      require(
+        ERC20(purchaseToken).transferFrom(
+          msgSender(),
+          address(colony),
+          totalCost
+        ),
+        "coin-machine-purchase-failed"
+      );
     }
 
-    require(ERC20(token).transfer(msgSender(), numTokens), "coin-machine-transfer-failed");
+    require(
+      ERC20(token).transfer(msgSender(), numTokens),
+      "coin-machine-transfer-failed"
+    );
 
     // slither-disable-next-line reentrancy-unlimited-gas
     emit TokensBought(msgSender(), token, numTokens, totalCost);
@@ -389,7 +415,8 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @notice Get the number of remaining tokens for sale this period
   /// @return _remaining Tokens remaining
   function getSellableTokens() public view returns (uint256 _remaining) {
-    return (maxPerPeriod - ((activePeriod >= getCurrentPeriod()) ? activeSold : 0));
+    return (maxPerPeriod -
+      ((activePeriod >= getCurrentPeriod()) ? activeSold : 0));
   }
 
   /// @notice Get the maximum amount of tokens a user can purchase in total
@@ -399,7 +426,8 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     return
       (userLimitFraction == WAD || whitelist == address(0x0))
         ? UINT256_MAX
-        : wmul(getTokenBalance() + soldTotal, userLimitFraction) - soldUser[_user];
+        : wmul(getTokenBalance() + soldTotal, userLimitFraction) -
+          soldUser[_user];
   }
 
   /// @notice Get the maximum amount of tokens a user can purchase in a period

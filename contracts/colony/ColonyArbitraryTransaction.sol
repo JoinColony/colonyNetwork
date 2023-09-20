@@ -19,22 +19,26 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {ERC20Extended} from "./../common/ERC20Extended.sol";
-import {IEtherRouter} from "./../common/IEtherRouter.sol";
-import {MultiChain} from "./../common/MultiChain.sol";
-import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
-import {ColonyStorage} from "./ColonyStorage.sol";
-import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
-import {ColonyExtension} from "./../extensions/ColonyExtension.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { IEtherRouter } from "./../common/IEtherRouter.sol";
+import { MultiChain } from "./../common/MultiChain.sol";
+import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { ColonyStorage } from "./ColonyStorage.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
 
 contract ColonyArbitraryTransaction is ColonyStorage {
   bytes4 constant APPROVE_SIG = bytes4(keccak256("approve(address,uint256)"));
   bytes4 constant TRANSFER_SIG = bytes4(keccak256("transfer(address,uint256)"));
-  bytes4 constant TRANSFER_FROM_SIG = bytes4(keccak256("transferFrom(address,address,uint256)"));
+  bytes4 constant TRANSFER_FROM_SIG =
+    bytes4(keccak256("transferFrom(address,address,uint256)"));
   bytes4 constant BURN_SIG = bytes4(keccak256("burn(uint256)"));
   bytes4 constant BURN_GUY_SIG = bytes4(keccak256("burn(address,uint256)"));
 
-  function makeArbitraryTransaction(address _to, bytes memory _action) public stoppable auth returns (bool) {
+  function makeArbitraryTransaction(
+    address _to,
+    bytes memory _action
+  ) public stoppable auth returns (bool) {
     return this.makeSingleArbitraryTransaction(_to, _action);
   }
 
@@ -43,11 +47,16 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     bytes[] memory _actions,
     bool _strict
   ) public stoppable auth returns (bool) {
-    require(_targets.length == _actions.length, "colony-targets-and-actions-length-mismatch");
+    require(
+      _targets.length == _actions.length,
+      "colony-targets-and-actions-length-mismatch"
+    );
     for (uint256 i; i < _targets.length; i += 1) {
       bool success = true;
       // slither-disable-next-line unused-return
-      try this.makeSingleArbitraryTransaction(_targets[i], _actions[i]) returns (bool ret) {
+      try
+        this.makeSingleArbitraryTransaction(_targets[i], _actions[i])
+      returns (bool ret) {
         if (_strict) {
           success = ret;
         }
@@ -62,7 +71,10 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     return true;
   }
 
-  function makeSingleArbitraryTransaction(address _to, bytes memory _action) external stoppable self returns (bool) {
+  function makeSingleArbitraryTransaction(
+    address _to,
+    bytes memory _action
+  ) external stoppable self returns (bool) {
     // Prevent transactions to network contracts
     require(_to != address(this), "colony-cannot-target-self");
     require(_to != colonyNetworkAddress, "colony-cannot-target-network");
@@ -89,7 +101,10 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     // slither-disable-next-line unused-return
     try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
       require(
-        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) != _to,
+        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(
+          extensionId,
+          address(this)
+        ) != _to,
         "colony-cannot-target-extensions"
       );
     } catch {}
@@ -105,7 +120,10 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     return res;
   }
 
-  function approveTransactionPreparation(address _to, bytes memory _action) internal {
+  function approveTransactionPreparation(
+    address _to,
+    bytes memory _action
+  ) internal {
     address spender;
     assembly {
       spender := mload(add(_action, 0x24))
@@ -113,7 +131,10 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     updateApprovalAmountInternal(_to, spender, false);
   }
 
-  function approveTransactionCleanup(address _to, bytes memory _action) internal {
+  function approveTransactionCleanup(
+    address _to,
+    bytes memory _action
+  ) internal {
     address spender;
     assembly {
       spender := mload(add(_action, 0x24))
@@ -121,25 +142,39 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     updateApprovalAmountInternal(_to, spender, true);
   }
 
-  function burnTransactionPreparation(address _to, bytes memory _action) internal {
+  function burnTransactionPreparation(
+    address _to,
+    bytes memory _action
+  ) internal {
     uint256 amount;
     assembly {
       amount := mload(add(_action, 0x24))
     }
     fundingPots[1].balance[_to] -= amount;
-    require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
+    require(
+      fundingPots[1].balance[_to] >= tokenApprovalTotals[_to],
+      "colony-not-enough-tokens"
+    );
   }
 
-  function transferTransactionPreparation(address _to, bytes memory _action) internal {
+  function transferTransactionPreparation(
+    address _to,
+    bytes memory _action
+  ) internal {
     uint256 amount;
     assembly {
       amount := mload(add(_action, 0x44))
     }
     fundingPots[1].balance[_to] -= amount;
-    require(fundingPots[1].balance[_to] >= tokenApprovalTotals[_to], "colony-not-enough-tokens");
+    require(
+      fundingPots[1].balance[_to] >= tokenApprovalTotals[_to],
+      "colony-not-enough-tokens"
+    );
   }
 
-  function burnGuyOrTransferFromTransactionPreparation(bytes memory _action) internal view {
+  function burnGuyOrTransferFromTransactionPreparation(
+    bytes memory _action
+  ) internal view {
     address spender;
     assembly {
       spender := mload(add(_action, 0x24))
@@ -147,13 +182,23 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     require(spender != address(this), "colony-cannot-spend-own-allowance");
   }
 
-  function updateApprovalAmount(address _token, address _spender) public stoppable {
+  function updateApprovalAmount(
+    address _token,
+    address _spender
+  ) public stoppable {
     updateApprovalAmountInternal(_token, _spender, false);
   }
 
-  function updateApprovalAmountInternal(address _token, address _spender, bool _postApproval) internal {
+  function updateApprovalAmountInternal(
+    address _token,
+    address _spender,
+    bool _postApproval
+  ) internal {
     uint256 recordedApproval = tokenApprovals[_token][_spender];
-    uint256 actualApproval = ERC20Extended(_token).allowance(address(this), _spender);
+    uint256 actualApproval = ERC20Extended(_token).allowance(
+      address(this),
+      _spender
+    );
     if (recordedApproval == actualApproval) {
       return;
     }
@@ -161,11 +206,18 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     if (recordedApproval > actualApproval && !_postApproval) {
       // They've spend some tokens out of root. Adjust balances accordingly
       // If we are post approval, then they have not spent tokens
-      fundingPots[1].balance[_token] = (fundingPots[1].balance[_token] - recordedApproval) + actualApproval;
+      fundingPots[1].balance[_token] =
+        (fundingPots[1].balance[_token] - recordedApproval) +
+        actualApproval;
     }
 
-    tokenApprovalTotals[_token] = (tokenApprovalTotals[_token] - recordedApproval) + actualApproval;
-    require(fundingPots[1].balance[_token] >= tokenApprovalTotals[_token], "colony-approval-exceeds-balance");
+    tokenApprovalTotals[_token] =
+      (tokenApprovalTotals[_token] - recordedApproval) +
+      actualApproval;
+    require(
+      fundingPots[1].balance[_token] >= tokenApprovalTotals[_token],
+      "colony-approval-exceeds-balance"
+    );
 
     tokenApprovals[_token][_spender] = actualApproval;
   }

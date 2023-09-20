@@ -20,9 +20,9 @@
 
 pragma solidity 0.8.21;
 
-import {ERC20} from "./../../lib/dappsys/erc20.sol";
-import {DSMath} from "./../../lib/dappsys/math.sol";
-import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
+import { ERC20 } from "./../../lib/dappsys/erc20.sol";
+import { DSMath } from "./../../lib/dappsys/math.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 
 abstract contract DSTokenBaseMeta is ERC20, DSMath, BasicMetaTransaction {
   uint256 _supply;
@@ -42,7 +42,10 @@ abstract contract DSTokenBaseMeta is ERC20, DSMath, BasicMetaTransaction {
     return _balances[src];
   }
 
-  function allowance(address src, address guy) public view override returns (uint) {
+  function allowance(
+    address src,
+    address guy
+  ) public view override returns (uint) {
     return _approvals[src][guy];
   }
 
@@ -50,9 +53,16 @@ abstract contract DSTokenBaseMeta is ERC20, DSMath, BasicMetaTransaction {
     return transferFrom(msgSender(), dst, wad);
   }
 
-  function transferFrom(address src, address dst, uint256 wad) public virtual override returns (bool) {
+  function transferFrom(
+    address src,
+    address dst,
+    uint256 wad
+  ) public virtual override returns (bool) {
     if (src != msgSender()) {
-      require(_approvals[src][msgSender()] >= wad, "ds-token-insufficient-approval");
+      require(
+        _approvals[src][msgSender()] >= wad,
+        "ds-token-insufficient-approval"
+      );
       _approvals[src][msgSender()] -= wad;
     }
 

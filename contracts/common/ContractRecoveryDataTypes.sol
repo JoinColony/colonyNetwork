@@ -37,7 +37,12 @@ interface ContractRecoveryDataTypes {
   /// @param slot The storage slot being modified
   /// @param fromValue The value the storage slot had before this transaction
   /// @param toValue The value the storage slot has after this transaction
-  event RecoveryStorageSlotSet(address user, uint256 slot, bytes32 fromValue, bytes32 toValue);
+  event RecoveryStorageSlotSet(
+    address user,
+    uint256 slot,
+    bytes32 fromValue,
+    bytes32 toValue
+  );
 
   /// @notice Event logged when someone with recovery mode signals they are happy with the state
   /// and wish to leave recovery mode

@@ -1,12 +1,12 @@
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import {PatriciaTreeBase} from "./PatriciaTreeBase.sol";
-import {IPatriciaTreeBase} from "./IPatriciaTreeBase.sol";
-import {IPatriciaTree} from "./IPatriciaTree.sol";
-import {Data} from "./Data.sol";
-import {Bits} from "./Bits.sol";
+import { PatriciaTreeBase } from "./PatriciaTreeBase.sol";
+import { IPatriciaTreeBase } from "./IPatriciaTreeBase.sol";
+import { IPatriciaTree } from "./IPatriciaTree.sol";
+import { Data } from "./Data.sol";
+import { Bits } from "./Bits.sol";
 
 /// More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTree is IPatriciaTree, PatriciaTreeBase {
@@ -19,7 +19,9 @@ contract PatriciaTree is IPatriciaTree, PatriciaTreeBase {
     tree.insert(keccak256(key), value);
   }
 
-  function getProof(bytes memory key) public view override returns (uint branchMask, bytes32[] memory _siblings) {
+  function getProof(
+    bytes memory key
+  ) public view override returns (uint branchMask, bytes32[] memory _siblings) {
     // ignore-swc-127
     return getProofFunctionality(keccak256(key));
   }
@@ -33,15 +35,32 @@ contract PatriciaTree is IPatriciaTree, PatriciaTreeBase {
     return getImpliedRootHashKey(key, value, branchMask, siblings);
   }
 
-  function getRootHash() public view override(IPatriciaTreeBase, PatriciaTreeBase) returns (bytes32) {
+  function getRootHash()
+    public
+    view
+    override(IPatriciaTreeBase, PatriciaTreeBase)
+    returns (bytes32)
+  {
     return super.getRootHash();
   }
 
-  function getRootEdge() public view override(IPatriciaTreeBase, PatriciaTreeBase) returns (Data.Edge memory e) {
+  function getRootEdge()
+    public
+    view
+    override(IPatriciaTreeBase, PatriciaTreeBase)
+    returns (Data.Edge memory e)
+  {
     return super.getRootEdge();
   }
 
-  function getNode(bytes32 hash) public view override(IPatriciaTreeBase, PatriciaTreeBase) returns (Data.Node memory n) {
+  function getNode(
+    bytes32 hash
+  )
+    public
+    view
+    override(IPatriciaTreeBase, PatriciaTreeBase)
+    returns (Data.Node memory n)
+  {
     return super.getNode(hash);
   }
 }

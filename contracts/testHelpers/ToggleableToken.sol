@@ -3,8 +3,8 @@
 
 pragma solidity 0.8.21;
 
-import {ERC20, ERC20Events} from "./../../lib/dappsys/erc20.sol";
-import {DSMath} from "./../../lib/dappsys/math.sol";
+import { ERC20, ERC20Events } from "./../../lib/dappsys/erc20.sol";
+import { DSMath } from "./../../lib/dappsys/math.sol";
 
 contract ToggleableToken is DSMath, ERC20Events {
   uint256 _supply;
@@ -37,13 +37,20 @@ contract ToggleableToken is DSMath, ERC20Events {
     return transferFrom(msg.sender, dst, wad);
   }
 
-  function transferFrom(address src, address dst, uint wad) public returns (bool) {
+  function transferFrom(
+    address src,
+    address dst,
+    uint wad
+  ) public returns (bool) {
     if (locked) {
       return false;
     }
 
     if (src != msg.sender) {
-      require(_approvals[src][msg.sender] >= wad, "ds-token-insufficient-approval");
+      require(
+        _approvals[src][msg.sender] >= wad,
+        "ds-token-insufficient-approval"
+      );
       _approvals[src][msg.sender] -= wad;
     }
 

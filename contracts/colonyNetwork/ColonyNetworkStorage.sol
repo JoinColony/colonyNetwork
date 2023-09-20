@@ -18,11 +18,11 @@
 
 pragma solidity 0.8.21;
 
-import {DSMath} from "./../../lib/dappsys/math.sol";
-import {IMetaColony} from "./../colony/IMetaColony.sol";
-import {CommonStorage} from "./../common/CommonStorage.sol";
-import {ERC20Extended} from "./../common/ERC20Extended.sol";
-import {ColonyNetworkDataTypes} from "./ColonyNetworkDataTypes.sol";
+import { DSMath } from "./../../lib/dappsys/math.sol";
+import { IMetaColony } from "./../colony/IMetaColony.sol";
+import { CommonStorage } from "./../common/CommonStorage.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { ColonyNetworkDataTypes } from "./ColonyNetworkDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
@@ -129,7 +129,10 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
     if (globalSkill) {
       require(msgSender() == metaColony, "colony-must-be-meta-colony");
     } else {
-      require(_isColony[msgSender()] || msgSender() == address(this), "colony-caller-must-be-colony");
+      require(
+        _isColony[msgSender()] || msgSender() == address(this),
+        "colony-caller-must-be-colony"
+      );
     }
     _;
   }

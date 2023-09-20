@@ -19,13 +19,15 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
-import {ColonyExtension} from "./ColonyExtension.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ColonyExtension } from "./ColonyExtension.sol";
 
 abstract contract ColonyExtensionMeta is ColonyExtension, BasicMetaTransaction {
   mapping(address => uint256) metatransactionNonces;
 
-  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(
+    address _user
+  ) public view override returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 

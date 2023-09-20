@@ -19,11 +19,11 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
-import {ColonyStorage} from "./ColonyStorage.sol";
-import {PatriciaTreeProofs} from "./../patriciaTree/PatriciaTreeProofs.sol";
-import {ERC20Extended} from "./../common/ERC20Extended.sol";
-import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { ColonyStorage } from "./ColonyStorage.sol";
+import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract ColonyRewards is
   ColonyStorage,
@@ -35,9 +35,16 @@ contract ColonyRewards is
     return lockId;
   }
 
-  function unlockTokenForUser(address _user, uint256 _lockId) public stoppable onlyOwnExtension {
+  function unlockTokenForUser(
+    address _user,
+    uint256 _lockId
+  ) public stoppable onlyOwnExtension {
     require(tokenLocks[msgSender()][_lockId], "colony-bad-lock-id");
-    ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, _user, _lockId);
+    ITokenLocking(tokenLockingAddress).unlockTokenForUser(
+      token,
+      _user,
+      _lockId
+    );
   }
 
   function startNextRewardPayout(
@@ -49,16 +56,32 @@ contract ColonyRewards is
   ) public stoppable auth {
     ITokenLocking tokenLocking = ITokenLocking(tokenLockingAddress);
     uint256 totalLockCount = tokenLocking.lockToken(token);
-    uint256 thisPayoutAmount = fundingPots[0].balance[_token] - pendingRewardPayments[_token];
+    uint256 thisPayoutAmount = fundingPots[0].balance[_token] -
+      pendingRewardPayments[_token];
     require(thisPayoutAmount > 0, "colony-reward-payout-no-rewards");
-    pendingRewardPayments[_token] = pendingRewardPayments[_token] + thisPayoutAmount;
+    pendingRewardPayments[_token] =
+      pendingRewardPayments[_token] +
+      thisPayoutAmount;
 
-    uint256 totalTokens = ERC20Extended(token).totalSupply() - ERC20Extended(token).balanceOf(address(this));
+    uint256 totalTokens = ERC20Extended(token).totalSupply() -
+      ERC20Extended(token).balanceOf(address(this));
     require(totalTokens > 0, "colony-reward-payout-invalid-total-tokens");
 
-    bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
-    uint256 colonyWideReputation = checkReputation(rootHash, domains[1].skillId, address(0x0), key, value, branchMask, siblings);
-    require(colonyWideReputation > 0, "colony-reward-payout-invalid-colony-wide-reputation");
+    bytes32 rootHash = IColonyNetwork(colonyNetworkAddress)
+      .getReputationRootHash();
+    uint256 colonyWideReputation = checkReputation(
+      rootHash,
+      domains[1].skillId,
+      address(0x0),
+      key,
+      value,
+      branchMask,
+      siblings
+    );
+    require(
+      colonyWideReputation > 0,
+      "colony-reward-payout-invalid-colony-wide-reputation"
+    );
 
     rewardPayoutCycles[totalLockCount] = RewardPayoutCycle(
       rootHash,
@@ -95,9 +118,17 @@ contract ColonyRewards is
 
     address tokenAddress;
     uint256 reward;
-    (tokenAddress, reward) = calculateRewardForUser(_payoutId, _squareRoots, userReputation);
+    (tokenAddress, reward) = calculateRewardForUser(
+      _payoutId,
+      _squareRoots,
+      userReputation
+    );
 
-    ITokenLocking(tokenLockingAddress).unlockTokenForUser(token, msgSender(), _payoutId);
+    ITokenLocking(tokenLockingAddress).unlockTokenForUser(
+      token,
+      msgSender(),
+      _payoutId
+    );
 
     uint fee = calculateNetworkFeeForPayout(reward);
     uint remainder = reward - fee;
@@ -114,9 +145,15 @@ contract ColonyRewards is
 
   function finalizeRewardPayout(uint256 _payoutId) public stoppable {
     RewardPayoutCycle memory payout = rewardPayoutCycles[_payoutId];
-    require(payout.reputationState != 0x00, "colony-reward-payout-does-not-exist");
+    require(
+      payout.reputationState != 0x00,
+      "colony-reward-payout-does-not-exist"
+    );
     require(!payout.finalized, "colony-reward-payout-already-finalized");
-    require(block.timestamp - payout.blockTimestamp > 60 days, "colony-reward-payout-active");
+    require(
+      block.timestamp - payout.blockTimestamp > 60 days,
+      "colony-reward-payout-active"
+    );
 
     rewardPayoutCycles[_payoutId].finalized = true;
     pendingRewardPayments[payout.tokenAddress] -= payout.amountRemaining;
@@ -124,7 +161,9 @@ contract ColonyRewards is
     emit RewardPayoutCycleEnded(msgSender(), _payoutId);
   }
 
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle memory rewardPayoutCycle) {
+  function getRewardPayoutInfo(
+    uint256 _payoutId
+  ) public view returns (RewardPayoutCycle memory rewardPayoutCycle) {
     rewardPayoutCycle = rewardPayoutCycles[_payoutId];
   }
 
@@ -144,7 +183,12 @@ contract ColonyRewards is
     uint256 branchMask,
     bytes32[] memory siblings
   ) internal view returns (uint256) {
-    bytes32 impliedRoot = getImpliedRootHashKey(key, value, branchMask, siblings);
+    bytes32 impliedRoot = getImpliedRootHashKey(
+      key,
+      value,
+      branchMask,
+      siblings
+    );
     require(rootHash == impliedRoot, "colony-reputation-invalid-root-hash");
 
     uint256 reputationValue;
@@ -159,9 +203,15 @@ contract ColonyRewards is
       keyUserAddress := mload(add(key, 72))
     }
 
-    require(keyColonyAddress == address(this), "colony-reputation-invalid-colony-address");
+    require(
+      keyColonyAddress == address(this),
+      "colony-reputation-invalid-colony-address"
+    );
     require(keySkill == skillId, "colony-reputation-invalid-skill-id");
-    require(keyUserAddress == userAddress, "colony-reputation-invalid-user-address");
+    require(
+      keyUserAddress == userAddress,
+      "colony-reputation-invalid-user-address"
+    );
 
     return reputationValue;
   }
@@ -174,9 +224,14 @@ contract ColonyRewards is
     RewardPayoutCycle memory payout = rewardPayoutCycles[payoutId];
 
     // Checking if payout is active
-    require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
+    require(
+      block.timestamp - payout.blockTimestamp <= 60 days,
+      "colony-reward-payout-not-active"
+    );
 
-    uint256 userTokens = ITokenLocking(tokenLockingAddress).getUserLock(token, msgSender()).balance;
+    uint256 userTokens = ITokenLocking(tokenLockingAddress)
+      .getUserLock(token, msgSender())
+      .balance;
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
     require(userReputation > 0, "colony-reward-payout-invalid-user-reputation");
 
@@ -188,16 +243,37 @@ contract ColonyRewards is
     // squareRoots[5] - square root of denominator
     // squareRoots[6] - square root of payout.amount
 
-    require(squareRoots[0] * squareRoots[0] <= userReputation, "colony-reward-payout-invalid-parameter-user-reputation");
-    require(squareRoots[1] * squareRoots[1] <= userTokens, "colony-reward-payout-invalid-parameter-user-token");
-    require(squareRoots[2] * squareRoots[2] >= payout.colonyWideReputation, "colony-reward-payout-invalid-parameter-total-reputation");
-    require(squareRoots[3] * squareRoots[3] >= payout.totalTokens, "colony-reward-payout-invalid-parameter-total-tokens");
-    require(squareRoots[6] * squareRoots[6] <= payout.amount, "colony-reward-payout-invalid-parameter-amount");
+    require(
+      squareRoots[0] * squareRoots[0] <= userReputation,
+      "colony-reward-payout-invalid-parameter-user-reputation"
+    );
+    require(
+      squareRoots[1] * squareRoots[1] <= userTokens,
+      "colony-reward-payout-invalid-parameter-user-token"
+    );
+    require(
+      squareRoots[2] * squareRoots[2] >= payout.colonyWideReputation,
+      "colony-reward-payout-invalid-parameter-total-reputation"
+    );
+    require(
+      squareRoots[3] * squareRoots[3] >= payout.totalTokens,
+      "colony-reward-payout-invalid-parameter-total-tokens"
+    );
+    require(
+      squareRoots[6] * squareRoots[6] <= payout.amount,
+      "colony-reward-payout-invalid-parameter-amount"
+    );
     uint256 numerator = squareRoots[0] * squareRoots[1];
     uint256 denominator = squareRoots[2] * squareRoots[3];
 
-    require(squareRoots[4] * squareRoots[4] <= numerator, "colony-reward-payout-invalid-parameter-numerator");
-    require(squareRoots[5] * squareRoots[5] >= denominator, "colony-reward-payout-invalid-parameter-denominator");
+    require(
+      squareRoots[4] * squareRoots[4] <= numerator,
+      "colony-reward-payout-invalid-parameter-numerator"
+    );
+    require(
+      squareRoots[5] * squareRoots[5] >= denominator,
+      "colony-reward-payout-invalid-parameter-denominator"
+    );
 
     uint256 reward = ((squareRoots[4] * squareRoots[6]) / squareRoots[5]) ** 2;
 

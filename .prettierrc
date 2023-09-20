@@ -4,18 +4,15 @@
         {
             "files": "*.sol",
             "options": {
-                "parser": "solidity-parse",
-                "printWidth": 140,
-                "tabWidth": 2,
-                "useTabs": false,
-                "singleQuote": false,
-                "bracketSpacing": false
+                "parser": "solidity-parse"
             }
         }
     ],
     "tabWidth": 2,
-    "printWidth": 140,
+    "printWidth": 80,
     "trailingComma": "all",
     "singleQuote": false,
-    "semi": true
+    "semi": true,
+    "useTabs": false,
+    "bracketSpacing": true
 }

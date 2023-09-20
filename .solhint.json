@@ -7,6 +7,6 @@
     "state-visibility": ["off"],
     "no-inline-assembly": ["off"],
     "max-states-count": ["off"],
-    "func-visibility": ["warn",{"ignoreConstructors":false}]
+    "func-visibility": ["warn",{"ignoreConstructors":true}]
   }
 }

@@ -18,18 +18,26 @@
 
 pragma solidity 0.8.21; // ignore-swc-103
 
-import {DSRoles} from "./../../lib/dappsys/roles.sol";
+import { DSRoles } from "./../../lib/dappsys/roles.sol";
 
 contract DomainRoles is DSRoles {
   mapping(address => mapping(uint256 => bytes32)) internal userDomainRoles;
 
   // New function signatures taking arbitrary domains
 
-  function getUserRoles(address who, uint256 where) public view returns (bytes32) {
+  function getUserRoles(
+    address who,
+    uint256 where
+  ) public view returns (bytes32) {
     return userDomainRoles[who][where];
   }
 
-  function setUserRole(address who, uint256 where, uint8 role, bool enabled) public auth {
+  function setUserRole(
+    address who,
+    uint256 where,
+    uint8 role,
+    bool enabled
+  ) public auth {
     bytes32 lastRoles = userDomainRoles[who][where];
     bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
     if (enabled) {
@@ -39,19 +47,34 @@ contract DomainRoles is DSRoles {
     }
   }
 
-  function hasUserRole(address who, uint256 where, uint8 role) public view returns (bool) {
+  function hasUserRole(
+    address who,
+    uint256 where,
+    uint8 role
+  ) public view returns (bool) {
     bytes32 roles = getUserRoles(who, where);
     bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
     return bytes32(0) != roles & shifted;
   }
 
-  function canCall(address caller, uint256 where, address code, bytes4 sig) public view returns (bool) {
+  function canCall(
+    address caller,
+    uint256 where,
+    address code,
+    bytes4 sig
+  ) public view returns (bool) {
     bytes32 hasRoles = getUserRoles(caller, where);
     bytes32 needsOneOf = getCapabilityRoles(code, sig);
     return bytes32(0) != hasRoles & needsOneOf;
   }
 
-  function canCallOnlyBecause(address caller, uint256 where, uint8 role, address code, bytes4 sig) public view returns (bool) {
+  function canCallOnlyBecause(
+    address caller,
+    uint256 where,
+    uint8 role,
+    address code,
+    bytes4 sig
+  ) public view returns (bool) {
     bytes32 hasRoles = getUserRoles(caller, where);
     bytes32 needsOneOf = getCapabilityRoles(code, sig);
     bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
@@ -61,15 +84,26 @@ contract DomainRoles is DSRoles {
 
   // Support old function signatures for root domain
 
-  function setUserRole(address who, uint8 role, bool enabled) public override auth {
+  function setUserRole(
+    address who,
+    uint8 role,
+    bool enabled
+  ) public override auth {
     return setUserRole(who, 1, role, enabled);
   }
 
-  function hasUserRole(address who, uint8 role) public view override returns (bool) {
+  function hasUserRole(
+    address who,
+    uint8 role
+  ) public view override returns (bool) {
     return hasUserRole(who, 1, role);
   }
 
-  function canCall(address caller, address code, bytes4 sig) public view override returns (bool) {
+  function canCall(
+    address caller,
+    address code,
+    bytes4 sig
+  ) public view override returns (bool) {
     return canCall(caller, 1, code, sig);
   }
 }

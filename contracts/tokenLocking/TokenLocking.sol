@@ -19,13 +19,13 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import {DSMath} from "./../../lib/dappsys/math.sol";
-import {IMetaColony} from "./../colony/IMetaColony.sol";
-import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
-import {ERC20Extended} from "./../common/ERC20Extended.sol";
-import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
-import {IReputationMiningCycle} from "./../reputationMiningCycle/IReputationMiningCycle.sol";
-import {TokenLockingStorage} from "./../tokenLocking/TokenLockingStorage.sol";
+import { DSMath } from "./../../lib/dappsys/math.sol";
+import { IMetaColony } from "./../colony/IMetaColony.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import { TokenLockingStorage } from "./../tokenLocking/TokenLockingStorage.sol";
 
 contract TokenLocking is
   TokenLockingStorage,
@@ -34,7 +34,8 @@ contract TokenLocking is
 {
   modifier calledByColonyOrNetwork() {
     require(
-      colonyNetwork == msgSender() || IColonyNetwork(colonyNetwork).isColony(msgSender()),
+      colonyNetwork == msgSender() ||
+        IColonyNetwork(colonyNetwork).isColony(msgSender()),
       "colony-token-locking-sender-not-colony-or-network"
     );
     _;
@@ -44,13 +45,17 @@ contract TokenLocking is
     if (_force) {
       userLocks[_token][msgSender()].lockCount = totalLockCount[_token];
     }
-    require(isTokenUnlocked(_token, msgSender()), "colony-token-locking-token-locked");
+    require(
+      isTokenUnlocked(_token, msgSender()),
+      "colony-token-locking-token-locked"
+    );
     _;
   }
 
   modifier notObligated(address _token, uint256 _amount) {
     require(
-      userLocks[_token][msgSender()].balance - _amount >= totalObligations[msgSender()][_token],
+      userLocks[_token][msgSender()].balance - _amount >=
+        totalObligations[msgSender()][_token],
       "colony-token-locking-excess-obligation"
     );
     _;
@@ -58,7 +63,9 @@ contract TokenLocking is
 
   // Public functions
 
-  function getMetatransactionNonce(address userAddress) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(
+    address userAddress
+  ) public view override returns (uint256 nonce) {
     return metatransactionNonces[userAddress];
   }
 
@@ -67,7 +74,10 @@ contract TokenLocking is
   }
 
   function setColonyNetwork(address _colonyNetwork) public auth {
-    require(_colonyNetwork != address(0x0), "colony-token-locking-network-cannot-be-zero");
+    require(
+      _colonyNetwork != address(0x0),
+      "colony-token-locking-network-cannot-be-zero"
+    );
 
     colonyNetwork = _colonyNetwork;
 
@@ -78,7 +88,9 @@ contract TokenLocking is
     return colonyNetwork;
   }
 
-  function lockToken(address _token) public calledByColonyOrNetwork returns (uint256) {
+  function lockToken(
+    address _token
+  ) public calledByColonyOrNetwork returns (uint256) {
     totalLockCount[_token] += 1;
     lockers[_token][totalLockCount[_token]] = msgSender();
 
@@ -87,8 +99,15 @@ contract TokenLocking is
     return totalLockCount[_token];
   }
 
-  function unlockTokenForUser(address _token, address _user, uint256 _lockId) public calledByColonyOrNetwork {
-    require(lockers[_token][_lockId] == msgSender(), "colony-token-locking-not-locker");
+  function unlockTokenForUser(
+    address _token,
+    address _user,
+    uint256 _lockId
+  ) public calledByColonyOrNetwork {
+    require(
+      lockers[_token][_lockId] == msgSender(),
+      "colony-token-locking-not-locker"
+    );
 
     // If we want to unlock tokens at id greater than total lock count, we are doing something wrong
     require(_lockId <= totalLockCount[_token], "colony-token-invalid-lockid");
@@ -96,7 +115,10 @@ contract TokenLocking is
     // These checks should happen in this order, as the second is stricter than the first
     uint256 lockCountDelta = _lockId - userLocks[_token][_user].lockCount;
     require(lockCountDelta != 0, "colony-token-locking-already-unlocked");
-    require(lockCountDelta == 1, "colony-token-locking-has-previous-active-locks");
+    require(
+      lockCountDelta == 1,
+      "colony-token-locking-has-previous-active-locks"
+    );
 
     userLocks[_token][_user].lockCount = _lockId; // Basically just a ++
 
@@ -105,7 +127,8 @@ contract TokenLocking is
 
   function incrementLockCounterTo(address _token, uint256 _lockId) public {
     require(
-      _lockId <= totalLockCount[_token] && _lockId > userLocks[_token][msgSender()].lockCount,
+      _lockId <= totalLockCount[_token] &&
+        _lockId > userLocks[_token][msgSender()].lockCount,
       "colony-token-locking-invalid-lock-id"
     );
     userLocks[_token][msgSender()].lockCount = _lockId;
@@ -116,7 +139,11 @@ contract TokenLocking is
     deposit(_token, _amount, false);
   }
 
-  function deposit(address _token, uint256 _amount, bool _force) public tokenNotLocked(_token, _force) {
+  function deposit(
+    address _token,
+    uint256 _amount,
+    bool _force
+  ) public tokenNotLocked(_token, _force) {
     Lock storage lock = userLocks[_token][msgSender()];
     lock.balance += _amount;
 
@@ -127,17 +154,31 @@ contract TokenLocking is
     }
 
     // Actually claim the tokens
-    require(ERC20Extended(_token).transferFrom(msgSender(), address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
+    require(
+      ERC20Extended(_token).transferFrom(msgSender(), address(this), _amount),
+      "colony-token-locking-transfer-failed"
+    ); // ignore-swc-123
 
     emit UserTokenDeposited(_token, msgSender(), lock.balance);
   }
 
-  function depositFor(address _token, uint256 _amount, address _recipient) public {
-    require(ERC20Extended(_token).transferFrom(msgSender(), address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
+  function depositFor(
+    address _token,
+    uint256 _amount,
+    address _recipient
+  ) public {
+    require(
+      ERC20Extended(_token).transferFrom(msgSender(), address(this), _amount),
+      "colony-token-locking-transfer-failed"
+    ); // ignore-swc-123
 
     makeConditionalDeposit(_token, _amount, _recipient);
 
-    emit UserTokenDeposited(_token, _recipient, userLocks[_token][_recipient].balance);
+    emit UserTokenDeposited(
+      _token,
+      _recipient,
+      userLocks[_token][_recipient].balance
+    );
   }
 
   function transfer(
@@ -159,39 +200,66 @@ contract TokenLocking is
     withdraw(_token, _amount, false);
   }
 
-  function withdraw(address _token, uint256 _amount, bool _force) public notObligated(_token, _amount) tokenNotLocked(_token, _force) {
+  function withdraw(
+    address _token,
+    uint256 _amount,
+    bool _force
+  ) public notObligated(_token, _amount) tokenNotLocked(_token, _force) {
     Lock storage lock = userLocks[_token][msgSender()];
     lock.balance -= _amount;
 
-    require(ERC20Extended(_token).transfer(msgSender(), _amount), "colony-token-locking-transfer-failed");
+    require(
+      ERC20Extended(_token).transfer(msgSender(), _amount),
+      "colony-token-locking-transfer-failed"
+    );
 
     emit UserTokenWithdrawn(_token, msgSender(), _amount);
   }
 
-  function approveStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork {
+  function approveStake(
+    address _user,
+    uint256 _amount,
+    address _token
+  ) public calledByColonyOrNetwork {
     approvals[_user][_token][msgSender()] += _amount;
 
     emit UserTokenApproved(_token, _user, msgSender(), _amount);
   }
 
-  function obligateStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork {
+  function obligateStake(
+    address _user,
+    uint256 _amount,
+    address _token
+  ) public calledByColonyOrNetwork {
     approvals[_user][_token][msgSender()] -= _amount;
     obligations[_user][_token][msgSender()] += _amount;
     totalObligations[_user][_token] += _amount;
 
-    require(userLocks[_token][_user].balance >= totalObligations[_user][_token], "colony-token-locking-insufficient-deposit");
+    require(
+      userLocks[_token][_user].balance >= totalObligations[_user][_token],
+      "colony-token-locking-insufficient-deposit"
+    );
 
     emit UserTokenObligated(_token, _user, msgSender(), _amount);
   }
 
-  function deobligateStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork {
+  function deobligateStake(
+    address _user,
+    uint256 _amount,
+    address _token
+  ) public calledByColonyOrNetwork {
     obligations[_user][_token][msgSender()] -= _amount;
     totalObligations[_user][_token] -= _amount;
 
     emit UserTokenDeobligated(_token, _user, msgSender(), _amount);
   }
 
-  function transferStake(address _user, uint256 _amount, address _token, address _recipient) public calledByColonyOrNetwork {
+  function transferStake(
+    address _user,
+    uint256 _amount,
+    address _token,
+    address _recipient
+  ) public calledByColonyOrNetwork {
     obligations[_user][_token][msgSender()] -= _amount;
     totalObligations[_user][_token] -= _amount;
 
@@ -212,33 +280,53 @@ contract TokenLocking is
     return totalLockCount[_token];
   }
 
-  function getUserLock(address _token, address _user) public view returns (Lock memory lock) {
+  function getUserLock(
+    address _token,
+    address _user
+  ) public view returns (Lock memory lock) {
     lock = userLocks[_token][_user];
   }
 
-  function getTotalObligation(address _user, address _token) public view returns (uint256) {
+  function getTotalObligation(
+    address _user,
+    address _token
+  ) public view returns (uint256) {
     return totalObligations[_user][_token];
   }
 
-  function getApproval(address _user, address _token, address _obligator) public view returns (uint256) {
+  function getApproval(
+    address _user,
+    address _token,
+    address _obligator
+  ) public view returns (uint256) {
     return approvals[_user][_token][_obligator];
   }
 
-  function getObligation(address _user, address _token, address _obligator) public view returns (uint256) {
+  function getObligation(
+    address _user,
+    address _token,
+    address _obligator
+  ) public view returns (uint256) {
     return obligations[_user][_token][_obligator];
   }
 
   // Internal functions
 
   // slither-disable-next-line reentrancy-no-eth
-  function makeConditionalDeposit(address _token, uint256 _amount, address _user) internal {
+  function makeConditionalDeposit(
+    address _token,
+    uint256 _amount,
+    address _user
+  ) internal {
     Lock storage userLock = userLocks[_token][_user];
     if (isTokenUnlocked(_token, _user)) {
       userLock.balance += _amount;
     } else {
       // If the transfer fails (for any reason), add tokens to pendingBalance
       // slither-disable-next-line unchecked-transfer
-      try ERC20Extended(_token).transfer(_user, _amount) returns (bool success) {
+      try ERC20Extended(_token).transfer(_user, _amount) returns (
+        bool success
+      ) {
         if (!success) {
           userLock.pendingBalance += _amount;
         }
@@ -248,7 +336,10 @@ contract TokenLocking is
     }
   }
 
-  function isTokenUnlocked(address _token, address _user) internal view returns (bool) {
+  function isTokenUnlocked(
+    address _token,
+    address _user
+  ) internal view returns (bool) {
     return userLocks[_token][_user].lockCount == totalLockCount[_token];
   }
 }

@@ -19,19 +19,31 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {ColonyDataTypes} from "./../colony/ColonyDataTypes.sol";
-import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
-import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
-import {ERC20Extended} from "./../common/ERC20Extended.sol";
-import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
-import {ColonyExtension} from "./ColonyExtension.sol";
-import {IColony} from "./../colony/IColony.sol";
+import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { ColonyExtension } from "./ColonyExtension.sol";
+import { IColony } from "./../colony/IColony.sol";
 
 contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   // Events
-  event ProposalCreated(uint256 id, uint256 indexed fromPot, uint256 indexed toPot, address indexed token, uint256 amount);
+  event ProposalCreated(
+    uint256 id,
+    uint256 indexed fromPot,
+    uint256 indexed toPot,
+    address indexed token,
+    uint256 amount
+  );
   event ProposalStaked(uint256 indexed id, uint256 domainTotalRep);
-  event ProposalBacked(uint256 indexed id, uint256 indexed newPrevId, address indexed user, uint256 backing, uint256 prevBacking);
+  event ProposalBacked(
+    uint256 indexed id,
+    uint256 indexed newPrevId,
+    address indexed user,
+    uint256 backing,
+    uint256 prevBacking
+  );
   event ProposalPinged(uint256 indexed id, uint256 amount);
   event ProposalCompleted(uint256 indexed id);
   event ProposalCancelled(uint256 indexed id);
@@ -82,7 +94,9 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   /// @notice Gets the next nonce for a meta-transaction
   /// @param userAddress The user's address
   /// @return nonce The nonce
-  function getMetatransactionNonce(address userAddress) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(
+    address userAddress
+  ) public view override returns (uint256 nonce) {
     return metatransactionNonces[userAddress];
   }
 
@@ -159,12 +173,14 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
     require(
       (domainSkillId == fromSkillId && _fromChildSkillIndex == UINT256_MAX) ||
-        fromSkillId == colonyNetwork.getChildSkillId(domainSkillId, _fromChildSkillIndex),
+        fromSkillId ==
+        colonyNetwork.getChildSkillId(domainSkillId, _fromChildSkillIndex),
       "funding-queue-bad-inheritence-from"
     );
     require(
       (domainSkillId == toSkillId && _toChildSkillIndex == UINT256_MAX) ||
-        toSkillId == colonyNetwork.getChildSkillId(domainSkillId, _toChildSkillIndex),
+        toSkillId ==
+        colonyNetwork.getChildSkillId(domainSkillId, _toChildSkillIndex),
       "funding-queue-bad-inheritence-to"
     );
 
@@ -186,7 +202,13 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     );
     queue[proposalCount] = proposalCount; // Initialize as a disconnected self-edge
 
-    emit ProposalCreated(proposalCount, _fromPot, _toPot, _token, _totalRequested);
+    emit ProposalCreated(
+      proposalCount,
+      _fromPot,
+      _toPot,
+      _token,
+      _totalRequested
+    );
   }
 
   /// @notice Cancel a funding proposal and remove from linked list
@@ -195,8 +217,14 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   function cancelProposal(uint256 _id, uint256 _prevId) public {
     Proposal storage proposal = proposals[_id];
 
-    require(proposal.state != ProposalState.Cancelled, "funding-queue-already-cancelled");
-    require(proposal.state != ProposalState.Completed, "funding-queue-already-completed");
+    require(
+      proposal.state != ProposalState.Cancelled,
+      "funding-queue-already-cancelled"
+    );
+    require(
+      proposal.state != ProposalState.Completed,
+      "funding-queue-already-completed"
+    );
     require(proposal.creator == msgSender(), "funding-queue-not-creator");
     require(queue[_prevId] == _id, "funding-queue-bad-prev-id");
 
@@ -217,13 +245,29 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   /// @param _value Reputation value indicating the total reputation in _domainId
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
-  function stakeProposal(uint256 _id, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings) public {
+  function stakeProposal(
+    uint256 _id,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  ) public {
     Proposal storage proposal = proposals[_id];
 
-    require(proposal.state == ProposalState.Inactive, "funding-queue-not-inactive");
+    require(
+      proposal.state == ProposalState.Inactive,
+      "funding-queue-not-inactive"
+    );
     require(proposal.creator == msgSender(), "funding-queue-not-creator");
 
-    proposal.domainTotalRep = doCheckReputation(proposals[_id].domainId, address(0x0), _key, _value, _branchMask, _siblings);
+    proposal.domainTotalRep = doCheckReputation(
+      proposals[_id].domainId,
+      address(0x0),
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
     proposal.state = ProposalState.Active;
 
     uint256 stake = wmul(proposal.domainTotalRep, STAKE_FRACTION);
@@ -253,10 +297,20 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   ) public {
     Proposal storage proposal = proposals[_id];
 
-    require(proposal.state == ProposalState.Active, "funding-queue-proposal-not-active");
+    require(
+      proposal.state == ProposalState.Active,
+      "funding-queue-proposal-not-active"
+    );
     require(_id != _newPrevId, "funding-queue-cannot-insert-after-self"); // NOTE: this may be redundant
 
-    uint256 userRep = doCheckReputation(proposals[_id].domainId, msgSender(), _key, _value, _branchMask, _siblings);
+    uint256 userRep = doCheckReputation(
+      proposals[_id].domainId,
+      msgSender(),
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
     require(_backing <= userRep, "funding-queue-insufficient-reputation");
 
     // Update the user's reputation backing
@@ -276,10 +330,16 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
       pingProposal(nextId);
     }
     // Does this proposal have less than or equal support to the previous proposal?
-    require(proposals[_newPrevId].totalSupport >= proposal.totalSupport, "funding-queue-excess-support");
+    require(
+      proposals[_newPrevId].totalSupport >= proposal.totalSupport,
+      "funding-queue-excess-support"
+    );
     // Does this proposal have more support than the next proposal?
     //  (Special case for the tail of the list since "next" is HEAD)
-    require(nextId == HEAD || proposals[nextId].totalSupport < proposal.totalSupport, "funding-queue-insufficient-support");
+    require(
+      nextId == HEAD || proposals[nextId].totalSupport < proposal.totalSupport,
+      "funding-queue-insufficient-support"
+    );
     queue[_newPrevId] = _id; // prev proposal => this proposal
     queue[_id] = nextId; // this proposal => next proposal
 
@@ -295,7 +355,10 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
     uint256 fundingToTransfer = calculateFundingToTransfer(_id);
     uint256 remainingRequested = proposal.totalRequested - proposal.totalPaid;
-    uint256 actualFundingToTransfer = min(fundingToTransfer, remainingRequested);
+    uint256 actualFundingToTransfer = min(
+      fundingToTransfer,
+      remainingRequested
+    );
 
     // Infer update time based on actualFundingToTransfer / fundingToTransfer
     //  This is done so, if completed, the timestamp reflects the approximate completion
@@ -312,7 +375,13 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
     // Check if the extension has the permissions to do this
     // If not, cancel the proposal so others aren't blocked
-    if (!colony.hasUserRole(address(this), proposal.domainId, ColonyDataTypes.ColonyRole.Funding)) {
+    if (
+      !colony.hasUserRole(
+        address(this),
+        proposal.domainId,
+        ColonyDataTypes.ColonyRole.Funding
+      )
+    ) {
       emit ProposalPinged(_id, 0);
       cancelProposal(_id, HEAD);
       return;
@@ -346,8 +415,14 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   function reclaimStake(uint256 _id) public {
     Proposal storage proposal = proposals[_id];
 
-    require(proposal.state != ProposalState.Active, "funding-queue-proposal-still-active");
-    require(proposal.lastUpdated + COOLDOWN_PERIOD <= block.timestamp, "funding-queue-cooldown-not-elapsed");
+    require(
+      proposal.state != ProposalState.Active,
+      "funding-queue-proposal-still-active"
+    );
+    require(
+      proposal.lastUpdated + COOLDOWN_PERIOD <= block.timestamp,
+      "funding-queue-cooldown-not-elapsed"
+    );
 
     uint256 stake = wmul(proposal.domainTotalRep, STAKE_FRACTION);
     colony.deobligateStake(proposal.creator, proposal.domainId, stake);
@@ -366,7 +441,9 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   /// @notice Get the proposal struct for a given proposal
   /// @param _id The proposal Id
   /// @return proposal The proposal struct
-  function getProposal(uint256 _id) public view returns (Proposal memory proposal) {
+  function getProposal(
+    uint256 _id
+  ) public view returns (Proposal memory proposal) {
     return proposals[_id];
   }
 
@@ -374,7 +451,10 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   /// @param _id The proposal Id
   /// @param _supporter The supporter
   /// @return support The support amount
-  function getSupport(uint256 _id, address _supporter) public view returns (uint256 support) {
+  function getSupport(
+    uint256 _id,
+    address _supporter
+  ) public view returns (uint256 support) {
     return supporters[_id][_supporter];
   }
 
@@ -395,16 +475,31 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     uint256 _branchMask,
     bytes32[] memory _siblings
   ) internal view returns (uint256) {
-    bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork()).getReputationRootHash();
+    bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork())
+      .getReputationRootHash();
     uint256 domainSkillId = colony.getDomain(_domainId).skillId;
-    return checkReputation(rootHash, domainSkillId, _user, _key, _value, _branchMask, _siblings);
+    return
+      checkReputation(
+        rootHash,
+        domainSkillId,
+        _user,
+        _key,
+        _value,
+        _branchMask,
+        _siblings
+      );
   }
 
-  function calculateFundingToTransfer(uint256 _id) internal view returns (uint256) {
+  function calculateFundingToTransfer(
+    uint256 _id
+  ) internal view returns (uint256) {
     Proposal storage proposal = proposals[_id];
 
     uint256 balance = colony.getFundingPotBalance(proposal.fromPot, token);
-    uint256 backingPercent = min(WAD, wdiv(proposal.totalSupport, proposal.domainTotalRep));
+    uint256 backingPercent = min(
+      WAD,
+      wdiv(proposal.totalSupport, proposal.domainTotalRep)
+    );
 
     uint256 decayRate = getDecayRate(backingPercent);
     uint256 unitsElapsed = (block.timestamp - proposal.lastUpdated) / 10; // 10 second intervals
@@ -415,7 +510,9 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     return fundingToTransfer;
   }
 
-  function getDecayRate(uint256 backingPercent) internal pure returns (uint256) {
+  function getDecayRate(
+    uint256 backingPercent
+  ) internal pure returns (uint256) {
     assert(backingPercent <= WAD);
 
     if (backingPercent == WAD) {
@@ -428,7 +525,9 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     uint256 lowerBin = backingPercent / (10 ** 17);
     uint256 lowerPct = (backingPercent - (lowerBin * 10 ** 17)) * 10;
 
-    return wmul(getDecayRateFromBin(lowerBin), WAD - lowerPct) + wmul(getDecayRateFromBin(lowerBin + 1), lowerPct);
+    return
+      wmul(getDecayRateFromBin(lowerBin), WAD - lowerPct) +
+      wmul(getDecayRateFromBin(lowerBin + 1), lowerPct);
   }
 
   function getDecayRateFromBin(uint256 bin) internal pure returns (uint256) {
