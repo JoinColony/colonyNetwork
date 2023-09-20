@@ -18,8 +18,8 @@
 
 pragma solidity 0.8.21;
 
-import {DSTokenBaseMeta} from "./DSTokenBaseMeta.sol";
-import {DSAuthMeta} from "./DSAuthMeta.sol";
+import { DSTokenBaseMeta } from "./DSTokenBaseMeta.sol";
+import { DSAuthMeta } from "./DSAuthMeta.sol";
 
 contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
   uint8 public immutable decimals;
@@ -38,7 +38,9 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
   event Mint(address indexed guy, uint256 wad);
   event Burn(address indexed guy, uint256 wad);
 
-  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(
+    address _user
+  ) public view override returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 
@@ -71,7 +73,9 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
 
     DOMAIN_SEPARATOR = keccak256(
       abi.encode(
-        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+        keccak256(
+          "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+        ),
         keccak256(bytes(name)),
         keccak256(bytes("1")),
         chainId,
@@ -80,7 +84,11 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
     );
   }
 
-  function transferFrom(address src, address dst, uint256 wad) public override unlocked returns (bool) {
+  function transferFrom(
+    address src,
+    address dst,
+    uint256 wad
+  ) public override unlocked returns (bool) {
     return super.transferFrom(src, dst, wad);
   }
 
@@ -102,7 +110,10 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
 
   function burn(address guy, uint256 wad) public {
     if (guy != msgSender()) {
-      require(_approvals[guy][msgSender()] >= wad, "ds-token-insufficient-approval");
+      require(
+        _approvals[guy][msgSender()] >= wad,
+        "ds-token-insufficient-approval"
+      );
       _approvals[guy][msgSender()] -= wad;
     }
 
@@ -121,21 +132,42 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
   // Which is also licenced under GPL V3
 
   // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-  bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+  bytes32 public constant PERMIT_TYPEHASH =
+    0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
   string constant EIP_712_PREFIX = "\x19\x01";
 
-  function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external unlocked {
+  function permit(
+    address owner,
+    address spender,
+    uint256 value,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external unlocked {
     require(deadline >= block.timestamp, "colony-token-expired-deadline");
 
     bytes32 digest = keccak256(
       abi.encodePacked(
         EIP_712_PREFIX,
         DOMAIN_SEPARATOR,
-        keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, metatransactionNonces[owner]++, deadline))
+        keccak256(
+          abi.encode(
+            PERMIT_TYPEHASH,
+            owner,
+            spender,
+            value,
+            metatransactionNonces[owner]++,
+            deadline
+          )
+        )
       )
     );
     address recoveredAddress = ecrecover(digest, v, r, s);
-    require(recoveredAddress != address(0) && recoveredAddress == owner, "colony-token-invalid-signature");
+    require(
+      recoveredAddress != address(0) && recoveredAddress == owner,
+      "colony-token-invalid-signature"
+    );
     _approvals[owner][spender] = value;
 
     emit Approval(owner, spender, value);

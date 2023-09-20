@@ -18,19 +18,23 @@
 
 pragma solidity 0.8.21;
 
-import {ColonyNetworkStorage} from "./ColonyNetworkStorage.sol";
-import {MultiChain} from "./../common/MultiChain.sol";
-import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
-import {ERC20Extended} from "./../common/ERC20Extended.sol";
-import {IMetaColony} from "./../colony/IMetaColony.sol";
-import {DSMath} from "./../../lib/dappsys/math.sol";
+import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
+import { MultiChain } from "./../common/MultiChain.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { IMetaColony } from "./../colony/IMetaColony.sol";
+import { DSMath } from "./../../lib/dappsys/math.sol";
 
 contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
   function startTokenAuction(address _token) public stoppable auth {
     require(_token != address(0x0), "colony-auction-invalid-token");
 
     uint lastAuctionTimestamp = recentAuctions[_token];
-    require(lastAuctionTimestamp == 0 || block.timestamp - lastAuctionTimestamp >= 30 days, "colony-auction-start-too-soon");
+    require(
+      lastAuctionTimestamp == 0 ||
+        block.timestamp - lastAuctionTimestamp >= 30 days,
+      "colony-auction-start-too-soon"
+    );
 
     address clny = IMetaColony(metaColony).getToken();
     require(clny != address(0x0), "colony-auction-invalid-clny-token");
@@ -43,7 +47,10 @@ contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
       if (isXdai()) {
         // On Xdai, we can't burn bridged tokens
         // so let's send them to the metacolony for now.
-        require(ERC20Extended(clny).transfer(metaColony, availableTokens), "colony-network-transfer-failed");
+        require(
+          ERC20Extended(clny).transfer(metaColony, availableTokens),
+          "colony-network-transfer-failed"
+        );
       } else {
         ERC20Extended(clny).burn(availableTokens);
       }
@@ -122,12 +129,19 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   }
 
   event AuctionStarted(address _token, uint256 _quantity, uint256 _minPrice);
-  event AuctionBid(address indexed _sender, uint256 _amount, uint256 _missingFunds);
+  event AuctionBid(
+    address indexed _sender,
+    uint256 _amount,
+    uint256 _missingFunds
+  );
   event AuctionClaim(address indexed _recipient, uint256 _sentAmount);
   event AuctionFinalized(uint256 _finalPrice);
 
   constructor(address _clnyToken, address _token, address _metaColonyAddress) {
-    require(_metaColonyAddress != address(0x0), "colony-auction-metacolony-cannot-be-zero");
+    require(
+      _metaColonyAddress != address(0x0),
+      "colony-auction-metacolony-cannot-be-zero"
+    );
 
     colonyNetwork = msgSender();
     metaColonyAddress = _metaColonyAddress;
@@ -135,7 +149,9 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     token = ERC20Extended(_token);
   }
 
-  function getMetatransactionNonce(address userAddress) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(
+    address userAddress
+  ) public view override returns (uint256 nonce) {
     return metatransactionNonces[userAddress];
   }
 
@@ -156,7 +172,12 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     emit AuctionStarted(address(token), quantity, minPrice);
   }
 
-  function remainingToEndAuction() public view auctionStartedAndOpen returns (uint256) {
+  function remainingToEndAuction()
+    public
+    view
+    auctionStartedAndOpen
+    returns (uint256)
+  {
     // Total amount to end the auction at the current price
     uint totalToEndAuctionAtCurrentPrice;
     // For low quantity auctions, there are cases where q * p < 1e18 once price has decreased sufficiently
@@ -218,7 +239,10 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     bids[msgSender()] = bids[msgSender()] + amount;
     receivedTotal = receivedTotal + amount;
 
-    require(clnyToken.transferFrom(msgSender(), address(this), amount), "colony-auction-bid-transfer-failed");
+    require(
+      clnyToken.transferFrom(msgSender(), address(this), amount),
+      "colony-auction-bid-transfer-failed"
+    );
 
     emit AuctionBid(msgSender(), amount, _remainingToEndAuction - amount);
   }
@@ -235,7 +259,10 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     if (isXdai()) {
       // On Xdai, we can't burn bridged tokens
       // so let's send them to the metacolony for now.
-      require(clnyToken.transfer(metaColonyAddress, receivedTotal), "colony-network-transfer-failed");
+      require(
+        clnyToken.transfer(metaColonyAddress, receivedTotal),
+        "colony-network-transfer-failed"
+      );
     } else {
       clnyToken.burn(receivedTotal);
     }

@@ -19,9 +19,9 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {ColonyExtension} from "./ColonyExtension.sol";
-import {BasicMetaTransaction} from "./../common/BasicMetaTransaction.sol";
-import {IColony} from "./../colony/IColony.sol";
+import { ColonyExtension } from "./ColonyExtension.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IColony } from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 
@@ -69,7 +69,9 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _userAddress The user's address
   /// @return nonce The nonce
-  function getMetatransactionNonce(address _userAddress) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(
+    address _userAddress
+  ) public view override returns (uint256 nonce) {
     return metatransactionNonces[_userAddress];
   }
 
@@ -90,8 +92,14 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
     uint256[] memory _slots,
     int256[] memory _payoutModifiers
   ) public {
-    require(_slots.length == _payoutModifiers.length, "evaluated-expenditure-bad-slots");
-    require(colony.getExpenditure(_id).owner == msgSender(), "evaluated-expenditure-not-owner");
+    require(
+      _slots.length == _payoutModifiers.length,
+      "evaluated-expenditure-bad-slots"
+    );
+    require(
+      colony.getExpenditure(_id).owner == msgSender(),
+      "evaluated-expenditure-not-owner"
+    );
 
     bool[] memory mask = new bool[](2);
     bytes32[] memory keys = new bytes32[](2);

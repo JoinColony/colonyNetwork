@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.21;
 
-import {DSMath} from "../../lib/dappsys/math.sol";
+import { DSMath } from "../../lib/dappsys/math.sol";
 
 abstract contract MetaTransactionMsgSender is DSMath {
   bytes32 constant METATRANSACTION_FLAG = keccak256("METATRANSACTION");
@@ -19,7 +19,10 @@ abstract contract MetaTransactionMsgSender is DSMath {
       }
       assembly {
         // Load the 32 bytes word from memory with the address on the lower 20 bytes, and mask those.
-        sender := and(mload(add(array, index)), 0xffffffffffffffffffffffffffffffffffffffff)
+        sender := and(
+          mload(add(array, index)),
+          0xffffffffffffffffffffffffffffffffffffffff
+        )
       }
     } else {
       return payable(msg.sender);

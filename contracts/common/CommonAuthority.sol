@@ -18,8 +18,8 @@
 
 pragma solidity 0.8.21;
 
-import {ColonyDataTypes} from "./../colony/ColonyDataTypes.sol";
-import {DomainRoles} from "./DomainRoles.sol";
+import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { DomainRoles } from "./DomainRoles.sol";
 
 contract CommonAuthority is DomainRoles {
   uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
@@ -27,11 +27,17 @@ contract CommonAuthority is DomainRoles {
   constructor(address contractAddress) {
     setRecoveryRoleCapability(contractAddress, "enterRecoveryMode()");
     setRecoveryRoleCapability(contractAddress, "approveExitRecovery()");
-    setRecoveryRoleCapability(contractAddress, "setStorageSlotRecovery(uint256,bytes32)");
+    setRecoveryRoleCapability(
+      contractAddress,
+      "setStorageSlotRecovery(uint256,bytes32)"
+    );
     setRecoveryRoleCapability(contractAddress, "exitRecoveryMode()");
   }
 
-  function setRecoveryRoleCapability(address contractAddress, bytes memory sig) private {
+  function setRecoveryRoleCapability(
+    address contractAddress,
+    bytes memory sig
+  ) private {
     bytes4 functionSig = bytes4(keccak256(sig));
     setRoleCapability(RECOVERY_ROLE, contractAddress, functionSig, true);
   }

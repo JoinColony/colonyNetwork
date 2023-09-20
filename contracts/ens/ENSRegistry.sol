@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-2-Clause
 pragma solidity 0.8.21;
 
-import {ENS} from "./ENS.sol";
+import { ENS } from "./ENS.sol";
 
 // ignore-file-swc-101 This is due to ConsenSys/truffle-security#245 and the bad-line reporting associated with it
 // (It's really the abi.encodepacked in setSubnodeOwner.
@@ -18,7 +18,10 @@ contract ENSRegistry is ENS {
   // Permits modifications only by the owner of the specified node, or if unowned.
   modifier onlyOwner(bytes32 node) {
     address currentOwner = records[node].owner;
-    require(currentOwner == address(0x0) || currentOwner == msg.sender, "colony-ens-non-owner-access");
+    require(
+      currentOwner == address(0x0) || currentOwner == msg.sender,
+      "colony-ens-non-owner-access"
+    );
     _;
   }
 
@@ -30,7 +33,10 @@ contract ENSRegistry is ENS {
   /// @dev Transfers ownership of a node to a new address.
   /// @param node The node to transfer ownership of.
   /// @param owner The address of the new owner.
-  function setOwner(bytes32 node, address owner) public override onlyOwner(node) {
+  function setOwner(
+    bytes32 node,
+    address owner
+  ) public override onlyOwner(node) {
     emit Transfer(node, owner);
     records[node].owner = owner;
   }
@@ -39,7 +45,11 @@ contract ENSRegistry is ENS {
   /// @param node The parent node.
   /// @param label The hash of the label specifying the subnode.
   /// @param owner The address of the new owner.
-  function setSubnodeOwner(bytes32 node, bytes32 label, address owner) public override onlyOwner(node) {
+  function setSubnodeOwner(
+    bytes32 node,
+    bytes32 label,
+    address owner
+  ) public override onlyOwner(node) {
     require(records[node].owner != address(0x0), "unowned-node");
     bytes32 subnode = keccak256(abi.encodePacked(node, label));
     emit NewOwner(node, label, owner);
@@ -49,7 +59,10 @@ contract ENSRegistry is ENS {
   /// @dev Sets the resolver address for the specified node.
   /// @param node The node to update.
   /// @param resolver The address of the resolver.
-  function setResolver(bytes32 node, address resolver) public override onlyOwner(node) {
+  function setResolver(
+    bytes32 node,
+    address resolver
+  ) public override onlyOwner(node) {
     emit NewResolver(node, resolver);
     records[node].resolver = resolver;
   }

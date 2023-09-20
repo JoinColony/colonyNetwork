@@ -2,8 +2,8 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import {Data} from "./Data.sol";
-import {Bits} from "./Bits.sol";
+import { Data } from "./Data.sol";
+import { Bits } from "./Bits.sol";
 
 /// More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTreeProofs {
@@ -18,7 +18,12 @@ contract PatriciaTreeProofs {
     bytes32[] memory siblings
   ) internal pure returns (bytes32) {
     bytes32 hash;
-    (hash, ) = getImpliedRootFunctionality(keccak256(key), keccak256(value), branchMask, siblings);
+    (hash, ) = getImpliedRootFunctionality(
+      keccak256(key),
+      keccak256(value),
+      branchMask,
+      siblings
+    );
     return hash;
   }
 
@@ -29,7 +34,12 @@ contract PatriciaTreeProofs {
     bytes32[] memory siblings
   ) internal pure returns (bytes32) {
     bytes32 hash;
-    (hash, ) = getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings);
+    (hash, ) = getImpliedRootFunctionality(
+      key,
+      keccak256(value),
+      branchMask,
+      siblings
+    );
     return hash;
   }
 
@@ -39,7 +49,8 @@ contract PatriciaTreeProofs {
     uint256 branchMask,
     bytes32[] memory siblings
   ) internal pure returns (bytes32, bytes32[2] memory) {
-    return getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings);
+    return
+      getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings);
   }
 
   // solium-disable-next-line security/no-assign-params

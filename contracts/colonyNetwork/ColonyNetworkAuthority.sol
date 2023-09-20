@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.21;
 
-import {CommonAuthority} from "./../common/CommonAuthority.sol";
+import { CommonAuthority } from "./../common/CommonAuthority.sol";
 
 contract ColonyNetworkAuthority is CommonAuthority {
   constructor(address colonyNetwork) CommonAuthority(colonyNetwork) {

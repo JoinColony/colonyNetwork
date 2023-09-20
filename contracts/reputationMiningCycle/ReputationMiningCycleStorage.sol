@@ -18,13 +18,16 @@
 
 pragma solidity 0.8.21;
 
-import {DSAuth} from "./../../lib/dappsys/auth.sol";
-import {ReputationMiningCycleDataTypes} from "./../reputationMiningCycle/ReputationMiningCycleDataTypes.sol";
+import { DSAuth } from "./../../lib/dappsys/auth.sol";
+import { ReputationMiningCycleDataTypes } from "./../reputationMiningCycle/ReputationMiningCycleDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth {
+contract ReputationMiningCycleStorage is
+  ReputationMiningCycleDataTypes,
+  DSAuth
+{
   // From DSAuth there is authority and owner at storage slots 0 and 1 respectively
   // These are not used but are necessary for alignment when casting from EtherRouter
 

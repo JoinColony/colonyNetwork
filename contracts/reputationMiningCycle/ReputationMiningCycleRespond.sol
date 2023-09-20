@@ -19,11 +19,11 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
-import {PatriciaTreeProofs} from "./../patriciaTree/PatriciaTreeProofs.sol";
-import {ITokenLocking} from "./../tokenLocking/ITokenLocking.sol";
-import {Bits} from "./../patriciaTree/Bits.sol";
-import {ReputationMiningCycleCommon} from "./ReputationMiningCycleCommon.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
+import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { Bits } from "./../patriciaTree/Bits.sol";
+import { ReputationMiningCycleCommon } from "./ReputationMiningCycleCommon.sol";
 
 // TODO (post CCv1, possibly never): Can we handle all possible disputes regarding the very first hash that should be set?
 // Currently, at the very least, we can't handle a dispute if the very first entry is disputed.
@@ -35,19 +35,30 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
   /// @param _idx The index in the round of the hash under consideration
   modifier challengeOpen(uint256 _round, uint256 _idx) {
     // Check the binary search has finished, but not necessarily confirmed
-    require(_idx < disputeRounds[_round].length, "colony-reputation-mining-index-beyond-round-length");
-    require(disputeRounds[_round][_idx].lowerBound == disputeRounds[_round][_idx].upperBound, "colony-reputation-binary-search-incomplete");
+    require(
+      _idx < disputeRounds[_round].length,
+      "colony-reputation-mining-index-beyond-round-length"
+    );
+    require(
+      disputeRounds[_round][_idx].lowerBound ==
+        disputeRounds[_round][_idx].upperBound,
+      "colony-reputation-binary-search-incomplete"
+    );
     // Check the binary search result has been confirmed
-    Submission storage submission = reputationHashSubmissions[disputeRounds[_round][_idx].firstSubmitter];
+    Submission storage submission = reputationHashSubmissions[
+      disputeRounds[_round][_idx].firstSubmitter
+    ];
     require(
       disputeRounds[_round][_idx].challengeStepCompleted >= 2 &&
-        2 ** (disputeRounds[_round][_idx].challengeStepCompleted - 2) > submission.jrhNLeaves,
+        2 ** (disputeRounds[_round][_idx].challengeStepCompleted - 2) >
+        submission.jrhNLeaves,
       "colony-reputation-mining-binary-search-result-not-confirmed"
     );
     // Check that we have not already responded to the challenge
     require(
       disputeRounds[_round][_idx].challengeStepCompleted >= 3 &&
-        2 ** (disputeRounds[_round][_idx].challengeStepCompleted - 3) <= submission.jrhNLeaves,
+        2 ** (disputeRounds[_round][_idx].challengeStepCompleted - 3) <=
+        submission.jrhNLeaves,
       "colony-reputation-mining-challenge-already-responded"
     );
     _;
@@ -93,7 +104,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
   // Note that these values and the mining window size (defined in ReputationMiningCycleCommon)
   // need to be consistent with each other, but are not checked, in order for the decay
   // rate to be as-expected.
-  uint constant DECAY_NUMERATOR = 999679150010889; // 1-hr mining cycle
+  // prettier-ignore
+  uint constant DECAY_NUMERATOR =    999679150010889; // 1-hr mining cycle
   uint constant DECAY_DENOMINATOR = 1000000000000000;
 
   function getDecayConstant() public pure returns (uint256, uint256) {
@@ -111,7 +123,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     bytes32[] memory _adjacentReputationSiblings
   ) public challengeOpen(_u[U_ROUND], _u[U_IDX]) {
     require(
-      responsePossible(DisputeStages.RespondToChallenge, disputeRounds[_u[U_ROUND]][_u[U_IDX]].lastResponseTimestamp),
+      responsePossible(
+        DisputeStages.RespondToChallenge,
+        disputeRounds[_u[U_ROUND]][_u[U_IDX]].lastResponseTimestamp
+      ),
       "colony-reputation-mining-user-ineligible-to-respond"
     );
 
@@ -119,7 +134,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     _u[U_GLOBAL_CHILD_UPDATE] = 0;
     _u[U_NEW_REPUTATION] = 0;
     // Require disagree state nleaves - agree state nleaves is either 0 or 1. Its a uint, so we can simplify this to < 2.
-    require(_u[U_DISAGREE_STATE_NLEAVES] - _u[U_AGREE_STATE_NLEAVES] < 2, "colony-network-mining-more-than-one-leaf-added");
+    require(
+      _u[U_DISAGREE_STATE_NLEAVES] - _u[U_AGREE_STATE_NLEAVES] < 2,
+      "colony-network-mining-more-than-one-leaf-added"
+    );
     // TODO: More checks that this is an appropriate time to respondToChallenge (maybe in modifier);
     /* bytes32 jrh = disputeRounds[round][idx].jrh; */
     // The contract knows
@@ -138,25 +156,51 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     checkKey(_u, _b32);
 
     // Prove the reputation's starting value is in some state, and that state is in the appropriate index in our JRH
-    proveBeforeReputationValue(_u, _b32, _reputationSiblings, _agreeStateSiblings);
+    proveBeforeReputationValue(
+      _u,
+      _b32,
+      _reputationSiblings,
+      _agreeStateSiblings
+    );
 
     // Prove the reputation's final value is in a particular state, and that state is in our JRH in the appropriate index (corresponding to the first disagreement between these miners)
     // By using the same branchMask and siblings, we know that no other changes to the reputation state tree have been slipped in.
-    proveAfterReputationValue(_u, _b32, _reputationSiblings, _disagreeStateSiblings);
+    proveAfterReputationValue(
+      _u,
+      _b32,
+      _reputationSiblings,
+      _disagreeStateSiblings
+    );
 
     // Perform the reputation calculation ourselves.
     performReputationCalculation(_u);
 
     if (_u[U_DECAY_TRANSITION] == 0) {
-      checkUserOriginReputation(_u, _b32, _agreeStateSiblings, _userOriginReputationSiblings);
+      checkUserOriginReputation(
+        _u,
+        _b32,
+        _agreeStateSiblings,
+        _userOriginReputationSiblings
+      );
     }
 
     if (_u[U_GLOBAL_CHILD_UPDATE] == 1) {
-      checkChildReputation(_u, _b32, _agreeStateSiblings, _childReputationSiblings);
+      checkChildReputation(
+        _u,
+        _b32,
+        _agreeStateSiblings,
+        _childReputationSiblings
+      );
     }
 
     if (_u[U_NEW_REPUTATION] == 1) {
-      checkAdjacentReputation(_u, _b32, _adjacentReputationSiblings, _agreeStateSiblings, _disagreeStateSiblings);
+      checkAdjacentReputation(
+        _u,
+        _b32,
+        _adjacentReputationSiblings,
+        _agreeStateSiblings,
+        _disagreeStateSiblings
+      );
     }
 
     confirmChallengeCompleted(_u);
@@ -181,7 +225,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     DisputedEntry storage disputedEntry = disputeRounds[_u[U_ROUND]][_u[U_IDX]];
     // Check this proof is valid for the agree state
     // We binary searched to the first disagreement, so the last agreement is the one before
-    bytes memory adjacentReputationValue = abi.encodePacked(_u[U_ADJACENT_REPUTATION_VALUE], _u[U_ADJACENT_REPUTATION_UID]);
+    bytes memory adjacentReputationValue = abi.encodePacked(
+      _u[U_ADJACENT_REPUTATION_VALUE],
+      _u[U_ADJACENT_REPUTATION_UID]
+    );
 
     bytes32 reputationRootHash = getImpliedRootNoHashKey(
       _b32[B_ADJACENT_REPUTATION_KEY_HASH],
@@ -189,7 +236,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       _u[U_ADJACENT_REPUTATION_BRANCH_MASK],
       _adjacentReputationSiblings
     );
-    bytes memory jhLeafValue = abi.encodePacked(uint256(reputationRootHash), _u[U_AGREE_STATE_NLEAVES]);
+    bytes memory jhLeafValue = abi.encodePacked(
+      uint256(reputationRootHash),
+      _u[U_AGREE_STATE_NLEAVES]
+    );
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
     bytes32 impliedRoot = getImpliedRootNoHashKey(
       bytes32(disputedEntry.lowerBound - 1),
@@ -199,19 +249,37 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     );
 
     require(
-      impliedRoot == reputationHashSubmissions[disputedEntry.firstSubmitter].jrh,
+      impliedRoot ==
+        reputationHashSubmissions[disputedEntry.firstSubmitter].jrh,
       "colony-reputation-mining-adjacent-agree-state-disagreement"
     );
 
     // The bit added to the branchmask is based on where the (hashes of the) two keys first differ.
-    uint256 firstDifferenceBit = uint256(Bits.highestBitSet(uint256(_b32[B_ADJACENT_REPUTATION_KEY_HASH] ^ _b32[B_REPUTATION_KEY_HASH])));
-    uint256 afterInsertionBranchMask = _u[U_ADJACENT_REPUTATION_BRANCH_MASK] | uint256(2 ** firstDifferenceBit);
+    uint256 firstDifferenceBit = uint256(
+      Bits.highestBitSet(
+        uint256(
+          _b32[B_ADJACENT_REPUTATION_KEY_HASH] ^ _b32[B_REPUTATION_KEY_HASH]
+        )
+      )
+    );
+    uint256 afterInsertionBranchMask = _u[U_ADJACENT_REPUTATION_BRANCH_MASK] |
+      uint256(2 ** firstDifferenceBit);
     // If a key that exists in the lastAgreeState has been passed in as the reputationKey, the adjacent key will already have a branch at the
     // first difference bit, and this check will fail.
-    require(afterInsertionBranchMask != _u[U_ADJACENT_REPUTATION_BRANCH_MASK], "colony-reputation-mining-adjacent-branchmask-incorrect");
+    require(
+      afterInsertionBranchMask != _u[U_ADJACENT_REPUTATION_BRANCH_MASK],
+      "colony-reputation-mining-adjacent-branchmask-incorrect"
+    );
 
-    bytes32[] memory afterInsertionAdjacentReputationSiblings = new bytes32[](_adjacentReputationSiblings.length + 1);
-    afterInsertionAdjacentReputationSiblings = buildNewSiblingsArray(_u, _b32, firstDifferenceBit, _adjacentReputationSiblings);
+    bytes32[] memory afterInsertionAdjacentReputationSiblings = new bytes32[](
+      _adjacentReputationSiblings.length + 1
+    );
+    afterInsertionAdjacentReputationSiblings = buildNewSiblingsArray(
+      _u,
+      _b32,
+      firstDifferenceBit,
+      _adjacentReputationSiblings
+    );
 
     reputationRootHash = getImpliedRootNoHashKey(
       _b32[B_ADJACENT_REPUTATION_KEY_HASH],
@@ -220,7 +288,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       afterInsertionAdjacentReputationSiblings
     );
 
-    jhLeafValue = abi.encodePacked(uint256(reputationRootHash), _u[U_DISAGREE_STATE_NLEAVES]);
+    jhLeafValue = abi.encodePacked(
+      uint256(reputationRootHash),
+      _u[U_DISAGREE_STATE_NLEAVES]
+    );
     // Prove that state is in our JRH, in the index corresponding to the first state that the two submissions disagree on
     impliedRoot = getImpliedRootNoHashKey(
       bytes32(disputedEntry.lowerBound),
@@ -230,7 +301,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     );
 
     require(
-      impliedRoot == reputationHashSubmissions[disputedEntry.firstSubmitter].jrh,
+      impliedRoot ==
+        reputationHashSubmissions[disputedEntry.firstSubmitter].jrh,
       "colony-reputation-mining-adjacent-disagree-state-disagreement"
     );
   }
@@ -243,7 +315,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
   ) internal pure returns (bytes32[] memory) {
     bytes32 newSibling = keccak256(
       abi.encodePacked(
-        keccak256(abi.encodePacked(_u[U_DISAGREE_STATE_REPUTATION_VALUE], _u[U_DISAGREE_STATE_REPUTATION_UID])),
+        keccak256(
+          abi.encodePacked(
+            _u[U_DISAGREE_STATE_REPUTATION_VALUE],
+            _u[U_DISAGREE_STATE_REPUTATION_UID]
+          )
+        ),
         _firstDifferenceBit,
         _b32[B_REPUTATION_KEY_HASH] << (256 - _firstDifferenceBit)
       )
@@ -261,17 +338,23 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       }
       i >>= 1;
     }
-    bytes32[] memory afterInsertionAdjacentReputationSiblings = new bytes32[](_adjacentReputationSiblings.length + 1);
+    bytes32[] memory afterInsertionAdjacentReputationSiblings = new bytes32[](
+      _adjacentReputationSiblings.length + 1
+    );
 
     // Now actually build the new siblings array
     i = 0;
     while (i < afterInsertionAdjacentReputationSiblings.length) {
       if (i < insert) {
-        afterInsertionAdjacentReputationSiblings[i] = _adjacentReputationSiblings[i];
+        afterInsertionAdjacentReputationSiblings[
+          i
+        ] = _adjacentReputationSiblings[i];
       } else if (i == insert) {
         afterInsertionAdjacentReputationSiblings[i] = newSibling;
       } else {
-        afterInsertionAdjacentReputationSiblings[i] = _adjacentReputationSiblings[i - 1];
+        afterInsertionAdjacentReputationSiblings[
+          i
+        ] = _adjacentReputationSiblings[i - 1];
       }
       i += 1;
     }
@@ -285,15 +368,25 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     bytes32[] memory _agreeStateSiblings,
     bytes32[] memory _userOriginReputationSiblings
   ) internal view {
-    ReputationLogEntry storage logEntry = reputationUpdateLog[_u[U_LOG_ENTRY_NUMBER]];
+    ReputationLogEntry storage logEntry = reputationUpdateLog[
+      _u[U_LOG_ENTRY_NUMBER]
+    ];
     if (logEntry.amount >= 0) {
       return;
     }
 
     // Check the user origin reputation key matches the colony, user address and skill id of the log
-    bytes32 userOriginReputationKeyBytesHash = keccak256(abi.encodePacked(logEntry.colony, logEntry.skillId, logEntry.user));
+    bytes32 userOriginReputationKeyBytesHash = keccak256(
+      abi.encodePacked(logEntry.colony, logEntry.skillId, logEntry.user)
+    );
 
-    checkUserOriginReputationInState(_u, _b32, _agreeStateSiblings, userOriginReputationKeyBytesHash, _userOriginReputationSiblings);
+    checkUserOriginReputationInState(
+      _u,
+      _b32,
+      _agreeStateSiblings,
+      userOriginReputationKeyBytesHash,
+      _userOriginReputationSiblings
+    );
   }
 
   function checkChildReputation(
@@ -308,11 +401,18 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       return;
     }
     // This function is only called if the dispute is over a child reputation update of a colony-wide reputation total
-    ReputationLogEntry storage logEntry = reputationUpdateLog[_u[U_LOG_ENTRY_NUMBER]];
+    ReputationLogEntry storage logEntry = reputationUpdateLog[
+      _u[U_LOG_ENTRY_NUMBER]
+    ];
 
     uint256 relativeUpdateNumber = getRelativeUpdateNumber(_u, logEntry);
-    uint256 expectedSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(logEntry.skillId, relativeUpdateNumber);
-    bytes memory childReputationKey = abi.encodePacked(logEntry.colony, expectedSkillId, logEntry.user);
+    uint256 expectedSkillId = IColonyNetwork(colonyNetworkAddress)
+      .getChildSkillId(logEntry.skillId, relativeUpdateNumber);
+    bytes memory childReputationKey = abi.encodePacked(
+      logEntry.colony,
+      expectedSkillId,
+      logEntry.user
+    );
 
     checkChildReputationInState(
       _u,
@@ -326,20 +426,33 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
   function confirmChallengeCompleted(uint256[26] memory _u) internal {
     // If everthing checked out, note that we've responded to the challenge.
     disputeRounds[_u[U_ROUND]][_u[U_IDX]].challengeStepCompleted += 1;
-    disputeRounds[_u[U_ROUND]][_u[U_IDX]].lastResponseTimestamp = block.timestamp;
-    Submission storage submission = reputationHashSubmissions[disputeRounds[_u[U_ROUND]][_u[U_IDX]].firstSubmitter];
+    disputeRounds[_u[U_ROUND]][_u[U_IDX]].lastResponseTimestamp = block
+      .timestamp;
+    Submission storage submission = reputationHashSubmissions[
+      disputeRounds[_u[U_ROUND]][_u[U_IDX]].firstSubmitter
+    ];
 
     // And reward the user
     rewardResponder(getMinerAddressIfStaked());
 
-    emit ChallengeCompleted(submission.proposedNewRootHash, submission.nLeaves, submission.jrh);
+    emit ChallengeCompleted(
+      submission.proposedNewRootHash,
+      submission.nLeaves,
+      submission.jrh
+    );
   }
 
-  function checkKey(uint256[26] memory _u, bytes32[7] memory _b32) internal view {
+  function checkKey(
+    uint256[26] memory _u,
+    bytes32[7] memory _b32
+  ) internal view {
     // If the state transition we're checking is less than the number of leaves in the currently accepted state, it's a decay transition
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[_u[U_ROUND]][_u[U_IDX]].lowerBound - 1;
-    if (updateNumber < IColonyNetwork(colonyNetworkAddress).getReputationRootHashNLeaves()) {
+    if (
+      updateNumber <
+      IColonyNetwork(colonyNetworkAddress).getReputationRootHashNLeaves()
+    ) {
       checkKeyDecay(_u, updateNumber);
       _u[U_DECAY_TRANSITION] = 1;
     } else {
@@ -347,27 +460,56 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     }
   }
 
-  function checkKeyDecay(uint256[26] memory u, uint256 _updateNumber) internal pure {
+  function checkKeyDecay(
+    uint256[26] memory u,
+    uint256 _updateNumber
+  ) internal pure {
     // We check that the reputation UID is right for the decay transition being disputed.
     // The key is then implicitly checked when they prove that the key+value they supplied is in the
     // right intermediate state in their justification tree.
-    require(u[U_AGREE_STATE_REPUTATION_UID] - 1 == _updateNumber, "colony-reputation-mining-uid-not-decay");
+    require(
+      u[U_AGREE_STATE_REPUTATION_UID] - 1 == _updateNumber,
+      "colony-reputation-mining-uid-not-decay"
+    );
   }
 
-  function checkKeyLogEntry(uint256[26] memory u, bytes32[7] memory b32) internal view {
-    ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
+  function checkKeyLogEntry(
+    uint256[26] memory u,
+    bytes32[7] memory b32
+  ) internal view {
+    ReputationLogEntry storage logEntry = reputationUpdateLog[
+      u[U_LOG_ENTRY_NUMBER]
+    ];
 
     uint256 expectedSkillId;
     address expectedAddress;
-    (expectedSkillId, expectedAddress) = getExpectedSkillIdAndAddress(u, logEntry);
-
-    require(expectedAddress == address(uint160(uint256(b32[B_REPUTATION_KEY_USER]))), "colony-reputation-mining-user-address-mismatch");
-    require(logEntry.colony == address(uint160(uint256(b32[B_REPUTATION_KEY_COLONY]))), "colony-reputation-mining-colony-address-mismatch");
-    require(expectedSkillId == uint256(b32[B_REPUTATION_KEY_SKILLID]), "colony-reputation-mining-skill-id-mismatch");
+    (expectedSkillId, expectedAddress) = getExpectedSkillIdAndAddress(
+      u,
+      logEntry
+    );
 
     require(
-      keccak256(buildReputationKey(b32[B_REPUTATION_KEY_COLONY], b32[B_REPUTATION_KEY_SKILLID], b32[B_REPUTATION_KEY_USER])) ==
-        b32[B_REPUTATION_KEY_HASH],
+      expectedAddress == address(uint160(uint256(b32[B_REPUTATION_KEY_USER]))),
+      "colony-reputation-mining-user-address-mismatch"
+    );
+    require(
+      logEntry.colony ==
+        address(uint160(uint256(b32[B_REPUTATION_KEY_COLONY]))),
+      "colony-reputation-mining-colony-address-mismatch"
+    );
+    require(
+      expectedSkillId == uint256(b32[B_REPUTATION_KEY_SKILLID]),
+      "colony-reputation-mining-skill-id-mismatch"
+    );
+
+    require(
+      keccak256(
+        buildReputationKey(
+          b32[B_REPUTATION_KEY_COLONY],
+          b32[B_REPUTATION_KEY_SKILLID],
+          b32[B_REPUTATION_KEY_USER]
+        )
+      ) == b32[B_REPUTATION_KEY_HASH],
       "colony-reputation-mining-reputation-key-and-hash-mismatch"
     );
   }
@@ -393,11 +535,18 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     // Expected skill Id
     // We update skills in the order children, then parents, then the skill listed in the log itself.
     // If the amount in the log is positive, then no children are being updated.
-    uint256 _relativeUpdateNumber = relativeUpdateNumber % (logEntry.nUpdates / 2);
+    uint256 _relativeUpdateNumber = relativeUpdateNumber %
+      (logEntry.nUpdates / 2);
     if (_relativeUpdateNumber < nChildUpdates) {
-      expectedSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(logEntry.skillId, _relativeUpdateNumber);
+      expectedSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(
+        logEntry.skillId,
+        _relativeUpdateNumber
+      );
     } else if (_relativeUpdateNumber < (nChildUpdates + nParentUpdates)) {
-      expectedSkillId = IColonyNetwork(colonyNetworkAddress).getParentSkillId(logEntry.skillId, _relativeUpdateNumber - nChildUpdates);
+      expectedSkillId = IColonyNetwork(colonyNetworkAddress).getParentSkillId(
+        logEntry.skillId,
+        _relativeUpdateNumber - nChildUpdates
+      );
     } else {
       expectedSkillId = logEntry.skillId;
     }
@@ -419,7 +568,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     // We binary searched to the first disagreement, so the last agreement is the one before.
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
 
-    bytes memory agreeStateReputationValue = abi.encodePacked(u[U_AGREE_STATE_REPUTATION_VALUE], u[U_AGREE_STATE_REPUTATION_UID]);
+    bytes memory agreeStateReputationValue = abi.encodePacked(
+      u[U_AGREE_STATE_REPUTATION_VALUE],
+      u[U_AGREE_STATE_REPUTATION_UID]
+    );
 
     bytes32 reputationRootHash = getImpliedRootNoHashKey(
       b32[B_REPUTATION_KEY_HASH],
@@ -428,13 +580,26 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       reputationSiblings
     );
 
-    bytes memory jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_AGREE_STATE_NLEAVES]);
+    bytes memory jhLeafValue = abi.encodePacked(
+      uint256(reputationRootHash),
+      u[U_AGREE_STATE_NLEAVES]
+    );
 
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on.
-    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(
+      bytes32(lastAgreeIdx),
+      jhLeafValue,
+      u[U_AGREE_STATE_BRANCH_MASK],
+      agreeStateSiblings
+    );
 
-    Submission storage submission = reputationHashSubmissions[disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter];
-    require(impliedRoot == submission.jrh, "colony-reputation-mining-invalid-before-reputation-proof");
+    Submission storage submission = reputationHashSubmissions[
+      disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter
+    ];
+    require(
+      impliedRoot == submission.jrh,
+      "colony-reputation-mining-invalid-before-reputation-proof"
+    );
     // Check that they have not changed NLEAVES from the agree state
     // There is a check at the very start of RespondToChallenge that this difference is either 0 or 1.
     // There is an 'if' statement above that returns if this difference is 1.
@@ -451,10 +616,15 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     bytes32[] memory reputationSiblings,
     bytes32[] memory disagreeStateSiblings
   ) internal view {
-    Submission storage submission = reputationHashSubmissions[disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter];
+    Submission storage submission = reputationHashSubmissions[
+      disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter
+    ];
     uint256 firstDisagreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound;
 
-    bytes memory disagreeStateReputationValue = abi.encodePacked(u[U_DISAGREE_STATE_REPUTATION_VALUE], u[U_DISAGREE_STATE_REPUTATION_UID]);
+    bytes memory disagreeStateReputationValue = abi.encodePacked(
+      u[U_DISAGREE_STATE_REPUTATION_VALUE],
+      u[U_DISAGREE_STATE_REPUTATION_UID]
+    );
 
     bytes32 reputationRootHash = getImpliedRootNoHashKey(
       b32[B_REPUTATION_KEY_HASH],
@@ -463,7 +633,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       reputationSiblings
     );
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on.
-    bytes memory jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_DISAGREE_STATE_NLEAVES]);
+    bytes memory jhLeafValue = abi.encodePacked(
+      uint256(reputationRootHash),
+      u[U_DISAGREE_STATE_NLEAVES]
+    );
 
     bytes32 impliedRoot = getImpliedRootNoHashKey(
       bytes32(firstDisagreeIdx),
@@ -471,47 +644,90 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       u[U_DISAGREE_STATE_BRANCH_MASK],
       disagreeStateSiblings
     );
-    require(submission.jrh == impliedRoot, "colony-reputation-mining-invalid-after-reputation-proof");
+    require(
+      submission.jrh == impliedRoot,
+      "colony-reputation-mining-invalid-after-reputation-proof"
+    );
   }
 
   function performReputationCalculation(uint256[26] memory u) internal {
-    proveUID(u, u[U_AGREE_STATE_REPUTATION_UID], u[U_DISAGREE_STATE_REPUTATION_UID]);
+    proveUID(
+      u,
+      u[U_AGREE_STATE_REPUTATION_UID],
+      u[U_DISAGREE_STATE_REPUTATION_UID]
+    );
 
-    proveValue(u, int256(u[U_AGREE_STATE_REPUTATION_VALUE]), int256(u[U_DISAGREE_STATE_REPUTATION_VALUE]));
+    proveValue(
+      u,
+      int256(u[U_AGREE_STATE_REPUTATION_VALUE]),
+      int256(u[U_DISAGREE_STATE_REPUTATION_VALUE])
+    );
   }
 
-  function proveUID(uint256[26] memory u, uint256 _agreeStateReputationUID, uint256 _disagreeStateReputationUID) internal {
+  function proveUID(
+    uint256[26] memory u,
+    uint256 _agreeStateReputationUID,
+    uint256 _disagreeStateReputationUID
+  ) internal {
     if (_agreeStateReputationUID != 0) {
       // i.e. if this was an existing reputation, then require that the ID hasn't changed.
-      require(_agreeStateReputationUID == _disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
-      emit ProveUIDSuccess(_agreeStateReputationUID, _disagreeStateReputationUID, true);
+      require(
+        _agreeStateReputationUID == _disagreeStateReputationUID,
+        "colony-reputation-mining-uid-changed-for-existing-reputation"
+      );
+      emit ProveUIDSuccess(
+        _agreeStateReputationUID,
+        _disagreeStateReputationUID,
+        true
+      );
     } else {
-      require(u[U_AGREE_STATE_NLEAVES] + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
+      require(
+        u[U_AGREE_STATE_NLEAVES] + 1 == _disagreeStateReputationUID,
+        "colony-reputation-mining-new-uid-incorrect"
+      );
 
-      emit ProveUIDSuccess(u[U_AGREE_STATE_NLEAVES], _disagreeStateReputationUID, false);
+      emit ProveUIDSuccess(
+        u[U_AGREE_STATE_NLEAVES],
+        _disagreeStateReputationUID,
+        false
+      );
     }
   }
 
-  function proveValue(uint256[26] memory u, int256 _agreeStateReputationValue, int256 _disagreeStateReputationValue) internal {
-    ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
+  function proveValue(
+    uint256[26] memory u,
+    int256 _agreeStateReputationValue,
+    int256 _disagreeStateReputationValue
+  ) internal {
+    ReputationLogEntry storage logEntry = reputationUpdateLog[
+      u[U_LOG_ENTRY_NUMBER]
+    ];
 
-    int256 userOriginReputationValue = int256(u[U_USER_ORIGIN_REPUTATION_VALUE]);
+    int256 userOriginReputationValue = int256(
+      u[U_USER_ORIGIN_REPUTATION_VALUE]
+    );
 
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
     if (u[U_DECAY_TRANSITION] == 1) {
       require(
-        uint256(_disagreeStateReputationValue) == (uint256(_agreeStateReputationValue) * DECAY_NUMERATOR) / DECAY_DENOMINATOR,
+        uint256(_disagreeStateReputationValue) ==
+          (uint256(_agreeStateReputationValue) * DECAY_NUMERATOR) /
+            DECAY_DENOMINATOR,
         "colony-reputation-mining-decay-incorrect"
       );
     } else {
       if (logEntry.amount >= 0) {
         // Don't allow reputation to overflow
         if (_agreeStateReputationValue + logEntry.amount >= MAX_INT128) {
-          require(_disagreeStateReputationValue == MAX_INT128, "colony-reputation-mining-reputation-not-max-int128");
+          require(
+            _disagreeStateReputationValue == MAX_INT128,
+            "colony-reputation-mining-reputation-not-max-int128"
+          );
         } else {
           require(
-            _agreeStateReputationValue + logEntry.amount == _disagreeStateReputationValue,
+            _agreeStateReputationValue + logEntry.amount ==
+              _disagreeStateReputationValue,
             "colony-reputation-mining-increased-reputation-value-incorrect"
           );
         }
@@ -534,7 +750,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
             u[U_GLOBAL_CHILD_UPDATE] = 1;
             userChildReputationValue = int256(u[U_CHILD_REPUTATION_VALUE]);
           } else {
-            userChildReputationValue = int256(u[U_AGREE_STATE_REPUTATION_VALUE]);
+            userChildReputationValue = int256(
+              u[U_AGREE_STATE_REPUTATION_VALUE]
+            );
           }
 
           int256 childReputationChange;
@@ -543,7 +761,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
             reputationChange = 0;
           } else {
             // Calculate the proportional change expected
-            childReputationChange = (logEntry.amount * userChildReputationValue) / userOriginReputationValue;
+            childReputationChange =
+              (logEntry.amount * userChildReputationValue) /
+              userOriginReputationValue;
             // Cap change based on current value of the user's child reputation.
             if (userChildReputationValue + childReputationChange < 0) {
               reputationChange = -1 * userChildReputationValue;
@@ -564,23 +784,36 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
         }
 
         require(
-          _agreeStateReputationValue + reputationChange == _disagreeStateReputationValue,
+          _agreeStateReputationValue + reputationChange ==
+            _disagreeStateReputationValue,
           "colony-reputation-mining-decreased-reputation-value-incorrect"
         );
       }
     }
 
-    emit ProveValueSuccess(_agreeStateReputationValue, _disagreeStateReputationValue, userOriginReputationValue);
+    emit ProveValueSuccess(
+      _agreeStateReputationValue,
+      _disagreeStateReputationValue,
+      userOriginReputationValue
+    );
   }
 
   // Get the update number relative in the context of the log entry currently considered
   // e.g. for log entry with 6 updates, the relative update number range is [0 .. 5] (inclusive)
-  function getRelativeUpdateNumber(uint256[26] memory u, ReputationLogEntry memory logEntry) internal view returns (uint256) {
-    uint256 nLeaves = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNLeaves();
-    uint256 updateNumber = (disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1) - nLeaves;
+  function getRelativeUpdateNumber(
+    uint256[26] memory u,
+    ReputationLogEntry memory logEntry
+  ) internal view returns (uint256) {
+    uint256 nLeaves = IColonyNetwork(colonyNetworkAddress)
+      .getReputationRootHashNLeaves();
+    uint256 updateNumber = (disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound -
+      1) - nLeaves;
 
     // Check that the supplied log entry corresponds to this update number
-    require(updateNumber >= logEntry.nPreviousUpdates, "colony-reputation-mining-update-number-part-of-previous-log-entry-updates");
+    require(
+      updateNumber >= logEntry.nPreviousUpdates,
+      "colony-reputation-mining-update-number-part-of-previous-log-entry-updates"
+    );
     require(
       updateNumber < logEntry.nUpdates + logEntry.nPreviousUpdates,
       "colony-reputation-mining-update-number-part-of-following-log-entry-updates"
@@ -590,9 +823,15 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     return relativeUpdateNumber;
   }
 
-  function getChildAndParentNUpdatesForLogEntry(uint256[26] memory u) internal view returns (uint128, uint128) {
-    ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
-    uint128 nParents = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId).nParents;
+  function getChildAndParentNUpdatesForLogEntry(
+    uint256[26] memory u
+  ) internal view returns (uint128, uint128) {
+    ReputationLogEntry storage logEntry = reputationUpdateLog[
+      u[U_LOG_ENTRY_NUMBER]
+    ];
+    uint128 nParents = IColonyNetwork(colonyNetworkAddress)
+      .getSkill(logEntry.skillId)
+      .nParents;
 
     uint128 nChildUpdates;
     if (logEntry.amount < 0) {
@@ -604,10 +843,17 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     return (nChildUpdates, nParents);
   }
 
-  function checkKeyHashesAdjacent(bytes32 hash1, bytes32 hash2, uint256 branchMask) internal pure returns (bool) {
+  function checkKeyHashesAdjacent(
+    bytes32 hash1,
+    bytes32 hash2,
+    uint256 branchMask
+  ) internal pure returns (bool) {
     // The bit that would be added to the branchmask is based on where the (hashes of the) two keys first differ.
-    uint256 firstDifferenceBit = uint256(Bits.highestBitSet(uint256(hash1 ^ hash2)));
-    uint256 afterInsertionBranchMask = branchMask | uint256(2 ** firstDifferenceBit);
+    uint256 firstDifferenceBit = uint256(
+      Bits.highestBitSet(uint256(hash1 ^ hash2))
+    );
+    uint256 afterInsertionBranchMask = branchMask |
+      uint256(2 ** firstDifferenceBit);
     // If key1 and key2 both exist in a tree, there will already be a branch at the first difference bit,
     // and so the branchmask will be unchanged.
     return afterInsertionBranchMask != branchMask;
@@ -623,7 +869,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     // We binary searched to the first disagreement, so the last agreement is the one before
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
 
-    bytes memory userOriginReputationValueBytes = abi.encodePacked(u[U_USER_ORIGIN_REPUTATION_VALUE], u[U_USER_ORIGIN_REPUTATION_UID]);
+    bytes memory userOriginReputationValueBytes = abi.encodePacked(
+      u[U_USER_ORIGIN_REPUTATION_VALUE],
+      u[U_USER_ORIGIN_REPUTATION_UID]
+    );
 
     bytes32 reputationRootHash = getImpliedRootNoHashKey(
       userOriginReputationKeyHash,
@@ -632,17 +881,30 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       userOriginReputationStateSiblings
     );
 
-    bytes memory jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_AGREE_STATE_NLEAVES]);
+    bytes memory jhLeafValue = abi.encodePacked(
+      uint256(reputationRootHash),
+      u[U_AGREE_STATE_NLEAVES]
+    );
 
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
-    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(
+      bytes32(lastAgreeIdx),
+      jhLeafValue,
+      u[U_AGREE_STATE_BRANCH_MASK],
+      agreeStateSiblings
+    );
 
-    Submission storage submission = reputationHashSubmissions[disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter];
+    Submission storage submission = reputationHashSubmissions[
+      disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter
+    ];
     if (impliedRoot == submission.jrh) {
       // They successfully proved the user origin value is in the lastAgreeState, so we're done here
       return;
     }
-    require(u[U_USER_ORIGIN_REPUTATION_VALUE] == 0, "colony-reputation-mining-origin-reputation-nonzero");
+    require(
+      u[U_USER_ORIGIN_REPUTATION_VALUE] == 0,
+      "colony-reputation-mining-origin-reputation-nonzero"
+    );
 
     // Otherwise, maybe the user's origin skill doesn't exist. If that's true, they can prove it.
     // In which case, the proof they supplied should be for a reputation that proves the origin reputation doesn't exist in the tree
@@ -668,11 +930,22 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       u[U_USER_ORIGIN_SKILL_REPUTATION_BRANCH_MASK],
       userOriginReputationStateSiblings
     );
-    jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_AGREE_STATE_NLEAVES]);
+    jhLeafValue = abi.encodePacked(
+      uint256(reputationRootHash),
+      u[U_AGREE_STATE_NLEAVES]
+    );
 
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
-    impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
-    require(impliedRoot == submission.jrh, "colony-reputation-mining-origin-adjacent-proof-invalid");
+    impliedRoot = getImpliedRootNoHashKey(
+      bytes32(lastAgreeIdx),
+      jhLeafValue,
+      u[U_AGREE_STATE_BRANCH_MASK],
+      agreeStateSiblings
+    );
+    require(
+      impliedRoot == submission.jrh,
+      "colony-reputation-mining-origin-adjacent-proof-invalid"
+    );
   }
 
   function checkChildReputationInState(
@@ -685,7 +958,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
     // We binary searched to the first disagreement, so the last agreement is the one before
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
 
-    bytes memory childReputationValueBytes = abi.encodePacked(u[U_CHILD_REPUTATION_VALUE], u[U_CHILD_REPUTATION_UID]);
+    bytes memory childReputationValueBytes = abi.encodePacked(
+      u[U_CHILD_REPUTATION_VALUE],
+      u[U_CHILD_REPUTATION_UID]
+    );
 
     bytes32 reputationRootHash = getImpliedRootHashKey(
       childReputationKey,
@@ -694,28 +970,48 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       childReputationStateSiblings
     );
 
-    bytes memory jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_AGREE_STATE_NLEAVES]);
+    bytes memory jhLeafValue = abi.encodePacked(
+      uint256(reputationRootHash),
+      u[U_AGREE_STATE_NLEAVES]
+    );
 
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
-    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(
+      bytes32(lastAgreeIdx),
+      jhLeafValue,
+      u[U_AGREE_STATE_BRANCH_MASK],
+      agreeStateSiblings
+    );
 
-    Submission storage submission = reputationHashSubmissions[disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter];
+    Submission storage submission = reputationHashSubmissions[
+      disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter
+    ];
     if (impliedRoot == submission.jrh) {
       // They successfully proved the user origin value is in the lastAgreeState, so we're done here
       return;
     }
 
-    require(u[U_CHILD_REPUTATION_VALUE] == 0, "colony-reputation-mining-child-reputation-nonzero");
+    require(
+      u[U_CHILD_REPUTATION_VALUE] == 0,
+      "colony-reputation-mining-child-reputation-nonzero"
+    );
 
     // Otherwise, maybe the child skill doesn't exist. If that's true, they can prove it.
     // In which case, the proof they supplied should be for a reputation that proves the child reputation doesn't exist in the tree
     require(
-      checkKeyHashesAdjacent(keccak256(childReputationKey), childAdjacentReputationKeyHash, u[U_CHILD_REPUTATION_BRANCH_MASK]),
+      checkKeyHashesAdjacent(
+        keccak256(childReputationKey),
+        childAdjacentReputationKeyHash,
+        u[U_CHILD_REPUTATION_BRANCH_MASK]
+      ),
       "colony-reputation-mining-adjacent-child-not-adjacent-or-already-exists"
     );
     // We assume that the proof they supplied is for the child-adjacent reputation, not the child reputation.
     // So use the key and value for the child-adjacent reputation, but uid, branchmask and siblings that were supplied.
-    bytes memory childAdjacentReputationValueBytes = abi.encodePacked(u[U_CHILD_ADJACENT_REPUTATION_VALUE], u[U_CHILD_REPUTATION_UID]);
+    bytes memory childAdjacentReputationValueBytes = abi.encodePacked(
+      u[U_CHILD_ADJACENT_REPUTATION_VALUE],
+      u[U_CHILD_REPUTATION_UID]
+    );
 
     // Check that the key supplied actually exists in the tree
     reputationRootHash = getImpliedRootNoHashKey(
@@ -724,14 +1020,29 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       u[U_CHILD_REPUTATION_BRANCH_MASK],
       childReputationStateSiblings
     );
-    jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_AGREE_STATE_NLEAVES]);
+    jhLeafValue = abi.encodePacked(
+      uint256(reputationRootHash),
+      u[U_AGREE_STATE_NLEAVES]
+    );
 
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
-    impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
-    require(impliedRoot == submission.jrh, "colony-reputation-mining-child-adjacent-proof-invalid");
+    impliedRoot = getImpliedRootNoHashKey(
+      bytes32(lastAgreeIdx),
+      jhLeafValue,
+      u[U_AGREE_STATE_BRANCH_MASK],
+      agreeStateSiblings
+    );
+    require(
+      impliedRoot == submission.jrh,
+      "colony-reputation-mining-child-adjacent-proof-invalid"
+    );
   }
 
-  function buildReputationKey(bytes32 colony, bytes32 skill, bytes32 user) internal pure returns (bytes memory) {
+  function buildReputationKey(
+    bytes32 colony,
+    bytes32 skill,
+    bytes32 user
+  ) internal pure returns (bytes memory) {
     bytes memory reputationKey = new bytes(72);
     assembly {
       mstore(add(reputationKey, 32), shl(96, colony))

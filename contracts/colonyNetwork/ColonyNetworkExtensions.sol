@@ -19,35 +19,53 @@
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-import {ColonyDataTypes} from "../colony/ColonyDataTypes.sol";
-import {IColonyNetwork} from "../colonyNetwork/IColonyNetwork.sol";
-import {ColonyExtension} from "../extensions/ColonyExtension.sol";
-import {ColonyNetworkStorage} from "./ColonyNetworkStorage.sol";
-import {MetaTxToken} from "./../metaTxToken/MetaTxToken.sol";
-import {TokenAuthority} from "./../common/TokenAuthority.sol";
-import {EtherRouter} from "./../common/EtherRouter.sol";
-import {Resolver} from "./../common/Resolver.sol";
+import { ColonyDataTypes } from "../colony/ColonyDataTypes.sol";
+import { IColonyNetwork } from "../colonyNetwork/IColonyNetwork.sol";
+import { ColonyExtension } from "../extensions/ColonyExtension.sol";
+import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
+import { MetaTxToken } from "./../metaTxToken/MetaTxToken.sol";
+import { TokenAuthority } from "./../common/TokenAuthority.sol";
+import { EtherRouter } from "./../common/EtherRouter.sol";
+import { Resolver } from "./../common/Resolver.sol";
 
 contract ColonyNetworkExtensions is ColonyNetworkStorage {
   // Public functions
 
-  function addExtensionToNetwork(bytes32 _extensionId, address _resolver) public stoppable calledByMetaColony {
+  function addExtensionToNetwork(
+    bytes32 _extensionId,
+    address _resolver
+  ) public stoppable calledByMetaColony {
     require(_resolver != address(0x0), "colony-network-extension-bad-resolver");
 
     bytes32 extensionId = getExtensionId(_resolver);
-    require(_extensionId == extensionId, "colony-network-extension-bad-identifier");
+    require(
+      _extensionId == extensionId,
+      "colony-network-extension-bad-identifier"
+    );
 
     uint256 version = getResolverVersion(_resolver);
-    require(resolvers[_extensionId][version] == address(0x0), "colony-network-extension-already-set");
+    require(
+      resolvers[_extensionId][version] == address(0x0),
+      "colony-network-extension-already-set"
+    );
 
     resolvers[_extensionId][version] = _resolver;
 
     emit ExtensionAddedToNetwork(_extensionId, version);
   }
 
-  function installExtension(bytes32 _extensionId, uint256 _version) public stoppable calledByColony {
-    require(resolvers[_extensionId][_version] != address(0x0), "colony-network-extension-bad-version");
-    require(installations[_extensionId][msgSender()] == address(0x0), "colony-network-extension-already-installed");
+  function installExtension(
+    bytes32 _extensionId,
+    uint256 _version
+  ) public stoppable calledByColony {
+    require(
+      resolvers[_extensionId][_version] != address(0x0),
+      "colony-network-extension-bad-version"
+    );
+    require(
+      installations[_extensionId][msgSender()] == address(0x0),
+      "colony-network-extension-already-installed"
+    );
 
     EtherRouter extension = new EtherRouter();
     installations[_extensionId][msgSender()] = payable(address(extension));
@@ -58,12 +76,24 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     emit ExtensionInstalled(_extensionId, msgSender(), _version);
   }
 
-  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion) public stoppable calledByColony {
-    require(installations[_extensionId][msgSender()] != address(0x0), "colony-network-extension-not-installed");
+  function upgradeExtension(
+    bytes32 _extensionId,
+    uint256 _newVersion
+  ) public stoppable calledByColony {
+    require(
+      installations[_extensionId][msgSender()] != address(0x0),
+      "colony-network-extension-not-installed"
+    );
 
     address payable extension = installations[_extensionId][msgSender()];
-    require(_newVersion == ColonyExtension(extension).version() + 1, "colony-network-extension-bad-increment");
-    require(resolvers[_extensionId][_newVersion] != address(0x0), "colony-network-extension-bad-version");
+    require(
+      _newVersion == ColonyExtension(extension).version() + 1,
+      "colony-network-extension-bad-increment"
+    );
+    require(
+      resolvers[_extensionId][_newVersion] != address(0x0),
+      "colony-network-extension-bad-version"
+    );
 
     EtherRouter(extension).setResolver(resolvers[_extensionId][_newVersion]);
     ColonyExtension(extension).finishUpgrade();
@@ -72,16 +102,28 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     emit ExtensionUpgraded(_extensionId, msgSender(), _newVersion);
   }
 
-  function deprecateExtension(bytes32 _extensionId, bool _deprecated) public stoppable calledByColony {
-    ColonyExtension(installations[_extensionId][msgSender()]).deprecate(_deprecated);
+  function deprecateExtension(
+    bytes32 _extensionId,
+    bool _deprecated
+  ) public stoppable calledByColony {
+    ColonyExtension(installations[_extensionId][msgSender()]).deprecate(
+      _deprecated
+    );
 
     emit ExtensionDeprecated(_extensionId, msgSender(), _deprecated);
   }
 
-  function uninstallExtension(bytes32 _extensionId) public stoppable calledByColony {
-    require(installations[_extensionId][msgSender()] != address(0x0), "colony-network-extension-not-installed");
+  function uninstallExtension(
+    bytes32 _extensionId
+  ) public stoppable calledByColony {
+    require(
+      installations[_extensionId][msgSender()] != address(0x0),
+      "colony-network-extension-not-installed"
+    );
 
-    ColonyExtension extension = ColonyExtension(installations[_extensionId][msgSender()]);
+    ColonyExtension extension = ColonyExtension(
+      installations[_extensionId][msgSender()]
+    );
     installations[_extensionId][msgSender()] = payable(address(0x0));
     extension.uninstall();
 
@@ -90,11 +132,17 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
 
   // Public view functions
 
-  function getExtensionResolver(bytes32 _extensionId, uint256 _version) public view returns (address) {
+  function getExtensionResolver(
+    bytes32 _extensionId,
+    uint256 _version
+  ) public view returns (address) {
     return resolvers[_extensionId][_version];
   }
 
-  function getExtensionInstallation(bytes32 _extensionId, address _colony) public view returns (address) {
+  function getExtensionInstallation(
+    bytes32 _extensionId,
+    address _colony
+  ) public view returns (address) {
     return installations[_extensionId][_colony];
   }
 
@@ -114,7 +162,11 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     return ColonyExtension(extension).version();
   }
 
-  function deployTokenViaNetwork(string memory _name, string memory _symbol, uint8 _decimals) public stoppable returns (address) {
+  function deployTokenViaNetwork(
+    string memory _name,
+    string memory _symbol,
+    uint8 _decimals
+  ) public stoppable returns (address) {
     MetaTxToken token = new MetaTxToken(_name, _symbol, _decimals);
     token.setOwner(msgSender());
 
@@ -123,8 +175,16 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     return address(token);
   }
 
-  function deployTokenAuthority(address _token, address _colony, address[] memory allowedToTransfer) public stoppable returns (address) {
-    TokenAuthority tokenAuthority = new TokenAuthority(_token, _colony, allowedToTransfer);
+  function deployTokenAuthority(
+    address _token,
+    address _colony,
+    address[] memory allowedToTransfer
+  ) public stoppable returns (address) {
+    TokenAuthority tokenAuthority = new TokenAuthority(
+      _token,
+      _colony,
+      allowedToTransfer
+    );
 
     emit TokenAuthorityDeployed(address(tokenAuthority));
 

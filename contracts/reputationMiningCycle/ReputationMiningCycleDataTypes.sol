@@ -70,16 +70,39 @@ interface ReputationMiningCycleDataTypes {
     ConfirmNewHash
   }
 
-  event ReputationRootHashSubmitted(address _miner, bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex);
-  event JustificationRootHashConfirmed(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
-  event BinarySearchConfirmed(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _firstDisagreeIdx);
+  event ReputationRootHashSubmitted(
+    address _miner,
+    bytes32 _newHash,
+    uint256 _nLeaves,
+    bytes32 _jrh,
+    uint256 _entryIndex
+  );
+  event JustificationRootHashConfirmed(
+    bytes32 _newHash,
+    uint256 _nLeaves,
+    bytes32 _jrh
+  );
+  event BinarySearchConfirmed(
+    bytes32 _newHash,
+    uint256 _nLeaves,
+    bytes32 _jrh,
+    uint256 _firstDisagreeIdx
+  );
   event ChallengeCompleted(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
   event HashInvalidated(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
   event BinarySearchStep(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
 
   /// @notice Event logged when a reputation UID is proven to be correct in a challenge
-  event ProveUIDSuccess(uint256 previousNewReputationUID, uint256 _disagreeStateReputationUID, bool _existingUID);
+  event ProveUIDSuccess(
+    uint256 previousNewReputationUID,
+    uint256 _disagreeStateReputationUID,
+    bool _existingUID
+  );
 
   /// @notice Event logged when a reputation value is proven to be correct in a challenge
-  event ProveValueSuccess(int256 _agreeStateReputationValue, int256 _disagreeStateReputationValue, int256 _originReputationValue);
+  event ProveValueSuccess(
+    int256 _agreeStateReputationValue,
+    int256 _disagreeStateReputationValue,
+    int256 _originReputationValue
+  );
 }

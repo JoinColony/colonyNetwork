@@ -18,8 +18,8 @@
 
 pragma solidity 0.8.21;
 
-import {DSAuth} from "./../../lib/dappsys/auth.sol";
-import {MetaTransactionMsgSender} from "./../common/MetaTransactionMsgSender.sol";
+import { DSAuth } from "./../../lib/dappsys/auth.sol";
+import { MetaTransactionMsgSender } from "./../common/MetaTransactionMsgSender.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
@@ -34,7 +34,9 @@ abstract contract CommonStorage is DSAuth, MetaTransactionMsgSender {
   bytes32 constant PROTECTED = keccak256("Recovery Mode Protected Slot");
 
   function protectSlot(uint256 _slot) internal always {
-    uint256 flagSlot = uint256(keccak256(abi.encodePacked("RECOVERY_PROTECTED", _slot)));
+    uint256 flagSlot = uint256(
+      keccak256(abi.encodePacked("RECOVERY_PROTECTED", _slot))
+    );
     uint256 protectFlag = uint256(PROTECTED);
     assembly {
       sstore(flagSlot, protectFlag) // ignore-swc-124

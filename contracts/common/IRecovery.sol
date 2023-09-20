@@ -19,7 +19,7 @@
 pragma solidity >=0.8.21; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import {ContractRecoveryDataTypes} from "./ContractRecoveryDataTypes.sol";
+import { ContractRecoveryDataTypes } from "./ContractRecoveryDataTypes.sol";
 
 interface IRecovery is ContractRecoveryDataTypes {
   /// @notice Put colony network mining into recovery mode.

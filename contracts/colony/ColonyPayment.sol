@@ -19,8 +19,8 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import {ColonyStorage} from "./ColonyStorage.sol";
-import {IColonyNetwork} from "./../colonyNetwork/IColonyNetwork.sol";
+import { ColonyStorage } from "./ColonyStorage.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract ColonyPayment is ColonyStorage {
   function addPayment(
@@ -31,12 +31,19 @@ contract ColonyPayment is ColonyStorage {
     uint256 _amount,
     uint256 _domainId,
     uint256 _skillId
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) validPayoutAmount(_amount) returns (uint256) {
+  )
+    public
+    stoppable
+    authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+    validPayoutAmount(_amount)
+    returns (uint256)
+  {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
     paymentCount += 1;
 
     fundingPotCount += 1;
-    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType.Payment;
+    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType
+      .Payment;
     fundingPots[fundingPotCount].associatedTypeId = paymentCount;
     fundingPots[fundingPotCount].payoutsWeCannotMake = _amount > 0 ? 1 : 0;
 
@@ -54,7 +61,12 @@ contract ColonyPayment is ColonyStorage {
     emit PaymentAdded(msgSender(), paymentCount);
 
     if (_skillId > 0) {
-      setPaymentSkill(_permissionDomainId, _childSkillIndex, paymentCount, _skillId);
+      setPaymentSkill(
+        _permissionDomainId,
+        _childSkillIndex,
+        paymentCount,
+        _skillId
+      );
 
       emit PaymentSkillSet(msgSender(), paymentCount, _skillId);
     }
@@ -69,20 +81,36 @@ contract ColonyPayment is ColonyStorage {
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _id
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId) paymentFunded(_id) paymentNotFinalized(_id) {
+  )
+    public
+    stoppable
+    authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
+    paymentFunded(_id)
+    paymentNotFinalized(_id)
+  {
     Payment storage payment = payments[_id];
     payment.finalized = true;
 
     if (!isExtension(payment.recipient)) {
       FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
 
-      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+      IColonyNetwork colonyNetworkContract = IColonyNetwork(
+        colonyNetworkAddress
+      );
       // All payments in Colony's home token earn domain reputation and if skill was set, earn skill reputation
-      colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), domains[payment.domainId].skillId);
+      colonyNetworkContract.appendReputationUpdateLog(
+        payment.recipient,
+        int(fundingPot.payouts[token]),
+        domains[payment.domainId].skillId
+      );
       if (payment.skills[0] > 0) {
         // Currently we support at most one skill per Payment, similarly to Task model.
         // This may change in future to allow multiple skills to be set on both Tasks and Payments
-        colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), payment.skills[0]);
+        colonyNetworkContract.appendReputationUpdateLog(
+          payment.recipient,
+          int(fundingPot.payouts[token]),
+          payment.skills[0]
+        );
       }
     }
 
@@ -94,7 +122,12 @@ contract ColonyPayment is ColonyStorage {
     uint256 _childSkillIndex,
     uint256 _id,
     address payable _recipient
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId) paymentNotFinalized(_id) {
+  )
+    public
+    stoppable
+    authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
+    paymentNotFinalized(_id)
+  {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
     payments[_id].recipient = _recipient;
 

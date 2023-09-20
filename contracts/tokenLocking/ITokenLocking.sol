@@ -19,8 +19,8 @@
 pragma solidity >=0.8.21; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import {TokenLockingDataTypes} from "./TokenLockingDataTypes.sol";
-import {IBasicMetaTransaction} from "./../common/IBasicMetaTransaction.sol";
+import { TokenLockingDataTypes } from "./TokenLockingDataTypes.sol";
+import { IBasicMetaTransaction } from "./../common/IBasicMetaTransaction.sol";
 
 interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @notice Set the ColonyNetwork contract address.
@@ -42,7 +42,11 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _token Address of the token we want to unlock
   /// @param _user Address of the user
   /// @param _lockId Id of the lock we want to increment to
-  function unlockTokenForUser(address _token, address _user, uint256 _lockId) external;
+  function unlockTokenForUser(
+    address _token,
+    address _user,
+    uint256 _lockId
+  ) external;
 
   /// @notice Increments sender's lock count to `_lockId`.
   /// @param _token Address of the token we want to increment lock count for
@@ -67,14 +71,23 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _token Address of the token to deposit
   /// @param _amount Amount to deposit
   /// @param _recipient User to receive the tokens
-  function depositFor(address _token, uint256 _amount, address _recipient) external;
+  function depositFor(
+    address _token,
+    uint256 _amount,
+    address _recipient
+  ) external;
 
   /// @notice Transfer tokens to a recipient's pending balance. Can only be called if user tokens are not locked.
   /// @param _token Address of the token to transfer
   /// @param _amount Amount to transfer
   /// @param _recipient User to receive the tokens
   /// @param _force Pass true to forcibly unlock the token
-  function transfer(address _token, uint256 _amount, address _recipient, bool _force) external;
+  function transfer(
+    address _token,
+    uint256 _amount,
+    address _recipient,
+    bool _force
+  ) external;
 
   /// @notice @deprecated
   /// @notice Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
@@ -99,21 +112,33 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _user Address of the user that is allowing their holdings to be staked by the caller
   /// @param _amount Amount of that colony's internal token up to which we are willing to be obligated.
   /// @param _token The colony's internal token address
-  function approveStake(address _user, uint256 _amount, address _token) external;
+  function approveStake(
+    address _user,
+    uint256 _amount,
+    address _token
+  ) external;
 
   /// @notice Obligate the user some amount of tokens as a stake.
   /// Can only be called by a colony or colonyNetwork.
   /// @param _user Address of the account we are obligating.
   /// @param _amount Amount of the colony's internal token we are obligating.
   /// @param _token The colony's internal token address
-  function obligateStake(address _user, uint256 _amount, address _token) external;
+  function obligateStake(
+    address _user,
+    uint256 _amount,
+    address _token
+  ) external;
 
   /// @notice Deobligate the user some amount of tokens, releasing the stake.
   /// Can only be called by a colony or colonyNetwork.
   /// @param _user Address of the account we are deobligating.
   /// @param _amount Amount of colony's internal token we are deobligating.
   /// @param _token The colony's internal token address
-  function deobligateStake(address _user, uint256 _amount, address _token) external;
+  function deobligateStake(
+    address _user,
+    uint256 _amount,
+    address _token
+  ) external;
 
   /// @notice Transfer some amount of staked tokens.
   /// Can only be called by a colony or colonyNetwork.
@@ -121,12 +146,19 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _amount Amount of colony's internal token we are taking.
   /// @param _token The colony's internal token address
   /// @param _recipient Recipient of the slashed tokens
-  function transferStake(address _user, uint256 _amount, address _token, address _recipient) external;
+  function transferStake(
+    address _user,
+    uint256 _amount,
+    address _token,
+    address _recipient
+  ) external;
 
   /// @notice Get global lock count for a specific token.
   /// @param _token Address of the token
   /// @return lockCount Global token lock count
-  function getTotalLockCount(address _token) external view returns (uint256 lockCount);
+  function getTotalLockCount(
+    address _token
+  ) external view returns (uint256 lockCount);
 
   /// @notice Get user token lock info (lock count and deposited amount).
   /// @param _token Address of the token
@@ -137,25 +169,39 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   ///   `DEPRECATED_timestamp` Timestamp of deposit (deprecated)
   ///   `pendingBalance` Tokens that have been sent to them, but are inaccessible until all locks are cleared and then these
   ///                    tokens are claimed
-  function getUserLock(address _token, address _user) external view returns (Lock memory lock);
+  function getUserLock(
+    address _token,
+    address _user
+  ) external view returns (Lock memory lock);
 
   /// @notice See the total amount of a user's obligation.
   /// @param _user Address of the obligated account.
   /// @param _token The token for which the user is obligated.
   /// @return obligation The total amount this user is obligated
-  function getTotalObligation(address _user, address _token) external view returns (uint256 obligation);
+  function getTotalObligation(
+    address _user,
+    address _token
+  ) external view returns (uint256 obligation);
 
   /// @notice See how much an address has approved another address to obligate on their behalf.
   /// @param _user Address of the account that has approved _approvee to obligate their funds.
   /// @param _token The token for which the user has provided the approval.
   /// @param _obligator The address that has been approved to obligate the funds.
   /// @return approval The total amount for this obligation
-  function getApproval(address _user, address _token, address _obligator) external view returns (uint256 approval);
+  function getApproval(
+    address _user,
+    address _token,
+    address _obligator
+  ) external view returns (uint256 approval);
 
   /// @notice See how much a user is currently obligated by another.
   /// @param _user Address of the account that has had their funds obligated.
   /// @param _token The token for which the user has provided the approval.
   /// @param _obligator The address that obligated the funds (and therefore can slash or return them).
   /// @return approval The total amount for this obligation
-  function getObligation(address _user, address _token, address _obligator) external view returns (uint256 approval);
+  function getObligation(
+    address _user,
+    address _token,
+    address _obligator
+  ) external view returns (uint256 approval);
 }

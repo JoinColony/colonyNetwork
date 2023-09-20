@@ -19,13 +19,13 @@
 pragma solidity 0.8.21;
 pragma experimental "ABIEncoderV2";
 
-import {EtherRouter} from "./../common/EtherRouter.sol";
-import {ColonyAuthority} from "./../colony/ColonyAuthority.sol";
-import {IColony} from "./../colony/IColony.sol";
-import {ColonyNetworkStorage} from "./ColonyNetworkStorage.sol";
-import {IColonyNetwork} from "./IColonyNetwork.sol";
-import {MetaTxToken} from "./../metaTxToken/MetaTxToken.sol";
-import {DSAuth, DSAuthority} from "./../../lib/dappsys/auth.sol";
+import { EtherRouter } from "./../common/EtherRouter.sol";
+import { ColonyAuthority } from "./../colony/ColonyAuthority.sol";
+import { IColony } from "./../colony/IColony.sol";
+import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
+import { IColonyNetwork } from "./IColonyNetwork.sol";
+import { MetaTxToken } from "./../metaTxToken/MetaTxToken.sol";
+import { DSAuth, DSAuthority } from "./../../lib/dappsys/auth.sol";
 
 contract ColonyNetworkDeployer is ColonyNetworkStorage {
   function createMetaColony(address _tokenAddress) public stoppable auth {
@@ -34,13 +34,17 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
 
     // Add the special mining skill
-    reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(skillCount - 1);
+    reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(
+      skillCount - 1
+    );
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
 
   /// @notice @deprecated only deploys version 3 colonies.
-  function createColony(address _tokenAddress) public stoppable returns (address) {
+  function createColony(
+    address _tokenAddress
+  ) public stoppable returns (address) {
     return createColony(_tokenAddress, 3, "", "");
   }
 
@@ -55,7 +59,11 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     return createColony(_tokenAddress, 4, _colonyName, "");
   }
 
-  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName) public stoppable returns (address) {
+  function createColony(
+    address _tokenAddress,
+    uint256 _version,
+    string memory _colonyName
+  ) public stoppable returns (address) {
     return createColony(_tokenAddress, _version, _colonyName, "");
   }
 
@@ -72,7 +80,9 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
       IColony(colonyAddress).registerColonyLabel(_colonyName, "");
     }
 
-    if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
+    if (
+      keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))
+    ) {
       IColony(colonyAddress).editColony(_metadata);
     }
 
@@ -93,20 +103,32 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     // Create Token
     MetaTxToken token;
     if (_tokenAddress == address(0x0)) {
-      token = MetaTxToken(IColonyNetwork(address(this)).deployTokenViaNetwork(_name, _symbol, _decimals));
+      token = MetaTxToken(
+        IColonyNetwork(address(this)).deployTokenViaNetwork(
+          _name,
+          _symbol,
+          _decimals
+        )
+      );
       emit TokenDeployed(address(token));
     } else {
       token = MetaTxToken(_tokenAddress);
     }
 
     // Create Colony
-    address colonyAddress = createColony(address(token), _version, _colonyName, _metadata);
+    address colonyAddress = createColony(
+      address(token),
+      _version,
+      _colonyName,
+      _metadata
+    );
 
     // Extra token bookkeeping if we deployed it
     if (_tokenAddress == address(0x0)) {
       // Deploy Authority
       address[] memory allowedToTransfer;
-      address tokenAuthorityAddress = IColonyNetwork(address(this)).deployTokenAuthority(address(token), colonyAddress, allowedToTransfer);
+      address tokenAuthorityAddress = IColonyNetwork(address(this))
+        .deployTokenAuthority(address(token), colonyAddress, allowedToTransfer);
       // Set Authority
       token.setAuthority(DSAuthority(tokenAuthorityAddress));
       token.setOwner(msgSender());
@@ -115,9 +137,15 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     return (address(token), colonyAddress);
   }
 
-  function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {
+  function deployColony(
+    address _tokenAddress,
+    uint256 _version
+  ) internal returns (address) {
     require(_tokenAddress != address(0x0), "colony-token-invalid-address");
-    require(colonyVersionResolver[_version] != address(0x00), "colony-network-invalid-version");
+    require(
+      colonyVersionResolver[_version] != address(0x00),
+      "colony-network-invalid-version"
+    );
 
     EtherRouter etherRouter = new EtherRouter();
     IColony colony = IColony(address(etherRouter));
@@ -147,7 +175,10 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
   }
 
   function setFounderPermissions(address _colonyAddress) internal {
-    require(DSAuth(_colonyAddress).owner() == address(this), "colony-network-not-colony-owner");
+    require(
+      DSAuth(_colonyAddress).owner() == address(this),
+      "colony-network-not-colony-owner"
+    );
 
     // Assign all permissions in root domain
     IColony colony = IColony(_colonyAddress);
