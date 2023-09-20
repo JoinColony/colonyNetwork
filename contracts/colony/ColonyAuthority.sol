@@ -129,6 +129,9 @@ contract ColonyAuthority is CommonAuthority {
 
     // Added in colony v10 (ginger-lwss)
     addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)");
+
+    // Added in colony vxxx
+    addRoleCapability(ROOT_ROLE, "setBridgeData(address,uint256,uint256,bytes4,address,bytes,bytes,bytes,bytes,bytes,bytes)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

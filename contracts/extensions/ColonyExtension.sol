@@ -21,13 +21,14 @@ pragma experimental ABIEncoderV2;
 import "./../../lib/dappsys/math.sol";
 import "./../common/EtherRouter.sol";
 import "./../common/Multicall.sol";
+import "./../common/MultiChain.sol";
 import "./../colony/IColony.sol";
 import "./../colony/ColonyDataTypes.sol";
 import "./../colonyNetwork/IColonyNetwork.sol";
 import "./../patriciaTree/PatriciaTreeProofs.sol";
 
 
-abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall {
+abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall, MultiChain {
   uint256 constant UINT256_MAX = 2**256 - 1;
 
   event ExtensionInitialised();
@@ -95,5 +96,4 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
     require(keyUserAddress == _user, "colony-extension-invalid-user-address");
 
     return reputationValue;
-  }
-}
+  }}

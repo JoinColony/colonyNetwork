@@ -12,6 +12,7 @@ const {
   forwardTime,
   getBlockTime,
   getColonyEditable,
+  isMainnet,
 } = require("../../helpers/test-helper");
 
 const { WAD, SECONDS_PER_DAY } = require("../../helpers/constants");
@@ -100,7 +101,12 @@ contract("Colony Network Auction", (accounts) => {
       const supplyAfter = await clnyToken.totalSupply();
       const balanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
       expect(balanceAfter).to.be.zero;
-      expect(supplyBefore.sub(balanceBefore)).to.eq.BN(supplyAfter);
+      if (await isMainnet()) {
+        expect(supplyBefore.sub(balanceBefore)).to.eq.BN(supplyAfter);
+      } else {
+        const metaColonyBalanceAfter = await clnyToken.balanceOf(metaColony.address);
+        expect(metaColonyBalanceAfter).to.eq.BN(balanceBefore);
+      }
     });
 
     it("should fail with zero quantity", async () => {
@@ -825,7 +831,7 @@ contract("Colony Network Auction", (accounts) => {
       expect(finalized).to.be.true;
     });
 
-    it("all CLNY sent to the auction in bids is burned", async () => {
+    it("all CLNY sent to the auction in bids is burned in a chain-appropriate way", async () => {
       const balanceBefore = await clnyToken.balanceOf(tokenAuction.address);
       const supplyBefore = await clnyToken.totalSupply();
       const receivedTotal = await tokenAuction.receivedTotal();
@@ -834,8 +840,13 @@ contract("Colony Network Auction", (accounts) => {
 
       const balanceAfter = await clnyToken.balanceOf(tokenAuction.address);
       expect(balanceAfter).to.be.zero;
-      const supplyAfter = await clnyToken.totalSupply();
-      expect(supplyBefore.sub(supplyAfter)).to.eq.BN(balanceBefore);
+      if (await isMainnet()) {
+        const supplyAfter = await clnyToken.totalSupply();
+        expect(supplyBefore.sub(supplyAfter)).to.eq.BN(balanceBefore);
+      } else {
+        const metaColonyBalanceAfter = await clnyToken.balanceOf(metaColony.address);
+        expect(metaColonyBalanceAfter).to.eq.BN(balanceBefore);
+      }
     });
 
     it("cannot bid after finalized", async () => {

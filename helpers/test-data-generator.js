@@ -21,7 +21,7 @@ const {
   GLOBAL_SKILL_ID,
 } = require("./constants");
 
-const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } = require("./test-helper");
+const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData, isXdai } = require("./test-helper");
 const { executeSignedTaskChange, executeSignedRoleAssignment } = require("./task-review-signing");
 
 const IColony = artifacts.require("IColony");
@@ -325,7 +325,9 @@ exports.setupMetaColonyWithLockedCLNYToken = async function setupMetaColonyWithL
   const locked = await clnyToken.locked();
   assert.isTrue(locked);
 
-  await metaColony.addGlobalSkill();
+  if (await isXdai()) {
+    await metaColony.addGlobalSkill();
+  }
 
   return { metaColony, clnyToken };
 };
@@ -365,9 +367,11 @@ exports.setupColonyNetwork = async function setupColonyNetwork() {
   // Initialise with originally deployed version
   await colonyNetwork.initialise(colonyVersionResolverAddress, version);
 
-  // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
-  const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
-  await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+  if (await isXdai()) {
+    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
+    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
+    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+  }
 
   // Get token-locking router from when it was deployed during migrations
   const deployedTokenLockingAddress = await deployedColonyNetwork.getTokenLocking();

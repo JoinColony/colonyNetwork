@@ -73,6 +73,28 @@ Mints CLNY in the Meta Colony and transfers them to the colony network. Only all
 |_wad|uint256|Amount to mint and transfer to the colony network
 
 
+### ▸ `setBridgeData(address _bridgeAddress, uint256 _chainId, uint256 _gas, bytes4 _msgSenderFunctionSig, address _correspondingNetwork, bytes memory _updateLogBefore, bytes memory _updateLogAfter, bytes memory _skillCreationBefore, bytes memory _skillCreationAfter, bytes memory _setReputationRootHashBefore, bytes memory _setReputationRootHashAfter)`
+
+Called to set the details about bridge _bridgeAddress
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_bridgeAddress|address|The address of the bridge
+|_chainId|uint256|The chainId of the corresponding network
+|_gas|uint256|How much gas to use for a bridged transaction
+|_msgSenderFunctionSig|bytes4|The function signature of the function to call on the bridge to get the msgSender
+|_correspondingNetwork|address|The address of the corresponding colony network contract on the other network
+|_updateLogBefore|bytes|The tx data before the dynamic part of the tx to bridge to the update log
+|_updateLogAfter|bytes|The tx data after the dynamic part of the tx to bridge to the update log
+|_skillCreationBefore|bytes|The tx data before the dynamic part of the tx to brdige skill creation
+|_skillCreationAfter|bytes|The tx data after the dynamic part of the tx to brdige skill creation
+|_setReputationRootHashBefore|bytes|The tx data before the dynamic part of the tx to bridge a new reputation root hash
+|_setReputationRootHashAfter|bytes|The tx data after the dynamic part of the tx to bridge a new reputation root hash
+
+
 ### ▸ `setNetworkFeeInverse(uint256 _feeInverse)`
 
 Set the Colony Network fee inverse amount.

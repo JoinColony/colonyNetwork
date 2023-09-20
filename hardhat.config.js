@@ -15,7 +15,7 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      chainId: 2656691,
+      chainId: 265669100,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       blockGasLimit: 6721975,

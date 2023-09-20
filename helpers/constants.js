@@ -73,6 +73,11 @@ const DECAY_RATE = {
 
 const GLOBAL_SKILL_ID = new BN("4"); // Not a root global skill ID or anything, just the first global skill's ID
 
+const XDAI_CHAINID = 100;
+const FORKED_XDAI_CHAINID = 265669100;
+const MAINNET_CHAINID = 1;
+const FORKED_MAINNET_CHAINID = 2656691;
+
 module.exports = {
   UINT256_MAX,
   UINT128_MAX,
@@ -122,4 +127,8 @@ module.exports = {
   IPFS_HASH,
   HASHZERO,
   ADDRESS_ZERO,
+  XDAI_CHAINID,
+  FORKED_XDAI_CHAINID,
+  MAINNET_CHAINID,
+  FORKED_MAINNET_CHAINID,
 };

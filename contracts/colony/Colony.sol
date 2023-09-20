@@ -173,6 +173,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   function addGlobalSkill() public
   stoppable
   auth
+  onlyMiningChain
   returns (uint256)
   {
     return IColonyNetwork(colonyNetworkAddress).addSkill(0); // ignore-swc-107
@@ -212,6 +213,38 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   auth
   {
     IColonyNetwork(colonyNetworkAddress).addColonyVersion(_version, _resolver);
+  }
+
+  function setBridgeData(
+    address _bridgeAddress,
+    uint256 _chainId,
+    uint256 _gas,
+    bytes4 _msgSenderSig,
+    address _correspondingNetwork,
+    bytes memory _updateLogBefore,
+    bytes memory _updateLogAfter,
+    bytes memory _skillCreationBefore,
+    bytes memory _skillCreationAfter,
+    bytes memory _setReputationRootHashBefore,
+    bytes memory _setReputationRootHashAfter
+  )
+    external
+    stoppable
+    auth
+  {
+    IColonyNetwork(colonyNetworkAddress).setBridgeData(
+      _bridgeAddress,
+      _chainId,
+      _gas,
+      _msgSenderSig,
+      _correspondingNetwork,
+      _updateLogBefore,
+      _updateLogAfter,
+      _skillCreationBefore,
+      _skillCreationAfter,
+      _setReputationRootHashBefore,
+      _setReputationRootHashAfter
+    );
   }
 
   function addExtensionToNetwork(bytes32 _extensionId, address _resolver)
@@ -315,14 +348,8 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
+    sig = bytes4(keccak256("setBridgeData(address,uint256,uint256,bytes4,address,bytes,bytes,bytes,bytes,bytes,bytes)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
   }
 
   function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){

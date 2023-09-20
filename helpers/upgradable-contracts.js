@@ -111,6 +111,7 @@ exports.setupUpgradableColonyNetwork = async function setupUpgradableColonyNetwo
   colonyNetworkAuction,
   colonyNetworkENS,
   colonyNetworkExtensions,
+  colonyNetworkSkills,
   contractRecovery
 ) {
   const deployedImplementations = {};
@@ -120,6 +121,7 @@ exports.setupUpgradableColonyNetwork = async function setupUpgradableColonyNetwo
   deployedImplementations.ColonyNetworkAuction = colonyNetworkAuction.address;
   deployedImplementations.ColonyNetworkENS = colonyNetworkENS.address;
   deployedImplementations.ColonyNetworkExtensions = colonyNetworkExtensions.address;
+  deployedImplementations.ColonyNetworkSkills = colonyNetworkSkills.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
 
   await exports.setupEtherRouter("IColonyNetwork", deployedImplementations, resolver);
@@ -153,8 +155,8 @@ exports.setupReputationMiningCycleResolver = async function setupReputationMinin
   await colonyNetwork.setMiningResolver(resolver.address);
 };
 
-exports.setupENSRegistrar = async function setupENSRegistrar(colonyNetwork, ensRegistry, registrarOwner) {
-  const rootNode = namehash.hash("joincolony.eth");
+exports.setupENSRegistrar = async function setupENSRegistrar(colonyNetwork, ensRegistry, registrarOwner, suffix) {
+  const rootNode = namehash.hash(`joincolony.${suffix}`);
   const USER_HASH = soliditySha3("user");
   const COLONY_HASH = soliditySha3("colony");
 
