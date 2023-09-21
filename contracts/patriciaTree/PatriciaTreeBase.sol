@@ -23,9 +23,7 @@ contract PatriciaTreeBase is PatriciaTreeProofs {
     e = tree.rootEdge;
   }
 
-  function getNode(
-    bytes32 hash
-  ) public view virtual returns (Data.Node memory n) {
+  function getNode(bytes32 hash) public view virtual returns (Data.Node memory n) {
     n = tree.nodes[hash];
   }
 
@@ -53,10 +51,7 @@ contract PatriciaTreeBase is PatriciaTreeProofs {
       uint256 head;
       Data.Label memory tail;
       (head, tail) = suffix.chopFirstBit();
-      siblings[numSiblings++] = tree
-        .nodes[e.node]
-        .children[1 - head]
-        .edgeHash();
+      siblings[numSiblings++] = tree.nodes[e.node].children[1 - head].edgeHash();
       e = tree.nodes[e.node].children[head];
       k = tail;
     }

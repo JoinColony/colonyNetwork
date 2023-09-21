@@ -53,22 +53,14 @@ contract VotingReputationStorage is
   bytes4 constant NO_ACTION = 0x12345678;
   bytes4 constant OLD_MOVE_FUNDS =
     bytes4(
-      keccak256(
-        "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"
-      )
+      keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)")
     );
   bytes4 constant SET_EXPENDITURE_STATE =
     bytes4(
-      keccak256(
-        "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"
-      )
+      keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
     );
   bytes4 constant SET_EXPENDITURE_PAYOUT =
-    bytes4(
-      keccak256(
-        "setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"
-      )
-    );
+    bytes4(keccak256("setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"));
 
   // Initialization data
   ExtensionState state;
@@ -171,16 +163,12 @@ contract VotingReputationStorage is
 
   // View functions
 
-  function getMotionState(
-    uint256 _motionId
-  ) public view returns (MotionState _motionState) {
+  function getMotionState(uint256 _motionId) public view returns (MotionState _motionState) {
     Motion storage motion = motions[_motionId];
     uint256 requiredStake = getRequiredStake(_motionId);
 
     // Check for valid motion Id / motion
-    if (
-      _motionId == 0 || _motionId > motionCount || motion.action.length == 0
-    ) {
+    if (_motionId == 0 || _motionId > motionCount || motion.action.length == 0) {
       return MotionState.Null;
 
       // If finalized, we're done
@@ -188,9 +176,7 @@ contract VotingReputationStorage is
       return MotionState.Finalized;
 
       // Not fully staked
-    } else if (
-      motion.stakes[YAY] < requiredStake || motion.stakes[NAY] < requiredStake
-    ) {
+    } else if (motion.stakes[YAY] < requiredStake || motion.stakes[NAY] < requiredStake) {
       // Are we still staking?
       if (block.timestamp < motion.events[STAKE_END]) {
         return MotionState.Staking;
@@ -212,8 +198,7 @@ contract VotingReputationStorage is
       } else if (block.timestamp < motion.events[REVEAL_END]) {
         return MotionState.Reveal;
       } else if (
-        block.timestamp < motion.events[REVEAL_END] + escalationPeriod &&
-        motion.domainId > 1
+        block.timestamp < motion.events[REVEAL_END] + escalationPeriod && motion.domainId > 1
       ) {
         return MotionState.Closed;
       } else {
@@ -224,15 +209,11 @@ contract VotingReputationStorage is
 
   // If we decide that the motion is finalizable, we might actually want it to
   //  report as finalized if it's a no-action motion.
-  function finalizableOrFinalized(
-    uint256 _motionId
-  ) internal view returns (MotionState) {
+  function finalizableOrFinalized(uint256 _motionId) internal view returns (MotionState) {
     Motion storage motion = motions[_motionId];
     if (motion.sig == NO_ACTION || getSig(motion.action) == NO_ACTION) {
       return MotionState.Finalized;
-    } else if (
-      _motionId <= motionCountV10 && getSig(motion.action) == MULTICALL
-    ) {
+    } else if (_motionId <= motionCountV10 && getSig(motion.action) == MULTICALL) {
       // (Inefficiently) handle the potential case of a v9 motion:
       //  Return `Finalized` if either NO_ACTION or OLD_MOVE_FUNDS
       ActionSummary memory actionSummary = getActionSummary(motion.action, motion.altTarget);
@@ -300,30 +281,18 @@ contract VotingReputationStorage is
         domainSkillId = getActionDomainSkillId(actions[i]);
         expenditureId = getExpenditureId(actions[i]);
 
-        if (
-          summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId
-        ) {
+        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
           // Invalid multicall, caller should handle appropriately
           return
-            ActionSummary({
-              sig: bytes4(0x0),
-              domainSkillId: type(uint256).max,
-              expenditureId: 0
-            });
+            ActionSummary({ sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0 });
         } else {
           summary.domainSkillId = domainSkillId;
         }
 
-        if (
-          summary.expenditureId > 0 && summary.expenditureId != expenditureId
-        ) {
+        if (summary.expenditureId > 0 && summary.expenditureId != expenditureId) {
           // Invalid multicall, caller should handle appropriately
           return
-            ActionSummary({
-              sig: bytes4(0x0),
-              domainSkillId: 0,
-              expenditureId: type(uint256).max
-            });
+            ActionSummary({ sig: bytes4(0x0), domainSkillId: 0, expenditureId: type(uint256).max });
         } else {
           summary.expenditureId = expenditureId;
         }
@@ -331,24 +300,16 @@ contract VotingReputationStorage is
         // Otherwise we record the domain id and ensure it is consistent throughout the multicall
         // If no expenditure signatures have been seen, we record the latest signature
         // TODO: explicitly check `isExtension` for target, currently this simply errors
-        if (
-          ColonyRoles(target).getCapabilityRoles(sig) | ROOT_ROLES == ROOT_ROLES
-        ) {
+        if (ColonyRoles(target).getCapabilityRoles(sig) | ROOT_ROLES == ROOT_ROLES) {
           domainSkillId = colony.getDomain(1).skillId;
         } else {
           domainSkillId = getActionDomainSkillId(actions[i]);
         }
 
-        if (
-          summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId
-        ) {
+        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
           // Invalid multicall, caller should handle appropriately
           return
-            ActionSummary({
-              sig: bytes4(0x0),
-              domainSkillId: type(uint256).max,
-              expenditureId: 0
-            });
+            ActionSummary({ sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0 });
         } else {
           summary.domainSkillId = domainSkillId;
         }
@@ -362,9 +323,7 @@ contract VotingReputationStorage is
     return summary;
   }
 
-  function getActionDomainSkillId(
-    bytes memory _action
-  ) internal view returns (uint256) {
+  function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
     uint256 permissionDomainId;
     uint256 childSkillIndex;
 
@@ -377,9 +336,7 @@ contract VotingReputationStorage is
     return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
   }
 
-  function getExpenditureId(
-    bytes memory action
-  ) internal pure returns (uint256 expenditureId) {
+  function getExpenditureId(bytes memory action) internal pure returns (uint256 expenditureId) {
     bytes4 sig = getSig(action);
     assert(isExpenditureSig(sig));
 
@@ -388,9 +345,7 @@ contract VotingReputationStorage is
     }
   }
 
-  function getExpenditureAction(
-    bytes memory action
-  ) internal pure returns (bytes memory) {
+  function getExpenditureAction(bytes memory action) internal pure returns (bytes memory) {
     if (getSig(action) == MULTICALL) {
       bytes[] memory actions = abi.decode(extractCalldata(action), (bytes[]));
       for (uint256 i; i < actions.length; i++) {
@@ -413,10 +368,7 @@ contract VotingReputationStorage is
     // we would expect 68 bytes
     require(calldataWithSelector.length >= 68, "voting-rep-invalid-calldata");
     // We expect the 4-byte function selector, and then some multiple of 32 bytes
-    require(
-      (calldataWithSelector.length - 4) % 32 == 0,
-      "voting-rep-invalid-calldata"
-    );
+    require((calldataWithSelector.length - 4) % 32 == 0, "voting-rep-invalid-calldata");
 
     assembly {
       let totalLength := mload(calldataWithSelector)
@@ -428,10 +380,7 @@ contract VotingReputationStorage is
       // Mark the memory space taken for callDataWithoutSelector as allocated
       mstore(0x40, add(calldataWithoutSelector, add(0x20, targetLength)))
       // Process first 32 bytes (we only take the last 28 bytes)
-      mstore(
-        add(calldataWithoutSelector, 0x20),
-        shl(0x20, mload(add(calldataWithSelector, 0x20)))
-      )
+      mstore(add(calldataWithoutSelector, 0x20), shl(0x20, mload(add(calldataWithSelector, 0x20))))
       // Process all other data by chunks of 32 bytes
       for {
         let i := 0x1C
@@ -446,10 +395,7 @@ contract VotingReputationStorage is
     }
   }
 
-  function executeCall(
-    uint256 motionId,
-    bytes memory action
-  ) internal returns (bool success) {
+  function executeCall(uint256 motionId, bytes memory action) internal returns (bool success) {
     address to = getTarget(motions[motionId].altTarget);
 
     assembly {

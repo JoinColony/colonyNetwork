@@ -43,12 +43,7 @@ contract ZodiacBridgeModuleMock {
     uint8 _operation
   ) public {
     require(_operation == 0, "operation-must-be-zero");
-    bool success = IAvatar(avatar).execTransactionFromModule(
-      _target,
-      _value,
-      _data,
-      _operation
-    );
+    bool success = IAvatar(avatar).execTransactionFromModule(_target, _value, _data, _operation);
     emit SafeTransactionExecuted(success);
   }
 }

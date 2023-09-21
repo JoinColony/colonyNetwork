@@ -38,10 +38,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     require(_resolver != address(0x0), "colony-network-extension-bad-resolver");
 
     bytes32 extensionId = getExtensionId(_resolver);
-    require(
-      _extensionId == extensionId,
-      "colony-network-extension-bad-identifier"
-    );
+    require(_extensionId == extensionId, "colony-network-extension-bad-identifier");
 
     uint256 version = getResolverVersion(_resolver);
     require(
@@ -106,24 +103,18 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     bytes32 _extensionId,
     bool _deprecated
   ) public stoppable calledByColony {
-    ColonyExtension(installations[_extensionId][msgSender()]).deprecate(
-      _deprecated
-    );
+    ColonyExtension(installations[_extensionId][msgSender()]).deprecate(_deprecated);
 
     emit ExtensionDeprecated(_extensionId, msgSender(), _deprecated);
   }
 
-  function uninstallExtension(
-    bytes32 _extensionId
-  ) public stoppable calledByColony {
+  function uninstallExtension(bytes32 _extensionId) public stoppable calledByColony {
     require(
       installations[_extensionId][msgSender()] != address(0x0),
       "colony-network-extension-not-installed"
     );
 
-    ColonyExtension extension = ColonyExtension(
-      installations[_extensionId][msgSender()]
-    );
+    ColonyExtension extension = ColonyExtension(installations[_extensionId][msgSender()]);
     installations[_extensionId][msgSender()] = payable(address(0x0));
     extension.uninstall();
 
@@ -180,11 +171,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     address _colony,
     address[] memory allowedToTransfer
   ) public stoppable returns (address) {
-    TokenAuthority tokenAuthority = new TokenAuthority(
-      _token,
-      _colony,
-      allowedToTransfer
-    );
+    TokenAuthority tokenAuthority = new TokenAuthority(_token, _colony, allowedToTransfer);
 
     emit TokenAuthorityDeployed(address(tokenAuthority));
 

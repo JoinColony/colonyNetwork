@@ -18,12 +18,7 @@ contract PatriciaTreeProofs {
     bytes32[] memory siblings
   ) internal pure returns (bytes32) {
     bytes32 hash;
-    (hash, ) = getImpliedRootFunctionality(
-      keccak256(key),
-      keccak256(value),
-      branchMask,
-      siblings
-    );
+    (hash, ) = getImpliedRootFunctionality(keccak256(key), keccak256(value), branchMask, siblings);
     return hash;
   }
 
@@ -34,12 +29,7 @@ contract PatriciaTreeProofs {
     bytes32[] memory siblings
   ) internal pure returns (bytes32) {
     bytes32 hash;
-    (hash, ) = getImpliedRootFunctionality(
-      key,
-      keccak256(value),
-      branchMask,
-      siblings
-    );
+    (hash, ) = getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings);
     return hash;
   }
 
@@ -49,8 +39,7 @@ contract PatriciaTreeProofs {
     uint256 branchMask,
     bytes32[] memory siblings
   ) internal pure returns (bytes32, bytes32[2] memory) {
-    return
-      getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings);
+    return getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings);
   }
 
   // solium-disable-next-line security/no-assign-params

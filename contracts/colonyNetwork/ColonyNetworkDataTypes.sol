@@ -51,22 +51,14 @@ interface ColonyNetworkDataTypes {
   /// @param rootSkillId Id of the root skill of the global skills tree, normally this is 2
   /// Note that the speciat mining skill is created at rootSkillId + 1, so normally this is 3
   /// Skill id 1 is normally the local skill associate with meta colony domain 1
-  event MetaColonyCreated(
-    address metaColony,
-    address token,
-    uint256 rootSkillId
-  );
+  event MetaColonyCreated(address metaColony, address token, uint256 rootSkillId);
 
   /// @notice Event logged when a new colony is added
   /// @dev Emitted from `IColonyNetwork.createColony` function
   /// @param colonyId The colony id in the network
   /// @param colonyAddress The colony address in the network
   /// @param token Address of the associated colony token
-  event ColonyAdded(
-    uint256 indexed colonyId,
-    address indexed colonyAddress,
-    address token
-  );
+  event ColonyAdded(uint256 indexed colonyId, address indexed colonyAddress, address token);
 
   /// @notice Event logged when a new skill is added
   /// @dev Emitted from `IColonyNetwork.addSkill` function
@@ -132,39 +124,24 @@ interface ColonyNetworkDataTypes {
   /// @param extensionId The identifier for the extension
   /// @param colony The address of the colony
   /// @param version The version of the extension
-  event ExtensionInstalled(
-    bytes32 indexed extensionId,
-    address indexed colony,
-    uint256 version
-  );
+  event ExtensionInstalled(bytes32 indexed extensionId, address indexed colony, uint256 version);
 
   /// @notice Event logged when an extension is upgraded in a colony
   /// @param extensionId The identifier for the extension
   /// @param colony The address of the colony
   /// @param version The new version of the extension
-  event ExtensionUpgraded(
-    bytes32 indexed extensionId,
-    address indexed colony,
-    uint256 version
-  );
+  event ExtensionUpgraded(bytes32 indexed extensionId, address indexed colony, uint256 version);
 
   /// @notice Event logged when an extension is (un)deprecated in a colony
   /// @param extensionId The identifier for the extension
   /// @param colony The address of the colony
   /// @param deprecated Whether the extension is deprecated or not
-  event ExtensionDeprecated(
-    bytes32 indexed extensionId,
-    address indexed colony,
-    bool deprecated
-  );
+  event ExtensionDeprecated(bytes32 indexed extensionId, address indexed colony, bool deprecated);
 
   /// @notice Event logged when an extension is uninstalled from a colony
   /// @param extensionId The identifier for the extension
   /// @param colony The address of the colony
-  event ExtensionUninstalled(
-    bytes32 indexed extensionId,
-    address indexed colony
-  );
+  event ExtensionUninstalled(bytes32 indexed extensionId, address indexed colony);
 
   /// @notice Event logged when a token is deployed via transaction through the colony network
   /// @param tokenAddress The address of the token deployed

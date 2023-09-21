@@ -33,12 +33,7 @@ import { ColonyDataTypes } from "./ColonyDataTypes.sol";
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-contract ColonyStorage is
-  ColonyDataTypes,
-  ColonyNetworkDataTypes,
-  DSMath,
-  CommonStorage
-{
+contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage {
   uint256 constant COLONY_NETWORK_SLOT = 6;
   uint256 constant ROOT_LOCAL_SKILL_SLOT = 36;
 
@@ -130,9 +125,7 @@ contract ColonyStorage is
 
   modifier domainNotDeprecated(uint256 _id) {
     require(
-      !IColonyNetwork(colonyNetworkAddress)
-        .getSkill(domains[_id].skillId)
-        .deprecated,
+      !IColonyNetwork(colonyNetworkAddress).getSkill(domains[_id].skillId).deprecated,
       "colony-domain-deprecated"
     );
     _;
@@ -171,18 +164,12 @@ contract ColonyStorage is
   }
 
   modifier taskNotFinalized(uint256 _id) {
-    require(
-      tasks[_id].status != TaskStatus.Finalized,
-      "colony-task-already-finalized"
-    );
+    require(tasks[_id].status != TaskStatus.Finalized, "colony-task-already-finalized");
     _;
   }
 
   modifier taskFinalized(uint256 _id) {
-    require(
-      tasks[_id].status == TaskStatus.Finalized,
-      "colony-task-not-finalized"
-    );
+    require(tasks[_id].status == TaskStatus.Finalized, "colony-task-not-finalized");
     _;
   }
 
@@ -193,10 +180,7 @@ contract ColonyStorage is
 
   modifier expenditureDraft(uint256 _id) {
     require(expenditureExists(_id), "colony-expenditure-does-not-exist");
-    require(
-      expenditures[_id].status == ExpenditureStatus.Draft,
-      "colony-expenditure-not-draft"
-    );
+    require(expenditures[_id].status == ExpenditureStatus.Draft, "colony-expenditure-not-draft");
     _;
   }
 
@@ -220,18 +204,12 @@ contract ColonyStorage is
   }
 
   modifier expenditureOnlyOwner(uint256 _id) {
-    require(
-      expenditures[_id].owner == msgSender(),
-      "colony-expenditure-not-owner"
-    );
+    require(expenditures[_id].owner == msgSender(), "colony-expenditure-not-owner");
     _;
   }
 
   modifier validGlobalOrLocalSkill(uint256 _skillId) {
-    require(
-      isValidGlobalOrLocalSkill(_skillId),
-      "colony-not-valid-global-or-local-skill"
-    );
+    require(isValidGlobalOrLocalSkill(_skillId), "colony-not-valid-global-or-local-skill");
     _;
   }
 
@@ -247,10 +225,7 @@ contract ColonyStorage is
 
   modifier validFundingTransfer(uint256 _fromPot, uint256 _toPot) {
     // Prevent moving funds from between the same pot, which otherwise would cause the pot balance to increment by _amount.
-    require(
-      _fromPot != _toPot,
-      "colony-funding-cannot-move-funds-between-the-same-pot"
-    );
+    require(_fromPot != _toPot, "colony-funding-cannot-move-funds-between-the-same-pot");
 
     // Prevent people moving funds from the pot designated to paying out token holders
     require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
@@ -281,11 +256,7 @@ contract ColonyStorage is
       "colony-not-admin"
     );
     require(
-      validateDomainInheritance(
-        _permissionDomainId,
-        _childSkillIndex,
-        tasks[_id].domainId
-      ),
+      validateDomainInheritance(_permissionDomainId, _childSkillIndex, tasks[_id].domainId),
       "ds-auth-invalid-domain-inheritance"
     );
     _;
@@ -312,37 +283,19 @@ contract ColonyStorage is
     uint256 _childSkillIndex,
     uint256 _childDomainId
   ) {
+    require(domainExists(_permissionDomainId), "ds-auth-permission-domain-does-not-exist");
+    require(domainExists(_childDomainId), "ds-auth-child-domain-does-not-exist");
+    require(isAuthorized(msgSender(), _permissionDomainId, msg.sig), "ds-auth-unauthorized");
     require(
-      domainExists(_permissionDomainId),
-      "ds-auth-permission-domain-does-not-exist"
-    );
-    require(
-      domainExists(_childDomainId),
-      "ds-auth-child-domain-does-not-exist"
-    );
-    require(
-      isAuthorized(msgSender(), _permissionDomainId, msg.sig),
-      "ds-auth-unauthorized"
-    );
-    require(
-      validateDomainInheritance(
-        _permissionDomainId,
-        _childSkillIndex,
-        _childDomainId
-      ),
+      validateDomainInheritance(_permissionDomainId, _childSkillIndex, _childDomainId),
       "ds-auth-invalid-domain-inheritance"
     );
     _;
   }
 
   modifier archSubdomain(uint256 _permissionDomainId, uint256 _childDomainId) {
-    if (
-      canCallOnlyBecauseArchitect(msgSender(), _permissionDomainId, msg.sig)
-    ) {
-      require(
-        _permissionDomainId != _childDomainId,
-        "ds-auth-only-authorized-in-child-domain"
-      );
+    if (canCallOnlyBecauseArchitect(msgSender(), _permissionDomainId, msg.sig)) {
+      require(_permissionDomainId != _childDomainId, "ds-auth-only-authorized-in-child-domain");
     }
     _;
   }
@@ -356,8 +309,10 @@ contract ColonyStorage is
     if (permissionDomainId == childDomainId) {
       return childSkillIndex == UINT256_MAX;
     } else {
-      uint256 childSkillId = IColonyNetwork(colonyNetworkAddress)
-        .getChildSkillId(domains[permissionDomainId].skillId, childSkillIndex);
+      uint256 childSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(
+        domains[permissionDomainId].skillId,
+        childSkillIndex
+      );
       return childSkillId == domains[childDomainId].skillId;
     }
   }
@@ -378,19 +333,9 @@ contract ColonyStorage is
       );
   }
 
-  function isAuthorized(
-    address src,
-    uint256 domainId,
-    bytes4 sig
-  ) internal view returns (bool) {
+  function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
     return
-      (src == owner) ||
-      DomainRoles(address(authority)).canCall(
-        src,
-        domainId,
-        address(this),
-        sig
-      );
+      (src == owner) || DomainRoles(address(authority)).canCall(src, domainId, address(this), sig);
   }
 
   function isContract(address addr) internal returns (bool) {
@@ -409,10 +354,8 @@ contract ColonyStorage is
     // slither-disable-next-line unused-return
     try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
       return
-        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(
-          extensionId,
-          address(this)
-        ) == addr;
+        IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) ==
+        addr;
     } catch {
       return false;
     }
@@ -426,9 +369,7 @@ contract ColonyStorage is
     // slither-disable-next-line unused-return
     try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
       // slither-disable-next-line unused-return
-      try ColonyExtension(addr).getColony() returns (
-        address claimedAssociatedColony
-      ) {
+      try ColonyExtension(addr).getColony() returns (address claimedAssociatedColony) {
         return
           IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(
             extensionId,
@@ -442,9 +383,7 @@ contract ColonyStorage is
     }
   }
 
-  function isValidGlobalOrLocalSkill(
-    uint256 skillId
-  ) internal view returns (bool) {
+  function isValidGlobalOrLocalSkill(uint256 skillId) internal view returns (bool) {
     Skill memory skill = IColonyNetwork(colonyNetworkAddress).getSkill(skillId);
     return (skill.globalSkill || localSkills[skillId]) && !skill.deprecated;
   }
@@ -453,15 +392,11 @@ contract ColonyStorage is
     return domainId > 0 && domainId <= domainCount;
   }
 
-  function expenditureExists(
-    uint256 expenditureId
-  ) internal view returns (bool) {
+  function expenditureExists(uint256 expenditureId) internal view returns (bool) {
     return expenditureId > 0 && expenditureId <= expenditureCount;
   }
 
-  function calculateNetworkFeeForPayout(
-    uint256 _payout
-  ) internal view returns (uint256 fee) {
+  function calculateNetworkFeeForPayout(uint256 _payout) internal view returns (uint256 fee) {
     uint256 feeInverse = IColonyNetwork(colonyNetworkAddress).getFeeInverse();
 
     // slither-disable-next-line incorrect-equality

@@ -150,9 +150,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @dev We are only expecting this to be called from finalize motion in the contracts.
   /// It is marked as external only so that the frontend can use it.
   /// @return _allowed If motion is allowed to finalize without successful action
-  function failingExecutionAllowed(
-    uint256 _motionId
-  ) external view returns (bool _allowed);
+  function failingExecutionAllowed(uint256 _motionId) external view returns (bool _allowed);
 
   /// @notice Claim the staker's reward
   /// @param _motionId The id of the motion
@@ -209,9 +207,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @notice Get the data for a single motion
   /// @param _motionId The id of the motion
   /// @return _motion The motion struct
-  function getMotion(
-    uint256 _motionId
-  ) external view returns (Motion memory _motion);
+  function getMotion(uint256 _motionId) external view returns (Motion memory _motion);
 
   /// @notice Get a user's stake on a motion
   /// @param _motionId The id of the motion
@@ -227,9 +223,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @notice DEPRECATED Get the count of active motions for an expenditure slot
   /// @param _structHash Hash of an expenditure id and slot
   /// @return _count Number of motions
-  function getExpenditureMotionCount(
-    bytes32 _structHash
-  ) external view returns (uint256 _count);
+  function getExpenditureMotionCount(bytes32 _structHash) external view returns (uint256 _count);
 
   /// @notice Get the motion which holds the lock on an expenditure
   /// @param _expenditureId The expenditureId
@@ -242,9 +236,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @dev The previous version of this function which took an actionHash has been deprecated
   /// @param _expenditureId The expenditureId
   /// @return _vote The largest past vote on this variable
-  function getExpenditurePastVote(
-    uint256 _expenditureId
-  ) external view returns (uint256 _vote);
+  function getExpenditurePastVote(uint256 _expenditureId) external view returns (uint256 _vote);
 
   /// @notice DEPRECATED Get the largest past vote on an expenditure
   /// @dev This is deprecated, and allows visibility on to this variable for any v9 motions that are still
@@ -258,9 +250,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @notice Get the current state of the motion
   /// @param _motionId The id of the motion
   /// @return _motionState The current motion state
-  function getMotionState(
-    uint256 _motionId
-  ) external view returns (MotionState _motionState);
+  function getMotionState(uint256 _motionId) external view returns (MotionState _motionState);
 
   /// @notice Get the voter reward
   /// @dev This function will only return an accurate value if in the reveal state. Otherwise, use getVoterRewardRange

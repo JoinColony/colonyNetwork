@@ -38,10 +38,7 @@ contract VotingReputationStaking is VotingReputationStorage {
     Motion storage motion = motions[_motionId];
 
     require(_vote <= 1, "voting-rep-bad-vote");
-    require(
-      getMotionState(_motionId) == MotionState.Staking,
-      "voting-rep-motion-not-staking"
-    );
+    require(getMotionState(_motionId) == MotionState.Staking, "voting-rep-motion-not-staking");
 
     uint256 requiredStake = getRequiredStake(_motionId);
     uint256 amount = min(_amount, requiredStake - motion.stakes[_vote]);
@@ -102,17 +99,10 @@ contract VotingReputationStaking is VotingReputationStorage {
 
     if (!finalized) {
       // Move to vote submission once both sides are fully staked
-      if (
-        motion.stakes[NAY] == requiredStake &&
-        motion.stakes[YAY] == requiredStake
-      ) {
+      if (motion.stakes[NAY] == requiredStake && motion.stakes[YAY] == requiredStake) {
         motion.events[STAKE_END] = uint64(block.timestamp);
-        motion.events[SUBMIT_END] =
-          motion.events[STAKE_END] +
-          uint64(submitPeriod);
-        motion.events[REVEAL_END] =
-          motion.events[SUBMIT_END] +
-          uint64(revealPeriod);
+        motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+        motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
 
         emit MotionEventSet(_motionId, STAKE_END);
 
@@ -159,16 +149,9 @@ contract VotingReputationStaking is VotingReputationStorage {
       "voting-rep-motion-not-claimable"
     );
 
-    (uint256 stakerReward, uint256 repPenalty) = getStakerReward(
-      _motionId,
-      _staker,
-      _vote
-    );
+    (uint256 stakerReward, uint256 repPenalty) = getStakerReward(_motionId, _staker, _vote);
 
-    require(
-      stakes[_motionId][_staker][_vote] > 0,
-      "voting-rep-nothing-to-claim"
-    );
+    require(stakes[_motionId][_staker][_vote] > 0, "voting-rep-nothing-to-claim");
     delete stakes[_motionId][_staker][_vote];
 
     tokenLocking.transfer(token, stakerReward, _staker, true);
@@ -198,10 +181,7 @@ contract VotingReputationStaking is VotingReputationStorage {
       return (0, 0);
     }
 
-    uint256 stakeFraction = wdiv(
-      stakes[_motionId][_staker][_vote],
-      totalSideStake
-    );
+    uint256 stakeFraction = wdiv(stakes[_motionId][_staker][_vote], totalSideStake);
 
     uint256 realStake = wmul(stakeFraction, motion.stakes[_vote]);
 
@@ -227,10 +207,7 @@ contract VotingReputationStaking is VotingReputationStorage {
 
       if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
         // 50% gets 0% of loser's stake, 100% gets 100% of loser's stake, linear in between
-        stakerReward = wmul(
-          stakeFraction,
-          (winnerStake + wmul(loserStake, winShare - WAD))
-        );
+        stakerReward = wmul(stakeFraction, (winnerStake + wmul(loserStake, winShare - WAD)));
       } else {
         stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));
         repPenalty = realStake - stakerReward;
@@ -242,18 +219,14 @@ contract VotingReputationStaking is VotingReputationStorage {
       uint256 requiredStake = getRequiredStake(_motionId);
 
       // Your side fully staked, receive 10% (proportional) of loser's stake
-      if (
-        motion.stakes[_vote] == requiredStake &&
-        motion.stakes[flip(_vote)] < requiredStake
-      ) {
+      if (motion.stakes[_vote] == requiredStake && motion.stakes[flip(_vote)] < requiredStake) {
         uint256 loserStake = motion.stakes[flip(_vote)];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
         stakerReward = wmul(stakeFraction, (requiredStake + totalPenalty));
 
         // Opponent's side fully staked, pay 10% penalty
       } else if (
-        motion.stakes[_vote] < requiredStake &&
-        motion.stakes[flip(_vote)] == requiredStake
+        motion.stakes[_vote] < requiredStake && motion.stakes[flip(_vote)] == requiredStake
       ) {
         uint256 loserStake = motion.stakes[_vote];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
@@ -271,9 +244,7 @@ contract VotingReputationStaking is VotingReputationStorage {
 
   // Internal
 
-  function lockExpenditure(
-    uint256 _motionId
-  ) internal returns (bool finalized) {
+  function lockExpenditure(uint256 _motionId) internal returns (bool finalized) {
     Motion storage motion = motions[_motionId];
     bytes memory action = getExpenditureAction(motion.action);
     uint256 expenditureId = getExpenditureId(action);

@@ -92,14 +92,8 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
     uint256[] memory _slots,
     int256[] memory _payoutModifiers
   ) public {
-    require(
-      _slots.length == _payoutModifiers.length,
-      "evaluated-expenditure-bad-slots"
-    );
-    require(
-      colony.getExpenditure(_id).owner == msgSender(),
-      "evaluated-expenditure-not-owner"
-    );
+    require(_slots.length == _payoutModifiers.length, "evaluated-expenditure-bad-slots");
+    require(colony.getExpenditure(_id).owner == msgSender(), "evaluated-expenditure-not-owner");
 
     bool[] memory mask = new bool[](2);
     bytes32[] memory keys = new bytes32[](2);

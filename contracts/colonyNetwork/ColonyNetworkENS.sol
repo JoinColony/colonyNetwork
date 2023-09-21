@@ -38,14 +38,10 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
   bytes4 constant ADDR_INTERFACE_ID = 0x3b3b57de;
 
   function supportsInterface(bytes4 interfaceID) external pure returns (bool) {
-    return (interfaceID == INTERFACE_META_ID ||
-      interfaceID == ADDR_INTERFACE_ID);
+    return (interfaceID == INTERFACE_META_ID || interfaceID == ADDR_INTERFACE_ID);
   }
 
-  function setupRegistrar(
-    address _ens,
-    bytes32 _rootNode
-  ) public stoppable auth {
+  function setupRegistrar(address _ens, bytes32 _rootNode) public stoppable auth {
     require(_ens != address(0x0), "colony-ens-cannot-be-zero");
 
     ens = _ens;
@@ -68,10 +64,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
     unowned(userNode, username)
   {
     require(bytes(username).length > 0, "colony-user-label-invalid");
-    require(
-      bytes(userLabels[msgSender()]).length == 0,
-      "colony-user-label-already-owned"
-    );
+    require(bytes(userLabels[msgSender()]).length == 0, "colony-user-label-already-owned");
 
     bytes32 subnode = keccak256(abi.encodePacked(username));
     bytes32 node = keccak256(abi.encodePacked(userNode, subnode));
@@ -91,10 +84,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
     string memory orbitdb
   ) public calledByColony unowned(colonyNode, colonyName) stoppable {
     require(bytes(colonyName).length > 0, "colony-colony-label-invalid");
-    require(
-      bytes(colonyLabels[msgSender()]).length == 0,
-      "colony-already-labeled"
-    );
+    require(bytes(colonyLabels[msgSender()]).length == 0, "colony-already-labeled");
 
     bytes32 subnode = keccak256(abi.encodePacked(colonyName));
     bytes32 node = keccak256(abi.encodePacked(colonyNode, subnode));
@@ -109,9 +99,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
     emit ColonyLabelRegistered(msgSender(), subnode);
   }
 
-  function updateColonyOrbitDB(
-    string memory orbitdb
-  ) public calledByColony stoppable {
+  function updateColonyOrbitDB(string memory orbitdb) public calledByColony stoppable {
     string storage label = colonyLabels[msgSender()];
     require(bytes(label).length > 0, "colony-colony-not-labeled");
     bytes32 subnode = keccak256(abi.encodePacked(label));
@@ -119,9 +107,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
     records[node].orbitdb = orbitdb;
   }
 
-  function updateUserOrbitDB(
-    string memory orbitdb
-  ) public notCalledByColony stoppable {
+  function updateUserOrbitDB(string memory orbitdb) public notCalledByColony stoppable {
     string storage label = userLabels[msgSender()];
     require(bytes(label).length > 0, "colony-user-not-labeled");
     bytes32 subnode = keccak256(abi.encodePacked(label));
@@ -129,25 +115,15 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
     records[node].orbitdb = orbitdb;
   }
 
-  function getProfileDBAddress(
-    bytes32 node
-  ) public view returns (string memory orbitDB) {
+  function getProfileDBAddress(bytes32 node) public view returns (string memory orbitDB) {
     return records[node].orbitdb;
   }
 
-  function lookupRegisteredENSDomain(
-    address addr
-  ) public view returns (string memory domain) {
+  function lookupRegisteredENSDomain(address addr) public view returns (string memory domain) {
     if (bytes(userLabels[addr]).length != 0) {
-      return
-        string(
-          abi.encodePacked(userLabels[addr], ".user.", getGlobalENSDomain())
-        );
+      return string(abi.encodePacked(userLabels[addr], ".user.", getGlobalENSDomain()));
     } else if (bytes(colonyLabels[addr]).length != 0) {
-      return
-        string(
-          abi.encodePacked(colonyLabels[addr], ".colony.", getGlobalENSDomain())
-        );
+      return string(abi.encodePacked(colonyLabels[addr], ".colony.", getGlobalENSDomain()));
     } else {
       return "";
     }

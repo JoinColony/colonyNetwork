@@ -33,10 +33,7 @@ contract ENSRegistry is ENS {
   /// @dev Transfers ownership of a node to a new address.
   /// @param node The node to transfer ownership of.
   /// @param owner The address of the new owner.
-  function setOwner(
-    bytes32 node,
-    address owner
-  ) public override onlyOwner(node) {
+  function setOwner(bytes32 node, address owner) public override onlyOwner(node) {
     emit Transfer(node, owner);
     records[node].owner = owner;
   }
@@ -59,10 +56,7 @@ contract ENSRegistry is ENS {
   /// @dev Sets the resolver address for the specified node.
   /// @param node The node to update.
   /// @param resolver The address of the resolver.
-  function setResolver(
-    bytes32 node,
-    address resolver
-  ) public override onlyOwner(node) {
+  function setResolver(bytes32 node, address resolver) public override onlyOwner(node) {
     emit NewResolver(node, resolver);
     records[node].resolver = resolver;
   }

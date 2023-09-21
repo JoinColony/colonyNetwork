@@ -24,11 +24,7 @@ import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMi
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { Multicall } from "./../common/Multicall.sol";
 
-contract ColonyNetwork is
-  BasicMetaTransaction,
-  ColonyNetworkStorage,
-  Multicall
-{
+contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall {
   function isColony(address _colony) public view returns (bool) {
     return _isColony[_colony];
   }
@@ -53,9 +49,7 @@ contract ColonyNetwork is
     return reputationMiningSkillId;
   }
 
-  function getColonyVersionResolver(
-    uint256 _version
-  ) public view returns (address) {
+  function getColonyVersionResolver(uint256 _version) public view returns (address) {
     return colonyVersionResolver[_version];
   }
 
@@ -76,16 +70,10 @@ contract ColonyNetwork is
   }
 
   function setTokenLocking(address _tokenLocking) public stoppable auth {
-    require(
-      _tokenLocking != address(0x0),
-      "colony-token-locking-cannot-be-zero"
-    );
+    require(_tokenLocking != address(0x0), "colony-token-locking-cannot-be-zero");
 
     // Token locking address can't be changed
-    require(
-      tokenLocking == address(0x0),
-      "colony-token-locking-address-already-set"
-    );
+    require(tokenLocking == address(0x0), "colony-token-locking-address-already-set");
 
     tokenLocking = _tokenLocking;
 
@@ -96,14 +84,8 @@ contract ColonyNetwork is
     return tokenLocking;
   }
 
-  function addColonyVersion(
-    uint _version,
-    address _resolver
-  ) public always calledByMetaColony {
-    require(
-      currentColonyVersion > 0,
-      "colony-network-not-intialised-cannot-add-colony-version"
-    );
+  function addColonyVersion(uint _version, address _resolver) public always calledByMetaColony {
+    require(currentColonyVersion > 0, "colony-network-not-intialised-cannot-add-colony-version");
 
     colonyVersionResolver[_version] = _resolver;
     if (_version > currentColonyVersion) {
@@ -113,10 +95,7 @@ contract ColonyNetwork is
     emit ColonyVersionAdded(_version, _resolver);
   }
 
-  function initialise(
-    address _resolver,
-    uint256 _version
-  ) public stoppable auth {
+  function initialise(address _resolver, uint256 _version) public stoppable auth {
     require(currentColonyVersion == 0, "colony-network-already-initialised");
     require(_version > 0, "colony-network-invalid-version");
     colonyVersionResolver[_version] = _resolver;
@@ -192,17 +171,11 @@ contract ColonyNetwork is
     return skillCount;
   }
 
-  function getParentSkillId(
-    uint _skillId,
-    uint _parentSkillIndex
-  ) public view returns (uint256) {
+  function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
     return ascendSkillTree(_skillId, _parentSkillIndex + 1);
   }
 
-  function getChildSkillId(
-    uint _skillId,
-    uint _childSkillIndex
-  ) public view returns (uint256) {
+  function getChildSkillId(uint _skillId, uint _childSkillIndex) public view returns (uint256) {
     if (_childSkillIndex == UINT256_MAX) {
       return _skillId;
     } else {
@@ -218,12 +191,7 @@ contract ColonyNetwork is
   function deprecateSkill(
     uint256 _skillId,
     bool _deprecated
-  )
-    public
-    stoppable
-    allowedToAddSkill(skills[_skillId].nParents == 0)
-    returns (bool)
-  {
+  ) public stoppable allowedToAddSkill(skills[_skillId].nParents == 0) returns (bool) {
     bool changed = skills[_skillId].deprecated != _deprecated;
     skills[_skillId].deprecated = _deprecated;
     return changed;
@@ -234,12 +202,7 @@ contract ColonyNetwork is
     deprecateSkill(_skillId, true);
   }
 
-  function initialiseRootLocalSkill()
-    public
-    stoppable
-    calledByColony
-    returns (uint256)
-  {
+  function initialiseRootLocalSkill() public stoppable calledByColony returns (uint256) {
     return skillCount++;
   }
 
@@ -259,15 +222,14 @@ contract ColonyNetwork is
     uint128 nParents = skills[_skillId].nParents;
     // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
     uint128 nChildren = _amount < 0 ? skills[_skillId].nChildren : 0;
-    IReputationMiningCycle(inactiveReputationMiningCycle)
-      .appendReputationUpdateLog(
-        _user,
-        _amount,
-        _skillId,
-        msgSender(),
-        nParents,
-        nChildren
-      );
+    IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(
+      _user,
+      _amount,
+      _skillId,
+      msgSender(),
+      nParents,
+      nChildren
+    );
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view {
@@ -278,25 +240,18 @@ contract ColonyNetwork is
     return feeInverse;
   }
 
-  function setFeeInverse(
-    uint256 _feeInverse
-  ) public stoppable calledByMetaColony {
+  function setFeeInverse(uint256 _feeInverse) public stoppable calledByMetaColony {
     require(_feeInverse > 0, "colony-network-fee-inverse-cannot-be-zero");
     feeInverse = _feeInverse;
 
     emit NetworkFeeInverseSet(_feeInverse);
   }
 
-  function getMetatransactionNonce(
-    address _user
-  ) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 
-  function setPayoutWhitelist(
-    address _token,
-    bool _status
-  ) public stoppable calledByMetaColony {
+  function setPayoutWhitelist(address _token, bool _status) public stoppable calledByMetaColony {
     payoutWhitelist[_token] = _status;
 
     emit TokenWhitelisted(_token, _status);
@@ -312,21 +267,13 @@ contract ColonyNetwork is
     // What slot are we setting?
     // This mapping is in slot 41 (see ColonyNetworkStorage.sol);
     uint256 slot = uint256(
-      keccak256(
-        abi.encode(
-          uint256(uint160(_user)),
-          uint256(METATRANSACTION_NONCES_SLOT)
-        )
-      )
+      keccak256(abi.encode(uint256(uint160(_user)), uint256(METATRANSACTION_NONCES_SLOT)))
     );
     protectSlot(slot);
     metatransactionNonces[_user] += 1;
   }
 
-  function ascendSkillTree(
-    uint _skillId,
-    uint _parentSkillNumber
-  ) internal view returns (uint256) {
+  function ascendSkillTree(uint _skillId, uint _parentSkillNumber) internal view returns (uint256) {
     if (_parentSkillNumber == 0) {
       return _skillId;
     }

@@ -30,12 +30,7 @@ import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
 contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   // Events
 
-  event TokensBought(
-    address indexed buyer,
-    address token,
-    uint256 numTokens,
-    uint256 totalCost
-  );
+  event TokensBought(address indexed buyer, address token, uint256 numTokens, uint256 totalCost);
   event PeriodUpdated(uint256 activePeriod, uint256 currentPeriod);
   event PriceEvolutionSet(bool evolvePrice);
   event WhitelistSet(address whitelist);
@@ -264,19 +259,12 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       payable(address(colony)).transfer(totalCost);
     } else {
       require(
-        ERC20(purchaseToken).transferFrom(
-          msgSender(),
-          address(colony),
-          totalCost
-        ),
+        ERC20(purchaseToken).transferFrom(msgSender(), address(colony), totalCost),
         "coin-machine-purchase-failed"
       );
     }
 
-    require(
-      ERC20(token).transfer(msgSender(), numTokens),
-      "coin-machine-transfer-failed"
-    );
+    require(ERC20(token).transfer(msgSender(), numTokens), "coin-machine-transfer-failed");
 
     // slither-disable-next-line reentrancy-unlimited-gas
     emit TokensBought(msgSender(), token, numTokens, totalCost);
@@ -415,8 +403,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @notice Get the number of remaining tokens for sale this period
   /// @return _remaining Tokens remaining
   function getSellableTokens() public view returns (uint256 _remaining) {
-    return (maxPerPeriod -
-      ((activePeriod >= getCurrentPeriod()) ? activeSold : 0));
+    return (maxPerPeriod - ((activePeriod >= getCurrentPeriod()) ? activeSold : 0));
   }
 
   /// @notice Get the maximum amount of tokens a user can purchase in total
@@ -426,8 +413,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     return
       (userLimitFraction == WAD || whitelist == address(0x0))
         ? UINT256_MAX
-        : wmul(getTokenBalance() + soldTotal, userLimitFraction) -
-          soldUser[_user];
+        : wmul(getTokenBalance() + soldTotal, userLimitFraction) - soldUser[_user];
   }
 
   /// @notice Get the maximum amount of tokens a user can purchase in a period

@@ -42,10 +42,7 @@ abstract contract DSTokenBaseMeta is ERC20, DSMath, BasicMetaTransaction {
     return _balances[src];
   }
 
-  function allowance(
-    address src,
-    address guy
-  ) public view override returns (uint) {
+  function allowance(address src, address guy) public view override returns (uint) {
     return _approvals[src][guy];
   }
 
@@ -59,10 +56,7 @@ abstract contract DSTokenBaseMeta is ERC20, DSMath, BasicMetaTransaction {
     uint256 wad
   ) public virtual override returns (bool) {
     if (src != msgSender()) {
-      require(
-        _approvals[src][msgSender()] >= wad,
-        "ds-token-insufficient-approval"
-      );
+      require(_approvals[src][msgSender()] >= wad, "ds-token-insufficient-approval");
       _approvals[src][msgSender()] -= wad;
     }
 

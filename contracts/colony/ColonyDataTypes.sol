@@ -72,12 +72,7 @@ interface ColonyDataTypes {
   /// @param token The token address
   /// @param fee The fee deducted for rewards
   /// @param payoutRemainder The remaining funds moved to the top-level domain pot
-  event ColonyFundsClaimed(
-    address agent,
-    address token,
-    uint256 fee,
-    uint256 payoutRemainder
-  );
+  event ColonyFundsClaimed(address agent, address token, uint256 fee, uint256 payoutRemainder);
 
   /// @notice Event logged when a new reward payout cycle has started
   /// @param agent The address that is responsible for triggering this event
@@ -120,11 +115,7 @@ interface ColonyDataTypes {
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId The expenditure id
   /// @param owner The new owner of the expenditure
-  event ExpenditureTransferred(
-    address agent,
-    uint256 indexed expenditureId,
-    address indexed owner
-  );
+  event ExpenditureTransferred(address agent, uint256 indexed expenditureId, address indexed owner);
 
   /// @notice Event logged when an expenditure has been cancelled
   /// @param agent The address that is responsible for triggering this event
@@ -145,11 +136,7 @@ interface ColonyDataTypes {
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the expenditure
   /// @param metadata IPFS hash of the metadata
-  event ExpenditureMetadataSet(
-    address agent,
-    uint256 indexed expenditureId,
-    string metadata
-  );
+  event ExpenditureMetadataSet(address agent, uint256 indexed expenditureId, string metadata);
 
   /// @notice Event logged when an expenditure's recipient is set
   /// @param agent The address that is responsible for triggering this event
@@ -258,23 +245,14 @@ interface ColonyDataTypes {
   /// @param taskId Id of the task
   /// @param role Role of the user
   /// @param user User that fulfills the designated role
-  event TaskRoleUserSet(
-    uint256 indexed taskId,
-    TaskRole role,
-    address indexed user
-  );
+  event TaskRoleUserSet(uint256 indexed taskId, TaskRole role, address indexed user);
 
   /// @notice Event logged when a task payout changes
   /// @param taskId Id of the task
   /// @param role Task role whose payout is being changed
   /// @param token Token of the payout funding
   /// @param amount Amount of the payout funding
-  event TaskPayoutSet(
-    uint256 indexed taskId,
-    TaskRole role,
-    address token,
-    uint256 amount
-  );
+  event TaskPayoutSet(uint256 indexed taskId, TaskRole role, address token, uint256 amount);
 
   /// @notice Event logged when task data is changed via signed messages by those involved
   /// @param reviewerAddresses Array of addresses that signed off this change.
@@ -284,11 +262,7 @@ interface ColonyDataTypes {
   /// @param agent The address that is responsible for triggering this event
   /// @param taskId Id of the task
   /// @param deliverableHash Hash of the work performed
-  event TaskDeliverableSubmitted(
-    address agent,
-    uint256 indexed taskId,
-    bytes32 deliverableHash
-  );
+  event TaskDeliverableSubmitted(address agent, uint256 indexed taskId, bytes32 deliverableHash);
 
   /// @notice Event logged when a task has been completed. This is either because the dueDate has passed
   /// and the manager closed the task, or the worker has submitted the deliverable. In the
@@ -302,12 +276,7 @@ interface ColonyDataTypes {
   /// @param taskId Id of the task
   /// @param role Role that got rated
   /// @param rating Rating the role received
-  event TaskWorkRatingRevealed(
-    address agent,
-    uint256 indexed taskId,
-    TaskRole role,
-    uint8 rating
-  );
+  event TaskWorkRatingRevealed(address agent, uint256 indexed taskId, TaskRole role, uint8 rating);
 
   /// @notice Event logged when a task has been finalized
   /// @param agent The address that is responsible for triggering this event
@@ -325,12 +294,7 @@ interface ColonyDataTypes {
   /// @param fundingPotId Id of the funding pot where payout comes from
   /// @param token Token of the payout claim
   /// @param amount Amount of the payout claimed, after network fee was deducted
-  event PayoutClaimed(
-    address agent,
-    uint256 indexed fundingPotId,
-    address token,
-    uint256 amount
-  );
+  event PayoutClaimed(address agent, uint256 indexed fundingPotId, address token, uint256 amount);
 
   /// @notice Event logged when a task has been canceled
   /// @param taskId Id of the canceled task
@@ -345,11 +309,7 @@ interface ColonyDataTypes {
   /// @param agent The address that is responsible for triggering this event
   /// @param localSkillId Id of the newly-created local skill
   /// @param deprecated Deprecation status of the local skill
-  event LocalSkillDeprecated(
-    address agent,
-    uint256 localSkillId,
-    bool deprecated
-  );
+  event LocalSkillDeprecated(address agent, uint256 localSkillId, bool deprecated);
 
   /// @notice Event logged when a new Domain is added
   /// @param agent The address that is responsible for triggering this event
@@ -360,21 +320,13 @@ interface ColonyDataTypes {
   /// @param agent The address that is responsible for triggering this event
   /// @param domainId Id of the newly-created Domain
   /// @param metadata IPFS hash of the metadata
-  event DomainMetadata(
-    address agent,
-    uint256 indexed domainId,
-    string metadata
-  );
+  event DomainMetadata(address agent, uint256 indexed domainId, string metadata);
 
   /// @notice Event logged when domain metadata is updated
   /// @param agent The address that is responsible for triggering this event
   /// @param domainId Id of the domain
   /// @param deprecated Whether or not the domain is deprecated
-  event DomainDeprecated(
-    address agent,
-    uint256 indexed domainId,
-    bool deprecated
-  );
+  event DomainDeprecated(address agent, uint256 indexed domainId, bool deprecated);
 
   /// @notice Event logged when Colony metadata is updated
   /// @param agent The address that is responsible for triggering this event
@@ -394,43 +346,26 @@ interface ColonyDataTypes {
   /// @param agent Agent emitting the annotation
   /// @param txHash Hash of transaction being annotated (0x0 for current tx)
   /// @param metadata IPFS hash of the metadata
-  event Annotation(
-    address indexed agent,
-    bytes32 indexed txHash,
-    string metadata
-  );
+  event Annotation(address indexed agent, bytes32 indexed txHash, string metadata);
 
   /// @notice Event logged when a payment has its payout set
   /// @param agent The address that is responsible for triggering this event
   /// @param paymentId Id of the payment
   /// @param token Token of the payout
   /// @param amount Amount of token to be paid out
-  event PaymentPayoutSet(
-    address agent,
-    uint256 indexed paymentId,
-    address token,
-    uint256 amount
-  );
+  event PaymentPayoutSet(address agent, uint256 indexed paymentId, address token, uint256 amount);
 
   /// @notice Event logged when a payment has its skill set
   /// @param agent The address that is responsible for triggering this event
   /// @param paymentId Id of the payment
   /// @param skillId Token of the payout
-  event PaymentSkillSet(
-    address agent,
-    uint256 indexed paymentId,
-    uint256 skillId
-  );
+  event PaymentSkillSet(address agent, uint256 indexed paymentId, uint256 skillId);
 
   /// @notice Event logged when a payment has its recipient set
   /// @param agent The address that is responsible for triggering this event
   /// @param paymentId Id of the payment
   /// @param recipient Address to receive the payout
-  event PaymentRecipientSet(
-    address agent,
-    uint256 indexed paymentId,
-    address recipient
-  );
+  event PaymentRecipientSet(address agent, uint256 indexed paymentId, address recipient);
 
   /// @notice Event logged when a payment is finalised
   /// @param agent The address that is responsible for triggering this event
@@ -453,12 +388,7 @@ interface ColonyDataTypes {
   /// @param user The address that is having its reputation changed
   /// @param skillId The id of the skill the user is having their reputation changed in
   /// @param amount The (maximum) amount the address is having its reputation changed by
-  event ArbitraryReputationUpdate(
-    address agent,
-    address user,
-    uint256 skillId,
-    int256 amount
-  );
+  event ArbitraryReputationUpdate(address agent, address user, uint256 skillId, int256 amount);
 
   event ArbitraryTransaction(address target, bytes data, bool success);
 
@@ -470,13 +400,7 @@ interface ColonyDataTypes {
   /// @param slot Expenditure slot of the payout claimed
   /// @param token Token of the payout claim
   /// @param tokenPayout Amount of the payout claimed, after network fee was deducted
-  event PayoutClaimed(
-    address agent,
-    uint256 id,
-    uint256 slot,
-    address token,
-    uint256 tokenPayout
-  );
+  event PayoutClaimed(address agent, uint256 id, uint256 slot, address token, uint256 tokenPayout);
 
   // Structs
 

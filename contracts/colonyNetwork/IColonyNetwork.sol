@@ -25,19 +25,12 @@ import { IMulticall } from "./../common/IMulticall.sol";
 
 import { ColonyNetworkDataTypes } from "./ColonyNetworkDataTypes.sol";
 
-interface IColonyNetwork is
-  ColonyNetworkDataTypes,
-  IRecovery,
-  IBasicMetaTransaction,
-  IMulticall
-{
+interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
   /// @notice Query if a contract implements an interface
   /// @param _interfaceID The interface identifier, as specified in ERC-165
   /// @dev Interface identification is specified in ERC-165.
   /// @return _status `true` if the contract implements `interfaceID`
-  function supportsInterface(
-    bytes4 _interfaceID
-  ) external pure returns (bool _status);
+  function supportsInterface(bytes4 _interfaceID) external pure returns (bool _status);
 
   /// @notice Set a replacement log entry if we're in recovery mode.
   /// @param _reputationMiningCycle The address of the reputation mining cycle that the log was in.
@@ -81,10 +74,7 @@ interface IColonyNetwork is
 
   /// @notice Get the Meta Colony address.
   /// @return _colonyAddress The Meta colony address, if no colony was found, returns 0x0
-  function getMetaColony()
-    external
-    view
-    returns (address payable _colonyAddress);
+  function getMetaColony() external view returns (address payable _colonyAddress);
 
   /// @notice Get the number of colonies in the network.
   /// @return _count The colony count
@@ -93,9 +83,7 @@ interface IColonyNetwork is
   /// @notice Check if specific address is a colony created on colony network.
   /// @param _colony Address of the colony
   /// @return _addressIsColony true if specified address is a colony, otherwise false
-  function isColony(
-    address _colony
-  ) external view returns (bool _addressIsColony);
+  function isColony(address _colony) external view returns (bool _addressIsColony);
 
   /// @notice Adds a new skill to the global or local skills tree, under skill `_parentSkillId`.
   /// Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`.
@@ -108,18 +96,13 @@ interface IColonyNetwork is
   /// @notice Get the `nParents` and `nChildren` of skill with id `_skillId`.
   /// @param _skillId Id of the skill
   /// @return _skill The Skill struct
-  function getSkill(
-    uint256 _skillId
-  ) external view returns (Skill memory _skill);
+  function getSkill(uint256 _skillId) external view returns (Skill memory _skill);
 
   /// @notice Set deprecation status for a skill
   /// @param _skillId Id of the skill
   /// @param _deprecated Deprecation status
   /// @return _changed Whether the deprecated state was changed
-  function deprecateSkill(
-    uint256 _skillId,
-    bool _deprecated
-  ) external returns (bool _changed);
+  function deprecateSkill(uint256 _skillId, bool _deprecated) external returns (bool _changed);
 
   /// @notice Mark a skill as deprecated which stops new tasks and payments from using it.
   /// @dev This function is deprecated and will be removed in a future release
@@ -128,20 +111,14 @@ interface IColonyNetwork is
 
   /// @notice Initialise the local skills tree for a colony
   /// @return _rootLocalSkillId The root local skill
-  function initialiseRootLocalSkill()
-    external
-    returns (uint256 _rootLocalSkillId);
+  function initialiseRootLocalSkill() external returns (uint256 _rootLocalSkillId);
 
   /// @notice Adds a reputation update entry to log.
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or.
   /// @param _user The address of the user for the reputation update
   /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
   /// @param _skillId The skill for the reputation update
-  function appendReputationUpdateLog(
-    address _user,
-    int256 _amount,
-    uint256 _skillId
-  ) external;
+  function appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId) external;
 
   /// @notice Get the number of skills in the network including both global and local skills.
   /// @return _count The skill count
@@ -149,10 +126,7 @@ interface IColonyNetwork is
 
   /// @notice Get the `skillId` of the reputation mining skill. Only set once the metacolony is set up.
   /// @return _skillId The `skillId` of the reputation mining skill.
-  function getReputationMiningSkillId()
-    external
-    view
-    returns (uint256 _skillId);
+  function getReputationMiningSkillId() external view returns (uint256 _skillId);
 
   /// @notice Sets the token locking address.
   /// This is only set once, and can't be changed afterwards.
@@ -172,9 +146,7 @@ interface IColonyNetwork is
   /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token.
   /// @return _colonyAddress Address of the newly created colony
-  function createColony(
-    address _tokenAddress
-  ) external returns (address _colonyAddress);
+  function createColony(address _tokenAddress) external returns (address _colonyAddress);
 
   /// @notice Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options, at version 4
   /// @dev This is now deprecated and will be removed in a future version
@@ -258,9 +230,7 @@ interface IColonyNetwork is
   /// @notice Get a colony address by its Id in the network.
   /// @param _id Id of the colony to get
   /// @return _colonyAddress The colony address, if no colony was found, returns 0x0
-  function getColony(
-    uint256 _id
-  ) external view returns (address _colonyAddress);
+  function getColony(uint256 _id) external view returns (address _colonyAddress);
 
   /// @notice Returns the latest Colony contract version. This is the version used to create all new colonies.
   /// @return _version The current / latest Colony contract version
@@ -333,10 +303,7 @@ interface IColonyNetwork is
   /// @notice Get the number of leaves in the current reputation state tree.
   /// @dev I cannot see a reason why a user's client would need to call this - only stored to help with some edge cases in reputation mining dispute resolution.
   /// @return nLeaves uint256 The number of leaves in the state tree
-  function getReputationRootHashNLeaves()
-    external
-    view
-    returns (uint256 nLeaves);
+  function getReputationRootHashNLeaves() external view returns (uint256 nLeaves);
 
   /// @notice Get the number of leaves in the current reputation state tree.
   /// @dev Deprecated, replaced by getReputationRootHashNLeaves which does the same thing but is more accurately named.
@@ -356,18 +323,12 @@ interface IColonyNetwork is
   /// @notice Register a "user.joincolony.eth" label.
   /// @param _username The label to register
   /// @param _orbitdb The path of the orbitDB database associated with the user profile
-  function registerUserLabel(
-    string memory _username,
-    string memory _orbitdb
-  ) external;
+  function registerUserLabel(string memory _username, string memory _orbitdb) external;
 
   /// @notice Register a "colony.joincolony.eth" label. Can only be called by a Colony.
   /// @param _colonyName The label to register.
   /// @param _orbitdb The path of the orbitDB database associated with the colony name
-  function registerColonyLabel(
-    string memory _colonyName,
-    string memory _orbitdb
-  ) external;
+  function registerColonyLabel(string memory _colonyName, string memory _orbitdb) external;
 
   /// @notice Update a colony's orbitdb address. Can only be called by a colony with a registered subdomain
   /// @param _orbitdb The path of the orbitDB database to be associated with the colony
@@ -380,16 +341,12 @@ interface IColonyNetwork is
   /// @notice Retrieve the orbitdb address corresponding to a registered account.
   /// @param _node The Namehash of the account being queried.
   /// @return _orbitdb A string containing the address of the orbit database
-  function getProfileDBAddress(
-    bytes32 _node
-  ) external view returns (string memory _orbitdb);
+  function getProfileDBAddress(bytes32 _node) external view returns (string memory _orbitdb);
 
   /// @notice Reverse lookup a username from an address.
   /// @param _addr The address we wish to find the corresponding ENS domain for (if any)
   /// @return _domain A string containing the colony-based ENS name corresponding to addr
-  function lookupRegisteredENSDomain(
-    address _addr
-  ) external view returns (string memory _domain);
+  function lookupRegisteredENSDomain(address _addr) external view returns (string memory _domain);
 
   /// @notice Returns the address the supplied node resolves do, if we are the resolver.
   /// @param _node The namehash of the ENS address being requested
@@ -406,20 +363,14 @@ interface IColonyNetwork is
 
   /// @notice Get the resolver to be used by new instances of ReputationMiningCycle.
   /// @return miningResolverAddress The address of the mining cycle resolver currently used by new instances
-  function getMiningResolver()
-    external
-    view
-    returns (address miningResolverAddress);
+  function getMiningResolver() external view returns (address miningResolverAddress);
 
   /// @notice Add a new extension resolver to the Extensions repository.
   /// @dev Can only be called by the MetaColony.
   /// @dev The extension version is queried from the resolver itself.
   /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param _resolver The deployed resolver containing the extension contract logic
-  function addExtensionToNetwork(
-    bytes32 _extensionId,
-    address _resolver
-  ) external;
+  function addExtensionToNetwork(bytes32 _extensionId, address _resolver) external;
 
   /// @notice Install an extension in a colony. Can only be called by a Colony.
   /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
@@ -469,9 +420,7 @@ interface IColonyNetwork is
   /// @notice Get a token's status in the payout whitelist
   /// @param _token The token being queried
   /// @return _status Will be `true` if token is whitelisted
-  function getPayoutWhitelist(
-    address _token
-  ) external view returns (bool _status);
+  function getPayoutWhitelist(address _token) external view returns (bool _status);
 
   /// @notice Set a token's status in the payout whitelist
   /// @param _token The token being set
@@ -495,9 +444,7 @@ interface IColonyNetwork is
   /// @notice returns how much CLNY _user has staked for the purposes of reputation mining
   /// @param _user The user to query
   /// @return _info The amount staked and the timestamp the stake was made at.
-  function getMiningStake(
-    address _user
-  ) external view returns (MiningStake memory _info);
+  function getMiningStake(address _user) external view returns (MiningStake memory _info);
 
   /// @notice Used to track that a user is eligible to claim a reward
   /// @dev Only callable by the active reputation mining cycle
@@ -522,10 +469,7 @@ interface IColonyNetwork is
 
   /// @notice Called to get the total per-cycle reputation mining reward.
   /// @return _amount The CLNY awarded per mining cycle to the miners
-  function getReputationMiningCycleReward()
-    external
-    view
-    returns (uint256 _amount);
+  function getReputationMiningCycleReward() external view returns (uint256 _amount);
 
   /// @notice Called to deploy a token.
   /// @dev This is more expensive than deploying a token directly, but is able to be done via
@@ -562,7 +506,5 @@ interface IColonyNetwork is
   /// @notice Called to get the address _delegate is allowed to mine for
   /// @param _delegate The address that wants to mine
   /// @return _delegator The address they are allowed to mine on behalf of
-  function getMiningDelegator(
-    address _delegate
-  ) external view returns (address _delegator);
+  function getMiningDelegator(address _delegate) external view returns (address _delegator);
 }

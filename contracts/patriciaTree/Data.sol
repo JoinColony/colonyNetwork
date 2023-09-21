@@ -63,10 +63,7 @@ library Data {
   }
 
   function edgeHash(Edge memory self) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encodePacked(self.node, self.label.length, self.label.data)
-      );
+    return keccak256(abi.encodePacked(self.node, self.label.length, self.label.data));
   }
 
   function insert(Tree storage self, bytes32 key, bytes memory value) internal {
@@ -114,19 +111,13 @@ library Data {
       (head, tail) = chopFirstBit(suffix);
       Node memory branchNode;
       branchNode.children[head] = Edge(value, tail);
-      branchNode.children[1 - head] = Edge(
-        e.node,
-        removePrefix(e.label, prefix.length + 1)
-      );
+      branchNode.children[1 - head] = Edge(e.node, removePrefix(e.label, prefix.length + 1));
       newNodeHash = insertNode(self, branchNode);
     }
     return Edge(newNodeHash, prefix);
   }
 
-  function insertNode(
-    Tree storage tree,
-    Node memory n
-  ) private returns (bytes32 newHash) {
+  function insertNode(Tree storage tree, Node memory n) private returns (bytes32 newHash) {
     bytes32 h = nodeEncodingHash(n);
     tree.nodes[h].children[0] = n.children[0];
     tree.nodes[h].children[1] = n.children[1];
@@ -135,30 +126,18 @@ library Data {
 
   // Returns the hash of the encoding of a node.
   function nodeEncodingHash(Node memory self) private pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encodePacked(edgeHash(self.children[0]), edgeHash(self.children[1]))
-      );
+    return keccak256(abi.encodePacked(edgeHash(self.children[0]), edgeHash(self.children[1])));
   }
 
   // Returns the result of removing a prefix of length `prefix` bits from the
   // given label (shifting its data to the left).
-  function removePrefix(
-    Label memory self,
-    uint prefix
-  ) private pure returns (Label memory r) {
-    require(
-      prefix <= self.length,
-      "colony-patricia-tree-prefix-longer-than-self"
-    );
+  function removePrefix(Label memory self, uint prefix) private pure returns (Label memory r) {
+    require(prefix <= self.length, "colony-patricia-tree-prefix-longer-than-self");
     r.length = self.length - prefix;
     r.data = self.data << prefix;
   }
 
-  function commonPrefix(
-    Label memory self,
-    Label memory other
-  ) private pure returns (uint prefix) {
+  function commonPrefix(Label memory self, Label memory other) private pure returns (uint prefix) {
     uint length = self.length < other.length ? self.length : other.length;
     if (length == 0) {
       return 0;

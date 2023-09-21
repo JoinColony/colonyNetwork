@@ -19,11 +19,7 @@
 pragma solidity 0.8.21;
 
 contract ERC721Mock {
-  event Transfer(
-    address indexed from,
-    address indexed to,
-    uint256 indexed tokenId
-  );
+  event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
   // Mapping owner address to token count
   mapping(address => uint256) private _balances;
@@ -55,24 +51,13 @@ contract ERC721Mock {
     return owner;
   }
 
-  function safeTransferFrom(
-    address from,
-    address to,
-    uint256 tokenId
-  ) public virtual {
-    require(
-      msg.sender == ownerOf(tokenId),
-      "ERC721: caller is not token owner or approved"
-    );
+  function safeTransferFrom(address from, address to, uint256 tokenId) public virtual {
+    require(msg.sender == ownerOf(tokenId), "ERC721: caller is not token owner or approved");
     // just using simple transfer for mock purposes.
     _transfer(from, to, tokenId);
   }
 
-  function _transfer(
-    address from,
-    address to,
-    uint256 tokenId
-  ) internal virtual {
+  function _transfer(address from, address to, uint256 tokenId) internal virtual {
     require(ownerOf(tokenId) == from, "ERC721: transfer from incorrect owner");
     require(to != address(0), "ERC721: transfer to the zero address");
 

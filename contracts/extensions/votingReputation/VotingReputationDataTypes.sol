@@ -64,11 +64,7 @@ interface VotingReputationDataTypes {
   }
 
   // Events
-  event MotionCreated(
-    uint256 indexed motionId,
-    address creator,
-    uint256 indexed domainId
-  );
+  event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
   event MotionStaked(
     uint256 indexed motionId,
     address indexed staker,
@@ -76,11 +72,7 @@ interface VotingReputationDataTypes {
     uint256 amount
   );
   event MotionVoteSubmitted(uint256 indexed motionId, address indexed voter);
-  event MotionVoteRevealed(
-    uint256 indexed motionId,
-    address indexed voter,
-    uint256 indexed vote
-  );
+  event MotionVoteRevealed(uint256 indexed motionId, address indexed voter, uint256 indexed vote);
   event MotionFinalized(uint256 indexed motionId, bytes action, bool executed);
   event MotionEscalated(
     uint256 indexed motionId,

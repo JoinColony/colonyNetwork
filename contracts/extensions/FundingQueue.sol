@@ -173,14 +173,12 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
     require(
       (domainSkillId == fromSkillId && _fromChildSkillIndex == UINT256_MAX) ||
-        fromSkillId ==
-        colonyNetwork.getChildSkillId(domainSkillId, _fromChildSkillIndex),
+        fromSkillId == colonyNetwork.getChildSkillId(domainSkillId, _fromChildSkillIndex),
       "funding-queue-bad-inheritence-from"
     );
     require(
       (domainSkillId == toSkillId && _toChildSkillIndex == UINT256_MAX) ||
-        toSkillId ==
-        colonyNetwork.getChildSkillId(domainSkillId, _toChildSkillIndex),
+        toSkillId == colonyNetwork.getChildSkillId(domainSkillId, _toChildSkillIndex),
       "funding-queue-bad-inheritence-to"
     );
 
@@ -202,13 +200,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     );
     queue[proposalCount] = proposalCount; // Initialize as a disconnected self-edge
 
-    emit ProposalCreated(
-      proposalCount,
-      _fromPot,
-      _toPot,
-      _token,
-      _totalRequested
-    );
+    emit ProposalCreated(proposalCount, _fromPot, _toPot, _token, _totalRequested);
   }
 
   /// @notice Cancel a funding proposal and remove from linked list
@@ -217,14 +209,8 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   function cancelProposal(uint256 _id, uint256 _prevId) public {
     Proposal storage proposal = proposals[_id];
 
-    require(
-      proposal.state != ProposalState.Cancelled,
-      "funding-queue-already-cancelled"
-    );
-    require(
-      proposal.state != ProposalState.Completed,
-      "funding-queue-already-completed"
-    );
+    require(proposal.state != ProposalState.Cancelled, "funding-queue-already-cancelled");
+    require(proposal.state != ProposalState.Completed, "funding-queue-already-completed");
     require(proposal.creator == msgSender(), "funding-queue-not-creator");
     require(queue[_prevId] == _id, "funding-queue-bad-prev-id");
 
@@ -254,10 +240,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   ) public {
     Proposal storage proposal = proposals[_id];
 
-    require(
-      proposal.state == ProposalState.Inactive,
-      "funding-queue-not-inactive"
-    );
+    require(proposal.state == ProposalState.Inactive, "funding-queue-not-inactive");
     require(proposal.creator == msgSender(), "funding-queue-not-creator");
 
     proposal.domainTotalRep = doCheckReputation(
@@ -297,10 +280,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   ) public {
     Proposal storage proposal = proposals[_id];
 
-    require(
-      proposal.state == ProposalState.Active,
-      "funding-queue-proposal-not-active"
-    );
+    require(proposal.state == ProposalState.Active, "funding-queue-proposal-not-active");
     require(_id != _newPrevId, "funding-queue-cannot-insert-after-self"); // NOTE: this may be redundant
 
     uint256 userRep = doCheckReputation(
@@ -355,10 +335,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
     uint256 fundingToTransfer = calculateFundingToTransfer(_id);
     uint256 remainingRequested = proposal.totalRequested - proposal.totalPaid;
-    uint256 actualFundingToTransfer = min(
-      fundingToTransfer,
-      remainingRequested
-    );
+    uint256 actualFundingToTransfer = min(fundingToTransfer, remainingRequested);
 
     // Infer update time based on actualFundingToTransfer / fundingToTransfer
     //  This is done so, if completed, the timestamp reflects the approximate completion
@@ -375,13 +352,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
     // Check if the extension has the permissions to do this
     // If not, cancel the proposal so others aren't blocked
-    if (
-      !colony.hasUserRole(
-        address(this),
-        proposal.domainId,
-        ColonyDataTypes.ColonyRole.Funding
-      )
-    ) {
+    if (!colony.hasUserRole(address(this), proposal.domainId, ColonyDataTypes.ColonyRole.Funding)) {
       emit ProposalPinged(_id, 0);
       cancelProposal(_id, HEAD);
       return;
@@ -415,10 +386,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   function reclaimStake(uint256 _id) public {
     Proposal storage proposal = proposals[_id];
 
-    require(
-      proposal.state != ProposalState.Active,
-      "funding-queue-proposal-still-active"
-    );
+    require(proposal.state != ProposalState.Active, "funding-queue-proposal-still-active");
     require(
       proposal.lastUpdated + COOLDOWN_PERIOD <= block.timestamp,
       "funding-queue-cooldown-not-elapsed"
@@ -441,9 +409,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   /// @notice Get the proposal struct for a given proposal
   /// @param _id The proposal Id
   /// @return proposal The proposal struct
-  function getProposal(
-    uint256 _id
-  ) public view returns (Proposal memory proposal) {
+  function getProposal(uint256 _id) public view returns (Proposal memory proposal) {
     return proposals[_id];
   }
 
@@ -451,10 +417,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   /// @param _id The proposal Id
   /// @param _supporter The supporter
   /// @return support The support amount
-  function getSupport(
-    uint256 _id,
-    address _supporter
-  ) public view returns (uint256 support) {
+  function getSupport(uint256 _id, address _supporter) public view returns (uint256 support) {
     return supporters[_id][_supporter];
   }
 
@@ -475,31 +438,16 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     uint256 _branchMask,
     bytes32[] memory _siblings
   ) internal view returns (uint256) {
-    bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork())
-      .getReputationRootHash();
+    bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork()).getReputationRootHash();
     uint256 domainSkillId = colony.getDomain(_domainId).skillId;
-    return
-      checkReputation(
-        rootHash,
-        domainSkillId,
-        _user,
-        _key,
-        _value,
-        _branchMask,
-        _siblings
-      );
+    return checkReputation(rootHash, domainSkillId, _user, _key, _value, _branchMask, _siblings);
   }
 
-  function calculateFundingToTransfer(
-    uint256 _id
-  ) internal view returns (uint256) {
+  function calculateFundingToTransfer(uint256 _id) internal view returns (uint256) {
     Proposal storage proposal = proposals[_id];
 
     uint256 balance = colony.getFundingPotBalance(proposal.fromPot, token);
-    uint256 backingPercent = min(
-      WAD,
-      wdiv(proposal.totalSupport, proposal.domainTotalRep)
-    );
+    uint256 backingPercent = min(WAD, wdiv(proposal.totalSupport, proposal.domainTotalRep));
 
     uint256 decayRate = getDecayRate(backingPercent);
     uint256 unitsElapsed = (block.timestamp - proposal.lastUpdated) / 10; // 10 second intervals
@@ -510,9 +458,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     return fundingToTransfer;
   }
 
-  function getDecayRate(
-    uint256 backingPercent
-  ) internal pure returns (uint256) {
+  function getDecayRate(uint256 backingPercent) internal pure returns (uint256) {
     assert(backingPercent <= WAD);
 
     if (backingPercent == WAD) {

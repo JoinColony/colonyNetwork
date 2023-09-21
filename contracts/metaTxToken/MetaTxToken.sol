@@ -38,9 +38,7 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
   event Mint(address indexed guy, uint256 wad);
   event Burn(address indexed guy, uint256 wad);
 
-  function getMetatransactionNonce(
-    address _user
-  ) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 
@@ -110,10 +108,7 @@ contract MetaTxToken is DSTokenBaseMeta(0), DSAuthMeta {
 
   function burn(address guy, uint256 wad) public {
     if (guy != msgSender()) {
-      require(
-        _approvals[guy][msgSender()] >= wad,
-        "ds-token-insufficient-approval"
-      );
+      require(_approvals[guy][msgSender()] >= wad, "ds-token-insufficient-approval");
       _approvals[guy][msgSender()] -= wad;
     }
 

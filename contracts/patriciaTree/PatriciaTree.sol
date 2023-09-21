@@ -55,12 +55,7 @@ contract PatriciaTree is IPatriciaTree, PatriciaTreeBase {
 
   function getNode(
     bytes32 hash
-  )
-    public
-    view
-    override(IPatriciaTreeBase, PatriciaTreeBase)
-    returns (Data.Node memory n)
-  {
+  ) public view override(IPatriciaTreeBase, PatriciaTreeBase) returns (Data.Node memory n) {
     return super.getNode(hash);
   }
 }

@@ -27,11 +27,7 @@ contract NoLimitSubdomains is ColonyStorage {
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _parentDomainId
-  )
-    public
-    stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
-  {
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId) {
     uint256 parentSkillId = domains[_parentDomainId].skillId;
 
     // Setup new local skill
@@ -46,15 +42,11 @@ contract NoLimitSubdomains is ColonyStorage {
     domainCount += 1;
     // Create a new funding pot
     fundingPotCount += 1;
-    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType
-      .Domain;
+    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType.Domain;
     fundingPots[fundingPotCount].associatedTypeId = domainCount;
 
     // Create a new domain with the given skill and new funding pot
-    domains[domainCount] = Domain({
-      skillId: _skillId,
-      fundingPotId: fundingPotCount
-    });
+    domains[domainCount] = Domain({ skillId: _skillId, fundingPotId: fundingPotCount });
 
     emit DomainAdded(msg.sender, domainCount);
     emit FundingPotAdded(fundingPotCount);
