@@ -44,10 +44,8 @@ contract StreamingPayments is ColonyExtensionMeta {
   // Constants
 
   uint256 constant SLOT = 0;
-  ColonyDataTypes.ColonyRole constant ADMINISTRATION =
-    ColonyDataTypes.ColonyRole.Administration;
-  ColonyDataTypes.ColonyRole constant FUNDING =
-    ColonyDataTypes.ColonyRole.Funding;
+  ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
+  ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
 
   // Storage
 
@@ -171,16 +169,8 @@ contract StreamingPayments is ColonyExtensionMeta {
   )
     public
     notDeprecated
-    validateFundingPermission(
-      _fundingPermissionDomainId,
-      _fundingChildSkillIndex,
-      _domainId
-    )
-    validateAdministrationPermission(
-      _adminPermissionDomainId,
-      _adminChildSkillIndex,
-      _domainId
-    )
+    validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, _domainId)
+    validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, _domainId)
   {
     uint256 startTime = (_startTime == 0) ? block.timestamp : _startTime;
 
@@ -200,17 +190,9 @@ contract StreamingPayments is ColonyExtensionMeta {
     emit StreamingPaymentCreated(msgSender(), numStreamingPayments);
 
     for (uint256 i; i < _tokens.length; i++) {
-      paymentTokens[numStreamingPayments][_tokens[i]] = PaymentToken(
-        _amounts[i],
-        0
-      );
+      paymentTokens[numStreamingPayments][_tokens[i]] = PaymentToken(_amounts[i], 0);
 
-      emit PaymentTokenUpdated(
-        msgSender(),
-        numStreamingPayments,
-        _tokens[i],
-        _amounts[i]
-      );
+      emit PaymentTokenUpdated(msgSender(), numStreamingPayments, _tokens[i], _amounts[i]);
     }
   }
 
@@ -231,31 +213,19 @@ contract StreamingPayments is ColonyExtensionMeta {
   ) public {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
 
-    require(
-      streamingPayment.startTime < block.timestamp,
-      "streaming-payments-too-soon-to-claim"
-    );
+    require(streamingPayment.startTime < block.timestamp, "streaming-payments-too-soon-to-claim");
 
-    uint256 domainFundingPotId = colony
-      .getDomain(streamingPayment.domainId)
-      .fundingPotId;
+    uint256 domainFundingPotId = colony.getDomain(streamingPayment.domainId).fundingPotId;
     uint256[] memory amountsToClaim = new uint256[](_tokens.length);
     bool anythingToClaim;
 
     for (uint256 i; i < _tokens.length; i++) {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
 
-      uint256 amountEntitledFromStart = getAmountEntitledFromStart(
-        _id,
-        _tokens[i]
-      );
+      uint256 amountEntitledFromStart = getAmountEntitledFromStart(_id, _tokens[i]);
       uint256 amountSinceLastClaim = amountEntitledFromStart -
         paymentToken.pseudoAmountClaimedFromStart;
-      amountsToClaim[i] = getAmountClaimable(
-        domainFundingPotId,
-        _tokens[i],
-        amountSinceLastClaim
-      );
+      amountsToClaim[i] = getAmountClaimable(domainFundingPotId, _tokens[i], amountSinceLastClaim);
       paymentToken.pseudoAmountClaimedFromStart =
         paymentToken.pseudoAmountClaimedFromStart +
         amountsToClaim[i];
@@ -282,12 +252,7 @@ contract StreamingPayments is ColonyExtensionMeta {
       if (amountsToClaim[i] > 0) {
         colony.claimExpenditurePayout(expenditureId, SLOT, _tokens[i]);
 
-        emit StreamingPaymentClaimed(
-          msgSender(),
-          _id,
-          _tokens[i],
-          amountsToClaim[i]
-        );
+        emit StreamingPaymentClaimed(msgSender(), _id, _tokens[i], amountsToClaim[i]);
       }
     }
   }
@@ -312,10 +277,7 @@ contract StreamingPayments is ColonyExtensionMeta {
       streamingPayments[_id].domainId
     )
   {
-    require(
-      paymentTokens[_id][_token].amount == 0,
-      "streaming-payments-token-exists"
-    );
+    require(paymentTokens[_id][_token].amount == 0, "streaming-payments-token-exists");
 
     paymentTokens[_id][_token] = PaymentToken(_amount, 0);
 
@@ -362,17 +324,13 @@ contract StreamingPayments is ColonyExtensionMeta {
 
     PaymentToken storage paymentToken = paymentTokens[_id][_token];
     require(
-      paymentToken.pseudoAmountClaimedFromStart >=
-        getAmountEntitledFromStart(_id, _token),
+      paymentToken.pseudoAmountClaimedFromStart >= getAmountEntitledFromStart(_id, _token),
       "streaming-payments-insufficient-funds"
     );
     paymentToken.amount = _amount;
 
     // Update 'claimed' as if we've had this rate since the beginning
-    paymentToken.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(
-      _id,
-      _token
-    );
+    paymentToken.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(_id, _token);
 
     emit PaymentTokenUpdated(msgSender(), _id, _token, _amount);
   }
@@ -396,14 +354,8 @@ contract StreamingPayments is ColonyExtensionMeta {
     )
   {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
-    require(
-      block.timestamp <= streamingPayment.startTime,
-      "streaming-payments-already-started"
-    );
-    require(
-      _startTime <= streamingPayment.endTime,
-      "streaming-payments-invalid-start-time"
-    );
+    require(block.timestamp <= streamingPayment.startTime, "streaming-payments-already-started");
+    require(_startTime <= streamingPayment.endTime, "streaming-payments-invalid-start-time");
 
     streamingPayment.startTime = _startTime;
   }
@@ -427,15 +379,9 @@ contract StreamingPayments is ColonyExtensionMeta {
     )
   {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
-    require(
-      block.timestamp <= streamingPayment.endTime,
-      "streaming-payments-already-ended"
-    );
+    require(block.timestamp <= streamingPayment.endTime, "streaming-payments-already-ended");
     require(block.timestamp <= _endTime, "streaming-payments-invalid-end-time");
-    require(
-      streamingPayment.startTime <= _endTime,
-      "streaming-payments-invalid-end-time"
-    );
+    require(streamingPayment.startTime <= _endTime, "streaming-payments-invalid-end-time");
 
     streamingPayment.endTime = _endTime;
   }
@@ -460,12 +406,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     if (streamingPayment.startTime > block.timestamp) {
       streamingPayment.startTime = block.timestamp;
     }
-    setEndTime(
-      _adminPermissionDomainId,
-      _adminChildSkillIndex,
-      _id,
-      block.timestamp
-    );
+    setEndTime(_adminPermissionDomainId, _adminChildSkillIndex, _id, block.timestamp);
   }
 
   /// @notice Cancel the streaming payment, specifically by setting endTime to block.timestamp, and waive claim
@@ -475,10 +416,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   function cancelAndWaive(uint256 _id, address[] memory _tokens) public {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     // slither-disable-next-line incorrect-equality
-    require(
-      streamingPayment.recipient == msgSender(),
-      "streaming-payments-not-recipient"
-    );
+    require(streamingPayment.recipient == msgSender(), "streaming-payments-not-recipient");
 
     if (streamingPayment.startTime > block.timestamp) {
       streamingPayment.startTime = block.timestamp;
@@ -488,10 +426,7 @@ contract StreamingPayments is ColonyExtensionMeta {
 
     for (uint256 i; i < _tokens.length; i++) {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
-      paymentToken.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(
-        _id,
-        _tokens[i]
-      );
+      paymentToken.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(_id, _tokens[i]);
     }
   }
 
@@ -543,11 +478,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     if (durationToClaim == 0) {
       return 0;
     }
-    return
-      wmul(
-        paymentToken.amount,
-        wdiv(durationToClaim, streamingPayment.interval)
-      );
+    return wmul(paymentToken.amount, wdiv(durationToClaim, streamingPayment.interval));
   }
 
   // Internal
@@ -576,9 +507,7 @@ contract StreamingPayments is ColonyExtensionMeta {
       _childSkillIndex,
       streamingPayments[_id].domainId
     );
-    uint256 expenditureFundingPotId = colony
-      .getExpenditure(expenditureId)
-      .fundingPotId;
+    uint256 expenditureFundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
     for (uint256 i; i < _tokens.length; i++) {
       if (_amountsToClaim[i] > 0) {
@@ -593,27 +522,16 @@ contract StreamingPayments is ColonyExtensionMeta {
           _amountsToClaim[i],
           _tokens[i]
         );
-        colony.setExpenditurePayout(
-          expenditureId,
-          SLOT,
-          _tokens[i],
-          _amountsToClaim[i]
-        );
+        colony.setExpenditurePayout(expenditureId, SLOT, _tokens[i], _amountsToClaim[i]);
       }
     }
 
-    colony.setExpenditureRecipient(
-      expenditureId,
-      SLOT,
-      streamingPayments[_id].recipient
-    );
+    colony.setExpenditureRecipient(expenditureId, SLOT, streamingPayments[_id].recipient);
     colony.finalizeExpenditure(expenditureId);
     return expenditureId;
   }
 
-  function toArray(
-    address _token
-  ) internal pure returns (address[] memory tokens) {
+  function toArray(address _token) internal pure returns (address[] memory tokens) {
     tokens = new address[](1);
     tokens[0] = _token;
   }

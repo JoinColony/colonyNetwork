@@ -28,19 +28,11 @@ import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 contract StakedExpenditure is ColonyExtensionMeta {
   // Events
 
-  event ExpenditureMadeViaStake(
-    address indexed creator,
-    uint256 expenditureId,
-    uint256 stake
-  );
+  event ExpenditureMadeViaStake(address indexed creator, uint256 expenditureId, uint256 stake);
   event ExpenditureCancelled(address agent, uint256 expenditureId);
   event StakeReclaimed(uint256 expenditureId);
   event StakeFractionSet(address agent, uint256 stakeFraction);
-  event ExpenditureStakerPunished(
-    address agent,
-    uint256 expenditureId,
-    bool punished
-  );
+  event ExpenditureStakerPunished(address agent, uint256 expenditureId, bool punished);
 
   // Datatypes
 
@@ -141,8 +133,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
   ) public notDeprecated {
     require(stakeFraction > 0, "staked-expenditure-not-initialised");
 
-    bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork())
-      .getReputationRootHash();
+    bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork()).getReputationRootHash();
     uint256 domainSkillId = colony.getDomain(_domainId).skillId;
     uint256 domainRep = checkReputation(
       rootHash,
@@ -162,10 +153,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
       _domainId
     );
 
-    stakes[expenditureId] = Stake({
-      creator: msgSender(),
-      amount: stakeAmount
-    });
+    stakes[expenditureId] = Stake({ creator: msgSender(), amount: stakeAmount });
     colony.transferExpenditure(expenditureId, msgSender());
 
     emit ExpenditureMadeViaStake(msgSender(), expenditureId, stakeAmount);
@@ -175,18 +163,13 @@ contract StakedExpenditure is ColonyExtensionMeta {
   /// @param _expenditureId The id of the expenditure
   function reclaimStake(uint256 _expenditureId) public {
     Stake storage stake = stakes[_expenditureId];
-    require(
-      stake.creator != address(0x0),
-      "staked-expenditure-nothing-to-claim"
-    );
+    require(stake.creator != address(0x0), "staked-expenditure-nothing-to-claim");
 
     uint256 stakeAmount = stake.amount;
     address stakeCreator = stake.creator;
     delete stakes[_expenditureId];
 
-    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(
-      _expenditureId
-    );
+    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
     require(
       expenditure.status == ColonyDataTypes.ExpenditureStatus.Cancelled ||
         expenditure.status == ColonyDataTypes.ExpenditureStatus.Finalized,
@@ -209,26 +192,16 @@ contract StakedExpenditure is ColonyExtensionMeta {
     uint256 _expenditureId
   ) public {
     Stake storage stake = stakes[_expenditureId];
-    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(
-      _expenditureId
-    );
+    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
 
-    require(
-      expenditure.owner == msgSender(),
-      "staked-expenditure-must-be-owner"
-    );
+    require(expenditure.owner == msgSender(), "staked-expenditure-must-be-owner");
 
     require(
       expenditure.status == ColonyDataTypes.ExpenditureStatus.Draft,
       "staked-expenditure-expenditure-not-draft"
     );
 
-    cancelExpenditure(
-      _permissionDomainId,
-      _childSkillIndex,
-      _expenditureId,
-      expenditure.owner
-    );
+    cancelExpenditure(_permissionDomainId, _childSkillIndex, _expenditureId, expenditure.owner);
 
     // slither-disable-next-line reentrancy-no-eth
     reclaimStake(_expenditureId);
@@ -250,9 +223,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
     uint256 _expenditureId,
     bool _punish
   ) public {
-    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(
-      _expenditureId
-    );
+    ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
 
     require(
       colony.hasInheritedUserRole(
@@ -300,12 +271,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
       }
     }
 
-    cancelExpenditure(
-      _permissionDomainId,
-      _childSkillIndex,
-      _expenditureId,
-      expenditure.owner
-    );
+    cancelExpenditure(_permissionDomainId, _childSkillIndex, _expenditureId, expenditure.owner);
 
     emit ExpenditureStakerPunished(msgSender(), _expenditureId, _punish);
   }
@@ -321,9 +287,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
   /// @notice Get the stake for an expenditure
   /// @param _expenditureId The id of the expenditure to get the stake for
   /// @return stake The stake, a struct holding the staker's address and the stake amount
-  function getStake(
-    uint256 _expenditureId
-  ) public view returns (Stake memory stake) {
+  function getStake(uint256 _expenditureId) public view returns (Stake memory stake) {
     return stakes[_expenditureId];
   }
 

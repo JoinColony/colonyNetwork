@@ -51,10 +51,7 @@ interface IMetaColony is IColony {
   /// @dev Calls `IColonyNetwork.addColonyVersion`.
   /// @param _version The new Colony contract version
   /// @param _resolver Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
-  function addNetworkColonyVersion(
-    uint256 _version,
-    address _resolver
-  ) external;
+  function addNetworkColonyVersion(uint256 _version, address _resolver) external;
 
   /// @notice Called to set the total per-cycle reputation reward, which will be split between all miners.
   /// @dev Calls the corresponding function on the ColonyNetwork.
@@ -66,8 +63,5 @@ interface IMetaColony is IColony {
   /// @dev The extension version is queried from the resolver itself.
   /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param _resolver The deployed resolver containing the extension contract logic
-  function addExtensionToNetwork(
-    bytes32 _extensionId,
-    address _resolver
-  ) external;
+  function addExtensionToNetwork(bytes32 _extensionId, address _resolver) external;
 }

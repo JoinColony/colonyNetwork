@@ -34,9 +34,7 @@ abstract contract CommonStorage is DSAuth, MetaTransactionMsgSender {
   bytes32 constant PROTECTED = keccak256("Recovery Mode Protected Slot");
 
   function protectSlot(uint256 _slot) internal always {
-    uint256 flagSlot = uint256(
-      keccak256(abi.encodePacked("RECOVERY_PROTECTED", _slot))
-    );
+    uint256 flagSlot = uint256(keccak256(abi.encodePacked("RECOVERY_PROTECTED", _slot)));
     uint256 protectFlag = uint256(PROTECTED);
     assembly {
       sstore(flagSlot, protectFlag) // ignore-swc-124

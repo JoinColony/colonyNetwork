@@ -77,11 +77,7 @@ interface ReputationMiningCycleDataTypes {
     bytes32 _jrh,
     uint256 _entryIndex
   );
-  event JustificationRootHashConfirmed(
-    bytes32 _newHash,
-    uint256 _nLeaves,
-    bytes32 _jrh
-  );
+  event JustificationRootHashConfirmed(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh);
   event BinarySearchConfirmed(
     bytes32 _newHash,
     uint256 _nLeaves,

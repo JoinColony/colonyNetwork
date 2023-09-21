@@ -9,7 +9,7 @@
         }
     ],
     "tabWidth": 2,
-    "printWidth": 80,
+    "printWidth": 100,
     "trailingComma": "all",
     "singleQuote": false,
     "semi": true,

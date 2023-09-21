@@ -23,11 +23,7 @@ import { Colony } from "./../colony/Colony.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract FunctionsNotAvailableOnColony is Colony {
-  function registerUserLabel(
-    string memory username,
-    string memory orbitdb
-  ) public {
-    return
-      IColonyNetwork(colonyNetworkAddress).registerUserLabel(username, orbitdb);
+  function registerUserLabel(string memory username, string memory orbitdb) public {
+    return IColonyNetwork(colonyNetworkAddress).registerUserLabel(username, orbitdb);
   }
 }

@@ -30,18 +30,13 @@ contract ContractRecovery is
 {
   uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
 
-  function setStorageSlotRecovery(
-    uint256 _slot,
-    bytes32 _value
-  ) public recovery auth {
+  function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
     require(_slot != AUTHORITY_SLOT, "colony-common-protected-variable");
     require(_slot != OWNER_SLOT, "colony-common-protected-variable");
     require(_slot != RESOLVER_SLOT, "colony-common-protected-variable");
 
     bytes32 flag;
-    uint256 flagSlot = uint256(
-      keccak256(abi.encodePacked("RECOVERY_PROTECTED", _slot))
-    );
+    uint256 flagSlot = uint256(keccak256(abi.encodePacked("RECOVERY_PROTECTED", _slot)));
     assembly {
       flag := sload(flagSlot)
     }
@@ -111,10 +106,7 @@ contract ContractRecovery is
       totalAuthorized += 1;
     }
     uint numRequired = totalAuthorized / 2 + 1;
-    require(
-      recoveryApprovalCount >= numRequired,
-      "colony-recovery-exit-insufficient-approvals"
-    );
+    require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
     recoveryMode = false;
 
     emit RecoveryModeExited(msgSender());
@@ -122,21 +114,12 @@ contract ContractRecovery is
 
   // Can only be called by the root role.
   function setRecoveryRole(address _user) public stoppable auth {
-    require(
-      recoveryRolesCount < ~uint64(0),
-      "colony-maximum-num-recovery-roles"
-    );
+    require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
 
-    if (
-      !CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)
-    ) {
+    if (!CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
       // ignore-swc-113
       recoveryRolesCount++;
-      CommonAuthority(address(authority)).setUserRole(
-        _user,
-        RECOVERY_ROLE,
-        true
-      );
+      CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, true);
 
       emit RecoveryRoleSet(_user, true);
     }
@@ -147,11 +130,7 @@ contract ContractRecovery is
     if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
       // ignore-swc-113 ignore-swc-128
       recoveryRolesCount--; // ignore-swc-107 ignore-swc-101
-      CommonAuthority(address(authority)).setUserRole(
-        _user,
-        RECOVERY_ROLE,
-        false
-      ); // ignore-swc-113 ignore-swc-107
+      CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, false); // ignore-swc-113 ignore-swc-107
 
       emit RecoveryRoleSet(_user, false);
     }

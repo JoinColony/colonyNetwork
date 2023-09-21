@@ -26,16 +26,10 @@ import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 // ignore-file-swc-108
 
 contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
-  event OneTxPaymentMade(
-    address agent,
-    uint256 fundamentalId,
-    uint256 nPayouts
-  );
+  event OneTxPaymentMade(address agent, uint256 fundamentalId, uint256 nPayouts);
 
-  ColonyDataTypes.ColonyRole constant ADMINISTRATION =
-    ColonyDataTypes.ColonyRole.Administration;
-  ColonyDataTypes.ColonyRole constant FUNDING =
-    ColonyDataTypes.ColonyRole.Funding;
+  ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
+  ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
 
   mapping(address => uint256) metatransactionNonces;
 
@@ -104,9 +98,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   /// @notice Return the permissions required for each function
   /// @param _sig The function signature
   /// @return _roles The byte32 of permissions required
-  function getCapabilityRoles(
-    bytes4 _sig
-  ) public pure override returns (bytes32 _roles) {
+  function getCapabilityRoles(bytes4 _sig) public pure override returns (bytes32 _roles) {
     if (_sig == MAKE_PAYMENT_SIG || _sig == MAKE_PAYMENT_DOMAIN_SIG) {
       return REQUIRED_ROLES;
     } else {
@@ -142,13 +134,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     );
 
     require(
-      colony.hasInheritedUserRole(
-        msgSender(),
-        1,
-        FUNDING,
-        _childSkillIndex,
-        _domainId
-      ) &&
+      colony.hasInheritedUserRole(msgSender(), 1, FUNDING, _childSkillIndex, _domainId) &&
         colony.hasInheritedUserRole(
           msgSender(),
           _callerPermissionDomainId,
@@ -180,24 +166,14 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
         _amounts[0],
         _tokens[0]
       );
-      colony.setPaymentPayout(
-        1,
-        _childSkillIndex,
-        paymentId,
-        _tokens[0],
-        _amounts[0]
-      );
+      colony.setPaymentPayout(1, _childSkillIndex, paymentId, _tokens[0], _amounts[0]);
 
       colony.finalizePayment(1, _childSkillIndex, paymentId);
       colony.claimPayment(paymentId, _tokens[0]);
 
       emit OneTxPaymentMade(msgSender(), paymentId, _workers.length);
     } else {
-      uint256 expenditureId = colony.makeExpenditure(
-        1,
-        _childSkillIndex,
-        _domainId
-      );
+      uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
       uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
       prepareFunding(_childSkillIndex, fundingPotId, _tokens, _amounts);
@@ -208,10 +184,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       for (idx = 0; idx < _workers.length; idx++) {
         // If a new worker, start a new slot
         if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
-          require(
-            idx == 0 || _workers[idx] > _workers[idx - 1],
-            "one-tx-payment-bad-worker-order"
-          );
+          require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
 
           slot++;
           colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
@@ -220,18 +193,10 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
             colony.setExpenditureSkill(expenditureId, slot, _skillId);
           }
         } else {
-          require(
-            _tokens[idx] > _tokens[idx - 1],
-            "one-tx-payment-bad-token-order"
-          );
+          require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
         }
 
-        colony.setExpenditurePayout(
-          expenditureId,
-          slot,
-          _tokens[idx],
-          _amounts[idx]
-        );
+        colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
       }
 
       finalizeAndClaim(expenditureId, _workers, _tokens);
@@ -338,10 +303,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       for (idx = 0; idx < _workers.length; idx++) {
         // If a new worker, start a new slot
         if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
-          require(
-            idx == 0 || _workers[idx] > _workers[idx - 1],
-            "one-tx-payment-bad-worker-order"
-          );
+          require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
 
           slot++;
           colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
@@ -350,18 +312,10 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
             colony.setExpenditureSkill(expenditureId, slot, _skillId);
           }
         } else {
-          require(
-            _tokens[idx] > _tokens[idx - 1],
-            "one-tx-payment-bad-token-order"
-          );
+          require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
         }
 
-        colony.setExpenditurePayout(
-          expenditureId,
-          slot,
-          _tokens[idx],
-          _amounts[idx]
-        );
+        colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
       }
 
       finalizeAndClaim(expenditureId, _workers, _tokens);

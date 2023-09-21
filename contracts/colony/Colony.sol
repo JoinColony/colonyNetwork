@@ -29,12 +29,7 @@ import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
 import { ColonyAuthority } from "./ColonyAuthority.sol";
 
-contract Colony is
-  BasicMetaTransaction,
-  Multicall,
-  ColonyStorage,
-  PatriciaTreeProofs
-{
+contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeProofs {
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   // prettier-ignore
@@ -48,10 +43,7 @@ contract Colony is
     return token;
   }
 
-  function annotateTransaction(
-    bytes32 _txHash,
-    string memory _metadata
-  ) public always {
+  function annotateTransaction(bytes32 _txHash, string memory _metadata) public always {
     emit Annotation(msgSender(), _txHash, _metadata);
   }
 
@@ -68,12 +60,7 @@ contract Colony is
       domains[_domainId].skillId
     );
 
-    emit ArbitraryReputationUpdate(
-      msgSender(),
-      _user,
-      domains[_domainId].skillId,
-      _amount
-    );
+    emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
 
   function emitSkillReputationReward(
@@ -82,11 +69,7 @@ contract Colony is
     int256 _amount
   ) public stoppable auth validGlobalOrLocalSkill(_skillId) {
     require(_amount > 0, "colony-reward-must-be-positive");
-    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(
-      _user,
-      _amount,
-      _skillId
-    );
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
     emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
   }
@@ -97,11 +80,7 @@ contract Colony is
     uint256 _domainId,
     address _user,
     int256 _amount
-  )
-    public
-    stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(
       _user,
@@ -109,12 +88,7 @@ contract Colony is
       domains[_domainId].skillId
     );
 
-    emit ArbitraryReputationUpdate(
-      msgSender(),
-      _user,
-      domains[_domainId].skillId,
-      _amount
-    );
+    emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
 
   function emitSkillReputationPenalty(
@@ -123,11 +97,7 @@ contract Colony is
     int256 _amount
   ) public stoppable auth validGlobalOrLocalSkill(_skillId) {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
-    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(
-      _user,
-      _amount,
-      _skillId
-    );
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
     emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
   }
@@ -136,9 +106,7 @@ contract Colony is
     emit ColonyMetadata(msgSender(), _metadata);
   }
 
-  function editColonyByDelta(
-    string memory _metadataDelta
-  ) public stoppable auth {
+  function editColonyByDelta(string memory _metadataDelta) public stoppable auth {
     emit ColonyMetadataDelta(msgSender(), _metadataDelta);
   }
 
@@ -154,12 +122,8 @@ contract Colony is
         uint256(_amounts[i]) <= fundingPots[1].balance[token],
         "colony-bootstrap-not-enough-tokens"
       );
-      fundingPots[1].balance[token] =
-        fundingPots[1].balance[token] -
-        uint256(_amounts[i]);
-      nonRewardPotsTotal[token] =
-        nonRewardPotsTotal[token] -
-        uint256(_amounts[i]);
+      fundingPots[1].balance[token] = fundingPots[1].balance[token] - uint256(_amounts[i]);
+      nonRewardPotsTotal[token] = nonRewardPotsTotal[token] - uint256(_amounts[i]);
     }
 
     // After doing all the local storage changes, then do all the external calls
@@ -180,10 +144,7 @@ contract Colony is
 
   function burnTokens(address _token, uint256 _amount) public stoppable auth {
     // Check the root funding pot has enought
-    require(
-      fundingPots[1].balance[_token] >= _amount,
-      "colony-not-enough-tokens"
-    );
+    require(fundingPots[1].balance[_token] >= _amount, "colony-not-enough-tokens");
     fundingPots[1].balance[_token] -= _amount;
 
     ERC20Extended(_token).burn(_amount);
@@ -205,10 +166,7 @@ contract Colony is
 
   function mintTokensForColonyNetwork(uint _wad) public stoppable {
     // Only the colony Network can call this function
-    require(
-      msgSender() == colonyNetworkAddress,
-      "colony-access-denied-only-network-allowed"
-    );
+    require(msgSender() == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
     // Function only valid on the Meta Colony
     require(
       address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(),
@@ -227,10 +185,7 @@ contract Colony is
     string memory colonyName,
     string memory orbitdb
   ) public stoppable auth {
-    IColonyNetwork(colonyNetworkAddress).registerColonyLabel(
-      colonyName,
-      orbitdb
-    );
+    IColonyNetwork(colonyNetworkAddress).registerColonyLabel(colonyName, orbitdb);
   }
 
   function updateColonyOrbitDB(string memory orbitdb) public stoppable auth {
@@ -250,66 +205,32 @@ contract Colony is
     IColonyNetwork(colonyNetworkAddress).setFeeInverse(_feeInverse); // ignore-swc-107
   }
 
-  function setPayoutWhitelist(
-    address _token,
-    bool _status
-  ) public stoppable auth {
+  function setPayoutWhitelist(address _token, bool _status) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).setPayoutWhitelist(_token, _status); // ignore-swc-107
   }
 
-  function setReputationMiningCycleReward(
-    uint256 _amount
-  ) public stoppable auth {
-    IColonyNetwork(colonyNetworkAddress).setReputationMiningCycleReward(
-      _amount
-    );
+  function setReputationMiningCycleReward(uint256 _amount) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).setReputationMiningCycleReward(_amount);
   }
 
-  function addNetworkColonyVersion(
-    uint256 _version,
-    address _resolver
-  ) public stoppable auth {
+  function addNetworkColonyVersion(uint256 _version, address _resolver) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).addColonyVersion(_version, _resolver);
   }
 
-  function addExtensionToNetwork(
-    bytes32 _extensionId,
-    address _resolver
-  ) public stoppable auth {
-    IColonyNetwork(colonyNetworkAddress).addExtensionToNetwork(
-      _extensionId,
-      _resolver
-    );
+  function addExtensionToNetwork(bytes32 _extensionId, address _resolver) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).addExtensionToNetwork(_extensionId, _resolver);
   }
 
-  function installExtension(
-    bytes32 _extensionId,
-    uint256 _version
-  ) public stoppable auth {
-    IColonyNetwork(colonyNetworkAddress).installExtension(
-      _extensionId,
-      _version
-    );
+  function installExtension(bytes32 _extensionId, uint256 _version) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
   }
 
-  function upgradeExtension(
-    bytes32 _extensionId,
-    uint256 _newVersion
-  ) public stoppable auth {
-    IColonyNetwork(colonyNetworkAddress).upgradeExtension(
-      _extensionId,
-      _newVersion
-    );
+  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extensionId, _newVersion);
   }
 
-  function deprecateExtension(
-    bytes32 _extensionId,
-    bool _deprecated
-  ) public stoppable auth {
-    IColonyNetwork(colonyNetworkAddress).deprecateExtension(
-      _extensionId,
-      _deprecated
-    );
+  function deprecateExtension(bytes32 _extensionId, bool _deprecated) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extensionId, _deprecated);
   }
 
   function uninstallExtension(bytes32 _extensionId) public stoppable auth {
@@ -319,24 +240,14 @@ contract Colony is
   function addLocalSkill() public stoppable auth {
     require(rootLocalSkill != 0, "colony-local-skill-tree-not-initialised");
 
-    uint256 newLocalSkill = IColonyNetwork(colonyNetworkAddress).addSkill(
-      rootLocalSkill
-    );
+    uint256 newLocalSkill = IColonyNetwork(colonyNetworkAddress).addSkill(rootLocalSkill);
     localSkills[newLocalSkill] = true;
 
     emit LocalSkillAdded(msgSender(), newLocalSkill);
   }
 
-  function deprecateLocalSkill(
-    uint256 _localSkillId,
-    bool _deprecated
-  ) public stoppable auth {
-    if (
-      IColonyNetwork(colonyNetworkAddress).deprecateSkill(
-        _localSkillId,
-        _deprecated
-      )
-    ) {
+  function deprecateLocalSkill(uint256 _localSkillId, bool _deprecated) public stoppable auth {
+    if (IColonyNetwork(colonyNetworkAddress).deprecateSkill(_localSkillId, _deprecated)) {
       emit LocalSkillDeprecated(msgSender(), _localSkillId, _deprecated);
     }
   }
@@ -371,14 +282,8 @@ contract Colony is
     }
 
     // Get roothash from colonynetwork
-    bytes32 rootHash = IColonyNetwork(colonyNetworkAddress)
-      .getReputationRootHash();
-    bytes32 impliedHash = getImpliedRootHashKey(
-      key,
-      value,
-      branchMask,
-      siblings
-    );
+    bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
+    bytes32 impliedHash = getImpliedRootHashKey(key, value, branchMask, siblings);
     if (rootHash != impliedHash) {
       return false;
     }
@@ -389,13 +294,11 @@ contract Colony is
   function upgrade(uint256 _newVersion) public always auth {
     // Upgrades can only go up in version, one at a time
     uint256 currentVersion = version();
-    require(
-      _newVersion == currentVersion + 1,
-      "colony-version-must-be-one-newer"
-    );
+    require(_newVersion == currentVersion + 1, "colony-version-must-be-one-newer");
     // Requested version has to be registered
-    address newResolver = IColonyNetwork(colonyNetworkAddress)
-      .getColonyVersionResolver(_newVersion);
+    address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(
+      _newVersion
+    );
     require(newResolver != address(0x0), "colony-version-must-be-registered");
     IEtherRouter currentColony = IEtherRouter(address(this));
     currentColony.setResolver(newResolver);
@@ -412,38 +315,17 @@ contract Colony is
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(
-      keccak256("makeArbitraryTransactions(address[],bytes[],bool)")
-    );
-    colonyAuthority.setRoleCapability(
-      uint8(ColonyRole.Root),
-      address(this),
-      sig,
-      true
-    );
+    sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
     sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
-    colonyAuthority.setRoleCapability(
-      uint8(ColonyRole.Root),
-      address(this),
-      sig,
-      true
-    );
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
-    sig = bytes4(
-      keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)")
-    );
-    colonyAuthority.setRoleCapability(
-      uint8(ColonyRole.Arbitration),
-      address(this),
-      sig,
-      true
-    );
+    sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
   }
 
-  function getMetatransactionNonce(
-    address _user
-  ) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 
@@ -453,12 +335,7 @@ contract Colony is
     // What slot are we setting?
     // This mapping is in slot 34 (see ColonyStorage.sol);
     uint256 slot = uint256(
-      keccak256(
-        abi.encode(
-          uint256(uint160(_user)),
-          uint256(METATRANSACTION_NONCES_SLOT)
-        )
-      )
+      keccak256(abi.encode(uint256(uint160(_user)), uint256(METATRANSACTION_NONCES_SLOT)))
     );
     protectSlot(slot);
     metatransactionNonces[_user] += 1;
@@ -469,36 +346,20 @@ contract Colony is
     require(_slot != ROOT_LOCAL_SKILL_SLOT, "colony-protected-variable");
   }
 
-  function approveStake(
-    address _approvee,
-    uint256 _domainId,
-    uint256 _amount
-  ) public stoppable {
+  function approveStake(address _approvee, uint256 _domainId, uint256 _amount) public stoppable {
     approvals[msgSender()][_approvee][_domainId] += _amount;
 
-    ITokenLocking(tokenLockingAddress).approveStake(
-      msgSender(),
-      _amount,
-      token
-    );
+    ITokenLocking(tokenLockingAddress).approveStake(msgSender(), _amount, token);
   }
 
-  function obligateStake(
-    address _user,
-    uint256 _domainId,
-    uint256 _amount
-  ) public stoppable {
+  function obligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
     approvals[_user][msgSender()][_domainId] -= _amount;
     obligations[_user][msgSender()][_domainId] += _amount;
 
     ITokenLocking(tokenLockingAddress).obligateStake(_user, _amount, token);
   }
 
-  function deobligateStake(
-    address _user,
-    uint256 _domainId,
-    uint256 _amount
-  ) public stoppable {
+  function deobligateStake(address _user, uint256 _domainId, uint256 _amount) public stoppable {
     obligations[_user][msgSender()][_domainId] -= _amount;
 
     ITokenLocking(tokenLockingAddress).deobligateStake(_user, _amount, token);
@@ -512,19 +373,10 @@ contract Colony is
     uint256 _domainId,
     uint256 _amount,
     address _beneficiary
-  )
-    public
-    stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
     obligations[_user][_obligator][_domainId] -= _amount;
 
-    ITokenLocking(tokenLockingAddress).transferStake(
-      _user,
-      _amount,
-      token,
-      _beneficiary
-    );
+    ITokenLocking(tokenLockingAddress).transferStake(_user, _amount, token, _beneficiary);
   }
 
   function getApproval(
@@ -549,10 +401,7 @@ contract Colony is
     emit TokenUnlocked(msgSender());
   }
 
-  function getTokenApproval(
-    address _token,
-    address _spender
-  ) public view returns (uint256) {
+  function getTokenApproval(address _token, address _spender) public view returns (uint256) {
     return tokenApprovals[_token][_spender];
   }
 

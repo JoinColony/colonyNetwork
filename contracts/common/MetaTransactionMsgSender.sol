@@ -19,10 +19,7 @@ abstract contract MetaTransactionMsgSender is DSMath {
       }
       assembly {
         // Load the 32 bytes word from memory with the address on the lower 20 bytes, and mask those.
-        sender := and(
-          mload(add(array, index)),
-          0xffffffffffffffffffffffffffffffffffffffff
-        )
+        sender := and(mload(add(array, index)), 0xffffffffffffffffffffffffffffffffffffffff)
       }
     } else {
       return payable(msg.sender);

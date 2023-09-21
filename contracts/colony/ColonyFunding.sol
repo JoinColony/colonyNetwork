@@ -47,19 +47,11 @@ contract ColonyFunding is
     validFundingTransfer(_fromPot, _toPot)
   {
     require(
-      validateDomainInheritance(
-        _domainId,
-        _fromChildSkillIndex,
-        getDomainFromFundingPot(_fromPot)
-      ),
+      validateDomainInheritance(_domainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot)),
       "colony-invalid-domain-inheritance"
     );
     require(
-      validateDomainInheritance(
-        _domainId,
-        _toChildSkillIndex,
-        getDomainFromFundingPot(_toPot)
-      ),
+      validateDomainInheritance(_domainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot)),
       "colony-invalid-domain-inheritance"
     );
 
@@ -78,16 +70,8 @@ contract ColonyFunding is
     public
     stoppable
     domainNotDeprecated(getDomainFromFundingPot(_toPot))
-    authDomain(
-      _permissionDomainId,
-      _fromChildSkillIndex,
-      getDomainFromFundingPot(_fromPot)
-    )
-    authDomain(
-      _permissionDomainId,
-      _toChildSkillIndex,
-      getDomainFromFundingPot(_toPot)
-    )
+    authDomain(_permissionDomainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot))
+    authDomain(_permissionDomainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot))
     validFundingTransfer(_fromPot, _toPot)
   {
     moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
@@ -144,24 +128,15 @@ contract ColonyFunding is
     emit TaskPayoutSet(_id, TaskRole.Evaluator, _token, _amount);
   }
 
-  function setTaskWorkerPayout(
-    uint256 _id,
-    address _token,
-    uint256 _amount
-  ) public stoppable self {
+  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, TaskRole.Worker, _token, _amount);
     emit TaskPayoutSet(_id, TaskRole.Worker, _token, _amount);
   }
 
   // To get all payouts for a task iterate over roles.length
-  function getTaskPayout(
-    uint256 _id,
-    uint8 _role,
-    address _token
-  ) public view returns (uint256) {
+  function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256) {
     Task storage task = tasks[_id];
-    bool unsatisfactory = task.roles[_role].rating ==
-      TaskRatings.Unsatisfactory;
+    bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
     return unsatisfactory ? 0 : task.payouts[_role][_token];
   }
 
@@ -177,8 +152,7 @@ contract ColonyFunding is
     uint payout = task.payouts[_role][_token];
     task.payouts[_role][_token] = 0;
 
-    bool unsatisfactory = task.roles[_role].rating ==
-      TaskRatings.Unsatisfactory;
+    bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
     if (!unsatisfactory) {
       processPayout(task.fundingPotId, _token, payout, task.roles[_role].user);
     } else {
@@ -208,11 +182,7 @@ contract ColonyFunding is
     public
     stoppable
     validExpenditure(_id)
-    authDomain(
-      _permissionDomainId,
-      _childSkillIndex,
-      expenditures[_id].domainId
-    )
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     uint256[] memory slots = new uint256[](1);
     slots[0] = _slot;
@@ -277,9 +247,7 @@ contract ColonyFunding is
 
     // Process reputation updates if internal token
     if (_token == token && !isExtension(slot.recipient)) {
-      IColonyNetwork colonyNetworkContract = IColonyNetwork(
-        colonyNetworkAddress
-      );
+      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       colonyNetworkContract.appendReputationUpdateLog(
         slot.recipient,
         int256(repPayout),
@@ -326,29 +294,17 @@ contract ColonyFunding is
     uint currentTotalAmount = fundingPot.payouts[_token];
     fundingPot.payouts[_token] = _amount;
 
-    updatePayoutsWeCannotMakeAfterBudgetChange(
-      payment.fundingPotId,
-      _token,
-      currentTotalAmount
-    );
+    updatePayoutsWeCannotMakeAfterBudgetChange(payment.fundingPotId, _token, currentTotalAmount);
 
     emit PaymentPayoutSet(msgSender(), _id, _token, _amount);
   }
 
-  function claimPayment(
-    uint256 _id,
-    address _token
-  ) public stoppable paymentFinalized(_id) {
+  function claimPayment(uint256 _id, address _token) public stoppable paymentFinalized(_id) {
     Payment storage payment = payments[_id];
     FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
     assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
 
-    processPayout(
-      payment.fundingPotId,
-      _token,
-      fundingPot.payouts[_token],
-      payment.recipient
-    );
+    processPayout(payment.fundingPotId, _token, fundingPot.payouts[_token], payment.recipient);
   }
 
   // View
@@ -357,17 +313,11 @@ contract ColonyFunding is
     return fundingPotCount;
   }
 
-  function getFundingPotBalance(
-    uint256 _potId,
-    address _token
-  ) public view returns (uint256) {
+  function getFundingPotBalance(uint256 _potId, address _token) public view returns (uint256) {
     return fundingPots[_potId].balance[_token];
   }
 
-  function getFundingPotPayout(
-    uint256 _potId,
-    address _token
-  ) public view returns (uint256) {
+  function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256) {
     return fundingPots[_potId].payouts[_token];
   }
 
@@ -383,16 +333,10 @@ contract ColonyFunding is
     )
   {
     FundingPot storage fundingPot = fundingPots[_potId];
-    return (
-      fundingPot.associatedType,
-      fundingPot.associatedTypeId,
-      fundingPot.payoutsWeCannotMake
-    );
+    return (fundingPot.associatedType, fundingPot.associatedTypeId, fundingPot.payoutsWeCannotMake);
   }
 
-  function getDomainFromFundingPot(
-    uint256 _fundingPotId
-  ) public view returns (uint256 domainId) {
+  function getDomainFromFundingPot(uint256 _fundingPotId) public view returns (uint256 domainId) {
     require(_fundingPotId <= fundingPotCount, "colony-funding-nonexistent-pot");
     FundingPot storage fundingPot = fundingPots[_fundingPotId];
 
@@ -402,9 +346,7 @@ contract ColonyFunding is
       domainId = tasks[fundingPot.associatedTypeId].domainId;
     } else if (fundingPot.associatedType == FundingPotAssociatedType.Payment) {
       domainId = payments[fundingPot.associatedTypeId].domainId;
-    } else if (
-      fundingPot.associatedType == FundingPotAssociatedType.Expenditure
-    ) {
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.Expenditure) {
       domainId = expenditures[fundingPot.associatedTypeId].domainId;
     } else {
       // If rewards pot, return root domain.
@@ -452,8 +394,7 @@ contract ColonyFunding is
     }
     if (fromPot.associatedType == FundingPotAssociatedType.Expenditure) {
       require(
-        expenditures[fromPot.associatedTypeId].status ==
-          ExpenditureStatus.Cancelled ||
+        expenditures[fromPot.associatedTypeId].status == ExpenditureStatus.Cancelled ||
           fromPot.balance[_token] >= fromPot.payouts[_token],
         "colony-funding-expenditure-bad-state"
       );
@@ -465,11 +406,7 @@ contract ColonyFunding is
       fromPot.associatedType == FundingPotAssociatedType.Task
     ) {
       uint256 fromPotPreviousAmount = fromPot.balance[_token] + _amount;
-      updatePayoutsWeCannotMakeAfterPotChange(
-        _fromPot,
-        _token,
-        fromPotPreviousAmount
-      );
+      updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
     }
 
     if (
@@ -478,24 +415,14 @@ contract ColonyFunding is
       toPot.associatedType == FundingPotAssociatedType.Task
     ) {
       uint256 toPotPreviousAmount = toPot.balance[_token] - _amount;
-      updatePayoutsWeCannotMakeAfterPotChange(
-        _toPot,
-        _token,
-        toPotPreviousAmount
-      );
+      updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
     }
 
     if (_toPot == 0) {
       nonRewardPotsTotal[_token] -= _amount;
     }
 
-    emit ColonyFundsMovedBetweenFundingPots(
-      msgSender(),
-      _fromPot,
-      _toPot,
-      _amount,
-      _token
-    );
+    emit ColonyFundsMovedBetweenFundingPots(msgSender(), _fromPot, _toPot, _amount, _token);
   }
 
   function updatePayoutsWeCannotMakeAfterPotChange(
@@ -564,13 +491,7 @@ contract ColonyFunding is
       expenditureSlotPayouts[_id][_slots[i]][_token] = _amounts[i];
       runningTotal = (runningTotal - currentPayout) + _amounts[i];
 
-      emit ExpenditurePayoutSet(
-        msgSender(),
-        _id,
-        _slots[i],
-        _token,
-        _amounts[i]
-      );
+      emit ExpenditurePayoutSet(msgSender(), _id, _slots[i], _token, _amounts[i]);
     }
     fundingPot.payouts[_token] = runningTotal;
 
@@ -595,15 +516,9 @@ contract ColonyFunding is
     uint currentTaskRolePayout = task.payouts[uint8(_role)][_token];
     task.payouts[uint8(_role)][_token] = _amount;
 
-    fundingPot.payouts[_token] =
-      (currentTotalAmount - currentTaskRolePayout) +
-      _amount;
+    fundingPot.payouts[_token] = (currentTotalAmount - currentTaskRolePayout) + _amount;
 
-    updatePayoutsWeCannotMakeAfterBudgetChange(
-      task.fundingPotId,
-      _token,
-      currentTotalAmount
-    );
+    updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);
   }
 
   function processPayout(
@@ -621,9 +536,7 @@ contract ColonyFunding is
     fundingPots[_fundingPotId].payouts[_token] -= _payout;
     nonRewardPotsTotal[_token] -= _payout;
 
-    uint fee = isOwnExtension(_user)
-      ? 0
-      : calculateNetworkFeeForPayout(_payout);
+    uint fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
     payoutToUser = _payout - fee;
 
     if (_token == address(0x0)) {

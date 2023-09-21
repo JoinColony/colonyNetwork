@@ -42,8 +42,7 @@ contract ColonyPayment is ColonyStorage {
     paymentCount += 1;
 
     fundingPotCount += 1;
-    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType
-      .Payment;
+    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType.Payment;
     fundingPots[fundingPotCount].associatedTypeId = paymentCount;
     fundingPots[fundingPotCount].payoutsWeCannotMake = _amount > 0 ? 1 : 0;
 
@@ -61,12 +60,7 @@ contract ColonyPayment is ColonyStorage {
     emit PaymentAdded(msgSender(), paymentCount);
 
     if (_skillId > 0) {
-      setPaymentSkill(
-        _permissionDomainId,
-        _childSkillIndex,
-        paymentCount,
-        _skillId
-      );
+      setPaymentSkill(_permissionDomainId, _childSkillIndex, paymentCount, _skillId);
 
       emit PaymentSkillSet(msgSender(), paymentCount, _skillId);
     }
@@ -94,9 +88,7 @@ contract ColonyPayment is ColonyStorage {
     if (!isExtension(payment.recipient)) {
       FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
 
-      IColonyNetwork colonyNetworkContract = IColonyNetwork(
-        colonyNetworkAddress
-      );
+      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       // All payments in Colony's home token earn domain reputation and if skill was set, earn skill reputation
       colonyNetworkContract.appendReputationUpdateLog(
         payment.recipient,

@@ -25,19 +25,12 @@ contract TokenAuthority is DSAuthority {
   mapping(address => mapping(bytes4 => bool)) authorizations;
 
   bytes4 constant BURN_FUNC_SIG = bytes4(keccak256("burn(uint256)"));
-  bytes4 constant BURN_OVERLOAD_FUNC_SIG =
-    bytes4(keccak256("burn(address,uint256)"));
+  bytes4 constant BURN_OVERLOAD_FUNC_SIG = bytes4(keccak256("burn(address,uint256)"));
 
-  constructor(
-    address _token,
-    address _colony,
-    address[] memory allowedToTransfer
-  ) {
+  constructor(address _token, address _colony, address[] memory allowedToTransfer) {
     token = _token;
     bytes4 transferSig = bytes4(keccak256("transfer(address,uint256)"));
-    bytes4 transferFromSig = bytes4(
-      keccak256("transferFrom(address,address,uint256)")
-    );
+    bytes4 transferFromSig = bytes4(keccak256("transferFrom(address,address,uint256)"));
     bytes4 mintSig = bytes4(keccak256("mint(uint256)"));
     bytes4 mintSigOverload = bytes4(keccak256("mint(address,uint256)"));
 
@@ -51,11 +44,7 @@ contract TokenAuthority is DSAuthority {
     }
   }
 
-  function canCall(
-    address src,
-    address dst,
-    bytes4 sig
-  ) public view override returns (bool) {
+  function canCall(address src, address dst, bytes4 sig) public view override returns (bool) {
     if (sig == BURN_FUNC_SIG || sig == BURN_OVERLOAD_FUNC_SIG) {
       // We allow anyone to burn their own tokens even when the token is still locked
       return true;

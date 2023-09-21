@@ -37,20 +37,13 @@ contract ToggleableToken is DSMath, ERC20Events {
     return transferFrom(msg.sender, dst, wad);
   }
 
-  function transferFrom(
-    address src,
-    address dst,
-    uint wad
-  ) public returns (bool) {
+  function transferFrom(address src, address dst, uint wad) public returns (bool) {
     if (locked) {
       return false;
     }
 
     if (src != msg.sender) {
-      require(
-        _approvals[src][msg.sender] >= wad,
-        "ds-token-insufficient-approval"
-      );
+      require(_approvals[src][msg.sender] >= wad, "ds-token-insufficient-approval");
       _approvals[src][msg.sender] -= wad;
     }
 

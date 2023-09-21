@@ -27,9 +27,7 @@ contract ColonyExpenditure is ColonyStorage {
 
   // Public functions
 
-  function setDefaultGlobalClaimDelay(
-    uint256 _defaultGlobalClaimDelay
-  ) public stoppable auth {
+  function setDefaultGlobalClaimDelay(uint256 _defaultGlobalClaimDelay) public stoppable auth {
     defaultGlobalClaimDelay = _defaultGlobalClaimDelay;
 
     emit ExpenditureGlobalClaimDelaySet(msgSender(), _defaultGlobalClaimDelay);
@@ -49,8 +47,7 @@ contract ColonyExpenditure is ColonyStorage {
     expenditureCount += 1;
     fundingPotCount += 1;
 
-    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType
-      .Expenditure;
+    fundingPots[fundingPotCount].associatedType = FundingPotAssociatedType.Expenditure;
     fundingPots[fundingPotCount].associatedTypeId = expenditureCount;
 
     expenditures[expenditureCount] = Expenditure({
@@ -87,11 +84,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     expenditureDraftOrLocked(_id)
-    authDomain(
-      _permissionDomainId,
-      _childSkillIndex,
-      expenditures[_id].domainId
-    )
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     expenditures[_id].owner = _newOwner;
 
@@ -118,10 +111,7 @@ contract ColonyExpenditure is ColonyStorage {
     uint256 _id
   ) public stoppable expenditureDraftOrLocked(_id) expenditureOnlyOwner(_id) {
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
-    require(
-      fundingPot.payoutsWeCannotMake == 0,
-      "colony-expenditure-not-funded"
-    );
+    require(fundingPot.payoutsWeCannotMake == 0, "colony-expenditure-not-funded");
 
     expenditures[_id].status = ExpenditureStatus.Finalized;
     expenditures[_id].finalizedTimestamp = block.timestamp;
@@ -145,11 +135,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     validExpenditure(_id)
-    authDomain(
-      _permissionDomainId,
-      _childSkillIndex,
-      expenditures[_id].domainId
-    )
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     emit ExpenditureMetadataSet(msgSender(), _id, _metadata);
   }
@@ -159,10 +145,7 @@ contract ColonyExpenditure is ColonyStorage {
     uint256[] memory _slots,
     address payable[] memory _recipients
   ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
-    require(
-      _slots.length == _recipients.length,
-      "colony-expenditure-bad-slots"
-    );
+    require(_slots.length == _recipients.length, "colony-expenditure-bad-slots");
 
     for (uint256 i; i < _slots.length; i++) {
       expenditureSlots[_id][_slots[i]].recipient = _recipients[i];
@@ -179,10 +162,7 @@ contract ColonyExpenditure is ColonyStorage {
     require(_slots.length == _skillIds.length, "colony-expenditure-bad-slots");
 
     for (uint256 i; i < _slots.length; i++) {
-      require(
-        isValidGlobalOrLocalSkill(_skillIds[i]),
-        "colony-not-valid-global-or-local-skill"
-      );
+      require(isValidGlobalOrLocalSkill(_skillIds[i]), "colony-not-valid-global-or-local-skill");
 
       // We only allow setting of the first skill here.
       // If we allow more in the future, make sure to have a hard limit that
@@ -199,20 +179,12 @@ contract ColonyExpenditure is ColonyStorage {
     uint256[] memory _slots,
     uint256[] memory _claimDelays
   ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
-    require(
-      _slots.length == _claimDelays.length,
-      "colony-expenditure-bad-slots"
-    );
+    require(_slots.length == _claimDelays.length, "colony-expenditure-bad-slots");
 
     for (uint256 i; i < _slots.length; i++) {
       expenditureSlots[_id][_slots[i]].claimDelay = _claimDelays[i];
 
-      emit ExpenditureClaimDelaySet(
-        msgSender(),
-        _id,
-        _slots[i],
-        _claimDelays[i]
-      );
+      emit ExpenditureClaimDelaySet(msgSender(), _id, _slots[i], _claimDelays[i]);
     }
   }
 
@@ -221,20 +193,12 @@ contract ColonyExpenditure is ColonyStorage {
     uint256[] memory _slots,
     int256[] memory _payoutModifiers
   ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
-    require(
-      _slots.length == _payoutModifiers.length,
-      "colony-expenditure-bad-slots"
-    );
+    require(_slots.length == _payoutModifiers.length, "colony-expenditure-bad-slots");
 
     for (uint256 i; i < _slots.length; i++) {
       expenditureSlots[_id][_slots[i]].payoutModifier = _payoutModifiers[i];
 
-      emit ExpenditurePayoutModifierSet(
-        msgSender(),
-        _id,
-        _slots[i],
-        _payoutModifiers[i]
-      );
+      emit ExpenditurePayoutModifierSet(msgSender(), _id, _slots[i], _payoutModifiers[i]);
     }
   }
 
@@ -262,11 +226,7 @@ contract ColonyExpenditure is ColonyStorage {
       setExpenditureClaimDelays(_id, _claimDelaySlots, _claimDelays);
     }
     if (_payoutModifiers.length > 0) {
-      setExpenditurePayoutModifiers(
-        _id,
-        _payoutModifierSlots,
-        _payoutModifiers
-      );
+      setExpenditurePayoutModifiers(_id, _payoutModifierSlots, _payoutModifiers);
     }
     if (_payoutTokens.length > 0) {
       setExpenditurePayouts(_id, _payoutTokens, _payoutSlots, _payoutValues);
@@ -287,11 +247,7 @@ contract ColonyExpenditure is ColonyStorage {
   }
 
   // Deprecated
-  function setExpenditureSkill(
-    uint256 _id,
-    uint256 _slot,
-    uint256 _skillId
-  ) public stoppable {
+  function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId) public stoppable {
     uint256[] memory slots = new uint256[](1);
     slots[0] = _slot;
     uint256[] memory skillIds = new uint256[](1);
@@ -327,11 +283,7 @@ contract ColonyExpenditure is ColonyStorage {
     public
     stoppable
     validExpenditure(_id)
-    authDomain(
-      _permissionDomainId,
-      _childSkillIndex,
-      expenditures[_id].domainId
-    )
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     // Only allow editing expenditure status, owner, finalizedTimestamp, and globalClaimDelay
     //  Do not allow editing of fundingPotId or domainId
@@ -339,10 +291,7 @@ contract ColonyExpenditure is ColonyStorage {
     if (_storageSlot == EXPENDITURES_SLOT) {
       require(_keys.length == 1, "colony-expenditure-bad-keys");
       uint256 offset = uint256(_keys[0]);
-      require(
-        offset == 0 || offset == 3 || offset == 4,
-        "colony-expenditure-bad-offset"
-      );
+      require(offset == 0 || offset == 3 || offset == 4, "colony-expenditure-bad-offset");
 
       // Explicitly whitelist all slots, in case we add new slots in the future
     } else if (_storageSlot == EXPENDITURESLOTS_SLOT) {
@@ -362,21 +311,9 @@ contract ColonyExpenditure is ColonyStorage {
       require(false, "colony-expenditure-bad-slot");
     }
 
-    executeStateChange(
-      keccak256(abi.encode(_id, _storageSlot)),
-      _mask,
-      _keys,
-      _value
-    );
+    executeStateChange(keccak256(abi.encode(_id, _storageSlot)), _mask, _keys, _value);
 
-    emit ExpenditureStateChanged(
-      msgSender(),
-      _id,
-      _storageSlot,
-      _mask,
-      _keys,
-      _value
-    );
+    emit ExpenditureStateChanged(msgSender(), _id, _storageSlot, _mask, _keys, _value);
   }
 
   // Public view functions
@@ -385,9 +322,7 @@ contract ColonyExpenditure is ColonyStorage {
     return expenditureCount;
   }
 
-  function getExpenditure(
-    uint256 _id
-  ) public view returns (Expenditure memory expenditure) {
+  function getExpenditure(uint256 _id) public view returns (Expenditure memory expenditure) {
     expenditure = expenditures[_id];
   }
 
@@ -456,10 +391,7 @@ contract ColonyExpenditure is ColonyStorage {
       }
 
       if (_mask[i] == ARRAY) {
-        require(
-          uint256(_keys[i]) <= MAX_ARRAY,
-          "colony-expenditure-large-offset"
-        );
+        require(uint256(_keys[i]) <= MAX_ARRAY, "colony-expenditure-large-offset");
 
         slot = bytes32(uint256(_keys[i]) + uint256(slot));
         // If we are indexing in to an array, and this was the last entry

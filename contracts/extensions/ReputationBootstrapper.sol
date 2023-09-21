@@ -88,12 +88,9 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     token = colony.getToken();
 
     address colonyNetwork = colony.getColonyNetwork();
-    address repCycle = IColonyNetwork(colonyNetwork).getReputationMiningCycle(
-      false
-    );
+    address repCycle = IColonyNetwork(colonyNetwork).getReputationMiningCycle(false);
     decayPeriod = IReputationMiningCycle(repCycle).getMiningWindowDuration();
-    (decayNumerator, decayDenominator) = IReputationMiningCycle(repCycle)
-      .getDecayConstant();
+    (decayNumerator, decayDenominator) = IReputationMiningCycle(repCycle).getDecayConstant();
   }
 
   /// @notice Called when upgrading the extension
@@ -126,21 +123,12 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     bytes32[] memory _hashedSecrets,
     uint256[] memory _amounts
   ) public onlyRoot notDeprecated {
-    require(
-      _paid.length == _hashedSecrets.length,
-      "reputation-bootstrapper-invalid-arguments"
-    );
-    require(
-      _hashedSecrets.length == _amounts.length,
-      "reputation-bootstrapper-invalid-arguments"
-    );
+    require(_paid.length == _hashedSecrets.length, "reputation-bootstrapper-invalid-arguments");
+    require(_hashedSecrets.length == _amounts.length, "reputation-bootstrapper-invalid-arguments");
     uint256 balance = ERC20(token).balanceOf(address(this));
 
     for (uint256 i; i < _hashedSecrets.length; i++) {
-      require(
-        _amounts[i] <= INT128_MAX,
-        "reputation-bootstrapper-invalid-amount"
-      );
+      require(_amounts[i] <= INT128_MAX, "reputation-bootstrapper-invalid-amount");
 
       if (_paid[i]) {
         uint256 priorGrant = grants[_paid[i]][_hashedSecrets[i]].amount;
@@ -152,18 +140,13 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
       emit GrantSet(_paid[i], _hashedSecrets[i], _amounts[i]);
     }
 
-    require(
-      totalPayableGrants <= balance,
-      "reputation-bootstrapper-insufficient-balance"
-    );
+    require(totalPayableGrants <= balance, "reputation-bootstrapper-insufficient-balance");
   }
 
   /// @notice Commit the secret, beginning the security delay window
   /// @param _committedSecret A sha256 hash of (userAddress, secret)
   function commitSecret(bytes32 _committedSecret) public notDeprecated {
-    bytes32 addressHash = keccak256(
-      abi.encodePacked(msgSender(), _committedSecret)
-    );
+    bytes32 addressHash = keccak256(abi.encodePacked(msgSender(), _committedSecret));
     committedSecrets[addressHash] = block.timestamp;
   }
 
@@ -171,14 +154,11 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   /// @param _secret The secret corresponding to a reputation grant
   function claimGrant(bool _paid, uint256 _secret) public notDeprecated {
     bytes32 committedSecret = keccak256(abi.encodePacked(msgSender(), _secret));
-    bytes32 addressHash = keccak256(
-      abi.encodePacked(msgSender(), committedSecret)
-    );
+    bytes32 addressHash = keccak256(abi.encodePacked(msgSender(), committedSecret));
     uint256 commitTimestamp = committedSecrets[addressHash];
 
     require(
-      commitTimestamp > 0 &&
-        commitTimestamp + SECURITY_DELAY <= block.timestamp,
+      commitTimestamp > 0 && commitTimestamp + SECURITY_DELAY <= block.timestamp,
       "reputation-bootstrapper-commit-window-unelapsed"
     );
 
@@ -211,9 +191,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
         grantAmount = (grantAmount * adjustedNumerator) / decayDenominator;
       }
       // slither-disable-next-line divide-before-multiply
-      adjustedNumerator =
-        (adjustedNumerator * adjustedNumerator) /
-        decayDenominator;
+      adjustedNumerator = (adjustedNumerator * adjustedNumerator) / decayDenominator;
       decayEpochs >>= 1;
     }
 
@@ -244,16 +222,11 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     return totalPayableGrants;
   }
 
-  function getGrant(
-    bool _paid,
-    bytes32 _hashedSecret
-  ) external view returns (Grant memory grant) {
+  function getGrant(bool _paid, bytes32 _hashedSecret) external view returns (Grant memory grant) {
     grant = grants[_paid][_hashedSecret];
   }
 
-  function getCommittedSecret(
-    bytes32 _addressHash
-  ) external view returns (uint256) {
+  function getCommittedSecret(bytes32 _addressHash) external view returns (uint256) {
     return committedSecrets[_addressHash];
   }
 }

@@ -33,15 +33,11 @@ interface IColonyExtension is IBasicMetaTransaction {
 
   function uninstall() external virtual;
 
-  function getCapabilityRoles(
-    bytes4 _sig
-  ) external view virtual returns (bytes32);
+  function getCapabilityRoles(bytes4 _sig) external view virtual returns (bytes32);
 
   function getDeprecated() external view returns (bool);
 
   function getColony() external view returns (address);
 
-  function multicall(
-    bytes[] calldata
-  ) external virtual returns (bytes[] memory results);
+  function multicall(bytes[] calldata) external virtual returns (bytes[] memory results);
 }

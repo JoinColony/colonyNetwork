@@ -75,16 +75,10 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
   /// @dev Only owner can call this function, must be in draft state
   /// @param _expenditureId Which expenditure we are changing
   /// @param _staged Indcating whether the expenditure is staged or not
-  function setExpenditureStaged(
-    uint256 _expenditureId,
-    bool _staged
-  ) public notDeprecated {
+  function setExpenditureStaged(uint256 _expenditureId, bool _staged) public notDeprecated {
     Expenditure memory e = IColony(colony).getExpenditure(_expenditureId);
     require(e.owner == msgSender(), "staged-expenditure-not-owner");
-    require(
-      e.status == ColonyDataTypes.ExpenditureStatus.Draft,
-      "expenditure-not-draft"
-    );
+    require(e.status == ColonyDataTypes.ExpenditureStatus.Draft, "expenditure-not-draft");
 
     if (stagedExpenditures[_expenditureId] != _staged) {
       stagedExpenditures[_expenditureId] = _staged;
@@ -107,17 +101,11 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
     uint256 _slot,
     address[] memory _tokens
   ) public {
-    require(
-      stagedExpenditures[_expenditureId],
-      "staged-expenditure-not-staged-expenditure"
-    );
+    require(stagedExpenditures[_expenditureId], "staged-expenditure-not-staged-expenditure");
 
     Expenditure memory e = IColony(colony).getExpenditure(_expenditureId);
     require(e.owner == msgSender(), "staged-expenditure-not-owner");
-    require(
-      e.status == ColonyDataTypes.ExpenditureStatus.Finalized,
-      "expenditure-not-finalized"
-    );
+    require(e.status == ColonyDataTypes.ExpenditureStatus.Finalized, "expenditure-not-finalized");
 
     bool[] memory mask = new bool[](2);
     mask[0] = false;

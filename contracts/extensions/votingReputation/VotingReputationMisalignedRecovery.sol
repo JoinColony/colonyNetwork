@@ -26,11 +26,7 @@ import { DSMath } from "./../../../lib/dappsys/math.sol";
 import { DSAuth } from "./../../../lib/dappsys/auth.sol";
 import { VotingReputationDataTypes } from "./VotingReputationDataTypes.sol";
 
-contract VotingReputationMisalignedRecovery is
-  DSMath,
-  DSAuth,
-  VotingReputationDataTypes
-{
+contract VotingReputationMisalignedRecovery is DSMath, DSAuth, VotingReputationDataTypes {
   // THIS FILE IS DELIBERATELY WRONG. IF YOU'RE EDITING THIS FILE, AND YOU'VE NOT BEEN EXPLICITLY
   // TOLD TO DO SO, LEAVE NOW. THERE BE DRAGONS HERE.
 
@@ -96,16 +92,9 @@ contract VotingReputationMisalignedRecovery is
     //   "voting-rep-motion-not-claimable"
     // );
 
-    (uint256 stakerReward, uint256 repPenalty) = getStakerReward(
-      _motionId,
-      _staker,
-      _vote
-    );
+    (uint256 stakerReward, uint256 repPenalty) = getStakerReward(_motionId, _staker, _vote);
 
-    require(
-      stakes[_motionId][_staker][_vote] > 0,
-      "voting-rep-nothing-to-claim"
-    );
+    require(stakes[_motionId][_staker][_vote] > 0, "voting-rep-nothing-to-claim");
     delete stakes[_motionId][_staker][_vote];
 
     tokenLocking.transfer(token, stakerReward, _staker, true);
@@ -140,10 +129,7 @@ contract VotingReputationMisalignedRecovery is
       return (0, 0);
     }
 
-    uint256 stakeFraction = wdiv(
-      stakes[_motionId][_staker][_vote],
-      totalSideStake
-    );
+    uint256 stakeFraction = wdiv(stakes[_motionId][_staker][_vote], totalSideStake);
 
     uint256 realStake = wmul(stakeFraction, motion.stakes[_vote]);
 
@@ -169,10 +155,7 @@ contract VotingReputationMisalignedRecovery is
 
       if (winShare > WAD || (winShare == WAD && _vote == NAY)) {
         // 50% gets 0% of loser's stake, 100% gets 100% of loser's stake, linear in between
-        stakerReward = wmul(
-          stakeFraction,
-          (winnerStake + wmul(loserStake, winShare - WAD))
-        );
+        stakerReward = wmul(stakeFraction, (winnerStake + wmul(loserStake, winShare - WAD)));
       } else {
         stakerReward = wmul(stakeFraction, wmul(loserStake, winShare));
         repPenalty = realStake - stakerReward;
@@ -184,18 +167,14 @@ contract VotingReputationMisalignedRecovery is
       uint256 requiredStake = getRequiredStake(_motionId);
 
       // Your side fully staked, receive 10% (proportional) of loser's stake
-      if (
-        motion.stakes[_vote] == requiredStake &&
-        motion.stakes[flip(_vote)] < requiredStake
-      ) {
+      if (motion.stakes[_vote] == requiredStake && motion.stakes[flip(_vote)] < requiredStake) {
         uint256 loserStake = motion.stakes[flip(_vote)];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
         stakerReward = wmul(stakeFraction, (requiredStake + totalPenalty));
 
         // Opponent's side fully staked, pay 10% penalty
       } else if (
-        motion.stakes[_vote] < requiredStake &&
-        motion.stakes[flip(_vote)] == requiredStake
+        motion.stakes[_vote] < requiredStake && motion.stakes[flip(_vote)] == requiredStake
       ) {
         uint256 loserStake = motion.stakes[_vote];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);

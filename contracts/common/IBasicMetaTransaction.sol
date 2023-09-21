@@ -2,11 +2,7 @@
 pragma solidity 0.8.21;
 
 interface IBasicMetaTransaction {
-  event MetaTransactionExecuted(
-    address userAddress,
-    address payable relayerAddress,
-    bytes payload
-  );
+  event MetaTransactionExecuted(address userAddress, address payable relayerAddress, bytes payload);
 
   /// @notice Executes a metatransaction targeting this contract
   /// @param userAddress The address of the user that signed the metatransaction
@@ -24,7 +20,5 @@ interface IBasicMetaTransaction {
 
   /// @notice Gets the next metatransaction nonce for user that should be used targeting this contract
   /// @param userAddress The address of the user that will sign the metatransaction
-  function getMetatransactionNonce(
-    address userAddress
-  ) external view returns (uint256 nonce);
+  function getMetatransactionNonce(address userAddress) external view returns (uint256 nonce);
 }

@@ -31,8 +31,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
 
     uint lastAuctionTimestamp = recentAuctions[_token];
     require(
-      lastAuctionTimestamp == 0 ||
-        block.timestamp - lastAuctionTimestamp >= 30 days,
+      lastAuctionTimestamp == 0 || block.timestamp - lastAuctionTimestamp >= 30 days,
       "colony-auction-start-too-soon"
     );
 
@@ -129,19 +128,12 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   }
 
   event AuctionStarted(address _token, uint256 _quantity, uint256 _minPrice);
-  event AuctionBid(
-    address indexed _sender,
-    uint256 _amount,
-    uint256 _missingFunds
-  );
+  event AuctionBid(address indexed _sender, uint256 _amount, uint256 _missingFunds);
   event AuctionClaim(address indexed _recipient, uint256 _sentAmount);
   event AuctionFinalized(uint256 _finalPrice);
 
   constructor(address _clnyToken, address _token, address _metaColonyAddress) {
-    require(
-      _metaColonyAddress != address(0x0),
-      "colony-auction-metacolony-cannot-be-zero"
-    );
+    require(_metaColonyAddress != address(0x0), "colony-auction-metacolony-cannot-be-zero");
 
     colonyNetwork = msgSender();
     metaColonyAddress = _metaColonyAddress;
@@ -172,12 +164,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     emit AuctionStarted(address(token), quantity, minPrice);
   }
 
-  function remainingToEndAuction()
-    public
-    view
-    auctionStartedAndOpen
-    returns (uint256)
-  {
+  function remainingToEndAuction() public view auctionStartedAndOpen returns (uint256) {
     // Total amount to end the auction at the current price
     uint totalToEndAuctionAtCurrentPrice;
     // For low quantity auctions, there are cases where q * p < 1e18 once price has decreased sufficiently

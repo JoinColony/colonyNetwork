@@ -38,10 +38,7 @@ contract VotingReputation is VotingReputationStorage {
     require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
 
     require(_totalStakeFraction <= WAD / 2, "voting-rep-greater-than-half-wad");
-    require(
-      _voterRewardFraction <= WAD / 2,
-      "voting-rep-greater-than-half-wad"
-    );
+    require(_voterRewardFraction <= WAD / 2, "voting-rep-greater-than-half-wad");
 
     require(_userMinStakeFraction <= WAD, "voting-rep-greater-than-wad");
     require(_maxVoteFraction <= WAD, "voting-rep-greater-than-wad");
@@ -78,17 +75,11 @@ contract VotingReputation is VotingReputationStorage {
     bytes32[] memory _siblings
   ) public notDeprecated {
     require(state == ExtensionState.Active, "voting-rep-not-active");
-    require(
-      _altTarget != address(colony),
-      "voting-rep-alt-target-cannot-be-base-colony"
-    );
+    require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");
 
     ActionSummary memory actionSummary = getActionSummary(_action, _altTarget);
 
-    require(
-      actionSummary.sig != OLD_MOVE_FUNDS,
-      "voting-rep-disallowed-function"
-    );
+    require(actionSummary.sig != OLD_MOVE_FUNDS, "voting-rep-disallowed-function");
     require(
       actionSummary.domainSkillId != type(uint256).max &&
         actionSummary.expenditureId != type(uint256).max,
@@ -104,19 +95,10 @@ contract VotingReputation is VotingReputationStorage {
     } else {
       // Otherwise, we validate the vote domain against the action
       if (domainSkillId == actionSummary.domainSkillId) {
-        require(
-          _childSkillIndex == UINT256_MAX,
-          "voting-rep-invalid-domain-id"
-        );
+        require(_childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");
       } else {
-        uint256 childSkillId = colonyNetwork.getChildSkillId(
-          domainSkillId,
-          _childSkillIndex
-        );
-        require(
-          childSkillId == actionSummary.domainSkillId,
-          "voting-rep-invalid-domain-id"
-        );
+        uint256 childSkillId = colonyNetwork.getChildSkillId(domainSkillId, _childSkillIndex);
+        require(childSkillId == actionSummary.domainSkillId, "voting-rep-invalid-domain-id");
       }
     }
 
@@ -144,22 +126,12 @@ contract VotingReputation is VotingReputationStorage {
 
     // If an expenditure motion, make sure no v9 motions are holding a lock
     if (isExpenditureSig(actionSummary.sig)) {
-      bytes32 structHash1 = getExpenditureStructHash(
-        getExpenditureAction(motion.action)
-      );
-      require(
-        expenditureMotionCounts_DEPRECATED[structHash1] == 0,
-        "voting-rep-motion-locked"
-      );
+      bytes32 structHash1 = getExpenditureStructHash(getExpenditureAction(motion.action));
+      require(expenditureMotionCounts_DEPRECATED[structHash1] == 0, "voting-rep-motion-locked");
       // Check the main expenditure as well, in case the action is a slot action
-      uint256 expenditureId = getExpenditureId(
-        getExpenditureAction(motion.action)
-      );
+      uint256 expenditureId = getExpenditureId(getExpenditureAction(motion.action));
       bytes32 structHash2 = keccak256(abi.encodePacked(expenditureId));
-      require(
-        expenditureMotionCounts_DEPRECATED[structHash2] == 0,
-        "voting-rep-motion-locked"
-      );
+      require(expenditureMotionCounts_DEPRECATED[structHash2] == 0, "voting-rep-motion-locked");
       // There may be existing v9 slot motions, we can't really check that...
       //  On the plus side, new motions can't be slot motions so there's no possibility of interference
     }
@@ -176,10 +148,7 @@ contract VotingReputation is VotingReputationStorage {
     bytes32[] memory _siblings
   ) public {
     Motion storage motion = motions[_motionId];
-    require(
-      getMotionState(_motionId) == MotionState.Submit,
-      "voting-rep-motion-not-open"
-    );
+    require(getMotionState(_motionId) == MotionState.Submit, "voting-rep-motion-not-open");
     require(_voteSecret != bytes32(0), "voting-rep-invalid-secret");
 
     uint256 userRep = checkReputation(
@@ -219,10 +188,7 @@ contract VotingReputation is VotingReputationStorage {
     bytes32[] memory _siblings
   ) public {
     Motion storage motion = motions[_motionId];
-    require(
-      getMotionState(_motionId) == MotionState.Reveal,
-      "voting-rep-motion-not-reveal"
-    );
+    require(getMotionState(_motionId) == MotionState.Reveal, "voting-rep-motion-not-reveal");
     require(_vote <= 1, "voting-rep-bad-vote");
 
     uint256 userRep = checkReputation(
@@ -237,10 +203,7 @@ contract VotingReputation is VotingReputationStorage {
     motion.votes[_vote] += userRep;
 
     bytes32 voteSecret = voteSecrets[_motionId][msgSender()];
-    require(
-      voteSecret == keccak256(abi.encodePacked(_salt, _vote)),
-      "voting-rep-secret-no-match"
-    );
+    require(voteSecret == keccak256(abi.encodePacked(_salt, _vote)), "voting-rep-secret-no-match");
     delete voteSecrets[_motionId][msgSender()];
 
     uint256 voterReward = getVoterReward(_motionId, userRep);
@@ -268,16 +231,10 @@ contract VotingReputation is VotingReputationStorage {
     bytes32[] memory _siblings
   ) public {
     Motion storage motion = motions[_motionId];
-    require(
-      getMotionState(_motionId) == MotionState.Closed,
-      "voting-rep-motion-not-closed"
-    );
+    require(getMotionState(_motionId) == MotionState.Closed, "voting-rep-motion-not-closed");
 
     uint256 newDomainSkillId = colony.getDomain(_newDomainId).skillId;
-    uint256 childSkillId = colonyNetwork.getChildSkillId(
-      newDomainSkillId,
-      _childSkillIndex
-    );
+    uint256 childSkillId = colonyNetwork.getChildSkillId(newDomainSkillId, _childSkillIndex);
     require(childSkillId == motion.skillId, "voting-rep-invalid-domain-proof");
 
     uint256 domainId = motion.domainId;
@@ -300,18 +257,12 @@ contract VotingReputation is VotingReputationStorage {
 
     uint256 requiredStake = getRequiredStake(_motionId);
 
-    if (
-      motion.stakes[NAY] < requiredStake || motion.stakes[YAY] < requiredStake
-    ) {
+    if (motion.stakes[NAY] < requiredStake || motion.stakes[YAY] < requiredStake) {
       motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
     } else {
       motion.events[STAKE_END] = uint64(block.timestamp);
-      motion.events[SUBMIT_END] =
-        motion.events[STAKE_END] +
-        uint64(submitPeriod);
-      motion.events[REVEAL_END] =
-        motion.events[SUBMIT_END] +
-        uint64(revealPeriod);
+      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
     }
 
     motion.escalated = true;
@@ -343,10 +294,7 @@ contract VotingReputation is VotingReputationStorage {
     // Perform vote power checks
     if (_motionId > motionCountV10) {
       // New functionality for versions 10 and above
-      if (
-        isExpenditureSig(motion.sig) &&
-        getTarget(motion.altTarget) == address(colony)
-      ) {
+      if (isExpenditureSig(motion.sig) && getTarget(motion.altTarget) == address(colony)) {
         uint256 expenditureId = unlockExpenditure(_motionId);
         uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0
           ? motion.votes[YAY]
@@ -393,16 +341,12 @@ contract VotingReputation is VotingReputationStorage {
     emit MotionFinalized(_motionId, motion.action, executed);
   }
 
-  function failingExecutionAllowed(
-    uint256 _motionId
-  ) public view returns (bool _allowed) {
+  function failingExecutionAllowed(uint256 _motionId) public view returns (bool _allowed) {
     Motion storage motion = motions[_motionId];
     uint256 requiredStake = getRequiredStake(_motionId);
 
     // Failing execution is allowed if we didn't fully stake, and it's been a week since staking ended
-    if (
-      motion.stakes[YAY] < requiredStake || motion.stakes[NAY] < requiredStake
-    ) {
+    if (motion.stakes[YAY] < requiredStake || motion.stakes[NAY] < requiredStake) {
       return block.timestamp >= motion.events[STAKE_END] + 7 days;
     } else {
       // It was fully staked, and went to a vote.
@@ -449,9 +393,7 @@ contract VotingReputation is VotingReputationStorage {
     return motionCount;
   }
 
-  function getMotion(
-    uint256 _motionId
-  ) public view returns (Motion memory _motion) {
+  function getMotion(uint256 _motionId) public view returns (Motion memory _motion) {
     _motion = motions[_motionId];
   }
 
@@ -463,9 +405,7 @@ contract VotingReputation is VotingReputationStorage {
     return stakes[_motionId][_staker][_vote];
   }
 
-  function getExpenditureMotionCount(
-    bytes32 _structHash
-  ) public view returns (uint256 _count) {
+  function getExpenditureMotionCount(bytes32 _structHash) public view returns (uint256 _count) {
     return expenditureMotionCounts_DEPRECATED[_structHash];
   }
 
@@ -475,9 +415,7 @@ contract VotingReputation is VotingReputationStorage {
     return expenditureMotionLocks[_expenditureId];
   }
 
-  function getExpenditurePastVote(
-    uint256 _expenditureId
-  ) public view returns (uint256 _vote) {
+  function getExpenditurePastVote(uint256 _expenditureId) public view returns (uint256 _vote) {
     return expenditurePastVotes[_expenditureId];
   }
 
@@ -588,9 +526,7 @@ contract VotingReputation is VotingReputationStorage {
       structHash = keccak256(abi.encodePacked(expenditureId));
     } else {
       uint256 expenditureSlot;
-      uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE)
-        ? 0x184
-        : 0x84;
+      uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
       assembly {
         expenditureSlot := mload(add(_action, expenditureSlotLoc))
       }
@@ -599,9 +535,7 @@ contract VotingReputation is VotingReputationStorage {
   }
 
   // NOTE: This function is deprecated and only used to support v9 expenditure motions
-  function hashExpenditureAction(
-    bytes memory action
-  ) internal pure returns (bytes32 hash) {
+  function hashExpenditureAction(bytes memory action) internal pure returns (bytes32 hash) {
     bytes4 sig = getSig(action);
     assert(sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT);
 
