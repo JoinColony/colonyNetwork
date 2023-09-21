@@ -18,6 +18,7 @@
 
 pragma solidity 0.8.21;
 
+// prettier-ignore
 interface ColonyDataTypes {
   // Events
 
@@ -45,13 +46,7 @@ interface ColonyDataTypes {
   /// @param domainId The domainId of the role
   /// @param role The role being granted/revoked
   /// @param setTo A boolean representing the action -- granted (`true`) or revoked (`false`)
-  event ColonyRoleSet(
-    address agent,
-    address indexed user,
-    uint256 indexed domainId,
-    uint8 indexed role,
-    bool setTo
-  );
+  event ColonyRoleSet(address agent, address indexed user, uint256 indexed domainId, uint8 indexed role, bool setTo);
 
   /// @notice Event logged when colony funds, either tokens or ether, has been moved between funding pots
   /// @param agent The address that is responsible for triggering this event
@@ -59,13 +54,7 @@ interface ColonyDataTypes {
   /// @param toPot The targer funding pot
   /// @param amount The amount that was transferred
   /// @param token The token address being transferred
-  event ColonyFundsMovedBetweenFundingPots(
-    address agent,
-    uint256 indexed fromPot,
-    uint256 indexed toPot,
-    uint256 amount,
-    address token
-  );
+  event ColonyFundsMovedBetweenFundingPots(address agent, uint256 indexed fromPot, uint256 indexed toPot, uint256 amount, address token);
 
   /// @notice Event logged when colony funds are moved to the top-level domain pot
   /// @param agent The address that is responsible for triggering this event
@@ -89,12 +78,7 @@ interface ColonyDataTypes {
   /// @param user The user address who received the reward payout
   /// @param fee The fee deducted from payout
   /// @param rewardRemainder The remaining reward amount paid out to user
-  event RewardPayoutClaimed(
-    uint256 rewardPayoutId,
-    address user,
-    uint256 fee,
-    uint256 rewardRemainder
-  );
+  event RewardPayoutClaimed(uint256 rewardPayoutId, address user, uint256 fee, uint256 rewardRemainder);
 
   /// @notice Event logged when the colony reward inverse is set
   /// @param agent The address that is responsible for triggering this event
@@ -143,24 +127,14 @@ interface ColonyDataTypes {
   /// @param expenditureId Id of the expenditure
   /// @param slot Expenditure slot of the recipient
   /// @param recipient Address of the recipient
-  event ExpenditureRecipientSet(
-    address agent,
-    uint256 indexed expenditureId,
-    uint256 indexed slot,
-    address indexed recipient
-  );
+  event ExpenditureRecipientSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, address indexed recipient);
 
   /// @notice Event logged when an expenditure's skill changes
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the expenditure
   /// @param slot Slot receiving the skill
   /// @param skillId Id of the set skill
-  event ExpenditureSkillSet(
-    address agent,
-    uint256 indexed expenditureId,
-    uint256 indexed slot,
-    uint256 indexed skillId
-  );
+  event ExpenditureSkillSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, uint256 indexed skillId);
 
   /// @notice Event logged when an expenditure payout changes
   /// @param agent The address that is responsible for triggering this event
@@ -168,37 +142,21 @@ interface ColonyDataTypes {
   /// @param slot Expenditure slot of the payout being changed
   /// @param token Token of the payout funding
   /// @param amount Amount of the payout funding
-  event ExpenditurePayoutSet(
-    address agent,
-    uint256 indexed expenditureId,
-    uint256 indexed slot,
-    address indexed token,
-    uint256 amount
-  );
+  event ExpenditurePayoutSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, address indexed token, uint256 amount);
 
   /// @notice Event logged when an expenditure slot claim delay changes
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the expenditure
   /// @param slot Expenditure slot being changed
   /// @param claimDelay Additional amount of time to hold the funds
-  event ExpenditureClaimDelaySet(
-    address agent,
-    uint256 indexed expenditureId,
-    uint256 indexed slot,
-    uint256 claimDelay
-  );
+  event ExpenditureClaimDelaySet(address agent, uint256 indexed expenditureId, uint256 indexed slot, uint256 claimDelay);
 
   /// @notice Event logged when an expenditure slot payout modifier changes
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the expenditure
   /// @param slot Expenditure slot being changed
   /// @param payoutModifier The payout modifier for the slot
-  event ExpenditurePayoutModifierSet(
-    address agent,
-    uint256 indexed expenditureId,
-    uint256 indexed slot,
-    int256 payoutModifier
-  );
+  event ExpenditurePayoutModifierSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, int256 payoutModifier);
 
   /// @notice Event logged when an expenditure slot payout modifier changes
   /// @param agent The address that is responsible for triggering this event
@@ -207,14 +165,7 @@ interface ColonyDataTypes {
   /// @param mask Mask indicating whether we are making mapping or array operations
   /// @param keys Values used to construct final slot via mapping or array operations
   /// @param value Value being set in the slot
-  event ExpenditureStateChanged(
-    address agent,
-    uint256 indexed expenditureId,
-    uint256 indexed storageSlot,
-    bool[] mask,
-    bytes32[] keys,
-    bytes32 value
-  );
+  event ExpenditureStateChanged(address agent, uint256 indexed expenditureId, uint256 indexed storageSlot, bool[] mask, bytes32[] keys, bytes32 value);
 
   /// @notice Event logged when a new payment is added
   /// @param agent The address that is responsible for triggering this event
@@ -439,12 +390,7 @@ interface ColonyDataTypes {
     uint256[] skills;
   }
 
-  enum ExpenditureStatus {
-    Draft,
-    Cancelled,
-    Finalized,
-    Locked
-  }
+  enum ExpenditureStatus { Draft, Cancelled, Finalized, Locked }
 
   struct Payment {
     address payable recipient;
@@ -468,36 +414,12 @@ interface ColonyDataTypes {
     mapping(uint8 => mapping(address => uint256)) payouts;
   }
 
-  enum TaskRatings {
-    None,
-    Unsatisfactory,
-    Satisfactory,
-    Excellent
-  }
-
-  enum TaskRole {
-    Manager,
-    Evaluator,
-    Worker
-  }
-
-  enum TaskStatus {
-    Active,
-    Cancelled,
-    Finalized
-  }
+  enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }
+  enum TaskRole { Manager, Evaluator, Worker }
+  enum TaskStatus { Active, Cancelled, Finalized }
 
   // Any new roles added should be added before NUMBER_OF_ROLES, which should always be the last entry in this enum
-  enum ColonyRole {
-    Recovery,
-    Root,
-    Arbitration,
-    Architecture,
-    ArchitectureSubdomain_DEPRECATED,
-    Funding,
-    Administration,
-    NUMBER_OF_ROLES
-  }
+  enum ColonyRole { Recovery, Root, Arbitration, Architecture, ArchitectureSubdomain_DEPRECATED, Funding, Administration, NUMBER_OF_ROLES }
 
   struct Role {
     // Address of the user for the given role
@@ -516,13 +438,7 @@ interface ColonyDataTypes {
 
   // We do have 1 "special" funding pot with id 0 for rewards which will carry the "Unassigned" type.
   // as they are unrelated to other entities in the Colony the same way the remaining funding pots are releated to domains, tasks and payouts.
-  enum FundingPotAssociatedType {
-    Unassigned,
-    Domain,
-    Task,
-    Payment,
-    Expenditure
-  }
+  enum FundingPotAssociatedType { Unassigned, Domain, Task, Payment, Expenditure }
 
   struct FundingPot {
     // Funding pots can store multiple token balances, for ETH use 0x0 address

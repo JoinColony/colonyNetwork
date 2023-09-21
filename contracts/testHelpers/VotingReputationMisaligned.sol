@@ -1073,7 +1073,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
       //   providing g gas and v wei and output area mem[out…(out+outsize))
       //   returning 0 on error (eg. out of gas) and 1 on success
 
-      // call(g,   a,  v, in,                insize,        out, outsize)
+      //         call(g,   a,  v, in,                insize,        out, outsize)
       success := call(gas(), to, 0, add(action, 0x20), mload(action), 0, 0)
     }
   }

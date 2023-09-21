@@ -23,6 +23,7 @@ import { ColonyStorage } from "./ColonyStorage.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract ColonyDomains is ColonyStorage {
+  // prettier-ignore
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
     require(_colonyNetworkAddress != address(0x0), "colony-network-cannot-be-zero");
     require(_token != address(0x0), "colony-token-cannot-be-zero");
@@ -35,56 +36,18 @@ contract ColonyDomains is ColonyStorage {
     tokenLockingAddress = IColonyNetwork(colonyNetworkAddress).getTokenLocking();
 
     // Initialise the task update reviewers
-    setFunctionReviewers(
-      bytes4(keccak256("setTaskBrief(uint256,bytes32)")),
-      TaskRole.Manager,
-      TaskRole.Worker
-    );
-    setFunctionReviewers(
-      bytes4(keccak256("setTaskDueDate(uint256,uint256)")),
-      TaskRole.Manager,
-      TaskRole.Worker
-    );
-    setFunctionReviewers(
-      bytes4(keccak256("setTaskSkill(uint256,uint256)")),
-      TaskRole.Manager,
-      TaskRole.Worker
-    );
+    setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), TaskRole.Manager, TaskRole.Worker);
+    setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
+    setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
     // We are setting a manager to both reviewers, but it will require just one signature from manager
-    setFunctionReviewers(
-      bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")),
-      TaskRole.Manager,
-      TaskRole.Manager
-    );
-    setFunctionReviewers(
-      bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")),
-      TaskRole.Manager,
-      TaskRole.Evaluator
-    );
-    setFunctionReviewers(
-      bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")),
-      TaskRole.Manager,
-      TaskRole.Worker
-    );
-    setFunctionReviewers(
-      bytes4(keccak256("removeTaskEvaluatorRole(uint256)")),
-      TaskRole.Manager,
-      TaskRole.Evaluator
-    );
-    setFunctionReviewers(
-      bytes4(keccak256("removeTaskWorkerRole(uint256)")),
-      TaskRole.Manager,
-      TaskRole.Worker
-    );
-    setFunctionReviewers(
-      bytes4(keccak256("cancelTask(uint256)")),
-      TaskRole.Manager,
-      TaskRole.Worker
-    );
+    setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Manager);
+    setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Evaluator);
+    setFunctionReviewers(bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Worker);
+    setFunctionReviewers(bytes4(keccak256("removeTaskEvaluatorRole(uint256)")), TaskRole.Manager, TaskRole.Evaluator);
+    setFunctionReviewers(bytes4(keccak256("removeTaskWorkerRole(uint256)")), TaskRole.Manager, TaskRole.Worker);
+    setFunctionReviewers(bytes4(keccak256("cancelTask(uint256)")), TaskRole.Manager, TaskRole.Worker);
 
-    setRoleAssignmentFunction(
-      bytes4(keccak256("setTaskManagerRole(uint256,address,uint256,uint256)"))
-    );
+    setRoleAssignmentFunction(bytes4(keccak256("setTaskManagerRole(uint256,address,uint256,uint256)")));
     setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));
     setRoleAssignmentFunction(bytes4(keccak256("setTaskWorkerRole(uint256,address)")));
 

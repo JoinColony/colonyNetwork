@@ -19,25 +19,13 @@
 pragma solidity 0.8.21;
 import { ColonyDataTypes } from "./../../colony/ColonyDataTypes.sol";
 
+// prettier-ignore
 interface VotingReputationDataTypes {
   // Data structures
 
-  enum ExtensionState {
-    Deployed,
-    Active,
-    Deprecated
-  }
+  enum ExtensionState { Deployed, Active, Deprecated }
 
-  enum MotionState {
-    Null,
-    Staking,
-    Submit,
-    Reveal,
-    Closed,
-    Finalizable,
-    Finalized,
-    Failed
-  }
+  enum MotionState { Null, Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
 
   struct Motion {
     uint64[3] events; // For recording motion lifecycle timestamps (STAKE, SUBMIT, REVEAL)
@@ -65,26 +53,11 @@ interface VotingReputationDataTypes {
 
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
-  event MotionStaked(
-    uint256 indexed motionId,
-    address indexed staker,
-    uint256 indexed vote,
-    uint256 amount
-  );
+  event MotionStaked(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);
   event MotionVoteSubmitted(uint256 indexed motionId, address indexed voter);
   event MotionVoteRevealed(uint256 indexed motionId, address indexed voter, uint256 indexed vote);
   event MotionFinalized(uint256 indexed motionId, bytes action, bool executed);
-  event MotionEscalated(
-    uint256 indexed motionId,
-    address escalator,
-    uint256 indexed domainId,
-    uint256 indexed newDomainId
-  );
-  event MotionRewardClaimed(
-    uint256 indexed motionId,
-    address indexed staker,
-    uint256 indexed vote,
-    uint256 amount
-  );
+  event MotionEscalated(uint256 indexed motionId, address escalator, uint256 indexed domainId, uint256 indexed newDomainId);
+  event MotionRewardClaimed(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);
   event MotionEventSet(uint256 indexed motionId, uint256 eventIndex);
 }
