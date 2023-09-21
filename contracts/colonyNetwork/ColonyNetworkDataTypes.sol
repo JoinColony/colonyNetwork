@@ -18,6 +18,7 @@
 
 pragma solidity 0.8.21;
 
+// prettier-ignore
 interface ColonyNetworkDataTypes {
   /// @notice Event logged when the colony network is intialised. This is only ever emitted once in a network's lifetime
   /// @param resolver The Resolver contract address used by the Colony version 1
@@ -91,12 +92,7 @@ interface ColonyNetworkDataTypes {
   /// @param newNLeaves The updated leaves count value
   /// @param stakers Array of users who submitted or backed the hash accepted
   /// @param reward Amount of CLNY distributed as reward to miners
-  event ReputationRootHashSet(
-    bytes32 newHash,
-    uint256 newNLeaves,
-    address[] stakers,
-    uint256 reward
-  );
+  event ReputationRootHashSet(bytes32 newHash, uint256 newNLeaves, address[] stakers, uint256 reward);
 
   /// @notice Event logged when the ENS registrar is initialised
   /// @param ens Address of ENS registrar

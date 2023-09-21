@@ -417,7 +417,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
       //   providing g gas and v wei and output area mem[out…(out+outsize))
       //   returning 0 on error (eg. out of gas) and 1 on success
 
-      // call(g,     a,  v,     in,              insize,      out, outsize)
+      //         call(g,     a,  v,     in,              insize,      out, outsize)
       success := call(gas(), to, value, add(data, 0x20), mload(data), 0, 0)
     }
   }
