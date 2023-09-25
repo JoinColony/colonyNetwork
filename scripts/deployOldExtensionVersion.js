@@ -41,9 +41,9 @@ module.exports = async (contractName, interfaceName, implementationNames, versio
     const res = await exec(
       `cd ${path.resolve(
         __dirname,
-        `../colonyNetwork-${versionTag}`
+        `../colonyNetwork-${versionTag}`,
       )} && npx truffle exec --network ${network} ./scripts/deployOldExtensionVersionTruffle.js --interfaceName ${interfaceName}` +
-        ` --implementationNames ${implementationNames.join(",")}`
+        ` --implementationNames ${implementationNames.join(",")}`,
     );
 
     const extensionResolverAddress = res.split("\n").slice(-2)[0].trim();

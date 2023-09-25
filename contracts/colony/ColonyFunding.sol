@@ -219,8 +219,10 @@ contract ColonyFunding is
     // First two checks prevent overflows
     require(
       type(uint256).max - expenditure.globalClaimDelay > slot.claimDelay &&
-      type(uint256).max - expenditure.globalClaimDelay - slot.claimDelay > expenditure.finalizedTimestamp &&
-      expenditure.finalizedTimestamp + expenditure.globalClaimDelay + slot.claimDelay <= block.timestamp,
+        type(uint256).max - expenditure.globalClaimDelay - slot.claimDelay >
+        expenditure.finalizedTimestamp &&
+        expenditure.finalizedTimestamp + expenditure.globalClaimDelay + slot.claimDelay <=
+        block.timestamp,
       "colony-expenditure-cannot-claim"
     );
 
