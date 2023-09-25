@@ -2779,7 +2779,7 @@ contract("Voting Reputation", (accounts) => {
         "IVotingReputation",
         ["VotingReputation,VotingReputationMisalignedRecovery"],
         "glwss4",
-        colonyNetwork
+        colonyNetwork,
       );
       // We also need to deploy all tags from glwss4 to the most recent release
       // though we can skip any tags where the contract did not change

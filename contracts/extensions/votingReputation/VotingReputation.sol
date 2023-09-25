@@ -314,8 +314,9 @@ contract VotingReputation is VotingReputationStorage {
           unlockV9Expenditure(_motionId);
         }
 
-        uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0 ?
-          motion.votes[YAY] : motion.stakes[YAY];
+        uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0
+          ? motion.votes[YAY]
+          : motion.stakes[YAY];
 
         bytes memory action = getExpenditureAction(motion.action);
         bytes32 actionHash = hashExpenditureAction(action);
@@ -482,7 +483,10 @@ contract VotingReputation is VotingReputationStorage {
       ? expenditure.globalClaimDelay - LOCK_DELAY
       : 0;
 
-    bytes memory claimDelayAction = createGlobalClaimDelayAction(action, newClaimDelay + sinceFinalized);
+    bytes memory claimDelayAction = createGlobalClaimDelayAction(
+      action,
+      newClaimDelay + sinceFinalized
+    );
     // No require this time, since we don't want stakes to be permanently locked
     executeCall(_motionId, claimDelayAction);
 

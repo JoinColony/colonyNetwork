@@ -217,9 +217,10 @@ contract VotingReputationStorage is
       // (Inefficiently) handle the potential case of a v9 motion:
       //  Return `Finalized` if either NO_ACTION or OLD_MOVE_FUNDS
       ActionSummary memory actionSummary = getActionSummary(motion.action, motion.altTarget);
-      return (actionSummary.sig == NO_ACTION || actionSummary.sig == OLD_MOVE_FUNDS)
-        ? MotionState.Finalized
-        : MotionState.Finalizable;
+      return
+        (actionSummary.sig == NO_ACTION || actionSummary.sig == OLD_MOVE_FUNDS)
+          ? MotionState.Finalized
+          : MotionState.Finalizable;
     } else {
       return MotionState.Finalizable;
     }
@@ -408,11 +409,10 @@ contract VotingReputationStorage is
     }
   }
 
-  function createGlobalClaimDelayAction(bytes memory action, uint256 value)
-    internal
-    pure
-    returns (bytes memory)
-  {
+  function createGlobalClaimDelayAction(
+    bytes memory action,
+    uint256 value
+  ) internal pure returns (bytes memory) {
     // See https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
     //  for documentation on how the action `bytes` is encoded
     // In brief, the first byte32 is the length of the array. Then we have
@@ -444,10 +444,10 @@ contract VotingReputationStorage is
       mstore(add(expenditureAction, 0xa4), 0xe0) // mask location
       mstore(add(expenditureAction, 0xc4), 0x120) // keys location
       mstore(add(expenditureAction, 0xe4), value)
-      mstore(add(expenditureAction, 0x104), 1)      // mask length
-      mstore(add(expenditureAction, 0x124), 1)      // offset
-      mstore(add(expenditureAction, 0x144), 1)      // keys length
-      mstore(add(expenditureAction, 0x164), 4)      // claimDelay offset
+      mstore(add(expenditureAction, 0x104), 1) // mask length
+      mstore(add(expenditureAction, 0x124), 1) // offset
+      mstore(add(expenditureAction, 0x144), 1) // keys length
+      mstore(add(expenditureAction, 0x164), 4) // claimDelay offset
     }
 
     return expenditureAction;
@@ -457,11 +457,7 @@ contract VotingReputationStorage is
     bytes memory action,
     uint256 expenditureSlotLoc,
     uint256 value
-  )
-    internal
-    pure
-    returns (bytes memory)
-  {
+  ) internal pure returns (bytes memory) {
     bytes memory slotClaimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
     bytes4 functionSignature = SET_EXPENDITURE_STATE;
 
@@ -480,21 +476,20 @@ contract VotingReputationStorage is
       mstore(add(slotClaimDelayAction, 0x24), permissionDomainId)
       mstore(add(slotClaimDelayAction, 0x44), childSkillIndex)
       mstore(add(slotClaimDelayAction, 0x64), expenditureId)
-      mstore(add(slotClaimDelayAction, 0x84), 26)     // expenditureSlot storage slot
-      mstore(add(slotClaimDelayAction, 0xa4), 0xe0)   // mask location
-      mstore(add(slotClaimDelayAction, 0xc4), 0x140)  // keys location
+      mstore(add(slotClaimDelayAction, 0x84), 26) // expenditureSlot storage slot
+      mstore(add(slotClaimDelayAction, 0xa4), 0xe0) // mask location
+      mstore(add(slotClaimDelayAction, 0xc4), 0x140) // keys location
       mstore(add(slotClaimDelayAction, 0xe4), value)
-      mstore(add(slotClaimDelayAction, 0x104), 2)     // mask length
-      mstore(add(slotClaimDelayAction, 0x124), 0)     // mapping
-      mstore(add(slotClaimDelayAction, 0x144), 1)     // offset
-      mstore(add(slotClaimDelayAction, 0x164), 2)     // keys length
+      mstore(add(slotClaimDelayAction, 0x104), 2) // mask length
+      mstore(add(slotClaimDelayAction, 0x124), 0) // mapping
+      mstore(add(slotClaimDelayAction, 0x144), 1) // offset
+      mstore(add(slotClaimDelayAction, 0x164), 2) // keys length
       mstore(add(slotClaimDelayAction, 0x184), expenditureSlot)
-      mstore(add(slotClaimDelayAction, 0x1a4), 1)     // claimDelay offset
+      mstore(add(slotClaimDelayAction, 0x1a4), 1) // claimDelay offset
     }
 
     return slotClaimDelayAction;
   }
-
 
   // Kept for backwards-compatibility with v9, since a slot may have been locked
   function createClaimDelayAction(
@@ -520,7 +515,7 @@ contract VotingReputationStorage is
     // If we are editing the main expenditure struct
     if (sig == SET_EXPENDITURE_STATE && storageSlot == 25) {
       return createGlobalClaimDelayAction(action, value);
-    // If we are editing an expenditure slot
+      // If we are editing an expenditure slot
     } else {
       uint256 expenditureSlotLoc = (sig == SET_EXPENDITURE_STATE) ? 0x184 : 0x84;
       return createSlotClaimDelayAction(action, expenditureSlotLoc, value);
