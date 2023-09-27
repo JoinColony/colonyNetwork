@@ -202,9 +202,9 @@ contract("Multisig Permissions", (accounts) => {
     it("can't propose an action requiring the same permissions for multiple actions, but in different domains, even via multicall", async () => {
       await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ARCHITECTURE_ROLE]));
 
-      // Action to award core funding in subdomain 1
+      // Action to award core funding in domain 2
       const action1 = await encodeTxData(colony, "setUserRoles", [1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE])]);
-      // Action to award core funding in subdomain 1
+      // Action to award core funding in domain 3
       const action2 = await encodeTxData(colony, "setUserRoles", [1, 1, USER2, 3, rolesToBytes32([FUNDING_ROLE])]);
 
       const action = await encodeTxData(colony, "multicall", [[action1, action2]]);
@@ -251,7 +251,6 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
 
       const motionId = await multisigPermissions.getMotionCount();
-      // let motion = await multisigPermissions.getMotion(motionId);
       let rootApprovalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(rootApprovalCount).to.eq.BN(1);
       let userApproval = await multisigPermissions.getUserApproval(motionId, USER0, ROOT_ROLE);
@@ -259,7 +258,6 @@ contract("Multisig Permissions", (accounts) => {
 
       // And can remove the approval
       await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, false);
-      // motion = await multisigPermissions.getMotion(motionId);
       rootApprovalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(rootApprovalCount).to.eq.BN(0);
       userApproval = await multisigPermissions.getUserApproval(motionId, USER0, ROOT_ROLE);
@@ -414,16 +412,15 @@ contract("Multisig Permissions", (accounts) => {
       await checkErrorRevert(multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER2 }), "colony-multisig-no-permissions");
 
       // Not right permissions
-
       await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ARBITRATION_ROLE]));
       await checkErrorRevert(multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER2 }), "colony-multisig-no-permissions");
-      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([]));
     });
 
     it("if you don't show the right permissions, you cannot approve", async () => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
       const motionId = await multisigPermissions.getMotionCount();
+
       // Not right permissions
       await checkErrorRevert(multisigPermissions.changeApproval(1, 0, motionId, true), "colony-multisig-not-same-domain");
     });
@@ -445,6 +442,7 @@ contract("Multisig Permissions", (accounts) => {
 
       // Could call if we wanted
       await multisigPermissions.execute.estimateGas(motionId);
+
       // Unapprove
       await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, false, { from: USER1 });
       approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
@@ -543,6 +541,7 @@ contract("Multisig Permissions", (accounts) => {
 
       // Approve again
       await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true);
+
       // But no effect
       let approvalCount = await multisigPermissions.getMotionRoleApprovalCount(motionId, ROOT_ROLE);
       expect(approvalCount).to.eq.BN(1);
@@ -581,10 +580,10 @@ contract("Multisig Permissions", (accounts) => {
 
       const domain = await colony.getDomain(2);
 
-      // That should make the threshold 2. If the admin holder in root was counted, the threshold would be three
       const counts = await multisigPermissions.getDomainSkillRoleCounts(domain.skillId, ADMINISTRATION_ROLE);
       expect(counts).to.eq.BN(3);
 
+      // That should make the threshold 2. If the admin holder in root was counted, the threshold would be three
       const threshold = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ADMINISTRATION_ROLE);
       expect(threshold).to.eq.BN(2);
     });
@@ -612,13 +611,13 @@ contract("Multisig Permissions", (accounts) => {
         "makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)",
         [1, 0, 1, 0, [USER0], [token.address], [100], 2, 0]
       );
-      // await oneTxPayment.makePaymentFundedFromDomain(2, UINT256_MAX, 1, 0, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID);
 
       // If we don't have any permissions, can't create
       await checkErrorRevert(multisigPermissions.createMotion(1, 0, [oneTxPayment.address], [action]), "colony-multisig-no-permissions");
 
       // Give one permission
       await multisigPermissions.setUserRoles(1, UINT256_MAX, USER0, 1, rolesToBytes32([ROOT_ROLE, ADMINISTRATION_ROLE]));
+
       // Now can create
       await multisigPermissions.createMotion(1, 0, [oneTxPayment.address], [action]);
 
@@ -650,8 +649,6 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
       await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-permissions-not-enough-approvals");
 
-      await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true);
-      await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-permissions-not-enough-approvals");
       await multisigPermissions.changeApproval(1, UINT256_MAX, motionId, true, { from: USER1 });
 
       const amountBefore = await token.totalSupply();
