@@ -440,9 +440,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
       ), "multisig-caller-not-correct-permissions"
     );
 
-    // This is not strictly necessary, since these roles are never used in subdomains
-    require(_roles & ROOT_ROLES == 0 || _domainId == 1, "colony-bad-domain-for-role");
-
     Domain memory domain = colony.getDomain(_domainId);
 
     bytes32 existingRoles = getUserRoles(_user, _domainId);
