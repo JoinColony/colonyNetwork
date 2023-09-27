@@ -63,7 +63,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
 
   // Storage
 
-  // User Address => Domain Skill Id => Roles
+  // User Address => Domain Id => Roles
   mapping(address => mapping(uint256 => bytes32)) internal userDomainRoles;
 
   IColonyNetwork colonyNetwork;
@@ -71,12 +71,12 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
 
   // Domain Skill Id => Role => Usercount
   mapping(uint256 => mapping(uint8 => uint256)) domainSkillRoleCounts;
-  // Domain Skill Id => fixed threshold
+  // Domain Skill Id => Fixed Threshold
   mapping(uint256 => uint256) domainSkillThreshold;
 
   uint256 motionCount;
   mapping (uint256 => Motion) motions;
-  // Motion Id => User => approvals
+  // Motion Id => User => Approvals
   mapping(uint256 => mapping(address => bytes32)) motionApprovals;
   // Motion Id => Permission => Approval Count
   mapping(uint256 => mapping(ColonyRole => uint256)) motionRoleApprovalCount;
@@ -146,8 +146,10 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     emit GlobalThresholdSet(_globalThreshold);
   }
 
-  function getGlobalThreshold() public view returns (uint256) {
-    return globalThreshold;
+  function setDomainSkillThreshold(uint256 _domainSkillId, uint256 _threshold) public onlyCoreRoot {
+    domainSkillThreshold[_domainSkillId] = _threshold;
+
+    emit DomainSkillThresholdSet(_domainSkillId, _threshold);
   }
 
   function createMotion(
@@ -273,11 +275,12 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
       roleIndex += 1;
     }
 
-    // If approvals were made, threshold lowered, and then executed, motion.overallApprovalTimestamp is 0
+    // If approvals were made, threshold lowered, and then executed,
+    //  motion.overallApprovalTimestamp is 0 (since it was never set)
     if (motion.overallApprovalTimestamp == 0) {
       // We set the overall approval timestamp to now, and return
       // We don't execute the motion, but we want to commit the timestamp
-      // (which wouldn't happen if we continued and the call(s) failed)
+      //  (which wouldn't happen if we continued and a call failed)
       motion.overallApprovalTimestamp = block.timestamp;
       return;
     }
@@ -300,6 +303,9 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     emit MotionExecuted(msgSender(), _motionId, overallSuccess);
   }
 
+  function getGlobalThreshold() public view returns (uint256) {
+    return globalThreshold;
+  }
 
   function getMotionCount() public view returns(uint256) {
     return motionCount;
@@ -325,12 +331,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     return domainSkillThreshold[_domainSkillId];
   }
 
-  function setDomainSkillThreshold(uint256 _domainSkillId, uint256 _threshold) public onlyCoreRoot {
-    domainSkillThreshold[_domainSkillId] = _threshold;
-
-    emit DomainSkillThresholdSet(_domainSkillId, _threshold);
-  }
-
   function getDomainSkillRoleThreshold(uint256 _domainSkillId, ColonyRole _role) public view returns (uint256) {
     if (domainSkillThreshold[_domainSkillId] > 0) {
       return domainSkillThreshold[_domainSkillId];
@@ -341,72 +341,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     }
 
     return (domainSkillRoleCounts[_domainSkillId][uint8(_role)] / 2) + 1;
-  }
-
-  // Copied from ColonyRoles.sol
-  function getUserRoles(address who, uint256 where) public view returns (bytes32) {
-    return userDomainRoles[who][where];
-  }
-
-  // Copied from ColonyRoles.sol
-  function setUserRoles(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    address _user,
-    uint256 _domainId,
-    bytes32 _roles
-  )
-    public
-  {
-    // This is not strictly necessary, since these roles are never used in subdomains
-    require(_roles & ROOT_ROLES == 0 || _domainId == 1, "multisig-bad-domain-for-role");
-
-    require(
-      validateDomainInheritance(_permissionDomainId, _childSkillIndex, _domainId),
-      "multisig-invalid-domain-inheritance"
-    );
-
-    // Allow this function to be called if the caller:
-    require(
-      // Has core root permissions OR
-      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root) || 
-      // Has core architecture, if we're using that permission in a child domain of where we have it
-      (
-        // Core architecture check
-        colony.hasUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Architecture) && 
-        // In a child domain check
-        (_permissionDomainId != _domainId)
-      ), "multisig-caller-not-correct-permissions"
-    );
-
-    // This is not strictly necessary, since these roles are never used in subdomains
-    require(_roles & ROOT_ROLES == 0 || _domainId == 1, "colony-bad-domain-for-role");
-
-    Domain memory domain = colony.getDomain(_domainId);
-
-    bytes32 existingRoles = getUserRoles(_user, _domainId);
-    bytes32 rolesChanged = _roles ^ existingRoles;
-    bytes32 roles = _roles;
-    bool setTo;
-
-    for (uint8 roleId; roleId < uint8(ColonyRole.NUMBER_OF_ROLES); roleId += 1) {
-      bool changed = uint256(rolesChanged) % 2 == 1;
-      if (changed) {
-        setTo = uint256(roles) % 2 == 1;
-        setUserRole(_user, _domainId, roleId, setTo);
-
-        if (setTo) {
-          domainSkillRoleCounts[domain.skillId][roleId] += 1;
-        } else {
-          domainSkillRoleCounts[domain.skillId][roleId] -= 1;
-        }
-
-        emit MultisigRoleSet(msgSender(), _user, _domainId, roleId, setTo);
-      }
-
-      roles >>= 1;
-      rolesChanged >>= 1;
-    }
   }
 
   function getActionSummary(
@@ -468,6 +402,72 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     }
 
     return (overallDomainSkillId, overallPermissionMask);
+  }
+
+  // Copied from ColonyRoles.sol
+  function getUserRoles(address who, uint256 where) public view returns (bytes32) {
+    return userDomainRoles[who][where];
+  }
+
+  // Copied from ColonyRoles.sol
+  function setUserRoles(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bytes32 _roles
+  )
+    public
+  {
+    // This is not strictly necessary, since these roles are never used in subdomains
+    require(_roles & ROOT_ROLES == 0 || _domainId == 1, "multisig-bad-domain-for-role");
+
+    require(
+      validateDomainInheritance(_permissionDomainId, _childSkillIndex, _domainId),
+      "multisig-invalid-domain-inheritance"
+    );
+
+    // Allow this function to be called if the caller:
+    require(
+      // Has core root permissions OR
+      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root) ||
+      // Has core architecture, if we're using that permission in a child domain of where we have it
+      (
+        // Core architecture check
+        colony.hasUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Architecture) &&
+        // In a child domain check
+        (_permissionDomainId != _domainId)
+      ), "multisig-caller-not-correct-permissions"
+    );
+
+    // This is not strictly necessary, since these roles are never used in subdomains
+    require(_roles & ROOT_ROLES == 0 || _domainId == 1, "colony-bad-domain-for-role");
+
+    Domain memory domain = colony.getDomain(_domainId);
+
+    bytes32 existingRoles = getUserRoles(_user, _domainId);
+    bytes32 rolesChanged = _roles ^ existingRoles;
+    bytes32 roles = _roles;
+    bool setTo;
+
+    for (uint8 roleId; roleId < uint8(ColonyRole.NUMBER_OF_ROLES); roleId += 1) {
+      bool changed = uint256(rolesChanged) % 2 == 1;
+      if (changed) {
+        setTo = uint256(roles) % 2 == 1;
+        setUserRole(_user, _domainId, roleId, setTo);
+
+        if (setTo) {
+          domainSkillRoleCounts[domain.skillId][roleId] += 1;
+        } else {
+          domainSkillRoleCounts[domain.skillId][roleId] -= 1;
+        }
+
+        emit MultisigRoleSet(msgSender(), _user, _domainId, roleId, setTo);
+      }
+
+      roles >>= 1;
+      rolesChanged >>= 1;
+    }
   }
 
   // Internal functions
