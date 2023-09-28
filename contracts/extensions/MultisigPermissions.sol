@@ -27,9 +27,12 @@ import { GetActionDomainSkillId } from "./../common/GetActionDomainSkillId.sol";
 
 // ignore-file-swc-108
 
-
-contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCallData, GetActionDomainSkillId {
-
+contract MultisigPermissions is
+  ColonyExtensionMeta,
+  ColonyDataTypes,
+  ExtractCallData,
+  GetActionDomainSkillId
+{
   // Events
 
   event MultisigRoleSet(address agent, address user, uint256 domainId, uint256 roleId, bool setTo);
@@ -52,14 +55,16 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
   }
 
   bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
-  bytes4 constant SET_USER_ROLES = bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
-  bytes32 constant ROOT_ROLES = (
-    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Recovery) |
-    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
-  );
+  bytes4 constant SET_USER_ROLES =
+    bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
+  bytes32 constant ROOT_ROLES = ((bytes32(uint256(1)) <<
+    uint8(ColonyDataTypes.ColonyRole.Recovery)) |
+    (bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)));
 
-  bytes32 constant ONLY_ROOT_ROLE_MASK = bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root);
-  bytes32 constant ONLY_ARCHITECTURE_ROLE_MASK = bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Architecture);
+  bytes32 constant ONLY_ROOT_ROLE_MASK =
+    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root);
+  bytes32 constant ONLY_ARCHITECTURE_ROLE_MASK =
+    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Architecture);
 
   // Storage
 
@@ -75,7 +80,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
   mapping(uint256 => uint256) domainSkillThreshold;
 
   uint256 motionCount;
-  mapping (uint256 => Motion) motions;
+  mapping(uint256 => Motion) motions;
   // Motion Id => User => Approvals
   mapping(uint256 => mapping(address => bytes32)) motionApprovals;
   // Motion Id => Permission => Approval Count
@@ -85,13 +90,13 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("MultisigPermissions");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
+  function version() public pure override returns (uint256 _version) {
     return 1;
   }
 
@@ -118,7 +123,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     }
     return bytes32(0);
   }
-
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
@@ -157,10 +161,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     uint256 _childSkillIndex,
     address[] memory _targets,
     bytes[] memory _data
-  )
-    public
-    notDeprecated
-  {
+  ) public notDeprecated {
     require(_targets.length == _data.length, "colony-multisig-invalid-motion");
     require(_targets.length >= 1, "colony-multisig-invalid-motion");
 
@@ -173,15 +174,18 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
       uint256 actionDomainSkillId;
       bytes32 actionRequiredPermissions;
 
-      (actionDomainSkillId, actionRequiredPermissions) = getActionSummary(motion.data[i], _targets[i]);
+      (actionDomainSkillId, actionRequiredPermissions) = getActionSummary(
+        motion.data[i],
+        _targets[i]
+      );
 
-      if (motion.domainSkillId == 0 && motion.requiredPermissions == 0){
+      if (motion.domainSkillId == 0 && motion.requiredPermissions == 0) {
         motion.domainSkillId = actionDomainSkillId;
         motion.requiredPermissions = actionRequiredPermissions;
       } else {
         require(
           motion.domainSkillId == actionDomainSkillId &&
-          motion.requiredPermissions == actionRequiredPermissions,
+            motion.requiredPermissions == actionRequiredPermissions,
           "colony-multisig-invalid-motion"
         );
       }
@@ -200,13 +204,10 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     uint256 _childSkillIndex,
     uint256 _motionId,
     bool _approved
-  )
-    public
-    notExecuted(_motionId)
-  {
+  ) public notExecuted(_motionId) {
     validateMotionDomain(_permissionDomainId, _childSkillIndex, _motionId);
 
-    if (_approved){
+    if (_approved) {
       validateUserPermissions(_permissionDomainId, _motionId);
     }
 
@@ -228,7 +229,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
         }
 
         // Update appropriately
-        if (getUserApproval(_motionId, msgSender(), ColonyRole(roleIndex)) != _approved){
+        if (getUserApproval(_motionId, msgSender(), ColonyRole(roleIndex)) != _approved) {
           setUserApproval(_motionId, msgSender(), ColonyRole(roleIndex), _approved);
 
           if (_approved) {
@@ -240,10 +241,15 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
           emit ApprovalChanged(msgSender(), _motionId, ColonyRole(roleIndex), _approved);
         }
 
-        uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, ColonyRole(roleIndex));
+        uint256 threshold = getDomainSkillRoleThreshold(
+          motion.domainSkillId,
+          ColonyRole(roleIndex)
+        );
         if (motionRoleApprovalCount[_motionId][ColonyRole(roleIndex)] < threshold) {
           anyBelowThreshold = true;
-        } else if (motionRoleApprovalCount[_motionId][ColonyRole(roleIndex)] == threshold && _approved) {
+        } else if (
+          motionRoleApprovalCount[_motionId][ColonyRole(roleIndex)] == threshold && _approved
+        ) {
           newlyApproved = true;
         }
       }
@@ -263,10 +269,13 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
 
     uint8 roleIndex;
     // While there are still relevant roles we've not checked yet
-    while (uint256(motion.requiredPermissions) >= (1 << roleIndex)){
+    while (uint256(motion.requiredPermissions) >= (1 << roleIndex)) {
       // For the current role, is it required for the motion?
-      if ((motion.requiredPermissions & bytes32(1 << roleIndex)) > 0){
-        uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, ColonyRole(roleIndex));
+      if ((motion.requiredPermissions & bytes32(1 << roleIndex)) > 0) {
+        uint256 threshold = getDomainSkillRoleThreshold(
+          motion.domainSkillId,
+          ColonyRole(roleIndex)
+        );
         require(
           motionRoleApprovalCount[_motionId][ColonyRole(roleIndex)] >= threshold,
           "colony-multisig-permissions-not-enough-approvals"
@@ -307,23 +316,34 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     return globalThreshold;
   }
 
-  function getMotionCount() public view returns(uint256) {
+  function getMotionCount() public view returns (uint256) {
     return motionCount;
   }
 
   function getMotion(uint256 motionId) public view returns (Motion memory) {
     return motions[motionId];
   }
-  function getMotionRoleApprovalCount(uint256 _motionId, ColonyRole _role) public view returns (uint256) {
+
+  function getMotionRoleApprovalCount(
+    uint256 _motionId,
+    ColonyRole _role
+  ) public view returns (uint256) {
     return motionRoleApprovalCount[_motionId][_role];
   }
 
-  function getUserApproval(uint256 _motionId, address _user, ColonyRole _permission) public view returns (bool) {
+  function getUserApproval(
+    uint256 _motionId,
+    address _user,
+    ColonyRole _permission
+  ) public view returns (bool) {
     bytes32 approvals = motionApprovals[_motionId][_user];
     return (approvals >> uint8(_permission)) & bytes32(uint256(1)) == bytes32(uint256(1));
   }
 
-  function getDomainSkillRoleCounts(uint256 _domainSkillId, uint8 role) public view returns (uint256) {
+  function getDomainSkillRoleCounts(
+    uint256 _domainSkillId,
+    uint8 role
+  ) public view returns (uint256) {
     return domainSkillRoleCounts[_domainSkillId][role];
   }
 
@@ -331,7 +351,10 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     return domainSkillThreshold[_domainSkillId];
   }
 
-  function getDomainSkillRoleThreshold(uint256 _domainSkillId, ColonyRole _role) public view returns (uint256) {
+  function getDomainSkillRoleThreshold(
+    uint256 _domainSkillId,
+    ColonyRole _role
+  ) public view returns (uint256) {
     if (domainSkillThreshold[_domainSkillId] > 0) {
       return domainSkillThreshold[_domainSkillId];
     }
@@ -346,18 +369,15 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
   function getActionSummary(
     bytes memory action,
     address target
-  )
-    public
-    view
-    returns (uint256 domainSkillId, bytes32 requiredPermissions)
-  {
+  ) public view returns (uint256 domainSkillId, bytes32 requiredPermissions) {
     bytes4 sig;
     bytes[] memory actions;
 
     if (getSig(action) == MULTICALL) {
       actions = abi.decode(extractCalldata(action), (bytes[]));
     } else {
-      actions = new bytes[](1); actions[0] = action;
+      actions = new bytes[](1);
+      actions[0] = action;
     }
 
     uint256 overallDomainSkillId;
@@ -394,8 +414,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
         overallPermissionMask = permissionMask;
       } else {
         require(
-          overallDomainSkillId == domainSkillId &&
-          overallPermissionMask == permissionMask,
+          overallDomainSkillId == domainSkillId && overallPermissionMask == permissionMask,
           "colony-multisig-invalid-motion"
         );
       }
@@ -416,9 +435,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     address _user,
     uint256 _domainId,
     bytes32 _roles
-  )
-    public
-  {
+  ) public {
     // This is not strictly necessary, since these roles are never used in subdomains
     require(_roles & ROOT_ROLES == 0 || _domainId == 1, "multisig-bad-domain-for-role");
 
@@ -431,13 +448,16 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     require(
       // Has core root permissions OR
       colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root) ||
-      // Has core architecture, if we're using that permission in a child domain of where we have it
-      (
-        // Core architecture check
-        colony.hasUserRole(msgSender(), _permissionDomainId, ColonyDataTypes.ColonyRole.Architecture) &&
-        // In a child domain check
-        (_permissionDomainId != _domainId)
-      ), "multisig-caller-not-correct-permissions"
+        // Has core architecture, if we're using that permission in a child domain of where we have it
+        (// Core architecture check
+        colony.hasUserRole(
+          msgSender(),
+          _permissionDomainId,
+          ColonyDataTypes.ColonyRole.Architecture
+        ) &&
+          // In a child domain check
+          (_permissionDomainId != _domainId)),
+      "multisig-caller-not-correct-permissions"
     );
 
     Domain memory domain = colony.getDomain(_domainId);
@@ -479,13 +499,12 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _domainId
-  )
-    internal
-    view
-    returns (bool)
-  {
+  ) internal view returns (bool) {
     uint256 colonyDomainCount = colony.getDomainCount();
-    require(_permissionDomainId > 0 && _permissionDomainId <= colonyDomainCount, "multisig-domain-does-not-exist");
+    require(
+      _permissionDomainId > 0 && _permissionDomainId <= colonyDomainCount,
+      "multisig-domain-does-not-exist"
+    );
     require(_domainId > 0 && _domainId <= colonyDomainCount, "multisig-domain-does-not-exist");
 
     if (_permissionDomainId == _domainId) {
@@ -502,22 +521,33 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _motionId
-  )
-    internal
-    view
-  {
-      uint256 permissionSkillId = colony.getDomain(_permissionDomainId).skillId;
-      uint256 userActingInDomainWithSkillId = colonyNetwork.getChildSkillId(permissionSkillId, _childSkillIndex);
-      // slither-disable-next-line incorrect-equality
-      require(userActingInDomainWithSkillId == motions[_motionId].domainSkillId, "colony-multisig-not-same-domain");
+  ) internal view {
+    uint256 permissionSkillId = colony.getDomain(_permissionDomainId).skillId;
+    uint256 userActingInDomainWithSkillId = colonyNetwork.getChildSkillId(
+      permissionSkillId,
+      _childSkillIndex
+    );
+    // slither-disable-next-line incorrect-equality
+    require(
+      userActingInDomainWithSkillId == motions[_motionId].domainSkillId,
+      "colony-multisig-not-same-domain"
+    );
   }
 
   function validateUserPermissions(uint256 _permissionDomainId, uint256 _motionId) internal view {
-      bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
-      require(userPermissions & motions[_motionId].requiredPermissions > 0, "colony-multisig-no-permissions");
+    bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
+    require(
+      userPermissions & motions[_motionId].requiredPermissions > 0,
+      "colony-multisig-no-permissions"
+    );
   }
 
-  function setUserApproval(uint256 _motionId, address _user, ColonyRole _permission, bool _approved) internal {
+  function setUserApproval(
+    uint256 _motionId,
+    address _user,
+    ColonyRole _permission,
+    bool _approved
+  ) internal {
     bytes32 approvals = motionApprovals[_motionId][_user];
     if (_approved) {
       approvals = approvals | bytes32(uint256(2) ** uint256(_permission));
@@ -544,5 +574,4 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, ExtractCal
   function BITNOT(bytes32 input) internal pure returns (bytes32 output) {
     return (input ^ bytes32(uint(int(-1))));
   }
-
 }
