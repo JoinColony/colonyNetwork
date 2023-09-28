@@ -47,6 +47,7 @@ class ReputationMinerClient {
    * @param {bool}   oracle                  Whether to serve requests as a reputation oracle or not
    * @param {bool}   exitOnError             Whether to exit when an error is hit or not.
    * @param {Object} adapter                 An object with .log and .error that controls where the output from the miner ends up.
+   * @param {Number} processingDelay         Delay between processing reputation logs (in blocks)
    */
   constructor({ minerAddress, loader, realProviderPort, oraclePort = 3000, privateKey, provider, useJsTree, dbPath, auto, oracle, exitOnError, adapter, processingDelay }) { // eslint-disable-line max-len
     this._loader = loader;
@@ -749,7 +750,7 @@ class ReputationMinerClient {
 
     // Submit hash
     let submitRootHashTx = await this._miner.submitRootHash(entryIndex);
-    if (!submitRootHashTx.nonce) {
+    if (!Object.prototype.hasOwnProperty.call(submitRootHashTx, "nonce")) {
       // Assume we've been given back the submitRootHashTx hash.
       submitRootHashTx = await this._miner.realProvider.getTransaction(submitRootHashTx);
     }

@@ -16,6 +16,8 @@ const minStake = ethers.BigNumber.from(10).pow(18).mul(2000);
 
 const DAY_IN_SECONDS = 60 * 60 * 24;
 
+const BLOCK_PAGING_SIZE = 1000000;
+
 class ReputationMiner {
   /**
    * Constructor for ReputationMiner
@@ -1359,10 +1361,17 @@ class ReputationMiner {
     if (!blockNumber) {
       throw new Error("Block number not supplied to sync");
     }
-    // Get the events
+    let events = [];
+    const latestBlockNumber = await this.realProvider.getBlockNumber();
+
     const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
-    filter.fromBlock = blockNumber;
-    const events = await this.realProvider.getLogs(filter);
+    filter.toBlock = Math.max(blockNumber - 1, 0);
+    while (filter.toBlock !== latestBlockNumber) {
+      filter.fromBlock = filter.toBlock + 1;
+      filter.toBlock = Math.min(filter.fromBlock + BLOCK_PAGING_SIZE, latestBlockNumber);
+      const partialEvents = await this.realProvider.getLogs(filter);
+      events = events.concat(partialEvents);
+    }
     let localHash = await this.reputationTree.getRootHash();
     let applyLogs = false;
 
@@ -1428,6 +1437,7 @@ class ReputationMiner {
     // Some more cycles might have completed since we started syncing
     const lastEventBlock = events[events.length - 1].blockNumber
     filter.fromBlock = lastEventBlock;
+    filter.toBlock = "latest";
     const sinceEvents = await this.realProvider.getLogs(filter);
     if (sinceEvents.length > 1){
       console.log("Some more cycles have completed during the sync process. Continuing to sync...")
@@ -1558,10 +1568,13 @@ class ReputationMiner {
     await this.instantiateJustificationTree(jtType);
 
     try {
-
       const justificationHashFile = await fs.readFile(this.justificationCachePath, 'utf8')
       this.justificationHashes = JSON.parse(justificationHashFile);
+    } catch (err) {
+      console.log('Could not find justificationTreeCache.json. It will be created...')
+    }
 
+    try {
       for (let i = 0; i < Object.keys(this.justificationHashes).length; i += 1) {
         const hash = Object.keys(this.justificationHashes)[i];
         const tx = await this.justificationTree.insert(
