@@ -180,7 +180,7 @@ contract("Multisig Permissions", (accounts) => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action], { from: USER2 }),
-        "colony-multisig-no-permissions"
+        "colony-multisig-no-permissions",
       );
     });
 
@@ -211,11 +211,11 @@ contract("Multisig Permissions", (accounts) => {
 
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action1, action2], { from: USER2 }),
-        "colony-multisig-invalid-motion"
+        "colony-multisig-invalid-motion",
       );
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action], { from: USER2 }),
-        "colony-multisig-invalid-motion"
+        "colony-multisig-invalid-motion",
       );
     });
 
@@ -231,7 +231,7 @@ contract("Multisig Permissions", (accounts) => {
 
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action], { from: USER2 }),
-        "colony-multisig-no-permissions"
+        "colony-multisig-no-permissions",
       );
     });
 
@@ -242,7 +242,7 @@ contract("Multisig Permissions", (accounts) => {
 
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [nestedAction]),
-        "colony-multisig-no-nested-multicall"
+        "colony-multisig-no-nested-multicall",
       );
     });
 
@@ -299,7 +299,7 @@ contract("Multisig Permissions", (accounts) => {
       // Try to award multisig FUNDING in root domain
       await checkErrorRevert(
         multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([FUNDING_ROLE]), { from: USER2 }),
-        "multisig-caller-not-correct-permissions"
+        "multisig-caller-not-correct-permissions",
       );
 
       // Try to award multisig FUNDING in a child domain
@@ -316,7 +316,7 @@ contract("Multisig Permissions", (accounts) => {
 
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action], { from: USER2 }),
-        "colony-multisig-no-permissions"
+        "colony-multisig-no-permissions",
       );
 
       // Can create motions to award core funding in subdomain
@@ -332,7 +332,7 @@ contract("Multisig Permissions", (accounts) => {
         multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE]), {
           from: USER2,
         }),
-        "multisig-caller-not-correct-permissions"
+        "multisig-caller-not-correct-permissions",
       );
 
       const action = await encodeTxData(multisigPermissions, "setUserRoles", [1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE])]);
@@ -345,7 +345,7 @@ contract("Multisig Permissions", (accounts) => {
 
       await checkErrorRevert(
         multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ROOT_ROLE]), { from: USER2 }),
-        "multisig-caller-not-correct-permissions"
+        "multisig-caller-not-correct-permissions",
       );
 
       const action = await encodeTxData(colony, "setUserRoles", [1, UINT256_MAX, USER2, 1, rolesToBytes32([ROOT_ROLE])]);
@@ -609,7 +609,7 @@ contract("Multisig Permissions", (accounts) => {
       const action = await encodeTxData(
         oneTxPayment,
         "makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)",
-        [1, 0, 1, 0, [USER0], [token.address], [100], 2, 0]
+        [1, 0, 1, 0, [USER0], [token.address], [100], 2, 0],
       );
 
       // If we don't have any permissions, can't create
