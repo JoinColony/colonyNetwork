@@ -2,9 +2,7 @@ pragma solidity 0.8.21;
 
 import "./../colony/ColonyStorage.sol";
 
-
 contract TasksPayments is ColonyStorage {
-
   function makeTask(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -12,11 +10,7 @@ contract TasksPayments is ColonyStorage {
     uint256 _domainId,
     uint256 _skillId,
     uint256 _dueDate
-  )
-    public
-    stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
     DEPRECATED_taskCount += 1;
 
     fundingPotCount += 1;
@@ -47,7 +41,7 @@ contract TasksPayments is ColonyStorage {
       dueDate = block.timestamp + 90 days;
     }
 
-    require (dueDate > 0, "colony-task-due-date-cannot-be-zero");
+    require(dueDate > 0, "colony-task-due-date-cannot-be-zero");
     DEPRECATED_tasks[DEPRECATED_taskCount].dueDate = dueDate;
 
     emit TaskDueDateSet(DEPRECATED_taskCount, dueDate);

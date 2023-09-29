@@ -329,7 +329,11 @@ contract ColonyFunding is
     emit ColonyFundsMovedBetweenFundingPots(msgSender(), _fromPot, _toPot, _amount, _token);
   }
 
-  function updatePayoutsWeCannotMakeAfterPotChange(uint256 _fundingPotId, address _token, uint256 _prev) internal {
+  function updatePayoutsWeCannotMakeAfterPotChange(
+    uint256 _fundingPotId,
+    address _token,
+    uint256 _prev
+  ) internal {
     FundingPot storage tokenPot = fundingPots[_fundingPotId];
 
     if (_prev >= tokenPot.payouts[_token]) {
@@ -347,7 +351,11 @@ contract ColonyFunding is
     }
   }
 
-  function updatePayoutsWeCannotMakeAfterBudgetChange(uint256 _fundingPotId, address _token, uint256 _prev) internal {
+  function updatePayoutsWeCannotMakeAfterBudgetChange(
+    uint256 _fundingPotId,
+    address _token,
+    uint256 _prev
+  ) internal {
     FundingPot storage tokenPot = fundingPots[_fundingPotId];
 
     if (tokenPot.balance[_token] >= _prev) {
@@ -390,7 +398,11 @@ contract ColonyFunding is
     }
 
     fundingPot.payouts[_token] = runningTotal;
-    updatePayoutsWeCannotMakeAfterBudgetChange(expenditures[_id].fundingPotId, _token, previousTotal);
+    updatePayoutsWeCannotMakeAfterBudgetChange(
+      expenditures[_id].fundingPotId,
+      _token,
+      previousTotal
+    );
   }
 
   function processPayout(
@@ -398,10 +410,7 @@ contract ColonyFunding is
     address _token,
     uint256 _payout,
     address payable _user
-  )
-    private
-    returns (uint256)
-  {
+  ) private returns (uint256) {
     refundDomain(_fundingPotId, _token);
 
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);

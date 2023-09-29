@@ -110,11 +110,11 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     emit ColonyMetadataDelta(msgSender(), _metadataDelta);
   }
 
-  function bootstrapColony(address[] memory _users, int[] memory _amounts) public
-  stoppable
-  auth
-  {
-    require(DEPRECATED_taskCount == 0 && DEPRECATED_paymentCount == 0, "colony-not-in-bootstrap-mode");
+  function bootstrapColony(address[] memory _users, int[] memory _amounts) public stoppable auth {
+    require(
+      DEPRECATED_taskCount == 0 && DEPRECATED_paymentCount == 0,
+      "colony-not-in-bootstrap-mode"
+    );
     require(expenditureCount == 0, "colony-not-in-bootstrap-mode");
     require(_users.length == _amounts.length, "colony-bootstrap-bad-inputs");
 
@@ -433,15 +433,12 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     role = DEPRECATED_tasks[_id].roles[_role];
   }
 
-  function getTask(uint256 _id) public view returns (
-    bytes32,
-    bytes32,
-    TaskStatus,
-    uint256,
-    uint256,
-    uint256,
-    uint256,
-    uint256[] memory)
+  function getTask(
+    uint256 _id
+  )
+    public
+    view
+    returns (bytes32, bytes32, TaskStatus, uint256, uint256, uint256, uint256, uint256[] memory)
   {
     Task storage t = DEPRECATED_tasks[_id];
     return (
@@ -463,5 +460,4 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   function getPaymentCount() public view returns (uint256) {
     return DEPRECATED_paymentCount;
   }
-
 }
