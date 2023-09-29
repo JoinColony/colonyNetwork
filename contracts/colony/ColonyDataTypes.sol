@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.21;
 
-
+// prettier-ignore
 interface ColonyDataTypes {
   // Events
 

@@ -935,6 +935,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @notice Get the number of tasks in the colony.
   /// @return count The task count
   function getTaskCount() external view returns (uint256 count);
+
   /// @notice Get a task with id `_id`
   /// @param _id Id of the task
   /// @return specificationHash Task brief hash
@@ -945,21 +946,41 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
-  function getTask(uint256 _id) external view returns (bytes32 specificationHash, bytes32 deliverableHash, TaskStatus status, uint256 dueDate, uint256 fundingPotId, uint256 completionTimestamp, uint256 domainId, uint256[] memory skillIds);
+  function getTask(
+    uint256 _id
+  )
+    external
+    view
+    returns (
+      bytes32 specificationHash,
+      bytes32 deliverableHash,
+      TaskStatus status,
+      uint256 dueDate,
+      uint256 fundingPotId,
+      uint256 completionTimestamp,
+      uint256 domainId,
+      uint256[] memory skillIds
+    );
+
   /// @notice Starts from 0 and is incremented on every co-reviewed task change via `executeTaskChange` call.
   /// @param _id Id of the task
   /// @return nonce The current task change nonce value
   function getTaskChangeNonce(uint256 _id) external view returns (uint256 nonce);
+
   /// @notice Get the `ColonyStorage.RatingSecrets` information for task `_id`.
   /// @param _id Id of the task
   /// @return nSecrets Number of secrets
   /// @return lastSubmittedAt Timestamp of the last submitted rating secret
-  function getTaskWorkRatingSecretsInfo(uint256 _id) external view returns (uint256 nSecrets, uint256 lastSubmittedAt);
+  function getTaskWorkRatingSecretsInfo(
+    uint256 _id
+  ) external view returns (uint256 nSecrets, uint256 lastSubmittedAt);
+
   /// @notice Get the rating secret submitted for role `_role` in task `_id`
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in TaskRole enum
   /// @return secret Rating secret `bytes32` value
   function getTaskWorkRatingSecret(uint256 _id, uint8 _role) external view returns (bytes32 secret);
+
   /// @notice Get the `Role` properties back for role `_role` in task `_id`.
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in TaskRole enum
@@ -969,6 +990,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @notice Get the number of payments in the colony.
   /// @return count The payment count
   function getPaymentCount() external view returns (uint256 count);
+
   /// @notice Returns an exiting payment.
   /// @param _id Payment identifier
   /// @return payment The Payment data structure

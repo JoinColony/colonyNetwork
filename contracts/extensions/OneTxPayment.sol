@@ -55,7 +55,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
+  function version() public pure override returns (uint256 _version) {
     return 7;
   }
 
@@ -93,6 +93,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       )
     );
 
+  // prettier-ignore
   bytes32 constant REQUIRED_ROLES = (
     bytes32(uint256(1)) << uint8(ARBITRATION) |
     bytes32(uint256(1)) << uint8(FUNDING) |
@@ -137,6 +138,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       "one-tx-payment-invalid-input"
     );
 
+    // prettier-ignore
     require(
       colony.hasInheritedUserRole(msgSender(), 1, FUNDING, _childSkillIndex, _domainId) &&
       colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId) &&
@@ -204,6 +206,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       "one-tx-payment-invalid-input"
     );
 
+    // prettier-ignore
     require(
       colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, FUNDING, _callerChildSkillIndex, _domainId) &&
       colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId) &&
@@ -363,16 +366,24 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _expenditureId,
-    address payable[] memory  _workers,
+    address payable[] memory _workers,
     address[] memory _tokens
-  )
-    internal
-  {
+  ) internal {
     colony.finalizeExpenditure(_expenditureId);
 
-    bool[] memory mask = new bool[](1); mask[0] = ARRAY;
-    bytes32[] memory keys = new bytes32[](1); keys[0] = CLAIM_DELAY_OFFSET;
-    colony.setExpenditureState( _permissionDomainId, _childSkillIndex, _expenditureId, EXPENDITURES_SLOT, mask, keys, bytes32(0));
+    bool[] memory mask = new bool[](1);
+    mask[0] = ARRAY;
+    bytes32[] memory keys = new bytes32[](1);
+    keys[0] = CLAIM_DELAY_OFFSET;
+    colony.setExpenditureState(
+      _permissionDomainId,
+      _childSkillIndex,
+      _expenditureId,
+      EXPENDITURES_SLOT,
+      mask,
+      keys,
+      bytes32(0)
+    );
 
     uint256 slot;
 

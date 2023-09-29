@@ -193,7 +193,7 @@ contract("ColonyPermissions", (accounts) => {
 
       await checkErrorRevert(
         colony.setExpenditureState(1, UINT256_MAX, expenditureId1, EXPENDITURES_SLOT, [ARRAY], [bn2bytes32(new BN(4))], day32, { from: USER1 }),
-        "ds-auth-unauthorized"
+        "ds-auth-unauthorized",
       );
       await colony.setExpenditureState(2, UINT256_MAX, expenditureId2, EXPENDITURES_SLOT, [ARRAY], [bn2bytes32(new BN(4))], day32, { from: USER1 });
     });
