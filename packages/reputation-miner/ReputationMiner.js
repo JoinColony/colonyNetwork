@@ -96,7 +96,7 @@ class ReputationMiner {
 
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
-    this.gasPrice = ethers.utils.hexlify(20000000000);
+    this.feeData = {};
     const repCycle = await this.getActiveRepCycle();
     await this.updatePeriodLength(repCycle);
     this.db = new Database(this.dbPath, { });
@@ -763,7 +763,7 @@ class ReputationMiner {
     }
 
     // Submit that entry
-    return repCycle.submitRootHash(hash, nLeaves, jrh, entryIndex, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+    return repCycle.submitRootHash(hash, nLeaves, jrh, entryIndex, { gasLimit: gasEstimate, ...this.feeData });
   }
 
   async getEntryIndex(startIndex = 1) {
@@ -1017,7 +1017,7 @@ class ReputationMiner {
       index,
       siblings1,
       siblings2,
-      { gasLimit: gasEstimate, gasPrice: this.gasPrice }
+      { gasLimit: gasEstimate, ...this.feeData }
     );
   }
 
@@ -1107,7 +1107,7 @@ class ReputationMiner {
       siblings,
       {
         gasLimit: gasEstimate,
-        gasPrice: this.gasPrice
+        ...this.feeData
       }
     );
   }
@@ -1139,7 +1139,7 @@ class ReputationMiner {
 
     return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings, {
       gasLimit: gasEstimate,
-      gasPrice: this.gasPrice
+      ...this.feeData
     });
   }
 
@@ -1243,7 +1243,7 @@ class ReputationMiner {
     }
 
     return repCycle.respondToChallenge(...functionArgs,
-      { gasLimit: gasEstimate, gasPrice: this.gasPrice }
+      { gasLimit: gasEstimate, ...this.feeData }
     );
   }
 
@@ -1263,7 +1263,7 @@ class ReputationMiner {
     } catch (err){
       gasEstimate = ethers.BigNumber.from(4000000);
     }
-    return repCycle.confirmNewHash(round, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+    return repCycle.confirmNewHash(round, { gasLimit: gasEstimate, ...this.feeData });
   }
 
 
@@ -1463,18 +1463,8 @@ class ReputationMiner {
     }
   }
 
-  // Gas price should be a hex string
-  async setGasPrice(_gasPrice){
-    if (!ethers.utils.isHexString(_gasPrice)){
-      throw new Error("Passed gas price was not a hex string")
-    }
-    const passedPrice = ethers.BigNumber.from(_gasPrice);
-    const minimumPrice = ethers.BigNumber.from("1100000000");
-    if (passedPrice.lt(minimumPrice)){
-      this.gasPrice = minimumPrice.toHexString();
-    } else {
-      this.gasPrice = _gasPrice;
-    }
+  async setFeeData(_feeData){
+    this.feeData = _feeData;
   }
 
   async saveCurrentState() {

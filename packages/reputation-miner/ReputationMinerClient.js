@@ -4,7 +4,7 @@ const path = require("path");
 const apicache = require("apicache")
 
 const ReputationMiner = require("./ReputationMiner");
-const { ConsoleAdapter, updateGasEstimate } = require("../package-utils");
+const { ConsoleAdapter, getFeeData } = require("../package-utils");
 
 const minStake = ethers.BigNumber.from(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
 const MINUTE_IN_SECONDS = 60;
@@ -442,8 +442,8 @@ class ReputationMinerClient {
           const canSubmit = await this._miner.submissionPossible(entryIndex);
           if (canSubmit) {
             this._adapter.log("⏰ Looks like it's time to submit an entry to the current cycle");
-            const gasPrice = await updateGasEstimate("average", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
+            const feeData = await getFeeData("average", this.chainId, this._adapter, this._miner.realProvider);
+            await this._miner.setFeeData(feeData);
             await this.submitEntry(entryIndex);
             this.submissionIndex += 1;
             this.endDoBlockChecks();
@@ -494,8 +494,8 @@ class ReputationMinerClient {
               return;
             }
           }
-          const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-          await this._miner.setGasPrice(gasPrice);
+          const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
+          await this._miner.setFeeData(feeData);
 
           this._adapter.log("Invalidating pseudo-opponent in dispute");
           await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
@@ -509,8 +509,8 @@ class ReputationMinerClient {
         if (submission.jrhNLeaves.eq(0)) {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
           if (responsePossible){
-            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
+            const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
+            await this._miner.setFeeData(feeData);
             this._adapter.log("Confirming JRH in dispute");
             const tx = await this._miner.confirmJustificationRootHash();
             await tx.wait();
@@ -524,9 +524,9 @@ class ReputationMinerClient {
           if (oppEntry.challengeStepCompleted.gte(entry.challengeStepCompleted)) {
             const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_RESPONSE, entry.lastResponseTimestamp);
             if (responsePossible){
-            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
-              this._adapter.log("Responding to binary search in dispute");
+              const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
+              await this._miner.setFeeData(feeData);
+                  this._adapter.log("Responding to binary search in dispute");
               const tx = await this._miner.respondToBinarySearchForChallenge();
               await tx.wait();
             }
@@ -542,9 +542,9 @@ class ReputationMinerClient {
         {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
           if (responsePossible){
-            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
-            this._adapter.log("Confirming binary search in dispute");
+            const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
+            await this._miner.setFeeData(feeData);
+              this._adapter.log("Confirming binary search in dispute");
             const tx = await this._miner.confirmBinarySearchResult();
             await tx.wait();
           }
@@ -560,9 +560,9 @@ class ReputationMinerClient {
         {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
           if (responsePossible){
-            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
-            this._adapter.log("Responding to challenge in dispute");
+            const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
+            await this._miner.setFeeData(feeData);
+              this._adapter.log("Responding to challenge in dispute");
             const tx = await this._miner.respondToChallenge();
             await tx.wait();
           }
@@ -578,9 +578,9 @@ class ReputationMinerClient {
           );
           if (responsePossible) {
             // If so, invalidate them.
-            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
-            this._adapter.log("Invalidating opponent in dispute");
+            const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
+            await this._miner.setFeeData(feeData);
+              this._adapter.log("Invalidating opponent in dispute");
             await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
             this.endDoBlockChecks();
             return;
@@ -764,8 +764,8 @@ class ReputationMinerClient {
     // Confirm hash if possible
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
-      const gasPrice = await updateGasEstimate("average", this.chainId, this._adapter);
-      await this._miner.setGasPrice(gasPrice);
+      const feeData = await getFeeData("average", this.chainId, this._adapter, this._miner.realProvider);
+      await this._miner.setFeeData(feeData);
 
       const confirmNewHashTx = await this._miner.confirmNewHash();
 

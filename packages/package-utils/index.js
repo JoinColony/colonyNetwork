@@ -1,5 +1,5 @@
 exports.colonyIOCors = require("./colonyIOCors");
-exports.updateGasEstimate = require("./updateGasEstimate");
+exports.getFeeData = require("./getFeeData");
 exports.DiscordAdapter = require("./adapters/discord");
 exports.SlackAdapter = require("./adapters/slack");
 exports.ConsoleAdapter = require("./adapters/console");
