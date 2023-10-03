@@ -37,10 +37,11 @@ const updateGasEstimate = async function (_type, chainId, adapter) {
 
   // Get latest from whichever oracle
   try {
-    const gasEstimates = await axios.request(options);
+    const request = await axios.request(options);
+    const gasEstimates = request.data;
     let gasPrice;
     if (gasEstimates[type]) {
-      gasPrice = ethers.utils.hexlify(ethers.BigNumber.from(gasEstimates[type] * 1e9).div(factor));
+      gasPrice = ethers.utils.hexlify(ethers.BigNumber.from(Math.floor((gasEstimates[type] * 1e9) / factor)));
     } else {
       gasPrice = defaultGasPrice;
     }
