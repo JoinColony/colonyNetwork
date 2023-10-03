@@ -133,6 +133,9 @@
     "truffle-hdwallet-provider": "^1.0.17",
     "web3-utils": "^1.7.3"
   },
+  "optionalDependencies": {
+    "fsevents": "^2.3.2"
+  },
   "private": true,
   "workspaces": [
     "packages/kyc-oracle",
