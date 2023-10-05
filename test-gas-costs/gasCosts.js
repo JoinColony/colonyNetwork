@@ -12,7 +12,6 @@ const {
   SECONDS_PER_DAY,
   DEFAULT_STAKE,
   INITIAL_FUNDING,
-  GLOBAL_SKILL_ID,
   MINING_CYCLE_DURATION,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
 } = require("../helpers/constants");
@@ -64,6 +63,7 @@ contract("All", function (accounts) {
 
   let colony;
   let token;
+  let localSkillId;
   let otherToken;
   let metaColony;
   let colonyNetwork;
@@ -82,7 +82,7 @@ contract("All", function (accounts) {
   });
 
   beforeEach(async function () {
-    ({ colony, token } = await setupRandomColony(colonyNetwork));
+    ({ colony, token, localSkillId } = await setupRandomColony(colonyNetwork));
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
@@ -102,10 +102,10 @@ contract("All", function (accounts) {
     });
 
     it("when working with the Meta Colony", async function () {
-      await metaColony.addGlobalSkill();
-      await metaColony.addGlobalSkill();
-      await metaColony.addGlobalSkill();
-      await metaColony.addGlobalSkill();
+      await metaColony.addLocalSkill();
+      await metaColony.addLocalSkill();
+      await metaColony.addLocalSkill();
+      await metaColony.addLocalSkill();
     });
 
     it("when working with a Colony", async function () {
@@ -128,7 +128,7 @@ contract("All", function (accounts) {
       await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER], [otherToken.address], [10], 1, 0);
 
       // 1 tx payment to one recipient, with skill
-      await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER], [token.address], [10], 1, GLOBAL_SKILL_ID);
+      await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER], [token.address], [10], 1, localSkillId);
 
       const firstToken = token.address < otherToken.address ? token.address : otherToken.address;
       const secondToken = token.address < otherToken.address ? otherToken.address : token.address;

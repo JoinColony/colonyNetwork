@@ -162,7 +162,7 @@ contract ColonyExpenditure is ColonyStorage {
     require(_slots.length == _skillIds.length, "colony-expenditure-bad-slots");
 
     for (uint256 i; i < _slots.length; i++) {
-      require(isValidGlobalOrLocalSkill(_skillIds[i]), "colony-not-valid-global-or-local-skill");
+      require(isValidLocalSkill(_skillIds[i]), "colony-not-valid-local-skill");
 
       // We only allow setting of the first skill here.
       // If we allow more in the future, make sure to have a hard limit that

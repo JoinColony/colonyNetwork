@@ -12,6 +12,7 @@ const {
   setupRandomColony,
   getMetaTransactionParameters,
 } = require("../../helpers/test-data-generator");
+
 const {
   getTokenArgs,
   web3GetNetwork,
@@ -21,7 +22,8 @@ const {
   expectNoEvent,
   getColonyEditable,
 } = require("../../helpers/test-helper");
-const { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH, ADDRESS_ZERO, WAD } = require("../../helpers/constants");
+
+const { CURR_VERSION, MIN_STAKE, IPFS_HASH, ADDRESS_ZERO, WAD } = require("../../helpers/constants");
 const { setupENSRegistrar } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
@@ -306,20 +308,9 @@ contract("Colony Network", (accounts) => {
       expect(colonyCount).to.eq.BN(8);
     });
 
-    it("when meta colony is created, should have the root global, domain, and local skills initialised, plus the local mining skill", async () => {
+    it("when meta colony is created, should have the root domain and local skills initialised, plus the local mining skill", async () => {
       const skillCount = await colonyNetwork.getSkillCount();
-      expect(skillCount).to.eq.BN(4);
-
-      const globalSkill = await colonyNetwork.getSkill(GLOBAL_SKILL_ID);
-      expect(parseInt(globalSkill.nParents, 10)).to.be.zero;
-      expect(parseInt(globalSkill.nChildren, 10)).to.be.zero;
-      expect(globalSkill.globalSkill).to.be.true;
-
-      const localSkill1 = await colonyNetwork.getSkill(1);
-      expect(localSkill1.globalSkill).to.be.false;
-
-      const localSkill2 = await colonyNetwork.getSkill(2);
-      expect(localSkill2.globalSkill).to.be.false;
+      expect(skillCount).to.eq.BN(3);
 
       const miningSkillId = await colonyNetwork.getReputationMiningSkillId();
       expect(miningSkillId).to.eq.BN(3);
@@ -337,12 +328,12 @@ contract("Colony Network", (accounts) => {
     it("when any colony is created, should have the root domain and local skills initialised", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       const skillCount = await colonyNetwork.getSkillCount();
-      const rootDomainSkillId = skillCount.subn(1);
+      const rootLocalSkillId = skillCount.subn(1);
+      const rootDomainSkillId = skillCount.subn(2);
 
-      const rootLocalSkill = await colonyNetwork.getSkill(skillCount);
-      expect(rootLocalSkill.globalSkill).to.be.false;
+      const rootLocalSkill = await colonyNetwork.getSkill(rootLocalSkillId);
       expect(parseInt(rootLocalSkill.nParents, 10)).to.be.zero;
-      expect(parseInt(rootLocalSkill.nChildren, 10)).to.be.zero;
+      expect(parseInt(rootLocalSkill.nChildren, 10)).to.eq.BN(1); // Created by data generator
 
       const rootDomainSkill = await colonyNetwork.getSkill(rootDomainSkillId);
       expect(parseInt(rootDomainSkill.nParents, 10)).to.be.zero;
@@ -490,15 +481,6 @@ contract("Colony Network", (accounts) => {
   });
 
   describe("when working with skills", () => {
-    it("should not be able to add a global skill, by an address that is not the meta colony ", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(0), "colony-must-be-meta-colony");
-    });
-
-    it("should not be able to deprecate a global skill, by an address that is not the meta colony ", async () => {
-      const skillCount = await colonyNetwork.getSkillCount();
-      await checkErrorRevert(colonyNetwork.deprecateSkill(skillCount), "colony-must-be-meta-colony");
-    });
-
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
       await checkErrorRevert(colonyNetwork.addSkill(1), "colony-caller-must-be-colony");
     });

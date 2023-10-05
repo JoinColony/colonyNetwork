@@ -17,7 +17,6 @@ const {
   FUNDING_ROLE,
   ADMINISTRATION_ROLE,
   INITIAL_FUNDING,
-  GLOBAL_SKILL_ID,
   ADDRESS_ZERO,
   HASHZERO,
   SECONDS_PER_DAY,
@@ -42,6 +41,7 @@ contract("ColonyPermissions", (accounts) => {
   let colonyNetwork;
   let colony;
   let token;
+  let localSkillId;
   let hasRole;
 
   let domain1;
@@ -54,14 +54,13 @@ contract("ColonyPermissions", (accounts) => {
   });
 
   beforeEach(async () => {
-    ({ colony, token } = await setupRandomColony(colonyNetwork));
+    ({ colony, token, localSkillId } = await setupRandomColony(colonyNetwork));
     await colony.setRewardInverse(100);
 
     // Add subdomains 2 and 3
     await colony.addDomain(1, UINT256_MAX, 1);
     await colony.addDomain(1, UINT256_MAX, 1);
     domain1 = await colony.getDomain(1);
-
     domain2 = await colony.getDomain(2);
     domain3 = await colony.getDomain(3);
   });
@@ -320,12 +319,12 @@ contract("ColonyPermissions", (accounts) => {
       await checkErrorRevert(colony.emitDomainReputationReward(3, USER2, 100, { from: USER1 }), "ds-auth-unauthorized");
 
       // Skill rewards
-      tx = await colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, 100, { from: FOUNDER });
-      await expectEvent(tx, "ArbitraryReputationUpdate", [FOUNDER, USER2, GLOBAL_SKILL_ID, 100]);
+      tx = await colony.emitSkillReputationReward(localSkillId, USER2, 100, { from: FOUNDER });
+      await expectEvent(tx, "ArbitraryReputationUpdate", [FOUNDER, USER2, localSkillId, 100]);
 
-      await checkErrorRevert(colony.emitSkillReputationReward(0, USER2, 100, { from: FOUNDER }), "colony-not-valid-global-or-local-skill");
-      await checkErrorRevert(colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, -100, { from: FOUNDER }), "colony-reward-must-be-positive");
-      await checkErrorRevert(colony.emitSkillReputationReward(GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.emitSkillReputationReward(0, USER2, 100, { from: FOUNDER }), "colony-not-valid-local-skill");
+      await checkErrorRevert(colony.emitSkillReputationReward(localSkillId, USER2, -100, { from: FOUNDER }), "colony-reward-must-be-positive");
+      await checkErrorRevert(colony.emitSkillReputationReward(localSkillId, USER2, 100, { from: USER1 }), "ds-auth-unauthorized");
     });
 
     it("should allow users with arbitration permission to emit negative reputation penalties", async () => {
@@ -341,12 +340,12 @@ contract("ColonyPermissions", (accounts) => {
       await checkErrorRevert(colony.emitDomainReputationPenalty(1, 1, 3, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");
 
       // Skill penalties (root domain only)
-      tx = await colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, -100, { from: USER1 });
-      await expectEvent(tx, "ArbitraryReputationUpdate", [USER1, USER2, GLOBAL_SKILL_ID, -100]);
+      tx = await colony.emitSkillReputationPenalty(localSkillId, USER2, -100, { from: USER1 });
+      await expectEvent(tx, "ArbitraryReputationUpdate", [USER1, USER2, localSkillId, -100]);
 
-      await checkErrorRevert(colony.emitSkillReputationPenalty(0, USER2, 100, { from: USER1 }), "colony-not-valid-global-or-local-skill");
-      await checkErrorRevert(colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");
-      await checkErrorRevert(colony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, USER2, -100, { from: USER2 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.emitSkillReputationPenalty(0, USER2, 100, { from: USER1 }), "colony-not-valid-local-skill");
+      await checkErrorRevert(colony.emitSkillReputationPenalty(localSkillId, USER2, 100, { from: USER1 }), "colony-penalty-cannot-be-positive");
+      await checkErrorRevert(colony.emitSkillReputationPenalty(localSkillId, USER2, -100, { from: USER2 }), "ds-auth-unauthorized");
     });
 
     it("reputation update log should respect caps on emitted rewards and penalties", async () => {

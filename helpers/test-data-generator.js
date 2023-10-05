@@ -3,7 +3,6 @@ const BN = require("bn.js");
 
 const {
   UINT256_MAX,
-  GLOBAL_SKILL_ID,
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
@@ -13,6 +12,7 @@ const {
   SLOT2,
   ADDRESS_ZERO,
 } = require("./constants");
+
 const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } = require("./test-helper");
 
 const IColony = artifacts.require("IColony");
@@ -27,18 +27,15 @@ const Resolver = artifacts.require("Resolver");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 
-exports.makeExpenditure = async function makeExpenditure({
-  colonyNetwork,
-  colony,
-  domainId = 1,
-  skillId = GLOBAL_SKILL_ID,
-  manager,
-  evaluator,
-  worker,
-}) {
+exports.makeExpenditure = async function makeExpenditure({ colonyNetwork, colony, domainId = 1, skillId, manager, evaluator, worker }) {
   if (colonyNetwork === undefined) {
     const networkAddress = await colony.getColonyNetwork();
     colonyNetwork = await IColonyNetwork.at(networkAddress); // eslint-disable-line no-param-reassign
+  }
+
+  if (skillId === undefined) {
+    await colony.addLocalSkill();
+    skillId = await colonyNetwork.getSkillCount(); // eslint-disable-line no-param-reassign
   }
 
   const accounts = await web3GetAccounts();
@@ -211,8 +208,6 @@ exports.setupMetaColonyWithLockedCLNYToken = async function setupMetaColonyWithL
   const locked = await clnyToken.locked();
   assert.isTrue(locked);
 
-  await metaColony.addGlobalSkill();
-
   return { metaColony, clnyToken };
 };
 
@@ -280,14 +275,16 @@ exports.setupRandomToken = async function setupRandomToken(lockedToken) {
 
 exports.setupRandomColony = async function setupRandomColony(colonyNetwork, lockedToken = false) {
   const token = await exports.setupRandomToken(lockedToken);
-
   const colony = await exports.setupColony(colonyNetwork, token.address);
+
+  await colony.addLocalSkill();
+  const localSkillId = await colonyNetwork.getSkillCount();
 
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [tokenLockingAddress]);
   await token.setAuthority(tokenAuthority.address);
 
-  return { colony, token };
+  return { colony, token, localSkillId };
 };
 
 exports.setupColony = async function setupColony(colonyNetwork, tokenAddress, version = 0) {

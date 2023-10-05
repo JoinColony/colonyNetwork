@@ -157,7 +157,7 @@ interface ColonyNetworkDataTypes {
     // array of `skill_id`s of all child skills
     uint256[] children;
     // `true` for a global skill reused across colonies or `false` for a skill mapped to a single colony's domain
-    bool globalSkill;
+    bool DEPRECATED_globalSkill;
     // `true` for a global skill that is deprecated
     bool deprecated;
   }

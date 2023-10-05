@@ -376,6 +376,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     mask[0] = ARRAY;
     bytes32[] memory keys = new bytes32[](1);
     keys[0] = CLAIM_DELAY_OFFSET;
+
     colony.setExpenditureState(
       _permissionDomainId,
       _childSkillIndex,

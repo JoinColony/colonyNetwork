@@ -3,7 +3,7 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const BN = require("bn.js");
 
-const { UINT256_MAX, WAD, GLOBAL_SKILL_ID } = require("../helpers/constants");
+const { UINT256_MAX, WAD } = require("../helpers/constants");
 const { fundColonyWithTokens, setupColony } = require("../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -26,6 +26,7 @@ contract("Contract Storage", (accounts) => {
 
   let colony;
   let token;
+  let localSkillId;
   let otherToken;
   let colonyNetwork;
   let metaColony;
@@ -42,7 +43,9 @@ contract("Contract Storage", (accounts) => {
 
     token = await Token.new("name", "symbol", 18);
     await token.unlock();
-    colony = await setupColony(colonyNetwork, token.address);
+
+    ({ colony, localSkillId } = await setupColony(colonyNetwork, token.address));
+
     tokenLockingAddress = await colonyNetwork.getTokenLocking();
     const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [tokenLockingAddress]);
     await token.setAuthority(tokenAuthority.address);
@@ -87,7 +90,7 @@ contract("Contract Storage", (accounts) => {
 
       await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
-      await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
+      await colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN });
 
       const expenditure = await colony.getExpenditure(expenditureId);
       await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);

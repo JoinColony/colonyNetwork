@@ -117,16 +117,11 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     allowedToAddSkill(_parentSkillId == 0)
     returns (uint256)
   {
-    skillCount += 1;
-
     Skill storage parentSkill = skills[_parentSkillId];
-    // Global and local skill trees are kept separate
-    require(
-      _parentSkillId == 0 || !parentSkill.globalSkill,
-      "colony-global-and-local-skill-trees-are-separate"
-    );
 
+    skillCount += 1;
     Skill memory s;
+
     if (_parentSkillId != 0) {
       s.nParents = parentSkill.nParents + 1;
       skills[skillCount] = s;
@@ -162,9 +157,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
         treeWalkingCounter += 1;
       }
     } else {
-      // Add a global skill
-      s.globalSkill = true;
-      skills[skillCount] = s;
+      require(false, "colony-global-skills-are-deprecated");
     }
 
     emit SkillAdded(skillCount, _parentSkillId);
@@ -207,7 +200,8 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
   }
 
   function initialiseRootLocalSkill() public stoppable calledByColony returns (uint256) {
-    return skillCount++;
+    skillCount++;
+    return skillCount;
   }
 
   function appendReputationUpdateLog(

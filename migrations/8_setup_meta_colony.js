@@ -52,7 +52,6 @@ module.exports = async function (deployer, network, accounts) {
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, DEFAULT_STAKE, true, { from: MAIN_ACCOUNT });
   await colonyNetwork.stakeForMining(DEFAULT_STAKE, { from: MAIN_ACCOUNT });
-  await metaColony.addGlobalSkill();
 
   // Set up functional resolvers that identify correctly as previous versions.
   const Colony = artifacts.require("./Colony");
@@ -109,7 +108,7 @@ module.exports = async function (deployer, network, accounts) {
   await colonyNetwork.startNextCycle();
 
   const skillCount = await colonyNetwork.getSkillCount();
-  assert.equal(skillCount.toNumber(), 4);
+  assert.equal(skillCount.toNumber(), 3); // Root domain, root local skill, mining skill
 
   console.log("### Meta Colony created at", metaColony.address);
 };

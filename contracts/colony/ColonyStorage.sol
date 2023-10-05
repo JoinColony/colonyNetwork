@@ -166,8 +166,8 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
-  modifier validGlobalOrLocalSkill(uint256 _skillId) {
-    require(isValidGlobalOrLocalSkill(_skillId), "colony-not-valid-global-or-local-skill");
+  modifier validLocalSkill(uint256 _skillId) {
+    require(isValidLocalSkill(_skillId), "colony-not-valid-local-skill");
     _;
   }
 
@@ -301,9 +301,9 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     }
   }
 
-  function isValidGlobalOrLocalSkill(uint256 skillId) internal view returns (bool) {
-    Skill memory skill = IColonyNetwork(colonyNetworkAddress).getSkill(skillId);
-    return (skill.globalSkill || localSkills[skillId]) && !skill.deprecated;
+  function isValidLocalSkill(uint256 skillId) internal view returns (bool) {
+    bool deprecated = IColonyNetwork(colonyNetworkAddress).getSkill(skillId).deprecated;
+    return localSkills[skillId] && !deprecated;
   }
 
   function domainExists(uint256 domainId) internal view returns (bool) {

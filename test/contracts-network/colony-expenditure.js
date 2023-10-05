@@ -5,17 +5,7 @@ const { BN } = require("bn.js");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const {
-  UINT256_MAX,
-  INT128_MAX,
-  WAD,
-  SECONDS_PER_DAY,
-  MAX_PAYOUT,
-  GLOBAL_SKILL_ID,
-  IPFS_HASH,
-  ADDRESS_ZERO,
-  HASHZERO,
-} = require("../../helpers/constants");
+const { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, IPFS_HASH, ADDRESS_ZERO, HASHZERO } = require("../../helpers/constants");
 const { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } = require("../../helpers/test-helper");
 const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
@@ -55,6 +45,7 @@ contract("Colony Expenditure", (accounts) => {
 
   let colony;
   let token;
+  let localSkillId;
   let otherToken;
   let colonyNetwork;
   let metaColony;
@@ -66,8 +57,10 @@ contract("Colony Expenditure", (accounts) => {
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
+  });
 
-    ({ colony, token } = await setupRandomColony(colonyNetwork));
+  beforeEach(async () => {
+    ({ colony, token, localSkillId } = await setupRandomColony(colonyNetwork));
 
     await colony.setRewardInverse(100);
     await colony.setAdministrationRole(1, UINT256_MAX, ADMIN, 1, true);
@@ -178,7 +171,7 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should error if the expenditure does not exist", async () => {
-      await checkErrorRevert(colony.setExpenditureSkill(100, SLOT0, GLOBAL_SKILL_ID), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.setExpenditureSkills(100, [SLOT0], [localSkillId]), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.transferExpenditure(100, USER), "colony-expenditure-does-not-exist");
       await checkErrorRevert(
         colony.transferExpenditureViaArbitration(0, UINT256_MAX, 100, USER, { from: ARBITRATOR }),
@@ -250,48 +243,36 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should allow owners to update a slot skill", async () => {
-      await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
-
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
-      expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
-    });
-
-    it("should allow owners to update many slot skills at once", async () => {
-      await colony.setExpenditureSkills(expenditureId, [SLOT1, SLOT2], [GLOBAL_SKILL_ID, GLOBAL_SKILL_ID], { from: ADMIN });
-
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
-      expect(expenditureSlot.skills[0]).to.be.zero;
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT1);
-      expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
-      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT2);
-      expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
-    });
-
-    it("should not allow owners to update many slot skills with mismatched arguments", async () => {
-      await checkErrorRevert(
-        colony.setExpenditureSkills(expenditureId, [SLOT0, SLOT1], [GLOBAL_SKILL_ID], { from: ADMIN }),
-        "colony-expenditure-bad-slots",
-      );
-    });
-
-    it("should allow owners to update a slot skill with a local skill", async () => {
-      await colony.addLocalSkill();
-      const localSkillId = await colonyNetwork.getSkillCount();
-
-      await colony.setExpenditureSkill(expenditureId, SLOT0, localSkillId, { from: ADMIN });
+      await colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN });
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.skills[0]).to.eq.BN(localSkillId);
     });
 
+    it("should allow owners to update many slot skills at once", async () => {
+      await colony.setExpenditureSkills(expenditureId, [SLOT1, SLOT2], [localSkillId, localSkillId], { from: ADMIN });
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
+      expect(expenditureSlot.skills[0]).to.be.zero;
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT1);
+      expect(expenditureSlot.skills[0]).to.eq.BN(localSkillId);
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT2);
+      expect(expenditureSlot.skills[0]).to.eq.BN(localSkillId);
+    });
+
+    it("should not allow owners to update many slot skills with mismatched arguments", async () => {
+      await checkErrorRevert(
+        colony.setExpenditureSkills(expenditureId, [SLOT0, SLOT1], [localSkillId], { from: ADMIN }),
+        "colony-expenditure-bad-slots",
+      );
+    });
+
     it("should not allow owners to update a slot skill with a local skill from a different colony", async () => {
-      const { colony: otherColony } = await setupRandomColony(colonyNetwork);
-      await otherColony.addLocalSkill();
-      const localSkillId = await colonyNetwork.getSkillCount();
+      const { localSkillId: otherLocalSkillId } = await setupRandomColony(colonyNetwork);
 
       await checkErrorRevert(
-        colony.setExpenditureSkill(expenditureId, SLOT0, localSkillId, { from: ADMIN }),
-        "colony-not-valid-global-or-local-skill",
+        colony.setExpenditureSkills(expenditureId, [SLOT0], [otherLocalSkillId], { from: ADMIN }),
+        "colony-not-valid-local-skill",
       );
     });
 
@@ -300,14 +281,19 @@ contract("Colony Expenditure", (accounts) => {
       const localSkillId = await colonyNetwork.getSkillCount();
       await colony.deprecateLocalSkill(localSkillId, true);
 
-      await checkErrorRevert(
-        colony.setExpenditureSkill(expenditureId, SLOT0, localSkillId, { from: ADMIN }),
-        "colony-not-valid-global-or-local-skill",
-      );
+      await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN }), "colony-not-valid-local-skill");
     });
 
     it("should not allow owners to update many slot skills with nonexistent skills", async () => {
-      await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [100], { from: ADMIN }), "colony-not-valid-global-or-local-skill");
+      await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [100], { from: ADMIN }), "colony-not-valid-local-skill");
+    });
+
+    it("should not allow owners to set a deprecated global skill", async () => {
+      await metaColony.addGlobalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+      await metaColony.deprecateGlobalSkill(skillId);
+
+      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, skillId, { from: ADMIN }), "colony-not-valid-local-skill");
     });
 
     it("should allow only owners to update a slot claim delay", async () => {
@@ -380,20 +366,8 @@ contract("Colony Expenditure", (accounts) => {
       );
     });
 
-    it.skip("should not allow owners to set a non-global/local skill or a deprecated global skill", async () => {
-      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, 2, { from: ADMIN }), "colony-not-valid-global-or-local-skill");
-    });
-
-    it("should not allow owners to set a deprecated global skill", async () => {
-      await metaColony.addGlobalSkill();
-      const skillId = await colonyNetwork.getSkillCount();
-      await metaColony.deprecateGlobalSkill(skillId);
-
-      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, skillId, { from: ADMIN }), "colony-not-valid-global-or-local-skill");
-    });
-
     it("should not allow non-owners to update skills or payouts", async () => {
-      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID), "colony-expenditure-not-owner");
+      await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId]), "colony-expenditure-not-owner");
       await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD), "colony-expenditure-not-owner");
     });
 
@@ -465,7 +439,7 @@ contract("Colony Expenditure", (accounts) => {
         [SLOT0, SLOT1, SLOT2],
         [RECIPIENT, USER, ADMIN],
         [SLOT1, SLOT2],
-        [GLOBAL_SKILL_ID, GLOBAL_SKILL_ID],
+        [localSkillId, localSkillId],
         [SLOT0, SLOT1],
         [10, 20],
         [SLOT0, SLOT2],
@@ -491,13 +465,13 @@ contract("Colony Expenditure", (accounts) => {
 
       slot = await colony.getExpenditureSlot(expenditureId, SLOT1);
       expect(slot.recipient).to.equal(USER);
-      expect(slot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(slot.skills[0]).to.eq.BN(localSkillId);
       expect(slot.claimDelay).to.eq.BN(20);
       expect(slot.payoutModifier).to.be.zero;
 
       slot = await colony.getExpenditureSlot(expenditureId, SLOT2);
       expect(slot.recipient).to.equal(ADMIN);
-      expect(slot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(slot.skills[0]).to.eq.BN(localSkillId);
       expect(slot.claimDelay).to.be.zero;
       expect(slot.payoutModifier).to.eq.BN(WAD.divn(2));
 
@@ -524,7 +498,7 @@ contract("Colony Expenditure", (accounts) => {
           [SLOT0, SLOT1, SLOT2],
           [RECIPIENT, USER, ADMIN],
           [SLOT1, SLOT2],
-          [GLOBAL_SKILL_ID, GLOBAL_SKILL_ID],
+          [localSkillId, localSkillId],
           [SLOT0, SLOT1],
           [10, 20],
           [SLOT0, SLOT2],
@@ -563,7 +537,7 @@ contract("Colony Expenditure", (accounts) => {
         [SLOT0, SLOT1, SLOT2],
         [RECIPIENT, USER, ADMIN],
         [SLOT1, SLOT2],
-        [GLOBAL_SKILL_ID, GLOBAL_SKILL_ID],
+        [localSkillId, localSkillId],
         [SLOT0, SLOT1],
         [10, 20],
         [SLOT0, SLOT2],
@@ -592,13 +566,13 @@ contract("Colony Expenditure", (accounts) => {
 
       slot = await colony.getExpenditureSlot(expenditureId, SLOT1);
       expect(slot.recipient).to.equal(USER);
-      expect(slot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(slot.skills[0]).to.eq.BN(localSkillId);
       expect(slot.claimDelay).to.eq.BN(20);
       expect(slot.payoutModifier).to.be.zero;
 
       slot = await colony.getExpenditureSlot(expenditureId, SLOT2);
       expect(slot.recipient).to.equal(ADMIN);
-      expect(slot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(slot.skills[0]).to.eq.BN(localSkillId);
       expect(slot.claimDelay).to.be.zero;
       expect(slot.payoutModifier).to.eq.BN(WAD.divn(2));
 
@@ -656,7 +630,7 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should not allow the owner to set skills", async () => {
-      await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [GLOBAL_SKILL_ID], { from: ADMIN }), "colony-expenditure-not-draft");
+      await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN }), "colony-expenditure-not-draft");
     });
 
     it("should not allow the owner to set claim delays", async () => {
@@ -1010,7 +984,7 @@ contract("Colony Expenditure", (accounts) => {
     it("if skill is set, should emit two reputation updates", async () => {
       await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
-      await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
+      await colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN });
 
       const expenditure = await colony.getExpenditure(expenditureId);
       await colony.moveFundsBetweenPots(
@@ -1033,7 +1007,7 @@ contract("Colony Expenditure", (accounts) => {
 
       const skillEntry = await repCycle.getReputationUpdateLogEntry(numEntries.subn(1));
       expect(skillEntry.user).to.equal(RECIPIENT);
-      expect(skillEntry.skillId).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(skillEntry.skillId).to.eq.BN(localSkillId);
       expect(skillEntry.amount).to.eq.BN(WAD);
 
       const domainEntry = await repCycle.getReputationUpdateLogEntry(numEntries.subn(2));
@@ -1090,25 +1064,24 @@ contract("Colony Expenditure", (accounts) => {
   });
 
   describe("when claiming expenditures for extension contracts", () => {
-    let expenditureId;
-    let extensionAddress;
     const TEST_EXTENSION = soliditySha3("TestExtension");
     const extensionVersion = 0;
 
-    before(async () => {
-      // Install an extension
+    let expenditureId;
+    let extensionAddress;
 
+    before(async () => {
       const extensionImplementation = await TestExtension0.new();
       const resolver = await Resolver.new();
       await setupEtherRouter("TestExtension0", { TestExtension0: extensionImplementation.address }, resolver);
 
       await metaColony.addExtensionToNetwork(TEST_EXTENSION, resolver.address);
-
-      await colony.installExtension(TEST_EXTENSION, extensionVersion);
-      extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
     });
 
     beforeEach(async () => {
+      await colony.installExtension(TEST_EXTENSION, extensionVersion);
+      extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
+
       await colony.makeExpenditure(1, UINT256_MAX, 1, { from: ADMIN });
       expenditureId = await colony.getExpenditureCount();
     });
@@ -1116,7 +1089,7 @@ contract("Colony Expenditure", (accounts) => {
     it("if recipient is own extension, should not award reputation or pay network fee", async () => {
       await colony.setExpenditureRecipient(expenditureId, SLOT0, extensionAddress, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
-      await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
+      await colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN });
 
       const expenditure = await colony.getExpenditure(expenditureId);
       await colony.moveFundsBetweenPots(
@@ -1156,7 +1129,7 @@ contract("Colony Expenditure", (accounts) => {
 
       await colony.setExpenditureRecipient(expenditureId, SLOT0, otherExtensionAddress, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
-      await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
+      await colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN });
 
       const expenditure = await colony.getExpenditure(expenditureId);
       await colony.moveFundsBetweenPots(
@@ -1337,7 +1310,7 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should allow arbitration users to update expenditure slot skills", async () => {
-      await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
+      await colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN });
 
       const mask = [MAPPING, ARRAY, ARRAY];
       const keys = ["0x0", bn2bytes32(new BN(3)), bn2bytes32(new BN(0))];
@@ -1350,11 +1323,11 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it("should allow arbitration users to add or remove expenditure slot skills", async () => {
-      await colony.setExpenditureSkill(expenditureId, SLOT0, GLOBAL_SKILL_ID, { from: ADMIN });
+      await colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN });
 
       let expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.skills.length).to.eq.BN(1);
-      expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(expenditureSlot.skills[0]).to.eq.BN(localSkillId);
 
       // Lengthen the array
       let mask = [MAPPING, ARRAY];
@@ -1372,7 +1345,7 @@ contract("Colony Expenditure", (accounts) => {
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.skills.length).to.eq.BN(2);
-      expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(expenditureSlot.skills[0]).to.eq.BN(localSkillId);
       expect(expenditureSlot.skills[1]).to.eq.BN(100);
 
       // Shrink the array
@@ -1384,7 +1357,7 @@ contract("Colony Expenditure", (accounts) => {
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
       expect(expenditureSlot.skills.length).to.eq.BN(1);
-      expect(expenditureSlot.skills[0]).to.eq.BN(GLOBAL_SKILL_ID);
+      expect(expenditureSlot.skills[0]).to.eq.BN(localSkillId);
     });
 
     it("should allow arbitrators to update a payout in one slot", async () => {

@@ -76,8 +76,6 @@ contract ColonyAuthority is CommonAuthority {
     //  Meta Colony functions
     addRoleCapability(ROOT_ROLE, "addNetworkColonyVersion(uint256,address)");
     addRoleCapability(ROOT_ROLE, "setNetworkFeeInverse(uint256)");
-    addRoleCapability(ROOT_ROLE, "addGlobalSkill()");
-    addRoleCapability(ROOT_ROLE, "deprecateGlobalSkill(uint256)");
 
     // Added in colony v3 (auburn-glider)
     addRoleCapability(ROOT_ROLE, "updateColonyOrbitDB(string)");

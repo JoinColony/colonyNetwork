@@ -39,7 +39,6 @@ const {
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
   HASHZERO,
-  GLOBAL_SKILL_ID,
 } = require("../../helpers/constants");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
@@ -58,15 +57,20 @@ const loader = new TruffleLoader({
 
 const useJsTree = true;
 
-let metaColony;
 let colonyNetwork;
+let metaColony;
 let clnyToken;
+let localSkillId;
 let goodClient;
+
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+  await metaColony.addLocalSkill();
+  localSkillId = await colonyNetwork.getSkillCount();
 
   await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
 
@@ -533,7 +537,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await metaColony.emitDomainReputationReward(1, USER0, 1);
       await metaColony.emitDomainReputationReward(1, MINER1, 1);
       await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MINER2, -1);
-      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
+      await metaColony.emitSkillReputationPenalty(localSkillId, MINER2, -1);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
 
@@ -546,7 +550,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
         await metaColony.emitDomainReputationReward(1, USER0, 1);
         await metaColony.emitDomainReputationReward(1, MINER1, 1);
         await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MINER2, -1);
-        await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
+        await metaColony.emitSkillReputationPenalty(localSkillId, MINER2, -1);
 
         const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength();
         const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1);
@@ -916,7 +920,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
       await metaColony.emitDomainReputationReward(2, USER0, 1000000000000);
       await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -1000000000000);
-      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1000000000000);
+      await metaColony.emitSkillReputationPenalty(localSkillId, MINER2, -1000000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -967,13 +971,13 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await metaColony.emitDomainReputationReward(2, USER0, 1500000000000);
       await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
       await metaColony.emitDomainReputationReward(2, MINER2, 7500000000000);
-      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(localSkillId, MINER2, 7500000000000);
 
       // Manager, evaluator, worker
       await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
       await metaColony.emitDomainReputationReward(2, USER0, 1000000000000);
       await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -1);
-      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
+      await metaColony.emitSkillReputationPenalty(localSkillId, MINER2, -1);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 

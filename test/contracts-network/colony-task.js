@@ -2155,12 +2155,12 @@ contract.skip("ColonyTask", (accounts) => {
 
     it("should NOT be able to set nonexistent skill on task", async () => {
       const taskId = await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(taskId, 100), "colony-not-valid-global-or-local-skill");
+      await checkErrorRevert(colony.setTaskSkill(taskId, 100), "colony-not-valid-local-skill");
     });
 
     it("should NOT be able to set a domain skill on task", async () => {
       const taskId = await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(taskId, 1), "colony-not-valid-global-or-local-skill");
+      await checkErrorRevert(colony.setTaskSkill(taskId, 1), "colony-not-valid-local-skill");
     });
 
     it("should NOT be able to set a deprecated global skill on task", async () => {
@@ -2169,7 +2169,7 @@ contract.skip("ColonyTask", (accounts) => {
       const skillId = await colonyNetwork.getSkillCount();
       await metaColony.deprecateGlobalSkill(skillId);
 
-      await checkErrorRevert(colony.setTaskSkill(taskId, skillId), "colony-not-valid-global-or-local-skill");
+      await checkErrorRevert(colony.setTaskSkill(taskId, skillId), "colony-not-valid-local-skill");
     });
   });
 });

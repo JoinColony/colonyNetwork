@@ -71,8 +71,6 @@ const DECAY_RATE = {
   DENOMINATOR: new BN("1000000000000000"),
 };
 
-const GLOBAL_SKILL_ID = new BN("4"); // Not a root global skill ID or anything, just the first global skill's ID
-
 const SLOT0 = 0;
 const SLOT1 = 1;
 const SLOT2 = 2;
@@ -122,7 +120,6 @@ module.exports = {
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
   DECAY_RATE,
-  GLOBAL_SKILL_ID,
   IPFS_HASH,
   HASHZERO,
   ADDRESS_ZERO,

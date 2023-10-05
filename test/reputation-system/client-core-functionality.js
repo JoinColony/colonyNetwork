@@ -328,7 +328,11 @@ process.env.SOLIDITY_COVERAGE
 
         it("should correctly respond to a request for all reputation a single user has in a colony", async () => {
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
-          await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: MINER1, manager: accounts[6] });
+
+          await metaColony.addLocalSkill();
+          const localSkillId = await colonyNetwork.getSkillCount();
+
+          await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: MINER1, manager: accounts[6] });
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
@@ -340,10 +344,10 @@ process.env.SOLIDITY_COVERAGE
           let res = await request(url);
           expect(res.statusCode).to.equal(200);
           let { reputations } = JSON.parse(res.body);
-          expect(reputations.length).to.equal(3);
+          expect(reputations.length).to.equal(4);
 
           // More people get reputation doesn't change anything
-          await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: accounts[6], manager: accounts[6] });
+          await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: accounts[6], manager: accounts[6] });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           rootHash = await reputationMiner.reputationTree.getRootHash();
@@ -353,7 +357,7 @@ process.env.SOLIDITY_COVERAGE
           expect(res.statusCode).to.equal(200);
 
           ({ reputations } = JSON.parse(res.body));
-          expect(reputations.length).to.equal(3);
+          expect(reputations.length).to.equal(4);
         });
 
         it("should correctly respond to a request for all reputation a single user has in a colony that has an invalid address", async () => {

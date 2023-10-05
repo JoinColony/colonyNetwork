@@ -9,7 +9,6 @@ const {
   UINT256_MAX,
   WAD,
   INITIAL_FUNDING,
-  GLOBAL_SKILL_ID,
   ARBITRATION_ROLE,
   FUNDING_ROLE,
   ADMINISTRATION_ROLE,
@@ -24,7 +23,6 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const IMetaColony = artifacts.require("IMetaColony");
 const EtherRouter = artifacts.require("EtherRouter");
 const OneTxPayment = artifacts.require("OneTxPayment");
 
@@ -34,8 +32,8 @@ const { deployOldExtensionVersion, deployOldColonyVersion } = require("../../scr
 contract("One transaction payments", (accounts) => {
   let colony;
   let token;
+  let localSkillId;
   let colonyNetwork;
-  let metaColony;
   let oneTxPayment;
   let version;
 
@@ -48,15 +46,12 @@ contract("One transaction payments", (accounts) => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IMetaColony.at(metaColonyAddress);
-
     const extension = await OneTxPayment.new();
     version = await extension.version();
   });
 
   beforeEach(async () => {
-    ({ colony, token } = await setupRandomColony(colonyNetwork));
+    ({ colony, token, localSkillId } = await setupRandomColony(colonyNetwork));
     await colony.addDomain(1, UINT256_MAX, 1); // Domain 2, skillId 5
     await colony.addDomain(1, UINT256_MAX, 1); // Domain 3, skillId 6
 
@@ -114,7 +109,7 @@ contract("One transaction payments", (accounts) => {
       const balanceBefore = await token.balanceOf(USER1);
       expect(balanceBefore).to.be.zero;
 
-      const tx = await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID);
+      const tx = await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, localSkillId);
 
       const balanceAfter = await token.balanceOf(USER1);
       expect(balanceAfter).to.eq.BN(9);
@@ -128,7 +123,7 @@ contract("One transaction payments", (accounts) => {
       const balanceBefore = await token.balanceOf(USER1);
       expect(balanceBefore).to.be.zero;
 
-      await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID);
+      await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, localSkillId);
 
       const balanceAfter = await token.balanceOf(USER1);
       expect(balanceAfter).to.eq.BN(9);
@@ -141,17 +136,7 @@ contract("One transaction payments", (accounts) => {
       expect(balanceBefore).to.be.zero;
 
       const txData = await oneTxPayment.contract.methods
-        .makePaymentFundedFromDomain(
-          1,
-          UINT256_MAX.toString(),
-          1,
-          UINT256_MAX.toString(),
-          [USER1],
-          [token.address],
-          [10],
-          1,
-          GLOBAL_SKILL_ID.toString(),
-        )
+        .makePaymentFundedFromDomain(1, UINT256_MAX.toString(), 1, UINT256_MAX.toString(), [USER1], [token.address], [10], 1, localSkillId.toString())
         .encodeABI();
       const { r, s, v } = await getMetaTransactionParameters(txData, accounts[0], oneTxPayment.address);
 
@@ -168,7 +153,7 @@ contract("One transaction payments", (accounts) => {
       await colony.send(10); // NB 10 wei, not ten ether!
       await colony.claimColonyFunds(ADDRESS_ZERO);
 
-      await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [ADDRESS_ZERO], [10], 1, GLOBAL_SKILL_ID);
+      await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [ADDRESS_ZERO], [10], 1, localSkillId);
 
       const balanceAfter = await web3.eth.getBalance(USER1);
       // So only 9 here, because of the same rounding errors as applied to the token
@@ -181,22 +166,22 @@ contract("One transaction payments", (accounts) => {
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, d1.fundingPotId, d2.fundingPotId, WAD, token.address);
-      await oneTxPayment.makePaymentFundedFromDomain(1, 0, 1, 0, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID);
+      await oneTxPayment.makePaymentFundedFromDomain(1, 0, 1, 0, [USER1], [token.address], [10], 2, localSkillId);
     });
 
     it("should allow a single-transaction to occur in a child domain, paid out from the root domain", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      await oneTxPayment.makePayment(1, 0, 1, 0, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID);
+      await oneTxPayment.makePayment(1, 0, 1, 0, [USER1], [token.address], [10], 2, localSkillId);
     });
 
     it("should allow a single-transaction to occur in a child domain that's not the first child, paid out from the root domain", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      await oneTxPayment.makePayment(1, 1, 1, 1, [USER1], [token.address], [10], 3, GLOBAL_SKILL_ID);
+      await oneTxPayment.makePayment(1, 1, 1, 1, [USER1], [token.address], [10], 3, localSkillId);
     });
 
     it("should allow a single-transaction to occur in the root domain, paid out from the root domain", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      await oneTxPayment.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID);
+      await oneTxPayment.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, localSkillId);
     });
 
     it(`should not allow a single-transaction to occur in a child domain, paid out from the root domain
@@ -207,7 +192,7 @@ contract("One transaction payments", (accounts) => {
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       await checkErrorRevert(
-        oneTxPayment.makePayment(2, UINT256_MAX, 2, UINT256_MAX, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID, { from: USER1 }),
+        oneTxPayment.makePayment(2, UINT256_MAX, 2, UINT256_MAX, [USER1], [token.address], [10], 2, localSkillId, { from: USER1 }),
         "one-tx-payment-not-authorized",
       );
     });
@@ -220,7 +205,7 @@ contract("One transaction payments", (accounts) => {
       await colony.setArbitrationRole(1, 0, USER1, 2, true);
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      await oneTxPayment.makePayment(1, 0, 2, UINT256_MAX, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID, { from: USER1 });
+      await oneTxPayment.makePayment(1, 0, 2, UINT256_MAX, [USER1], [token.address], [10], 2, localSkillId, { from: USER1 });
     });
 
     it("should allow a single-transaction to occur when user has different permissions than contract", async () => {
@@ -233,12 +218,12 @@ contract("One transaction payments", (accounts) => {
       await colony.setAdministrationRole(1, 0, USER1, 2, true);
       await colony.setFundingRole(1, 0, USER1, 2, true);
       await colony.setArbitrationRole(1, 0, USER1, 2, true);
-      await oneTxPayment.makePaymentFundedFromDomain(1, 0, 2, UINT256_MAX, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID, { from: USER1 });
+      await oneTxPayment.makePaymentFundedFromDomain(1, 0, 2, UINT256_MAX, [USER1], [token.address], [10], 2, localSkillId, { from: USER1 });
     });
 
     it("should not allow a non-admin to make a single-transaction payment", async () => {
       await checkErrorRevert(
-        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID, {
+        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, localSkillId, {
           from: USER1,
         }),
         "one-tx-payment-not-authorized",
@@ -248,7 +233,7 @@ contract("One transaction payments", (accounts) => {
     it("should not allow a non-funder to make a single-transaction payment", async () => {
       await colony.setAdministrationRole(1, UINT256_MAX, USER1, 1, true);
       await checkErrorRevert(
-        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID, {
+        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, localSkillId, {
           from: USER1,
         }),
         "one-tx-payment-not-authorized",
@@ -258,32 +243,23 @@ contract("One transaction payments", (accounts) => {
     it("should not allow an admin to specify a non-global skill", async () => {
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 2),
-        "colony-not-valid-global-or-local-skill",
-      );
-    });
-
-    it("should not allow an admin to specify a deprecated global skill", async () => {
-      await metaColony.addGlobalSkill();
-      const skillId = await colonyNetwork.getSkillCount();
-      await metaColony.deprecateGlobalSkill(skillId);
-
-      await checkErrorRevert(
-        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, skillId),
-        "colony-not-valid-global-or-local-skill",
+        "colony-not-valid-local-skill",
       );
     });
 
     it("should not allow an admin to specify a non-existent domain", async () => {
       await checkErrorRevert(
-        oneTxPayment.makePaymentFundedFromDomain(1, 98, 1, 98, [USER1], [token.address], [10], 99, GLOBAL_SKILL_ID),
+        oneTxPayment.makePaymentFundedFromDomain(1, 98, 1, 98, [USER1], [token.address], [10], 99, localSkillId),
         "colony-network-out-of-range-child-skill-index",
       );
     });
 
     it("should not allow an admin to specify a non-existent skill", async () => {
+      const skillCount = await colonyNetwork.getSkillCount();
+
       await checkErrorRevert(
-        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 99),
-        "colony-not-valid-global-or-local-skill",
+        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, skillCount.addn(1)),
+        "colony-not-valid-local-skill",
       );
     });
 
@@ -291,7 +267,7 @@ contract("One transaction payments", (accounts) => {
       // Try to make a payment with the permissions in domain 1, child skill at index 1, i.e. skill 6
       // When actually domain 2 in which we are creating the task is skill 5
       await checkErrorRevert(
-        oneTxPayment.makePaymentFundedFromDomain(1, 1, 1, 1, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID),
+        oneTxPayment.makePaymentFundedFromDomain(1, 1, 1, 1, [USER1], [token.address], [10], 2, localSkillId),
         "one-tx-payment-not-authorized",
       );
     });
@@ -309,7 +285,7 @@ contract("One transaction payments", (accounts) => {
         [token.address, token.address],
         [10, 5],
         1,
-        GLOBAL_SKILL_ID,
+        localSkillId,
       );
 
       const balanceAfter1 = await token.balanceOf(USER1);
@@ -334,7 +310,7 @@ contract("One transaction payments", (accounts) => {
         [ADDRESS_ZERO, ADDRESS_ZERO],
         [10, 5],
         1,
-        GLOBAL_SKILL_ID,
+        localSkillId,
       );
 
       const balanceAfter1 = await web3.eth.getBalance(USER1);
@@ -360,7 +336,7 @@ contract("One transaction payments", (accounts) => {
         [token.address, ADDRESS_ZERO],
         [10, 5],
         1,
-        GLOBAL_SKILL_ID,
+        localSkillId,
       );
 
       const balanceTokenAfter1 = await token.balanceOf(USER1);
@@ -388,7 +364,7 @@ contract("One transaction payments", (accounts) => {
         [ADDRESS_ZERO, token.address, ADDRESS_ZERO, token.address],
         [5, 10, 5, 5],
         1,
-        GLOBAL_SKILL_ID,
+        localSkillId,
       );
 
       const balanceTokenAfter1 = await token.balanceOf(USER1);
@@ -422,7 +398,7 @@ contract("One transaction payments", (accounts) => {
         [ADDRESS_ZERO, token.address, ADDRESS_ZERO, token.address],
         [5, 10, 5, 5],
         2,
-        GLOBAL_SKILL_ID,
+        localSkillId,
       );
 
       const balanceTokenAfter1 = await token.balanceOf(USER1);
@@ -503,7 +479,7 @@ contract("One transaction payments", (accounts) => {
       expect(balanceBefore).to.be.zero;
 
       await checkErrorRevert(
-        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, GLOBAL_SKILL_ID),
+        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, localSkillId),
         "ds-auth-unauthorized",
       );
     });
@@ -517,7 +493,7 @@ contract("One transaction payments", (accounts) => {
 
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, d1.fundingPotId, d2.fundingPotId, WAD, token.address);
 
-      await oneTxPayment.makePaymentFundedFromDomain(2, UINT256_MAX, 1, 0, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID);
+      await oneTxPayment.makePaymentFundedFromDomain(2, UINT256_MAX, 1, 0, [USER1], [token.address], [10], 2, localSkillId);
 
       const balanceAfter = await token.balanceOf(USER1);
       expect(balanceAfter).to.eq.BN(9);
@@ -526,7 +502,7 @@ contract("One transaction payments", (accounts) => {
     it("cannot payout with funds from root if the extension only has subdomain permissions", async () => {
       const balanceBefore = await token.balanceOf(USER1);
       expect(balanceBefore).to.be.zero;
-      await checkErrorRevert(oneTxPayment.makePayment(2, 0, 1, 0, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID), "ds-auth-unauthorized");
+      await checkErrorRevert(oneTxPayment.makePayment(2, 0, 1, 0, [USER1], [token.address], [10], 2, localSkillId), "ds-auth-unauthorized");
     });
   });
 
