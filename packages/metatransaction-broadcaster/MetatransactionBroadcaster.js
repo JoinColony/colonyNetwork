@@ -336,6 +336,10 @@ class MetatransactionBroadcaster {
 
       try {
         gasEstimate = await estimateGas(...args);
+        if (ethers.BigNumber.from(args[args.length - 1].gasLimit).gt(gasEstimate.mul(11).div(10))) {
+          // eslint-disable-next-line
+          args[args.length - 1].gasLimit = gasEstimate.mul(11).div(10);
+        }
       } catch (err) {
         let reason;
         try {

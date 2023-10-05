@@ -10,6 +10,7 @@ const axios = require("axios");
 const { TruffleLoader } = require("../../packages/package-utils");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 const { UINT256_MAX } = require("../../helpers/constants");
+const { web3GetTransaction } = require("../../helpers/test-helper");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 const { getMetaTransactionParameters, getPermitParameters, setupColony } = require("../../helpers/test-data-generator");
@@ -242,6 +243,9 @@ contract("Metatransaction broadcaster", (accounts) => {
       expect(balanceAccount1).to.eq.BN(1200000);
       const balanceAccount2 = await metaTxToken.balanceOf(colony.address);
       expect(balanceAccount2).to.eq.BN(300000);
+
+      const tx = await web3GetTransaction(txHash);
+      expect(tx.gas).to.be.lt.BN(500000);
     });
 
     it("valid transactions broadcast near-simultaneously are still mined", async function () {

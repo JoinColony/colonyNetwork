@@ -3,7 +3,7 @@ COPY ./packages ./packages
 COPY ./package.json ./
 COPY ./package-lock.json ./
 COPY ./build ./build
-RUN npm i
+RUN npm ci
 RUN cd ./packages/metatransaction-broadcaster/ && npm i
 RUN cd ./packages/package-utils/ && npm i
 EXPOSE 3000
