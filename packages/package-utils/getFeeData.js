@@ -24,7 +24,7 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
 
   if (chainId === 100) {
     options.url = "https://blockscout.com/xdai/mainnet/api/v1/gas-price-oracle";
-    defaultGasPrice = ethers.BigNumber.from(2000000000);
+    defaultGasPrice = ethers.BigNumber.from(10000000000);
     factor = 1;
     // This oracle presents the information slightly differently from ethgasstation.
     if (_type === "safeLow") {
@@ -32,7 +32,7 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
     }
   } else if (chainId === 1) {
     options.url = "https://ethgasstation.info/json/ethgasAPI.json";
-    defaultGasPrice = ethers.BigNumber.from(2000000000);
+    defaultGasPrice = ethers.BigNumber.from(10000000000);
     factor = 10;
   } else {
     // We don't have an oracle, so just use the provided fee data
@@ -75,10 +75,11 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
       }
     } catch (err) {
       adapter.error(`Error during gas estimation: ${err}`);
-      feeData = { gasPrice: defaultGasPrice };
+      adapter.error(`Using default fee data from node`);
     }
   } catch (err) {
-    adapter.error(err);
+    adapter.error(`Error getting fee data from provider: ${err}`);
+    adapter.error(`Using default static gas fee. Hopefully it's not too low...`);
     feeData = { gasPrice: defaultGasPrice };
   }
   return feeData;
